@@ -725,88 +725,6 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ---
 
-### S1.23 — Stage 0's world on the core
-
-**Status**: planned
-
-**Clauses**: Stage 0's exit, as built, on the core: the population (POP, DEM, REP), the institutions, banks, the
-treasury and the central bank, deposits, pensions in payment, the opening's balance sheet from S1.22 (GEN); N1, N2.
-
-**Architecture**: §7, §10.
-
-**Depends on**: S1.20 (done), S1.22 (done).
-
-**Goal**: the world assembles on the core and runs Stage 0's world: persons, households, hazards, deposits, pensions
-and the state's payments. The Stage 0 live checks and audit families run on it.
-
-**Files**
-
-| File | Purpose |
-| --- | --- |
-| `crates/assembly/phx-world/` | assembly, the day and the opening on the core |
-| `crates/kernel/phx-pop/` | persons and households as kind tables; hazards and outcomes |
-| `crates/systems/sys-dem/`, `sys-soc/`, `sys-sta/`, `sys-cb/`, `sys-trs/`, `sys-tax/`, `sys-sov/` | ported handlers and openings |
-| `crates/apps/phx-cli/src/checks/` | the Stage 0 checks re-pointed at the inspector over the core |
-
-**Design**:
-- **Parts**, each committed on its fast checks:
-  - a *(done)*. The kernel's party and contract stores (`phx_core::store`): a kind's parties with their record words,
-    accounts and cash lines, and a family's contracts with their list heads, due wheel and shape plan, as the
-    full-load bench built them; the bench builds on them.
-  - b *(done: mirrored from the old books at assembly and load)*. Households and their persons on the core: the household kind's records and each household's persons in its
-    chunk's arena (`phx-pop`), and the institutions' kinds, drawn by the opening beside the old world's.
-  - c *(done for accounts)*. The balance sheet apportioned: each country's sheet (`opening::sheet`), its group's
-    moved by its drawn profile and closed as the dataset closes it, and every account on the core, each sector's total
-    split over its parties by `split_total`. Government paper, loans and pensions in payment open as families at d;
-    households' currency opens with the retail payments at d.
-  - d. The day: hazards and outcomes over persons, dated flows by shape from the wheel, settlement over `Books`,
-    closed days committed, estates on edges. *Done*: the day's frame — dated families from their wheels, each
-    currency settled or committed — with the state pensions in payment (LC-0-62); chance on the persons, their
-    outcomes written back, the gone persons' contracts closed and an empty household ended (LC-0-63); its money to an
-    estate settled to the treasury on the next business day (LC-0-64). *Left*: the other families the Stage 0
-    checks read.
-  - e. The audit's money and contracts families, the Stage 0 checks on the inspector over the core, and the smoke.
-    *Done*: the money family's identities each day (LC-0-65) and the core's day timed.
-- **Values the opening now draws from the data in hand.** Whom an extended or non-relative household holds besides
-  its head, assumed today (`DEM.household_members`: one relative of 65 and over, one unrelated adult), is derived per
-  group from the DHS household structure (`people/dhs_indicators`: members of 65 and over, three generations,
-  non-nuclear shares, household size); the partners' age gap's spread stays the measured US couples' gap.
-- The world holds both cores during the port. The old one serves the committed world until S1.24 switches it. The
-  core's copies raise the smoke's memory by what they hold, and the smoke's memory reading is judged against that
-  until S1.24 deletes the old core.
-- The opening apportions S1.22's balance sheet over parties by the shapes, exactly (`split_total`).
-- A drawn profile moves the matrices by a declared mapping that keeps their identities (`opening::sheet::map`): the
-  levels it draws replace the group's, the group's splits stay, and the dataset's closures balance the rest. The
-  primitives the matrices replace — CAP's stock per GDP, CB's currency, and the openings' reads of the profile's debt
-  levels and bank capital — retire at S1.24 with the old openings that read them.
-- Estates follow PTY.9 and the waterfall on edges.
-- Settlement runs over the world's `Books`: every money kind's accounts, the banks' reserves and deposits, the issuer.
-  The tie lot is the declared stream `SET.order`, opened for the payer at 7b. Each reason is a `ReasonDef` with the
-  payment order its terms declare, and each kind's cash lines are those its accounts report (ACC.9).
-- The audit's money family reads `Books::deposit_breaks` and the reserves' conservation against the issuer's
-  outstanding reserves; its contracts family checks each contract's balance against its shape's arithmetic on the
-  rolling cycle (N8.6). Both read and never repair.
-
-**Unit tests**: the ported systems' tests.
-
-**Live checks**: every Stage 0 live check on a smoke of the core world; `LC-0-62`: every flow the core's day makes is
-settled, failed or committed, and the core pays its dues; `LC-0-63`: the core's households hold their opening persons
-plus those born less those gone, and chance reaches them; `LC-0-64`: every estate on the core settles on its
-country's next business day and ends; `LC-0-65`: on the core each bank owes what its customers hold, and settlement
-makes and loses no money.
-
-**Budget**: the smoke's Stage 0 world within its share of the unit targets.
-
-**Guards**: none new.
-
-**Not allowed**: a check weakened to pass on the core; an opening figure changed to make a check pass.
-
-**Done when**
-- [ ] The Stage 0 checks pass on the core world, and its smoke is within budget.
-- [ ] Two reviews are done.
-
----
-
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
 **Status**: planned
@@ -817,7 +735,7 @@ makes and loses no money.
 **Architecture**: §7.10–§7.15, §10.
 
 **Depends on**: S1.21 (done: the posted-price and between-firms meetings, goods, capital and labour matching on the
-core, ARCHITECTURE §7.17), S1.23.
+core, ARCHITECTURE §7.17), S1.23 (done: Stage 0's world on the core beside the books, ARCHITECTURE §7.17).
 
 **Goal**: the circular flow runs on the core, and every firm is of one kind with its size an outcome. The committed
 world switches to the core.
@@ -831,6 +749,10 @@ world switches to the core.
 
 **Design**:
 - **Values the port takes from the data in hand**, in place of today's assumed ones:
+  - whom an extended or non-relative household holds besides its head, assumed today (`DEM.household_members`: one
+    relative of 65 and over, one unrelated adult), derived per group from the DHS household structure
+    (`people/dhs_indicators`: members of 65 and over, three generations, non-nuclear shares, household size), as the
+    opening on the core draws its households;
   - the developing group's job tenure from the developing economies of Donovan, Lu and Schoellman's surveys
     (`people/tenure_dls`), no longer the emerging group's;
   - coal and metal ore apart from oil and gas and stone: each mining division's output, value added and employment
@@ -847,6 +769,12 @@ world switches to the core.
   - each firm's stock cover its own, drawn from the Enterprise Surveys' days of inventory by size
     (`state/enterprise_surveys`); the markup's speeds, the pressure's curvature and a review's and a price change's
     hours stay one declared management type, no source measuring their spread across firms.
+- **From S1.23**: the core runs beside the books, mirrored from them at assembly and load (`phx_world::core`); this
+  step makes the core the committed world, its opening drawn on the core itself rather than copied, the core's
+  checks (LC-0-62 to LC-0-65) its Stage 0 checks, and the old kernel's checks retired with it; the primitives the
+  balance sheet replaces (CAP's stock per GDP, CB's currency, the openings' reads of the profile's debt levels and
+  bank capital) retire with the old openings; households' currency opens with the retail payments; party kinds'
+  roles on the core (the household, the treasury, the estate) are declared rather than found by name.
 - **What ends with the old kernel.** The per-payment settlement path, the agents' kernel, the cells' rows and their
   measured costs describe code this step deletes; the core's costs are this step's budget and S1.16's.
 - **The checks and the bench.** The checks' instruments run in the build run only, never in the phone's day; every
@@ -10059,7 +9987,7 @@ the final build within the budget on the phone.
 ## 11. Findings — retired
 
 Retired by the owner (2026-09-28): a finding is solved in its step or written into the step that will fix it
-(§0.5); there is no findings table. Its open rows were moved into S1.16, S1.23, S1.24, S2.03, S2.05, S3.03, S5.01,
+(§0.5); there is no findings table. Its open rows were moved into S1.16, S1.24, S2.03, S2.05, S3.03, S5.01,
 S5.02 and S6.04, or deleted where the core's restructure retired what they measured.
 
 ---
