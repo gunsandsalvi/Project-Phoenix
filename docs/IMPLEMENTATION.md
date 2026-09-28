@@ -814,7 +814,16 @@ world switches to the core.
     (vintage nought; the samples and revisions of STA.2 remain). LC-1-37 and LC-1-40 read them and pass. Measured
     (150,000 persons, 95 days, seed 1): the developed country 2.9% unemployed in January, 4.5% by March; the
     developing country's consumer index up 13% in February while the others fell 1% to 3% — the price reviews'
-    response to the opening's demand, to be read with e's outlooks and management types.
+    response to the opening's demand, to be read with e's outlooks and management types. Traced (seed 1, 150,000
+    persons): the crops' unit value there rose from 2.4 to 3.6 while households bought 38% fewer units. The firms
+    hold ample stock (55 days of what they expect), but they expect 3.2 million units a day where households buy 0.37
+    million: the opening sizes each firm's output to the accounts' whole use of its product, and on the core the
+    exports among those uses have no buyer until XB (Stage 5), while the firms buying crops as inputs draw on their
+    opening stocks first. The cheapest sellers are overrun and sell out, the pressure rule multiplying their demand's
+    ratio by their stock's shortfall against its cover (up to about 43 times, their cover's days and one), and
+    they reprice by the pressure's power, so buyers move to dearer sellers. To settle in e: each firm's expected
+    sales at the opening read only the uses the world has buyers for, and the price reviews read against the
+    management types' spread.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
   - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each
