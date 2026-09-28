@@ -1,6 +1,6 @@
 # Proposal — Minds and places
 
-*A proposal for the owner, not yet the specification. Nothing here binds a step until the owner accepts it; what is
+*A proposal accepted by the owner on 2026-09-28, with the answers of Part 3; not yet the specification. What is
 accepted moves into `PROJECT_PHOENIX.md` (what exists and why), `ARCHITECTURE.md` (how it is built) and
 `IMPLEMENTATION.md` (the steps), and this file is then removed.*
 
@@ -401,18 +401,85 @@ land or a deposit, towns take hold; where it doesn't, they don't.
 
 ---
 
-## Part 3 — What the owner decides
+## Part 3 — The owner's answers (2026-09-28)
 
-1. **Accept the direction**: a mind for every person, and places that emerge on a finer layer, as proposed or changed.
-2. **The concern list** (§1.4): the eight proposed, fewer, or others.
-3. **Concern weights' source**: fetch a measured one (life-goal items of the World Values Survey), or simulate a
-   declared distribution from the GPS dimensions in hand.
-4. **Fetching the literature tables and series** listed in §1.9 and §2.6: an exception to "the data are in hand".
-5. **The cell size**: 1 km (the settlement definition's own), or finer, the budget permitting.
-6. **The narrator**: none, on the device, or on a server.
-7. **When**: the proposal's order places the mind after S1.24–S1.25 and places with S2.05. The alternative is to
-   bring the mind's kernel forward into S1.24's part e, where households' and firms' decisions are ported anyway, so
-   they are ported once.
+The direction is accepted, both parts as proposed, with these answers. Where an answer differs from the text above,
+the answer stands.
+
+**When and how**
+- **The mind** is built in **its own stage after Stage 3**, once credit, failure and the markets exist and the offices
+  of firms and banks are built. It replaces each decision's rule **one by one**, each rule retired in the same change
+  as its move, with no second version kept.
+- **Places** are built **with housing (S2.05)**: cells, buildings, land per cell and commuting.
+- **Over budget**: the detail of minds and places gives way first (fewer character types, coarser traces, fewer options
+  considered, larger cells); the persons the world holds are cut only last.
+- **Data**: a one-time fetch of exactly the items listed in §1.9 and §2.6, into `data/sources/raw/`, after which the
+  data are in hand again.
+
+**The mind**
+- **Concerns**: the eight proposed.
+- **Concern weights**: simulated by a declared procedure from the GPS dimensions in hand (patience, risk taking,
+  altruism, trust, positive and negative reciprocity); the World Values Survey is not fetched.
+- **Character by country**: drawn around each country's own GPS profile, matched to its group. Migrants carry theirs,
+  and their children draw from their new country's.
+- **Children**: a newborn's character is drawn independently of its parents', from its country's distribution.
+- **Age**: risk aversion, patience and concern weights drift with age along the profiles the literature measures, on
+  top of experience.
+- **Choice**: declared per decision. Random-utility best choice for most; satisficing where options arrive one at a
+  time (job and house search).
+- **Experience traces**: markets and prices; work (unemployment, layoffs, one's firm failing); home and debt
+  (foreclosure, arrears, default, eviction); crises and disasters.
+- **Goals**: home and family; career and business (founding a firm, reaching a board or the chief executive's chair);
+  politics and public life (standing for parliament, mayor, head of state or government); education, retirement and
+  moving.
+- **Learning**: from the person's own record and from **peers it knows** (colleagues, kin, neighbours) whose outcomes
+  it saw: social learning, only from what it could observe (Law 12).
+- **Households**: adults' views combined by each one's share of the household's income; long divergence feeds
+  separation (POP.17).
+
+**Offices**
+- **Mandate**: it enters only through the holder's contracts and the threat of removal (pay in shares, bonuses, a board
+  or voters removing a holder whose results disappoint). No office declares a fixed weight for its mandate.
+- **Self-interest**: office holders may act in their own interest against their mandate **within the law**
+  (empire-building, perks, short-termism, political favours) where incentives and oversight allow; boards, voters,
+  auditors and courts can catch and remove them. Crime is out of scope.
+- **Selection**: by the candidates' records, their networks (past colleagues, kin, fellow members), their public
+  reputation, and pay and competition between institutions for them.
+- **Constitutions**: each country's (parliamentary or presidential) is a setup choice or drawn from its group's
+  profile.
+- **Founders**: persons found firms by their minds, and so do firms (spin-offs) and funds (ventures).
+
+**Following lives**
+- **Recorder**: every person's key life events are recorded compactly and **deleted at their death**, except those of
+  office holders (presidents, governors, chief executives, ministers, mayors, founders), which are kept as the world's
+  history.
+- **Narrator**: a small language model **on the phone** writes a followed person's biography from its record, outside
+  the world; nothing it writes enters the world.
+- **The player's household**: its persons have minds like everyone's, which **advise**: they say what they would do
+  and why, and the player decides or delegates.
+- **Reasons shown**: the concern that tipped each decision.
+
+**Places**
+- **Cell size**: a resolution set by the budget, starting at 1 km and refined while the phone allows.
+- **Buildings**: kind, floors, floor area, condition and age, **plus their footprint and exact position within the
+  cell**, so the map is stable and streets can be drawn.
+- **The opening's cities**: the largest are placed from data (urbanisation share, city sizes by the measured law, on
+  favourable land); smaller towns form during settling from the mechanisms alone.
+- **Transport**: roads whose capacity is shared and congests, and transit (buses, trams, rail) that municipalities and
+  the state build, with fares and times in the choice.
+- **Agglomeration**: productivity rises with the density of jobs within reach, more near firms of the same industry,
+  and larger labour markets match better through the hiring round itself.
+- **Municipalities**: a recognised settlement can incorporate by law, with an elected mayor and council, local taxes,
+  zoning and local services.
+- **Zoning**: by municipalities' elected offices, within national law.
+- **Countryside**: farmland, forests and mines are parcels on cells, owned or leased, with farm buildings; villages form
+  as towns do.
+- **Display**: zoomed out, regions and recognised towns; zoomed in, cells with their buildings drawn from the save's
+  holdings.
+
+**What follows**: the MND system and the changes to GEO, CAP, HSG, REP, TEC, STA and the polity are written into the
+specification, and the steps into the plan (a stage for the mind after Stage 3, places into S2.05), each in its own
+change; this file is then removed.
 
 ## Part 4 — Risks
 
