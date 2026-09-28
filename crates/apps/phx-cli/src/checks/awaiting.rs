@@ -382,13 +382,6 @@ pub const LC_1_06: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 h, the revenue family"),
 };
 
-pub const LC_1_07: Check = live_check! {
-    id: "LC-1-07",
-    title: "every posted price is a point of its trade's table, and prices change only on review or wake days",
-    from_step: "S1.03",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the prices' reads"),
-};
-
 pub const LC_1_08: Check = live_check! {
     id: "LC-1-08",
     title: "the frequency and size of price changes, and the markups, are reported per trade (SRV.7, FRM.19)",
@@ -471,13 +464,6 @@ pub const LC_1_20: Check = live_check! {
     title: "FRT.10: freight rates and price gaps between places are reported, and gaps track freight",
     from_step: "S1.07",
     check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
-};
-
-pub const LC_1_21: Check = live_check! {
-    id: "LC-1-21",
-    title: "LAB.13: no person has more hours than a day; headcount equals contracts; no wage paid to nobody",
-    from_step: "S1.08",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the labour reads"),
 };
 
 pub const LC_1_22: Check = live_check! {
@@ -565,14 +551,6 @@ pub const LC_1_33: Check = live_check! {
     title: "Households going without their needs are recorded as events and counted",
     from_step: "S1.12",
     check: |_| Outcome::NotYet("awaits S1.24 e, the households' needs"),
-};
-
-pub const LC_1_34: Check = live_check! {
-    id: "LC-1-34",
-    title: "Liveness (N2) for the circular flow: wages paid, spending received, production, employment and lending \
-            are non-zero and respond when a primitive moves in the run by its owner's decision",
-    from_step: "S1.12",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the circular flow's liveness"),
 };
 
 pub const LC_1_36: Check = live_check! {

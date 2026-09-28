@@ -413,3 +413,108 @@ pub const LC_1_35: Check = live_check! {
     from_step: "S1.13",
     check: persons_clean,
 };
+
+/// Every firm's posted price is a point of its trade's table, and prices move only at reviews: no day repriced more
+/// firms than it reviewed.
+fn prices_are_points(w: Inspector<'_>) -> Outcome {
+    let Some(m) = w.management() else { return Outcome::NotYet("no firms' management compiled") };
+    let core = w.core();
+    let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
+    let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
+    for slot in store.parties.live_slots() {
+        let price = store.record(slot).get(phx_world::consts::firm::PRICE).map(|w| w.get());
+        if let Some(phx_num::Missing::Present(p)) = price
+            && !m.is_point(p)
+        {
+            return Outcome::Fail(format!("firm slot {} posts {p}, no point of its trade", slot.get()));
+        }
+    }
+    if let Some(d) = core.goods.days.iter().find(|d| d.repriced > d.reviews) {
+        return Outcome::Fail(format!("day {}: {} repriced of {} reviewed", d.day, d.repriced, d.reviews));
+    }
+    Outcome::Pass
+}
+
+/// The hours in a week, which no person's jobs may pass.
+const WEEK_HOURS: u32 = 7 * 24;
+
+/// No person holds jobs of more hours than a week has; every job names a person its household holds, so no wage is
+/// paid to nobody.
+fn jobs_held_by_persons(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let mut hours: std::collections::BTreeMap<u64, u32> = std::collections::BTreeMap::new();
+    for f in core.families.iter().filter(|f| f.reason == phx_world::consts::reason::WAGE) {
+        for edge in f.store.edges.open_slots() {
+            let Some(row) = f.store.edges.row(edge) else { continue };
+            let [_, household] = row.ends;
+            let held = core
+                .persons
+                .get(usize::from(household.kind()))
+                .and_then(Option::as_ref)
+                .is_some_and(|p| p.of(household.slot()).any(|x| x.id == row.person));
+            if !held {
+                return Outcome::Fail(format!(
+                    "a job of {} names person {}, whom its household does not hold",
+                    f.name, row.person
+                ));
+            }
+            let class = f.classes.get(usize::try_from(row.schedule).unwrap_or(usize::MAX)).copied().unwrap_or_default();
+            *hours.entry(row.person).or_insert(0) += class[1];
+        }
+    }
+    match hours.iter().find(|(_, h)| **h > WEEK_HOURS) {
+        Some((p, h)) => Outcome::Fail(format!("person {p} holds jobs of {h} hours a week")),
+        None if hours.is_empty() => Outcome::Fail("no one holds a job".to_owned()),
+        None => Outcome::Pass,
+    }
+}
+
+/// The circular flow lives: over the run wages were paid, households spent, firms made goods, persons were employed
+/// and banks lent.
+fn circular_flow_lives(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let paid = core.days.iter().any(|d| d.wages > 0);
+    let spent = core.goods.days.iter().any(|d| d.spent > 0);
+    let made = core.goods.days.iter().any(|d| d.made > 0);
+    let employed = core
+        .families
+        .iter()
+        .any(|f| f.reason == phx_world::consts::reason::WAGE && f.store.edges.open_slots().next().is_some());
+    let lent = core
+        .families
+        .iter()
+        .any(|f| f.reason == phx_world::consts::reason::REPAID && f.store.edges.open_slots().next().is_some());
+    let missing: Vec<&str> =
+        [(paid, "wages paid"), (spent, "spending"), (made, "production"), (employed, "employment"), (lent, "lending")]
+            .iter()
+            .filter(|(on, _)| !on)
+            .map(|(_, what)| *what)
+            .collect();
+    if missing.is_empty() {
+        Outcome::NotYet("the circular flow lives; its response is read when a decision moves a primitive in the run")
+    } else {
+        Outcome::Fail(format!("no {}", missing.join(", no ")))
+    }
+}
+
+pub const LC_1_07: Check = live_check! {
+    id: "LC-1-07",
+    title: "every posted price is a point of its trade's table, and prices change only on review or wake days",
+    from_step: "S1.03",
+    check: prices_are_points,
+};
+
+pub const LC_1_21: Check = live_check! {
+    id: "LC-1-21",
+    title: "LAB.13: no person has more hours than a day; headcount equals contracts; no wage paid to nobody",
+    from_step: "S1.08",
+    check: jobs_held_by_persons,
+};
+
+pub const LC_1_34: Check = live_check! {
+    id: "LC-1-34",
+    title: "Liveness (N2) for the circular flow: wages paid, spending received, production, employment and lending \
+            are non-zero and respond when a primitive moves in the run by its owner's decision",
+    from_step: "S1.12",
+    check: circular_flow_lives,
+};

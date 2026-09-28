@@ -82,6 +82,14 @@ impl<'a> Inspector<'a> {
         &self.world.countries
     }
 
+    /// The firms' management, as their system compiled it.
+    #[must_use]
+    pub fn management(&self) -> Option<&'a sys_frm::decide::Management> {
+        let code = <sys_frm::Frm as phx_core::System>::CODE;
+        let own = self.world.own.iter().find(|(c, _)| *c == code)?;
+        own.1.downcast_ref::<sys_frm::Own>().map(sys_frm::Own::management)
+    }
+
     #[must_use]
     pub fn game(&self) -> &'a NewGame {
         &self.world.game

@@ -89,6 +89,8 @@ pub struct CoreDay {
     pub arrears: u64,
     /// The failed flows by their reason.
     pub failed_by: [u64; crate::consts::reason::REASONS],
+    /// The wages the day paid and did not fail.
+    pub wages: i64,
     /// The money the day's flows move, whatever came of them.
     pub gross: i128,
     /// The estates settled and ended.
@@ -136,8 +138,8 @@ fn reckoned(
 }
 
 impl Core {
-    /// The wages the day's dues made and did not fail, recorded in their countries' months.
-    fn record_wages_settled(&mut self, failed: &[Flow]) {
+    /// The wages the day's dues made and did not fail, recorded in their countries' months; returns them.
+    fn record_wages_settled(&mut self, failed: &[Flow]) -> i64 {
         let wage = crate::consts::reason::WAGE;
         let mut by: BTreeMap<u8, i64> = BTreeMap::new();
         if let Some(buf) = self.work.flows.chunks_mut().first_mut() {
@@ -148,9 +150,12 @@ impl Core {
         for f in failed.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
             *by.entry(f.denomination.ccy()).or_insert(0) -= f.amount;
         }
+        let mut all = 0;
         for (ccy, amount) in by {
             self.record_wages(ccy, amount);
+            all += amount;
         }
+        all
     }
 
     /// Each failed flow a dated contract made held on it in arrears, asked again with its next due: a contract past
@@ -449,6 +454,26 @@ impl Core {
         }
     }
 
+    /// Each estate that paid all it held today ended; returns them.
+    fn end_settled(&mut self, settling: Vec<PartyKey>) -> u64 {
+        let mut ended = 0;
+        for estate in settling {
+            let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
+                a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0
+            });
+            if empty {
+                self.estates.retain(|(e, _, _)| *e != estate);
+                if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
+                    && let Some(r) = k.parties.at(estate.slot())
+                {
+                    k.parties.end(r);
+                }
+                ended += 1;
+            }
+        }
+        ended
+    }
+
     /// Runs the core's day: every family's dues made flows, then each currency's flows settled on its country's
     /// business day or committed on its closed day.
     #[clause("SET.4", "SET.6", "MON.5")]
@@ -463,6 +488,7 @@ impl Core {
             committed: 0,
             failed_by: [0; crate::consts::reason::REASONS],
             arrears: 0,
+            wages: 0,
             gross: 0,
             estates: 0,
             breaks: 0,
@@ -529,23 +555,10 @@ impl Core {
             }
         }
         record.arrears = self.hold_arrears(day, calendar, &failed);
-        self.record_wages_settled(&failed);
+        record.wages = self.record_wages_settled(&failed);
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
-        for estate in settling {
-            let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
-                a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0
-            });
-            if empty {
-                self.estates.retain(|(e, _, _)| *e != estate);
-                if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
-                    && let Some(r) = k.parties.at(estate.slot())
-                {
-                    k.parties.end(r);
-                }
-                record.estates += 1;
-            }
-        }
+        record.estates += self.end_settled(settling);
         for k in &mut self.kinds {
             k.parties.close_day();
         }
