@@ -257,8 +257,12 @@ android/  data/  perf/  docs/  tools/{build-run.sh,versions.toml,data/}  .github
 `data/world.toml` holds the calendar's constants (the epoch, day zero) and the world's units; the generator's constants
 — the population, the countries and their regions, the map's size, the settling length — are `data/shared/GEN.toml`'s.
 `data/shared/` holds the register's shared files, one or more per system (`<SYS>.toml`); `data/setup/` the default new
-game; `data/profiles/<level>/` the country-group profiles, the choices' ranges and each development level's templates of
-every system's primitives, the opening's distributions in its `gen/`; `data/names/` the name tables (§10.0);
+game; `data/profiles/<level>/` each development level's four files — `economy.toml` (the accounts: ways, prices, the
+flows' primitives, stocks), `people.toml` (demography, households, education, labour force, wealth, banking),
+`law.toml` (every policy its law sets), `profile.toml` (the joint draw of a country's derived values) — each primitive
+in the one that describes it, and `later/<SYS>.toml`, tables of a system a later stage builds, which a new game copies
+only with it; the derivations write every profile primitive by id through `tools/data/profile_files.py`;
+`data/names/` the name tables (§10.0);
 `data/observer/READS.toml` the observer's declared macro reads, which no world crate reads; `data/inventory.toml` the
 opening's inventory of derived values and distributions with their sources; `data/sources/` the fetched raw series and
 their notes. `tools/data/*.py` fetch the sources and derive the profiles from them; `tools/versions.toml` pins every
@@ -277,7 +281,7 @@ volumes (§14.6); `perf/schema/` the device report's schema; `perf/ratchets.toml
 Each system's opening technology and distributions are derived by a pair of scripts, `fetch_<sys>.py` into
 `data/sources/raw/` and `derive_<sys>.py` into `data/`, each value its country group's median over the economies the
 sources report, a group reporting too few taking the developed group's, marked assumed:
-- **TEC** (`data/shared/TEC.toml`, `data/profiles/<level>/TEC.toml`): nineteen products aggregating the industries of
+- **TEC** (`data/shared/TEC.toml`, `economy.toml`): nineteen products aggregating the industries of
   the OECD's inter-country input-output tables (2019, 76 economies), each product's 2019 dollars carried to 2022 cents
   by the US GDP deflator; one opening way per product per country group — inputs per unit made from the tables' uses
   summed over origins (energy carriers turned into quantities at world prices, as the fuels they are made from), energy
@@ -287,12 +291,12 @@ sources report, a group reporting too few taking the developed group's, marked a
   net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
   livestock, a kilogram of deposit per kilogram extracted; a growing season's lead time for crops and livestock, a day for
   other goods, none for services; every unit started finished; a batch of one.
-- **FRM** (`data/profiles/<level>/FRM_industries.toml`, `FRM.industry_by_size`): each size class's firms (rows the
+- **FRM** (`economy.toml`, `FRM.industry_by_size`): each size class's firms (rows the
   OECD's classes by their smallest persons employed) over the industries — the group's business owners (ILOSTAT's
   employers and own-account workers) by ISIC section, split among a section's industries by the OECD's enterprise
   counts, tilted toward a class by the industry's share of the class's enterprises over its share of all; agriculture,
   which the OECD does not count, untilted. Finance, real estate and public administration make no product of the ways.
-- **CAP** (`data/shared/CAP_kinds.toml`, `data/profiles/<level>/CAP.toml`): each kind's geometric rate (the BEA's
+- **CAP** (`data/shared/CAP_kinds.toml`, `economy.toml`): each kind's geometric rate (the BEA's
   current-cost depreciation over its net stock), mean service life (the BEA's declining-balance rate over the
   geometric), efficiency shape (the BLS's and ABS's hyperbolic β), lead time (the Census's construction months for
   structures, the M3 survey's months of unfilled orders for equipment) and the product it is bought
@@ -302,7 +306,7 @@ sources report, a group reporting too few taking the developed group's, marked a
 - **GDS** (`data/shared/GDS.toml`): three grade classes per extracted product at the terciles of GEO's log-normal
   grade index; the grade's fall as a deposit is worked; each storable product's yearly spoilage in stock and the room
   it is kept in; the standardised products (crops and livestock and the four extracted), which meet in calls. Each
-  group's product price levels (`data/profiles/<level>/GDS_prices.toml`, `GDS.price_level`): a product's ICP 2021 price
+  group's product price levels (`economy.toml`, `GDS.price_level`): a product's ICP 2021 price
   level over GDP's, the median over the group's economies in the input-output tables, since a currency's smallest unit
   is a GDP at purchasing power parity's cent while a product's unit is what a cent bought at world-average prices;
   those priced at world prices — the extracted products and energy carriers, the ICP publishing no heading for energy
@@ -2587,16 +2591,16 @@ back to its own scale; a value its group's profile lacks is missing, named as no
 setup — refusing one outside the guardrails with the rule it breaks, drawing open choices from `GEN.setup` — allots
 regions and land, draws each country's values and makes its name; `instantiate` writes into the run's directory
 (`phx run --setup --run-dir`) `setup.toml`, each country's record `countries/<id>.toml`, and its data `data/<id>/` —
-its level's templates, the level's opening tables of the systems the world keeps (`gen/<SYS>.toml`) and its derived
-values (`derived.toml`) — which the register reads in place of the templates. Each row of `data/inventory.toml` names a
+its level's four files, the `later/` tables of the systems the world keeps and its derived values (`derived.toml`)
+— which the register reads in place of the templates. Each row of `data/inventory.toml` names a
 derived value's, distribution's or present value's owner and source, never a value.
 
 ### 10.0a The opening dataset
 
 Each country group's economy of 2019, in shares of its GDP, is one derivation (`tools/data/derive_economy.py`), which
 first reruns the ways and price levels (`derive_tec.py`), the budget shares (`derive_hh.py`) and the plant
-(`derive_cap.py`) and then writes `data/profiles/<level>/economy/`:
-- **The flows** (`flows.toml`): twenty-two activities, the nineteen products with finance, real estate and public
+(`derive_cap.py`) and then writes the flows, stocks and shapes into `data/profiles/<level>/economy.toml`:
+- **The flows**: twenty-two activities, the nineteen products with finance, real estate and public
   administration; households' own employment is no market activity. The economy is closed: what each economy used,
   from wherever it came, is made at home. The products' inputs of products are their ways' (`TEC.inputs`) at the
   group's opening prices (`GDS.opening_price` times `GDS.price_level`), so the matrix and the ways agree; what they
@@ -2605,7 +2609,7 @@ first reruns the ways and price levels (`derive_tec.py`), the budget shares (`de
   surplus and other taxes on production by Table 6 (`GEN.value_added`). Final uses — households (their products
   their budget shares), collective consumption, investment, inventories — are medians (`GEN.final_uses`), and each
   activity's output is what they need, (I − A)⁻¹ f (`GEN.output`).
-- **The stocks** (`stocks.toml`): five sectors (households, firms, banks, the central bank, the government) holding
+- **The stocks**: five sectors (households, firms, banks, the central bank, the government) holding
   currency, deposits, loans, bonds, government paper, reserves, central bank loans and equity
   (`GEN.balance_sheet`, assets positive, each row summing to nothing) and real assets (`GEN.real_assets`: firms'
   plant, which is `CAP.stock_per_gdp`, inventories and land; households' dwellings and land; the government's fixed
@@ -2615,7 +2619,7 @@ first reruns the ways and price levels (`derive_tec.py`), the budget shares (`de
   assets less their debts; households hold the rest.
 - A group with too few reporters of a sector table takes the developed group's figure scaled by a broad measure of
   its own (the Penn World Table's structures per GDP, the labour share), and the note says so.
-- **The shapes** (`shapes.toml`): distributions the opening scales to the matrices' totals — the spread of firms'
+- **The shapes**: distributions the opening scales to the matrices' totals — the spread of firms'
   log physical productivity within an industry (`GEN.productivity_spread`, Hsieh and Klenow's TFPQ, the United States,
   China and India standing for the three groups) and each occupation's mean earnings over all employees'
   (`GEN.occupation_pay`, the median of each group's ILOSTAT reporters nearest 2019).
@@ -2630,8 +2634,7 @@ Assembly checks every country's dataset (`opening::economy::check`, at compile) 
 named, primitive and residue: each activity's supply is its uses, its output its inputs, taxes and value added, GDP
 by production and by expenditure one; each instrument's assets its liabilities; firms, banks and the central bank
 worth nothing beyond their equity; firms' plant `CAP.stock_per_gdp`; households' spending their budget shares. The
-tolerance is the rounding of the stored places over the terms summed (Law 7). A new game copies the level's
-`economy/` files (flows, stocks, shapes) into each country.
+tolerance is the rounding of the stored places over the terms summed (Law 7).
 
 ### 10.1 Phases
 
@@ -3368,7 +3371,7 @@ weakened. Before Stage 4's steps are built, `phx measure` also measures policy r
 
 Every job runs on push and pull request on a pinned runner image with a 30-minute timeout, reads its tools' versions
 from `tools/versions.toml`, caches on `Cargo.lock` and the toolchains, and may not fail. CODEOWNERS gives the owner
-`/perf/` (but `perf/build-run/`), `docs/PROJECT_PHOENIX.md` and `data/**/gen/`.
+`/perf/` (but `perf/build-run/`), `docs/PROJECT_PHOENIX.md` and `data/profiles/`.
 
 **The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB): a `--release`
 build (thin LTO; only the `device` profile is fat, §17); the world at the play resolution (§10.5), with `read-trace` on,

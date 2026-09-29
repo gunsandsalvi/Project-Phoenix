@@ -1,0 +1,251 @@
+# The developing group's law (spec GEN.1, NUM.3): every policy a country's law sets. Written by tools/data's derivations; never edited by hand.
+
+[[primitive]]
+id = "CB.currency"
+kind = "ENDOWMENT"
+owner = "CB"
+source = "measured"
+source_ref = "Currency in circulation as a share of GDP: 7.15%, the median over 61 economies of the group of currency in circulation over GDP, both in national currency at each one's latest year of 2015-2019 reporting both (IMF Monetary and Financial Statistics, central bank survey, S121_L_CIC_IMB_CBS; World Bank NY.GDP.MKTP.CN; fetched 2026-09-27)."
+value = "7.15"
+
+[[primitive]]
+id = "DEM.age_of_majority"
+kind = "POLICY"
+owner = "DEM"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "The age at which family law makes a person an adult: 18, as the UN Convention on the Rights of the Child defines childhood and as nearly every country's civil law sets majority."
+value = 18
+
+[[primitive]]
+id = "DEM.school_leaving_age"
+kind = "POLICY"
+owner = "DEM"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The age at which compulsory education ends, the theoretical entrance age of primary school plus the duration of compulsory education (World Bank WDI SE.PRM.AGES and SE.COM.DURS, from UNESCO, each country's latest year from 2010 to 2024): 15, the median over the group's 64 countries. Where schooling before primary is compulsory the sum overstates the ending age by up to two years."
+value = 15
+
+[[primitive]]
+id = "FRM.insolvency_grace_days"
+kind = "POLICY"
+owner = "FRM"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "Days a firm may leave a payment due unpaid before it is in default of payment: 21, the three weeks within which the managers of an illiquid company must file for insolvency under German law (Insolvenzordnung section 15a); each country's own law is assumed at it until the legal-origin data of the World Bank's resolving-insolvency indicators are mapped to it."
+value = 21
+
+[[primitive]]
+id = "GEN.units_per_dollar"
+kind = "ENDOWMENT"
+owner = "GEN"
+source = "assumed"
+source_ref = "A generated currency has no history against the dollar, so its unit is set worth one international dollar of the profile's GDP per head at the snapshot, and its smallest unit a hundredth of it, as most currencies divide their unit."
+value = 100
+
+[[primitive]]
+id = "IDX.base"
+kind = "POLICY"
+owner = "IDX"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The level a price index opens at: 100, the convention of every agency's index reference period."
+value = 100.00
+
+[[primitive]]
+id = "LAB.full_time_hours"
+kind = "POLICY"
+owner = "LAB"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The hours a week of a full-time job: the mean hours actually worked by full-time workers, the group's median (ILOSTAT HOW_TEMP_SEX_AGE_JBT_NB, ages 15 and over, fetched 2026-09-26), to the nearest hour."
+value = 50
+
+[[primitive]]
+id = "LAB.notice_days"
+kind = "POLICY"
+owner = "LAB"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The days of notice a redundancy dismissal needs: the mean over tenures of 1, 5 and 10 years of the notice period in weeks, the group's median (World Bank, Employing Workers, Redundancy Cost table, EW-Cost.xlsx, fetched 2026-09-26; its round is not stated, believed Doing Business 2020), in calendar days."
+value = 30
+
+[[primitive]]
+id = "LAB.severance_days_a_year"
+kind = "POLICY"
+owner = "LAB"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The days of wages owed as severance for each year of service: the severance pay for redundancy at 10 years of tenure in weeks of salary, the group's median (World Bank, Employing Workers, Redundancy Cost table, fetched 2026-09-26), over its 10 years, in calendar days."
+value = 14
+
+[[primitive]]
+id = "LAB.minimum_wage_share"
+kind = "POLICY"
+owner = "LAB"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The statutory monthly minimum wage over the mean monthly earnings of employees, the group's median over the economies reporting both in the same year (ILOSTAT EAR_INEE_NOC_NB over EAR_EMTA_SEX_NB, fetched 2026-09-26); about 90% of countries set a minimum (ILO Global Wage Report 2020-21)."
+value = "0.4200"
+
+[[primitive]]
+id = "SOC.benefit_replacement"
+kind = "POLICY"
+owner = "SOC"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The benefit's monthly amount as a share of the last wage: none, since the median lower-middle- and low-income economy has no unemployment benefit: 2.5% and 0.2% of their unemployed received one in 2023 and no low-income economy has a scheme (ILO World Social Protection Report 2024-26, Figures 4.24 and 4.26)."
+value = "0.000"
+
+[[primitive]]
+id = "SOC.benefit_months"
+kind = "POLICY"
+owner = "SOC"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The months the benefit pays: none, as the group's median economy pays no benefit (ILO World Social Protection Report 2024-26)."
+value = 0
+
+[[primitive]]
+id = "STA.release_day"
+kind = "POLICY"
+owner = "STA"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The business day of the month each series is released on, in the series' order, after the calendars agencies publish: consumer prices near mid-month and producer prices a day or more after them (as the US BLS's CPI and PPI), the labour force early in the month (as the first Friday's Employment Situation), money late in the month (as the Federal Reserve's H.6), output in the second week (as the UK ONS's monthly GDP), later the less developed the agency; assumed until each agency's calendar is read."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [15, 18, 15, 20, 15, 20], outside = "refuse" }
+
+[[primitive]]
+id = "STA.release_lag"
+kind = "POLICY"
+owner = "STA"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The months after a period's end each series' first release comes in, in the series' order: the month after for prices and money where agencies publish monthly, longer for surveys, vital registration and output (the UK ONS publishes a month's GDP about six weeks after it ends), and longer the less developed the agency; assumed."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0, 1, 2, 1, 3, 3], outside = "refuse" }
+
+[[primitive]]
+id = "STA.sample_share"
+kind = "POLICY"
+owner = "STA"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The share of its records or households each series samples, in the series' order: a hundredth of retail sales and two hundredths of sales at the factory gate, three thousandths of households for the labour force (the UK's LFS and the US CPS sample between one and two thousandths), all of the banks' reports, two hundredths of households for vital statistics, and two hundredths of firms' records of sales, purchases and payrolls for the national accounts, as the business surveys behind them; assumed."
+value = { axis = [0, 1, 2, 3, 4, 5], values = [0.0100, 0.0200, 0.0030, 1.0000, 0.0200, 0.0200], outside = "refuse" }
+
+[[primitive]]
+id = "STA.early_returns"
+kind = "POLICY"
+owner = "STA"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The share of a sample's returns in by a first release: 0.50, near the collection rate of the US BLS's establishment survey at its first estimate for the developed group, lower the less developed the agency; assumed."
+value = 0.50
+
+[[primitive]]
+id = "STA.revision_months"
+kind = "POLICY"
+owner = "STA"
+decided_by = "statistics agency"
+source = "assumed"
+source_ref = "The months after a first release its revision, from every return, comes: one, as the US BLS revises its establishment survey's estimate the month after; assumed."
+value = 1
+
+[[primitive]]
+id = "TAX.income_band_edges"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "measured"
+source_ref = "Each income tax band's lower edge as a multiple of the mean wage: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values), each multiple of output per person over the group's mean wage over output per person, 1.72: the median over 62 economies of the group of employees' mean monthly earnings times twelve over GDP per head, both in local currency at each one's latest year reporting both (ILOSTAT DF_EAR_EMTA_SEX_CUR_NB, World Bank NY.GDP.PCAP.CN, fetched 2026-09-27)."
+value = { axis = [0, 1, 2], values = [0.00, 0.76, 19.82], outside = "refuse" }
+
+[[primitive]]
+id = "TAX.income_band_rates"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "measured"
+source_ref = "Each income tax band's marginal rate: the IMF's means for low-income developing countries: tax starting at 1.3 times output per person at a lowest rate of 10.4%, the top rate 29% from 34 times (Collecting Taxes data, IMF Working Paper 22/20, 2019 values)."
+value = { axis = [0, 1, 2], values = [0.000, 0.104, 0.290], outside = "refuse" }
+
+[[primitive]]
+id = "TAX.consumption_rate"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "measured"
+source_ref = "The standard rate of value-added tax: 16.0%, the median over 38 lower-middle- and low-income economies (PwC Worldwide Tax Summaries, VAT rates quick chart, fetched 2026-09-26)."
+value = "0.160"
+
+[[primitive]]
+id = "TIME.calendar"
+kind = "ENDOWMENT"
+owner = "TIME"
+source = "measured"
+source_ref = "Weekend: Banks and the Nairobi Securities Exchange settle Monday to Friday (Central Bank of Kenya, KEPSS operating calendar). Holidays: Public Holidays Act (Cap. 110), Schedule, as amended by the Statute Law (Miscellaneous Amendments) Act 2024, which made 10 October Mazingira Day; a holiday falling on a Sunday is kept on the following Monday. Idd-ul-Fitr, also in the Schedule, follows the lunar calendar, which the calendar's rules do not express, and is left out."
+[primitive.value]
+weekend = ["Saturday", "Sunday"]
+holidays = [
+  { name = "New Year's Day", rule = "fixed", month = 1, day = 1 },
+  { name = "Good Friday", rule = "easter", offset_days = -2 },
+  { name = "Easter Monday", rule = "easter", offset_days = 1 },
+  { name = "Labour Day", rule = "fixed", month = 5, day = 1 },
+  { name = "Madaraka Day", rule = "fixed", month = 6, day = 1 },
+  { name = "Mazingira Day", rule = "fixed", month = 10, day = 10 },
+  { name = "Mashujaa Day", rule = "fixed", month = 10, day = 20 },
+  { name = "Jamhuri Day", rule = "fixed", month = 12, day = 12 },
+  { name = "Christmas Day", rule = "fixed", month = 12, day = 25 },
+  { name = "Boxing Day", rule = "fixed", month = 12, day = 26 },
+  { name = "New Year's Day, substitute", rule = "substitute", of = "New Year's Day", when_on = ["Sunday"] },
+  { name = "Labour Day, substitute", rule = "substitute", of = "Labour Day", when_on = ["Sunday"] },
+  { name = "Madaraka Day, substitute", rule = "substitute", of = "Madaraka Day", when_on = ["Sunday"] },
+  { name = "Mazingira Day, substitute", rule = "substitute", of = "Mazingira Day", when_on = ["Sunday"] },
+  { name = "Mashujaa Day, substitute", rule = "substitute", of = "Mashujaa Day", when_on = ["Sunday"] },
+  { name = "Jamhuri Day, substitute", rule = "substitute", of = "Jamhuri Day", when_on = ["Sunday"] },
+  { name = "Christmas Day, substitute", rule = "substitute", of = "Christmas Day", when_on = ["Sunday"] },
+  { name = "Boxing Day, substitute", rule = "substitute", of = "Boxing Day", when_on = ["Sunday"] },
+]
+
+[[primitive]]
+id = "TRS.payment_order"
+kind = "POLICY"
+owner = "TRS"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "The rank of the treasury's debt service, its pensions, its benefits, its public staff's wages and its public purchases in its payment order (rows in that order), the first paid first: debt service, pensions and wages first, benefits after, purchases last, assumed from the priority governments give debt service and their payroll when cash is short and the order the spec's TRS.10 lists, until each parliament's order is read."
+value = { axis = [0, 1, 2, 3, 4], values = [0, 0, 1, 0, 2], outside = "refuse" }
+
+[[primitive]]
+id = "SOC.pension_age"
+kind = "POLICY"
+owner = "SOC"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "By sex (female, male), the current normal pension age of a worker entering at 22, years: the median over 9 economies at their latest year 2015-2025, from OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The group's own members report too few (1), so, as the owner decided, they are pooled with the emerging group's: ARG, BRA, CHN, COL, IDN, IND, MEX, TUR, ZAF; an assumption, recorded. The state pension's rule at its flat point; its earnings-related part waits for SOC."
+value = { axis = [0, 1], values = [58.00, 60.00], outside = "refuse" }
+
+[[primitive]]
+id = "SOC.replacement_rate"
+kind = "POLICY"
+owner = "SOC"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "By sex (female, male), the gross replacement rate of mandatory schemes for a worker on average earnings, share of pre-retirement earnings: the median over 9 economies at their latest year 2015-2025, from OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The group's own members report too few (1), so, as the owner decided, they are pooled with the emerging group's: ARG, BRA, CHN, COL, IDN, IND, MEX, TUR, ZAF; an assumption, recorded. The state pension's rule at its flat point; its earnings-related part waits for SOC."
+value = { axis = [0, 1], values = [0.663000, 0.691000], outside = "refuse" }
+
+[[primitive]]
+id = "SOC.pension_coverage"
+kind = "ENDOWMENT"
+owner = "SOC"
+source = "measured"
+source_ref = "Share of persons above the statutory pensionable age receiving an old-age pension, by sex (female, male): each sex's median over 33 economies of the group at their latest year 2015-2025, from the ILO's Social Security Inquiry and its modelled estimates (SDG indicator 1.3.1), OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The group's standard at every drawn value."
+value = { axis = [0, 1], values = [0.179000, 0.350000], outside = "refuse" }
+
+[[primitive]]
+id = "SOC.disability_benefit_coverage"
+kind = "ENDOWMENT"
+owner = "SOC"
+source = "measured"
+source_ref = "Share of persons with severe disabilities receiving a disability benefit, by sex (female, male): each sex's median over 15 economies of the group at their latest year 2015-2025, from the ILO's Social Security Inquiry and its modelled estimates (SDG indicator 1.3.1), OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The group's standard at every drawn value."
+value = { axis = [0, 1], values = [0.006000, 0.007000], outside = "refuse" }

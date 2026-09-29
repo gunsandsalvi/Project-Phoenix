@@ -109,7 +109,7 @@ fn toml_of<T: serde::de::DeserializeOwned>(path: &Path) -> Result<T, Vec<String>
 
 /// A development level's profile, read alone through the register from its template.
 fn level_profile(data: &Path, level: Level) -> Result<JointProfile, Vec<String>> {
-    let path = data.join("profiles").join(level.dir()).join("GEN.toml");
+    let path = data.join("profiles").join(level.dir()).join("profile.toml");
     let file = DataFile {
         path: path.display().to_string(),
         country: Missing::Present(CountryId::new(0)),
@@ -285,11 +285,11 @@ pub fn instantiate(
             let Some(file_name) = f.file_name() else { continue };
             write(&dir.join(file_name), &text(&f)?)?;
         }
-        // A level's opening tables are copied only for the systems the world keeps, since the register refuses an
-        // entry no system declares; a system's tables, its code's file and its code's parts, arrive with it.
-        let gen_dir = templates.join("gen");
-        let mut tables: Vec<PathBuf> = std::fs::read_dir(&gen_dir)
-            .map_err(|e| format!("{}: {e}", gen_dir.display()))?
+        // The tables of systems a later stage builds are copied only for the systems the world keeps, since the
+        // register refuses an entry no system declares; a system's tables, its code's file, arrive with it.
+        let later_dir = templates.join("later");
+        let mut tables: Vec<PathBuf> = std::fs::read_dir(&later_dir)
+            .map_err(|e| format!("{}: {e}", later_dir.display()))?
             .filter_map(Result::ok)
             .map(|e| e.path())
             .filter(|p| p.extension().is_some_and(|x| x == "toml"))
@@ -297,16 +297,10 @@ pub fn instantiate(
         tables.sort();
         for table in tables {
             let Some(stem) = table.file_stem().and_then(|s| s.to_str()) else { continue };
-            let owner = stem.split('_').next().unwrap_or(stem);
-            if systems.contains(&owner) {
+            if systems.contains(&stem) {
                 let Some(file_name) = table.file_name() else { continue };
-                write(&dir.join("gen").join(file_name), &text(&table)?)?;
+                write(&dir.join("later").join(file_name), &text(&table)?)?;
             }
-        }
-        // The level's flows and stocks, which every world's assembly checks.
-        let economy = templates.join("economy");
-        for name in ["flows.toml", "stocks.toml", "shapes.toml"] {
-            write(&dir.join("economy").join(name), &text(&economy.join(name))?)?;
         }
         write(&dir.join("derived.toml"), &setup_file(c, setup)?)?;
         let record = toml::to_string(c).map_err(|e| e.to_string())?;

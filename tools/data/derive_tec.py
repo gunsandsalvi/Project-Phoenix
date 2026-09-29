@@ -25,9 +25,9 @@ import pandas as pd
 
 from derive import LEVELS, RAW
 from derive_cap import pwt_scale
+import profile_files
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILES = ROOT / "data" / "profiles"
 SHARED = ROOT / "data" / "shared"
 YEAR = 2019
 UNIT_YEAR = 2022
@@ -468,7 +468,7 @@ def write_level(level: str, members: dict, m: dict) -> None:
         f"inter-country input-output tables, the median over the group's economies; the others take none.",
         f"{{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
         + ", ".join(num(land if i == 0 else 0.0) for i in range(len(PRODUCTS))) + "], outside = \"refuse\" }")
-    (PROFILES / level / "TEC.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
     shares = by_industry(median([w["shares"] for w in members.values()]))
     ref = (f"Each product's part of its industry's output (axis: the products' places): the median over the "
            f"{len(members)} economies of the World Bank's {level} income groups the {YEAR} inter-country input-output "
@@ -480,7 +480,7 @@ def write_level(level: str, members: dict, m: dict) -> None:
            'kind = "ENDOWMENT"', 'owner = "FRM"', f'source = "{thin(len(members))}"', f"source_ref = {json.dumps(ref)}",
            f"value = {{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
            + ", ".join(num(v, SHARE_EXP) for v in shares) + "], outside = \"refuse\" }"]
-    (PROFILES / level / "FRM_products.toml").write_text("\n".join(frm) + "\n")
+    profile_files.put_text(level, "\n".join(frm) + "\n")
     levels = median([w["levels"] for w in members.values()])
     icp = m["sources"]["prices"]
     ref = (f"Each product's price at the opening over its world price (axis: the products' places): its ICP 2021 price "
@@ -495,7 +495,7 @@ def write_level(level: str, members: dict, m: dict) -> None:
            'owner = "GDS"', f'source = "{thin(len(members))}"', f"source_ref = {json.dumps(ref)}",
            f"value = {{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
            + ", ".join(num(v, SHARE_EXP) for v in levels) + "], outside = \"refuse\" }"]
-    (PROFILES / level / "GDS_prices.toml").write_text("\n".join(gds) + "\n")
+    profile_files.put_text(level, "\n".join(gds) + "\n")
 
 
 def main() -> None:

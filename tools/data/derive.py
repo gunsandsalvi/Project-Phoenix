@@ -25,10 +25,10 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import profile_files
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = ROOT / "data" / "sources" / "raw"
-PROFILES = ROOT / "data" / "profiles"
 NAMES = ROOT / "data" / "names"
 EXP = 6
 FIRST_YEAR = 2015
@@ -244,8 +244,7 @@ def write_profile(level: str, group: pd.DataFrame, manifest: dict) -> dict:
     for row in corr:
         lines.append("  [" + ", ".join(f'"{num(r)}"' for r in row) + "],")
     lines.append("]")
-    path = PROFILES / level / "GEN.toml"
-    path.write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
     return {"values": [s[0] for s in stats], "gaps": gaps, "thin_pairs": len(thin), "moved": moved,
             "stats": {s[0]: (s[1], s[2]) for s in stats}}
 
@@ -303,7 +302,7 @@ def write_firms(manifest: dict, levels: pd.Series) -> dict:
             f"source_ref = {json.dumps(ref)}",
             f'value = "{num(value)}"',
         ]
-        (PROFILES / level / "FRM.toml").write_text("\n".join(lines) + "\n")
+        profile_files.put_text(level, "\n".join(lines) + "\n")
     return out
 
 

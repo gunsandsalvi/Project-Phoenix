@@ -45,9 +45,9 @@ import derive_cap
 import derive_hh
 import derive_tec as tec
 from derive import LEVELS, RAW
+import profile_files
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILES = ROOT / "data" / "profiles"
 YEAR = 2019
 # A series' observation nearest the year, within this many years of it.
 NEAR_YEARS = 2
@@ -256,7 +256,7 @@ def read_primitive(path: Path, pid: str):
 def group_prices(level: str) -> np.ndarray:
     """Each product's price a unit at the opening: its world price times the group's price level."""
     shared = read_primitive(ROOT / "data" / "shared" / "GDS.toml", "GDS.opening_price")["values"]
-    levels = read_primitive(PROFILES / level / "GDS_prices.toml", "GDS.price_level")["values"]
+    levels = profile_files.get(level, "GDS.price_level")["values"]
     return np.array([float(a) * float(b) for a, b in zip(shared, levels)])
 
 
@@ -265,7 +265,7 @@ def group_flows(level: str, members: dict, levels: pd.Series) -> dict:
     med = lambda k: np.median(np.stack([e[k] for e in members.values()]), axis=0)
     coef = med("coef")
     # The products' inputs of products are the ways' at the group's prices.
-    ways = np.array(read_primitive(PROFILES / level / "TEC.toml", "TEC.inputs")["values"], dtype=float)
+    ways = np.array(profile_files.get(level, "TEC.inputs")["values"], dtype=float)
     price = group_prices(level)
     coef[:NP, :NP] = ways * price[:, None] / price[None, :]
     tax_rate = med("tax_rate")
@@ -279,7 +279,7 @@ def group_flows(level: str, members: dict, levels: pd.Series) -> dict:
     comp = med("composition")
     comp /= comp.sum(axis=0, keepdims=True)
     # Households' products are their budget shares, beside what they spend on finance, rents and public services.
-    shares = np.array([float(x) for x in read_primitive(PROFILES / level / "HH.toml", "HH.budget_shares")["values"]])
+    shares = np.array([float(x) for x in profile_files.get(level, "HH.budget_shares")["values"]])
     services = comp[NP:, 0].sum()
     comp[:NP, 0] = shares * (1.0 - services)
     spent = weight / (1.0 + final_tax)
@@ -532,8 +532,6 @@ def primitive(pid: str, owner: str, kind: str, source: str, ref: str, value: str
 
 
 def write(level: str, members: dict, f: dict, s: dict, m: dict) -> None:
-    out = PROFILES / level / "economy"
-    out.mkdir(exist_ok=True)
     icio = m["sources"]["icio"]
     names = ", ".join(sorted(members))
     acts = "; ".join(f"{i} {a}" for i, a in enumerate(ACTIVITIES))
@@ -577,7 +575,7 @@ def write(level: str, members: dict, f: dict, s: dict, m: dict) -> None:
         f"their budget shares (HH.budget_shares) beside the median parts they spend on finance, rents and public "
         f"services.",
         matrix(N, len(FINALS), f["final"]))
-    (out / "flows.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
     notes = s["notes"]
     oecd = m["sources"].get("oecd_sectors", {})
     src = (f"IMF currency in circulation (MFS) over GDP, {notes['currency']}; World Bank GFDD bank deposits "
@@ -612,7 +610,7 @@ def write(level: str, members: dict, f: dict, s: dict, m: dict) -> None:
         f"OECD's balance sheets for non-financial assets (Table 9B, {YEAR}), a group with too few reporters scaled by "
         f"its Penn World Table structures per unit of GDP over the developed group's.",
         matrix(len(REAL), len(SECTORS), s["real"]))
-    (out / "stocks.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
 
 
 def write_shapes(level: str, spread, pay: pd.Series, economies, m: dict) -> None:
@@ -635,7 +633,7 @@ def write_shapes(level: str, spread, pay: pd.Series, economies, m: dict) -> None
         f"{NEAR_YEARS} years that reports the total, an occupation an economy does not report left out of its median, "
         f"from ILOSTAT (DF_EAR_EMTA_SEX_OCU_CUR_NB, both sexes, fetched {ilo['fetched']}).",
         axis(pay.to_numpy()))
-    (PROFILES / level / "economy" / "shapes.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
 
 
 def main() -> None:
@@ -653,7 +651,7 @@ def main() -> None:
         members = {c: e for c, e in economies.items() if levels.get(c) == level}
         f = group_flows(level, members, levels)
         check_flows(level, f)
-        plant = np.array(read_primitive(PROFILES / level / "CAP.toml", "CAP.stock_per_gdp")["values"], dtype=float)
+        plant = np.array(profile_files.get(level, "CAP.stock_per_gdp")["values"], dtype=float)
         s = group_stocks(level, [c for c, lv in levels.items() if lv == level], developed, plant)
         check_stocks(level, s)
         write(level, members, f, s, m)

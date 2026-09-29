@@ -1,9 +1,0 @@
-# The developing group's currency (spec MON.4): what its central bank has in circulation, derived by tools/data/derive_mon.py; never edited by hand.
-
-[[primitive]]
-id = "CB.currency"
-kind = "ENDOWMENT"
-owner = "CB"
-source = "measured"
-source_ref = "Currency in circulation as a share of GDP: 7.15%, the median over 61 economies of the group of currency in circulation over GDP, both in national currency at each one's latest year of 2015-2019 reporting both (IMF Monetary and Financial Statistics, central bank survey, S121_L_CIC_IMB_CBS; World Bank NY.GDP.MKTP.CN; fetched 2026-09-27)."
-value = "7.15"

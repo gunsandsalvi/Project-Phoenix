@@ -11,7 +11,8 @@ import json
 
 import pandas as pd
 
-from derive import LEVELS, PROFILES, RAW
+from derive import LEVELS, RAW
+import profile_files
 
 
 def main() -> None:
@@ -33,7 +34,7 @@ def main() -> None:
                 f"tools/data/derive_mon.py; never edited by hand.\n\n[[primitive]]\nid = \"CB.currency\"\n"
                 f"kind = \"ENDOWMENT\"\nowner = \"CB\"\nsource = \"measured\"\nsource_ref = \"{ref}\"\n"
                 f"value = \"{value}\"\n")
-        (PROFILES / group / "CB_currency.toml").write_text(text)
+        profile_files.put_text(group, text)
         print(group, value, len(ratio))
 
 

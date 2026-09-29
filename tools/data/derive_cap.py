@@ -35,10 +35,10 @@ import numpy as np
 import pandas as pd
 
 from derive import LEVELS, RAW
+import profile_files
 
 ROOT = Path(__file__).resolve().parents[2]
 SHARED = ROOT / "data" / "shared"
-PROFILES = ROOT / "data" / "profiles"
 YEAR = 2022
 WEIGHT_YEAR = "2024"
 MIN_COUNTRIES = 10
@@ -394,7 +394,7 @@ def write_levels(m: dict) -> None:
                       f"value added, OECD Table 9A over Table 6 in national currency, the latest year to {YEAR} "
                       f"({oecd['title']}, fetched {oecd['fetched']}); {who}."),
                   f"value = {table1(list(values))}"]
-        (PROFILES / level / "CAP.toml").write_text("\n".join(lines) + "\n")
+        profile_files.put_text(level, "\n".join(lines) + "\n")
 
 
 def main() -> None:

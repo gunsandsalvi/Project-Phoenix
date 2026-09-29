@@ -934,7 +934,16 @@ value = 0.035
         let mut files =
             vec![DataFile { path: "world.toml".to_owned(), country: Missing::Absent, text: read("world.toml") }];
         for (i, level) in ["developed", "emerging", "developing"].into_iter().enumerate() {
-            let text = read(&format!("profiles/{level}/TIME.toml"));
+            // The calendar's entry alone, the only one of the law's files this register declares.
+            let law = read(&format!("profiles/{level}/law.toml"));
+            let text: String = law.split("[[primitive]]").filter(|b| b.contains("id = \"TIME.calendar\"")).fold(
+                String::new(),
+                |mut t, b| {
+                    t.push_str("[[primitive]]");
+                    t.push_str(b);
+                    t
+                },
+            );
             files.push(file(u8::try_from(i).unwrap(), &text));
         }
         let mut b = RegisterBuilder::new();

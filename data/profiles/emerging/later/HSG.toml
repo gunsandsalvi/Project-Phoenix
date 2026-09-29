@@ -1,0 +1,9 @@
+# The emerging group's HSG tables, for the system a later stage builds; a world takes them only with it. Written by tools/data's derivations; never edited by hand.
+
+[[primitive]]
+id = "HSG.tenure_and_costs"
+kind = "ENDOWMENT"
+owner = "HSG"
+source = "measured"
+source_ref = "Four shares, the group's standard at every drawn value: 0 owners with a mortgage among owners; 1 subsidised or reduced-rent tenants among tenants; 2 the median mortgage burden (principal and interest over disposable income) of owners with a mortgage; 3 the median rent burden of tenants. Each economy at its latest year 2015-2025, from the OECD Affordable Housing Database (households), else Eurostat's EU-SILC (persons); the median over the group's economies where at least 10 report it, otherwise, as the owner decided for values a group lacks, over the 10 reporting economies nearest the group's median GDP per head (PPP, constant 2021 dollars) (mortgaged: the median of the 10 reporting economies nearest the group in GDP per head, 16,461 to 35,326; subsidised: the median of the 10 reporting economies nearest the group in GDP per head, 16,461 to 40,690; mortgage burden: the median of the 10 reporting economies nearest the group in GDP per head, 18,779 to 41,604; rent burden: the median of the 10 reporting economies nearest the group in GDP per head, 18,779 to 40,846), from OECD Affordable Housing Database (HM1.3, HC1.2); Eurostat SDMX API (ilc_lvho02); ECLAC CEPALSTAT API (indicator 166); DHS Program API (fetched 2026-09-24); World Bank, World Development Indicators, bulk CSV (fetched 2026-09-23). Owners' and tenants' shares of households are GEN.home_ownership's; a mortgage's rate and remaining term have no source here and are the owner's placeholder (S0.16's)."
+value = { axis = [0, 1, 2, 3], values = [0.036813, 0.389152, 0.141188, 0.193056], outside = "refuse" }

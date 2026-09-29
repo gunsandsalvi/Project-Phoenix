@@ -2,7 +2,7 @@
 # opening needs, naming its owner, the step that first reads it, and the dataset and table it comes from. A row
 # never holds a value. A step that needs a new derived value or mapping adds its row here, in that step's commit,
 # before its data. `status` says where the value stands: "profiled", in the country-group profiles of
-# data/profiles/<level>/GEN.toml, derived by tools/data/derive.py; "sourced", derived into the file it names; "in hand",
+# data/profiles/<level>/profile.toml, derived by tools/data/derive.py; "sourced", derived into the file it names; "in hand",
 # its published series already in data/sources/raw/ (manifest.json names them), mapped into primitives at the step
 # that first reads it; or "mapped", a present value the step that first reads it computes from derived values.
 
@@ -209,7 +209,7 @@ what = "population by age and sex, and deaths by age"
 owner = "DEM"
 first_read = "S0.25"
 source = "UN World Population Prospects 2024: 2023's complete life tables by sex as a Brass logit standard, solved to the drawn life expectancy; population by single age and sex as a standard raked to the drawn shares under 15 and over 65; the sex ratio at birth"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/DEM.toml"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml"
 
 [[row]]
 id = "GEN.dist.household_composition"
@@ -217,7 +217,7 @@ what = "households by size and composition, and by region"
 owner = "DEM"
 first_read = "S0.25"
 source = "UN DESA Database on Household Size and Composition 2026 (types and sizes as log ratios on the drawn fertility) and on the Living Arrangements of Older Persons 2026; kin from WPP's fertility by year and age and survival (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/DEM.toml; by region, drawn with the region's households at S0.25c; the partners' age gap (DEM.partner_age_gap) from the World Bank's ages at first marriage, its spread from one economy's couples, and the lone parents who are fathers (DEM.single_father_share) from the same UN database; who each type's extra members are (DEM.household_members) is assumed until S1.23 derives it from people/dhs_indicators"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml; by region, drawn with the region's households at S0.25c; the partners' age gap (DEM.partner_age_gap) from the World Bank's ages at first marriage, its spread from one economy's couples, and the lone parents who are fathers (DEM.single_father_share) from the same UN database; who each type's extra members are (DEM.household_members) is assumed until S1.23 derives it from people/dhs_indicators"
 
 [[row]]
 id = "GEN.dist.education_and_skills"
@@ -225,7 +225,7 @@ what = "education and skills by age, region and occupation family"
 owner = "DEM"
 first_read = "S0.25"
 source = "Wittgenstein Centre Human Capital Data Explorer v3 (attainment by five-year age and sex, 2020); ILOSTAT employment by ISCO-08 major group and by ICSE-93 status"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/DEM.toml and LAB.toml; skills by occupation family have no source and are drawn from education at S0.25c"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml and LAB.toml; skills by occupation family have no source and are drawn from education at S0.25c"
 
 [[row]]
 id = "GEN.dist.income"
@@ -233,7 +233,7 @@ what = "incomes: a log-normal body with a Pareto top, drawn as the contracts tha
 owner = "HH"
 first_read = "S0.25"
 source = "World Inequality Database sptincj992 shares: a lognormal body and Pareto top above the 90th percentile, the body's sigma solved to the drawn income Gini"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HH.toml"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml"
 
 [[row]]
 id = "GEN.dist.wealth"
@@ -241,7 +241,7 @@ what = "household wealth, by preference type"
 owner = "HH"
 first_read = "S0.25"
 source = "World Inequality Database shwealj992 shares: a lognormal body and Pareto top, the body's sigma solved to the drawn top tenth's share; WID imputes almost all emerging and developing economies' wealth"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HH.toml; by preference type at S1.12"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml; by preference type at S1.12"
 
 [[row]]
 id = "GEN.dist.firms"
@@ -257,7 +257,7 @@ what = "the housing stock, its tenure and its mortgages"
 owner = "HSG"
 first_read = "S0.25"
 source = "OECD Affordable Housing Database HM1.3 and HC1.2, Eurostat ilc_lvho02: owners with a mortgage, subsidised tenants and the median mortgage and rent burdens, for the groups that lack them the median of the ten reporting economies nearest in GDP per head (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder until S2.05 draws them from the Survey of Consumer Finances"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder until S2.05 draws them from the Survey of Consumer Finances"
 
 [[row]]
 id = "GEN.dist.health"
@@ -265,7 +265,7 @@ what = "disability by age and sex, and its onset"
 owner = "DEM"
 first_read = "S0.25"
 source = "ILOSTAT population by disability status, sex and age band (mostly the Washington Group's questions); onset derived from the rise in prevalence between bands (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/DEM.toml; short spells of illness have no source"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml; short spells of illness have no source"
 
 [[row]]
 id = "GEN.dist.accounts_and_borrowing"
@@ -273,7 +273,7 @@ what = "adults with an account, saving at a bank and borrowing from one"
 owner = "BNK"
 first_read = "S0.25"
 source = "World Bank Global Findex (account.t.d, fin17a, fin22a)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/BNK.toml"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/people.toml"
 
 [[row]]
 id = "GEN.dist.state_pension"
@@ -281,7 +281,7 @@ what = "the state pension's age and replacement rate, and who receives old-age a
 owner = "SOC"
 first_read = "S0.25"
 source = "OECD Pensions at a Glance (the developing group's pooled with the emerging members, the owner's decision); ILO SDG 1.3.1 coverage"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/SOC.toml; the developing group's rule is an assumption from nine economies"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/law.toml; the developing group's rule is an assumption from nine economies"
 
 [[row]]
 id = "GEN.dist.pensions_in_payment"
@@ -289,7 +289,7 @@ what = "defined-benefit pensions in payment and pension funds' assets"
 owner = "PEN"
 first_read = "S0.25"
 source = "OECD Pensions at a Glance (occupational transfers' share of the over-65s' income), for the groups that lack it the median of the ten reporting economies nearest in GDP per head; World Bank GFDD pension fund assets to GDP"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/gen/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S4.04; amounts' spread, indexation and survivors' shares have no source"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S4.04; amounts' spread, indexation and survivors' shares have no source"
 
 [[row]]
 id = "GEN.dist.banks"
@@ -511,7 +511,7 @@ what = "the social accounting matrix: each activity's output, inputs, taxes on p
 owner = "GEN"
 first_read = "S1.23"
 source = "OECD ICIO 2019 (origins summed), OECD Table 6 value added parts, TEC.inputs at GDS prices, HH.budget_shares"
-status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/flows.toml; checked at assembly"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml; checked at assembly"
 
 [[row]]
 id = "GEN.stocks"
@@ -519,7 +519,7 @@ what = "the balance-sheet matrix: each sector's financial instruments and real a
 owner = "GEN"
 first_read = "S1.23"
 source = "IMF MFS currency, GDD and WEO debt; World Bank GFDD deposits, bank reserves and capital; OECD Tables 720 and 9B; CAP.stock_per_gdp"
-status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/stocks.toml; checked at assembly"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml; checked at assembly"
 
 [[row]]
 id = "GEN.productivity_spread"
@@ -527,7 +527,7 @@ what = "the spread of firms' log physical productivity within an industry"
 owner = "GEN"
 first_read = "S1.24"
 source = "Hsieh and Klenow (2007), NBER WP 13290, Table 1: the United States, China and India standing for the three groups"
-status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/shapes.toml"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml"
 
 [[row]]
 id = "GEN.occupation_pay"
@@ -535,4 +535,4 @@ what = "each occupation's mean earnings over all employees'"
 owner = "GEN"
 first_read = "S1.24"
 source = "ILOSTAT mean monthly earnings by ISCO-08 major group (DF_EAR_EMTA_SEX_OCU_CUR_NB)"
-status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy/shapes.toml"
+status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml"

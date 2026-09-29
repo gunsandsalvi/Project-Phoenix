@@ -206,15 +206,16 @@ data/world.toml                 world constants: epoch, total population, map, t
                                 length, save interval (spec GEN.14)
 data/setup/default.toml         the default new game: population split and each country's choices and name (GEN.14)
 data/profiles/                  country-group profile tables and each choice's ranges by level, with sources (GEN.15)
-data/profiles/<level>/<SYS>.toml  a development level's template of each system's primitives and mappings
-data/profiles/<level>/gen/<SYS>.toml  its template of each system's opening distributions and the technology they
-                                rest on (life tables, health hazards), derived by tools/data/derive_pop.py
+data/profiles/<level>/economy.toml  a development level's accounts: ways, prices, the flows' primitives, stocks
+data/profiles/<level>/people.toml   its demography, households, education, labour force, wealth and banking
+data/profiles/<level>/law.toml      every policy its law sets
+data/profiles/<level>/profile.toml  the joint draw of a country's derived values
+data/profiles/<level>/later/<SYS>.toml  tables of a system a later stage builds, taken only with it
 data/sources/raw/               the published series the profiles are derived from, with their manifest
 data/names/                     real countries' institution and currency names, and the name generator's lists
 data/shared/<SYS>.toml          primitives common to all countries
-data/<country>/<SYS>.toml       one country's primitives, instantiated at a new game from its level's template and
-                                its derived values (GEN.15); never edited by hand
-data/<country>/gen/<SYS>.toml   that system's opening distributions for one country, derived the same way
+data/<country>/                 one country's primitives, instantiated at a new game from its level's files and its
+                                derived values (GEN.15); never edited by hand
 perf/ratchets.toml              counter ratchets (§2.11)
 perf/device/                    device reports, committed by the owner
 perf/measure/                   `phx measure` reports, one per step that changes a budget line
@@ -224,10 +225,12 @@ docs/                           the spec, the architecture, this file
 ```
 
 A step's **Files** row naming `data/<country>/<SYS>.toml` or `data/<country>/gen/<SYS>.toml` commits that system's
-templates in `data/profiles/<level>/` or `data/profiles/<level>/gen/`, one per development level, with their sources;
-each country's file is instantiated from them at a new game (S0.27) and never committed. A new game copies a
-level's `gen/` templates only once a system declares what they hold, since the register refuses an entry no system
-declares.
+primitives into its level's four files, each in the one that describes it (the accounts, the people, the law, the
+profile's draw), written by id through `tools/data/profile_files.py`, one per development level, with their sources;
+a table that repeats a fact another holds is derived from it, not stored. A system a later stage builds keeps its
+tables in `later/<SYS>.toml` until it is built: a new game copies them only for a system the world keeps, since
+the register refuses an entry no system declares. Each country's files are instantiated at a new game (S0.27) and
+never committed.
 
 ### 2.2 Inside a crate
 
@@ -2672,7 +2675,7 @@ Appendix E 49).
 | `crates/systems/sys-hsg/src/parcels.rs` | land by the parcel: bids, sales and leases |
 | `crates/systems/sys-sta/src/settlements.rs` | the Degree of Urbanisation over the held cells |
 | `crates/assembly/phx-world/src/opening/places.rs` | the opening's largest cities, their gradients and the buildings that house the opening |
-| `data/shared/GEO.toml`, `data/profiles/<level>/HSG.toml`, `data/shared/STA.toml` | the cell size, height cost, travel time's value, the settlement thresholds, urbanisation shares, city-size laws, density gradients, agglomeration elasticities, with sources |
+| `data/shared/GEO.toml`, `data/profiles/<level>/later/HSG.toml`, `data/shared/STA.toml` | the cell size, height cost, travel time's value, the settlement thresholds, urbanisation shares, city-size laws, density gradients, agglomeration elasticities, with sources |
 
 **Design**
 - **Cells** (GEO.19): a tile's cells are the same map subdivided; a cell's identity is its tile's and its place within

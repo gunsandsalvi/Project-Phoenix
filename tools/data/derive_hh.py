@@ -20,7 +20,8 @@ import numpy as np
 import pandas as pd
 
 from derive import RAW
-from derive_tec import LEFT_OUT, MIN_COUNTRIES, PRODUCTS, PROFILES, YEAR, groups, io_tables, price_levels, taken_share
+from derive_tec import LEFT_OUT, MIN_COUNTRIES, PRODUCTS, YEAR, groups, io_tables, price_levels, taken_share
+import profile_files
 
 RAW_FILE = RAW / "icio" / f"households_{YEAR}.csv"
 PLACES = 6
@@ -90,7 +91,7 @@ def write_level(level: str, economies: list, spent: dict, note: dict) -> tuple:
              f'source = "{source}"', f"source_ref = {json.dumps(ref)}",
              f"value = {{ axis = [{axis}], values = [{', '.join(values)}], "
              'outside = "refuse" }']
-    (PROFILES / level / "HH.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
     return values, left_median
 
 

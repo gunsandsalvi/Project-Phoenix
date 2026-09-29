@@ -14,7 +14,8 @@ import json
 
 import pandas as pd
 
-from derive import LEVELS, PROFILES, RAW
+from derive import LEVELS, RAW
+import profile_files
 
 LEVEL = "developing"
 MONTHS = 12
@@ -63,7 +64,7 @@ def main() -> None:
         lines += ["", "[[primitive]]", f'id = "{pid}"', 'kind = "POLICY"', 'owner = "TAX"',
                   'decided_by = "parliament"', 'source = "measured"', f"source_ref = {json.dumps(ref)}",
                   f"value = {value}"]
-    (PROFILES / LEVEL / "TAX.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(LEVEL, "\n".join(lines) + "\n")
     print(f"mean wage over output per person {ratio:.3f} over {n} economies; edges {edges}")
 
 

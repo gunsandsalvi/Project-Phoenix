@@ -8,7 +8,7 @@ same files gives the same tables.
 
     python3 tools/data/derive_pop.py
 
-The tables are written to data/profiles/<level>/gen/, the opening's distributions and the technology they rest on.
+The tables are written into each level's profile files by id (profile_files.put): the opening's distributions and the technology they rest on.
 """
 import json
 import math
@@ -18,9 +18,9 @@ import numpy as np
 import pandas as pd
 
 from derive import LEVELS, RAW
+import profile_files
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILES = ROOT / "data" / "profiles"
 SEXES = ["female", "male"]
 SNAPSHOT = 2023
 DISABILITY_BANDS = ["15-24", "25-54", "55-64", "GE65"]
@@ -65,9 +65,7 @@ def table2(rows, columns, values: np.ndarray, outside: str, places: int = 6) -> 
 
 
 def write(level: str, name: str, header: str, entries: list) -> None:
-    path = PROFILES / level / "gen" / f"{name}.toml"
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(header + "\n\n" + "\n".join(entries))
+    profile_files.put_text(level, header + "\n\n" + "\n".join(entries))
 
 
 # ---- Demography --------------------------------------------------------------------------------------------------

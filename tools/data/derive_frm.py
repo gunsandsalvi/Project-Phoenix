@@ -23,9 +23,9 @@ import numpy as np
 import pandas as pd
 
 from derive import LEVELS, RAW
+import profile_files
 
 ROOT = Path(__file__).resolve().parents[2]
-PROFILES = ROOT / "data" / "profiles"
 YEAR = 2022
 MIN_COUNTRIES = 10
 EXP = 6
@@ -188,7 +188,7 @@ def write_level(level: str, members: dict, tilt: pd.DataFrame, reporting: int, m
     lines = [f"# The {level} group's firms by industry and size (spec GEN.2, FRM.2), derived by tools/data/derive_frm.py;",
              "# never edited by hand.", "", "[[primitive]]", 'id = "FRM.industry_by_size"', 'kind = "ENDOWMENT"',
              'owner = "FRM"', f'source = "{thin}"', f"source_ref = {json.dumps(ref)}", f"value = {table}"]
-    (PROFILES / level / "FRM_industries.toml").write_text("\n".join(lines) + "\n")
+    profile_files.put_text(level, "\n".join(lines) + "\n")
 
 
 def main() -> None:
