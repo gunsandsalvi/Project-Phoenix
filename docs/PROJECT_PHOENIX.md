@@ -5468,7 +5468,8 @@ Decisions taken in writing this version, and decisions still open.
     one run at the resolution in force; when the valve moves, its effect is measured in the running world.
 41. **The order of refinement** (N8.5; owner, 2026-09-29): when the budget allows a finer resolution, the
     representation's size (REP.40) is raised first, then the number of preference types (NUM.4), then each kind's
-    attribute classes and zones, then history horizons and snapshot intervals (SET.13, SET.17); when the budget calls
+    attribute classes and zones, then history horizons and snapshot intervals (SET.13, SET.17), then age classes, the
+    full audit's cycle, the draw scheme (REP.7) and the map's cell size for buildings; when the budget calls
     for a coarser one, the same order runs backwards. A miss is met by N8.7's remedies in their order — how the world
     is represented and traversed, then this valve — and no law, mechanism or requirement is weakened to meet it.
 42. **Public ways** (TEC.4): every firm knows its industry's ways that no patent covers and no firm keeps to itself,
