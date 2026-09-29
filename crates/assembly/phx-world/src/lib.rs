@@ -11,6 +11,7 @@ pub mod core_firms;
 pub mod core_goods;
 pub mod core_jobs;
 pub mod core_labour;
+pub mod core_lending;
 pub mod core_open;
 pub mod core_outlooks;
 pub mod core_pop;

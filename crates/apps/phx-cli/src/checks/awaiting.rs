@@ -338,13 +338,6 @@ pub const LC_1_20: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
 };
 
-pub const LC_1_25: Check = live_check! {
-    id: "LC-1-25",
-    title: "Declined applications are visible and counted per bank",
-    from_step: "S1.09",
-    check: |_| Outcome::NotYet("awaits S1.24 f, the banks' books"),
-};
-
 pub const LC_1_27: Check = live_check! {
     id: "LC-1-27",
     title: "MON.7 and MON.9 clean with the central bank's facilities in use; facility quantities are reported daily",

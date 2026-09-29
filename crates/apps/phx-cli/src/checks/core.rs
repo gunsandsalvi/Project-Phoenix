@@ -948,3 +948,29 @@ pub const LC_1_06: Check = live_check! {
     from_step: "S1.03",
     check: revenue_clean,
 };
+
+/// Each bank's applications, declines and quotes are counted, and declines are seen where any bank refused.
+fn declines_counted(w: Inspector<'_>) -> Outcome {
+    let lenders = &w.core().credit.lenders;
+    let applied: u64 = lenders.values().map(|l| l.applications).sum();
+    if applied == 0 {
+        return Outcome::NotYet("no firm applied for a loan in the run");
+    }
+    match lenders.iter().find(|(_, l)| l.declined + l.quoted != l.applications) {
+        Some((bank, l)) => Outcome::Fail(format!(
+            "bank {}: {} applications where it declined {} and quoted {}",
+            bank.word(),
+            l.applications,
+            l.declined,
+            l.quoted
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_25: Check = live_check! {
+    id: "LC-1-25",
+    title: "Declined applications are visible and counted per bank",
+    from_step: "S1.09",
+    check: declines_counted,
+};

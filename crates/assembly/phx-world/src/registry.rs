@@ -410,6 +410,7 @@ fn core_of(
     }
     open_stats(p, &opening, &mut core)?;
     core.open_accounts(today);
+    core.open_credit(&p.c.register, &opening).map_err(|e| AssemblyErrors(vec![e]))?;
 
     Ok(core)
 }

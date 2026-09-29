@@ -164,6 +164,7 @@ impl Core {
             insolvency: crate::core_default::Insolvency::default(),
             loan_books: std::collections::BTreeMap::new(),
             accounts: crate::core_accounts::Accounts::default(),
+            credit: crate::core_lending::Credit::default(),
             next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),

@@ -2023,6 +2023,11 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   of interest, arrears' changes accrued, balances written off). `audit_accounts` holds each equity account to
   `net_assets` — money, goods at cost and what it is owed, less what it owes and a bank's deposits — and the revenue
   recognised to the money received for sales.
+- **Lending** (`phx_world::core_lending`, BNK.4–BNK.6, BNK.20): `Credit` keeps each country's `if_credit::law::Law`,
+  each firm's filed earnings a year at the opening, and each bank's `Lender` (standard, applications, declines, quotes,
+  loans). `apply_for_loan` draws the banks a firm asks (`BNK.lenders_asked`), reads its `cover`, and has each bank
+  decline or quote by `sys_bnk::credit`; the firm chooses by its tastes (`BNK.lender_taste`). `lend_shortfalls` lends
+  the shortfall at the chosen quote's rate from the chosen bank, or nothing.
 - **Loan books** (`phx_world::core_books`, BNK.11): each dated family records its moves on its creditors' books
   (`LoanMoves`: lent, principal repaid in `dues`, balances written off by `close_contract`); `book_loans` enters them
   at the day's close and holds each creditor's `LoanBook` to the balances its loan contracts owe it.

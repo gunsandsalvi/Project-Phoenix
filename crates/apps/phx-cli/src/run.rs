@@ -462,6 +462,14 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "labour": labour_report(w),
         "services": services_report(w),
         "outlooks": outlooks_report(w),
+        "lenders": w.core().credit.lenders.iter().map(|(b, l)| json!({
+            "bank": b.word(),
+            "standard": l.standard,
+            "applications": l.applications,
+            "declined": l.declined,
+            "quoted": l.quoted,
+            "lent": l.lent,
+        })).collect::<Vec<_>>(),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
             "stratum": a.stratum,

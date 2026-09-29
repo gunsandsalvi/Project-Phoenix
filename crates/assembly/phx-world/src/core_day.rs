@@ -625,7 +625,7 @@ impl Core {
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
             settling = self.estates_pay(day, calendar, buf);
             buf.append(&mut self.pending);
-            self.lend_shortfalls(day, calendar, buf);
+            self.lend_shortfalls((day, calendar, streams), buf);
             for f in buf.iter().filter(|f| f.reason == crate::consts::reason::LENT) {
                 record.lent += 1;
                 if self.bank_of(f.payee) != Some(f.payer) {
