@@ -30,6 +30,21 @@ pub fn waiting_multiple(rate: f64, payout: f64, sigma: f64) -> f64 {
     beta / (beta - 1.0)
 }
 
+/// What a yearly margin is worth over a plant's life of `life` years at `rate`: the annuity factor.
+#[clause("CAP.3")]
+#[must_use]
+pub fn annuity(rate: f64, life: f64) -> f64 {
+    if rate > 0.0 { (1.0 - libm::pow(1.0 + rate, -life)) / rate } else { life }
+}
+
+/// The volatility a year of what a firm sells: the change from one period's sales to the next's over the first, as a
+/// year's over the periods a year holds.
+#[clause("CAP.3")]
+#[must_use]
+pub fn volatility(sold: f64, before: f64, periods_a_year: f64) -> f64 {
+    libm::fabs((sold - before) / before) * libm::sqrt(periods_a_year)
+}
+
 /// Whether to invest: the value beats the cost by the hurdle, after the value of waiting, and the firm can fund it.
 #[clause("CAP.3", "CAP.11")]
 #[must_use]
@@ -48,6 +63,13 @@ mod tests {
         assert!(!invests(130.0, 100.0, 0.2, 1.0, false), "not fundable");
         assert!(!invests(130.0, 100.0, 0.2, 1.2, true), "waiting is worth more");
         assert!((cost_of_funds(0.06, 0.12, 0.5) - 0.09).abs() < 1e-12);
+    }
+
+    #[test]
+    fn annuity_and_volatility() {
+        assert!((super::annuity(0.0, 10.0) - 10.0).abs() < 1e-12, "no discount: the life's years");
+        assert!((super::annuity(0.1, 1.0) - 1.0 / 1.1).abs() < 1e-12);
+        assert!((super::volatility(110.0, 100.0, 4.0) - 0.2).abs() < 1e-12);
     }
 
     #[test]

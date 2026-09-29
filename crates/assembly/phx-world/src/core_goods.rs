@@ -97,9 +97,8 @@ pub struct CoreGoods {
     /// Each country's GDP, and each product's collective consumption and fixed investment over it, by country.
     pub gdp: Vec<f64>,
     pub final_uses: Vec<Vec<[f64; 2]>>,
-    /// Each region's share of its country's persons, and each firm's share of its country's turnover at the opening.
+    /// Each region's share of its country's persons.
     pub region_share: Vec<f64>,
-    pub turnover_share: BTreeMap<u32, f64>,
     /// Today's retail wants: each household's money asked of a product, at its region.
     pub wants: Vec<(u16, Buyer)>,
     pub meeting: Meeting,
@@ -200,7 +199,7 @@ fn whole_units(x: f64) -> i64 {
 }
 
 impl Core {
-    fn record_word(&self, kind: usize, slot: Slot, at: usize) -> Option<i64> {
+    pub(crate) fn record_word(&self, kind: usize, slot: Slot, at: usize) -> Option<i64> {
         match self.kinds.get(kind)?.record(slot).get(at).map(|w| w.get()) {
             Some(Missing::Present(v)) => Some(v),
             _ => None,
@@ -320,7 +319,6 @@ impl Core {
         goods.region_share = self.region_shares(ctx.regions);
         self.goods = goods;
         self.goods.recipes = self.recipes();
-        self.goods.turnover_share = self.turnover_shares(ctx, firm);
         self.open_prices(ctx, firm, &prices);
         self.open_expected(ctx, firm, today);
         self.open_stocks(ctx.regions, firm, &prices, today);
@@ -482,21 +480,6 @@ impl Core {
             .collect()
     }
 
-    /// Each firm's share of its country's turnover at its posted price and output, by its slot.
-    fn turnover_shares(&self, ctx: &GoodsCtx<'_>, firm: usize) -> BTreeMap<u32, f64> {
-        let mut by: Vec<(u32, usize, f64)> = Vec::new();
-        for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let lot = self.lot(f.product);
-            by.push((slot.get(), f.country, from_i64(f.price) / lot * f.output));
-        }
-        let mut totals: BTreeMap<usize, f64> = BTreeMap::new();
-        for (_, c, t) in &by {
-            *totals.entry(*c).or_insert(0.0) += t;
-        }
-        by.into_iter().map(|(s, c, t)| (s, totals.get(&c).filter(|w| **w > 0.0).map_or(0.0, |w| t / w))).collect()
-    }
-
     /// Each country's public agency's purchases today, its head's decision: each product's share of GDP a day in the
     /// state's final uses, asked at retail in each region by its share of the country's persons.
     #[clause("SOC.2", "GEN.2")]
@@ -520,40 +503,6 @@ impl Core {
                 if amount > 0 {
                     let subject = packed(u64::from(agency.word()), u64::from(region), REGION_BITS);
                     wants.push((p, Buyer { party: agency, subject, want: Want::Money(amount), place: region }));
-                }
-            }
-        }
-        wants
-    }
-
-    /// The firms whose production schedule came today buy their share, by their opening turnover, of their country's
-    /// fixed investment in each capital good over their production period, and hold it, until their plant decides
-    /// what they invest.
-    #[clause("CAP.3", "GEN.2")]
-    fn investment_wants(&self, ctx: &GoodsCtx<'_>) -> Vec<(u16, Buyer)> {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Vec::new() };
-        let mut wants = Vec::new();
-        let investing = self.bind(&sys_cap::points::INVEST);
-        for s in &self.labour.due_today {
-            let Some(f) = self.goods_firm(ctx.regions, firm, Slot::new(*s)) else { continue };
-            let (Some(gdp), Some(uses), Some(share)) =
-                (self.goods.gdp.get(f.country), self.goods.final_uses.get(f.country), self.goods.turnover_share.get(s))
-            else {
-                continue;
-            };
-            let amounts = self.decide(investing, f.key, |_| sys_cap::points::InvestIn {
-                per_period: gdp * ctx.management.production_days / DAYS_A_YEAR * share,
-                shares: uses.iter().map(|u| u[1]).collect(),
-            });
-            for (p, amount) in (0_u16..).zip(amounts) {
-                if amount > 0 {
-                    let buyer = Buyer {
-                        party: f.key,
-                        subject: u64::from(f.key.word()),
-                        want: Want::Money(amount),
-                        place: f.region,
-                    };
-                    wants.push((p, buyer));
                 }
             }
         }
@@ -613,7 +562,7 @@ impl Core {
         wants.extend(self.public_wants(ctx.regions));
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
         let (sales, spent) = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Final), &leg);
-        let invest = self.investment_wants(ctx);
+        let invest = self.investment_wants(ctx, day);
         // A service bought as investment is used as it is delivered, being made as it is sold; a good is held.
         let stored = self.goods.stored.clone();
         let plant = self.plant_products();
@@ -946,7 +895,7 @@ impl Core {
     }
 
     /// The whole units a firm's staff's hours a day make at its hours a unit; none known where it has no hours a unit.
-    fn staff_capacity(&self, f: &Firm) -> Option<i64> {
+    pub(crate) fn staff_capacity(&self, f: &Firm) -> Option<i64> {
         let family = self.families.iter().position(|x| x.name == crate::consts::families::EMPLOYMENT)?;
         let (level, ways) = (self.labour.level.get(f.country)?, self.labour.ways.get(f.country)?);
         let p = usize::from(f.product);
@@ -1731,6 +1680,7 @@ impl Core {
                 continue;
             }
             let carried = self.move_goods_from(d.goods, (Bound::Committed, Cost::At(d.paid)), day, &mut moved);
+            self.note_sold(seller, d.goods.amount);
             // A sale is income on the day it is delivered: its price, less what its units cost.
             self.recognise(seller, Line::Revenue, d.paid);
             self.recognise(seller, Line::CostOfSales, carried.unwrap_or(0));

@@ -5,6 +5,8 @@
 //! capital good bought as investment is a project of its buyer at what it paid, named with its producer, until its
 //! kind's lead has passed, when it enters service as new plant.
 
+use std::collections::BTreeMap;
+
 use phx_core::OpeningCountry;
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Bound, Cost, Held, NATURE};
@@ -55,11 +57,16 @@ pub struct Plant {
     products: usize,
     bought_as: Vec<u16>,
     lead: Vec<u32>,
+    lives: Vec<f64>,
     review_days: u32,
     began: u32,
     pub projects: Vec<Project>,
     pub days: Vec<PlantDay>,
     today: PlantDay,
+    /// Each firm's units delivered since the opening, and, at its last review, what it had delivered and what it
+    /// delivered in the period before.
+    sold: BTreeMap<PartyKey, i64>,
+    reviewed: BTreeMap<PartyKey, (i64, i64)>,
 }
 
 impl Core {
@@ -103,6 +110,7 @@ impl Core {
             products,
             bought_as: cap.bought_as.clone(),
             lead,
+            lives: cap.kinds.kinds.iter().map(|k| k.life).collect(),
             review_days: u32::try_from(floor_to_i64(cap.review_days).unwrap_or(0)).map_err(|e| e.to_string())?,
             began: today.get(),
             ..Plant::default()
@@ -248,6 +256,107 @@ impl Core {
             .filter(|h| matches!(self.goods.units.held(h.unit), Some(Held::Capital(_))))
             .map(|h| i128::from(h.cost))
             .sum()
+    }
+
+    /// A seller's units delivered, counted for its plant's review.
+    pub(crate) fn note_sold(&mut self, seller: PartyKey, units: i64) {
+        *self.plant.sold.entry(seller).or_insert(0) += units;
+    }
+
+    /// On each review day, each firm weighs adding plant: the output a day it expects to sell, within what its staff
+    /// make, beyond what its plant allows, of its scarcest kind; the margin that output earns a year, an annuity over
+    /// the kind's life at the return it requires, against what the plant costs at its product's mark there, beaten by
+    /// the multiple its sales' volatility between its last two periods gives waiting, and funded from its money. It
+    /// buys what it invests from the kind's producers at its region.
+    #[clause("CAP.3", "CAP.5", "MND.20")]
+    pub(crate) fn investment_wants(
+        &mut self,
+        ctx: &crate::core_goods::GoodsCtx<'_>,
+        day: Day,
+    ) -> Vec<(u16, phx_market::meet::Buyer)> {
+        let period = self.plant.review_days;
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Vec::new() };
+        if period == 0 || !(day.get() - self.plant.began).is_multiple_of(period) {
+            return Vec::new();
+        }
+        let investing = self.bind(&sys_cap::points::INVEST);
+        let mut wants = Vec::new();
+        for slot in self.firm_slots(firm) {
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let delivered = self.plant.sold.get(&f.key).copied().unwrap_or(0);
+            let Some((seen, before)) = self.plant.reviewed.insert(f.key, (delivered, 0)) else { continue };
+            let sold = delivered - seen;
+            self.plant.reviewed.insert(f.key, (delivered, sold));
+            if let Some((kind, outlay, input)) = self.project_for(&f, (sold, before))
+                && self.decide(investing, f.key, |_| input)
+            {
+                let buyer = phx_market::meet::Buyer {
+                    party: f.key,
+                    subject: u64::from(f.key.word()),
+                    want: phx_market::retail::Want::Money(outlay),
+                    place: f.region,
+                };
+                wants.push((kind, buyer));
+            }
+        }
+        wants
+    }
+
+    /// A firm's project: the product its scarcest kind is bought as, what it would cost and what the decision reads;
+    /// none where its plant does not bind what it expects to sell, a unit earns nothing, or a price is not yet known.
+    fn project_for(
+        &self,
+        f: &crate::core_goods::Firm,
+        (sold, before): (i64, i64),
+    ) -> Option<(u16, i64, sys_cap::points::InvestIn)> {
+        let needs = self.plant.needs.get(f.country * self.plant.products + usize::from(f.product))?;
+        let lot = self.lot(f.product);
+        let price = from_i64(f.price) / lot;
+        let margin = price - self.unit_cost(f)?;
+        let staff = self.staff_capacity(f).map_or(f64::INFINITY, from_i64);
+        let expected =
+            from_i64(self.record_word(usize::from(f.key.kind()), f.key.slot(), crate::consts::firm::EXPECTED)?)
+                / crate::consts::firm::PART_ONE;
+        let wanted = if expected < staff { expected } else { staff };
+        let gap = wanted - self.plant_capacity(f.key, (f.country, f.product));
+        if gap <= 0.0 || margin <= 0.0 || sold <= 0 || before <= 0 {
+            return None;
+        }
+        let mut scarcest: Option<(usize, f64, f64)> = None;
+        for (k, per) in needs.iter().filter(|(_, per)| *per > 0.0) {
+            let (Some(chain), Ok(kind)) = (self.plant.chains.get(*k), u16::try_from(*k)) else { continue };
+            let allows =
+                phx_core::units::capacity(&self.goods.stocks, &self.goods.units, f.key, (kind, None), chain) / per;
+            if scarcest.is_none_or(|(_, _, b)| allows < b) {
+                scarcest = Some((*k, *per, allows));
+            }
+        }
+        let (kind, per, _) = scarcest?;
+        let product = self.plant.bought_as.get(kind).copied()?;
+        let life = self.plant.lives.get(kind).copied()?;
+        let mark = self.goods.marks.get(&(product, f.region)).copied()?;
+        let unit_price = mark / self.lot(product);
+        let prefs = self.decider(self.bind(&sys_cap::points::INVEST), f.key).1;
+        let Missing::Present(rate) = prefs.required_return else {
+            violation!(clause = "CAP.3", "an investor with no required return", firm = f.key.word());
+        };
+        let earned = gap * DAYS_A_YEAR * margin;
+        let annuity = sys_cap::rules::invest::annuity(rate, life);
+        let value = earned * annuity;
+        let outlay = gap * DAYS_A_YEAR * per * unit_price;
+        let periods = DAYS_A_YEAR / f64::from(self.plant.review_days);
+        let sigma = sys_cap::rules::invest::volatility(from_i64(sold), from_i64(before), periods);
+        let money = from_i64(self.money_of(f.key));
+        let input = sys_cap::points::InvestIn { value, outlay, rate, earned, sigma, money };
+        Some((product, floor_to_i64(outlay)?, input))
+    }
+
+    /// The money a party holds, its pending payments counted.
+    fn money_of(&self, party: PartyKey) -> i64 {
+        self.kinds
+            .get(usize::from(party.kind()))
+            .and_then(|k| k.accounts.as_ref())
+            .map_or(0, |a| a.balance.get(party.slot()).unwrap_or(0) + a.pending.get(party.slot()).unwrap_or(0))
     }
 
     /// The products plant is bought as.

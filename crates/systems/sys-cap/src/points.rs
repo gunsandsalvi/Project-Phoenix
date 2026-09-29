@@ -1,29 +1,38 @@
-//! Plant's decision point: a firm's chief executive's fixed investment.
+//! Plant's decision point: a firm's chief executive's investment.
 
 use phx_core::decisions::DecisionPointDecl;
 use phx_macros::clause;
 use phx_num::Missing;
 
-/// What a firm's investment reads: what it invests over its production period, and each capital good's share of it.
-#[derive(Clone, Debug, PartialEq)]
+use crate::rules::invest::{invests, waiting_multiple};
+
+/// What a firm's investment reads: the project's value — the margin its extra output earns a year as an annuity over
+/// the plant's life — what it costs, the return the firm requires, the margin a year, the volatility of its sales a
+/// year, and the money it holds.
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct InvestIn {
-    pub per_period: f64,
-    pub shares: Vec<f64>,
+    pub value: f64,
+    pub outlay: f64,
+    pub rate: f64,
+    pub earned: f64,
+    pub sigma: f64,
+    pub money: f64,
 }
 
-/// What it buys of each capital good, in whole units of its currency.
-#[clause("CAP.3")]
+/// Whether it invests: the value beats the cost after the value of waiting, and it can fund it.
+#[clause("CAP.3", "CAP.11")]
 #[must_use]
-pub fn invest(i: &InvestIn) -> Vec<i64> {
-    i.shares.iter().map(|s| phx_rand::float::floor_to_i64(s * i.per_period).unwrap_or(0)).collect()
+pub fn invest(i: &InvestIn) -> bool {
+    let waiting = waiting_multiple(i.rate, i.earned / i.value, i.sigma);
+    invests(i.value, i.outlay, 0.0, waiting, i.money >= i.outlay)
 }
 
-/// A firm's fixed investment, on its production schedule.
-pub const INVEST: DecisionPointDecl<InvestIn, Vec<i64>> = DecisionPointDecl {
+/// A firm's investment, on its plant's review.
+pub const INVEST: DecisionPointDecl<InvestIn, bool> = DecisionPointDecl {
     name: "CAP.invest",
     system: "CAP",
     rule: invest,
-    schedule: Missing::Present("FRM.production_days"),
+    schedule: Missing::Present("CAP.review_days"),
     wakes: &[],
     runs_on_non_business: false,
     clause: "CAP.3",

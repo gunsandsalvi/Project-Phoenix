@@ -1533,9 +1533,13 @@ nature under `WORN`), the value lost charged to income as depreciation. A capita
 product a kind is bought as (`CAP.bought_as`) is used at delivery and becomes its buyer's `Project` at what it paid,
 named with its producer, an asset at cost on its balance sheet (CAP.2); after the kind's `CAP.lead_days` it enters
 service as new plant at its buyer's region, carrying that cost (`BUILT`). An ended firm's projects pass to its estate,
-which then waits. What a firm invests is still the placeholder of its country's fixed investment shared by its
-opening turnover (`CAP.invest`); the investment decision by CAP.3 (`rules::invest`) and the owner's maintenance,
-repair, sale and scrapping by CAP.4 (`rules::maintain`) are the next of plant.
+which then waits. On each review day each firm weighs adding plant (CAP.3, `sys_cap::points::INVEST` through the
+decision core): the output a day it expects to sell, within what its staff make, beyond what its plant allows, of its
+scarcest kind; the margin that output earns a year as an annuity over the kind's life at its required return (its
+hurdle rate), against the plant's cost at its product's mark in its region, beaten by the waiting multiple its sales'
+change between its last two periods gives (`rules::invest`), and funded from its money; investing, it asks that
+cost of the kind's product at its region's between-firms meeting. The owner's maintenance, repair, sale and scrapping
+by CAP.4 (`rules::maintain`) are the next of plant.
 
 ### 7.11 Goods, orders and trades
 

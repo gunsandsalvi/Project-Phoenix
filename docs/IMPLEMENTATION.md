@@ -1073,8 +1073,9 @@ world switches to the core.
     each firm's plant opened from its output and its way on the steady path; production held to its plant's
     capacity; wear on the review schedule with depreciation; investment in a kind's product a project of its buyer,
     named with its producer, entering service after the kind's lead; LC-1-10, LC-1-11 and LC-1-12 read them, the run
-    report's `plant` its days and its units by condition. Next of plant: the investment decision by CAP.3, retiring
-    the placeholder of the fixed investment shared by turnover, and maintenance, repair, sale and scrapping by CAP.4.
+    report's `plant` its days and its units by condition. The investment decision by CAP.3 (ARCHITECTURE §7.10)
+    retired the placeholder of each country's fixed investment shared by the firms' opening turnover. Next of plant:
+    maintenance, repair, sale and scrapping by CAP.4.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
