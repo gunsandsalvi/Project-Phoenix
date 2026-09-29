@@ -465,13 +465,6 @@ pub const LC_1_39: Check = live_check! {
     retired: "market indices, whose returns it read, are built with S3.09",
 };
 
-pub const LC_1_41: Check = live_check! {
-    id: "LC-1-41",
-    title: "The GEN report lists every balancing change and apportionment difference, and names every party",
-    from_step: "S1.15",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the opening report"),
-};
-
 pub const LC_1_45: Check = live_check! {
     id: "LC-1-45",
     title: "firms end every year in every industry, by closure and by default, each with an estate or a successor; \

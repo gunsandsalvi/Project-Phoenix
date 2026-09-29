@@ -854,3 +854,39 @@ pub const LC_0_56: Check = live_check! {
     from_step: "S0.25",
     check: apportionments_reported,
 };
+
+/// The opening report lists every closure that balanced each country's sheet and every apportionment, and every party
+/// the core holds is named: each live row carries an identity.
+fn opening_reported(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let countries = w.countries().len();
+    for c in 0..countries {
+        let Ok(c) = u8::try_from(c) else { continue };
+        if !core.closures.iter().any(|(k, _, _)| *k == c) {
+            return Outcome::Fail(format!("country {c}'s sheet reports no closure"));
+        }
+    }
+    if let Some((c, name, v)) = core.closures.iter().find(|(_, _, v)| !v.is_finite()) {
+        return Outcome::Fail(format!("country {c}'s {name} closed at {v}"));
+    }
+    if core.apportioned.is_empty() {
+        return Outcome::Fail("the opening reports no apportionment".to_owned());
+    }
+    for (k, store) in core.kinds.iter().enumerate() {
+        if let Some(slot) = store.parties.live_slots().find(|s| store.parties.id(*s).is_none()) {
+            return Outcome::Fail(format!(
+                "a {} at slot {} carries no identity",
+                core.names.get(k).map_or("party", |n| n),
+                slot.get()
+            ));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_41: Check = live_check! {
+    id: "LC-1-41",
+    title: "The GEN report lists every balancing change and apportionment difference, and names every party",
+    from_step: "S1.15",
+    check: opening_reported,
+};

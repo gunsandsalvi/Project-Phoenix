@@ -409,6 +409,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "population": population_report(w),
         "prices": prices_report(w),
         "labour": labour_report(w),
+        "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
             "stratum": a.stratum,
             "country": a.country,

@@ -31,6 +31,8 @@ pub struct Drawn {
 pub struct Sheet {
     pub financial: Vec<[f64; SECTORS]>,
     pub real: Vec<[f64; SECTORS]>,
+    /// The closures that balanced it, each a share of GDP: what the identities set rather than the data drew.
+    pub closures: Vec<(&'static str, f64)>,
 }
 
 impl Sheet {
@@ -111,9 +113,10 @@ pub fn map(group: &Stocks, d: &Drawn) -> Result<Sheet, String> {
     let (mut reserves, mut paper_c, mut cb_loans, mut equity, mut bonds_b) =
         close_banks(d, (lent, deposits, currency, paper_b));
     let mut paper_h = d.public_debt - paper_b - paper_c;
+    let mut extra = 0.0;
     if bonds_b < 0.0 {
         // Deposits beyond what banks lend are held as more government paper, taken from households'.
-        let extra = lesser(-bonds_b, paper_h);
+        extra = lesser(-bonds_b, paper_h);
         paper_b += extra;
         (reserves, paper_c, cb_loans, equity, bonds_b) = close_banks(d, (lent + extra, deposits, currency, paper_b));
         paper_h = d.public_debt - paper_b - paper_c;
@@ -138,7 +141,17 @@ pub fn map(group: &Stocks, d: &Drawn) -> Result<Sheet, String> {
         return Err(format!("firms owe more than they hold, by {}", -firms_worth));
     }
     put(&mut m, FIRMS_EQUITY, &[(HOUSEHOLDS, firms_worth), (FIRMS, -firms_worth)]);
-    Ok(Sheet { financial: m, real })
+    let closures = vec![
+        ("banks' reserves", reserves),
+        ("central bank's government paper", paper_c),
+        ("central bank's loans to banks", cb_loans),
+        ("banks' equity", equity),
+        ("banks' bonds", bonds_b),
+        ("deposits held as government paper", extra),
+        ("households' government paper", paper_h),
+        ("firms' equity", firms_worth),
+    ];
+    Ok(Sheet { financial: m, real, closures })
 }
 
 /// A drawn level by name, a percentage made a share.

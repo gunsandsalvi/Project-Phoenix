@@ -174,6 +174,7 @@ impl Core {
             rates: crate::core_rates::Rates::default(),
             touched: std::collections::BTreeSet::new(),
             apportioned: Vec::new(),
+            closures: Vec::new(),
         }
     }
 
@@ -203,6 +204,7 @@ impl Core {
         let date = o.calendar.date(o.today);
         let mut pensions = core.pension_family(o.today);
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
+            core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), *name, *share)));
             let at = |instrument, sector| phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
             let site = sys_cb::site(&ctx, c);
             let issuer = core.begin_party(CENTRAL_BANK, &[MaybeI64::present(i64::from(site.get()))], None);

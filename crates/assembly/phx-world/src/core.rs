@@ -61,8 +61,10 @@ pub struct Core {
     pub rates: crate::core_rates::Rates,
     /// The households whose persons the day's labour changed, booked again for every process from the next day.
     pub(crate) touched: std::collections::BTreeSet<u32>,
-    /// Every amount the opening shared over parties by weight: the opening report's apportionments.
+    /// Every amount the opening shared over parties by weight, and every closure that balanced a country's sheet, a
+    /// share of its GDP: the opening report.
     pub apportioned: Vec<Apportioned>,
+    pub closures: Vec<(u8, &'static str, f64)>,
 }
 
 /// An amount the opening shared over parties by their weights: what it was, in which country, the amount, what the
