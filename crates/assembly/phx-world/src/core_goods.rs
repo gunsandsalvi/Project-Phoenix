@@ -46,6 +46,11 @@ pub struct GoodsDay {
     pub repriced: u64,
     /// The goods whose units at the close are not their units at the open and what the day made less what it used.
     pub breaks: u64,
+    /// What the day's sales took from their named buyers and what they credited their named sellers, and the sales
+    /// that named no buyer or no seller.
+    pub debits: i128,
+    pub credits: i128,
+    pub unnamed: u64,
 }
 
 /// A trade's price reviews over the run: the reviews, the prices moved, and the sum of the moves' sizes, each the
@@ -95,6 +100,8 @@ pub struct CoreGoods {
     pub marks: BTreeMap<(u16, u32), f64>,
     /// Each trade's price reviews over the run.
     pub prices: BTreeMap<u16, PriceTally>,
+    /// Today's sales' debits to named buyers, credits to named sellers, and sales naming neither.
+    pub named: (i128, i128, u64),
 }
 
 /// What the goods day reads of the world besides the core.
@@ -570,6 +577,7 @@ impl Core {
         let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
         self.close_services(ctx, day, &mut moved);
         (record.sales, record.spent) = (sales, spent);
+        (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
         for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
             if units > 0 {
                 let lot = self.lot(product);
@@ -1221,6 +1229,12 @@ impl Core {
                 }
                 for f in out.drain(..) {
                     if f.denomination.is_money() {
+                        if f.payer == sale.buyer && f.payee == sale.seller {
+                            self.goods.named.0 += i128::from(f.amount);
+                            self.goods.named.1 += i128::from(f.amount);
+                        } else {
+                            self.goods.named.2 += 1;
+                        }
                         money.push(f);
                     } else {
                         let _ = self.move_goods(f, Cost::At(sale.paid), day, moved);

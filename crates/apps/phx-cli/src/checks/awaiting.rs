@@ -401,14 +401,6 @@ pub const LC_1_16: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 h, the services' reads"),
 };
 
-pub const LC_1_18: Check = live_check! {
-    id: "LC-1-18",
-    title: "HH.15 (part): every unit of household spending names its seller through a match-set record, and the \
-            sellers' credits per meeting sum to the buyers' debits",
-    from_step: "S1.06",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the meetings' records"),
-};
-
 pub const LC_1_19: Check = live_check! {
     id: "LC-1-19",
     title: "FRT.9 and GEO.13: every shipment has one owner, one carrier and its goods pledged to it; no carrier books \
@@ -464,14 +456,6 @@ pub const LC_1_31: Check = live_check! {
     title: "Auction results (cover, tail, failures) are published",
     from_step: "S1.11",
     check: |_| Outcome::NotYet("awaits S1.24 g, the bills"),
-};
-
-pub const LC_1_32: Check = live_check! {
-    id: "LC-1-32",
-    title: "HH.15: every household's spending reaches named sellers (through match-set records), and every unit of \
-            income came from a named payer",
-    from_step: "S1.12",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the meetings' records"),
 };
 
 pub const LC_1_33: Check = live_check! {

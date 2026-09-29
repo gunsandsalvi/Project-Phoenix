@@ -762,3 +762,35 @@ pub const LC_1_22: Check = live_check! {
     from_step: "S1.08",
     check: labour_reads,
 };
+
+/// Every sale's money is a flow from its named buyer to its named seller: each day the sellers' credits are the
+/// buyers' debits, and no sale names neither.
+fn sales_named(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().goods.days;
+    if days.iter().all(|d| d.sales == 0) {
+        return Outcome::NotYet("no sale was made in the run");
+    }
+    match days.iter().find(|d| d.debits != d.credits || d.unnamed > 0) {
+        Some(d) => Outcome::Fail(format!(
+            "day {}: buyers debited {}, sellers credited {}, {} sales unnamed",
+            d.day, d.debits, d.credits, d.unnamed
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_18: Check = live_check! {
+    id: "LC-1-18",
+    title: "HH.15 (part): every unit of household spending names its seller through a match-set record, and the \
+            sellers' credits per meeting sum to the buyers' debits",
+    from_step: "S1.06",
+    check: sales_named,
+};
+
+pub const LC_1_32: Check = live_check! {
+    id: "LC-1-32",
+    title: "HH.15: every household's spending reaches named sellers (through match-set records), and every unit of \
+            income came from a named payer",
+    from_step: "S1.12",
+    check: sales_named,
+};
