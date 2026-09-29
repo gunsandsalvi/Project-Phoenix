@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a, b and c done; the committed world is the core's; d–g on the core; next: h, the old kernel's crates, the core's day on the pool)
+**Status**: building (a, b and c done; the committed world is the core's; d–g on the core; e's outlooks, stances and pay rounds built, its attention next; then h, the old kernel's crates, the core's day on the pool)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2; ACC.3, ACC.4, ACC.8, ACC.10–ACC.13, ACC.16 and FRM.17 *(moved from S0.19
