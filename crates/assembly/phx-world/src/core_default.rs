@@ -114,9 +114,13 @@ impl Core {
         }
         due.sort_unstable();
         due.dedup();
+        let mut ended = BTreeMap::new();
         for &(key, country) in &due {
-            self.end_firm(ctx, (key, CountryId::new(country)), day, true);
+            if let Some(estate) = self.end_firm(ctx, (key, CountryId::new(country)), day, true) {
+                ended.insert(key, estate);
+            }
         }
+        self.close_ended(&ended);
         phx_rand::float::len_u64(due.len())
     }
 
@@ -127,9 +131,32 @@ impl Core {
         }
     }
 
+    /// What the day's ended firms leave in the labour market and the plant, each firm by its estate, closed in one pass
+    /// over each: their vacancies, with the offers and applications on them, and the fills they paid, and their
+    /// projects passed to their estates.
+    fn close_ended(&mut self, ended: &BTreeMap<PartyKey, PartyKey>) {
+        if ended.is_empty() {
+            return;
+        }
+        for v in self.labour.vacancies.iter_mut().filter(|v| ended.contains_key(&v.employer)) {
+            v.open = 0;
+        }
+        // Their offers and applications go with their vacancies, so no one is hired by a firm that has ended.
+        let vacancies = &self.labour.vacancies;
+        let theirs = |a: &phx_market::hiring::Application| {
+            vacancies
+                .get(usize::try_from(a.vacancy).unwrap_or(usize::MAX))
+                .is_some_and(|v| ended.contains_key(&v.employer))
+        };
+        self.labour.offers.retain(|a| !theirs(a));
+        self.labour.applications.retain(|a| !theirs(a));
+        self.labour.fills.retain(|(employer, _), _| !ended.contains_key(employer));
+        self.pass_projects_of(ended);
+    }
+
     /// A firm ended into an estate: its money, goods and rights to deposits pass to it, each contract it was party to
-    /// closes into a claim on it, its owners own the estate, its employees and working owners search again, and its
-    /// vacancies close.
+    /// closes into a claim on it, its owners own the estate and its employees and working owners search again; the
+    /// estate, whose firm's vacancies and projects the day's ending closes with the others'.
     #[clause("PTY.9", "LAB.12", "L3", "SET.7")]
     pub(crate) fn end_firm(
         &mut self,
@@ -137,23 +164,19 @@ impl Core {
         (key, country): (PartyKey, CountryId),
         day: Day,
         defaulted: bool,
-    ) {
+    ) -> Option<PartyKey> {
         // Services it has not yet bought for what it made are owed by no one once it ends.
         self.goods.services_owed.remove(&key);
         let place = usize::from(key.kind());
         let (Some(product), Some(region)) =
             (self.record_of(place, key.slot(), PRODUCT), self.record_of(place, key.slot(), REGION))
         else {
-            return;
+            return None;
         };
-        let Some((bank, money)) = self
-            .kinds
-            .get(place)
-            .and_then(|k| k.accounts.as_ref())
-            .and_then(|a| Some((a.bank.get(key.slot())?, a.balance.get(key.slot())? + a.pending.get(key.slot())?)))
-        else {
-            return;
-        };
+        let (bank, money) =
+            self.kinds.get(place).and_then(|k| k.accounts.as_ref()).and_then(|a| {
+                Some((a.bank.get(key.slot())?, a.balance.get(key.slot())? + a.pending.get(key.slot())?))
+            })?;
         let estate = self.open_estate((bank, money), (country, day));
         if let Some(a) = self.kinds.get_mut(place).and_then(|k| k.accounts.as_mut()) {
             a.balance.set(key.slot(), 0);
@@ -161,7 +184,6 @@ impl Core {
         }
         self.pass_goods(key, estate);
         self.pass_rights(key, estate);
-        self.pass_projects(key, estate);
         if !defaulted {
             self.leave_classed_book(key);
         }
@@ -173,17 +195,6 @@ impl Core {
                 self.searches_again(ctx, (w.household, w.person), None, &law);
             }
         }
-        for v in self.labour.vacancies.iter_mut().filter(|v| v.employer == key) {
-            v.open = 0;
-        }
-        // Its offers and applications go with its vacancies, so no one is hired by a firm that has ended.
-        let vacancies = &self.labour.vacancies;
-        let theirs = |a: &phx_market::hiring::Application| {
-            vacancies.get(usize::try_from(a.vacancy).unwrap_or(usize::MAX)).is_some_and(|v| v.employer == key)
-        };
-        self.labour.offers.retain(|a| !theirs(a));
-        self.labour.applications.retain(|a| !theirs(a));
-        self.labour.fills.retain(|(employer, _), _| *employer != key);
         self.labour.reviews.remove(&key);
         self.goods.outlooks.awaiting.remove(&key.slot().get());
         self.goods.stocks.end(key);
@@ -198,6 +209,7 @@ impl Core {
             region: u32::try_from(region).unwrap_or(u32::MAX),
             defaulted,
         });
+        Some(estate)
     }
 
     /// A solvent firm's loans taken off its lenders' classed book before they close: its estate repays them, so their

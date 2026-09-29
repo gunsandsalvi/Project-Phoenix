@@ -481,10 +481,12 @@ impl Core {
         costs
     }
 
-    /// A holder's projects passed to its successor, as its goods pass.
-    pub(crate) fn pass_projects(&mut self, from: PartyKey, to: PartyKey) {
-        for p in self.plant.projects.iter_mut().filter(|p| p.holder == from) {
-            p.holder = to;
+    /// Each ended holder's projects passed to its successor, as its goods pass, in one pass over the projects.
+    pub(crate) fn pass_projects_of(&mut self, successors: &BTreeMap<PartyKey, PartyKey>) {
+        for p in &mut self.plant.projects {
+            if let Some(to) = successors.get(&p.holder) {
+                p.holder = *to;
+            }
         }
     }
 

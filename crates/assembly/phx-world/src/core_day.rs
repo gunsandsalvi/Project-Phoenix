@@ -858,7 +858,6 @@ impl Core {
                 self.waiting.insert(estate, why);
             }
             if empty && !goods {
-                self.estate_ended(estate);
                 self.waiting.remove(&estate);
                 self.goods.stocks.end(estate);
                 gone.insert(estate);
@@ -870,6 +869,7 @@ impl Core {
                 ended += 1;
             }
         }
+        self.estates_ended(&gone);
         self.estates.retain(|(e, _, _)| !gone.contains(e));
         ended
     }

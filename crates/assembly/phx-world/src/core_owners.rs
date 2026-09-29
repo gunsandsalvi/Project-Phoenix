@@ -328,12 +328,17 @@ impl Core {
         workers
     }
 
-    /// An ended estate no longer owned: its holders' shares of it let go.
-    pub(crate) fn estate_ended(&mut self, estate: PartyKey) {
-        let Some(holders) = self.owners.of.remove(&estate) else { return };
-        for h in holders {
+    /// The day's ended estates no longer owned: their holders' shares of them let go, each holder's in one pass.
+    pub(crate) fn estates_ended(&mut self, estates: &std::collections::BTreeSet<PartyKey>) {
+        let mut by_holder: BTreeMap<PartyKey, std::collections::BTreeSet<PartyKey>> = BTreeMap::new();
+        for estate in estates {
+            for h in self.owners.of.remove(estate).unwrap_or_default() {
+                by_holder.entry(h).or_default().insert(*estate);
+            }
+        }
+        for (h, gone) in by_holder {
             if let Some(owned) = self.owners.holds.get_mut(&h) {
-                owned.retain(|p| *p != estate);
+                owned.retain(|p| !gone.contains(p));
                 if owned.is_empty() {
                     self.owners.holds.remove(&h);
                 }
