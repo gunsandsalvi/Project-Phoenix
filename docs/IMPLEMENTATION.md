@@ -731,7 +731,9 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 **Status**: building (a, b and c done; the committed world is the core's; d–g on the core; next: h, the old kernel's crates, the core's day on the pool)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
-(FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2.
+(FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2; ACC.3, ACC.4, ACC.8, ACC.10–ACC.13, ACC.16 and FRM.17 *(moved from S0.19
+and S1.03: the accounts' read — accruals, equity accounts, valuations, statements and the revenue family — rebuilt on
+the core's contracts in h, the old kernel's books it read being deleted)*.
 
 **Architecture**: §7.10–§7.15, §10.
 
@@ -10752,8 +10754,9 @@ and are not mapped.
 | REG | S0.14 | 1, 2, 3, 4, 5, 8, 9, 10, 13, 14, 15, 16, 17, 18 |
 | REG | S3.05 | 6, 11, 12 |
 | REG | S3.07 | 7 |
-| ACC | S0.19 | 1, 2, 3, 4, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 |
+| ACC | S0.19 | 1, 2, 9, 14, 15, 17 |
 | ACC | S1.05 | 6 |
+| ACC | S1.24 | 3, 4, 8, 10, 11, 12, 13, 16 |
 | ACC | S2.01 | 7 |
 | ACC | S3.05 | 5 |
 | MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 21 |
@@ -10787,10 +10790,10 @@ and are not mapped.
 | TEC | S1.15 | 9 |
 | TEC | S2.13 | 16 |
 | TEC | S6.01 | 5, 6, 7, 8, 10, 11, 13, 14, 15 |
-| FRM | S1.03 | 17, 22 |
+| FRM | S1.03 | 22 |
 | FRM | S1.05 | 13 |
 | FRM | S1.08 | 7, 14 |
-| FRM | S1.24 | 20, 21 |
+| FRM | S1.24 | 17, 20, 21 |
 | FRM | S1.15 | 1, 2, 4, 5, 6, 8, 11 |
 | FRM | S2.02 | 18 |
 | FRM | S2.03 | 15, 19 |

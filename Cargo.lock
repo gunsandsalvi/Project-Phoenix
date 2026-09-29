@@ -599,7 +599,6 @@ dependencies = [
  "phx-num",
  "phx-rand",
  "phx-store",
- "trybuild",
 ]
 
 [[package]]
