@@ -1120,8 +1120,11 @@ impl Core {
             meet(&mut meeting, None, (&plain, &places, &buyers), (lot, ctx.weights), tastes, &lots);
             let made: Vec<Sale> = meeting.sales().copied().collect();
             self.goods.meeting = meeting;
+            let by_seller: BTreeMap<PartyKey, usize> =
+                stalls.iter().enumerate().map(|(i, x)| (x.0.seller, i)).collect();
             for sale in made {
-                let Some((_, unit, ccy, _)) = stalls.iter().find(|x| x.0.seller == sale.seller).copied() else {
+                let Some((_, unit, ccy, region)) = by_seller.get(&sale.seller).and_then(|i| stalls.get(*i)).copied()
+                else {
                     continue;
                 };
                 let mut out = Vec::new();
@@ -1156,10 +1159,8 @@ impl Core {
                 if let Some(sold) = self.record_word(firm, sale.seller.slot(), SOLD_UNITS) {
                     self.set_record_word(firm, sale.seller.slot(), SOLD_UNITS, sold + sale.units);
                 }
-                if let Some((_, _, _, region)) = stalls.iter().find(|x| x.0.seller == sale.seller) {
-                    let t = self.goods.traded.entry((product, *region)).or_insert((0, 0));
-                    (t.0, t.1) = (t.0 + i128::from(sale.paid), t.1 + i128::from(sale.units));
-                }
+                let t = self.goods.traded.entry((product, region)).or_insert((0, 0));
+                (t.0, t.1) = (t.0 + i128::from(sale.paid), t.1 + i128::from(sale.units));
                 sales += 1;
                 spent += sale.paid;
                 self.record_sale(ccy, (sale.buyer.kind(), purpose), (product, sale.paid, sale.units));
