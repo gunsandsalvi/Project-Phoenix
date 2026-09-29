@@ -1985,9 +1985,9 @@ house itself, insure itself, and vote. Every decision is its own, from its own s
 - **HH.2 STATE** — A household's **income**: wages, business income, interest, dividends and coupons,
   rents received, transfers and benefits, pensions, annuities, inheritances, each from a named payer. Income
   it has not received and is not owed is not income.
-- **HH.3 STATE** — A household's **preferences** (drawn at formation from declared distributions): patience,
-  risk aversion, tastes across categories of consumption, the value it places on leisure, on dwelling size
-  and on location, and its memory.
+- **HH.3 STATE** — A household's **preferences** (drawn at formation from declared distributions): tastes across
+  categories of consumption, the value it places on leisure, on dwelling size and on location, and its memory. Its
+  patience and risk aversion are its adults' (MND.1), weighed together as its decisions are (MND.8).
 
 **Decisions**
 
