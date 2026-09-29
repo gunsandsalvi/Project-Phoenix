@@ -831,6 +831,9 @@ world switches to the core.
     the hits drawn (CHN.7; LC-0-39, LC-0-54 pass at 100 days). Measuring found retirement's chance declared certain
     on every day past the pension's age while its booking decides only at birthdays; retirement is now certain on each
     birthday at or past the age, a person who stays on deciding again at the next (LAB.6).
+  - d: goods held spoil (GDS.8): every `GDS.spoilage_days` from the day the core's goods opened, each holding of a
+    product that spoils loses what its yearly rate (`GDS.spoilage_rate`) takes over the days its units were held
+    within the period, a flow to nature the goods' family reads.
   - d: services are never held (SRV.1, SRV.8): a provider offers the day's capacity where a unit pays, makes what
     sells as it is sold, using its stored inputs for the units sold, and the capacity no sale took perishes at the
     day's end. Until then services were made to a stock that grew without end and priced against a stock target

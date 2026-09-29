@@ -188,8 +188,10 @@ pub mod reason {
     pub const LENT: u8 = 12;
     /// A service's capacity no sale took, lost at the day's end.
     pub const PERISHED: u8 = 13;
+    /// Goods lost in stock at their product's rate.
+    pub const SPOILED: u8 = 14;
     /// The reasons a day's record counts failed flows by: every reason above.
-    pub const REASONS: usize = 14;
+    pub const REASONS: usize = 15;
 }
 /// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
 pub mod draws {

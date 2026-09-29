@@ -27,7 +27,7 @@ use crate::consts::firm::{
     EXPECTED, MARKUP, MEMORY, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
     SOLD as SOLD_UNITS,
 };
-use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, USED};
+use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
 use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::opening::economy::table;
@@ -79,6 +79,9 @@ pub struct CoreGoods {
     pub lead: Vec<f64>,
     pub cover: f64,
     pub adjustment: f64,
+    /// Each product's yearly rate of loss in stock, and the days between two realisations of it.
+    pub spoil_rates: Vec<f64>,
+    pub spoil_days: u32,
     /// Each product's lot, the units its price is posted for; and each country's stored inputs a unit of each product.
     pub lots: Vec<f64>,
     pub recipes: Vec<Vec<Vec<(u16, f64)>>>,
@@ -274,6 +277,8 @@ impl Core {
         let lead = ctx.register.table1("TEC.lead_time")?;
         goods.lead = (0_i64..).take(products.len()).map(|p| lead.at(p).map_or(0.0, from_i64)).collect();
         goods.lots = (0_u16..).take(products.len()).map(|p| sys_frm::FilingPrims::lot(ctx.register, p)).collect();
+        goods.spoil_rates = sys_gds::spoilage_rates(ctx.register)?;
+        goods.spoil_days = u32::try_from(ctx.register.count(sys_gds::SPOILAGE_DAYS.id)?).map_err(|e| e.to_string())?;
         let mut prices: Vec<Vec<f64>> = Vec::new();
         for c in countries {
             goods.inputs.push(table(ctx.register, "TEC.inputs", c.id)?.0);
@@ -557,6 +562,7 @@ impl Core {
         let open = self.goods.stocks.totals();
         self.goods.cheapest = self.cheapest(ctx);
         let mut moved: Vec<Flow> = Vec::new();
+        self.spoil(day, &mut moved);
         record.made = self.make(ctx, day, &mut moved);
         record.inputs_wanted = self.buy_inputs(ctx, day, &mut moved);
         let (spenders, wants) = self.decide_spending(ctx, day);
@@ -754,6 +760,41 @@ impl Core {
             made += today;
         }
         made
+    }
+
+    /// Every holder's goods lost in stock on each spoilage period's last day: of each holding of a product that spoils,
+    /// what its yearly rate takes over the days its units were held within the period.
+    #[clause("GDS.8", "GDS.10")]
+    fn spoil(&mut self, day: Day, moved: &mut Vec<Flow>) {
+        let period = self.goods.spoil_days;
+        if period == 0 || !(day.get() - self.goods.began).is_multiple_of(period) {
+            return;
+        }
+        let mut holders: Vec<PartyKey> = Vec::new();
+        for (k, store) in self.kinds.iter().enumerate() {
+            let Ok(kind) = u8::try_from(k) else { continue };
+            holders.extend(store.parties.live_slots().map(|s| PartyKey::new(kind, s)));
+        }
+        let units = &self.goods.units;
+        let rates = &self.goods.spoil_rates;
+        let rate = |unit: u16| match units.held(unit) {
+            Some(Held::Good(g)) => rates.get(usize::from(g.product)).copied().filter(|r| *r > 0.0),
+            _ => None,
+        };
+        let mut lost = Vec::new();
+        for holder in holders {
+            phx_core::goods::spoil(
+                &self.goods.stocks,
+                holder,
+                rate,
+                (i64::from(period), day, phx_core::consts::DAYS_365),
+                SPOILED,
+                &mut lost,
+            );
+        }
+        for f in lost {
+            let _ = self.move_goods(f, Cost::Carried, day, moved);
+        }
     }
 
     /// Each provider's day closed: the inputs its sales used, and the capacity no sale took lost.
