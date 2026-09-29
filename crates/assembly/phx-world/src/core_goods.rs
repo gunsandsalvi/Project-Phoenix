@@ -64,6 +64,34 @@ pub struct GoodsDay {
     pub unnamed: u64,
 }
 
+/// The buyers grouped by the product they want, each product's in the order they came, by counting: where each
+/// product's run starts, one past the last, and the runs.
+fn by_product_of(wants: &[(u16, Buyer)]) -> (Vec<usize>, Vec<Buyer>) {
+    let products = wants.iter().map(|(p, _)| usize::from(*p) + 1).fold(0, |a, p| if p > a { p } else { a });
+    let mut starts = vec![0_usize; products + 1];
+    for (p, _) in wants {
+        if let Some(n) = starts.get_mut(usize::from(*p) + 1) {
+            *n += 1;
+        }
+    }
+    let mut sum = 0;
+    for n in &mut starts {
+        sum += *n;
+        *n = sum;
+    }
+    let mut next = starts.clone();
+    let mut grouped: Vec<Option<Buyer>> = vec![None; wants.len()];
+    for (p, b) in wants {
+        if let Some(k) = next.get_mut(usize::from(*p)) {
+            if let Some(g) = grouped.get_mut(*k) {
+                *g = Some(*b);
+            }
+            *k += 1;
+        }
+    }
+    (starts, grouped.into_iter().flatten().collect())
+}
+
 impl GoodsDay {
     /// The goods' day in counts, for the bench's trace.
     pub(crate) fn note(&self) {
@@ -1692,16 +1720,12 @@ impl Core {
         let rates = self.state.consumption.clone();
         let (mut sales, mut spent) = (0, 0);
         let mut money = Vec::new();
-        // Each product's buyers in the order they came, gathered in one pass.
-        let mut by_want: BTreeMap<u16, Vec<Buyer>> = phx_exec::trace::span("goods.buyers", || {
-            let mut m: BTreeMap<u16, Vec<Buyer>> = BTreeMap::new();
-            for (p, b) in wants {
-                m.entry(*p).or_default().push(*b);
-            }
-            m
-        });
+        let (starts, grouped) = phx_exec::trace::span("goods.buyers", || by_product_of(wants));
         for (product, stalls) in by_product {
-            let Some(buyers) = by_want.remove(&product) else { continue };
+            let (Some(a), Some(b)) = (starts.get(usize::from(product)), starts.get(usize::from(product) + 1)) else {
+                continue;
+            };
+            let Some(buyers) = grouped.get(*a..*b).filter(|g| !g.is_empty()) else { continue };
             phx_exec::trace::note("goods.product", &[("product", i64::from(product))]);
             // Each region's stalls, found in one pass over them.
             let mut places: Vec<Place> = (0..ctx.regions.len()).map(|_| Place { near: Vec::new() }).collect();
@@ -1732,7 +1756,7 @@ impl Core {
             };
             let mut meeting = std::mem::take(&mut self.goods.meeting);
             phx_exec::trace::span("goods.meet", || {
-                meet(&mut meeting, ctx.pool, (&plain, &places, &buyers), (lot, ctx.weights), tastes, &lots);
+                meet(&mut meeting, ctx.pool, (&plain, &places, buyers), (lot, ctx.weights), tastes, &lots);
             });
             let made: Vec<Sale> = meeting.sales().copied().collect();
             self.goods.meeting = meeting;
