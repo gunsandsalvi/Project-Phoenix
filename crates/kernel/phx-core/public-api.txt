@@ -645,6 +645,7 @@ pub fn phx_core::goods::Shipments::new(phx_id::day::Day, u32) -> phx_core::goods
 pub fn phx_core::goods::Shipments::of(&self, phx_id::ids::PartyKey) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::Slot, &phx_core::goods::Shipment)> + '_
 pub fn phx_core::goods::Shipments::on_the_way(&self) -> usize
 pub fn phx_core::goods::Shipments::overdue(&self, phx_id::day::Day) -> usize
+pub fn phx_core::goods::Shipments::pass(&mut self, phx_id::ids::PartyKey, phx_id::ids::PartyKey)
 pub fn phx_core::goods::Shipments::shrink(&mut self, phx_id::ids::PartyKey, u16, i64)
 impl phx_store::save::Saved for phx_core::goods::Shipments where alloc::vec::Vec<phx_core::goods::Shipment>: phx_store::save::Saved, alloc::vec::Vec<bool>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved, phx_core::wheel::DueWheel: phx_store::save::Saved
 pub fn phx_core::goods::Shipments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
@@ -663,6 +664,7 @@ pub fn phx_core::goods::Stocks::holding(&self, phx_id::ids::PartyKey, u16) -> co
 pub fn phx_core::goods::Stocks::holdings(&self, phx_id::ids::PartyKey) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::goods::Holding> + '_
 pub fn phx_core::goods::Stocks::lose(&mut self, phx_id::ids::PartyKey, u16, i64) -> (i64, i64)
 pub fn phx_core::goods::Stocks::receive(&mut self, phx_id::ids::PartyKey, u16, (i64, i64), phx_id::day::Day)
+pub fn phx_core::goods::Stocks::succeed(&mut self, phx_id::ids::PartyKey, phx_id::ids::PartyKey)
 pub fn phx_core::goods::Stocks::totals(&self) -> alloc::vec::Vec<i128>
 impl phx_store::save::Saved for phx_core::goods::Stocks where alloc::vec::Vec<phx_core::goods::Holding>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved
 pub fn phx_core::goods::Stocks::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>

@@ -286,11 +286,21 @@ pub fn instantiate(
             write(&dir.join(file_name), &text(&f)?)?;
         }
         // A level's opening tables are copied only for the systems the world keeps, since the register refuses an
-        // entry no system declares; a system's tables arrive with it.
-        for code in systems {
-            let table = templates.join("gen").join(format!("{code}.toml"));
-            if table.exists() {
-                write(&dir.join("gen").join(format!("{code}.toml")), &text(&table)?)?;
+        // entry no system declares; a system's tables, its code's file and its code's parts, arrive with it.
+        let gen_dir = templates.join("gen");
+        let mut tables: Vec<PathBuf> = std::fs::read_dir(&gen_dir)
+            .map_err(|e| format!("{}: {e}", gen_dir.display()))?
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.extension().is_some_and(|x| x == "toml"))
+            .collect();
+        tables.sort();
+        for table in tables {
+            let Some(stem) = table.file_stem().and_then(|s| s.to_str()) else { continue };
+            let owner = stem.split('_').next().unwrap_or(stem);
+            if systems.contains(&owner) {
+                let Some(file_name) = table.file_name() else { continue };
+                write(&dir.join("gen").join(file_name), &text(&table)?)?;
             }
         }
         // The level's flows and stocks, which every world's assembly checks.

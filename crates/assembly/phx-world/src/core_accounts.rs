@@ -240,7 +240,7 @@ impl Core {
         let mut found = Vec::new();
         let mut ended = Vec::new();
         for party in parties {
-            let live = self.kinds.get(usize::from(party.kind())).is_some_and(|k| k.parties.id(party.slot()).is_some());
+            let live = self.kinds.get(usize::from(party.kind())).is_some_and(|k| k.parties.at(party.slot()).is_some());
             if !live {
                 ended.push(party);
                 continue;

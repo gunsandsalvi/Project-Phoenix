@@ -406,7 +406,7 @@ impl Core {
         }
         // A firm its owner wound down today reviews and buys nothing more.
         let firms = self.kinds.get(firm);
-        self.labour.due_today.retain(|s| firms.is_some_and(|k| k.parties.id(Slot::new(*s)).is_some()));
+        self.labour.due_today.retain(|s| firms.is_some_and(|k| k.parties.at(Slot::new(*s)).is_some()));
         totals
     }
 
@@ -841,7 +841,7 @@ impl Core {
                 ps.of(household.slot()).nth(at)
             });
             let Some(h) =
-                held.filter(|_| self.kinds.get(place).is_some_and(|k| k.parties.id(household.slot()).is_some()))
+                held.filter(|_| self.kinds.get(place).is_some_and(|k| k.parties.at(household.slot()).is_some()))
             else {
                 gone.push((household, person));
                 continue;

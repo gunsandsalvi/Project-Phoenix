@@ -169,3 +169,28 @@ fn a_party_ends_holding_nothing() {
     s.receive(firm(2), 3, (1, 1), Day::new(2));
     assert_eq!(s.all().count(), 1, "the ended party's row is another's");
 }
+
+#[test]
+fn a_successor_takes_every_holding_with_what_binds_it() {
+    let mut s = Stocks::default();
+    let (ended, estate, carrier) = (firm(1), firm(2), firm(3));
+    s.receive(ended, 0, (10, 400), Day::new(4));
+    s.receive(ended, 1, (3, 90), Day::new(6));
+    assert!(s.bind(ended, 0, 2, (Bound::Free, Bound::Committed)).is_ok());
+    let mut ships = Shipments::new(Day::new(0), 16);
+    let trip = Shipment { owner: ended, carrier, from: 0, to: 1, arrives: 9, units: 5 };
+    assert!(ships.depart(&mut s, trip, (Bound::Free, Day::new(7))).is_ok());
+    s.succeed(ended, estate);
+    ships.pass(ended, estate);
+    let h = *s.holding(estate, 0).unwrap();
+    assert_eq!((h.units, h.cost, h.committed, h.pledged, h.day), (10, 400, 2, 5, 4), "whole, bound and aged as held");
+    assert_eq!(s.holding(estate, 1).map(|h| (h.units, h.cost)), Some((3, 90)));
+    assert!(s.holdings(ended).all(|h| h.units == 0 && h.committed == 0 && h.pledged == 0), "the ended holds nothing");
+    s.end(ended);
+    assert_eq!((ships.of(ended).count(), ships.of(estate).count()), (0, 1));
+    let mut out = Vec::new();
+    for d in 0..=9 {
+        ships.arrive(Day::new(d), &mut s, Carriage { shipped: 1, arrived: 2 }, &mut out);
+    }
+    assert_eq!(s.holding(estate, 1).map(|h| h.units), Some(8), "the goods on their way arrive at the successor");
+}

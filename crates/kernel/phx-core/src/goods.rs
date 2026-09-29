@@ -308,6 +308,28 @@ impl Stocks {
         Ok(())
     }
 
+    /// Every holding of a party passed whole to its successor: its units at their cost and their day, with what binds
+    /// them — covers of sales not yet delivered and pledges to carriers — still bound, so what is in flight settles
+    /// with the successor. The party is left holding nothing.
+    #[clause("PTY.9", "PTY.10", "GEO.15", "CAP.12")]
+    pub fn succeed(&mut self, from: PartyKey, to: PartyKey) {
+        let rows: Vec<usize> = self.rows_of(from).collect();
+        for r in rows {
+            let Some(h) = self.rows.get_mut(r) else { continue };
+            let taken = *h;
+            (h.units, h.cost, h.committed, h.pledged) = (0, 0, 0, 0);
+            if taken.units == 0 && taken.committed == 0 && taken.pledged == 0 {
+                continue;
+            }
+            self.receive(to, taken.unit, (taken.units, taken.cost), Day::new(taken.day));
+            let Some(n) = self.row_mut(to, taken.unit) else {
+                violation!(clause = "PTY.9", "a succession received nowhere", unit = taken.unit);
+            };
+            n.committed += taken.committed;
+            n.pledged += taken.pledged;
+        }
+    }
+
     /// A loss to nature: spoiled, struck or worn units go whatever binds them, and their cost with them. Where the
     /// units left fall below what is bound, the pledges are cut by the excess, as goods on their way are what is lost
     /// of them; returns the cost lost and the units the holder's pledges were cut by. A cover left beyond the units
@@ -604,6 +626,23 @@ impl Shipments {
             *l = false;
         }
         self.closed_today.push(at);
+    }
+
+    /// An owner's shipments on their way passed to its successor, who receives them when they arrive.
+    #[clause("PTY.9", "FRT.6")]
+    pub fn pass(&mut self, from: PartyKey, to: PartyKey) {
+        let mine: Vec<u32> = self.of(from).map(|(slot, _)| slot.get()).collect();
+        for at in mine {
+            let i = usize::try_from(at).unwrap_or(usize::MAX);
+            let after = self.next.get(i).copied().unwrap_or(NONE);
+            *self.head_mut(from) = after;
+            let head = *self.head_mut(to);
+            if let (Some(row), Some(n)) = (self.rows.get_mut(i), self.next.get_mut(i)) {
+                row.owner = to;
+                *n = head;
+            }
+            *self.head_mut(to) = at;
+        }
     }
 
     /// Cuts an owner's shipments of a good by the units its pledges lost, latest first, so a lien pledges units that

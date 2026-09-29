@@ -7,8 +7,7 @@
 
 use std::collections::BTreeMap;
 
-use phx_core::flows::{Denom, Flow};
-use phx_core::goods::{Bound, Cost};
+use phx_core::flows::Flow;
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 
@@ -211,7 +210,7 @@ impl Core {
             a.balance.set(key.slot(), 0);
             a.pending.set(key.slot(), 0);
         }
-        self.pass_goods(key, estate, day);
+        self.pass_goods(key, estate);
         self.pass_rights(key, estate);
         self.pass_projects(key, estate);
         let claims = self.close_contracts(ctx, (key, country.get()), day);
@@ -242,23 +241,13 @@ impl Core {
         });
     }
 
-    /// Every good a firm holds passed to its estate at its cost, where it lies: title moves, never the goods.
+    /// Every good a firm holds passed to its estate at its cost, where it lies, with what binds it — a cover of a sale not
+    /// yet delivered, a pledge to a carrier — and its goods on their way: title moves, never the goods.
     #[clause("GEO.15", "CAP.12")]
-    fn pass_goods(&mut self, from: PartyKey, to: PartyKey, day: Day) {
-        let held: Vec<(u16, i64)> = self.goods.stocks.holdings(from).map(|h| (h.unit, h.units)).collect();
-        for (unit, units) in held.into_iter().filter(|(_, u)| *u > 0) {
-            let flow = Flow {
-                payer: from,
-                payee: to,
-                amount: units,
-                source: from.slot().get(),
-                denomination: Denom::units(unit),
-                reason: crate::consts::reason::ESTATE,
-                order: 0,
-            };
-            if self.goods.stocks.apply(&flow, Bound::Free, Cost::Carried, day).is_err() {
-                phx_num::violation!(clause = "PTY.9", "an estate's succession to goods not held free", unit = unit);
-            }
+    fn pass_goods(&mut self, from: PartyKey, to: PartyKey) {
+        self.goods.stocks.succeed(from, to);
+        if let Some(s) = self.freight.shipments.as_mut() {
+            s.pass(from, to);
         }
     }
 

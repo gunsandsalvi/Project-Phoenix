@@ -482,13 +482,16 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
         (born, gone, ended) = (born + p.born, gone + p.gone, ended + p.ended);
         (retired, claimed) = (retired + p.retired, claimed + p.claimed);
     }
+    let endings = core.insolvency.endings.iter().filter(|e| in_turn(phx_id::Day::new(e.day)));
+    let (wound, defaulted) = endings.fold((0, 0), |(w, d), e| if e.defaulted { (w, d + 1) } else { (w + 1, d) });
     let date = |d| crate::measure::calendar::date_text(w.date(d));
     let phase = if turn.last < settle_end { "settling" } else { "running" };
     let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
     format!(
         "{phase} {} to {}: {} days in {wall}; flows {flows}, settled {settled}, failed {failed} ({arrears} into \
          arrears), committed {committed}, money breaks {breaks}; born {born}, gone {gone}, households ended {ended}, \
-         retired {retired} ({claimed} claiming a pension); persons {}",
+         retired {retired} ({claimed} claiming a pension); firms ended {wound} wound down, {defaulted} defaulted; \
+         persons {}",
         date(turn.first),
         date(turn.last),
         turn.days,

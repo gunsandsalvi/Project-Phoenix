@@ -17,6 +17,8 @@ cd "$root"
 cargo build --release -q -p phx-cli
 out="target/smoke"
 mkdir -p "$out"
+# A run that fails writes no report, so the last one is removed first and never read as this run's.
+rm -f "$out/report.json"
 status=0
 target/release/phx run \
     --seed 1 \
@@ -31,6 +33,11 @@ target/release/phx run \
     --report "$out/report.json" \
     "${extra[@]}" > "$out/run.log" || status=$?
 grep -E "^(budget:|[0-9]+ turns)" "$out/run.log" || true
+if [[ ! -f "$out/report.json" ]]; then
+    echo "smoke: the run wrote no report (exit $status):"
+    tail -20 "$out/run.log"
+    exit 1
+fi
 python3 - "$out/report.json" <<'PY'
 import json, sys
 r = json.load(open(sys.argv[1]))
