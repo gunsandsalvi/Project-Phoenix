@@ -1345,8 +1345,8 @@ decisions)*: every Stage 1 system's opening contribution.
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(complete them, moved from S1.12: LC-1-01, LC-1-03, LC-1-43 and LC-1-44
   read the outlooks once firms sell to the households that ask)*.
 - STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state; the core's
-  firms are drawn per product and region, and `FRM.industry_by_size` and `FRM.product_share`, declared and sourced, are
-  read here or retired: the industry a firm of a size is drawn in, and the mix an industry of several products deals)*;
+  firms are drawn per product and region; `FRM.industry_by_size` and `FRM.product_share` are retired at S1.24 j3, the
+  firms by activity coming from firms per person employed by activity at j4)*;
   SRV.2
   *(moved from S1.06: distributors holding goods bought at wholesale and selling them at retail, with GDS.6's
   merchants on the core)*.

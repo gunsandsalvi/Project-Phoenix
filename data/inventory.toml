@@ -480,22 +480,6 @@ source = "OECD ICIO 2019; ILOSTAT employment and hours by activity and occupatio
 status = "sourced: the emerging and developing groups' plant the developed ratios scaled by their Penn World Table stocks, each mining industry's output shared between its two resources by their users, until S1.24 sets the divisions apart from open/mining_divisions, lead times assumed"
 
 [[row]]
-id = "FRM.industry_by_size"
-what = "each group's firms by industry, for each size class: the industry a firm of a size is drawn in"
-owner = "FRM"
-first_read = "S1.03"
-source = "ILOSTAT employment by status in employment and ISIC section (employers and own-account workers); OECD Structural and Demographic Business Statistics, enterprises by activity and size class"
-status = "sourced: the size tilt of the emerging and developing groups is the OECD's reporting economies', agriculture's assumed flat over the size classes until S1.24 draws farms from households/eurostat_farms_by_size and us_farms_hired_workers"
-
-[[row]]
-id = "FRM.product_share"
-what = "each group's products' parts of their industries' output: the mix an industry of several products deals its firms"
-owner = "FRM"
-first_read = "S1.15"
-source = "OECD ICIO 2019"
-status = "sourced: each mining industry's output shared between its two resources by their users, until S1.24 sets the divisions apart from open/mining_divisions"
-
-[[row]]
 id = "GDS.price_level"
 what = "each group's products' price levels over GDP's: a product's opening price over its world price"
 owner = "GDS"

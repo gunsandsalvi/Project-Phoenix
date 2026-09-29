@@ -57,40 +57,12 @@ impl FilingPrims {
 
 /// The region a small firm is sited in.
 pub const REGION: AttrDecl = AttrDecl { name: "FRM.region", values: if_pop::consts::REGIONS, clause: "REP.41" };
-/// A small firm's persons employed.
-pub const SIZE: AttrDecl = AttrDecl { name: "FRM.size", values: consts::MOST_SMALL_EMPLOYED, clause: "FRM.23" };
 /// The bank a small firm banks with, which the banks declare on the kind; the opening draws it with the firm.
 pub const BANK_ATTR: &str = "BNK.bank";
 
 declare_prim! {
     /// Enterprises per person employed in the business economy, which sets the scale of the firm-size law.
     pub FIRMS_PER_EMPLOYED = "FRM.firms_per_employed" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: PerCountry }
-}
-
-declare_prim! {
-    /// The share of each size class's firms (rows, by the class's smallest size in persons) in each industry
-    /// (columns, in the products' order).
-    pub INDUSTRY_BY_SIZE = "FRM.industry_by_size" {
-        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
-    }
-}
-
-declare_prim! {
-    /// Each product's part of its industry's output, by which a firm of an industry of several products is drawn to
-    /// make one.
-    pub PRODUCT_SHARE = "FRM.product_share" {
-        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
-    }
-}
-
-declare_prim! {
-    /// The exponent of the firm-size law: the share of firms larger than a size falls as the size to its power.
-    pub SIZE_EXPONENT = "FRM.size_exponent" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: Shared }
-}
-
-declare_prim! {
-    /// The share of the banks' deposits that non-financial firms hold.
-    pub DEPOSIT_SHARE = "FRM.deposit_share" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: Shared }
 }
 
 /// What the firms' handlers read of the register, compiled at assembly.
@@ -130,10 +102,7 @@ impl System for Frm {
     fn declare(d: &mut Declarations) {
         d.kind(FIRM);
         d.stream(OpeningStream::DECL);
-        for p in [&FIRMS_PER_EMPLOYED, &SIZE_EXPONENT, &DEPOSIT_SHARE] {
-            let _: FixedPrim = d.prim(p);
-        }
-        let _: TablePrim = d.prim(&INDUSTRY_BY_SIZE);
+        let _: FixedPrim = d.prim(&FIRMS_PER_EMPLOYED);
         declare_decisions(d);
         d.decision(&points::DAY_ZERO_PRICE);
         d.decision(&points::PRODUCE);
@@ -144,7 +113,6 @@ impl System for Frm {
         d.decision(&points::STANCE);
         d.decision(&points::CLOSE);
         let _: phx_core::Prim<phx_core::register::values::Distribution> = d.prim(&REQUIRED_RETURN);
-        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&PRODUCT_SHARE);
     }
 }
 

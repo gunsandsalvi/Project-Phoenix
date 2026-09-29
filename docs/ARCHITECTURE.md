@@ -291,11 +291,9 @@ sources report, a group reporting too few taking the developed group's, marked a
   net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
   livestock, a kilogram of deposit per kilogram extracted; a growing season's lead time for crops and livestock, a day for
   other goods, none for services; every unit started finished; a batch of one.
-- **FRM** (`economy.toml`, `FRM.industry_by_size`): each size class's firms (rows the
-  OECD's classes by their smallest persons employed) over the industries — the group's business owners (ILOSTAT's
-  employers and own-account workers) by ISIC section, split among a section's industries by the OECD's enterprise
-  counts, tilted toward a class by the industry's share of the class's enterprises over its share of all; agriculture,
-  which the OECD does not count, untilted. Finance, real estate and public administration make no product of the ways.
+- **FRM** (`economy.toml`, `FRM.firms_per_employed`): enterprises per person employed in the business economy (OECD
+  SDBS), the firms' density over the employed. Finance, real estate and public administration make no product of the
+  ways.
 - **CAP** (`data/shared/CAP_kinds.toml`, `economy.toml`): each kind's geometric rate (the BEA's
   current-cost depreciation over its net stock), mean service life (the BEA's declining-balance rate over the
   geometric), efficiency shape (the BLS's and ABS's hyperbolic β), lead time (the Census's construction months for
@@ -2760,48 +2758,20 @@ Both are lines of many holders on both sides, so they are cleared (§6.5). Socia
 has reached its sex's pension age the state pension at its sex's coverage: a person's row on its sex's state pension
 line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is named. A person
 who retires in the run claims it as it retires (§7.16). The defined-benefit schemes are S4.04's, with their sources. The firms are counted by
-their density over the employed (`FRM.firms_per_employed`) and sized by a Pareto law of the sourced exponent
-(`FRM.size_exponent`) whose scale is solved, by halving, so that the firms' whole sizes — each rounded up, as a firm
-employs whole persons — sum to the employed in expectation (`sys-frm`'s `law`). The largest, down to the individuals'
-rank (REP.2), are drawn first as the top order statistics of the law of scale one and scaled. The small firms are
-drawn with the parties, before the households: each country's firms below the rank, the law's scale solved again so
-they employ what the large firms leave, sized up to the smallest the rank admits, apportioned over the regions by their
-land and over the banks by the banks' drawn sizes, and placed as agents of the small-firm kind, one a firm, with
-region, size and bank as attributes (§7.1). They
-hold the firms' deposits and debt the large firms do not, by their employees, on each bank's lines for them — a
-current account, and a loan line for each whole year a firm's loan may run (`BNK.loan_years_min` to `_max`), each
-agent's term drawn alike and its balance repaid monthly over the dates that remain (`Leg::Amortising`) — and are
-employers on the employment lines by their headcount beside the large firms. The large firms are rows of the kernel's
-firm kind table, individuals (REP.2).
+their density over the employed (`FRM.firms_per_employed`), dealt over products and regions by the hours their
+output takes (`core_firms`), each firm's size the demand its day-zero price wins (GEN.2), its deposits and debt the
+sheet's by its turnover (§7.17).
 
-Labour's draw (`sys-lab`'s `jobs`) employs each adult at the country's employment rate times its sex's and ten-year age band's ratio to it (`LAB.employment_by_age`, ILOSTAT's employment-to-population ratios, derived by `tools/data/derive_pop.py`) and as an employee at its sex's share; a job's occupation is drawn by sex among those its education's skill reaches, its hours part-time at its sex's share, its notice and severance the law's, its region its household's and its start band from the tenure shares; its wage is its hours times the labour share's mean wage over an employee's mean hours (over the sexes' shares of employees and of part-time work), times the household's income multiple, on the nearest point; a person's recorded point is what full time would pay it. Once the country is drawn, each region and occupation's jobs are apportioned over the region's firms by headcount weighted by the occupation's share of the hours of the way of the product each makes (`TEC.labour`, whose columns are products), and dealt to the lines in an order drawn by lot. Of the adults not employed, the unemployed search at the rate that makes their share of the labour force the country's, and one past its pension's age is retired.
+Labour's draw (`sys-lab`'s `jobs`) employs each adult at the country's employment rate times its sex's and ten-year age band's ratio to it (`LAB.employment_by_age`, ILOSTAT's employment-to-population ratios, derived by `tools/data/derive_pop.py`) and as an employee at its sex's share; a job's occupation is drawn by sex among those its education's skill reaches, its hours part-time at its sex's share, its notice and severance the law's, its region its household's and its start band from the tenure shares. No wage is drawn (`core_jobs`): the self-employed are dealt to the region's firms first, each firm taking its first owner in an order drawn by lot; then each region and occupation's jobs, public administration's share to the agency and the rest over the firms by the hours their output takes of the occupation net of their owners' (`TEC.labour`), in an order drawn by lot. A job's wage an hour is its activity's compensation in the accounts over the hours the activity's jobs work, each hour weighed by its occupation's pay (`GEN.occupation_pay`), a month's on the nearest wage point; a working owner's hours earn the self-employed's labour income — the labour share (ILO SDG 10.4.1) less the compensation — shared as they would be paid employed in their activity, held as its last point; searchers take their occupation's wage over every activity. Households' incomes, and their loans apportioned by income times years left, follow. Of the adults not employed, the unemployed search at the rate that makes their share of the labour force the country's, and one past its pension's age is retired.
 
-Every firm, large and small, is drawn in an industry given its size, from an alias table per size class over
-`FRM.industry_by_size` (`sys-frm`'s `industry`): a large firm's a fact, a small firm's an attribute. `sys-tec` then
-gives each its industry's public way-set in its country as `TEC.known` (`sys-tec`'s `known`), and the opening
-reports the firms by industry per country.
+Every firm makes one product, drawn per product and region with the firm count; `sys-tec` gives it its product's
+way in its country as `TEC.known` (`sys-tec`'s `known`).
 
-A firm of an industry of one product makes it; the firms of an industry of several (mining: ore, coal, oil and gas,
-stone) are dealt their products (`sys-frm`'s `filed::Products`) largest first, those of a size in an order drawn by
-lot, each to the product whose persons dealt fall furthest below its part of the industry's hours: its part of the
-industry's output (`FRM.product_share`, the input-output tables' split of each mining industry by its resource's
-users, derived by `tools/data/derive_tec.py`) over its opening price times its way's hours a unit, none for a
-resource the country's land holds no deposit of. A draw per firm would leave a country's few mining firms, whose
-sizes differ by orders, making whatever product its largest drew. Once staff are hired, each firm's filed accounts
-(`filed::Filed`) give it hours a unit of its way's hours (`TEC.labour`, summed over the occupations) times the
-country's productivity over its own hourly wage: the productivity is labour's share (`GEN.labour_share`) of the
-wage-weighted mean over the country's firms of what their ways add a unit over the hours a unit takes, so the
-country's firms' wage bill is labour's share of what they add, each product keeps its way's labour intensity, and a
-firm paying more makes more an hour. Its output a day is its staff's hours over that; its unit cost the way's inputs
-at opening prices and the hours at its wage; its price the point nearest the lot's opening price at the country's
-price level, the markup what that is over the cost.
-
-An adult is employed at the country's employment rate, and is an employee at its sex's share of the employed
-(`LAB.status_shares`). A household rents at one minus the country's home ownership. A job's monthly wage is the mean
-wage per worker that the labour share gives, times the household's income as a multiple of the mean. A tenancy's rent is
-the country's median rent burden applied to the household persons' share of the labour income, times the same multiple.
-Each wage is placed on the nearest point of labour's grid, the points a declared ratio apart
-(`LAB.wage_point_ratio`: a quarter), until firms post their own. The multiples of the mean come from the distributions' closed-form means (`Distribution::mean`).
+A firm's day-zero price is its product's in the accounts at its productivity, the point nearest it; its markup is
+that price over its own unit cost — its staff's wages and its owners' labour income over what they make, and its
+inputs at the opening's prices (`core_goods`). An adult is employed at the country's employment rate, and is an
+employee at its sex's share of the employed (`LAB.status_shares`). Each wage is placed on the nearest point of labour's
+grid, the points a declared ratio apart (`LAB.wage_point_ratio`: a quarter), until firms post their own.
 
 Nothing is balanced after drawing: finer attributes are drawn from their own counter keys, so a coarser setting is a
 projection of a finer one, and every number of preference types is a discretisation of the same declared distribution

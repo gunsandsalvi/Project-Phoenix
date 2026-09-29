@@ -2,26 +2,6 @@
 # they hold; their plant is CAP's (data/shared/CAP.toml). The firm density is each profile's (data/profiles/<level>/FRM.toml).
 
 [[primitive]]
-id = "FRM.size_exponent"
-kind = "ENDOWMENT"
-owner = "FRM"
-source = "measured"
-source_ref = "Axtell (2001), Zipf distribution of U.S. firm sizes, Science 293: the share of firms larger than a size falls as the size to the power 1.059 (s.e. 0.054), over the whole census of U.S. firms by employees (owner's decision, plan §12, 2026-09-24)."
-value = "1.059"
-
-[[primitive]]
-id = "FRM.deposit_share"
-kind = "ENDOWMENT"
-owner = "FRM"
-source = "assumed"
-source_ref = "Non-financial corporations hold about a quarter of the deposits of the euro area's banks (ECB, MFI balance sheet statistics, deposits by sector), taken for every country until each country's sectoral deposits are sourced."
-value = "0.25"
-
-# How firms decide (spec FRM.4, FRM.5, REP.21, REP.34, REP.38): their production schedule, the stock they aim for and
-# how fast they close a gap to it, how their markup and price move, what a review and a price change cost their staff,
-# and the price points of their trades.
-
-[[primitive]]
 id = "FRM.production_days"
 kind = "PREFERENCE"
 owner = "FRM"

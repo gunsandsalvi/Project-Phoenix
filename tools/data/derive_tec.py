@@ -13,9 +13,8 @@ economies the sources report for it; what the group's economies lack is named in
     python3 tools/data/derive_tec.py
 
 Writes data/shared/TEC.toml (the products and what extraction takes from a deposit),
-data/profiles/<level>/TEC.toml (the group's ways), data/profiles/<level>/FRM_products.toml (each product's part of
-its industry's output, which a firm of an industry of several products is dealt its product by) and
-data/profiles/<level>/GDS_prices.toml (each product's price level over GDP's, which its opening price is carried by).
+the group's ways and each product's price level over GDP's, which its opening price is carried by, into each level's
+economy.toml.
 """
 import json
 from pathlib import Path
@@ -173,26 +172,11 @@ def extracted_weight(t: pd.DataFrame, p) -> float:
     return float(sum(users[c] * taken_share(c, p[6]) for c in t.columns) / users.sum())
 
 
-def output_shares(t: pd.DataFrame) -> np.ndarray:
-    """Each product's part of its industry's output: an extracted product's the part its resource's users take of its
-    mining industry's output, and every other product all of its industry's."""
-    output = t.sum(axis=0)
-    value = np.array([sum(float(output[c]) for c in p[2] if c in output.index)
-                      * (extracted_weight(t, p) if p[6] is not None else 1.0) for p in PRODUCTS])
-    return by_industry(value)
-
-
 def relative_levels(pl: pd.Series) -> np.ndarray:
     """Each product's price level over the economy's GDP's: what a unit costs in the currency a GDP at purchasing power
     parity is counted in, the quantity a US cent buys at world-average prices."""
     gdp = pl[GDP_HEADING] / 100.0
     return np.array([product_level(pl, p[3]) / gdp for p in PRODUCTS])
-
-
-def by_industry(value: np.ndarray) -> np.ndarray:
-    """Each product's value over its industry's."""
-    total = {ind: sum(v for v, q in zip(value, PRODUCTS) if q[1] == ind) for ind in {p[1] for p in PRODUCTS}}
-    return np.array([v / total[p[1]] if total[p[1]] > 0 else 0.0 for v, p in zip(value, PRODUCTS)])
 
 
 def economy_ways(t: pd.DataFrame, pl: pd.Series, deflator: float, unit_dollars: np.ndarray):
@@ -469,18 +453,6 @@ def write_level(level: str, members: dict, m: dict) -> None:
         f"{{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
         + ", ".join(num(land if i == 0 else 0.0) for i in range(len(PRODUCTS))) + "], outside = \"refuse\" }")
     profile_files.put_text(level, "\n".join(lines) + "\n")
-    shares = by_industry(median([w["shares"] for w in members.values()]))
-    ref = (f"Each product's part of its industry's output (axis: the products' places): the median over the "
-           f"{len(members)} economies of the World Bank's {level} income groups the {YEAR} inter-country input-output "
-           f"tables report ({names(members)}), each renormalised over its industry ({tables['title']}, fetched "
-           f"{tables['fetched']}); an extracted product's is the part its resource's users take of its mining "
-           f"industry's output, every other product is all of its industry's.")
-    frm = [f"# The {level} group's products' parts of their industries' output (spec GEN.2, FRM.1), derived by",
-           "# tools/data/derive_tec.py; never edited by hand.", "", "[[primitive]]", 'id = "FRM.product_share"',
-           'kind = "ENDOWMENT"', 'owner = "FRM"', f'source = "{thin(len(members))}"', f"source_ref = {json.dumps(ref)}",
-           f"value = {{ axis = [{', '.join(str(i) for i in range(len(PRODUCTS)))}], values = ["
-           + ", ".join(num(v, SHARE_EXP) for v in shares) + "], outside = \"refuse\" }"]
-    profile_files.put_text(level, "\n".join(frm) + "\n")
     levels = median([w["levels"] for w in members.values()])
     icp = m["sources"]["prices"]
     ref = (f"Each product's price at the opening over its world price (axis: the products' places): its ICP 2021 price "
@@ -527,7 +499,7 @@ def main() -> None:
                                           ratios.get(iso3, scaled.get(level_of.get(iso3), fallback)))
         ways[iso3] = {"inputs": inputs, "labour": labour, "capital": capital, "capital_own": own,
                       "land": land_per_unit(t, made, land[iso3]) if iso3 in land.index else np.nan,
-                      "shares": output_shares(t), "levels": relative_levels(pls.loc[iso3])}
+                      "levels": relative_levels(pls.loc[iso3])}
     write_shared(prices, m)
     for level in ["developed", "emerging", "developing"]:
         members = {c: w for c, w in ways.items() if level_of.get(c) == level}

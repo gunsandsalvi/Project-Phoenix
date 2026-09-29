@@ -1,6 +1,3 @@
-/// The persons a small firm can employ: far beyond the smallest firm the individuals' rank admits, which a world whose
-/// rank reaches past it stops at as a capacity reached.
-pub const MOST_SMALL_EMPLOYED: u32 = 1 << 16;
 /// A decade's ratio, from one power of ten to the next, over which a trade's price points repeat.
 pub const DECADE: f64 = 10.0;
 /// A decade's ratio as a whole number, for points moved between decades exactly.

@@ -845,7 +845,6 @@ dependencies = [
  "sys-frt",
  "sys-gds",
  "sys-hh",
- "sys-hsg",
  "sys-idx",
  "sys-lab",
  "sys-soc",
@@ -1233,14 +1232,6 @@ dependencies = [
  "phx-num",
  "phx-rand",
  "phx-val",
-]
-
-[[package]]
-name = "sys-hsg"
-version = "0.1.0"
-dependencies = [
- "phx-core",
- "phx-num",
 ]
 
 [[package]]

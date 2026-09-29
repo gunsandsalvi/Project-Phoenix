@@ -35,10 +35,10 @@ pub struct Entry {
     pub source_ref: String,
 }
 
-/// The entries of the world's data by (file, id).
+/// The entries of the world's data by (scope, id).
 pub type Dump = BTreeMap<(String, String), Entry>;
 
-/// An entry that differs: its (file, id), and the entry before and after, either absent.
+/// An entry that differs: its (scope, id), and the entry before and after, either absent.
 pub type Change<'a> = (&'a (String, String), Option<&'a Entry>, Option<&'a Entry>);
 
 #[clause("GEN.11")]
@@ -115,7 +115,18 @@ fn is_register_file(path: &str) -> bool {
         && (path == "data/world.toml" || path.starts_with("data/shared/") || path.starts_with("data/profiles/"))
 }
 
-/// A data file's primitives and forms by id.
+/// Where a data file's entries are unique by id: its level's profile, whichever of the level's files holds them, the
+/// shared files, or the file itself; an entry moved between files of one scope is not changed.
+fn scope(path: &str) -> String {
+    let mut parts = path.split('/');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some("data"), Some("profiles"), Some(level)) => format!("data/profiles/{level}"),
+        (Some("data"), Some("shared"), Some(_)) => "data/shared".to_owned(),
+        _ => path.to_owned(),
+    }
+}
+
+/// A data file's primitives and forms by their scope and id.
 ///
 /// # Errors
 /// When the file does not parse.
@@ -133,21 +144,21 @@ pub fn dump(path: &str, text: &str) -> Result<Dump, String> {
                 value = format!("{value} {extra}={v}");
             }
         }
-        out.insert((path.to_owned(), id), Entry { kind, value, source_ref: field("source_ref").unwrap_or_default() });
+        out.insert((scope(path), id), Entry { kind, value, source_ref: field("source_ref").unwrap_or_default() });
     }
     for f in entries("form") {
         let field = |k: &str| f.get(k).and_then(toml::Value::as_str).map(str::to_owned);
         let Some(id) = field("id") else { continue };
         let value = field("reason").unwrap_or_default();
         out.insert(
-            (path.to_owned(), id),
+            (scope(path), id),
             Entry { kind: "FORM".to_owned(), value, source_ref: field("source_ref").unwrap_or_default() },
         );
     }
     Ok(out)
 }
 
-/// What differs between two dumps, by (file, id): the entry before and after, either absent.
+/// What differs between two dumps, by (scope, id): the entry before and after, either absent.
 pub fn diff<'a>(before: &'a Dump, after: &'a Dump) -> Vec<Change<'a>> {
     let mut keys: Vec<&(String, String)> = before.keys().chain(after.keys()).collect();
     keys.sort();
@@ -241,6 +252,16 @@ mod tests {
     }
 
     const NONE: &dyn Fn(&str) -> bool = &|_| false;
+
+    #[test]
+    fn a_move_within_a_scope_is_no_change() {
+        let entry = "[[primitive]]\nid = \"X.a\"\nkind = \"POLICY\"\nsource_ref = \"s\"\nvalue = 1\n";
+        let before = dump("data/profiles/developed/X.toml", entry).unwrap_or_default();
+        let moved = dump("data/profiles/developed/law.toml", entry).unwrap_or_default();
+        assert!(diff(&before, &moved).is_empty(), "moved within its level");
+        let elsewhere = dump("data/profiles/emerging/law.toml", entry).unwrap_or_default();
+        assert_eq!(diff(&before, &elsewhere).len(), 2, "another level's entry is another entry");
+    }
 
     #[test]
     fn registry_diff_by_id() {
