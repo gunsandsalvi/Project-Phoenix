@@ -10,12 +10,12 @@
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_median"
-value = 2978
+value = 1674
 direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_worst"
-value = 9307
+value = 5158
 direction = "down"
 
 [[ratchet]]

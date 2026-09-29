@@ -65,6 +65,9 @@ pub struct CoreGoods {
     pub lead: Vec<f64>,
     pub cover: f64,
     pub adjustment: f64,
+    /// Each product's lot, the units its price is posted for; and each country's stored inputs a unit of each product.
+    pub lots: Vec<f64>,
+    pub recipes: Vec<Vec<Vec<(u16, f64)>>>,
     /// Each country's GDP, and each product's collective consumption and fixed investment over it, by country.
     pub gdp: Vec<f64>,
     pub final_uses: Vec<Vec<[f64; 2]>>,
@@ -111,6 +114,9 @@ struct Firm {
     price: i64,
     output: f64,
 }
+
+/// A stall at a meeting with its seller's unit of the product, currency and region.
+type StallAt = (Stall, u16, u8, u32);
 
 /// A maker at the opening: its slot, its output a year and its price a unit.
 type Maker = (Slot, f64, f64);
@@ -180,6 +186,12 @@ impl Core {
     }
 
     /// A firm's stored inputs a unit of its output, each with its product.
+    fn lot(&self, product: u16) -> f64 {
+        self.goods.lots.get(usize::from(product)).copied().unwrap_or_else(|| {
+            violation!(clause = "GDS.1", "a product the technology does not declare", product = product)
+        })
+    }
+
     fn is_stored(&self, product: u16) -> bool {
         self.goods.stored.get(usize::from(product)).copied().unwrap_or_else(|| {
             violation!(clause = "GDS.1", "a product the technology does not declare", product = product)
@@ -187,11 +199,31 @@ impl Core {
     }
 
     fn stored_inputs(&self, f: &Firm) -> Vec<(u16, f64)> {
-        let Some(ways) = self.goods.inputs.get(f.country) else { return Vec::new() };
-        (0_u16..)
-            .zip(ways)
-            .filter(|(q, _)| self.is_stored(*q))
-            .filter_map(|(q, row)| row.get(usize::from(f.product)).copied().filter(|a| *a > 0.0).map(|a| (q, a)))
+        self.recipe(f).to_vec()
+    }
+
+    /// A firm's stored inputs a unit of its output, as its country's ways give them, read from the day's table.
+    fn recipe(&self, f: &Firm) -> &[(u16, f64)] {
+        self.goods.recipes.get(f.country).and_then(|c| c.get(usize::from(f.product))).map_or(&[], Vec::as_slice)
+    }
+
+    /// Each country's stored inputs a unit of each product.
+    fn recipes(&self) -> Vec<Vec<Vec<(u16, f64)>>> {
+        self.goods
+            .inputs
+            .iter()
+            .map(|ways| {
+                let products = ways.first().map_or(0, Vec::len);
+                (0..products)
+                    .map(|p| {
+                        (0_u16..)
+                            .zip(ways)
+                            .filter(|(q, _)| self.is_stored(*q))
+                            .filter_map(|(q, row)| row.get(p).copied().filter(|a| *a > 0.0).map(|a| (q, a)))
+                            .collect()
+                    })
+                    .collect()
+            })
             .collect()
     }
 
@@ -223,6 +255,7 @@ impl Core {
         goods.stored = products.iter().map(|p| p.storable).collect();
         let lead = ctx.register.table1("TEC.lead_time")?;
         goods.lead = (0_i64..).take(products.len()).map(|p| lead.at(p).map_or(0.0, from_i64)).collect();
+        goods.lots = (0_u16..).take(products.len()).map(|p| sys_frm::FilingPrims::lot(ctx.register, p)).collect();
         let mut prices: Vec<Vec<f64>> = Vec::new();
         for c in countries {
             goods.inputs.push(table(ctx.register, "TEC.inputs", c.id)?.0);
@@ -234,6 +267,7 @@ impl Core {
         }
         goods.region_share = self.region_shares(ctx.regions);
         self.goods = goods;
+        self.goods.recipes = self.recipes();
         self.goods.turnover_share = self.turnover_shares(ctx, firm);
         self.open_prices(ctx, firm, &prices);
         self.open_expected(ctx, firm, today);
@@ -263,7 +297,7 @@ impl Core {
             let Some(markup) = self.record_word(firm, slot, MARKUP).map(|m| from_i64(m) / PART_ONE) else { continue };
             let Some(price) = prices.get(f.country) else { continue };
             let Some(cost) = self.cost_at(&f, &|q| price.get(usize::from(q)).copied()) else { continue };
-            let wanted = (1.0 + markup) * cost * sys_frm::FilingPrims::lot(ctx.register, f.product);
+            let wanted = (1.0 + markup) * cost * self.lot(f.product);
             if let Some(p) = sys_frm::rules::price::nearest_point(&ctx.management.points_near(wanted), wanted) {
                 self.set_record_word(firm, slot, PRICE, p);
             }
@@ -312,7 +346,7 @@ impl Core {
         let mut makers: BTreeMap<(usize, u16), Vec<Maker>> = BTreeMap::new();
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let lot = sys_frm::FilingPrims::lot(ctx.register, f.product);
+            let lot = self.lot(f.product);
             makers.entry((f.country, f.product)).or_default().push((slot, f.output, from_i64(f.price) / lot));
         }
         for (country, uses) in self.goods.final_uses.clone().iter().enumerate() {
@@ -399,7 +433,7 @@ impl Core {
         let mut by: Vec<(u32, usize, f64)> = Vec::new();
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let lot = sys_frm::FilingPrims::lot(ctx.register, f.product);
+            let lot = self.lot(f.product);
             by.push((slot.get(), f.country, from_i64(f.price) / lot * f.output));
         }
         let mut totals: BTreeMap<usize, f64> = BTreeMap::new();
@@ -520,7 +554,7 @@ impl Core {
         (record.sales, record.spent) = (sales, spent);
         for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
             if units > 0 {
-                let lot = sys_frm::FilingPrims::lot(ctx.register, product);
+                let lot = self.lot(product);
                 self.goods.marks.insert(
                     (product, region),
                     phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot,
@@ -581,7 +615,7 @@ impl Core {
     fn cost_at(&self, f: &Firm, input_cost: &dyn Fn(u16) -> Option<f64>) -> Option<f64> {
         let mut inputs = 0.0;
         let mut own = 0.0;
-        for (q, a) in self.stored_inputs(f) {
+        for &(q, a) in self.recipe(f) {
             if q == f.product {
                 own = a;
             } else {
@@ -621,7 +655,7 @@ impl Core {
                 let can = from_i64(self.free_units(f.key, *q, f.region)) / a;
                 capacity = if can < capacity { can } else { capacity };
             }
-            let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, f.product)) else { continue };
+            let Some(lot) = floor_to_i64(self.lot(f.product)) else { continue };
             let Some(unit_cost) = self.unit_cost(&f) else { continue };
             let rate = self.labour.financing.get(f.country).copied().unwrap_or(0.0);
             // A service's stall is the day's capacity, where a unit pays: it is made as it sells.
@@ -779,7 +813,7 @@ impl Core {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
             let offers = !self.is_stored(f.product) || self.free_units(f.key, f.product, f.region) > 0;
             if f.price > 0 && offers {
-                let unit = from_i64(f.price) / sys_frm::FilingPrims::lot(ctx.register, f.product);
+                let unit = from_i64(f.price) / self.lot(f.product);
                 let e = out.entry((f.product, f.region)).or_insert(unit);
                 *e = if unit < *e { unit } else { *e };
             }
@@ -804,7 +838,7 @@ impl Core {
                 continue;
             };
             let Some(unit_cost) = self.unit_cost(&f) else { continue };
-            let lot = sys_frm::FilingPrims::lot(ctx.register, f.product);
+            let lot = self.lot(f.product);
             let margin = from_i64(f.price) / lot - unit_cost;
             let planned = self.planned(&f, expected);
             let financing = self.labour.financing.get(f.country).copied().unwrap_or(0.0) / DAYS_A_YEAR;
@@ -818,7 +852,7 @@ impl Core {
             let mut orders: Vec<(u16, f64, f64, i64)> = Vec::new();
             for (q, a) in self.stored_inputs(&f).into_iter().filter(|(q, _)| *q != f.product) {
                 let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
-                let input_lot = sys_frm::FilingPrims::lot(ctx.register, q);
+                let input_lot = self.lot(q);
                 let worth = per_unit + margin / a;
                 let carried = sys_frm::rules::inputs::carried_cost(per_unit, financing, lead + m.cover_days);
                 let held = from_i64(self.free_units(f.key, q, f.region));
@@ -967,7 +1001,7 @@ impl Core {
     /// What a firm keeps of its own product for its own making, never offered: what its way uses of it over the days
     /// a unit takes and its stock's cover at the sales it expects.
     fn own_use(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), f: &Firm) -> i64 {
-        let Some(a) = self.stored_inputs(f).iter().find(|(q, _)| *q == f.product).map(|(_, a)| *a) else { return 0 };
+        let Some(a) = self.recipe(f).iter().find(|(q, _)| *q == f.product).map(|(_, a)| *a) else { return 0 };
         let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else { return 0 };
         let lead = self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0);
         whole_units(a * expected * (lead + ctx.management.cover_days))
@@ -1031,7 +1065,7 @@ impl Core {
                 (0.0, 0.0)
             };
             let Some(unit_cost) = self.unit_cost(&f) else { continue };
-            let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, f.product)) else { continue };
+            let Some(lot) = floor_to_i64(self.lot(f.product)) else { continue };
             let lot = from_i64(lot);
             let pressure = match sys_frm::rules::price::pressure_stocked(demand, expected, cover * expected, stock) {
                 Missing::Present(p) => p,
@@ -1057,6 +1091,29 @@ impl Core {
         (reviews, repriced)
     }
 
+    /// Each wanted product's stalls: every maker holding it free beyond its own use, with a price, with its unit,
+    /// currency and region.
+    fn stalls(&mut self, ctx: &GoodsCtx<'_>, firm: usize, wants: &[(u16, Buyer)]) -> BTreeMap<u16, Vec<StallAt>> {
+        let mut by_product: BTreeMap<u16, Vec<StallAt>> = BTreeMap::new();
+        let wanted: std::collections::BTreeSet<u16> = wants.iter().map(|(p, _)| *p).collect();
+        for slot in self.firm_slots(firm) {
+            let product = self.record_word(firm, slot, PRODUCT).and_then(|p| u16::try_from(p).ok());
+            if !product.is_some_and(|p| wanted.contains(&p)) {
+                continue;
+            }
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let free = self.free_units(f.key, f.product, f.region) - self.own_use(ctx, (firm, slot), &f);
+            if free <= 0 || f.price <= 0 {
+                continue;
+            }
+            let unit = self.unit_of(f.product, f.region);
+            let Ok(ccy) = u8::try_from(f.country) else { continue };
+            let stall = Stall { seller: f.key, price: f.price, units: free };
+            by_product.entry(f.product).or_default().push((stall, unit, ccy, f.region));
+        }
+        by_product
+    }
+
     /// Each product's posted-price meeting over its firms holding it free with a price, each region a place whose
     /// firms are in its reach at no distance until the finer cells: each sale's money a flow settled with the day's,
     /// and its goods moved at once from the seller at their price. Returns the sales and what they paid.
@@ -1079,19 +1136,7 @@ impl Core {
             return (0, 0);
         };
         let key = ctx.streams.key(&taste);
-        // Each product's stalls, with each seller's unit, currency and region.
-        let mut by_product: BTreeMap<u16, Vec<(Stall, u16, u8, u32)>> = BTreeMap::new();
-        for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let free = self.free_units(f.key, f.product, f.region) - self.own_use(ctx, (firm, slot), &f);
-            if free <= 0 || f.price <= 0 {
-                continue;
-            }
-            let unit = self.unit_of(f.product, f.region);
-            let Ok(ccy) = u8::try_from(f.country) else { continue };
-            let stall = Stall { seller: f.key, price: f.price, units: free };
-            by_product.entry(f.product).or_default().push((stall, unit, ccy, f.region));
-        }
+        let by_product = self.stalls(ctx, firm, wants);
         let (mut sales, mut spent) = (0, 0);
         let mut money = Vec::new();
         for (product, stalls) in by_product {
@@ -1099,14 +1144,15 @@ impl Core {
             if buyers.is_empty() {
                 continue;
             }
-            let places: Vec<Place> = (0_u32..)
-                .take(ctx.regions.len())
-                .map(|r| Place {
-                    near: (0_u32..).zip(&stalls).filter(|(_, x)| x.3 == r).map(|(i, _)| (i, 0.0)).collect(),
-                })
-                .collect();
+            // Each region's stalls, found in one pass over them.
+            let mut places: Vec<Place> = (0..ctx.regions.len()).map(|_| Place { near: Vec::new() }).collect();
+            for (i, x) in (0_u32..).zip(&stalls) {
+                if let Some(place) = usize::try_from(x.3).ok().and_then(|r| places.get_mut(r)) {
+                    place.near.push((i, 0.0));
+                }
+            }
             let plain: Vec<Stall> = stalls.iter().map(|x| x.0).collect();
-            let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, product)) else { continue };
+            let Some(lot) = floor_to_i64(self.lot(product)) else { continue };
             let tastes = Tastes { key, day: day.get(), substep: SubStep::S5c.ordinal() };
             let lots = |seller: PartyKey, round: u32| {
                 ctx.streams.open(

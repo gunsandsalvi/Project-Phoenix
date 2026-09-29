@@ -305,12 +305,18 @@ impl Core {
         }
         self.labour.due_today.clone_from(&due);
         let mut totals = (0, 0, 0, len_u64(due.len()));
+        // Each employer's vacancies by their places, found in one pass, so a decision reads only its own.
+        let mut mine: BTreeMap<PartyKey, Vec<usize>> = BTreeMap::new();
+        for (i, v) in self.labour.vacancies.iter().enumerate() {
+            mine.entry(v.employer).or_default().push(i);
+        }
         for s in due {
             let slot = Slot::new(s);
             if self.kinds.get(firm).is_none_or(|k| k.parties.id(slot).is_none()) {
                 continue;
             }
-            let (p, w, l) = self.post_one(ctx, day, (firm, family), slot);
+            let own = mine.remove(&PartyKey::new(kind_number(firm), slot)).unwrap_or_default();
+            let (p, w, l) = self.post_one(ctx, day, (firm, family), (slot, &own));
             totals.0 += p;
             totals.1 += w;
             totals.2 += l;
@@ -362,13 +368,13 @@ impl Core {
         ctx: &LabourCtx<'_>,
         day: Day,
         (firm, family): (usize, usize),
-        slot: Slot,
+        (slot, own): (Slot, &[usize]),
     ) -> (u64, u64, u64) {
         let Some(f) = self.firm_record(firm, slot) else { return (0, 0, 0) };
         let key = PartyKey::new(kind_number(firm), slot);
         let c = ctx.country_of(f.region);
         let law = at_country(&self.labour.laws, c).clone();
-        self.raise_stale(ctx, day, key, &law);
+        self.raise_stale(ctx, day, own, &law);
         let staff = self.staff_of(family, key);
         let ways = at_country(&self.labour.ways, c);
         let level = at_country(&self.labour.level, c).clone();
@@ -392,11 +398,10 @@ impl Core {
             if hours_a_unit <= 0.0 && held <= 0.0 {
                 continue;
             }
-            let open: f64 = self
-                .labour
-                .vacancies
+            let open: f64 = own
                 .iter()
-                .filter(|v| v.employer == key && v.occupation == occupation)
+                .filter_map(|i| self.labour.vacancies.get(*i))
+                .filter(|v| v.occupation == occupation)
                 .map(|v| f64::from(v.open) * job_hours)
                 .sum();
             let point = self.offer_point(ctx, &law, (key, occupation), &staff);
@@ -441,8 +446,10 @@ impl Core {
         let mut withdrawn = 0;
         for &(occupation, jobs) in &out.withdraw {
             let mut left = jobs;
-            for v in self.labour.vacancies.iter_mut().rev().filter(|v| v.employer == key && v.occupation == occupation)
-            {
+            for i in own.iter().rev() {
+                let Some(v) = self.labour.vacancies.get_mut(*i).filter(|v| v.occupation == occupation) else {
+                    continue;
+                };
                 let take = if v.open < left { v.open } else { left };
                 v.open -= take;
                 left -= take;
@@ -454,9 +461,12 @@ impl Core {
     }
 
     /// An employer's vacancies that stood past the law's patience raised a point.
-    fn raise_stale(&mut self, ctx: &LabourCtx<'_>, day: Day, employer: PartyKey, law: &Law) {
-        for (v, p) in self.labour.vacancies.iter_mut().zip(self.labour.postings.iter_mut()) {
-            if v.employer == employer && ctx.calendar.days_between(p.set, day).is_some_and(|d| d > law.patience_days) {
+    fn raise_stale(&mut self, ctx: &LabourCtx<'_>, day: Day, own: &[usize], law: &Law) {
+        for i in own {
+            let (Some(v), Some(p)) = (self.labour.vacancies.get_mut(*i), self.labour.postings.get_mut(*i)) else {
+                continue;
+            };
+            if ctx.calendar.days_between(p.set, day).is_some_and(|d| d > law.patience_days) {
                 p.point += 1;
                 p.set = day;
                 v.wage = ctx.wage_at(law, p.point);
