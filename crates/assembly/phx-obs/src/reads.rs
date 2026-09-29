@@ -25,7 +25,12 @@ pub enum SettlementCount {
     Payments,
     Settled,
     Failed,
+    FailedPayer,
+    FailedBank,
     Gross,
+    Net,
+    Ring,
+    RingValue,
 }
 
 /// What a read measures, resolved against the world's declarations.
@@ -132,7 +137,12 @@ pub fn measure(name: &str, event_kinds: &[&str]) -> Result<Measure, String> {
         "settlement.payments" => Measure::Settlement(S::Payments),
         "settlement.settled" => Measure::Settlement(S::Settled),
         "settlement.failed" => Measure::Settlement(S::Failed),
+        "settlement.failed_payer" => Measure::Settlement(S::FailedPayer),
+        "settlement.failed_bank" => Measure::Settlement(S::FailedBank),
         "settlement.gross" => Measure::Settlement(S::Gross),
+        "settlement.net" => Measure::Settlement(S::Net),
+        "settlement.ring" => Measure::Settlement(S::Ring),
+        "settlement.ring_value" => Measure::Settlement(S::RingValue),
         other => {
             if let Some((_, step)) = PLANNED.iter().find(|(m, _)| *m == other) {
                 return Ok(Measure::NotYet(step));
@@ -259,7 +269,12 @@ fn settlement_count(s: &phx_world::core_day::CoreDay, c: SettlementCount) -> i12
         SettlementCount::Payments => i128::from(s.flows),
         SettlementCount::Settled => i128::from(s.settled),
         SettlementCount::Failed => i128::from(s.failed),
+        SettlementCount::FailedPayer => i128::from(s.fails[0]),
+        SettlementCount::FailedBank => i128::from(s.fails[1]),
         SettlementCount::Gross => s.gross,
+        SettlementCount::Net => s.net,
+        SettlementCount::Ring => i128::from(s.ring),
+        SettlementCount::RingValue => s.ring_value,
     }
 }
 

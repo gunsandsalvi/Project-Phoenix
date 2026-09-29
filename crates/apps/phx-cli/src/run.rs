@@ -639,7 +639,12 @@ fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
                 "failed_by": d.failed_by,
                 "arrears": d.arrears,
                 "committed": d.committed,
+                "made": d.made.to_string(),
                 "gross": d.gross.to_string(),
+                "net": d.net.to_string(),
+                "fails": { "payer": d.fails[0], "bank": d.fails[1] },
+                "ring": d.ring,
+                "ring_value": d.ring_value.to_string(),
                 "breaks": d.breaks,
             })
         })

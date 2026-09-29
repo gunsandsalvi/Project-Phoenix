@@ -240,6 +240,21 @@ fn a_flow_through_a_closed_bank_is_held() {
 }
 
 #[test]
+fn a_days_values_and_its_closing_ring() {
+    // 0 holds 10 and pays 1 60; 1 holds nothing and pays 2 50; 2 holds 30 and pays 0 55. All settle only together:
+    // 0 pays 60 on 10 of its own, so its receipts paid 50; 1 pays 50 on nothing; 2 pays 55 on 30, its receipts 25.
+    // Settled 165; 0 and 2 each end 5 lower, 1 ends 10 higher, so the nets drew 10.
+    let (out, after, _) = settle(&[10, 0, 30], &[(0, 1, 60), (1, 2, 50), (2, 0, 55)], [RICH, RICH]);
+    assert_eq!(after, vec![5, 10, 25]);
+    assert_eq!(out.values.gross, 165);
+    assert_eq!(out.values.net, 10);
+    assert_eq!((out.values.ring, out.values.ring_value), (3, 50 + 50 + 25));
+    // A party that pays within its own means is no part of the ring, and a failed flow is no part of the value.
+    let (out, _, _) = settle(&[100, 0], &[(0, 1, 40), (1, 0, 70)], [RICH, RICH]);
+    assert_eq!((out.values.gross, out.values.net, out.values.ring, out.values.ring_value), (40, 40, 0, 0));
+}
+
+#[test]
 fn a_facility_lets_an_account_fall_below_nothing() {
     let mut w = Fixture::new(&[20, 0], [RICH, RICH]);
     w.facility[0] = 50;

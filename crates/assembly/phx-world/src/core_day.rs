@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
-use phx_core::settle::Settle;
+use phx_core::settle::{Cause, Outcome, Settle};
 use phx_core::store::{Family, books, deposits_of};
 use phx_core::{StreamDecl, Streams, SubStep};
 use phx_id::{CountryId, Day, PartyKey, Slot};
@@ -125,7 +125,14 @@ pub struct CoreDay {
     /// The wages the day paid and did not fail.
     pub wages: i64,
     /// The money the day's flows move, whatever came of them.
+    pub made: i128,
+    /// The value settled; what the payers' nets drew; the failures by cause, the payer's and the bank's; and the
+    /// closing ring, the parties settled only by what they were paid in the same settlement, with what that paid.
     pub gross: i128,
+    pub net: i128,
+    pub fails: [u64; 2],
+    pub ring: u64,
+    pub ring_value: i128,
     /// The estates settled and ended.
     pub estates: u64,
     /// The money family's breaks found after settlement: a bank owing other than its customers hold, money made or
@@ -136,6 +143,28 @@ pub struct CoreDay {
     /// The loans disbursed, and of them those a bank other than the borrower's own disbursed.
     pub lent: u64,
     pub lent_elsewhere: u64,
+}
+
+impl CoreDay {
+    /// A currency's settlement added to the day's: its flows settled and failed, its values and its failures by cause.
+    #[clause("SET.10")]
+    fn settled_with(&mut self, out: &Outcome) {
+        self.settled += out.settled;
+        self.failed += phx_rand::float::len_u64(out.failed.len());
+        self.gross += out.values.gross;
+        self.net += out.values.net;
+        self.ring += out.values.ring;
+        self.ring_value += out.values.ring_value;
+        for (_, cause) in &out.failed {
+            let at = match cause {
+                Cause::Payer => 0,
+                Cause::Bank => 1,
+            };
+            if let Some(n) = self.fails.get_mut(at) {
+                *n += 1;
+            }
+        }
+    }
 }
 
 /// The day's working state, kept across days so a day allocates nothing once the heaviest has sized it.
@@ -635,7 +664,7 @@ impl Core {
         }
         // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
         record.flows = phx_rand::float::len_u64(buf.len());
-        record.gross = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
+        record.made = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
         settling
     }
 
@@ -805,7 +834,12 @@ impl Core {
             failed_by: [0; crate::consts::reason::REASONS],
             arrears: 0,
             wages: 0,
+            made: 0,
             gross: 0,
+            net: 0,
+            fails: [0; 2],
+            ring: 0,
+            ring_value: 0,
             estates: 0,
             breaks: 0,
             ns: 0,
@@ -855,8 +889,7 @@ impl Core {
                     )
                 };
                 let out = work.settle.settle(None, &grouped, &ranges, &mut b, &lot);
-                record.settled += out.settled;
-                record.failed += phx_rand::float::len_u64(out.failed.len());
+                record.settled_with(&out);
                 failed.extend(out.failed.iter().map(|(f, _)| *f));
             } else {
                 work.settle.commit(None, &grouped, &ranges, &mut b);

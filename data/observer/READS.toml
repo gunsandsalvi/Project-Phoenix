@@ -69,6 +69,36 @@ title = "gross value settled in the day, over every currency's smallest units"
 unit = "smallest currency units"
 measure = "settlement.gross"
 
+[[read]]
+id = "net_settled"
+title = "value the payers' nets drew in the day's settlement, over every currency's smallest units"
+unit = "smallest currency units"
+measure = "settlement.net"
+
+[[read]]
+id = "failed_payer"
+title = "payments failed in the day because their payer could not pay them"
+unit = "payments"
+measure = "settlement.failed_payer"
+
+[[read]]
+id = "failed_bank"
+title = "payments failed in the day because a bank they passed through could not cover its net"
+unit = "payments"
+measure = "settlement.failed_bank"
+
+[[read]]
+id = "closing_ring"
+title = "parties settled in the day only by what they were paid in the same settlement"
+unit = "parties"
+measure = "settlement.ring"
+
+[[read]]
+id = "closing_ring_value"
+title = "part of the closing ring's payments its receipts paid, over every currency's smallest units"
+unit = "smallest currency units"
+measure = "settlement.ring_value"
+
 # Stage 1's macro reads (S1.01), frozen before S1.16's gate run: each read with the relationship real economies show
 # that it is read against and where that is published, and the N3 fact it is, where it is one. A read over a system
 # not yet built records nothing until the step that brings it.

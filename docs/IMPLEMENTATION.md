@@ -819,6 +819,10 @@ world switches to the core.
     FRM.15), is next in f. Births come at the opening's transient: no
     household is trying at day zero and each decides at its head's birthday (38 births in 35 days), which the
     settling years absorb.
+  - h: the settlement values (SET.10, LC-0-22): each business day's settlement measures the value it settled, what
+    the payers' nets drew, and the closing ring — the parties whose settled payments exceed what they could pay alone,
+    and the part of their payments their receipts paid — published on the core's day with the failures by cause, the
+    payer's and the bank's, and read by the observer.
   - h begun: the core's audit — money (a bank owing other than its customers hold, money made or lost among the
     parties, the issuer's accounts moving), goods (GDS.10), contracts naming ended parties (REP.3) and persons
     reconciled (REP.26) — records findings at each close; LC-0-09, LC-0-23, LC-0-26 and LC-0-51 read it, and pass.

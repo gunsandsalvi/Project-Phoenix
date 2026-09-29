@@ -1988,6 +1988,11 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
     payee sides grouped by range, each job's bank moves summed after. A failure only takes from others, so deciding on
     the round's state keeps the greatest set that can settle, rings included; what a round misses the next finds.
   - A bank still short once its customers are done loses every flow through it (MON.5), the bank's to answer for.
+  - Before the nets are added, the day is measured (`Values`, SET.10), range by range on the pool: the value of the
+    flows settled; what the payers' nets drew; and the closing ring, the parties whose settled payments exceed what
+    they could pay alone (balance less what is held, plus the facility), with the part of their payments their
+    receipts paid. The core's day publishes them with the failures by cause (`CoreDay`: `gross`, `net`, `fails`,
+    `ring`, `ring_value`; `made` is the money its flows move, whatever came of them), and the observer reads them.
   - The nets are added in place, each bank's deposits move with its customers' nets, and the failed and held flows
     are taken back from the cash lines. A closed day's flows are committed (`commit`): netted into pending, the banks'
     moves into theirs, posted, nothing failed.

@@ -2109,11 +2109,19 @@ pub phx_core::settle::Outcome::failed: alloc::vec::Vec<(phx_core::flows::Flow, p
 pub phx_core::settle::Outcome::held: alloc::vec::Vec<phx_core::flows::Flow>
 pub phx_core::settle::Outcome::rounds: u64
 pub phx_core::settle::Outcome::settled: u64
+pub phx_core::settle::Outcome::values: phx_core::settle::Values
 pub phx_core::settle::Outcome::visits: u64
 pub struct phx_core::settle::Settle
 impl phx_core::settle::Settle
 pub fn phx_core::settle::Settle::commit(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Grouped<'_>, &phx_core::flows::Ranges, &mut phx_core::settle::Books<'_>)
 pub fn phx_core::settle::Settle::settle(&mut self, core::option::Option<&phx_exec::pool::Pool>, &phx_core::flows::Grouped<'_>, &phx_core::flows::Ranges, &mut phx_core::settle::Books<'_>, &impl core::ops::function::Fn(phx_id::ids::PartyKey) -> phx_rand::draws::Draws + core::marker::Sync) -> phx_core::settle::Outcome
+pub struct phx_core::settle::Values
+pub phx_core::settle::Values::gross: i128
+pub phx_core::settle::Values::net: i128
+pub phx_core::settle::Values::ring: u64
+pub phx_core::settle::Values::ring_value: i128
+impl core::ops::arith::AddAssign for phx_core::settle::Values
+pub fn phx_core::settle::Values::add_assign(&mut self, phx_core::settle::Values)
 pub const phx_core::settle::AT_ISSUER: u32
 pub mod phx_core::spoilage
 pub struct phx_core::spoilage::SpoilageDecl

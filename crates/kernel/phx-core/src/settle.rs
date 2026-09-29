@@ -84,6 +84,28 @@ pub struct Outcome {
     pub visits: u64,
     /// The worklist's rounds: how deep the failures ran from party to party.
     pub rounds: u64,
+    pub values: Values,
+}
+
+/// A day's settlement measured: the value of the flows settled; what the payers' nets drew, the value settlement
+/// needed; and the closing ring — the parties whose settled payments exceeded what they could pay alone, so settled
+/// only by what they were paid in the same settlement — with the part of their payments those receipts paid.
+#[clause("SET.10")]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Values {
+    pub gross: i128,
+    pub net: i128,
+    pub ring: u64,
+    pub ring_value: i128,
+}
+
+impl std::ops::AddAssign for Values {
+    fn add_assign(&mut self, o: Values) {
+        self.gross += o.gross;
+        self.net += o.net;
+        self.ring += o.ring;
+        self.ring_value += o.ring_value;
+    }
 }
 
 /// A range's flows by payer, in the order made: each flow's place among the grouped payers, and where each slot's
@@ -105,6 +127,8 @@ pub struct Settle {
     cust: Vec<i64>,
     /// The flows removed, held or failed, a bit a flow of the grouped payers.
     removed: Vec<u64>,
+    /// Each kind's parties' settled payments, a value a slot, read for the closing ring.
+    debits: Vec<Vec<i64>>,
     by_payer: Vec<ByPayer>,
 }
 
@@ -309,6 +333,7 @@ impl Settle {
             current.sort_unstable();
             current.dedup();
         }
+        out.values = self.values(pool, grouped, ranges, books);
         self.apply(pool, ranges, books);
         unsettled(books, &out);
         let removed: u64 = self.removed.iter().map(|w| u64::from(w.count_ones())).sum();
@@ -642,6 +667,65 @@ impl Settle {
             }
             by.built = true;
         });
+    }
+
+    /// The day's settlement measured once the greatest set is found and before its nets are added, so each account
+    /// still holds what it held before: range by range on the pool, each settled flow's value and its payer's
+    /// payments, then each payer's own means against them.
+    #[clause("SET.10")]
+    fn values(&mut self, pool: Option<&Pool>, grouped: &Grouped<'_>, ranges: &Ranges, books: &Books<'_>) -> Values {
+        let width = 1_usize << ranges.range_bits();
+        self.debits.resize_with(books.kinds.len(), Vec::new);
+        let mut jobs: Vec<(usize, &mut [i64], &[i64])> = Vec::new();
+        for (k, (book, debits)) in books.kinds.iter().zip(self.debits.iter_mut()).enumerate() {
+            let Some(b) = book.as_ref() else { continue };
+            debits.clear();
+            debits.resize(b.balance.len(), 0);
+            let first = ranges.of_kind(u8::try_from(k).unwrap_or(u8::MAX)).start;
+            let nets = self.net.get(k).map_or(&[][..], Vec::as_slice);
+            let nets = nets.chunks(width).chain(std::iter::repeat(&[][..]));
+            for (i, (d, n)) in debits.chunks_mut(width).zip(nets).enumerate() {
+                jobs.push((first + i, d, n));
+            }
+        }
+        let removed = &self.removed;
+        let parts = map_items(pool, jobs, |(range, debits, nets)| {
+            let (kind, first) = ranges.start(range);
+            let mut v = Values::default();
+            let base = grouped.first(range);
+            for (i, f) in grouped.payers(range).enumerate() {
+                let idx = base + i;
+                if removed.get(idx / BIT_WORD).is_some_and(|w| w & (1 << (idx % BIT_WORD)) != 0) {
+                    continue;
+                }
+                v.gross += i128::from(f.amount);
+                if f.payer != books.issuer {
+                    *cell(debits, to_usize(f.payer.slot().get() - first)) += f.amount;
+                }
+            }
+            let book = books.book(kind);
+            let start = to_usize(first);
+            for (i, d) in debits.iter().enumerate().filter(|(_, d)| **d > 0) {
+                let at = start + i;
+                let (Some(balance), Some(held), Some(facility)) =
+                    (book.balance.get(at), book.held.get(at), book.facility.get(at))
+                else {
+                    violation!(clause = "Law 5", "a payer its kind's accounts do not hold", slot = at);
+                };
+                let alone = balance - held + facility;
+                if *d > alone {
+                    v.ring += 1;
+                    v.ring_value += i128::from(if alone > 0 { *d - alone } else { *d });
+                }
+            }
+            v.net += nets.iter().filter(|n| **n < 0).map(|n| -i128::from(*n)).sum::<i128>();
+            v
+        });
+        let mut total = Values::default();
+        for v in parts {
+            total += v;
+        }
+        total
     }
 
     /// Adds each party's net to its account, and each bank's customers' moves to its reserves.

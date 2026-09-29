@@ -374,16 +374,31 @@ fn family_clean(w: Inspector<'_>, family: &str) -> Outcome {
     }
 }
 
-/// Every day the core ran records its gross flows, its settled and failed flows, and its failures by reason.
+/// Every day the core ran records its flows and what they move, the value settled and what the payers' nets drew,
+/// its failures by cause and by reason, and the closing ring; and they hold together: the nets draw no more than was
+/// settled, the ring's receipts paid no more than was settled, and the failures by cause are the failures.
 fn settlement_published(w: Inspector<'_>) -> Outcome {
     let days = &w.core().days;
     let Some(first) = days.first() else { return Outcome::NotYet("the run closed no day") };
     for (i, d) in days.iter().enumerate() {
-        if d.day.get() != first.day.get() + u32::try_from(i).unwrap_or(u32::MAX) {
-            return Outcome::Fail(format!("the core's days skip before day {}", d.day.get()));
+        let day = d.day.get();
+        if day != first.day.get() + u32::try_from(i).unwrap_or(u32::MAX) {
+            return Outcome::Fail(format!("the core's days skip before day {day}"));
         }
-        if d.flows > 0 && d.gross <= 0 {
-            return Outcome::Fail(format!("day {}: {} flows moving nothing", d.day.get(), d.flows));
+        if d.flows > 0 && d.made <= 0 {
+            return Outcome::Fail(format!("day {day}: {} flows moving nothing", d.flows));
+        }
+        if d.net < 0 || d.net > d.gross {
+            return Outcome::Fail(format!("day {day}: the nets drew {} of {} settled", d.net, d.gross));
+        }
+        if d.ring_value < 0 || d.ring_value > d.gross || (d.ring == 0) != (d.ring_value == 0) {
+            return Outcome::Fail(format!(
+                "day {day}: a ring of {} paid {} of {} settled",
+                d.ring, d.ring_value, d.gross
+            ));
+        }
+        if d.fails.iter().sum::<u64>() != d.failed {
+            return Outcome::Fail(format!("day {day}: {:?} failed by cause, {} failed", d.fails, d.failed));
         }
     }
     Outcome::Pass
