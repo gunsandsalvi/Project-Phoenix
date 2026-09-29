@@ -1,6 +1,7 @@
 //! The core's audit at each day's close, beside the money and goods families settlement and the goods' day read: each
 //! contract names parties that are live, every household holds a person, and the households hold the persons they
-//! opened with, plus those born, less those gone. It reads only and records what it finds; it never repairs.
+//! opened with, plus those born, less those gone. It reads only and records what it finds; it never repairs. At a close
+//! with no day run the families hold the state to itself as it stood, which is how an injection into a save is read.
 
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_id::Day;
@@ -8,7 +9,56 @@ use phx_macros::clause;
 
 use crate::core::Core;
 
+/// The audit's families on the core.
+pub const FAMILIES: [&str; 9] =
+    ["money", "goods", "contracts", "persons", "taxes", "debt", "loans", "accounts", "revenue"];
+
+/// What a close's money and goods families hold the state to: the money the parties hold, what each bank owes its
+/// customers, and the units of each good held.
+#[derive(Debug)]
+pub(crate) struct Held {
+    money: i128,
+    deposits: Vec<i64>,
+    goods: Vec<i128>,
+}
+
 impl Core {
+    /// What the money and goods families read at a close, as it stands.
+    pub(crate) fn held(&self) -> Held {
+        let banks = self.bank_kind.map_or(0, |b| {
+            usize::try_from(self.kinds.get(usize::from(b)).map_or(0, |k| k.parties.high_water())).unwrap_or(0)
+        });
+        Held {
+            money: self.money_totals(),
+            deposits: phx_core::store::deposits_of(self.kinds.iter(), banks),
+            goods: self.goods.stocks.totals(),
+        }
+    }
+
+    /// Every family's audit over the state as it stands against what it held, no day run and nothing moved between.
+    #[clause("N1", "II.5")]
+    pub(crate) fn audit_close(&mut self, day: Day, was: Held) {
+        let Held { money, mut deposits, goods } = was;
+        let _ = self.money_breaks((day, money), (0, Default::default()), &mut deposits);
+        let close = self.goods.stocks.totals();
+        for (good, expected, held) in phx_core::goods::breaks(&goods, &phx_core::goods::nature_net(&[]), &close) {
+            self.found.push(Finding {
+                family: "goods",
+                clause: "GDS.10",
+                owner: FindingOwner::Run,
+                size: held - expected,
+                unit: Unit::Count,
+                day,
+                detail: format!("good {good}: {held} units held where nothing moved them from {expected}"),
+            });
+        }
+        self.audit(day);
+        self.audit_taxes(day);
+        self.audit_debt(day);
+        self.book_loans(day);
+        self.audit_accounts(day);
+    }
+
     /// The day's audit of the contracts and the persons, its findings kept for the run.
     #[clause("REP.3", "REP.26", "PTY.11", "II.5")]
     pub(crate) fn audit(&mut self, day: Day) {

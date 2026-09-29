@@ -82,7 +82,7 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_0_07,
     awaiting::LC_0_08,
     core::LC_0_09,
-    awaiting::LC_0_10,
+    saves::LC_0_10,
     geo::LC_0_11,
     geo::LC_0_12,
     awaiting::LC_0_13,

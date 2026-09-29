@@ -163,7 +163,7 @@ pub const LC_0_60: Check = live_check! {
     observed: drift_read,
 };
 
-/// The core's audit families — money, goods, contracts and persons — ran at every close and found nothing.
+/// The core's audit families ran at every close and found nothing.
 fn audit_clean(w: Inspector<'_>) -> Outcome {
     match w.findings().first() {
         Some(f) => Outcome::Fail(format!(

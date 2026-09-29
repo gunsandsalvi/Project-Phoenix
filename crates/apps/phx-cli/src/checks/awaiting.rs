@@ -53,13 +53,6 @@ pub const LC_0_08: Check = live_check! {
     retired: "it compared the world with a second run of it; a stream's key comes from its own name alone",
 };
 
-pub const LC_0_10: Check = live_check! {
-    id: "LC-0-10",
-    title: "Each family's injection into the day-30 save lights that family alone",
-    from_step: "S0.12",
-    check: |_| Outcome::NotYet("awaits the core saved and loaded (S1.24 h)"),
-};
-
 pub const LC_0_13: Check = live_check! {
     id: "LC-0-13",
     title: "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence",

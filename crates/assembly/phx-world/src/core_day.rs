@@ -534,7 +534,7 @@ impl Core {
     /// and the issuers' money — reserves, the treasuries' accounts and banknotes — what their own record of the flows
     /// that moved it says.
     #[clause("MON.5", "MON.7", "MON.8", "MON.9", "N1", "REP.14")]
-    fn money_breaks(
+    pub(crate) fn money_breaks(
         &mut self,
         (day, before): (Day, i128),
         (net, classes): (i128, [i128; 3]),

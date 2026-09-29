@@ -2872,7 +2872,18 @@ world on the phone. CI never runs the world.
   calendar's window to the save's year and reads the run's measures.
 - **The save check** (LC-0-35): each periodic save of the build run is read back from its files alone, hashed and
   dropped, and its hash held to the manifest's; its sizes and its write and check times are the run's (LC-0-36).
-- **No copies**: a save is loaded only to continue the one run, never run beside it (N1).
+- **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
+  audited and discarded, never run on (N1).
+- **Injection** (N1, `save/inject.rs`): the build run takes one more save, at the close of the 30th day after
+  settling, into its own directory, and after its last day hands it to `phx inject` in a process of its own, so the
+  run's memory stays the world's alone. Each family (`core_audit::FAMILIES`: money, goods, contracts, persons, taxes,
+  debt, loans, accounts, revenue) has its discrepancy put into a fresh load of it — a unit where only that family's
+  invariant reads it: money in a treasury's account no flow paid, a good's unit nothing made, a contract naming a
+  household that never was, a person counted and not held, a unit of tax arisen, of bills issued, on a loan book, in
+  an equity account, of revenue — and the audit then runs once over the state as it stands at the save's next day, no
+  day stepped (`Core::audit_close`, which holds money and goods to what they were before the injection); the families
+  that found something are recorded with the run's measures, where LC-0-10 reads them. A world not read from a save
+  refuses an injection.
 - **The world hash** is `phx-store`'s `LogicalHasher`, SipHash-2-4 with a 128-bit result under a fixed key
   (`HASH_KEY`), over the day and the core as their save encodes them; a save reads back to exactly the layout it was
   written from, so its hash is its close's.

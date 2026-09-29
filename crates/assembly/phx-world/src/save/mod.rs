@@ -1,5 +1,6 @@
 //! Saves: the world written whole at a day's close, read back exactly, and checked by reading its files alone.
 
+pub mod inject;
 pub mod manifest;
 pub mod retention;
 

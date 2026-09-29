@@ -20,6 +20,10 @@ const SIZE_CLASSES: usize = 4;
 /// Resident memory the world may take at its peak: the budget's.
 const WORLD_BYTES: u64 = 4608 << 20;
 const MONTHS_PER_YEAR: u16 = 12;
+/// Days after settling at whose close the save the injections load is taken.
+const INJECTION_SAVE_DAY: u16 = 30;
+/// The live check that reads each family's injection into the day-30 save.
+const INJECTION_CHECK: &str = "LC-0-10";
 /// The key of a build's identity hash: any fixed value.
 const BUILD_KEY: [u64; 2] = [0x5048_5820_4255_494c, 0x4420_4944_2031_3131];
 
@@ -158,6 +162,34 @@ fn drift_report(settled: &[phx_obs::Drift], ended: &[phx_obs::Drift]) -> serde_j
     json!({ "settled": at(settled), "ended": at(ended) })
 }
 
+/// The closures that balanced each country's opening sheet, each a share of its GDP.
+fn closures_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .closures
+        .iter()
+        .map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share }))
+        .collect()
+}
+
+/// Every amount the opening shared by weight, with what its parties were given.
+fn apportioned_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .apportioned
+        .iter()
+        .map(|a| {
+            json!({
+                "stratum": a.stratum,
+                "country": a.country,
+                "total": a.total,
+                "given": a.given,
+                "difference": a.total - a.given,
+                "parties": a.parties,
+                "unfounded": a.unfounded,
+            })
+        })
+        .collect()
+}
+
 /// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
 /// its close's hash.
 fn saves_report(w: Inspector<'_>) -> serde_json::Value {
@@ -272,17 +304,46 @@ fn save_and_check(world: &mut World, root: &Path, build: &str, clock: &WallClock
     Ok(())
 }
 
-/// Runs the world to its last day, the observer reading each day, and saves it at each save interval into the run's
-/// own directory.
+/// Every family's injection into the injections' save, each loaded apart in a process of its own so the run's
+/// memory is the world's alone.
+fn inject_apart(args: &RunArgs, save: &Path) -> Result<Vec<phx_world::InjectionRecord>, String> {
+    let exe = std::env::current_exe().map_err(|e| format!("the running binary: {e}"))?;
+    let report = args.run_dir.join("inject.json");
+    if report.exists() {
+        std::fs::remove_file(&report).map_err(|e| format!("{}: {e}", report.display()))?;
+    }
+    let status = std::process::Command::new(exe)
+        .arg("inject")
+        .arg("--from")
+        .arg(save)
+        .arg("--data")
+        .arg(&args.data)
+        .arg("--setup")
+        .arg(&args.setup)
+        .arg("--run-dir")
+        .arg(args.run_dir.join("inject"))
+        .arg("--report")
+        .arg(&report)
+        .status()
+        .map_err(|e| format!("phx inject: {e}"))?;
+    let text = std::fs::read_to_string(&report).map_err(|e| format!("phx inject ({status}) left no report: {e}"))?;
+    crate::inject::parse(&text)
+}
+
+/// Runs the world to its last day, the observer reading each day, saving it at each save interval into the run's own
+/// directory and taking the injections' save, whose directory it returns.
 fn play(
     world: &mut World,
+    args: &RunArgs,
     (settle_end, end): (phx_id::Day, phx_id::Day),
-    saves: &Path,
     clock: &WallClock,
     obs: &mut Observing,
-) -> Result<(), String> {
-    let build = build_id()?;
+) -> Result<Option<PathBuf>, String> {
+    let (saves, build) = (args.run_dir.join("saves"), build_id()?);
     let mut period = save_period(Inspector::new(world), world.today())?;
+    let w = Inspector::new(world);
+    let injection_day = Period::days(INJECTION_SAVE_DAY).map_or(settle_end, |p| w.calendar().plus(settle_end, p));
+    let mut injection_save = None;
     obs.settling(Inspector::new(world), settle_end);
     while world.today() < end {
         let seen = Inspector::new(world).findings().len();
@@ -295,11 +356,15 @@ fn play(
         obs.settling(Inspector::new(world), settle_end);
         let now = save_period(Inspector::new(world), world.today())?;
         if now != period {
-            save_and_check(world, saves, &build, clock)?;
+            save_and_check(world, &saves, &build, clock)?;
             period = now;
         }
+        // The injections' save serves the check that reads them alone, so a run that does not ask for it takes none.
+        if injection_save.is_none() && world.today() >= injection_day && selected(&args.checks, INJECTION_CHECK) {
+            injection_save = Some(world.save(&args.run_dir.join("inject-save"), &build)?.dir);
+        }
     }
-    Ok(())
+    Ok(injection_save)
 }
 
 /// The turn just run, so a run can be followed as it goes: its dates and days, its wall time, and what the core's
@@ -497,8 +562,15 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
     let meter = crate::budget::Meter::start(clock.now_ns());
-    play(&mut world, (settle_end, end), &args.run_dir.join("saves"), &clock, &mut obs)?;
+    let injection_save = play(&mut world, args, (settle_end, end), &clock, &mut obs)?;
     let span = meter.stop(clock.now_ns());
+    let injecting = clock.now_ns();
+    if let Some(dir) = &injection_save {
+        for r in inject_apart(args, dir)? {
+            world.record_injection(r);
+        }
+    }
+    let inject_ns = clock.now_ns().checked_sub(injecting);
     let w = Inspector::new(&world);
     let view = obs.views.close(w, &obs.watch.recorder);
     let settled = obs.settled.as_ref().map(|v| phx_obs::drift(&opening, v)).unwrap_or_default();
@@ -515,7 +587,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let memory_ok = peak.is_some_and(|p| p <= WORLD_BYTES);
     let (budget_block, budget_kept) = crate::budget::judge(w, peak, &span, args.budget.as_deref())?;
     let turns = w.turns();
-    let report = json!({
+    let mut report = json!({
         "seed": args.seed,
         "settle_years": w.settling_years(),
         "days": args.days,
@@ -545,16 +617,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "agencies": agencies_report(w),
         "lenders": lenders_report(w),
         "saves": saves_report(w),
-        "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
-        "apportioned": w.core().apportioned.iter().map(|a| json!({
-            "stratum": a.stratum,
-            "country": a.country,
-            "total": a.total,
-            "given": a.given,
-            "difference": a.total - a.given,
-            "parties": a.parties,
-            "unfounded": a.unfounded,
-        })).collect::<Vec<_>>(),
+        "closures": closures_report(w),
+        "apportioned": apportioned_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "peak_resident_bytes": peak,
@@ -565,6 +629,10 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "findings": w.findings().len(),
         "checks": results,
     });
+    if let Some(o) = report.as_object_mut() {
+        o.insert("inject_ms".to_owned(), json!(inject_ns.map(|n| n / 1_000_000)));
+        o.insert("injections".to_owned(), crate::inject::report(w.injections()));
+    }
     if let Some(path) = &args.report {
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
