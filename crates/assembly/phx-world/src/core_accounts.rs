@@ -114,7 +114,11 @@ impl Core {
     /// bank, the balances its loans owe it; less the arrears it owes and the balances it has to repay, and, for a bank,
     /// its customers' deposits.
     #[must_use]
-    pub fn net_assets(&self, party: PartyKey, deposits: &[i64]) -> Option<i128> {
+    pub fn net_assets(
+        &self,
+        party: PartyKey,
+        (deposits, projects): (&[i64], &BTreeMap<PartyKey, i128>),
+    ) -> Option<i128> {
         let store = self.kinds.get(usize::from(party.kind()))?;
         let money = store.accounts.as_ref().map_or(0, |a| {
             i128::from(a.balance.get(party.slot()).unwrap_or(0)) + i128::from(a.pending.get(party.slot()).unwrap_or(0))
@@ -146,7 +150,9 @@ impl Core {
         } else {
             0
         };
-        Some(money + goods + self.projects_of(party) + owed_to - owes - deposits)
+        // A party with no project has none of their cost.
+        let projects = projects.get(&party).copied().unwrap_or(0);
+        Some(money + goods + projects + owed_to - owes - deposits)
     }
 
     /// Each bank's customers' deposits, by its slot.
@@ -158,14 +164,14 @@ impl Core {
     /// The accounts opened: every firm's and bank's equity account at what its balance sheet shows.
     #[clause("ACC.4")]
     pub fn open_accounts(&mut self, today: Day) {
-        let deposits = self.deposits();
+        let (deposits, projects) = (self.deposits(), self.project_costs());
         let mut opening = BTreeMap::new();
         for (k, store) in self.kinds.iter().enumerate() {
             let Ok(kind) = u8::try_from(k) else { continue };
             for slot in store.parties.live_slots() {
                 let party = PartyKey::new(kind, slot);
                 if self.owned(party)
-                    && let Some(worth) = self.net_assets(party, &deposits)
+                    && let Some(worth) = self.net_assets(party, (&deposits, &projects))
                 {
                     opening.insert(party, worth);
                 }
@@ -239,7 +245,7 @@ impl Core {
     #[clause("ACC.10", "ACC.11", "ACC.16", "FRM.17", "II.5")]
     pub(crate) fn audit_accounts(&mut self, day: Day) {
         let parties: Vec<PartyKey> = self.accounts.opening.keys().copied().collect();
-        let deposits = self.deposits();
+        let (deposits, projects) = (self.deposits(), self.project_costs());
         let mut found = Vec::new();
         let mut ended = Vec::new();
         for party in parties {
@@ -248,7 +254,9 @@ impl Core {
                 ended.push(party);
                 continue;
             }
-            let (Some(equity), Some(worth)) = (self.accounts.equity(party), self.net_assets(party, &deposits)) else {
+            let (Some(equity), Some(worth)) =
+                (self.accounts.equity(party), self.net_assets(party, (&deposits, &projects)))
+            else {
                 continue;
             };
             if equity != worth {

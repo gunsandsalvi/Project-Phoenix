@@ -805,18 +805,21 @@ impl Core {
     /// The day's books kept: the contracts' moves entered as income and on the loan books, every account and loan
     /// book held to what the positions show, and on a month's first day the banks' review of their standards.
     fn keep_books(&mut self, day: Day, calendar: &Calendar) {
-        self.audit_taxes(day);
-        self.audit_debt(day);
-        self.account_moves();
-        self.book_loans(day);
-        self.audit_accounts(day);
+        phx_exec::trace::span("books.audit_taxes", || self.audit_taxes(day));
+        phx_exec::trace::span("books.audit_debt", || self.audit_debt(day));
+        phx_exec::trace::span("books.account_moves", || self.account_moves());
+        phx_exec::trace::span("books.book_loans", || self.book_loans(day));
+        phx_exec::trace::span("books.audit_accounts", || self.audit_accounts(day));
         let date = calendar.date(day);
-        self.review_lenders(day, i64::from(date.year()) * crate::consts::MONTHS + i64::from(date.month()));
+        let month = i64::from(date.year()) * crate::consts::MONTHS + i64::from(date.month());
+        phx_exec::trace::span("books.review_lenders", || self.review_lenders(day, month));
     }
 
     /// Each estate that paid all it held today ended; returns them.
     fn end_settled(&mut self, settling: Vec<PartyKey>) -> u64 {
         let mut ended = 0;
+        let projects = if settling.is_empty() { BTreeMap::new() } else { self.project_costs() };
+        let mut gone: std::collections::BTreeSet<PartyKey> = std::collections::BTreeSet::new();
         for estate in settling {
             // Its claims are settled as far as its money went; what it could not pay is the creditors' loss.
             self.insolvency.claims.remove(&estate);
@@ -827,7 +830,7 @@ impl Core {
             // stays.
             let goods = self.goods.stocks.holdings(estate).any(|h| h.units != 0)
                 || self.deposits.held.contains_key(&estate)
-                || self.projects_of(estate) != 0;
+                || projects.get(&estate).is_some_and(|c| *c != 0);
             if !empty || goods {
                 let why = if goods { crate::core::Waits::Liquidation } else { crate::core::Waits::PayingOut };
                 self.waiting.insert(estate, why);
@@ -836,7 +839,7 @@ impl Core {
                 self.estate_ended(estate);
                 self.waiting.remove(&estate);
                 self.goods.stocks.end(estate);
-                self.estates.retain(|(e, _, _)| *e != estate);
+                gone.insert(estate);
                 if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
                     && let Some(r) = k.parties.at(estate.slot())
                 {
@@ -845,6 +848,7 @@ impl Core {
                 ended += 1;
             }
         }
+        self.estates.retain(|(e, _, _)| !gone.contains(e));
         ended
     }
 

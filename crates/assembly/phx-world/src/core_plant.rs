@@ -472,10 +472,13 @@ impl Core {
         }
     }
 
-    /// What a party's projects cost, an asset of it until they enter service.
-    #[must_use]
-    pub fn projects_of(&self, party: PartyKey) -> i128 {
-        self.plant.projects.iter().filter(|p| p.holder == party).map(|p| i128::from(p.cost)).sum()
+    /// What every holder's projects cost so far, in one pass over the projects.
+    pub(crate) fn project_costs(&self) -> BTreeMap<PartyKey, i128> {
+        let mut costs: BTreeMap<PartyKey, i128> = BTreeMap::new();
+        for p in &self.plant.projects {
+            *costs.entry(p.holder).or_insert(0) += i128::from(p.cost);
+        }
+        costs
     }
 
     /// A holder's projects passed to its successor, as its goods pass.
