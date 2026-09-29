@@ -452,8 +452,6 @@ pub fn phx_ledger::books::Books<B>::pass_holdings(&mut self, (phx_id::ids::Party
 pub fn phx_ledger::books::Books<B>::settle_estate(&mut self, phx_id::ids::PartyId, phx_id::ids::PartyId, phx_ledger::transfer::MoveAt, &mut phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::estate::Settled where B: core::marker::Sync
 pub fn phx_ledger::books::Books<B>::unlisted_against(&self, phx_id::ids::PartyId) -> alloc::vec::Vec<(phx_id::ids::LineId, phx_ledger::algebra::Side)>
 impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
-pub fn phx_ledger::books::Books<B>::owed_between(&self, phx_id::ids::PartyId, (phx_id::day::Day, phx_id::day::Day), &phx_core::calendar::Calendar) -> i128
-impl<B: phx_store::backing::Backing> phx_ledger::books::Books<B>
 pub fn phx_ledger::books::Books<B>::settle_day(&mut self, &phx_ledger::due::DueLines, phx_id::day::Day, &phx_core::calendar::Calendar, &phx_ledger::pending::Closed, &dyn core::ops::function::Fn(phx_id::ids::LineId) -> phx_rand::draws::Draws, &mut dyn phx_core::family::AuditStream) -> phx_ledger::apply_batch::DaySettlement where B: core::marker::Sync
 impl<B: phx_store::backing::Backing> phx_core::family::BooksAudit for phx_ledger::books::Books<B> where phx_ledger::books::Books<B>: core::fmt::Debug
 pub fn phx_ledger::books::Books<B>::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
@@ -1034,30 +1032,6 @@ pub phx_ledger::instrument::NewInstrument::family: phx_ledger::instrument::Instr
 pub phx_ledger::instrument::NewInstrument::issuer: phx_num::missing::Missing<phx_id::ids::PartyId>
 pub phx_ledger::instrument::NewInstrument::terms: phx_ledger::terms::TermsId
 pub phx_ledger::instrument::NewInstrument::unit: phx_num::qty::UnitId
-pub mod phx_ledger::intents
-pub struct phx_ledger::intents::CloseIntent
-pub phx_ledger::intents::CloseIntent::row: phx_id::ids::Slot
-impl phx_ledger::intents::CloseIntent
-pub fn phx_ledger::intents::CloseIntent::decode(&[u64]) -> core::option::Option<phx_ledger::intents::CloseIntent>
-impl phx_core::handler::IntentDef for phx_ledger::intents::CloseIntent
-pub const phx_ledger::intents::CloseIntent::NAME: &'static str
-pub fn phx_ledger::intents::CloseIntent::encode(&self, &mut alloc::vec::Vec<u64>)
-pub struct phx_ledger::intents::Made
-pub phx_ledger::intents::Made::cost: i64
-pub phx_ledger::intents::Made::grade: u8
-pub phx_ledger::intents::Made::product: u16
-pub phx_ledger::intents::Made::qty: i64
-pub phx_ledger::intents::Made::source: phx_ledger::instruction::Source
-pub struct phx_ledger::intents::Transform
-pub phx_ledger::intents::Transform::days: u32
-pub phx_ledger::intents::Transform::legs: alloc::vec::Vec<phx_ledger::intents::Made>
-pub phx_ledger::intents::Transform::reason: u64
-pub phx_ledger::intents::Transform::row: phx_id::ids::Slot
-impl phx_ledger::intents::Transform
-pub fn phx_ledger::intents::Transform::decode(&[u64]) -> core::option::Option<phx_ledger::intents::Transform>
-impl phx_core::handler::IntentDef for phx_ledger::intents::Transform
-pub const phx_ledger::intents::Transform::NAME: &'static str
-pub fn phx_ledger::intents::Transform::encode(&self, &mut alloc::vec::Vec<u64>)
 pub mod phx_ledger::levy
 pub enum phx_ledger::levy::LevyBase
 pub phx_ledger::levy::LevyBase::Amount
@@ -1242,7 +1216,6 @@ pub fn phx_ledger::opening::open_row(&phx_core::register::Register, phx_id::ids:
 pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms
 pub fn phx_ledger::opening::whole(f64) -> i64
 pub fn phx_ledger::opening::write(phx_id::ids::PartyId, phx_id::ids::LineId, phx_ledger::algebra::Side, i64, phx_num::money::Ccy, u64) -> phx_ledger::instruction::LegRec
-pub mod phx_ledger::owed
 pub mod phx_ledger::pending
 pub struct phx_ledger::pending::Closed
 pub phx_ledger::pending::Closed::issuers: alloc::collections::btree::set::BTreeSet<phx_id::ids::PartyId>
@@ -1375,24 +1348,6 @@ pub fn phx_ledger::succession::Successions::stands_for(&self, phx_id::ids::Party
 impl phx_store::save::Saved for phx_ledger::succession::Successions where alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, phx_id::ids::PartyId>: phx_store::save::Saved, alloc::collections::btree::map::BTreeMap<phx_id::ids::PartyId, alloc::vec::Vec<phx_id::ids::PartyId>>: phx_store::save::Saved
 pub fn phx_ledger::succession::Successions::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::succession::Successions::save(&self, &mut phx_store::save::Writer<'_>)
-pub mod phx_ledger::synthetic
-pub struct phx_ledger::synthetic::Settlement<B: phx_store::backing::Backing>
-pub phx_ledger::synthetic::Settlement::books: phx_ledger::books::Books<B>
-pub phx_ledger::synthetic::Settlement::calendar: phx_core::calendar::Calendar
-pub phx_ledger::synthetic::Settlement::monthly_due: phx_id::day::Day
-pub struct phx_ledger::synthetic::SettlementSize
-pub phx_ledger::synthetic::SettlementSize::banks: u32
-pub phx_ledger::synthetic::SettlementSize::daily_rows: u32
-pub phx_ledger::synthetic::SettlementSize::holders: u32
-pub phx_ledger::synthetic::SettlementSize::holders_per_line: u32
-pub phx_ledger::synthetic::SettlementSize::monthly_rows: u32
-pub struct phx_ledger::synthetic::Unaudited
-impl phx_core::family::AuditStream for phx_ledger::synthetic::Unaudited
-pub fn phx_ledger::synthetic::Unaudited::applied(&mut self, u64)
-pub fn phx_ledger::synthetic::Unaudited::leg(&mut self, u64, phx_core::family::LegDigest)
-pub fn phx_ledger::synthetic::Unaudited::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub fn phx_ledger::synthetic::calendar(&[phx_id::day::Date]) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>
-pub fn phx_ledger::synthetic::settlement<B: phx_store::backing::Backing>(phx_ledger::synthetic::SettlementSize, phx_core::calendar::Calendar, (phx_id::day::Date, phx_id::day::Date, phx_id::day::Date)) -> core::result::Result<phx_ledger::synthetic::Settlement<B>, alloc::string::String>
 pub mod phx_ledger::terms
 #[repr(transparent)] pub struct phx_ledger::terms::TermsId(_)
 impl phx_ledger::terms::TermsId
