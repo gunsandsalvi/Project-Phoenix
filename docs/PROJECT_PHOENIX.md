@@ -706,7 +706,8 @@ exposure; it never writes an economic outcome.
 **Processes**
 
 - **GEO.20 PROCESS** — **Travel.** A trip along a path takes the time its legs take at the use each carries that day
-  against its capacity: a road congests as more travel on it. **Transit** — buses, trams, rail — is a line owned by a
+  against its capacity: a road congests as more travel on it. The day's use is the fixed point of the day's trips:
+  every trip reads the load all of that day's trips put on its legs, never the trips placed before it. **Transit** — buses, trams, rail — is a line owned by a
   municipality, the state or a firm, with a timetable, a capacity and a fare; a trip on it takes its times and pays
   its fare.
 - **GEO.8 PROCESS** — A catastrophe on a tile damages or destroys what stands there — dwellings, plant,
