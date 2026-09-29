@@ -106,6 +106,9 @@ struct Firm {
     output: f64,
 }
 
+/// A maker at the opening: its slot, its output a year and its price a unit.
+type Maker = (Slot, f64, f64);
+
 /// A day `n` days after another.
 fn after(day: Day, n: u64) -> Day {
     match u32::try_from(n).ok().and_then(|n| day.get().checked_add(n)) {
@@ -226,6 +229,8 @@ impl Core {
         goods.region_share = self.region_shares(ctx.regions);
         self.goods = goods;
         self.goods.turnover_share = self.turnover_shares(ctx, firm);
+        self.open_prices(ctx, firm, &prices);
+        self.open_expected(ctx, firm, today);
         self.open_stocks(ctx.regions, firm, &prices, today);
         let mut wheel = DueWheel::new(today.succ(), CORE_WHEEL_DAYS);
         let Some(stream) = ctx.streams.named(sys_hh::VisitStream::DECL.name) else {
@@ -240,6 +245,121 @@ impl Core {
         }
         self.goods.spenders = Some(wheel);
         Ok(())
+    }
+
+    /// Each firm's day-zero price posted from its own cost on the core: its markup in the accounts over what a unit
+    /// costs it to make — its staff's wages over what they make, and its inputs at the opening's prices it holds them
+    /// at — at the nearest point of its trade's table.
+    #[clause("FRM.5", "GEN.13", "REP.34")]
+    fn open_prices(&mut self, ctx: &GoodsCtx<'_>, firm: usize, prices: &[Vec<f64>]) {
+        for slot in self.firm_slots(firm) {
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let Some(markup) = self.record_word(firm, slot, MARKUP).map(|m| from_i64(m) / PART_ONE) else { continue };
+            let Some(price) = prices.get(f.country) else { continue };
+            let Some(cost) = self.cost_at(&f, &|q| price.get(usize::from(q)).copied()) else { continue };
+            let wanted = (1.0 + markup) * cost * sys_frm::FilingPrims::lot(ctx.register, f.product);
+            if let Some(p) = sys_frm::rules::price::nearest_point(&ctx.management.points_near(wanted), wanted) {
+                self.set_record_word(firm, slot, PRICE, p);
+            }
+        }
+    }
+
+    /// Each country's households' spending a year at the opening, by the rule their first decision reads: the
+    /// buffer-stock rule at their cash on hand, what they hold beyond what their contracts take before that decision
+    /// over the income they expect.
+    fn opening_spending(&self, ctx: &GoodsCtx<'_>, today: Day) -> BTreeMap<usize, f64> {
+        let mut out: BTreeMap<usize, f64> = BTreeMap::new();
+        let (Some(place), Some(decl)) =
+            (self.names.iter().position(|n| *n == "household"), self.household_decl.as_ref())
+        else {
+            return out;
+        };
+        let income_name = <if_pop::facts::Income as phx_core::FactDef>::ITEM.name;
+        let Some(income_at) = decl.positions.iter().position(|p| p.item.name == income_name) else { return out };
+        let income_at = decl.attrs.len() + income_at;
+        let Missing::Present(region_at) = decl.sited_by else { return out };
+        let next = after(today, u64::from(self.goods.spend_days));
+        let Some(store) = self.kinds.get(place) else { return out };
+        for slot in store.parties.live_slots() {
+            let (Some(money), Some(income), Some(Missing::Present(region))) = (
+                store.accounts.as_ref().and_then(|a| a.balance.get(slot)),
+                self.record_word(place, slot, income_at).map(from_i64).filter(|y| *y > 0.0),
+                store.record(slot).get(region_at).map(|w| w.get()),
+            ) else {
+                continue;
+            };
+            let Some(c) = usize::try_from(region).ok().and_then(|r| ctx.regions.get(r)) else { continue };
+            let free = money - self.owed_until(PartyKey::new(kind_number(place), slot), (today, next), ctx.calendar);
+            let cash = from_i64(free) / income + 1.0;
+            *out.entry(usize::from(c.get())).or_insert(0.0) += sys_hh::buffer::spend(&ctx.rule.rule, cash) * income;
+        }
+        out
+    }
+
+    /// Each firm's expected sales at the opening: the demand the world's buyers bring at the opening's prices — the
+    /// households' spending by their budget shares, the state's collective consumption and the firms' fixed
+    /// investment, and what the firms' ways use of each stored product to make all of it — shared over each country's
+    /// makers of a product by their output, so no firm expects a buyer the world does not hold.
+    #[clause("GEN.2", "GEN.5", "FRM.14", "HH.5")]
+    fn open_expected(&mut self, ctx: &GoodsCtx<'_>, firm: usize, today: Day) {
+        let spending = self.opening_spending(ctx, today);
+        let mut makers: BTreeMap<(usize, u16), Vec<Maker>> = BTreeMap::new();
+        for slot in self.firm_slots(firm) {
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let lot = sys_frm::FilingPrims::lot(ctx.register, f.product);
+            makers.entry((f.country, f.product)).or_default().push((slot, f.output, from_i64(f.price) / lot));
+        }
+        for (country, uses) in self.goods.final_uses.clone().iter().enumerate() {
+            let (Some(gdp), Some(shares), Some(inputs)) =
+                (self.goods.gdp.get(country).copied(), ctx.rule.shares.get(country), self.goods.inputs.get(country))
+            else {
+                continue;
+            };
+            let households = spending.get(&country).copied().unwrap_or(0.0);
+            let n = uses.len();
+            // Each product's final demand in units a year at its makers' mean price, their output its weight.
+            let mut last: Vec<f64> = (0..n)
+                .map(|q| {
+                    let Some(of) = u16::try_from(q).ok().and_then(|q| makers.get(&(country, q))) else { return 0.0 };
+                    let weight: f64 = of.iter().map(|(_, w, _)| w).sum();
+                    let price = if weight > 0.0 { of.iter().map(|(_, w, p)| w * p).sum::<f64>() / weight } else { 0.0 };
+                    let value = households * shares.get(q).copied().unwrap_or(0.0)
+                        + uses.get(q).map_or(0.0, |u| (u[0] + u[1]) * gdp);
+                    if price > 0.0 { value / price } else { 0.0 }
+                })
+                .collect();
+            let finals = last.clone();
+            // What the ways use of each stored product to make it all, to the fixed point x = A·x + f.
+            for _ in 0..n * n {
+                let next: Vec<f64> = (0..n)
+                    .map(|q| {
+                        let stored = u16::try_from(q).is_ok_and(|q| self.is_stored(q));
+                        let used: f64 = if stored {
+                            inputs.get(q).map_or(0.0, |row| row.iter().zip(&last).map(|(a, x)| a * x).sum())
+                        } else {
+                            0.0
+                        };
+                        finals.get(q).copied().unwrap_or(0.0) + used
+                    })
+                    .collect();
+                let moved = next.iter().zip(&last).any(|(a, b)| (a - b).abs() > f64::EPSILON * a.abs());
+                last = next;
+                if !moved {
+                    break;
+                }
+            }
+            for (q, x) in (0_u16..).zip(&last) {
+                let Some(of) = makers.get(&(country, q)) else { continue };
+                let weight: f64 = of.iter().map(|(_, w, _)| w).sum();
+                if weight <= 0.0 {
+                    continue;
+                }
+                for (slot, w, _) in of {
+                    let per_day = x * w / weight / DAYS_A_YEAR;
+                    self.set_record_word(firm, *slot, EXPECTED, whole_units(per_day * PART_ONE));
+                }
+            }
+        }
     }
 
     /// Each region's share of its country's persons, by region.
@@ -344,7 +464,9 @@ impl Core {
     fn open_stocks(&mut self, regions: &[CountryId], firm: usize, prices: &[Vec<f64>], today: Day) {
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
-            let per_day = f.output / DAYS_A_YEAR;
+            let Some(per_day) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
+                continue;
+            };
             let price = |q: u16| prices.get(f.country).and_then(|p| p.get(usize::from(q))).copied().unwrap_or(0.0);
             let mut wanted: Vec<(u16, f64)> = Vec::new();
             if self.is_stored(f.product) {
@@ -435,16 +557,20 @@ impl Core {
     /// uses of itself; its stock's cost, which mixes units it bought at others' prices, is not its cost of making.
     /// None known while its staff make nothing, or an input it uses is neither held nor sold in its region.
     fn unit_cost(&self, f: &Firm) -> Option<f64> {
+        self.cost_at(f, &|q| {
+            self.average_cost(f.key, q, f.region).or_else(|| self.goods.cheapest.get(&(q, f.region)).copied())
+        })
+    }
+
+    /// A firm's cost of making a unit with its inputs at the costs given.
+    fn cost_at(&self, f: &Firm, input_cost: &dyn Fn(u16) -> Option<f64>) -> Option<f64> {
         let mut inputs = 0.0;
         let mut own = 0.0;
         for (q, a) in self.stored_inputs(f) {
             if q == f.product {
                 own = a;
             } else {
-                let cost = self
-                    .average_cost(f.key, q, f.region)
-                    .or_else(|| self.goods.cheapest.get(&(q, f.region)).copied())?;
-                inputs += a * cost;
+                inputs += a * input_cost(q)?;
             }
         }
         let wage_bill: f64 = self.families.iter().find(|x| x.name == "LAB.employment").map_or(0.0, |fam| {

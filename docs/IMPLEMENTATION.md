@@ -851,14 +851,17 @@ world switches to the core.
     Labour's changes to a household's persons (a hire, a separation) book its chances again from the next day, as the
     hazards' outcomes do. Each change was a finding of the 120-day run: the producer index rose a millionfold, then
     tenfold, as firms bought inputs without limit or money, bought their own product from each other, and froze at a
-    price below their cost. Measured now (120 days, 150,000 persons, seed 1): the flows settle every day but the month
-    ends; consumer prices rise 45% in February and 100% by March in the developed country (44% and 103% in the
-    emerging, 29% and 46% in the developing), unemployment there from 2.5% to 11.6%. The trigger is the opening: at the
-    opening's prices households ask up to twice what the firms expect to sell of some goods (households' spending is
-    72% of output, as the accounts say, but the budget shares renormalised over the products the world makes, and the
-    firms' expected sales count exports no one buys until XB), so the goods with the most household demand sell out in
-    weeks while their makers cannot hire as fast. To settle in e: each firm's expected sales and output at the opening
-    read the demand the world's buyers bring at the opening's prices; the management types' spread of the review.
+    price below their cost. At the opening each firm now posts its day-zero price from its own cost on the core (GEN.13:
+    its accounts' markup over its staff's wages over what they make and its inputs at the opening's prices), and
+    expects the demand the world's buyers bring at those prices — the households' first spending by their budget
+    shares, the state's and investment's final uses and the ways' use of each stored product, to the fixed point — so
+    no firm expects a buyer the world does not hold (the exports among the accounts' uses wait for XB). The cost the
+    accounts give a unit was up to 75% below the core's (agriculture, whose own-account workers the core pays as
+    employees until c3), and each first review raised the price to it. Measured now (120 days, 150,000 persons, seed
+    1): the flows settle every day but month ends; consumer prices rise 19% in February and 36% by March in the
+    developed country (27% and 59% in the emerging, 22% and 53% in the developing), unemployment there from 2.3% to
+    6.9%. To settle in e: what drives the rest — the reviews' pressure against the stock's target and the markups'
+    drift — read against the management types' spread and the self-employed of c3.
   - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
