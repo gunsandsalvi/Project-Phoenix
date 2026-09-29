@@ -4,7 +4,7 @@
 mod consts;
 pub mod points;
 pub use phx_core::register::values::Table1;
-use phx_core::{Declarations, FactDef, Register, StreamDef, System, declare_prim, declare_stream};
+use phx_core::{Declarations, Register, StreamDef, System, declare_prim, declare_stream};
 use phx_macros::clause;
 use phx_market::carriage::FreightTech;
 use phx_num::Count;
@@ -130,8 +130,6 @@ impl System for Frt {
             let _ = d.prim::<Table1>(table);
         }
         d.stream(LotStream::DECL);
-        let mode = <if_firm::freight::Mode as FactDef>::ITEM;
-        d.claim(mode.name);
         let _ = d.prim::<Table1>(&MODE_SHARE);
         let _ = d.prim::<Count>(&CARRIAGE_PRODUCT);
         let _ = d.prim::<Count>(&SHIPPING_DAYS);

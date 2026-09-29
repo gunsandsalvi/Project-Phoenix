@@ -7,7 +7,6 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-if-firm = { path = "../../interfaces/if-firm" }
 if-pop = { path = "../../interfaces/if-pop" }
 if-base = { path = "../../interfaces/if-base" }
 if-credit = { path = "../../interfaces/if-credit" }

@@ -450,13 +450,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "if-firm"
-version = "0.1.0"
-dependencies = [
- "phx-core",
-]
-
-[[package]]
 name = "if-labour"
 version = "0.1.0"
 dependencies = [
@@ -826,7 +819,6 @@ version = "0.1.0"
 dependencies = [
  "if-base",
  "if-credit",
- "if-firm",
  "if-labour",
  "if-pop",
  "if-state",
@@ -1160,7 +1152,6 @@ name = "sys-cap"
 version = "0.1.0"
 dependencies = [
  "if-base",
- "if-firm",
  "libm",
  "phx-core",
  "phx-id",
@@ -1198,7 +1189,6 @@ dependencies = [
 name = "sys-frm"
 version = "0.1.0"
 dependencies = [
- "if-firm",
  "if-pop",
  "libm",
  "phx-core",
@@ -1213,7 +1203,6 @@ dependencies = [
 name = "sys-frt"
 version = "0.1.0"
 dependencies = [
- "if-firm",
  "phx-core",
  "phx-macros",
  "phx-market",
@@ -1345,7 +1334,6 @@ name = "sys-tec"
 version = "0.1.0"
 dependencies = [
  "if-base",
- "if-firm",
  "phx-core",
  "phx-id",
  "phx-macros",

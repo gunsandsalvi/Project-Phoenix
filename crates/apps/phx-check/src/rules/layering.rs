@@ -5,18 +5,8 @@ const RULE: &str = "PC-01";
 
 /// The orders inside the foundation, the kernel and the interfaces: a crate may use only those before it.
 pub const FOUNDATION: &[&str] = &["phx-macros", "phx-num", "phx-rand", "phx-id"];
-pub const KERNEL: &[&str] = &[
-    "phx-store",
-    "phx-exec",
-    "phx-core",
-    "phx-geo",
-    "phx-ledger",
-    "phx-pop",
-    "phx-market",
-    "phx-acct",
-    "phx-val",
-    "phx-audit",
-];
+pub const KERNEL: &[&str] =
+    &["phx-store", "phx-exec", "phx-core", "phx-geo", "phx-ledger", "phx-pop", "phx-market", "phx-acct", "phx-val"];
 /// The assembly's order: the observer reads the world, which never reads the observer.
 pub const ASSEMBLY: &[&str] = &["phx-world", "phx-obs"];
 pub const INTERFACES: &[&str] = &[

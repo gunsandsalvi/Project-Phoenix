@@ -11,7 +11,7 @@ pub mod produce;
 pub mod rules;
 
 use phx_core::register::values::Table2;
-use phx_core::{AttrDecl, Declarations, FactDef, StreamDef, System, declare_kind, declare_prim, declare_stream};
+use phx_core::{AttrDecl, Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", clause: "FRM.1" } }
@@ -90,11 +90,6 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The firms, per million people, that the promotion rank makes individuals: the largest by employees.
-    pub RANK_PER_MILLION = "FRM.rank_per_million" { kind: Resolution, value: Count, clause: "REP.2", scope: Shared }
-}
-
-declare_prim! {
     /// The share of the banks' deposits that non-financial firms hold.
     pub DEPOSIT_SHARE = "FRM.deposit_share" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: Shared }
 }
@@ -139,10 +134,7 @@ impl System for Frm {
         for p in [&FIRMS_PER_EMPLOYED, &SIZE_EXPONENT, &DEPOSIT_SHARE] {
             let _: FixedPrim = d.prim(p);
         }
-        let _: CountPrim = d.prim(&RANK_PER_MILLION);
         let _: TablePrim = d.prim(&INDUSTRY_BY_SIZE);
-        d.claim(<if_firm::known::Industry as FactDef>::ITEM.name);
-        d.claim(<if_firm::known::Product as FactDef>::ITEM.name);
         declare_decisions(d);
         d.decision(&points::DAY_ZERO_PRICE);
         d.decision(&points::PRODUCE);
@@ -166,9 +158,6 @@ fn declare_decisions(d: &mut Declarations) {
     let _ = d.prim::<Count>(&INSOLVENCY_GRACE_DAYS);
     d.stream(VisitStream::DECL);
     d.stream(StanceStream::DECL);
-    for fact in if_firm::facts::FACTS {
-        d.claim(fact);
-    }
     let prims = decide::DecidePrims::declare(d);
     d.compile(Box::new(move |register, countries| {
         let adjustment = prims.adjustment_days.shared(register).get();

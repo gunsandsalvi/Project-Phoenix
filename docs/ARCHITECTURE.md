@@ -208,7 +208,7 @@ interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx
 | --- | --- |
 | `if-base` | shared identifiers and declared data: products, occupation families, skills, capital kinds, ways (issued at runtime from Stage 6, an improved way stored against its base as factors; the rule handle `labour_per_unit`), units; as built, the products, the way and the way-set identity as data only, what a way takes and finishes and the way-set interner being `sys-tec`'s; rating scales and notches; money-market tenors, segments, collateral baskets, haircuts and limits; agents' participation per asset class; pension kinds, contribution rate points and fund-menu identifiers, so a job's terms need no later crate |
 | `if-pop` | households, persons, roles, demographic facts, household decision points (founding a firm among them; `enrol`, `form`, `separate`), personal insolvency law; the education record, schooling and the enrolment attachment; education and family law and the day-local `Meeting` message; the rule handles `skill_now`, `division_shares` and `type_at_formation` |
-| `if-firm` | firms, production facts, known ways (one writer, `sys-tec`), pricing and payout decision points; research, imitation and licensing (`innovate`, `licence_quote`, `licence_accept`), licence lines, the patent instrument and the patent register; company and insolvency law, plans and votes; filed accounts |
+| `if-firm` | *(not built on the core: the old kernel's firm facts were deleted at S1.24, the core keeping a firm's state in its record)* pricing and payout decision points; research, imitation and licensing (`innovate`, `licence_quote`, `licence_accept`), licence lines, the patent instrument and the patent register; company and insolvency law, plans and votes; filed accounts |
 | `if-labour` | employment terms (the pension's kind and contribution rates among them), the employment attachment's scheme component, vacancies, applications, offers, separations; the rule handle `labour_state`, a read of a role's attachments and participation |
 | `if-property` | dwellings, land, tenancies, collateral descriptions, appraisals, sales |
 | `if-credit` | loan terms (interbank loans among them), applications and quotes, the lender's assessment, workouts and loan sales, credit-bureau records, trade credit; the decision points that need them (borrowing, where to live, financing, distress, answering a restructuring, arrears and filing, bidding for a failed bank) |
@@ -1311,9 +1311,8 @@ cleared line's claimants drawn to lose a failed payer's dues (REP.23) are drawn 
 
 One register primitive (`data/shared/REP.toml`, RESOLUTION) sets it (REP.40, spec Appendix E 44): `REP.persons`, the
 persons the world holds of the setup's `GEN.population`, which the opening splits among the countries, so
-everything derived from a country's people — the employed, firms, lines, the individuals' rank
-(`FRM.rank_per_million`) — follows the world's size, and every household and small firm drawn is one agent of one
-party; a size above the setup's population stops the run. `phx run --persons N` sets it before assembly in place of
+everything derived from a country's people — the employed, firms, contracts — follows the world's size, and every
+household drawn is one party; a size above the setup's population stops the run. `phx run --persons N` sets it before assembly in place of
 the register's, for a run of another size; the population's store and the save's manifest record it, so a save
 loads only under its own, and `phx inject` reads it from the manifest (§11). The agents are an outcome: the
 households the persons form and the small firms they employ, about 0.43 an agent a person (221 515 households and
@@ -2798,9 +2797,8 @@ An adult is employed at the country's employment rate, and is an employee at its
 (`LAB.status_shares`). A household rents at one minus the country's home ownership. A job's monthly wage is the mean
 wage per worker that the labour share gives, times the household's income as a multiple of the mean. A tenancy's rent is
 the country's median rent burden applied to the household persons' share of the labour income, times the same multiple.
-Each amount is placed on the nearest point of its trade's grid. The points are a declared ratio apart
-(`LAB.wage_point_ratio`, `HSG.rent_point_ratio`: a quarter), since each point is a line on whose other side every large
-firm holds a row. The multiples of the mean come from the distributions' closed-form means (`Distribution::mean`).
+Each wage is placed on the nearest point of labour's grid, the points a declared ratio apart
+(`LAB.wage_point_ratio`: a quarter), until firms post their own. The multiples of the mean come from the distributions' closed-form means (`Distribution::mean`).
 
 Nothing is balanced after drawing: finer attributes are drawn from their own counter keys, so a coarser setting is a
 projection of a finer one, and every number of preference types is a discretisation of the same declared distribution

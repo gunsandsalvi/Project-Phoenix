@@ -161,12 +161,5 @@ impl System for Cap {
         d.stream(VisitStream::DECL);
         d.decision(&points::INVEST);
         d.compile(Box::new(move |register, countries| Ok(Box::new(CapOwn::compile(&prims, register, countries)?))));
-        for item in [
-            <if_firm::facts::Capacity as phx_core::FactDef>::ITEM,
-            <if_firm::facts::DeliveredAtInvest as phx_core::FactDef>::ITEM,
-            <if_firm::facts::SoldAtInvest as phx_core::FactDef>::ITEM,
-        ] {
-            d.claim(item.name);
-        }
     }
 }

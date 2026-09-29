@@ -1,9 +1,0 @@
-# HSG's opening: the rent points tenancies are paid at, until landlords set their own rents.
-
-[[primitive]]
-id = "HSG.rent_point_ratio"
-kind = "RESOLUTION"
-owner = "HSG"
-source = "assumed"
-source_ref = "Rents at the opening lie on points a quarter apart: each point is a line whose other side every large firm takes a row on, so the points set the individuals' rows; a resolution setting, refined by measuring the budget (N8.5)."
-value = "1.25"

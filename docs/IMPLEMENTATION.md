@@ -1268,7 +1268,10 @@ decisions)*: every Stage 1 system's opening contribution.
   sales, payrolls and accounts, and the discrepancy published)*.
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(complete them, moved from S1.12: LC-1-01, LC-1-03, LC-1-43 and LC-1-44
   read the outlooks once firms sell to the households that ask)*.
-- STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state)*; SRV.2
+- STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state; the core's
+  firms are drawn per product and region, and `FRM.industry_by_size` and `FRM.product_share`, declared and sourced, are
+  read here or retired: the industry a firm of a size is drawn in, and the mix an industry of several products deals)*;
+  SRV.2
   *(moved from S1.06: distributors holding goods bought at wholesale and selling them at retail, with GDS.6's
   merchants on the core)*.
 - DECISION: FRM.5, REP.38 *(complete them, from S1.03: firms review and post prices, at the attention they set, from
@@ -8187,7 +8190,8 @@ the law's own handles (S5.03).
 
 **Clauses**:
 - STATE: SOC.1, SOC.2; PEN.1 *(completes it: the state pension claimed at its age, with the earnings-related part
-  where the law has one)*; GEO.4 *(completes it: public owners' infrastructure — life, maintenance and condition
+  where the law has one; the disability benefit its coverage declares, `SOC.disability_benefit_coverage`, declared
+  and sourced, read by nothing until here)*; GEO.4 *(completes it: public owners' infrastructure — life, maintenance and condition
   decided by their agencies)*.
 - DECISION: SOC.8.
 - PROCESS: SOC.3 *(completes it: every benefit)*, SOC.4, SOC.5; CAP.7 *(completes it: public owners build,
@@ -10890,7 +10894,7 @@ S5.02 and S6.04, or deleted where the core's restructure retired what they measu
 | Public events (S0.26b) | the builder's, under the autonomy below: weather always public, a catastrophe when a struck tile loses at least a permille, a household's death, disability or birthday never (`OBS.public_events`, a standing SHAPE) | 2026-09-25 |
 | Autonomy to the Stage 0 gate | the builder takes every decision the plan leaves to it, and the ones this table would otherwise wait for, until the gate's phone measurement; before it, the documents are checked against the code and fixed, then the full adversarial review of Stage 0 runs; each such decision is stated in its commit and here | 2026-09-24 |
 | The run heads read after S0.25c | 79 952 on the build run b7930378e270, rising with the world's cells as the owner accepted; taken by the builder under its autonomy | 2026-09-25 |
-| The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages and rents lie on points a quarter apart (`LAB.wage_point_ratio`, `HSG.rent_point_ratio`, 1.25) until firms and landlords post their own (placeholders LAB and HSG); taken by the builder under its autonomy | 2026-09-25 |
+| The opening's landlords and the wage and rent points | Tenancies at the opening pay landlords that stand in the country's firms by their plant, until the dwelling stock and its owners are drawn (S2.05); wages lie on points a quarter apart (`LAB.wage_point_ratio`, 1.25) until firms post their own (placeholder LAB), rents on the core with S2.05's tenancies (`HSG.rent_point_ratio` deleted at S1.24 with the old lines its points were); taken by the builder under its autonomy | 2026-09-25 |
 | S0.25's size | split into sub-steps, each with its own reviews and build run | 2026-09-24 |
 | The build run's length | an ordinary step's 120 days from day zero; a stage gate's settled and run two years, since the full population's opening and settling on the build machine take about an hour | 2026-09-24 |
 | Firms (spec REP.2, FRM.23) | one kind of firm whatever its size; size is derived from its contracts and books, never an input or a rank | 2026-09-28 |

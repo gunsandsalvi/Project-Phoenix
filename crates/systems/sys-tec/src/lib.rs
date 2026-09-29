@@ -7,7 +7,7 @@ pub mod sets;
 pub mod technology;
 pub mod ways;
 
-use phx_core::{Declarations, FactDef, System};
+use phx_core::{Declarations, System};
 
 pub use technology::Technology;
 
@@ -44,8 +44,5 @@ impl System for Tec {
             let tech = Technology::compile(&prims, register, countries)?;
             Ok(Box::new(tech))
         }));
-        let known = <if_firm::known::Known as FactDef>::ITEM.name;
-        d.claim(known);
-        d.claim(<if_firm::known::WayUsed as FactDef>::ITEM.name);
     }
 }

@@ -7,7 +7,6 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-if-firm = { path = "../../interfaces/if-firm" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-market = { path = "../../kernel/phx-market" }
