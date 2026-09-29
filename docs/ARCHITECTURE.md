@@ -1736,12 +1736,14 @@ length between two regions' market zones is taken once from the network. On its 
 day, a firm of a stored product holding free units beyond its expected sales times the goods' days of cover weighs
 carrying the whole lots beyond to each other region of its country that marks its product: the mark there less its own
 price less the freight of a lot out (`phx_market::carriage::freight`, at the lowest price carriage is posted at by a
-carrier of that mode with room at its region), the widest gap by any posted mode; it decides through the decision core
+carrier of that mode with room at its region), the widest gap by any posted mode, the carriers' prices and room read
+once a day into one table by region and mode (`carriage_offers`) that the shippers, the meetings and the basis read; it decides through the decision core
 (`FRT.ship`, taken by the head of the line of business, in `MND.decisions`). The consignments of each origin and mode
 meet in one carriage meeting (`phx_market::carriage::carriage`, order by `FRT.capacity_lot`): each booked with the
 cheapest carrier whose vehicles' room today (its transport equipment's efficient units times the mode's tonne-km a day)
 holds the trip out and back, one whose route crosses a segment already carrying its day's tonnes refused. A booking's
-goods are committed and its freight — whole units of carriage for its tonne-km at the carrier's posted price — is a
+goods are committed and its freight — the whole units of carriage its tonne-km take, priced at the carrier's posted
+price a lot and rounded once as a sale is (`phx_market::retail::paid`) — is a
 day's flow under `CARRIED`; after settlement a paid trip departs (`Shipments::depart`, the goods pledged to the carrier)
 and is the carrier's revenue, the shipper's services used and a sale of carriage to the national accounts, and an
 unpaid one frees its goods. On its day, in the goods day after wear, a shipment arrives (`Shipments::arrive`): used up

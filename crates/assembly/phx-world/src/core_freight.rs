@@ -59,7 +59,7 @@ pub struct FreightDay {
 /// Freight: its technology, each carrier's mode, each mode's route and its length between every two regions' market
 /// zones,
 /// the days between a shipper's decisions and the day freight opened, the shipments on their way, today's bookings, the
-/// days' records, and each gap a shipper chose to carry across with the freight it paid, both a lot.
+/// days' records.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Freight {
     tech: FreightTech,
@@ -72,8 +72,10 @@ pub struct Freight {
     bookings: Vec<Booking>,
     pub days: Vec<FreightDay>,
     today: FreightDay,
-    pub gaps: Vec<(f64, f64)>,
 }
+
+/// The day's carriage offers at each region and mode: each carrier, its posted price for a lot and its room today.
+type Offers = BTreeMap<(u32, u16), Vec<(PartyKey, i64, i64)>>;
 
 /// A consignment weighed at an origin: its shipper, the good it leaves as and arrives as, its units, the tonnes and
 /// the trip's tonne-km, its route's segments and days, and the freight it would pay a lot.
@@ -179,6 +181,7 @@ impl Core {
             return;
         }
         let deciding = self.bind(&sys_frt::points::SHIP);
+        let offers = self.carriage_offers();
         let mut by_origin: BTreeMap<(u32, u16), Vec<Weighed>> = BTreeMap::new();
         for slot in self.firm_slots(firm) {
             if !(day.get() + slot.get()).is_multiple_of(days) {
@@ -189,7 +192,7 @@ impl Core {
             if !self.is_stored(f.product) || !ctx.calendar.is_business(country, day) {
                 continue;
             }
-            if let Some((mode, w)) = self.weigh(ctx, (&f, deciding)) {
+            if let Some((mode, w)) = self.weigh(ctx, (&f, deciding), &offers) {
                 by_origin.entry((f.region, mode)).or_default().push(w);
             }
         }
@@ -197,7 +200,8 @@ impl Core {
             let Some(ccy) = country_of(ctx.regions, origin).and_then(|c| u8::try_from(c).ok()) else {
                 continue;
             };
-            self.meet_carriage((ctx.streams, geo), (origin, mode, ccy), &weighed, day);
+            let carriers = offers.get(&(origin, mode)).map_or(&[][..], Vec::as_slice);
+            self.meet_carriage((ctx.streams, geo), (origin, mode, ccy), (carriers, &weighed), day);
         }
     }
 
@@ -207,6 +211,7 @@ impl Core {
         &mut self,
         ctx: &crate::core_goods::GoodsCtx<'_>,
         (f, deciding): (&crate::core_goods::Firm, crate::core_decide::Bound<sys_frt::points::ShipIn, bool>),
+        offers: &Offers,
     ) -> Option<(u16, Weighed)> {
         let lot = self.lot(f.product);
         let lot_units = floor_to_i64(lot)?;
@@ -227,11 +232,12 @@ impl Core {
             if *product != f.product || *region == f.region || country_of(ctx.regions, *region) != Some(f.country) {
                 continue;
             }
-            for mode in self.posted_modes(f.region) {
-                let (Some(metres), Some(price)) = (
-                    self.freight.lengths.get(&(mode, f.region, *region)).copied(),
-                    self.lowest_carriage(f.region, mode),
-                ) else {
+            for ((_, mode), carriers) in offers.range((f.region, 0)..=(f.region, u16::MAX)) {
+                let mode = *mode;
+                let lowest = lowest_price(carriers);
+                let (Some(metres), Some(price)) =
+                    (self.freight.lengths.get(&(mode, f.region, *region)).copied(), lowest)
+                else {
                     continue;
                 };
                 let Some(out) =
@@ -256,7 +262,6 @@ impl Core {
             return None;
         }
         self.freight.today.chose += 1;
-        self.freight.gaps.push((there - here, freight_a_lot));
         let units = lots * lot_units;
         let units_a_tonne = self.freight.tech.units_a_tonne.get(usize::from(f.product)).copied()?;
         let route = self.route_of(mode, (f.region, to_region))?;
@@ -285,10 +290,9 @@ impl Core {
         &mut self,
         (streams, geo): (&Streams, &GeoState),
         (origin, mode, ccy): (u32, u16, u8),
-        weighed: &[Weighed],
+        (carriers, weighed): (&[(PartyKey, i64, i64)], &[Weighed]),
         day: Day,
     ) {
-        let carriers = self.carriers_at(origin, mode);
         let offers: Vec<Carrier> = carriers
             .iter()
             .filter_map(|(k, price, room)| {
@@ -321,12 +325,13 @@ impl Core {
         };
         for (i, k) in outcome.booked {
             let (Some(w), Some((carrier, price, _))) = (weighed.get(i), carriers.get(k).copied()) else { continue };
-            let bought = w.tonnes * w.km * per_tonne_km;
-            let (Some(owed), Some(units)) =
-                (floor_to_i64((bought / carriage_lot * from_i64(price)).ceil()), floor_to_i64(bought.ceil()))
+            // Carriage is sold in whole units, so a trip buys the whole units its tonne-km take, priced as a sale is.
+            let (Some(units), Some(lot)) =
+                (floor_to_i64((w.tonnes * w.km * per_tonne_km).ceil()), floor_to_i64(carriage_lot))
             else {
                 continue;
             };
+            let owed = phx_market::retail::paid(units, price, lot);
             if self.goods.stocks.bind(w.shipper, w.from, w.units, (Bound::Free, Bound::Committed)).is_err() {
                 continue;
             }
@@ -408,6 +413,8 @@ impl Core {
     #[must_use]
     pub fn basis(&self, regions: &[CountryId]) -> Vec<(f64, f64)> {
         let carriage_lot = self.lot(self.freight.tech.carriage_product);
+        let offers = self.carriage_offers();
+        let lowest = |at: u32, mode: u16| lowest_price(offers.get(&(at, mode))?);
         let mut out = Vec::new();
         for ((product, from), here) in &self.goods.marks {
             if !self.is_stored(*product) {
@@ -420,10 +427,10 @@ impl Core {
                 }
                 let least = [*from, *to]
                     .iter()
-                    .flat_map(|at| self.posted_modes(*at).into_iter().map(move |m| (m, *at)))
+                    .flat_map(|at| offers.range((*at, 0)..=(*at, u16::MAX)).map(move |((_, m), _)| (*m, *at)))
                     .filter_map(|(mode, at)| {
                         let metres = self.freight.lengths.get(&(mode, *from, *to)).copied()?;
-                        let price = self.lowest_carriage(at, mode)?;
+                        let price = lowest(at, mode)?;
                         freight(&self.freight.tech, (*product, lot), (mode, metres), (price, carriage_lot))
                     })
                     .reduce(|a, b| if b < a { b } else { a });
@@ -455,58 +462,26 @@ impl Core {
         held.into_iter().filter(|(_, (_, e))| *e > 0.0).map(|(k, (h, e))| (k, h / e)).collect()
     }
 
-    /// The carriers at a region carrying by a mode: each with its posted price for a lot of carriage and its
-    /// vehicles' room today in tonne-km.
-    fn carriers_at(&self, region: u32, mode: u16) -> Vec<(PartyKey, i64, i64)> {
+    /// The day's carriage offers by region and mode: each carrier with its posted price for a lot of carriage and its
+    /// vehicles' room today in tonne-km, read once for the day's shippers and meetings.
+    fn carriage_offers(&self) -> Offers {
+        let mut out = Offers::new();
         let (Some(chain), Ok(kind)) = (
             self.plant.chains.get(usize::try_from(self.freight.tech.vehicles).unwrap_or(usize::MAX)),
             u16::try_from(self.freight.tech.vehicles),
         ) else {
-            return Vec::new();
+            return out;
         };
-        let Some(a_day) = self.freight.tech.tonne_km.get(usize::from(mode)).copied() else { return Vec::new() };
-        let mut out = Vec::new();
-        for (k, m) in &self.freight.modes {
-            if *m != mode {
-                continue;
-            }
+        for (k, mode) in &self.freight.modes {
+            let Some(a_day) = self.freight.tech.tonne_km.get(usize::from(*mode)).copied() else { continue };
             let at = self.record_word(usize::from(k.kind()), k.slot(), crate::consts::firm::REGION);
             let price = self.record_word(usize::from(k.kind()), k.slot(), crate::consts::firm::PRICE);
-            let (Some(at), Some(price)) = (at, price) else { continue };
-            if at != i64::from(region) {
-                continue;
-            }
+            let (Some(at), Some(price)) = (at.and_then(|r| u32::try_from(r).ok()), price) else { continue };
             let vehicles = phx_core::units::capacity(&self.goods.stocks, &self.goods.units, *k, (kind, None), chain);
-            let room = floor_to_i64(vehicles * a_day).unwrap_or(0);
-            out.push((*k, price, room));
+            let Some(room) = floor_to_i64(vehicles * a_day) else { continue };
+            out.entry((at, *mode)).or_default().push((*k, price, room));
         }
         out
-    }
-
-    /// The modes some carrier at a region carries by.
-    fn posted_modes(&self, region: u32) -> Vec<u16> {
-        let mut modes: Vec<u16> = self
-            .freight
-            .modes
-            .iter()
-            .filter(|(k, _)| {
-                self.record_word(usize::from(k.kind()), k.slot(), crate::consts::firm::REGION)
-                    == Some(i64::from(region))
-            })
-            .map(|(_, m)| *m)
-            .collect();
-        modes.sort_unstable();
-        modes.dedup();
-        modes
-    }
-
-    /// The lowest price carriage is posted at by a carrier at a region by a mode.
-    fn lowest_carriage(&self, region: u32, mode: u16) -> Option<i64> {
-        self.carriers_at(region, mode)
-            .iter()
-            .filter(|(_, _, room)| *room > 0)
-            .map(|(_, p, _)| *p)
-            .reduce(|a, b| if b < a { b } else { a })
     }
 
     /// A mode's route between two regions' market zones, by its segments.
@@ -527,6 +502,11 @@ impl Core {
     fn good_unit(&mut self, product: u16, region: u32) -> u16 {
         self.goods.units.unit(Held::Good(Good { product, grade: 0, zone: region }))
     }
+}
+
+/// The lowest price carriage is posted at by the carriers with room.
+fn lowest_price(carriers: &[(PartyKey, i64, i64)]) -> Option<i64> {
+    carriers.iter().filter(|(_, _, room)| *room > 0).map(|(_, p, _)| *p).reduce(|a, b| if b < a { b } else { a })
 }
 
 /// The country a region lies in, by its place.
