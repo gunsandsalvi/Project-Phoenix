@@ -630,6 +630,8 @@ impl Core {
     /// The day's books kept: the contracts' moves entered as income and on the loan books, every account and loan
     /// book held to what the positions show, and on a month's first day the banks' review of their standards.
     fn keep_books(&mut self, day: Day, calendar: &Calendar) {
+        self.audit_taxes(day);
+        self.audit_debt(day);
         self.account_moves();
         self.book_loans(day);
         self.audit_accounts(day);
@@ -762,7 +764,6 @@ impl Core {
         record.wages = self.record_wages_settled(&failed);
         record.breaks += self.money_breaks((day, before), moved, &mut deposits);
         record.estates += self.end_settled(settling);
-        self.audit_taxes(day);
         self.keep_books(day, calendar);
         for k in &mut self.kinds {
             k.parties.close_day();

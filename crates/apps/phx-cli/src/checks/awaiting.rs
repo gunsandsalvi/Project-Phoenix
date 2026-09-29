@@ -81,13 +81,6 @@ pub const LC_0_15: Check = live_check! {
     check: |_| Outcome::NotYet("awaits extraction from deposits on the core (S1.24 d)"),
 };
 
-pub const LC_0_16: Check = live_check! {
-    id: "LC-0-16",
-    title: "For every issued instrument, holdings sum to the issued amount",
-    from_step: "S0.14",
-    check: |_| Outcome::NotYet("awaits instruments issued on the core (S1.24 g, the bills)"),
-};
-
 pub const LC_0_17: Check = live_check! {
     id: "LC-0-17",
     title: "Every line's two sides hold equal counts, and each side it lists equals its holders' rows",
@@ -322,20 +315,6 @@ pub const LC_1_20: Check = live_check! {
     title: "FRT.10: freight rates and price gaps between places are reported, and gaps track freight",
     from_step: "S1.07",
     check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
-};
-
-pub const LC_1_29: Check = live_check! {
-    id: "LC-1-29",
-    title: "TRS.6: debt outstanding equals issuance minus redemptions, read from the register",
-    from_step: "S1.11",
-    check: |_| Outcome::NotYet("awaits S1.24 g, the bills"),
-};
-
-pub const LC_1_31: Check = live_check! {
-    id: "LC-1-31",
-    title: "Auction results (cover, tail, failures) are published",
-    from_step: "S1.11",
-    check: |_| Outcome::NotYet("awaits S1.24 g, the bills"),
 };
 
 pub const LC_1_33: Check = live_check! {

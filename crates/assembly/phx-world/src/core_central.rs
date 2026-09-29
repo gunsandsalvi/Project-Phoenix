@@ -69,10 +69,36 @@ pub struct Central {
 /// One move of the fund stage, by the flow it makes: a position returned with its interest, a position opened, or a
 /// central bank's income remitted.
 #[derive(Clone, Copy, Debug)]
-enum Step {
-    Return { family: usize, edge: u32, principal: i64, interest: i64, country: usize, lending: bool },
-    Open { family: usize, bank: PartyKey, issuer: PartyKey, amount: i64, lending: bool, country: usize },
-    Remit { country: usize, amount: i64 },
+pub(crate) enum Step {
+    Return {
+        family: usize,
+        edge: u32,
+        principal: i64,
+        interest: i64,
+        country: usize,
+        lending: bool,
+    },
+    Open {
+        family: usize,
+        bank: PartyKey,
+        issuer: PartyKey,
+        amount: i64,
+        lending: bool,
+        country: usize,
+    },
+    Remit {
+        country: usize,
+        amount: i64,
+    },
+    /// Bills a bank won at its country's auction: how many, at what price a unit of face, and what it pays.
+    Buy {
+        bank: PartyKey,
+        treasury: PartyKey,
+        bills: i64,
+        price: f64,
+        pay: i64,
+        country: usize,
+    },
 }
 
 impl Core {
@@ -220,6 +246,8 @@ impl Core {
         }
         let mut steps = self.returns((deposit, lending), &open, day);
         steps.extend(self.remittances(&open, calendar.date(day)));
+        let buys = self.auctions(&open, (day, calendar), &steps);
+        steps.extend(buys);
         steps.extend(self.requests((deposit, lending), &open, &steps));
         let flows: Vec<Flow> = (0_u32..).zip(&steps).filter_map(|(i, s)| self.flow_of(*s, i)).collect();
         work.flows.reset(1);
@@ -245,6 +273,7 @@ impl Core {
         }
         let unpaid: std::collections::BTreeSet<u32> = failed.iter().map(|f| f.source).collect();
         self.after_fund_stage(&steps, &unpaid, day, calendar.date(day));
+        self.issue_bills(&steps, &unpaid, (day, calendar));
         self.account_flows(&flows, &failed);
         self.record_fund_days(&steps, &unpaid, &open, day);
         (flows, failed)
@@ -316,18 +345,9 @@ impl Core {
     /// the corridor's haircut. Its target is its reserves over its deposits at its first fund stage, times its
     /// deposits now.
     #[clause("CB.7", "CB.6", "MND.20")]
-    fn requests(&mut self, (deposit, lending): (usize, usize), open: &[usize], returns: &[Step]) -> Vec<Step> {
+    fn requests(&mut self, (deposit, lending): (usize, usize), open: &[usize], before: &[Step]) -> Vec<Step> {
         let Some(bank) = self.bank_kind else { return Vec::new() };
-        let mut after: BTreeMap<PartyKey, i64> = BTreeMap::new();
-        for s in returns {
-            let Step::Return { family, edge, principal, interest, lending: is_lending, .. } = *s else { continue };
-            let Some(row) = self.families.get(family).and_then(|f| f.store.edges.row(Slot::new(edge))) else {
-                continue;
-            };
-            let (b, v) =
-                if is_lending { (row.ends[0], -(principal + interest)) } else { (row.ends[1], principal + interest) };
-            *after.entry(b).or_insert(0) += v;
-        }
+        let after = self.reserves_moved(before);
         let mut collateral: BTreeMap<PartyKey, i128> = BTreeMap::new();
         if let Some(f) = self.families.iter().find(|f| f.name == "BNK.firm_loans") {
             for edge in f.store.edges.open_slots() {
@@ -336,9 +356,7 @@ impl Core {
                 }
             }
         }
-        let banks =
-            usize::try_from(self.kinds.get(usize::from(bank)).map_or(0, |k| k.parties.high_water())).unwrap_or(0);
-        let deposits = deposits_of(self.kinds.iter(), banks);
+        let deposits = self.bank_deposits();
         let requesting = self.bind(&sys_bnk::points::REQUEST);
         let mut steps = Vec::new();
         for c in open {
@@ -349,16 +367,7 @@ impl Core {
             };
             for (s, _) in self.banks_of.get(*c).cloned().unwrap_or_default() {
                 let key = PartyKey::new(bank, Slot::new(s));
-                let Some(a) = self.kinds.get(usize::from(bank)).and_then(|k| k.accounts.as_ref()) else { continue };
-                let (Some(balance), Some(pending)) = (a.balance.get(key.slot()), a.pending.get(key.slot())) else {
-                    continue;
-                };
-                let reserves = balance + pending + after.get(&key).copied().unwrap_or(0);
-                let owed = deposits.get(usize::try_from(s).unwrap_or(usize::MAX)).copied().unwrap_or(0);
-                let ratio = *self.central.targets.entry(key).or_insert_with(|| {
-                    if owed > 0 { phx_rand::float::from_i64(reserves) / phx_rand::float::from_i64(owed) } else { 0.0 }
-                });
-                let target = phx_ledger::opening::whole(ratio * phx_rand::float::from_i64(owed));
+                let Some((reserves, target)) = self.reserves_and_target(key, &after, &deposits) else { continue };
                 let lends = phx_ledger::opening::whole(
                     (1.0 - corridor.haircut)
                         * i64::try_from(collateral.get(&key).copied().unwrap_or(0))
@@ -390,6 +399,54 @@ impl Core {
         steps
     }
 
+    /// What the stage's earlier steps move each bank's reserves by: its positions returned, the bills it buys.
+    pub(crate) fn reserves_moved(&self, steps: &[Step]) -> BTreeMap<PartyKey, i64> {
+        let mut after: BTreeMap<PartyKey, i64> = BTreeMap::new();
+        for s in steps {
+            match *s {
+                Step::Return { family, edge, principal, interest, lending: is_lending, .. } => {
+                    let Some(row) = self.families.get(family).and_then(|f| f.store.edges.row(Slot::new(edge))) else {
+                        continue;
+                    };
+                    let (b, v) = if is_lending {
+                        (row.ends[0], -(principal + interest))
+                    } else {
+                        (row.ends[1], principal + interest)
+                    };
+                    *after.entry(b).or_insert(0) += v;
+                }
+                Step::Buy { bank, pay, .. } => *after.entry(bank).or_insert(0) -= pay,
+                _ => {}
+            }
+        }
+        after
+    }
+
+    /// Each bank's deposits, what it owes its customers.
+    pub(crate) fn bank_deposits(&self) -> Vec<i64> {
+        let banks = self.bank_kind.map_or(0, |b| {
+            usize::try_from(self.kinds.get(usize::from(b)).map_or(0, |k| k.parties.high_water())).unwrap_or(0)
+        });
+        deposits_of(self.kinds.iter(), banks)
+    }
+
+    /// A bank's reserves after the stage's earlier steps, and its target: its reserves over its deposits at its first
+    /// fund stage, times its deposits now.
+    pub(crate) fn reserves_and_target(
+        &mut self,
+        key: PartyKey,
+        after: &BTreeMap<PartyKey, i64>,
+        deposits: &[i64],
+    ) -> Option<(i64, i64)> {
+        let a = self.kinds.get(usize::from(key.kind()))?.accounts.as_ref()?;
+        let reserves = a.balance.get(key.slot())? + a.pending.get(key.slot())? + after.get(&key).copied().unwrap_or(0);
+        let owed = deposits.get(usize::try_from(key.slot().get()).unwrap_or(usize::MAX)).copied().unwrap_or(0);
+        let ratio = *self.central.targets.entry(key).or_insert_with(|| {
+            if owed > 0 { phx_rand::float::from_i64(reserves) / phx_rand::float::from_i64(owed) } else { 0.0 }
+        });
+        Some((reserves, phx_ledger::opening::whole(ratio * phx_rand::float::from_i64(owed))))
+    }
+
     /// The flow a step makes, its source the step's place: a return first in its payer's order, then what it opens.
     fn flow_of(&self, step: Step, at: u32) -> Option<Flow> {
         let (from, to, amount, reason, order, country) = match step {
@@ -404,6 +461,7 @@ impl Core {
             Step::Remit { country, amount } => {
                 (*self.issuers.get(country)?, (*self.treasuries.get(country)?)?, amount, REMITTED, 0, country)
             }
+            Step::Buy { bank, treasury, pay, country, .. } => (bank, treasury, pay, LENT, 0, country),
         };
         let ccy = u8::try_from(country).ok()?;
         Some(Flow { payer: from, payee: to, amount, source: at, denomination: Denom::money(ccy), reason, order })
@@ -435,7 +493,7 @@ impl Core {
                     }
                 }
                 Step::Open { .. } => self.open_position(*step, (day, date)),
-                Step::Remit { .. } => {}
+                Step::Remit { .. } | Step::Buy { .. } => {}
             }
         }
     }

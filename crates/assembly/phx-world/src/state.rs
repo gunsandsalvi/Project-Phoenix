@@ -1,7 +1,7 @@
 //! The state's laws as the core reads them: each country's taxes and benefit, compiled from the kinds the systems
 //! declare.
 
-use if_state::kinds::{BenefitKind, BenefitLaw, TaxKind, TaxLaw};
+use if_state::kinds::{BenefitKind, BenefitLaw, BillKind, BillLaw, TaxKind, TaxLaw};
 use phx_core::{Declarations, OpeningCountry, Register};
 use phx_num::Missing;
 
@@ -10,6 +10,7 @@ use phx_num::Missing;
 pub(crate) struct Country {
     pub tax: Missing<TaxLaw>,
     pub benefit: Missing<BenefitLaw>,
+    pub bills: Missing<BillLaw>,
 }
 
 /// The state as the core reads it: its kinds and each country's law.
@@ -17,6 +18,7 @@ pub(crate) struct Country {
 pub(crate) struct State {
     pub tax: Option<TaxKind>,
     pub benefit: Option<BenefitKind>,
+    pub bills: Option<BillKind>,
     pub countries: Vec<Country>,
 }
 
@@ -55,12 +57,14 @@ pub(crate) fn bind(d: &Declarations, register: &Register, countries: &[OpeningCo
     let mut errors = Vec::new();
     let tax = take(one::<TaxKind>(d), &mut errors);
     let benefit = take(one::<BenefitKind>(d), &mut errors);
+    let bills = take(one::<BillKind>(d), &mut errors);
     let compiled_countries: Vec<Country> = countries
         .iter()
         .map(|c| Country {
             tax: compiled("the taxes", c, tax.map(|k| (k.law)(register, c)), &mut errors),
             benefit: compiled("the benefit", c, benefit.map(|k| (k.law)(register, c)), &mut errors),
+            bills: compiled("the bills", c, bills.map(|k| (k.law)(register, c)), &mut errors),
         })
         .collect();
-    if errors.is_empty() { Ok(State { tax, benefit, countries: compiled_countries }) } else { Err(errors) }
+    if errors.is_empty() { Ok(State { tax, benefit, bills, countries: compiled_countries }) } else { Err(errors) }
 }

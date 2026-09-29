@@ -464,6 +464,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "outlooks": outlooks_report(w),
         "decisions": decisions_report(w),
         "fund_stages": fund_report(w),
+        "auctions": auctions_report(w),
         "lenders": lenders_report(w),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
@@ -561,6 +562,32 @@ fn fund_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
             })
         })
         .collect::<Vec<_>>()
+}
+
+/// Each bill auction: its offer, bids and sales, price, cover and tail, where it has them.
+fn auctions_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    let read = |m: phx_num::Missing<f64>| match m {
+        phx_num::Missing::Present(v) => json!(v),
+        phx_num::Missing::Absent => serde_json::Value::Null,
+    };
+    w.core()
+        .bills
+        .auctions
+        .iter()
+        .map(|a| {
+            json!({
+                "day": a.day,
+                "country": a.country,
+                "offered": a.offered,
+                "bid": a.bid,
+                "sold": a.sold,
+                "unsold": a.offered - a.sold,
+                "price": read(a.price),
+                "cover": read(a.cover),
+                "tail": read(a.tail),
+            })
+        })
+        .collect()
 }
 
 /// Each bank's applications, declines, quotes and loans, and its standard.

@@ -1026,6 +1026,11 @@ world switches to the core.
     the month after and asked again while unpaid, a claim in its estate; the taxes family holds what arose to what was
     remitted, owed and lost. A borrower's interest cover reads only its loans. LC-1-28 and LC-0-29 (the levies'
     sample) read them.
+  - g: the bills on the core (SOV.1, SOV.3, SOV.4, SOV.6, TRS.6; `core_bills`, ARCHITECTURE §7.16), not yet run: the
+    weekly auction in the fund stage, sized by the minister and bid by the banks through the decision core, cleared at
+    a uniform price, each bill a contract paid at maturity; the banks' government paper from the sheet opened as bills
+    maturing weekly; the central bank's paper waits for CB.5 (Stage 3) and the households' for their portfolios
+    (S3.05). LC-0-16, LC-1-29 and LC-1-31 read them.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

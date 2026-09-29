@@ -3,6 +3,7 @@
 //! arrive with their own steps.
 
 mod consts;
+pub mod points;
 mod rules;
 
 use if_state::kinds::{BillKind, BillLaw};
@@ -98,7 +99,7 @@ pub fn face(register: &Register, country: phx_id::CountryId) -> Result<i64, Stri
 
 /// The sovereign's bills, which the kernel runs.
 pub const BILLS: BillKind =
-    BillKind { line: BILL.name, sold: SOLD.name, law, size: rules::size, bid: rules::bid, clear: rules::clear };
+    BillKind { line: BILL.name, sold: SOLD.name, law, size: &points::SIZE, bid: &points::BID, clear: rules::clear };
 
 /// The sovereign's debt.
 #[derive(Debug)]
@@ -113,6 +114,8 @@ impl System for Sov {
         }
         let _: phx_core::Prim<Fixed<1>> = d.prim(&BUFFER_WEEKS);
         d.market(Box::new(BILLS));
+        d.decision(&points::SIZE);
+        d.decision(&points::BID);
     }
 
     fn handlers(_: &mut HandlerTable) {}

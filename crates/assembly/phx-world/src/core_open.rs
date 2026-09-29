@@ -170,6 +170,7 @@ impl Core {
             decisions: crate::core_decide::Decisions::default(),
             central: crate::core_central::Central::default(),
             taxes: crate::core_taxes::Taxes::default(),
+            bills: crate::core_bills::Bills::default(),
             next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),

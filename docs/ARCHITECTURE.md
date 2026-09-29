@@ -1827,13 +1827,20 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
   wage; it joins its country's benefit line of that amount — opened the first time a claim needs it, paid monthly for
   the benefit's months — with as many of the treasury's members. A hire ends it. A person who retires claims the state
   pension (§10.3).
-- **Bills** (`sys-sov`, SOV): each country's auction runs at 8d on its declared weekday, before the facilities. The
-  treasury's placeholder plan (naming TRS) offers the face that keeps its cash at `SOV.buffer_weeks` of its last
-  week's outflow (its cash at the last auction less now) after the bills maturing before the next; each bank bids its
-  reserves above its target at the price whose yield is the deposit facility's rate; the uniform-price clearing takes
-  bids from the highest price down, the last price's sharing what is left pro rata in whole contracts. Each auction is
-  a bill line of its own whose face is paid at maturity by the dues, rows opened at face and the price paid to the
-  treasury (the difference to equity, `SOV sold`).
+- **Bills** (`sys-sov`, SOV; on the core `core_bills`): each country's auction runs in its fund stage on its declared
+  weekday, before the facilities' requests. The minister sizes it (`SOV.size`, through the decision core; the
+  placeholder plan naming TRS): the face that keeps the treasury's cash at `SOV.buffer_weeks` of its last week's
+  outflow — its cash after the last auction's proceeds less now — after the week's maturities, in whole bills. Each
+  bank's chief executive bids (`SOV.bid`) its reserves above its target at the price whose yield over a bill's weeks
+  is the deposit facility's rate; the uniform-price clearing takes bids from the highest price down, the last price's
+  sharing what is left pro rata in whole bills, and what is not sold is not issued. A bill is a contract of the
+  `SOV.bills` family from the treasury to its holder, its balance the price paid, reckoned at the yield its price
+  gives and paid in full at maturity, so a treasury short of cash falls into arrears on it. At the opening each bank
+  holds the government paper its sheet gives it as bills maturing one tranche a week over a bill's weeks at the
+  deposit facility's rate; the central bank's paper waits for its purchases (CB.5) and the households' for their
+  portfolios. Each auction's offer, bids, sales, price, cover and tail are kept (the run report's `auctions`,
+  LC-1-31); each issue is held to what its holders paid while it stands (LC-0-16); and at each close the debt family
+  holds the bills outstanding to what was issued less what was redeemed and written off (TRS.6, LC-1-29).
 - **Taxes' collectors on the core** (`core_taxes`, TAX.2, TAX.5): a tax arises on its base's payment once it settles —
   income tax withheld by the employer from the wage it pays (the wage flow carries the net), consumption tax in a
   final sale's price charged by the seller — and is then its collector's debt to its treasury, a contract of the

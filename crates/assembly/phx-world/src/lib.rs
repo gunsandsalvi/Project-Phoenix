@@ -3,6 +3,7 @@ pub mod consts;
 pub mod core;
 pub mod core_accounts;
 pub mod core_audit;
+pub mod core_bills;
 pub mod core_books;
 pub mod core_central;
 pub mod core_credit;

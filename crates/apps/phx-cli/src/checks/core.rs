@@ -1124,3 +1124,81 @@ pub const LC_0_29: Check = live_check! {
     from_step: "S0.17",
     check: levies_sampled,
 };
+
+/// Every issue of bills not yet at maturity is held whole: its holders' balances sum to what they paid for it.
+fn issues_held(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let today = w.today();
+    let live: Vec<&phx_world::core_bills::Issue> = core.bills.issues.iter().filter(|i| i.maturity > today).collect();
+    if live.is_empty() {
+        return Outcome::NotYet("no bill stands issued at the run's close");
+    }
+    let held = core.issue_held();
+    match live.iter().find(|i| held.get(&i.schedule).copied().unwrap_or(0) != i.issued) {
+        Some(i) => Outcome::Fail(format!(
+            "the issue of day {} in country {} is held at {} where {} was issued",
+            i.day.get(),
+            i.country,
+            held.get(&i.schedule).copied().unwrap_or(0),
+            i.issued
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_0_16: Check = live_check! {
+    id: "LC-0-16",
+    title: "For every issued instrument, holdings sum to the issued amount",
+    from_step: "S0.14",
+    check: issues_held,
+};
+
+/// The debt family is clean: the bills outstanding are what was issued less what was redeemed and written off; and
+/// some bills were redeemed.
+fn debt_register(w: Inspector<'_>) -> Outcome {
+    if w.core().bills.redeemed == 0 {
+        return Outcome::NotYet("no bill was redeemed in the run");
+    }
+    family_clean(w, "debt")
+}
+
+pub const LC_1_29: Check = live_check! {
+    id: "LC-1-29",
+    title: "TRS.6: debt outstanding equals issuance minus redemptions, read from the register",
+    from_step: "S1.11",
+    check: debt_register,
+};
+
+/// Every auction's offer, bids and sales are published, with its cover where it offered and its price and tail
+/// where it sold; an auction that sold less than it offered is published as such.
+fn auctions_published(w: Inspector<'_>) -> Outcome {
+    let auctions = &w.core().bills.auctions;
+    if !auctions.iter().any(|a| a.offered > 0) {
+        return Outcome::NotYet("no treasury offered bills in the run");
+    }
+    for a in auctions {
+        if a.offered > 0 && matches!(a.cover, phx_num::Missing::Absent) {
+            return Outcome::Fail(format!("the auction of day {} in country {} has no cover", a.day, a.country));
+        }
+        if a.sold > 0 && (matches!(a.price, phx_num::Missing::Absent) || matches!(a.tail, phx_num::Missing::Absent)) {
+            return Outcome::Fail(format!(
+                "the auction of day {} in country {} sold with no price or tail",
+                a.day, a.country
+            ));
+        }
+        if a.sold > a.offered {
+            return Outcome::Fail(format!(
+                "the auction of day {} in country {} sold more than it offered",
+                a.day, a.country
+            ));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_31: Check = live_check! {
+    id: "LC-1-31",
+    title: "Auction results (cover, tail, failures) are published",
+    from_step: "S1.11",
+    check: auctions_published,
+};

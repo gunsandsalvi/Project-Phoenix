@@ -48,6 +48,8 @@ pub struct Core {
     pub accounts: crate::core_accounts::Accounts,
     /// Each country's lending law, the firms' filed earnings and each bank's lending.
     pub credit: crate::core_lending::Credit,
+    /// The sovereigns' bills: their auctions, issues and the debt they are.
+    pub bills: crate::core_bills::Bills,
     /// The taxes arising, their collectors' debts and what was remitted.
     pub taxes: crate::core_taxes::Taxes,
     /// The central banks' facilities, their positions' days, their income and the money they record owing.

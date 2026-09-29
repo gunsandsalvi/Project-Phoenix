@@ -132,7 +132,7 @@ pub struct BillKind {
     pub line: &'static str,
     pub sold: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<BillLaw, String>,
-    pub size: fn(&SizeIn) -> f64,
-    pub bid: fn(&BidIn) -> Vec<(f64, f64)>,
+    pub size: &'static phx_core::decisions::DecisionPointDecl<SizeIn, f64>,
+    pub bid: &'static phx_core::decisions::DecisionPointDecl<BidIn, Vec<(f64, f64)>>,
     pub clear: fn(i64, &[Bid]) -> Option<Allotment>,
 }
