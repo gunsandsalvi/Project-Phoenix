@@ -882,12 +882,15 @@ world switches to the core.
     goods' moves follow their stock's pressure, which at an empty stock is 43 (their cover's days and one) and moves
     the wanted price 6.5 times at its curvature, and back as the stock returns. To settle in e, the reviews read
     against the management types' spread and FRM.19's measure against the retail data (Levy et al., 2011).
-  - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
+  - The live checks on the core (120 days, 150,000 persons, seed 1): 40 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
-    drift (LC-0-59, LC-0-60), persons (LC-0-63), the accounts (LC-1-37); 28 are retired, each with the old kernel's
-    concept it read and the core's check that holds instead; 62 report "not yet", each naming the part of this step
-    that brings what it reads (d, e, f, g or h). None fails.
+    drift (LC-0-59, LC-0-60), persons, their events and rates (LC-0-39, LC-0-41, LC-0-54, LC-0-63, LC-1-36,
+    LC-1-49, LC-1-51), prices and outlooks (LC-1-04, LC-1-07, LC-1-08), goods and sales (LC-1-17, LC-1-18,
+    LC-1-32), jobs and the labour rounds (LC-1-21, LC-1-22, LC-1-23), loans and benefits (LC-1-26, LC-1-30), the
+    accounts (LC-1-37); 28 are retired, each with the old kernel's concept it read and the core's check that holds
+    instead; 44 report "not yet", each naming the part of this step or the later step that brings what it reads.
+    None fails.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
   - The native opening is built (a): the core reads nothing of the books. Built on the core: goods as holdings (each
