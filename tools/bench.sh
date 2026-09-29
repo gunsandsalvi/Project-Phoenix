@@ -69,6 +69,7 @@ mkdir -p "$out"
 # A run that fails writes no report, so the last one is removed first and never read as this run's.
 rm -rf "$out/report.json" "$out/run"
 status=0
+began=$(date +%s.%N)
 target/release/phx run "${args[@]}" "${extra[@]}" > "$out/run.log" 2>&1 &
 pid=$!
 # Ctrl-C or the time limit stops the world, never the bench: the summary is still read from what the log holds.
@@ -81,6 +82,7 @@ if [[ -n $limit ]]; then
     watchdog=$!
 fi
 wait "$pid" || status=$?
+ran=$(echo "$(date +%s.%N) - $began" | bc)
 wait "$tailer" 2>/dev/null || true
 if [[ -n $watchdog ]]; then kill "$watchdog" 2>/dev/null || true; fi
 trap - INT TERM
@@ -96,10 +98,10 @@ if [[ $keep == 1 && -f "$out/report.json" ]]; then
     cp "$out/report.json" "perf/bench/$commit-${persons:-committed}-$span.json"
 fi
 
-python3 - "$out" "$commit" "$status" <<'SUMMARY' | tee "$out/summary.txt"
+python3 - "$out" "$commit" "$status" "$ran" <<'SUMMARY' | tee "$out/summary.txt"
 import json, os, re, statistics, sys
 
-out, commit, status = sys.argv[1], sys.argv[2], int(sys.argv[3])
+out, commit, status, ran = sys.argv[1], sys.argv[2], int(sys.argv[3]), float(sys.argv[4])
 log = open(os.path.join(out, "run.log"), errors="replace").read().splitlines()
 path = os.path.join(out, "report.json")
 r = json.load(open(path)) if os.path.exists(path) else None
@@ -146,7 +148,7 @@ for text in log:
         elif name in ("meet.round", "settle.round"):
             rounds[name] = fields
 
-print(f"bench {commit}: exit {status}; the log's last mark at {last_t:.1f} s; peak {peak} MiB by the trace")
+print(f"bench {commit}: exit {status} after {ran:.1f} s; the log's last mark at {last_t:.1f} s; peak {peak} MiB")
 if r:
     b = r.get("budget", {})
     print(f"run: seed {r.get('seed')}, {r.get('persons')} persons held of {r.get('persons_opened')} opened, "
@@ -161,9 +163,9 @@ else:
     print("run: no report; the run did not finish, so what follows is read from its log alone")
 
 if open_spans:
-    print("still open when the log ended, outermost first (where the run stood):")
+    print("still open when the world stopped, outermost first (where the run stood):")
     for name, t0 in open_spans:
-        print(f"  {name:<30} begun at {t0:>10.3f} s, open {last_t - t0:>10.3f} s")
+        print(f"  {name:<30} begun at {t0:>10.3f} s, open {ran - t0:>10.3f} s")
     for name, fields in rounds.items():
         print(f"  last {name}: " + " ".join(f"{k}={v}" for k, v in fields.items()))
 
