@@ -755,8 +755,9 @@ impl Core {
             });
             // Goods and rights to deposits an estate holds wait for its liquidation, which sells them; until then it
             // stays.
-            let goods =
-                self.goods.stocks.holdings(estate).any(|h| h.units != 0) || self.deposits.held.contains_key(&estate);
+            let goods = self.goods.stocks.holdings(estate).any(|h| h.units != 0)
+                || self.deposits.held.contains_key(&estate)
+                || self.projects_of(estate) != 0;
             if !empty || goods {
                 let why = if goods { crate::core::Waits::Liquidation } else { crate::core::Waits::PayingOut };
                 self.waiting.insert(estate, why);

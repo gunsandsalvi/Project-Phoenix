@@ -2386,6 +2386,9 @@ pub struct phx_core::units::Chain
 pub phx_core::units::Chain::efficiency: alloc::vec::Vec<f64>
 pub phx_core::units::Chain::leaving_per_year: f64
 pub phx_core::units::Chain::value: alloc::vec::Vec<f64>
+impl phx_store::save::Saved for phx_core::units::Chain where f64: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved
+pub fn phx_core::units::Chain::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::units::Chain::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::units::Class
 pub phx_core::units::Class::band: u8
 pub phx_core::units::Class::condition: u8

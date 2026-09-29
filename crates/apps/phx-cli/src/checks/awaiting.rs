@@ -200,29 +200,6 @@ pub const LC_0_61: Check = live_check! {
     retired: "the ledger's run of rows due was the old kernel's; the core's dues come off its wheels, read by LC-0-62",
 };
 
-pub const LC_1_10: Check = live_check! {
-    id: "LC-1-10",
-    title: "per owner and kind, plant next day is plant today plus completions less retirements plus transfers: \
-            the family of the plant's stock (CAP.8) is clean and plant wears",
-    from_step: "S1.04",
-    check: |_| Outcome::NotYet("awaits S1.24 d, plant"),
-};
-
-pub const LC_1_11: Check = live_check! {
-    id: "LC-1-11",
-    title: "no output exceeds the capacity of the plant that made it (CAP.9)",
-    from_step: "S1.04",
-    check: |_| Outcome::NotYet("awaits S1.24 d, plant"),
-};
-
-pub const LC_1_12: Check = live_check! {
-    id: "LC-1-12",
-    title: "every investment is a purchase from a named producer, a commitment until delivery; investment's share, \
-            volatility and responses and the plant's age are reported (CAP.10)",
-    from_step: "S1.04",
-    check: |_| Outcome::NotYet("awaits S1.24 d, plant"),
-};
-
 pub const LC_1_15: Check = live_check! {
     id: "LC-1-15",
     title: "the reads of GDS.11 are reported: volatility against stocks, the basis between places against freight, \

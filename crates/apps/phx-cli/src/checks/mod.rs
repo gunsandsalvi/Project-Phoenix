@@ -4,6 +4,7 @@ pub mod geo;
 pub mod lives;
 pub mod observer;
 pub mod outlooks;
+pub mod plant;
 pub mod saves;
 pub mod services;
 
@@ -149,9 +150,9 @@ pub const CHECKS: &[Check] = &[
     core::LC_1_06,
     core::LC_1_07,
     core::LC_1_08,
-    awaiting::LC_1_10,
-    awaiting::LC_1_11,
-    awaiting::LC_1_12,
+    plant::LC_1_10,
+    plant::LC_1_11,
+    plant::LC_1_12,
     core::LC_1_13,
     geo::LC_1_14,
     awaiting::LC_1_15,

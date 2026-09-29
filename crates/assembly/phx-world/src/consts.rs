@@ -231,8 +231,12 @@ pub mod reason {
     pub const FUNDED: u8 = 16;
     /// Goods destroyed where a catastrophe struck.
     pub const DESTROYED: u8 = 17;
+    /// Plant worn from one condition to the next, or retired from the last.
+    pub const WORN: u8 = 18;
+    /// Plant entering service: at the opening, or a project complete.
+    pub const BUILT: u8 = 19;
     /// The reasons a day's record counts failed flows by: every reason above.
-    pub const REASONS: usize = 18;
+    pub const REASONS: usize = 20;
 }
 /// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
 pub mod draws {

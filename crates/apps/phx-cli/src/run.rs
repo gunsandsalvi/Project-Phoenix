@@ -162,6 +162,45 @@ fn drift_report(settled: &[phx_obs::Drift], ended: &[phx_obs::Drift]) -> serde_j
     json!({ "settled": at(settled), "ended": at(ended) })
 }
 
+/// The report's sections on the core's institutions, its saves and its plant.
+fn sections(w: Inspector<'_>) -> Vec<(String, serde_json::Value)> {
+    vec![
+        ("decisions".to_owned(), json!(decisions_report(w))),
+        ("fund_stages".to_owned(), json!(fund_report(w))),
+        ("auctions".to_owned(), json!(auctions_report(w))),
+        ("agencies".to_owned(), json!(agencies_report(w))),
+        ("lenders".to_owned(), json!(lenders_report(w))),
+        ("saves".to_owned(), saves_report(w)),
+        ("injections".to_owned(), crate::inject::report(w.injections())),
+        ("plant".to_owned(), plant_report(w)),
+    ]
+}
+
+/// The plant's days: what was paid into projects, what entered service, wore and was retired, the makings plant
+/// bound and those beyond it; and the capital units held at the close by condition, newest first.
+fn plant_report(w: Inspector<'_>) -> serde_json::Value {
+    let core = w.core();
+    let mut by_condition: std::collections::BTreeMap<u8, i64> = std::collections::BTreeMap::new();
+    for h in core.goods.stocks.all() {
+        if let Some(phx_core::goods::Held::Capital(c)) = core.goods.units.held(h.unit) {
+            *by_condition.entry(c.condition).or_insert(0) += h.units;
+        }
+    }
+    json!({
+        "days": core.plant.days.iter().map(|d| json!({
+            "day": d.day,
+            "invested": d.invested,
+            "completed": d.completed,
+            "worn": d.worn,
+            "retired": d.retired,
+            "bound": d.bound,
+            "beyond": d.beyond,
+        })).collect::<Vec<_>>(),
+        "projects": core.plant.projects.len(),
+        "units_by_condition": by_condition.iter().map(|(c, u)| json!({ "condition": c, "units": u })).collect::<Vec<_>>(),
+    })
+}
+
 /// The closures that balanced each country's opening sheet, each a share of its GDP.
 fn closures_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
@@ -634,12 +673,6 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "labour": labour_report(w),
         "services": services_report(w),
         "outlooks": outlooks_report(w),
-        "decisions": decisions_report(w),
-        "fund_stages": fund_report(w),
-        "auctions": auctions_report(w),
-        "agencies": agencies_report(w),
-        "lenders": lenders_report(w),
-        "saves": saves_report(w),
         "closures": closures_report(w),
         "apportioned": apportioned_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
@@ -654,7 +687,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     });
     if let Some(o) = report.as_object_mut() {
         o.insert("inject_ms".to_owned(), json!(inject_ns.map(|n| n / 1_000_000)));
-        o.insert("injections".to_owned(), crate::inject::report(w.injections()));
+        o.extend(sections(w));
     }
     if let Some(path) = &args.report {
         if let Some(dir) = path.parent() {

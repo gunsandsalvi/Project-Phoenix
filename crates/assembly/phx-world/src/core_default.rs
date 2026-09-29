@@ -212,6 +212,7 @@ impl Core {
         }
         self.pass_goods(key, estate, day);
         self.pass_rights(key, estate);
+        self.pass_projects(key, estate);
         let claims = self.close_contracts(ctx, (key, country.get()), day);
         self.insolvency.claims.insert(estate, claims);
         for v in self.labour.vacancies.iter_mut().filter(|v| v.employer == key) {

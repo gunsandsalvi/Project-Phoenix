@@ -26,7 +26,7 @@ pub struct Class {
 /// A kind's conditions: the yearly rate units leave each, and each condition's efficiency and value as shares of a
 /// unit new, newest first.
 #[clause("CAP.6", "REP.24")]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Chain {
     pub leaving_per_year: f64,
     pub efficiency: Vec<f64>,

@@ -1520,6 +1520,23 @@ covers the cost. `rules::invest::cost_of_funds` (debt quote and owners' return w
   carry. The apply routine refuses a `Built` leg on anything but a chain's construction or newest class, and plant put
   in service other than what construction gave.
 
+**Plant on the core** (`core_plant`, CAP.1, CAP.2, CAP.5, CAP.6, CAP.8, CAP.9): plant is capital units in its owners'
+holdings (`phx_core::units`: `Class` of kind, band, condition and region, each class a declared unit), so the goods
+family holds it as it holds goods. At the opening each firm holds, of each kind its way needs (`TEC.capital` per unit
+of output a year, `sys_cap::CapOwn::needs`), its output a year times that in efficient units, spread over the kind's
+`CAP.condition_classes` by the weights of a stock grown at its country's `GEN.growth` (`rules::wear::steady_weights`),
+each class's units at its value's share of the kind's product's opening price new — the steady-path convention. The
+production rule's capacity is at most its plant's (`rules::capacity`: the scarcest kind's efficient units over the
+way's plant a unit, a day); each making is counted where plant bound it and where it went beyond (never, by
+construction). Every `CAP.review_days` each holder's plant wears along its chains (`phx_core::units::wear`, flows with
+nature under `WORN`), the value lost charged to income as depreciation. A capital good bought as investment whose
+product a kind is bought as (`CAP.bought_as`) is used at delivery and becomes its buyer's `Project` at what it paid,
+named with its producer, an asset at cost on its balance sheet (CAP.2); after the kind's `CAP.lead_days` it enters
+service as new plant at its buyer's region, carrying that cost (`BUILT`). An ended firm's projects pass to its estate,
+which then waits. What a firm invests is still the placeholder of its country's fixed investment shared by its
+opening turnover (`CAP.invest`); the investment decision by CAP.3 (`rules::invest`) and the owner's maintenance,
+repair, sale and scrapping by CAP.4 (`rules::maintain`) are the next of plant.
+
 ### 7.11 Goods, orders and trades
 
 - **Goods** (GDS.1, GDS.2): a good is an instrument per **(product, grade class, zone)**, of the real-asset family, with

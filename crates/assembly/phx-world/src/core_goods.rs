@@ -602,6 +602,8 @@ impl Core {
         let mut moved: Vec<Flow> = Vec::new();
         self.spoil(day, &mut moved);
         record.destroyed = self.destroy(day, &mut moved);
+        self.complete_projects(day, &mut moved);
+        self.wear_plant(day, &mut moved);
         self.review_extraction(ctx.regions, day);
         record.made = self.make(ctx, day, &mut moved);
         record.inputs_wanted = self.buy_inputs(ctx, day);
@@ -614,11 +616,13 @@ impl Core {
         let invest = self.investment_wants(ctx);
         // A service bought as investment is used as it is delivered, being made as it is sold; a good is held.
         let stored = self.goods.stored.clone();
+        let plant = self.plant_products();
+        // A capital good bought for plant becomes its buyer's project at what it paid, until it enters service.
         let held = |product: u16, unit: u16| GoodsLeg {
             unit: Denom::units(unit),
             reason: DELIVERED,
             order: 0,
-            used: !stored.get(usize::from(product)).copied().unwrap_or(true),
+            used: !stored.get(usize::from(product)).copied().unwrap_or(true) || plant.contains(&product),
         };
         let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held);
         self.close_services(ctx, day, &mut moved);
@@ -656,6 +660,7 @@ impl Core {
             });
         }
         self.goods.days.push(record);
+        self.close_plant_day(day);
         record
     }
 
@@ -733,6 +738,8 @@ impl Core {
         let mut capacity = self.staff_capacity(&f).map_or(f64::INFINITY, from_i64);
         let deposits = self.deposit_room(f.key, f.product);
         capacity = if deposits < capacity { deposits } else { capacity };
+        let plant = self.plant_capacity(f.key, (f.country, f.product));
+        capacity = if plant < capacity { plant } else { capacity };
         for (q, a) in self.recipe(&f) {
             let can = from_i64(self.free_units(f.key, *q, f.region)) / a;
             capacity = if can < capacity { can } else { capacity };
@@ -778,6 +785,8 @@ impl Core {
         let mut made = 0;
         for (slot, (f, today)) in slots.into_iter().zip(plans).filter_map(|(s, p)| p.map(|p| (s, p))) {
             self.take_from_deposits(f.key, f.product, today);
+            let allowed = self.plant_capacity(f.key, (f.country, f.product));
+            self.count_plant(today, allowed);
             let stored = self.is_stored(f.product);
             let inputs = self.stored_inputs(&f);
             if !stored {
@@ -1729,7 +1738,10 @@ impl Core {
                 self.accounts.revenue += i128::from(d.paid);
             }
             if d.goods.payee == NATURE {
-                self.recognise(d.buyer, Line::ServicesUsed, d.paid);
+                match self.plant_kind_of_unit(unit).filter(|_| d.goods.reason == DELIVERED) {
+                    Some(kind) => self.start_project((d.buyer, seller), (kind, d.goods.amount, d.paid), day),
+                    None => self.recognise(d.buyer, Line::ServicesUsed, d.paid),
+                }
             }
         }
         let close = self.goods.stocks.totals();

@@ -27,6 +27,7 @@ pub struct Income {
     pub interest_paid: i128,
     pub interest_received: i128,
     pub written_off: i128,
+    pub depreciation: i128,
 }
 
 impl Income {
@@ -41,6 +42,7 @@ impl Income {
             - self.taxes
             - self.interest_paid
             - self.written_off
+            - self.depreciation
     }
 }
 
@@ -56,6 +58,7 @@ pub enum Line {
     InterestPaid,
     InterestReceived,
     WrittenOff,
+    Depreciation,
 }
 
 /// The accounts: the day they opened, each owned party's equity account at the opening and its income since, and
@@ -102,10 +105,12 @@ impl Core {
             Line::InterestPaid => i.interest_paid += a,
             Line::InterestReceived => i.interest_received += a,
             Line::WrittenOff => i.written_off += a,
+            Line::Depreciation => i.depreciation += a,
         }
     }
 
-    /// What a party's balance sheet shows: its money, its goods at their cost and the arrears it is owed, with, for a
+    /// What a party's balance sheet shows: its money, its goods and plant at their cost, its projects at what they
+    /// cost and the arrears it is owed, with, for a
     /// bank, the balances its loans owe it; less the arrears it owes and the balances it has to repay, and, for a bank,
     /// its customers' deposits.
     #[must_use]
@@ -141,7 +146,7 @@ impl Core {
         } else {
             0
         };
-        Some(money + goods + owed_to - owes - deposits)
+        Some(money + goods + self.projects_of(party) + owed_to - owes - deposits)
     }
 
     /// Each bank's customers' deposits, by its slot.

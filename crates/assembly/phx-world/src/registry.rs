@@ -451,6 +451,14 @@ fn open_core_goods(
             return Err(AssemblyErrors(vec!["the firms' management not compiled for the goods' opening".to_owned()]));
         };
         core.open_goods(&gctx, (opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
+        let cap = own
+            .iter()
+            .find(|(c, _)| *c == <sys_cap::Cap as phx_core::System>::CODE)
+            .and_then(|(_, s)| s.downcast_ref::<sys_cap::CapOwn>());
+        let Some(cap) = cap else {
+            return Err(AssemblyErrors(vec!["the plant's kinds not compiled for the plant's opening".to_owned()]));
+        };
+        core.open_plant((cap, &p.c.register), (opening, regions), today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
     Ok(())
 }
