@@ -18,7 +18,7 @@ use crate::consts::SEARCH_CHUNK;
 
 /// An employer's posted jobs: the region and occupation family they are in, the skill they ask, the monthly wage at
 /// their point, and the jobs still open.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Vacancy {
     pub employer: PartyKey,
     pub region: u32,
@@ -30,7 +30,7 @@ pub struct Vacancy {
 
 /// A person searching for work: its household and its identity, the identity its draws are made for, where it looks,
 /// the skill and years of experience it brings, and the least monthly wage it takes.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Seeker {
     pub household: PartyKey,
     pub person: u64,
@@ -43,7 +43,7 @@ pub struct Seeker {
 }
 
 /// A seeker's application to a vacancy, carrying what its employer reads of it.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Application {
     pub vacancy: u32,
     pub seeker: Seeker,

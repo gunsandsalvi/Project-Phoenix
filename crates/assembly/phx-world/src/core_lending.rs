@@ -22,7 +22,7 @@ use crate::core::Core;
 /// A bank's lending: the worst class it admits; the applications it answered, declined and quoted, and the loans it
 /// made; by class, the loan-years its book has held and the defaults it has seen; and what it wrote off since its
 /// last review.
-#[derive(Clone, Debug, Default, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, phx_macros::Saved)]
 pub struct Lender {
     pub standard: u32,
     pub applications: u64,
@@ -36,7 +36,7 @@ pub struct Lender {
 
 /// Lending on the core: each country's lending law, each firm's filed earnings a year at the opening, and each bank's
 /// lending.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Credit {
     pub laws: Vec<Law>,
     pub filed: BTreeMap<PartyKey, f64>,
@@ -146,7 +146,7 @@ impl Core {
 
     /// Each firm loan the opening holds classed as its bank reads its borrower at the opening.
     fn class_opening_loans(&mut self, today: Day) {
-        let Some(i) = self.families.iter().position(|f| f.name == "BNK.firm_loans") else { return };
+        let Some(i) = self.families.iter().position(|f| f.name == crate::consts::families::FIRM_LOANS) else { return };
         let Some(family) = self.families.get(i) else { return };
         let loans: Vec<(u32, PartyKey, u8)> = family
             .store

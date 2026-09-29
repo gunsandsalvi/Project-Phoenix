@@ -138,6 +138,9 @@ pub phx_market::hiring::Applicant::skill: u32
 pub struct phx_market::hiring::Application
 pub phx_market::hiring::Application::seeker: phx_market::hiring::Seeker
 pub phx_market::hiring::Application::vacancy: u32
+impl phx_store::save::Saved for phx_market::hiring::Application where u32: phx_store::save::Saved, phx_market::hiring::Seeker: phx_store::save::Saved
+pub fn phx_market::hiring::Application::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::hiring::Application::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::hiring::Seeker
 pub phx_market::hiring::Seeker::experience: u32
 pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey
@@ -147,6 +150,9 @@ pub phx_market::hiring::Seeker::region: u32
 pub phx_market::hiring::Seeker::reservation: f64
 pub phx_market::hiring::Seeker::skill: u32
 pub phx_market::hiring::Seeker::subject: u64
+impl phx_store::save::Saved for phx_market::hiring::Seeker where phx_id::ids::PartyKey: phx_store::save::Saved, u64: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved
+pub fn phx_market::hiring::Seeker::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::hiring::Seeker::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::hiring::Standing
 impl phx_market::hiring::Standing
 pub fn phx_market::hiring::Standing::in_reach<'a>(&'a self, &[phx_market::hiring::Vacancy], &phx_market::hiring::Seeker) -> &'a [u32]
@@ -158,6 +164,9 @@ pub phx_market::hiring::Vacancy::open: u32
 pub phx_market::hiring::Vacancy::region: u32
 pub phx_market::hiring::Vacancy::skill: u32
 pub phx_market::hiring::Vacancy::wage: f64
+impl phx_store::save::Saved for phx_market::hiring::Vacancy where phx_id::ids::PartyKey: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved
+pub fn phx_market::hiring::Vacancy::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::hiring::Vacancy::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_market::hiring::answer(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application, &phx_market::hiring::Vacancy) -> bool) -> alloc::vec::Vec<phx_market::hiring::Application>
 pub fn phx_market::hiring::pick(&[(u32, f64)], &[f64]) -> alloc::vec::Vec<u32>
 pub fn phx_market::hiring::search(core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::hiring::Vacancy], &phx_market::hiring::Standing), &[phx_market::hiring::Seeker], (f64, f64), (&impl core::ops::function::Fn(u64) -> phx_rand::draws::Draws + core::marker::Sync, &impl core::ops::function::Fn(&phx_market::hiring::Seeker, alloc::vec::Vec<(u32, f64)>, alloc::vec::Vec<f64>) -> alloc::vec::Vec<u32> + core::marker::Sync)) -> alloc::vec::Vec<phx_market::hiring::Application>
@@ -219,6 +228,9 @@ pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey
 pub phx_market::meet::Buyer::place: u32
 pub phx_market::meet::Buyer::subject: u64
 pub phx_market::meet::Buyer::want: phx_market::retail::Want
+impl phx_store::save::Saved for phx_market::meet::Buyer where phx_id::ids::PartyKey: phx_store::save::Saved, u64: phx_store::save::Saved, phx_market::retail::Want: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_market::meet::Buyer::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::meet::Buyer::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::meet::GoodsLeg
 pub phx_market::meet::GoodsLeg::order: u8
 pub phx_market::meet::GoodsLeg::reason: u8
@@ -229,6 +241,9 @@ pub phx_market::meet::Meeting::rounds: u64
 pub phx_market::meet::Meeting::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>
 impl phx_market::meet::Meeting
 pub fn phx_market::meet::Meeting::sales(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_market::meet::Sale>
+impl phx_store::save::Saved for phx_market::meet::Meeting where alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<phx_market::meet::Sale>>: core::default::Default, alloc::vec::Vec<Choosing>: core::default::Default, alloc::vec::Vec<alloc::vec::Vec<Choosing>>: core::default::Default, phx_exec::partition::Partitioned<Choosing>: core::default::Default, alloc::vec::Vec<i64>: core::default::Default, alloc::vec::Vec<core::option::Option<f64>>: core::default::Default, alloc::vec::Vec<usize>: core::default::Default
+pub fn phx_market::meet::Meeting::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::meet::Meeting::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::meet::Place
 pub phx_market::meet::Place::near: alloc::vec::Vec<(u32, f64)>
 pub struct phx_market::meet::Sale
@@ -396,6 +411,9 @@ pub enum phx_market::retail::Want
 pub phx_market::retail::Want::Money(i64)
 pub phx_market::retail::Want::Units(i64)
 pub phx_market::retail::Want::UpTo(i64, i64)
+impl phx_store::save::Saved for phx_market::retail::Want where i64: phx_store::save::Saved
+pub fn phx_market::retail::Want::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::retail::Want::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::retail::RetailKind
 pub phx_market::retail::RetailKind::capacity: phx_core::facts::ItemDecl
 pub phx_market::retail::RetailKind::distance_weight: &'static str

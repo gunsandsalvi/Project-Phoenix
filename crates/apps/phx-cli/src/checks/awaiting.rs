@@ -144,20 +144,6 @@ pub const LC_0_34: Check = live_check! {
     retired: "a receivable and its payable were two sides' rows of one line in the old ledger; on the core a contract is one row both its parties read, so the two cannot differ",
 };
 
-pub const LC_0_35: Check = live_check! {
-    id: "LC-0-35",
-    title: "Every save reads back to the world hash of its close",
-    from_step: "S0.20",
-    check: |_| Outcome::NotYet("awaits the core saved and loaded (S1.24 h)"),
-};
-
-pub const LC_0_36: Check = live_check! {
-    id: "LC-0-36",
-    title: "Save sizes and write times are recorded",
-    from_step: "S0.20",
-    check: |_| Outcome::NotYet("awaits the core saved and loaded (S1.24 h)"),
-};
-
 pub const LC_0_37: Check = live_check! {
     id: "LC-0-37",
     title: "Every agent's rows count its attachments, which name its persons, one a line",

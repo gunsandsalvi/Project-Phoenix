@@ -46,7 +46,7 @@ pub struct LevyDecl {
 }
 
 /// One marginal band: the share, in the rate's scale, of each unit of the base from `from` up to the next band's.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Band {
     pub from: i64,
     pub share: i64,
@@ -113,7 +113,7 @@ pub fn on_row(base: i64, before: i64, count: u32, rates: Rates<'_>, rounding: Ro
 
 /// A levy withheld from every payment on a line kind in one currency: its payee, its bands over a member's yearly
 /// amount, and the payments a year the line makes, so each payment is taxed as its year's share.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Withholding {
     pub kind: u16,
     pub ccy: phx_num::Ccy,

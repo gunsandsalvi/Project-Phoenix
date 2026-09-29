@@ -8,7 +8,7 @@
 /// published statistics count for in a bank's learning; the days before its maturity a borrower seeks to refinance a
 /// loan; the classes of interest cover, each's least cover, the worst first; each class's published yearly default
 /// frequency; and the published share of a defaulted loan's balance lost.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Law {
     pub cost_of_funds: f64,
     pub capital_requirement: f64,

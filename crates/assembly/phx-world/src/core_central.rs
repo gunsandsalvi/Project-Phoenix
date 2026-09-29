@@ -26,13 +26,13 @@ use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due};
 
 /// The deposit facility's positions, each owed by a central bank to a bank.
-pub const DEPOSIT_FACILITY: &str = "CB.deposit_facility";
+pub const DEPOSIT_FACILITY: &str = crate::consts::families::DEPOSIT_FACILITY;
 /// The lending facility's positions, each owed by a bank to its central bank.
-pub const LENDING_FACILITY: &str = "CB.lending_facility";
+pub const LENDING_FACILITY: &str = crate::consts::families::LENDING_FACILITY;
 
 /// A country's fund stage of a day: what its banks placed and borrowed and how many did each, what stood overdue after
 /// it and in how many banks, the positions a bank could not return, and what the central bank remitted.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct FundDay {
     pub day: u32,
     pub country: u8,
@@ -55,7 +55,7 @@ pub const NOTES: usize = 2;
 /// The central banks on the core: each country's corridor, each bank's reserves target as a share of its deposits,
 /// the day each position opened, each central bank's net interest since its last remittance and the losses it kept,
 /// the month it last remitted in, the fund stages' days, and the issuers' money as they record it.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Central {
     pub corridors: Vec<Corridor>,
     targets: BTreeMap<PartyKey, f64>,
@@ -350,7 +350,7 @@ impl Core {
         let Some(bank) = self.bank_kind else { return Vec::new() };
         let after = self.reserves_moved(before);
         let mut collateral: BTreeMap<PartyKey, i128> = BTreeMap::new();
-        if let Some(f) = self.families.iter().find(|f| f.name == "BNK.firm_loans") {
+        if let Some(f) = self.families.iter().find(|f| f.name == crate::consts::families::FIRM_LOANS) {
             for edge in f.store.edges.open_slots() {
                 if let Some(row) = f.store.edges.row(edge) {
                     *collateral.entry(row.ends[1]).or_insert(0) += i128::from(row.amount);

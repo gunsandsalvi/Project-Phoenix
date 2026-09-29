@@ -31,14 +31,16 @@ pub mod opening;
 pub mod pop_rules;
 pub mod refusals;
 pub mod registry;
+pub mod save;
 pub mod state;
 pub mod systems;
 pub mod world;
 
 pub use graph::{HandlerGraph, HandlerId};
 pub use inspector::Inspector;
-pub use metrics::{Metrics, TurnRecord};
+pub use metrics::{InjectionRecord, Metrics, SaveMeasure, TurnRecord};
 pub use observe::Observer;
 pub use refusals::AssemblyErrors;
 pub use registry::{WorldConfig, assemble};
+pub use save::load;
 pub use world::{OwnState, World};

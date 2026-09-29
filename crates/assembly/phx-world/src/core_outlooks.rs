@@ -25,7 +25,7 @@ pub const HEURISTICS: usize = MENU.len();
 
 /// A memory type's view of a series: each heuristic's outlook of the next print and its performance, and the width
 /// of the method's recent surprises; absent before the print that forms or scores them.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct MethodView {
     pub outlook: [Missing<f64>; HEURISTICS],
     pub performance: [Missing<f64>; HEURISTICS],
@@ -47,7 +47,7 @@ impl Default for MethodView {
 
 /// A public series as its methods saw it: the day of its last print, its last two prints, the mean of every print
 /// since the opening as the level the anchor returns to, the prints counted, and each memory type's view.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Series {
     pub day: Day,
     pub last: f64,
@@ -62,7 +62,7 @@ pub struct Series {
 
 /// A day's stances: the firms relying on each heuristic after the day's reviews, the stances reconsidered and those
 /// that changed, and the firms a large surprise bore on.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct StanceDay {
     pub day: u32,
     pub by_heuristic: [u64; HEURISTICS],
@@ -73,7 +73,7 @@ pub struct StanceDay {
 }
 
 /// The public series by product and region, and the days' stances.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Outlooks {
     pub series: BTreeMap<(u16, u32), Series>,
     pub days: Vec<StanceDay>,

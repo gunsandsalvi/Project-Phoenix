@@ -24,7 +24,7 @@ const WORDS: usize = 2;
 
 /// The persons of a kind's parties: each party's list reference by slot, and its chunk's arena.
 #[clause("REP.26")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Persons<B: Backing = SystemBacking> {
     lists: Column<CellListRef, B>,
     arenas: Vec<ChunkArena<B>>,

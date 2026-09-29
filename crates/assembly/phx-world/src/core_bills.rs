@@ -25,11 +25,11 @@ use crate::core_central::Step;
 use crate::core_day::{DatedFamily, Due};
 
 /// The bills' family: each a treasury's debt to a bank.
-pub const BILLS: &str = "SOV.bills";
+pub const BILLS: &str = crate::consts::families::BILLS;
 
 /// An auction's result: its day and country, the bills offered, bid for and sold, the price every winner paid a unit
 /// of face, the cover (bids over offer) and the tail (the mean accepted bid's price over the price paid).
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Auction {
     pub day: u32,
     pub country: u8,
@@ -43,7 +43,7 @@ pub struct Auction {
 
 /// An issue of bills: its country, the day it was issued and its maturity, its schedule among the family's, what its
 /// holders paid for it and the face it pays at maturity.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Issue {
     pub country: u8,
     pub day: Day,
@@ -55,9 +55,10 @@ pub struct Issue {
 
 /// The bills: the kind and each country's law, each treasury's cash at its last auction, the auctions and issues, and
 /// the debt issued, redeemed and written off since the opening.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Bills {
-    kind: Option<BillKind>,
+    #[saved(skip)]
+    pub(crate) kind: Option<BillKind>,
     laws: Vec<Option<BillLaw>>,
     last_cash: Vec<Option<i64>>,
     pub auctions: Vec<Auction>,

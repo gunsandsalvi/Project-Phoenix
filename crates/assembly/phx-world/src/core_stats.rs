@@ -21,7 +21,7 @@ pub(crate) const DEATH: u8 = 0;
 pub(crate) const ONSET: u8 = 1;
 
 /// What a sale at a meeting was for.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub(crate) enum Purchase {
     /// Bought at retail, by a household or the state.
     Final,
@@ -35,7 +35,7 @@ pub(crate) enum Purchase {
 /// firms, as money paid and units; spending by households, the state and on investment; inputs bought; wages paid,
 /// and of them those the state's agencies paid. Every sale is a firm's, so the firms' sales are the final purchases
 /// and the inputs together; the agencies' output is valued at its cost.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub(crate) struct Month {
     retail: BTreeMap<u16, (i128, i128)>,
     producer: BTreeMap<u16, (i128, i128)>,
@@ -58,12 +58,14 @@ impl Month {
 
 /// The agencies: each country's law and index base, the month recorded so far and the one before, each index's
 /// level, the releases waiting for their day and those published.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct CoreStats {
     laws: Vec<StaLaw>,
-    index: Option<IndexKind>,
+    #[saved(skip)]
+    pub(crate) index: Option<IndexKind>,
     /// The rate of events over the exposure they happened in, and the age classes' lower bounds.
-    rate: Option<Rate>,
+    #[saved(skip)]
+    pub(crate) rate: Option<Rate>,
     classes: Vec<i64>,
     period: Option<u32>,
     months: Vec<Month>,

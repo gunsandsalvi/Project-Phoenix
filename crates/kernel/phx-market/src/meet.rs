@@ -27,7 +27,7 @@ pub struct Stall {
 }
 
 /// A buyer: who, the identity its tastes are drawn for, what it wants, and the place it stands at.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Buyer {
     pub party: PartyKey,
     pub subject: u64,
@@ -61,16 +61,23 @@ pub struct Sale {
 /// A meeting's outcome, kept by its caller from one day to the next so a day's meeting writes into what the heaviest
 /// day sized: its sales, a list for each chunk of stalls in the order that chunk made them; what each buyer that found
 /// no seller still wanted; and the rounds capacity forced. The rest is the meeting's own working space.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Meeting {
     pub unserved: Vec<(PartyKey, Want)>,
     pub rounds: u64,
+    #[saved(skip)]
     sales: Vec<Vec<Sale>>,
+    #[saved(skip)]
     choosing: Vec<Choosing>,
+    #[saved(skip)]
     again: Vec<Vec<Choosing>>,
+    #[saved(skip)]
     scratch: Partitioned<Choosing>,
+    #[saved(skip)]
     left: Vec<i64>,
+    #[saved(skip)]
     log_prices: Vec<Option<f64>>,
+    #[saved(skip)]
     starts: Vec<usize>,
 }
 

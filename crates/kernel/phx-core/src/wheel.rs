@@ -10,7 +10,7 @@ use phx_num::violation;
 /// Buckets for the days of a horizon, reused round the wheel, and the entries due beyond it, which enter a bucket as
 /// the wheel comes within reach of their day.
 #[clause("TIME.3", "REP.12")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct DueWheel {
     first: Day,
     buckets: Vec<Vec<u32>>,
@@ -19,10 +19,14 @@ pub struct DueWheel {
     /// bounded number of times before its day, and none is missed, since an entry beyond reach at one reading is within
     /// it at the next, before its day.
     far_in: u32,
+    #[saved(skip)]
     far_scratch: Vec<(Day, u32)>,
     /// The sort's pairs, scratch and merge, kept so a day's take allocates nothing once the heaviest has sized them.
+    #[saved(skip)]
     pairs: Vec<(u32, u32)>,
+    #[saved(skip)]
     scratch: Vec<(u32, u32)>,
+    #[saved(skip)]
     merged: Vec<u32>,
 }
 

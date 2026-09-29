@@ -10,7 +10,7 @@ use crate::consts::UNITS_BIT;
 /// What a flow moves: money in a currency, or units of a declared unit. The top bit tells them apart, so money and
 /// units are never netted together.
 #[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub struct Denom(u16);
 
 /// The bit a denomination of units carries: the top one, leaving 2^15 currencies and as many units.
@@ -57,7 +57,7 @@ impl Denom {
 /// One movement: from the payer to the payee, an amount of a denomination, for a reason, at the payer's payment
 /// order for the reason, from a source the reason names (a contract, a match, a transformation).
 #[clause("Law 5", "SET.4", "MON.5")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Flow {
     pub payer: PartyKey,
     pub payee: PartyKey,

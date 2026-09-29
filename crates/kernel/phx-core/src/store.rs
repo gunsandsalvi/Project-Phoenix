@@ -15,7 +15,7 @@ use crate::wheel::DueWheel;
 
 /// A kind's accounts in its currency: the bank each is held at, its balance, the card payments pending, what it paid
 /// through a closed bank and is held, and the facility its terms grant.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Accounts<B: Backing> {
     pub bank: Column<u32, B>,
     pub balance: Column<i64, B>,
@@ -25,7 +25,7 @@ pub struct Accounts<B: Backing> {
 }
 
 /// A kind's parties' cash lines: `width` lines a party, and the line each reason's payments and receipts post to.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct CashLines<B: Backing> {
     pub amounts: Column<i64, B>,
     pub width: usize,
@@ -34,7 +34,7 @@ pub struct CashLines<B: Backing> {
 }
 
 /// A kind's parties, their records, and their accounts and cash lines if the kind holds money.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct KindStore<B: Backing> {
     pub parties: Parties<B>,
     pub records: Column<MaybeI64, B>,
@@ -239,6 +239,23 @@ pub struct Family<R: Row, B: Backing> {
     pub heads: [Option<Column<u32, B>>; 2],
     pub wheel: DueWheel,
     pub kinds: [u8; 2],
+}
+
+impl<R: Row, B: Backing> phx_store::Saved for Family<R, B> {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        let [a, b] = &self.heads;
+        self.edges.save(w);
+        a.save(w);
+        b.save(w);
+        self.wheel.save(w);
+        self.kinds.save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<Family<R, B>, phx_store::LoadError> {
+        let edges = EdgeTable::load(r)?;
+        let heads = [Option::load(r)?, Option::load(r)?];
+        Ok(Family { edges, heads, wheel: DueWheel::load(r)?, kinds: <[u8; 2]>::load(r)? })
+    }
 }
 
 impl<R: Row, B: Backing> Family<R, B> {

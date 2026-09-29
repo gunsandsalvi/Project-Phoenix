@@ -15,7 +15,7 @@ use crate::wear::{carried, leaving};
 /// A class of capital units at a zone: its kind (a kind of plant, dwelling or vehicle), its band of size or quality,
 /// and its condition, newest first.
 #[clause("CAP.1", "REP.24")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub struct Class {
     pub kind: u16,
     pub band: u8,

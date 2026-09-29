@@ -50,7 +50,7 @@ pub use crate::consts::reason::{ESTATE, PENSION, SEVERANCE, WAGE};
 /// A family of dated contracts: its store, the reason its flows carry, and the schedules its contracts' dates are
 /// read from, each with its currency and the payment order its payer gives the family's flows; and, for a family of
 /// jobs, each schedule's occupation, weekly hours and the year its jobs began.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct DatedFamily {
     pub name: &'static str,
     pub store: Family<Due, SystemBacking>,
@@ -74,7 +74,7 @@ pub struct DatedFamily {
 /// moves; each principal repaid, with its payer and creditor; and each change in a contract's arrears — what its payer
 /// owes and its creditor is owed beyond its dates — with the two, the family's reason and whether its contract is
 /// reckoned from terms.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct LoanMoves {
     pub lent: Vec<(PartyKey, i64)>,
     pub repaid: Vec<(PartyKey, PartyKey, i64)>,
@@ -84,7 +84,7 @@ pub struct LoanMoves {
 }
 
 /// A change in a contract's arrears.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Arrears {
     pub payer: PartyKey,
     pub payee: PartyKey,
@@ -95,12 +95,14 @@ pub struct Arrears {
 
 /// The state's laws on the core, by country: the income tax withheld from wages, the consumption tax's rate, the
 /// benefit for a job lost, and each country's treasury the taxes are paid to.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct CoreState {
     pub withholding: Vec<Option<phx_ledger::levy::Withholding>>,
     pub consumption: Vec<Option<f64>>,
     pub benefit: Vec<Option<if_state::kinds::BenefitLaw>>,
+    #[saved(skip)]
     pub claim: Option<&'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>>,
+    #[saved(skip)]
     pub included: Option<fn(f64, f64) -> f64>,
     /// Each country's day of the month after a tax is collected by which it is remitted.
     pub remit_day: Vec<Option<u32>>,
@@ -109,7 +111,7 @@ pub struct CoreState {
 }
 
 /// What the core's day did: the flows made, settled, failed and committed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct CoreDay {
     pub day: Day,
     pub flows: u64,
@@ -754,7 +756,7 @@ impl Core {
             // Goods an estate holds wait for its liquidation, which sells them; until then it stays.
             let goods = self.goods.stocks.holdings(estate).any(|h| h.units != 0);
             if !empty || goods {
-                let why = if goods { "its goods wait for their liquidation" } else { "its money waits to be paid out" };
+                let why = if goods { crate::core::Waits::Liquidation } else { crate::core::Waits::PayingOut };
                 self.waiting.insert(estate, why);
             }
             if empty && !goods {

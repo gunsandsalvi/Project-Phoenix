@@ -186,8 +186,8 @@ impl Core {
         let Some(agency) = self.names.iter().position(|n| *n == "agency") else {
             return Err("no agency kind to employ the state's staff".to_owned());
         };
-        let mut family = self.job_family("LAB.employment", firm, household, o.today);
-        let mut public = self.job_family("LAB.public_employment", agency, household, o.today);
+        let mut family = self.job_family(crate::consts::families::EMPLOYMENT, firm, household, o.today);
+        let mut public = self.job_family(crate::consts::families::PUBLIC_EMPLOYMENT, agency, household, o.today);
         let jobs = self.drawn_jobs(o, &mut family)?;
         public.schedules.clone_from(&family.schedules);
         public.classes.clone_from(&family.classes);

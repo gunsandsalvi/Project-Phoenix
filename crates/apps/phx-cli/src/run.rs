@@ -20,6 +20,8 @@ const SIZE_CLASSES: usize = 4;
 /// Resident memory the world may take at its peak: the budget's.
 const WORLD_BYTES: u64 = 4608 << 20;
 const MONTHS_PER_YEAR: u16 = 12;
+/// The key of a build's identity hash: any fixed value.
+const BUILD_KEY: [u64; 2] = [0x5048_5820_4255_494c, 0x4420_4944_2031_3131];
 
 #[derive(Debug, Deserialize)]
 struct Ratchet {
@@ -156,6 +158,27 @@ fn drift_report(settled: &[phx_obs::Drift], ended: &[phx_obs::Drift]) -> serde_j
     json!({ "settled": at(settled), "ended": at(ended) })
 }
 
+/// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
+/// its close's hash.
+fn saves_report(w: Inspector<'_>) -> serde_json::Value {
+    let saves: Vec<serde_json::Value> = w
+        .saves()
+        .iter()
+        .map(|s| {
+            json!({
+                "day": crate::measure::calendar::date_text(w.date(s.day)),
+                "bytes": s.stores.iter().map(|(_, b, _)| *b).sum::<u64>() + s.run_bytes,
+                "raw_bytes": s.stores.iter().map(|(_, _, r)| *r).sum::<u64>(),
+                "stores": s.stores.iter().map(|(n, b, r)| json!({ "name": n, "bytes": b, "raw_bytes": r })).collect::<Vec<_>>(),
+                "write_ms": s.write_ns.map(|n| n / 1_000_000),
+                "check_ms": s.check_ns.map(|n| n / 1_000_000),
+                "hash_matched": s.mismatch.is_none(),
+            })
+        })
+        .collect();
+    json!(saves)
+}
+
 fn live_checks(w: Inspector<'_>, observed: &Observed<'_>, checks: &str) -> (Vec<serde_json::Value>, bool) {
     let mut results = Vec::new();
     let mut all_pass = true;
@@ -210,8 +233,56 @@ impl Observing {
     }
 }
 
-/// Runs the world to its last day, the observer reading each day.
-fn play(world: &mut World, settle_end: phx_id::Day, end: phx_id::Day, clock: &WallClock, obs: &mut Observing) {
+/// The running binary's identity, which a save names so that another build refuses it: the hash of its bytes.
+///
+/// # Errors
+/// When the running binary cannot be read.
+pub fn build_id() -> Result<String, String> {
+    let exe = std::env::current_exe().map_err(|e| format!("the running binary: {e}"))?;
+    let bytes = std::fs::read(&exe).map_err(|e| format!("{}: {e}", exe.display()))?;
+    let mut h = phx_store::Sip128::new(BUILD_KEY);
+    h.write(&bytes);
+    Ok(format!("{:032x}", h.finish()))
+}
+
+/// The save interval a day falls in: its months since the calendar's year nought, over the months between saves.
+fn save_period(w: Inspector<'_>, day: phx_id::Day) -> Result<u64, String> {
+    let date = w.date(day);
+    let year = u64::try_from(date.year()).map_err(|_| "a day before the calendar's year nought")?;
+    let months = year * u64::from(MONTHS_PER_YEAR) + u64::from(date.month());
+    months.checked_div(w.save_every_months()).ok_or_else(|| "a save interval of no months".to_owned())
+}
+
+/// A save of the world at this close, checked by reading its files back; its sizes and times join the run's
+/// measures.
+fn save_and_check(world: &mut World, root: &Path, build: &str, clock: &WallClock) -> Result<(), String> {
+    let t0 = clock.now_ns();
+    let rec = world.save(root, build)?;
+    let t1 = clock.now_ns();
+    let checked = world.check_save(&rec.dir);
+    let t2 = clock.now_ns();
+    world.record_save(phx_world::SaveMeasure {
+        day: rec.day,
+        stores: rec.stores.iter().map(|s| (s.name.to_owned(), s.bytes, s.raw_bytes)).collect(),
+        run_bytes: rec.run_bytes,
+        write_ns: t1.checked_sub(t0),
+        check_ns: t2.checked_sub(t1),
+        mismatch: checked.err(),
+    });
+    Ok(())
+}
+
+/// Runs the world to its last day, the observer reading each day, and saves it at each save interval into the run's
+/// own directory.
+fn play(
+    world: &mut World,
+    (settle_end, end): (phx_id::Day, phx_id::Day),
+    saves: &Path,
+    clock: &WallClock,
+    obs: &mut Observing,
+) -> Result<(), String> {
+    let build = build_id()?;
+    let mut period = save_period(Inspector::new(world), world.today())?;
     obs.settling(Inspector::new(world), settle_end);
     while world.today() < end {
         let seen = Inspector::new(world).findings().len();
@@ -222,7 +293,13 @@ fn play(world: &mut World, settle_end: phx_id::Day, end: phx_id::Day, clock: &Wa
             println!("finding {} {} day {}: {:?} {}: {}", f.family, f.clause, f.day.get(), f.owner, f.size, f.detail);
         }
         obs.settling(Inspector::new(world), settle_end);
+        let now = save_period(Inspector::new(world), world.today())?;
+        if now != period {
+            save_and_check(world, saves, &build, clock)?;
+            period = now;
+        }
     }
+    Ok(())
 }
 
 /// The turn just run, so a run can be followed as it goes: its dates and days, its wall time, and what the core's
@@ -420,7 +497,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
     let meter = crate::budget::Meter::start(clock.now_ns());
-    play(&mut world, settle_end, end, &clock, &mut obs);
+    play(&mut world, (settle_end, end), &args.run_dir.join("saves"), &clock, &mut obs)?;
     let span = meter.stop(clock.now_ns());
     let w = Inspector::new(&world);
     let view = obs.views.close(w, &obs.watch.recorder);
@@ -467,6 +544,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "auctions": auctions_report(w),
         "agencies": agencies_report(w),
         "lenders": lenders_report(w),
+        "saves": saves_report(w),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
             "stratum": a.stratum,

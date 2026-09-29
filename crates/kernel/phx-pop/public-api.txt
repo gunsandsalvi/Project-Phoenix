@@ -87,6 +87,9 @@ pub fn phx_pop::persons::Persons<B>::push(&mut self, &mut phx_store::backing::Ad
 pub fn phx_pop::persons::Persons<B>::remove(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize)
 pub fn phx_pop::persons::Persons<B>::set(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, &[phx_pop::persons::Held])
 pub fn phx_pop::persons::Persons<B>::set_word(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize, u64)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::persons::Persons<B> where phx_store::column::Column<phx_store::arena::CellListRef, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u32: phx_store::save::Saved, u64: phx_store::save::Saved
+pub fn phx_pop::persons::Persons<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_pop::population
 pub struct phx_pop::population::PopKind
 pub phx_pop::population::PopKind::decl: phx_pop::kind::PopKindDecl

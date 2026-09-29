@@ -33,7 +33,9 @@ pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 11;
+pub const SAVE_FORMAT: u32 = 12;
+/// A save's tasks on the pool: the core's store, the run's record and the world's hash.
+pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.
 pub const SAVE_MANIFEST: &str = "manifest.json";
 /// The suffix a save's directory carries until it is complete.
@@ -101,6 +103,32 @@ pub const RATE_ONE: f64 = 1_000_000_000_000.0;
 pub const SECTORS_WORTH_NOTHING: [usize; 3] = [1, 2, 3];
 /// The balance sheet's sectors by their column, and its instruments and closing real assets by their row, as the
 /// dataset's derivation lays them out.
+/// The families of dated contracts on the core, by name: every name a save of the core holds for them.
+pub mod families {
+    pub const EMPLOYMENT: &str = "LAB.employment";
+    pub const PUBLIC_EMPLOYMENT: &str = "LAB.public_employment";
+    pub const HOUSEHOLD_LOANS: &str = "BNK.household_loans";
+    pub const FIRM_LOANS: &str = "BNK.firm_loans";
+    pub const BENEFIT: &str = "SOC.benefit";
+    pub const PENSION: &str = "SOC.pension";
+    pub const DEPOSIT_FACILITY: &str = "CB.deposit_facility";
+    pub const LENDING_FACILITY: &str = "CB.lending_facility";
+    pub const BILLS: &str = "SOV.bills";
+    pub const COLLECTED: &str = "TAX.collected";
+    pub const ALL: [&str; 10] = [
+        EMPLOYMENT,
+        PUBLIC_EMPLOYMENT,
+        HOUSEHOLD_LOANS,
+        FIRM_LOANS,
+        BENEFIT,
+        PENSION,
+        DEPOSIT_FACILITY,
+        LENDING_FACILITY,
+        BILLS,
+        COLLECTED,
+    ];
+}
+
 /// The kinds of party on the core, in their order, and each one's place: those sited by a tile, then the households.
 pub mod kinds {
     pub const KINDS: [&str; 7] =

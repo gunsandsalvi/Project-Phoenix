@@ -555,6 +555,59 @@ impl<A: Saved, B: Saved, C: Saved> Saved for (A, B, C) {
     }
 }
 
+impl<A: Saved, B: Saved, C: Saved, D: Saved> Saved for (A, B, C, D) {
+    fn save(&self, w: &mut Writer<'_>) {
+        self.0.save(w);
+        self.1.save(w);
+        self.2.save(w);
+        self.3.save(w);
+    }
+
+    fn load(r: &mut Reader<'_>) -> Result<(A, B, C, D), LoadError> {
+        Ok((A::load(r)?, B::load(r)?, C::load(r)?, D::load(r)?))
+    }
+}
+
+impl<A: Saved, B: Saved, C: Saved, D: Saved, E: Saved> Saved for (A, B, C, D, E) {
+    fn save(&self, w: &mut Writer<'_>) {
+        self.0.save(w);
+        self.1.save(w);
+        self.2.save(w);
+        self.3.save(w);
+        self.4.save(w);
+    }
+
+    fn load(r: &mut Reader<'_>) -> Result<(A, B, C, D, E), LoadError> {
+        Ok((A::load(r)?, B::load(r)?, C::load(r)?, D::load(r)?, E::load(r)?))
+    }
+}
+
+/// An array of values that are not plain bytes, saved element by element; an array of plain values is saved as its
+/// bytes.
+macro_rules! saved_array {
+    ($($t:ty),* $(,)?) => {
+        $(
+            impl<const N: usize> Saved for [$t; N] {
+                fn save(&self, w: &mut Writer<'_>) {
+                    for v in self {
+                        v.save(w);
+                    }
+                }
+
+                fn load(r: &mut Reader<'_>) -> Result<[$t; N], LoadError> {
+                    let mut out = Vec::with_capacity(N);
+                    for _ in 0..N {
+                        out.push(<$t>::load(r)?);
+                    }
+                    out.try_into().map_err(|_| LoadError::Invalid("an array of another length".to_owned()))
+                }
+            }
+        )*
+    };
+}
+
+saved_array!(bool, usize, f64, i128, u128, Missing<f64>, Missing<i64>, Missing<u16>);
+
 impl<K: Saved + Ord, V: Saved> Saved for BTreeMap<K, V> {
     fn save(&self, w: &mut Writer<'_>) {
         w.count(self.len());
@@ -675,6 +728,20 @@ mod tests {
         assert!(back.chunks(8).map(|b| u64::from_le_bytes(b.try_into().unwrap())).eq(words.iter().copied()));
         assert!(r.at_end().unwrap());
     }
+    #[test]
+    fn arrays_and_long_tuples_roundtrip() {
+        type Long = ([f64; 2], [Missing<f64>; 3], (u8, [usize; 3], bool, i128), (u32, u64, i64, u8, [bool; 2]));
+        let v: Long = (
+            [0.5, -3.25],
+            [Missing::Present(2.0), Missing::Absent, Missing::Present(-1.0)],
+            (7, [1, 2, 3], true, -9),
+            (4, 5, -6, 7, [false, true]),
+        );
+        let bytes = write(|w| v.save(w));
+        let back: Long = read(&bytes, Saved::load);
+        assert_eq!(back, v);
+    }
+
     #[test]
     fn values_roundtrip() {
         let map: BTreeMap<PartyId, (i128, Missing<String>)> = [

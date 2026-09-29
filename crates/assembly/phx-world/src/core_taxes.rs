@@ -21,7 +21,7 @@ use crate::core_accounts::Line;
 use crate::core_day::{DatedFamily, Due};
 
 /// The collectors' debts to their treasuries.
-pub const COLLECTED: &str = "TAX.collected";
+pub const COLLECTED: &str = crate::consts::families::COLLECTED;
 
 /// The bases a tax arises on.
 pub const INCOME: u8 = 0;
@@ -33,7 +33,7 @@ pub type FlowKey = (PartyKey, PartyKey, i64, u8, u32);
 
 /// A tax that arises if its base's payment settles: its collector, the party that bears it, its base, its amount and
 /// currency, and the payment it arises on.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Arising {
     pub collector: PartyKey,
     pub payer: PartyKey,
@@ -46,7 +46,7 @@ pub struct Arising {
 /// The taxes: those waiting on their bases' settlement, each collector's debt open for a base and a collection day,
 /// what arose by base and how often, what was remitted, and a sample of the income tax withheld, with the gross wage
 /// it was withheld from, for the levies' check.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Taxes {
     pub(crate) arising: Vec<Arising>,
     open: BTreeMap<(PartyKey, u8, Day), u32>,

@@ -2837,90 +2837,50 @@ world on the phone. CI never runs the world.
 
 ## 11. Persistence
 
-- A **save** is a directory: a manifest and one file per store of zstd frames of transformed pages. The manifest
-  (`save/manifest.rs`) holds the format, the build, the register (a hash of the data files the world was assembled
-  over), the seed, the day and its date, the settling length (`settling_years`), whether the read trace was on, the
-  representation's factor (§7.6), each
-  store's name, file, bytes compressed and raw and logical hash, and the world hash. It holds no policy hash, setup or
-  valve: the register hash covers them where they are data (§7.9, §10.0).
+- A **save** is a directory (`phx_world::save`): a manifest and one file per store of zstd frames. The manifest
+  (`save/manifest.rs`) holds the format (`SAVE_FORMAT`), the build (a hash of the running binary), the register (a hash
+  of the data files the world was assembled over), the seed, the day and its date, the settling length, the persons
+  the world was opened with, each store's name, file, bytes compressed and raw and logical hash, and the world hash.
+- **Stores**: `core`, the day and the whole core (`#[derive(Saved)]` on `Core` and everything it holds: every kind's
+  parties, records, accounts and cash lines, the persons, every family's contracts with their lists and wheels, the
+  goods' holdings and units, labour's vacancies, postings and searchers, the lenders, the central banks, bills, taxes,
+  agencies, the insolvency law's claims, the accounts, the statistics and outlooks, the decisions' preferences and
+  counts, and the laws the opening compiled); and `run`, the run's measures (turns, saves, injections), outside the
+  world hash. The run's findings are its report's, printed as they are found; a load starts with none.
 - Saves are written at the moments SET.12 declares — when the player saves, when the app is set aside, and at the
-  declared interval (an owner setting, by default every simulated quarter) — and the world pauses while one is written
-  (N8.10). Each store is written by a task of its own on the worker pool, beside a task writing `run` and one hashing
-  the world. A store's bytes are cut into fixed frames of 1 MiB, each compressed on its own as a zstd frame, a wave of
-  sixteen at a time across the pool; the frames are cut by bytes alone, so the file is the same however they were
-  compressed. Columns go through their declared transforms; a chunk arena is written as its raw words
-  (`Transform::Plain`) with its dead-word count, since the transforms do not help interleaved records. A type's save
-  encoding is `#[derive(Saved)]`, with `#[saved(skip)]` on a derived index its owner rebuilds on load. Under miri,
-  which cannot run the foreign zstd, the stream is written as it stands.
-- **Every save is full** (SET.12, spec Appendix E 22): it writes every store whole, and a restore reads one save.
-  Allocator state (free slots, block pools, interners) and the linked call's basis (§8) are
-  saved with the stores, and derived indexes are rebuilt on load in canonical order; the world hash covers logical
-  content only, so layout never makes two equal worlds differ (§14.3).
-- **Retention**: the latest complete save, plus the one being written; the older is deleted only after the new one is
-  complete (SET.15), so the peak is two full saves (§13.3).
-
-  A save is written into a directory named partial; once every file and the directory are synced, it takes its
-  complete name and the root is synced, and only then is every other save in the root, complete or left partial by a
-  save that never finished, removed.
-- **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
-  audited and discarded, never run on (N1).
-- **Injection** (N1): the build run takes one more save, at the close of the 30th day after settling, into its own
-  directory, and after its last day hands it to `phx inject` in a process of its own, so the run's memory stays the
-  world's alone. Each family's injection goes into a fresh load of it; the audit then closes over the longest rolling
-  cycle from the save's next day, no day stepped, and the families that found something are recorded with the run's
-  measures, where LC-0-10 reads them. A world not read from a save refuses an injection. Legs a family injects go to
-  the audit's own sink, as if they had settled.
-- **Stores** of a save, each one file, in the order the world hash reads them:
-  - `world`: the day, the fails waiting for the contract process, the player's queue, bindings, the closed fact;
-  - `books`: the kind tables, the population's agent tables, the directory and the ledger;
-  - `population`: the agenda, and each kind's members as the events that began and ended them count them;
-  - `markets`;
-  - `accounts`;
-  - `records`;
-  - `events`;
-  - `geo`: the map as generated and the kernel tables' columns.
-
-  Beside them, outside the world hash, `run` holds the run's metrics, findings, settlements, the opening's report, the
-  read trace's log and the handlers whose first chunk it traced (`traced_first`).
-  The map and the books are saved rather than regenerated, since the map's generation and the opening each take
-  longer than a load's 3 s.
-- **What the build supplies on load**: everything declared in code or data — the register, the calendar's rules,
-  streams, handlers, rules, the audit's families, and the books' declarations (line kinds and reasons). The books'
-  declarations are the opening's first phase, `DECLARATIONS`, which a load runs alone on empty books before reading
-  the `books` store; the save records their names, and a load refuses a save whose names differ.
-- **A load verifies** the manifest's format, build, register and seed before it reads a store, and after it has read
-  them all, that the world it rebuilt hashes to the manifest's world hash; either refusal names its reason (N5).
-- **What a load rebuilds**, in canonical order, never trusting a saved copy:
-  - instruments' and lines' holder lists, from holdings and rows;
-  - the due wheel, from the lines' next due days;
-  - the terms interner's index, from its entries;
-  - the tape's last print per market;
-  - the accounts' claims per party;
-  - the calendar's window;
-  - the audit's cursors, from the stores' lengths.
-
-  - the agenda's wheels, from each row's next day per reason;
-
-  Allocator state is saved as it stands: the slot allocators, the arenas' words with their dead words, and the
-  interner's free identities and reference counts.
-- **The world hash** covers every carried state a later day can read: with the directory, kind tables, instruments,
-  lines, markets, accounts, records, events and kernel tables, also the run heads, the terms and their reference
-  counts, liens, covers, commitments, arrears, the fails waiting and the player's queue. Layout, holder lists and
-  other indexes stay out.
-
-It is `phx-store`'s `LogicalHasher`, SipHash-2-4 with a 128-bit result under a fixed key (`HASH_KEY`), reading live
-slots' rows in slot order and lists through their references, never offsets, dead words or freed slots, so two layouts
-of one content hash equal. Metrics, findings, the read trace and wall time stay outside it, and no handler reads them.
+  declared interval (`SET.save_every_months`) — at a day's close, and the world pauses while one is written (N8.10).
+  The core's store and the run's are written by tasks of their own on the pool, beside one hashing the world; a
+  store's bytes are cut into fixed frames of 1 MiB, each compressed on its own as a zstd frame, a wave of sixteen at a
+  time across the pool, so the file is the same however they were compressed. Columns are written as their live rows;
+  a chunk arena as its raw words with its dead-word count. Under miri, which cannot run the foreign zstd, the stream is
+  written as it stands.
+- **What a save does not hold** is what the build supplies: the register, the calendar's rules, the streams (keyed by
+  name, subject and day, so they have no position), the map (generated from the seed), each system's own state, and
+  the declarations the core holds by reference — the population's household kind, the benefit's claim and the
+  consumption tax's rule, the bills' kind, the statistics' rate and index — which a load binds again as the opening
+  bound them (`Core::rebind`), marked `#[saved(skip)]`. The day's working buffers (`Work`, a meeting's and a wheel's
+  scratch) are empty at a close and are skipped too. Every name a save holds — the kinds' and the families'
+  (`consts::families`) — is read back as the build's own, and a name the build does not declare is refused.
+- **Every save is full** (SET.12, spec Appendix E 22): a restore reads one save. Allocator state (free slots, list
+  links, released slots) is saved as it stands.
+- **Retention**: the latest complete save, plus the one being written. A save is written into a directory named
+  partial; once every file and the directory are synced, it takes its complete name and the root is synced, and only
+  then is every other save in the root, complete or left partial by a save that never finished, removed.
+- **A load** (`phx_world::load`) refuses a save of another format, build, register, seed or number of persons, each
+  naming its reason (N5); it assembles the world from the build and the data as the save's was, draws no opening,
+  reads the core and its day, holds them to the manifest's world hash, binds the declarations again, moves the
+  calendar's window to the save's year and reads the run's measures.
+- **The save check** (LC-0-35): each periodic save of the build run is read back from its files alone, hashed and
+  dropped, and its hash held to the manifest's; its sizes and its write and check times are the run's (LC-0-36).
+- **No copies**: a save is loaded only to continue the one run, never run beside it (N1).
+- **The world hash** is `phx-store`'s `LogicalHasher`, SipHash-2-4 with a 128-bit result under a fixed key
+  (`HASH_KEY`), over the day and the core as their save encodes them; a save reads back to exactly the layout it was
+  written from, so its hash is its close's.
 - **Encoding** (`phx-store`): a column is encoded field by field, each field's transform declared with its type
   (delta modulo 2⁶⁴, zigzag, both, or plain), then bit-packed per block of 1 024 values at the block's widest value.
   Each field's stream is little-endian: magic `PXCL`, format version, field width, transform, element count, then per
-  block its bit width and packed values; streams go into zstd level-1 frames of at most 1 MiB, each preceded by its
-  length, so a store's frames compress at once on many workers. A decoder refuses a damaged, truncated, foreign or
-  unknown-version input with its reason, never a guess. The logical hash is SipHash-2-4 with 128-bit output
-  (`LogicalHasher`) over live slots' columns and lists read through their references in slot order, never offsets,
-  dead words, freed slots or page tails; a column descriptor tags each field (party, line, instrument, tile, day,
-  amount, quantity, plain), which the counters and the Names family read.
-
+  block its bit width and packed values. A decoder refuses a damaged, truncated, foreign or unknown-version input with
+  its reason, never a guess.
 
 ---
 

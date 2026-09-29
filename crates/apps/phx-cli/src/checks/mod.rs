@@ -3,6 +3,7 @@ pub mod core;
 pub mod geo;
 pub mod lives;
 pub mod outlooks;
+pub mod saves;
 pub mod services;
 
 use phx_world::Inspector;
@@ -106,8 +107,8 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_0_32,
     core::LC_0_33,
     awaiting::LC_0_34,
-    awaiting::LC_0_35,
-    awaiting::LC_0_36,
+    saves::LC_0_35,
+    saves::LC_0_36,
     awaiting::LC_0_37,
     awaiting::LC_0_38,
     lives::LC_0_39,

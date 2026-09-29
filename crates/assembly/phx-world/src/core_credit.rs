@@ -87,7 +87,7 @@ impl Core {
             return;
         };
         let family = DatedFamily {
-            name: "SOC.benefit",
+            name: crate::consts::families::BENEFIT,
             store: phx_core::store::Family::new(
                 &mut self.space,
                 ([kind_number(treasury), kind_number(household)], [AGENT_ROWS, AGENT_ROWS]),
@@ -165,7 +165,7 @@ impl Core {
     /// lending rate over the years it has left, repaid monthly in equal parts with interest on what it owes; owed by
     /// its head.
     fn household_loans(&mut self, o: &CreditOpening<'_>, household: usize, bank: usize) -> Result<DatedFamily, String> {
-        let mut family = self.loan_family("BNK.household_loans", household, bank, o.today);
+        let mut family = self.loan_family(crate::consts::families::HOUSEHOLD_LOANS, household, bank, o.today);
         let date = o.calendar.date(o.today);
         for l in std::mem::take(&mut self.drawn.loans) {
             let Some(c) = o.countries.iter().find(|c| c.id.get() == l.country) else {
@@ -187,7 +187,7 @@ impl Core {
     /// Each firm's share of its country's loans to firms, by its turnover, lent by its bank at the lending rate over
     /// a term drawn between the declared years, repaid in equal parts with interest on what it owes.
     fn firm_loans(&mut self, o: &CreditOpening<'_>, firm: usize, bank: usize) -> Result<DatedFamily, String> {
-        let mut family = self.loan_family("BNK.firm_loans", firm, bank, o.today);
+        let mut family = self.loan_family(crate::consts::families::FIRM_LOANS, firm, bank, o.today);
         let (min, max) = (o.register.count("BNK.loan_years_min")?, o.register.count("BNK.loan_years_max")?);
         let date = o.calendar.date(o.today);
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
@@ -298,7 +298,9 @@ impl Core {
             }
         }
         let date = calendar.date(day);
-        let Some(family) = self.families.iter().position(|f| f.name == "BNK.firm_loans") else { return };
+        let Some(family) = self.families.iter().position(|f| f.name == crate::consts::families::FIRM_LOANS) else {
+            return;
+        };
         for (key, (flow, ccy)) in net {
             if !calendar.is_business(phx_id::CountryId::new(ccy), day) {
                 continue;

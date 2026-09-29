@@ -11,7 +11,7 @@ use phx_macros::clause;
 use crate::core::Core;
 
 /// A creditor's loan book: what its loans owe it, and what was lent, repaid and written off since the opening.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct LoanBook {
     pub book: i128,
     pub lent: i128,

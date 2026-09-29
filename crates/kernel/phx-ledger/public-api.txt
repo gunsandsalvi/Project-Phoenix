@@ -1046,6 +1046,9 @@ pub phx_ledger::levy::Rates::Flat(i64)
 pub struct phx_ledger::levy::Band
 pub phx_ledger::levy::Band::from: i64
 pub phx_ledger::levy::Band::share: i64
+impl phx_store::save::Saved for phx_ledger::levy::Band where i64: phx_store::save::Saved
+pub fn phx_ledger::levy::Band::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::levy::Band::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::levy::FollowOn
 pub phx_ledger::levy::FollowOn::system: &'static str
 pub phx_ledger::levy::FollowOn::unit: phx_num::missing::Missing<phx_num::qty::UnitId>
@@ -1071,6 +1074,9 @@ pub phx_ledger::levy::Withholding::payee: phx_id::ids::PartyId
 pub phx_ledger::levy::Withholding::periods: i64
 impl phx_ledger::levy::Withholding
 pub fn phx_ledger::levy::Withholding::on_payment(&self, i64) -> i64
+impl phx_store::save::Saved for phx_ledger::levy::Withholding where u16: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::levy::Band>: phx_store::save::Saved, i64: phx_store::save::Saved
+pub fn phx_ledger::levy::Withholding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::levy::Withholding::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::levy::on_row(i64, i64, u32, phx_ledger::levy::Rates<'_>, phx_num::round::Round) -> i64
 pub fn phx_ledger::levy::per_member(i64, i64, phx_ledger::levy::Rates<'_>, phx_num::round::Round) -> i64
 pub fn phx_ledger::levy::withhold(i64, i64, phx_ledger::levy::Rates<'_>, phx_num::round::Round) -> phx_ledger::levy::Withheld

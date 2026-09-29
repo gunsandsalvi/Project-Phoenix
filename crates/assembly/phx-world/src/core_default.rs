@@ -18,7 +18,7 @@ use crate::core_labour::LabourCtx;
 
 /// A creditor's claim on an estate: whom it is owed to, how much, the reason its payment is made for, and its rank,
 /// the first paid first.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Claim {
     pub creditor: PartyKey,
     pub amount: i64,
@@ -31,7 +31,7 @@ pub const EMPLOYEES: u8 = 0;
 pub const CREDITORS: u8 = 1;
 
 /// A firm's ending: the day, its product and region, and whether it defaulted.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Ending {
     pub day: u32,
     pub product: u16,
@@ -41,7 +41,7 @@ pub struct Ending {
 
 /// The insolvency law on the core: each country's grace for firms, the day each contract in arrears began to be, each
 /// estate's claims, and the firms ended.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Insolvency {
     pub grace: Vec<Option<u32>>,
     pub since: BTreeMap<(usize, u32), Day>,
@@ -267,7 +267,7 @@ impl Core {
             if family.store.kinds.first() != Some(&key.kind()) {
                 continue;
             }
-            if family.name != "LAB.employment" {
+            if family.name != crate::consts::families::EMPLOYMENT {
                 continue;
             }
             for edge in family.store.of(0, key.slot()) {
@@ -310,7 +310,7 @@ impl Core {
     /// than a job, its arrears, and, on one reckoned from its terms, the balance it still has to repay.
     pub(crate) fn debts_of(&self, key: PartyKey) -> Vec<Claim> {
         let mut claims = Vec::new();
-        for family in self.families.iter().filter(|f| f.name != "LAB.employment") {
+        for family in self.families.iter().filter(|f| f.name != crate::consts::families::EMPLOYMENT) {
             if family.store.kinds.first() != Some(&key.kind()) {
                 continue;
             }

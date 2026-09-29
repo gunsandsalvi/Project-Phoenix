@@ -23,6 +23,8 @@ pub struct World {
     pub(crate) day_zero: Day,
     /// The years the world settles before the play the run measures.
     pub(crate) settling_years: u64,
+    /// The months between the world's own saves.
+    pub(crate) save_every: u64,
     pub(crate) today: Day,
     pub(crate) core: crate::core::Core,
     /// The processes acting on the households' persons, in order of kind, then hazard.
@@ -38,6 +40,10 @@ pub struct World {
     /// The data's hash, which a save names.
     pub(crate) register_hash: u128,
     pub(crate) seed: u64,
+    /// Whether the world was read back from a save, which an injection goes into and the run never is.
+    pub(crate) loaded: bool,
+    /// The persons the world was opened with.
+    pub(crate) persons: u64,
     /// The device's workers, one a fast core, which the day's meetings run on; none where it has one core.
     pub(crate) pool: Option<phx_exec::Pool>,
 }

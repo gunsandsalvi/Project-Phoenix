@@ -284,6 +284,9 @@ pub fn phx_store::edges::EdgeTable<R, B>::open_slots(&self) -> impl core::iter::
 pub fn phx_store::edges::EdgeTable<R, B>::row(&self, phx_id::ids::Slot) -> core::option::Option<R>
 pub fn phx_store::edges::EdgeTable<R, B>::rows(&self) -> &[R]
 pub fn phx_store::edges::EdgeTable<R, B>::rows_mut(&mut self) -> &mut [R]
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>
+pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)
 #[repr(C)] pub struct phx_store::edges::Pair
 pub phx_store::edges::Pair::ends: [phx_id::ids::PartyKey; 2]
 impl phx_store::edges::Row for phx_store::edges::Pair
@@ -343,6 +346,9 @@ pub fn phx_store::parties::Parties<B>::kind(&self) -> u8
 pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_store::pod
 pub mod phx_store::pod::__seal
 pub trait phx_store::pod::__seal::Sealed
@@ -569,6 +575,12 @@ pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for usize
 pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>
 pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved, E: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D, E)
+pub fn (A, B, C, D, E)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D, E), phx_store::save::LoadError>
+pub fn (A, B, C, D, E)::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D)
+pub fn (A, B, C, D)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D), phx_store::save::LoadError>
+pub fn (A, B, C, D)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved> phx_store::save::Saved for (A, B, C)
 pub fn (A, B, C)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C), phx_store::save::LoadError>
 pub fn (A, B, C)::save(&self, &mut phx_store::save::Writer<'_>)
@@ -578,6 +590,9 @@ pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
 pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
@@ -587,6 +602,9 @@ pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<K: phx_store::save::Saved + core::cmp::Ord, V: phx_store::save::Saved> phx_store::save::Saved for alloc::collections::btree::map::BTreeMap<K, V>
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::map::BTreeMap<K, V>, phx_store::save::LoadError>
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>
+pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)
@@ -605,6 +623,30 @@ pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [bool; N]
+pub fn [bool; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[bool; N], phx_store::save::LoadError>
+pub fn [bool; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [f64; N]
+pub fn [f64; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[f64; N], phx_store::save::LoadError>
+pub fn [f64; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [i128; N]
+pub fn [i128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[i128; N], phx_store::save::LoadError>
+pub fn [i128; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<f64>; N]
+pub fn [phx_num::missing::Missing<f64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<f64>; N], phx_store::save::LoadError>
+pub fn [phx_num::missing::Missing<f64>; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<i64>; N]
+pub fn [phx_num::missing::Missing<i64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<i64>; N], phx_store::save::LoadError>
+pub fn [phx_num::missing::Missing<i64>; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<u16>; N]
+pub fn [phx_num::missing::Missing<u16>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<u16>; N], phx_store::save::LoadError>
+pub fn [phx_num::missing::Missing<u16>; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [u128; N]
+pub fn [u128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[u128; N], phx_store::save::LoadError>
+pub fn [u128; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [usize; N]
+pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
+pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_store::save::compress_frame(&[u8]) -> core::io::error::Result<alloc::vec::Vec<u8>>
 pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
@@ -814,6 +856,9 @@ pub fn phx_store::edges::EdgeTable<R, B>::open_slots(&self) -> impl core::iter::
 pub fn phx_store::edges::EdgeTable<R, B>::row(&self, phx_id::ids::Slot) -> core::option::Option<R>
 pub fn phx_store::edges::EdgeTable<R, B>::rows(&self) -> &[R]
 pub fn phx_store::edges::EdgeTable<R, B>::rows_mut(&mut self) -> &mut [R]
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>
+pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::FieldDescriptor
 pub phx_store::FieldDescriptor::name: &'static str
 pub phx_store::FieldDescriptor::offset: u16
@@ -883,6 +928,9 @@ pub fn phx_store::parties::Parties<B>::kind(&self) -> u8
 pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_store::Reader<'a>
 impl<'a> phx_store::save::Reader<'a>
 pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>
@@ -1122,6 +1170,12 @@ pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for usize
 pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>
 pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved, E: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D, E)
+pub fn (A, B, C, D, E)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D, E), phx_store::save::LoadError>
+pub fn (A, B, C, D, E)::save(&self, &mut phx_store::save::Writer<'_>)
+impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D)
+pub fn (A, B, C, D)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D), phx_store::save::LoadError>
+pub fn (A, B, C, D)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved> phx_store::save::Saved for (A, B, C)
 pub fn (A, B, C)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C), phx_store::save::LoadError>
 pub fn (A, B, C)::save(&self, &mut phx_store::save::Writer<'_>)
@@ -1131,6 +1185,9 @@ pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
 pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
@@ -1140,6 +1197,9 @@ pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<K: phx_store::save::Saved + core::cmp::Ord, V: phx_store::save::Saved> phx_store::save::Saved for alloc::collections::btree::map::BTreeMap<K, V>
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::map::BTreeMap<K, V>, phx_store::save::LoadError>
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
+pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>
+pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)
@@ -1158,6 +1218,30 @@ pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [bool; N]
+pub fn [bool; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[bool; N], phx_store::save::LoadError>
+pub fn [bool; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [f64; N]
+pub fn [f64; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[f64; N], phx_store::save::LoadError>
+pub fn [f64; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [i128; N]
+pub fn [i128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[i128; N], phx_store::save::LoadError>
+pub fn [i128; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<f64>; N]
+pub fn [phx_num::missing::Missing<f64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<f64>; N], phx_store::save::LoadError>
+pub fn [phx_num::missing::Missing<f64>; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<i64>; N]
+pub fn [phx_num::missing::Missing<i64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<i64>; N], phx_store::save::LoadError>
+pub fn [phx_num::missing::Missing<i64>; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<u16>; N]
+pub fn [phx_num::missing::Missing<u16>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<u16>; N], phx_store::save::LoadError>
+pub fn [phx_num::missing::Missing<u16>; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [u128; N]
+pub fn [u128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[u128; N], phx_store::save::LoadError>
+pub fn [u128; N]::save(&self, &mut phx_store::save::Writer<'_>)
+impl<const N: usize> phx_store::save::Saved for [usize; N]
+pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
+pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_store::TableChunks
 pub type phx_store::TableChunks::Rows
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>

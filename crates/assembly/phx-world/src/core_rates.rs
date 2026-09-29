@@ -13,7 +13,7 @@ use crate::core::Core;
 use crate::core_pop::Ctx;
 
 /// One process's measure at one class of values: the hits expected, their variance, and the hits drawn.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, phx_macros::Saved)]
 pub struct RateTally {
     pub expected: f64,
     pub variance: f64,
@@ -21,7 +21,7 @@ pub struct RateTally {
 }
 
 /// The measures by process, calendar year and the age of the person hit, and the households measured.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Rates {
     pub tallies: BTreeMap<(u32, u32, u32), RateTally>,
     sample: Option<Vec<(Slot, PartyId)>>,

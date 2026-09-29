@@ -31,7 +31,7 @@ pub struct RetailKind {
 }
 
 /// What a buyer wants: units it needs, money it spends, or units it needs at no more than a price for a lot.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Want {
     Units(i64),
     Money(i64),

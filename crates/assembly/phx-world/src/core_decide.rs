@@ -31,14 +31,14 @@ impl<I, O> Copy for Bound<I, O> {}
 /// The decisions the world takes and who takes them: each decision's name and taker, the office it is taken in by
 /// each party kind whose form declares it, each kind's founding preferences by slot, the offices' holders with their
 /// own preferences, and the decisions taken, by kind and by the decider's standing.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Decisions {
     names: Vec<String>,
     taken_in: Vec<TakenIn>,
     office: Vec<Vec<Option<u8>>>,
     founding: Vec<Vec<Prefs>>,
     holders: BTreeMap<(PartyKey, u8), (u64, Prefs)>,
-    taken: Vec<[phx_exec::Tally; Standing::ALL.len()]>,
+    taken: Vec<Vec<phx_exec::Tally>>,
     household: Option<(usize, [usize; 3])>,
 }
 
@@ -114,7 +114,11 @@ impl Core {
             office,
             founding: vec![Vec::new(); self.names.len()],
             holders: BTreeMap::new(),
-            taken: kinds.kinds.iter().map(|_| std::array::from_fn(|_| phx_exec::Tally::default())).collect(),
+            taken: kinds
+                .kinds
+                .iter()
+                .map(|_| Standing::ALL.iter().map(|_| phx_exec::Tally::default()).collect())
+                .collect(),
             household,
         };
     }
@@ -269,7 +273,7 @@ mod tests {
             office: vec![vec![None, Some(1)]],
             founding: vec![Vec::new(), vec![Prefs::NONE, Prefs::NONE, founded]],
             holders: BTreeMap::new(),
-            taken: vec![std::array::from_fn(|_| phx_exec::Tally::default())],
+            taken: vec![Standing::ALL.iter().map(|_| phx_exec::Tally::default()).collect()],
             household: None,
         };
         (decisions, firm)

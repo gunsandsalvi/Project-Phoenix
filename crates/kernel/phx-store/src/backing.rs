@@ -35,7 +35,7 @@ pub type SystemBacking = MmapBacking;
 pub type SystemBacking = HeapBacking;
 
 /// The address space every store reserves, held within its budget; reservations last the world's life.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct AddressSpace {
     reserved: usize,
 }

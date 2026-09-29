@@ -13,7 +13,7 @@ use crate::table::SlotAlloc;
 /// identity, and each slot's generation, raised each time the slot takes a new party. Which event begins or ends a
 /// party, and where an ended party's holdings go, is the world's; this is where the party is held.
 #[clause("PTY.1", "REP.13")]
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Parties<B: Backing = SystemBacking> {
     kind: u8,
     slots: SlotAlloc<B>,

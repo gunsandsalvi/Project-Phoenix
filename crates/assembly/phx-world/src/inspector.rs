@@ -111,6 +111,24 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.turns
     }
 
+    /// The saves the run took, as measured.
+    #[must_use]
+    pub fn saves(&self) -> &'a [crate::metrics::SaveMeasure] {
+        &self.world.metrics.saves
+    }
+
+    /// Each family's injection into a save loaded apart.
+    #[must_use]
+    pub fn injections(&self) -> &'a [crate::metrics::InjectionRecord] {
+        &self.world.metrics.injections
+    }
+
+    /// The months between the world's own saves.
+    #[must_use]
+    pub fn save_every_months(&self) -> u64 {
+        self.world.save_every
+    }
+
     #[must_use]
     pub fn seed(&self) -> u64 {
         self.world.seed

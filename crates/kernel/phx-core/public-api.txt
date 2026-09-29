@@ -393,6 +393,9 @@ pub enum phx_core::decisions::TakenIn
 pub phx_core::decisions::TakenIn::Household
 pub phx_core::decisions::TakenIn::Office(alloc::string::String)
 pub phx_core::decisions::TakenIn::Person
+impl phx_store::save::Saved for phx_core::decisions::TakenIn where alloc::string::String: phx_store::save::Saved
+pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::decisions::DecisionKind
 pub phx_core::decisions::DecisionKind::concerns: alloc::vec::Vec<u8>
 pub phx_core::decisions::DecisionKind::mode: phx_core::decisions::Mode
@@ -445,6 +448,9 @@ pub phx_core::decisions::Prefs::stance: phx_num::missing::Missing<u16>
 pub phx_core::decisions::Prefs::switching: phx_num::missing::Missing<u16>
 impl phx_core::decisions::Prefs
 pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs
+impl phx_store::save::Saved for phx_core::decisions::Prefs where phx_num::missing::Missing<u16>: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved
+pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::decisions::QueuedIntent
 pub phx_core::decisions::QueuedIntent::party: phx_id::ids::PartyId
 pub phx_core::decisions::QueuedIntent::point: &'static str
@@ -836,6 +842,9 @@ pub const fn phx_core::flows::Denom::is_money(self) -> bool
 pub fn phx_core::flows::Denom::money(u8) -> phx_core::flows::Denom
 pub fn phx_core::flows::Denom::unit(self) -> u16
 pub fn phx_core::flows::Denom::units(u16) -> phx_core::flows::Denom
+impl phx_store::save::Saved for phx_core::flows::Denom where u16: phx_store::save::Saved
+pub fn phx_core::flows::Denom::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::flows::Denom::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::flows::Flow
 pub phx_core::flows::Flow::amount: i64
 pub phx_core::flows::Flow::denomination: phx_core::flows::Denom
@@ -844,6 +853,9 @@ pub phx_core::flows::Flow::payee: phx_id::ids::PartyKey
 pub phx_core::flows::Flow::payer: phx_id::ids::PartyKey
 pub phx_core::flows::Flow::reason: u8
 pub phx_core::flows::Flow::source: u32
+impl phx_store::save::Saved for phx_core::flows::Flow where phx_id::ids::PartyKey: phx_store::save::Saved, i64: phx_store::save::Saved, u32: phx_store::save::Saved, phx_core::flows::Denom: phx_store::save::Saved, u8: phx_store::save::Saved
+pub fn phx_core::flows::Flow::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::flows::Flow::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::flows::FlowBufs
 impl phx_core::flows::FlowBufs
 pub fn phx_core::flows::FlowBufs::chunks_mut(&mut self) -> &mut [alloc::vec::Vec<phx_core::flows::Flow>]
@@ -882,6 +894,9 @@ pub phx_core::goods::Cost::Carried
 pub enum phx_core::goods::Held
 pub phx_core::goods::Held::Capital(phx_core::units::Class)
 pub phx_core::goods::Held::Good(phx_core::goods::Good)
+impl phx_store::save::Saved for phx_core::goods::Held where phx_core::goods::Good: phx_store::save::Saved, phx_core::units::Class: phx_store::save::Saved
+pub fn phx_core::goods::Held::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::Held::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::goods::Carriage
 pub phx_core::goods::Carriage::arrived: u8
 pub phx_core::goods::Carriage::shipped: u8
@@ -889,6 +904,9 @@ pub struct phx_core::goods::Good
 pub phx_core::goods::Good::grade: u8
 pub phx_core::goods::Good::product: u16
 pub phx_core::goods::Good::zone: u32
+impl phx_store::save::Saved for phx_core::goods::Good where u16: phx_store::save::Saved, u8: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_core::goods::Good::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::Good::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::goods::Holding
 pub phx_core::goods::Holding::committed: i64
 pub phx_core::goods::Holding::cost: i64
@@ -898,6 +916,9 @@ pub phx_core::goods::Holding::unit: u16
 pub phx_core::goods::Holding::units: i64
 impl phx_core::goods::Holding
 pub fn phx_core::goods::Holding::free(&self) -> i64
+impl phx_store::save::Saved for phx_core::goods::Holding where u16: phx_store::save::Saved, u32: phx_store::save::Saved, i64: phx_store::save::Saved
+pub fn phx_core::goods::Holding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::Holding::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::goods::Shipment
 pub phx_core::goods::Shipment::arrives: u32
 pub phx_core::goods::Shipment::carrier: phx_id::ids::PartyKey
@@ -929,6 +950,9 @@ pub fn phx_core::goods::Stocks::holdings(&self, phx_id::ids::PartyKey) -> impl c
 pub fn phx_core::goods::Stocks::lose(&mut self, phx_id::ids::PartyKey, u16, i64) -> (i64, i64)
 pub fn phx_core::goods::Stocks::receive(&mut self, phx_id::ids::PartyKey, u16, (i64, i64), phx_id::day::Day)
 pub fn phx_core::goods::Stocks::totals(&self) -> alloc::vec::Vec<i128>
+impl phx_store::save::Saved for phx_core::goods::Stocks where alloc::vec::Vec<phx_core::goods::Holding>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved
+pub fn phx_core::goods::Stocks::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::Stocks::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::goods::UnitIds
 impl phx_core::goods::UnitIds
 pub fn phx_core::goods::UnitIds::find(&self, phx_core::goods::Held) -> core::option::Option<u16>
@@ -936,6 +960,9 @@ pub fn phx_core::goods::UnitIds::held(&self, u16) -> core::option::Option<phx_co
 pub fn phx_core::goods::UnitIds::is_empty(&self) -> bool
 pub fn phx_core::goods::UnitIds::len(&self) -> usize
 pub fn phx_core::goods::UnitIds::unit(&mut self, phx_core::goods::Held) -> u16
+impl phx_store::save::Saved for phx_core::goods::UnitIds where alloc::vec::Vec<phx_core::goods::Held>: phx_store::save::Saved, alloc::vec::Vec<(phx_core::goods::Held, u16)>: phx_store::save::Saved
+pub fn phx_core::goods::UnitIds::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::UnitIds::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_core::goods::NATURE: phx_id::ids::PartyKey
 pub fn phx_core::goods::breaks(&[i128], &[i128], &[i128]) -> alloc::vec::Vec<(u16, i128, i128)>
 pub fn phx_core::goods::nature_net<'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::flows::Flow>) -> alloc::vec::Vec<i128>
@@ -2082,11 +2109,17 @@ pub phx_core::store::Accounts::bank: phx_store::column::Column<u32, B>
 pub phx_core::store::Accounts::facility: phx_store::column::Column<i64, B>
 pub phx_core::store::Accounts::held: phx_store::column::Column<i64, B>
 pub phx_core::store::Accounts::pending: phx_store::column::Column<i64, B>
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::Accounts<B> where phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<i64, B>: phx_store::save::Saved
+pub fn phx_core::store::Accounts<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::store::Accounts<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::store::CashLines<B: phx_store::backing::Backing>
 pub phx_core::store::CashLines::amounts: phx_store::column::Column<i64, B>
 pub phx_core::store::CashLines::paid: alloc::vec::Vec<core::option::Option<usize>>
 pub phx_core::store::CashLines::received: alloc::vec::Vec<core::option::Option<usize>>
 pub phx_core::store::CashLines::width: usize
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::CashLines<B> where phx_store::column::Column<i64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, alloc::vec::Vec<core::option::Option<usize>>: phx_store::save::Saved
+pub fn phx_core::store::CashLines<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::store::CashLines<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::store::Family<R: phx_store::edges::Row, B: phx_store::backing::Backing>
 pub phx_core::store::Family::edges: phx_store::edges::EdgeTable<R, B>
 pub phx_core::store::Family::heads: [core::option::Option<phx_store::column::Column<u32, B>>; 2]
@@ -2097,6 +2130,9 @@ pub fn phx_core::store::Family<R, B>::close(&mut self, phx_id::ids::Slot)
 pub fn phx_core::store::Family<R, B>::new(&mut phx_store::backing::AddressSpace, ([u8; 2], [u32; 2]), (u32, u32), [bool; 2], (phx_id::day::Day, u32)) -> phx_core::store::Family<R, B>
 pub fn phx_core::store::Family<R, B>::of(&self, usize, phx_id::ids::Slot) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_core::store::Family<R, B>::open(&mut self, R, core::option::Option<phx_id::day::Day>) -> phx_id::ids::Slot
+impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::Family<R, B>
+pub fn phx_core::store::Family<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::store::Family<R, B>, phx_store::save::LoadError>
+pub fn phx_core::store::Family<R, B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::store::KindStore<B: phx_store::backing::Backing>
 pub phx_core::store::KindStore::accounts: core::option::Option<phx_core::store::Accounts<B>>
 pub phx_core::store::KindStore::cash: core::option::Option<phx_core::store::CashLines<B>>
@@ -2114,6 +2150,9 @@ pub fn phx_core::store::KindStore<B>::record(&self, phx_id::ids::Slot) -> &[phx_
 pub fn phx_core::store::KindStore<B>::record_mut(&mut self, phx_id::ids::Slot) -> &mut [phx_num::missing::MaybeI64]
 pub fn phx_core::store::KindStore<B>::with_accounts(self, &mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::store::KindStore<B>
 pub fn phx_core::store::KindStore<B>::with_cash(self, &mut phx_store::backing::AddressSpace, (u32, u32), usize, (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<core::option::Option<usize>>)) -> phx_core::store::KindStore<B>
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindStore<B> where phx_store::parties::Parties<B>: phx_store::save::Saved, phx_store::column::Column<phx_num::missing::MaybeI64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
+pub fn phx_core::store::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::store::KindStore<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::store::Opening
 pub phx_core::store::Opening::balance: i64
 pub phx_core::store::Opening::bank: u32
@@ -2342,6 +2381,9 @@ pub phx_core::units::Class::band: u8
 pub phx_core::units::Class::condition: u8
 pub phx_core::units::Class::kind: u16
 pub phx_core::units::Class::zone: u32
+impl phx_store::save::Saved for phx_core::units::Class where u16: phx_store::save::Saved, u8: phx_store::save::Saved, u32: phx_store::save::Saved
+pub fn phx_core::units::Class::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::units::Class::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::units::capacity(&phx_core::goods::Stocks, &phx_core::goods::UnitIds, phx_id::ids::PartyKey, (u16, core::option::Option<u32>), &phx_core::units::Chain) -> f64
 pub fn phx_core::units::issue_chain(&mut phx_core::goods::UnitIds, phx_core::units::Class, u8) -> alloc::vec::Vec<u16>
 pub fn phx_core::units::wear<'a>((&mut phx_core::goods::Stocks, &phx_core::goods::UnitIds), phx_id::ids::PartyKey, impl core::ops::function::Fn(u16) -> core::option::Option<&'a phx_core::units::Chain>, (i64, i64), u8, &mut alloc::vec::Vec<phx_core::flows::Flow>)
@@ -2378,6 +2420,9 @@ pub fn phx_core::wheel::DueWheel::new(phx_id::day::Day, u32) -> phx_core::wheel:
 pub fn phx_core::wheel::DueWheel::schedule(&mut self, u32, phx_id::day::Day)
 pub fn phx_core::wheel::DueWheel::schedule_all(&mut self, &[u32], phx_id::day::Day)
 pub fn phx_core::wheel::DueWheel::take(&mut self, phx_id::day::Day, &mut alloc::vec::Vec<u32>, core::option::Option<&phx_exec::pool::Pool>)
+impl phx_store::save::Saved for phx_core::wheel::DueWheel where phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::day::Day, u32)>: phx_store::save::Saved + core::default::Default, u32: phx_store::save::Saved, alloc::vec::Vec<(u32, u32)>: core::default::Default, alloc::vec::Vec<u32>: core::default::Default
+pub fn phx_core::wheel::DueWheel::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::wheel::DueWheel::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::ActsOn
 pub phx_core::ActsOn::Country
 pub phx_core::ActsOn::Holding
@@ -2762,6 +2807,9 @@ pub enum phx_core::TakenIn
 pub phx_core::TakenIn::Household
 pub phx_core::TakenIn::Office(alloc::string::String)
 pub phx_core::TakenIn::Person
+impl phx_store::save::Saved for phx_core::decisions::TakenIn where alloc::string::String: phx_store::save::Saved
+pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)
 pub enum phx_core::Transform
 pub phx_core::Transform::Identity
 pub phx_core::Transform::Log
@@ -3731,6 +3779,9 @@ pub phx_core::Prefs::stance: phx_num::missing::Missing<u16>
 pub phx_core::Prefs::switching: phx_num::missing::Missing<u16>
 impl phx_core::decisions::Prefs
 pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs
+impl phx_store::save::Saved for phx_core::decisions::Prefs where phx_num::missing::Missing<u16>: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved
+pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Prim<T>
 impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
 pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl

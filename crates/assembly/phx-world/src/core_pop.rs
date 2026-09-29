@@ -21,7 +21,7 @@ use crate::pop_rules::{Bound, Buffers, Reading, chances, follow};
 
 /// One process's bookings on the core: its place among the world's processes, and each household's next booking on
 /// a wheel, with its day and whether it is a hit by slot, so an entry the household was booked past is skipped.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Hazard {
     pub process: usize,
     pub wheel: DueWheel,
@@ -29,7 +29,7 @@ pub struct Hazard {
 }
 
 /// What the core's persons went through on a day: households followed, persons hit, born and gone, households ended.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct PopDay {
     pub followed: u64,
     pub hits: u64,
@@ -40,7 +40,7 @@ pub struct PopDay {
 
 /// Where what a person held and owed went at its death: to its household, which goes on; to the estate its household
 /// ended into; or nowhere, its household ending holding nothing, its debts written off their creditors' books.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Destination {
     Household(PartyKey),
     Estate(PartyKey),
@@ -49,7 +49,7 @@ pub enum Destination {
 
 /// A death: its day, the person, its household, the event kind of the process that took it, and where what it held and
 /// owed went.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Death {
     pub day: Day,
     pub person: u64,
@@ -59,7 +59,7 @@ pub struct Death {
 }
 
 /// A day's events of one kind: how many were recorded and the persons they reached.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct EventCount {
     pub kind: u16,
     pub events: u64,

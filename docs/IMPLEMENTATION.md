@@ -1040,6 +1040,11 @@ world switches to the core.
   - g: the treasury's payment order on the core (TRS.10), not yet run: its debt service, pensions, benefits, its
     agency's wages and purchases, each at its rank in `TRS.payment_order`, now five ranks, the two the agencies need
     added.
+  - h: the core saved and loaded (SET.12, SET.15, N8.10; `phx_world::save`, ARCHITECTURE §11), not yet run: the day and
+    the whole core in one store, the run's measures in another, the declarations the core holds by reference bound
+    again at a load, which draws no opening; the build run saves at each `SET.save_every_months` and reads each save
+    back to its close's hash, with its sizes and times (LC-0-35, LC-0-36). The injection into a loaded save (LC-0-10)
+    is next.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

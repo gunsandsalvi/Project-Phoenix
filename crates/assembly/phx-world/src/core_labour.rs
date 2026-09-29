@@ -34,7 +34,7 @@ use crate::opening::economy::table;
 
 /// A posted vacancy's own record beside the kernel's: its identity, its point, when it was first posted and when its
 /// point was last set, and its country.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Posting {
     pub id: u64,
     pub point: i64,
@@ -44,7 +44,7 @@ pub struct Posting {
 }
 
 /// What a day's round did.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct LabourDay {
     pub day: u32,
     pub employers: u64,
@@ -80,7 +80,7 @@ pub struct LabourDay {
 /// A contract's offer at its pay round, waiting for its employee's answer: the contract, its household and person, its
 /// country, its point, the point offered and the most the job's month pays, the employee's reservation, and the
 /// search it sees the vacancies by.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, phx_macros::Saved)]
 pub struct Offered {
     pub family: usize,
     pub edge: Slot,
@@ -94,7 +94,7 @@ pub struct Offered {
 
 /// A day's pay rounds: the contracts reviewed, those raised and cut, the employees whose counter the work could not
 /// pay, who took the offer and applied to the vacancies they saw, and those offered less than they work for, who quit.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Reviews {
     pub reviewed: u64,
     pub raised: u64,
@@ -104,7 +104,7 @@ pub struct Reviews {
 }
 
 /// Labour's state on the core, kept from day to day.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct CoreLabour {
     /// Each country's law, and its ways' hours of each occupation a unit of each product, by country index.
     pub laws: Vec<Law>,
@@ -206,7 +206,7 @@ impl LabourCtx<'_> {
 impl Core {
     /// The employment family's place among the core's families.
     fn employment(&self) -> Option<usize> {
-        self.families.iter().position(|f| f.name == "LAB.employment")
+        self.families.iter().position(|f| f.name == crate::consts::families::EMPLOYMENT)
     }
 
     fn firm_record(&self, firm: usize, slot: Slot) -> Option<Firm> {
@@ -1189,7 +1189,9 @@ impl Core {
             return;
         };
         let Some(Some(treasury)) = self.treasuries.get(usize::from(country)).copied() else { return };
-        let Some(family) = self.families.iter().position(|f| f.name == "SOC.benefit") else { return };
+        let Some(family) = self.families.iter().position(|f| f.name == crate::consts::families::BENEFIT) else {
+            return;
+        };
         let monthly = benefit.replacement * from_i64(wage);
         let hour = from_i64(wage) / (law.weeks_a_month * f64::from(law.full_time_hours));
         let input = if_state::kinds::ClaimIn {
@@ -1221,7 +1223,7 @@ impl Core {
 
     /// A person hired leaves the benefit.
     fn end_benefit(&mut self, household: PartyKey, person: u64) {
-        for family in self.families.iter_mut().filter(|f| f.name == "SOC.benefit") {
+        for family in self.families.iter_mut().filter(|f| f.name == crate::consts::families::BENEFIT) {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
             for e in mine {

@@ -23,7 +23,7 @@ pub struct TaxKind {
 
 /// A country's benefit for a job lost: the share of the last wage it pays monthly, the months it pays, and the hours
 /// claiming it takes.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct BenefitLaw {
     pub replacement: f64,
     pub months: u32,
@@ -69,7 +69,7 @@ pub struct BenefitKind {
 
 /// A country's bills: their face, the weeks they run, the weekday their auctions are held on, and the weeks of
 /// outflow the treasury keeps as its buffer.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct BillLaw {
     pub face: i64,
     pub weeks: u16,
@@ -86,7 +86,7 @@ pub struct TreasuryKind {
 
 /// A treasury's payment order: the rank of its debt service, its pensions, its benefits, its public staff's wages and
 /// its public purchases.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct PaymentOrder {
     pub debt_service: u8,
     pub pensions: u8,

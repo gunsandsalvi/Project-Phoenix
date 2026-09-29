@@ -23,7 +23,7 @@ pub struct Release {
 
 /// When and from how much a series is published: the business day of the month it is released on, the months after
 /// its period's end that month is, and the share of its records or households the agency samples.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Schedule {
     pub day: u32,
     pub lag: u32,
@@ -32,7 +32,7 @@ pub struct Schedule {
 
 /// A country's statistics law: each series' schedule, the share of the sample's returns in by a first release, and
 /// the months after it the revision, from every return, comes.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct StaLaw {
     pub series: Vec<Schedule>,
     pub early: f64,

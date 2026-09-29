@@ -5,7 +5,7 @@ use phx_core::{OpeningCountry, Register};
 
 /// A country's corridor: the yearly rates the deposit facility pays and the lending facility charges, and the share
 /// of an eligible loan's balance the lending facility lends against.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Corridor {
     pub deposit_rate: f64,
     pub lending_rate: f64,

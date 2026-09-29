@@ -9,7 +9,7 @@ use phx_num::Missing;
 /// weight of the wage in a searcher's choice; the reservation as a share of the searcher's last wage; the weeks in a
 /// month; the years of a start band; the months of age each sex's pension begins at; and the months between an
 /// employer's reviews of its wages.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Law {
     pub full_time_hours: u32,
     pub notice_days: u32,

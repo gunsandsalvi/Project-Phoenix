@@ -446,7 +446,9 @@ name = "if-credit"
 version = "0.1.0"
 dependencies = [
  "phx-core",
+ "phx-macros",
  "phx-num",
+ "phx-store",
 ]
 
 [[package]]
@@ -461,7 +463,9 @@ name = "if-labour"
 version = "0.1.0"
 dependencies = [
  "phx-core",
+ "phx-macros",
  "phx-num",
+ "phx-store",
 ]
 
 [[package]]

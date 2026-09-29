@@ -23,7 +23,7 @@ const NONE: u32 = u32::MAX;
 
 /// A good: a product's grade class at a zone. The same grade at two zones is two goods.
 #[clause("GDS.1")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub struct Good {
     pub product: u16,
     pub grade: u8,
@@ -31,7 +31,7 @@ pub struct Good {
 }
 
 /// What a declared unit names: a good, or a class of capital units.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub enum Held {
     Good(Good),
     Capital(Class),
@@ -39,7 +39,7 @@ pub enum Held {
 
 /// The goods and capital classes named so far, each issued the declared unit its flows carry the first time something
 /// names it, so only what is somewhere made or held exists.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct UnitIds {
     named: Vec<Held>,
     sorted: Vec<(Held, u16)>,
@@ -92,7 +92,7 @@ impl UnitIds {
 /// A party's holding of one good: its units, what they cost, the day they came in averaged by units, and what of them
 /// is committed to sales or pledged to carriers; the rest is free. Its party is the list it is on.
 #[clause("GDS.2", "ACC.6")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Holding {
     pub unit: u16,
     pub day: u32,
@@ -139,7 +139,7 @@ pub struct Short {
 
 /// Every party's holdings: rows, each party's threaded from a head its kind keeps, most recently opened first. A row
 /// stays with its party and good once opened, emptied or not, until the party ends.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Stocks {
     rows: Vec<Holding>,
     next: Vec<u32>,

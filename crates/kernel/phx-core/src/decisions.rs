@@ -17,7 +17,7 @@ declare_prim! {
 
 /// Who takes a decision: the holder of an office its institution's form declares, a household's adults as one, or a
 /// person for itself.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum TakenIn {
     Office(String),
     Household,
@@ -88,7 +88,7 @@ impl DecisionKinds {
 /// What a decider brings to a decision's rule before minds: its memory type, switching type and stance on the
 /// heuristics' menu, the return it requires a year and its management type, each absent where it holds none.
 #[clause("MND.20", "MND.16", "VAL.6", "VAL.7")]
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Prefs {
     pub memory: Missing<u16>,
     pub switching: Missing<u16>,

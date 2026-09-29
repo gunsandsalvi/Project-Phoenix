@@ -16,7 +16,7 @@ use crate::consts::reason::{REPAID, SEVERANCE, SOLD, TAXED, WAGE};
 use crate::core::Core;
 
 /// A party's income since the opening, by line.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct Income {
     pub revenue: i128,
     pub cost_of_sales: i128,
@@ -45,7 +45,7 @@ impl Income {
 }
 
 /// A line of income an event moves.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Line {
     Revenue,
     CostOfSales,
@@ -60,7 +60,7 @@ pub enum Line {
 
 /// The accounts: the day they opened, each owned party's equity account at the opening and its income since, and
 /// the money received for sales against the revenue recognised on their delivery.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Accounts {
     pub opened: Option<Day>,
     pub opening: BTreeMap<PartyKey, i128>,

@@ -20,6 +20,16 @@ impl Tally {
     }
 }
 
+impl phx_store::Saved for Tally {
+    fn save(&self, w: &mut phx_store::Writer<'_>) {
+        self.get().save(w);
+    }
+
+    fn load(r: &mut phx_store::Reader<'_>) -> Result<Tally, phx_store::LoadError> {
+        Ok(Tally(AtomicU64::new(u64::load(r)?)))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::Tally;

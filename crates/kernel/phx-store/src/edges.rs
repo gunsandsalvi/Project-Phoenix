@@ -41,7 +41,7 @@ impl Row for Pair {
 pub const NONE: u32 = u32::MAX;
 
 /// A side's list links: each contract's next and previous contract of the same party on that side.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 struct Links<B: Backing> {
     next: Column<u32, B>,
     prev: Column<u32, B>,
@@ -56,6 +56,24 @@ pub struct EdgeTable<R: Row = Pair, B: Backing = SystemBacking> {
     links: [Option<Links<B>>; 2],
     max: u32,
     rows_per_chunk: u32,
+}
+
+impl<R: Row, B: Backing> crate::save::Saved for EdgeTable<R, B> {
+    fn save(&self, w: &mut crate::save::Writer<'_>) {
+        let [a, b] = &self.links;
+        self.slots.save(w);
+        self.rows.save(w);
+        a.save(w);
+        b.save(w);
+        self.max.save(w);
+        self.rows_per_chunk.save(w);
+    }
+
+    fn load(r: &mut crate::save::Reader<'_>) -> Result<EdgeTable<R, B>, crate::save::LoadError> {
+        let (slots, rows) = (SlotAlloc::load(r)?, Column::load(r)?);
+        let links = [Option::load(r)?, Option::load(r)?];
+        Ok(EdgeTable { slots, rows, links, max: u32::load(r)?, rows_per_chunk: u32::load(r)? })
+    }
 }
 
 impl<R: Row, B: Backing> EdgeTable<R, B> {

@@ -13,8 +13,9 @@ use phx_core::store::KindStore;
 
 /// Each kind's parties on the core, the persons of the kind that holds them, and every party's key by its identity,
 /// sorted.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Core {
+    #[saved(skip)]
     pub space: AddressSpace,
     /// The household kind's place among the population's kinds, which its processes are bound by.
     pub household_pop: usize,
@@ -27,9 +28,11 @@ pub struct Core {
     pub bank_kind: Option<u8>,
     pub range_bits: u32,
     pub families: Vec<crate::core_day::DatedFamily>,
+    #[saved(skip)]
     pub work: crate::core_day::Work,
     pub days: Vec<crate::core_day::CoreDay>,
     pub hazards: Vec<crate::core_pop::Hazard>,
+    #[saved(skip)]
     pub household_decl: Option<phx_pop::kind::PopKindDecl>,
     /// The persons the households held when the core opened.
     pub persons_opened: u64,
@@ -41,7 +44,7 @@ pub struct Core {
     pub agencies_kept: crate::core_agencies::Agencies,
     pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
     /// Why each estate that has paid what it can still stands: the goods it holds waiting for their liquidation.
-    pub waiting: std::collections::BTreeMap<PartyKey, &'static str>,
+    pub waiting: std::collections::BTreeMap<PartyKey, Waits>,
     /// Every death: its person, household, cause and where what it held and owed went.
     pub deaths: Vec<crate::core_pop::Death>,
     /// The insolvency law on the core: graces, contracts in arrears, estates' claims and firms ended.
@@ -88,14 +91,23 @@ pub struct Core {
     /// Every amount the opening shared over parties by weight, and every closure that balanced a country's sheet, a
     /// share of its GDP: the opening report.
     pub apportioned: Vec<Apportioned>,
-    pub closures: Vec<(u8, &'static str, f64)>,
+    pub closures: Vec<(u8, String, f64)>,
+}
+
+/// Why an estate that has paid what it can still stands.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
+pub enum Waits {
+    /// Its goods wait for their liquidation.
+    Liquidation,
+    /// Its money waits to be paid out.
+    PayingOut,
 }
 
 /// An amount the opening shared over parties by their weights: what it was, in which country, the amount, what the
 /// parties were given, how many there were and how many of no weight were given anything.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Apportioned {
-    pub stratum: &'static str,
+    pub stratum: String,
     pub country: u8,
     pub total: i64,
     pub given: i64,
@@ -104,6 +116,24 @@ pub struct Apportioned {
 }
 
 impl Core {
+    /// The build's declarations a core read back from a save holds by reference, bound again as its opening bound
+    /// them: they are code, which a save never holds.
+    pub(crate) fn rebind(
+        &mut self,
+        household: Option<phx_pop::kind::PopKindDecl>,
+        state: &crate::state::State,
+        (rate, index): (Option<crate::core_stats::Rate>, Option<if_state::stats::IndexKind>),
+    ) {
+        self.household_decl = household;
+        self.state.claim = state.benefit.map(|k| k.claim);
+        self.state.included = state.tax.map(|k| k.included);
+        if self.names.contains(&"treasury") && self.bank_kind.is_some() {
+            self.bills.kind = state.bills;
+        }
+        self.stats.rate = rate;
+        self.stats.index = rate.and(index);
+    }
+
     /// An amount shared over weights exactly, and recorded in the opening report.
     pub(crate) fn apportion(
         &mut self,
@@ -114,7 +144,7 @@ impl Core {
         let parts = crate::core_firms::apportion_amount(total, weights);
         let unfounded = weights.iter().zip(&parts).filter(|(w, p)| **w == 0 && **p != 0).count();
         self.apportioned.push(Apportioned {
-            stratum,
+            stratum: stratum.to_owned(),
             country,
             total,
             given: parts.iter().sum(),

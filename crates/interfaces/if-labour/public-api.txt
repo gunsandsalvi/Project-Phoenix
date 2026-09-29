@@ -134,3 +134,6 @@ pub if_labour::law::Law::seen_chance: f64
 pub if_labour::law::Law::severance_days_a_year: u32
 pub if_labour::law::Law::wage_weight: f64
 pub if_labour::law::Law::weeks_a_month: f64
+impl phx_store::save::Saved for if_labour::law::Law where u32: phx_store::save::Saved, f64: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+pub fn if_labour::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_labour::law::Law::save(&self, &mut phx_store::save::Writer<'_>)

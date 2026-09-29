@@ -34,7 +34,7 @@ const HOLDS_MONEY: [usize; 6] = [TREASURY, BANK, FIRM, ESTATE, HOUSEHOLD, AGENCY
 
 /// A job drawn at the opening, before its employer is dealt: its household, its person, its month's wage, its
 /// country, its class — occupation, hours and the band its tenure began in — and its region.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, phx_macros::Saved)]
 pub(crate) struct OpenJob {
     pub household: PartyKey,
     pub person: u64,
@@ -46,7 +46,7 @@ pub(crate) struct OpenJob {
 
 /// A household's loan drawn at the opening: its household, its bank, its head, its weight by income, its country and
 /// the years it has left.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, phx_macros::Saved)]
 pub(crate) struct OpenLoan {
     pub household: PartyKey,
     pub bank: PartyKey,
@@ -57,7 +57,7 @@ pub(crate) struct OpenLoan {
 }
 
 /// What the opening drew for the openings that follow the firms'.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub(crate) struct Drawn {
     pub jobs: Vec<OpenJob>,
     pub loans: Vec<OpenLoan>,
@@ -219,7 +219,7 @@ impl Core {
         let date = o.calendar.date(o.today);
         let mut pensions = core.pension_family(o.today);
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
-            core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), *name, *share)));
+            core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), (*name).to_owned(), *share)));
             let at = |instrument, sector| phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
             let site = sys_cb::site(&ctx, c);
             let issuer = core.begin_party(CENTRAL_BANK, &[MaybeI64::present(i64::from(site.get()))], None);
@@ -458,7 +458,7 @@ impl Core {
     /// The state pensions' family: from each country's treasury to households, naming the person paid.
     fn pension_family(&mut self, today: Day) -> DatedFamily {
         DatedFamily {
-            name: "SOC.pension",
+            name: crate::consts::families::PENSION,
             store: phx_core::store::Family::new(
                 &mut self.space,
                 ([kind_number(TREASURY), kind_number(HOUSEHOLD)], [KIND_ROWS, AGENT_ROWS]),

@@ -37,7 +37,7 @@ use sys_frm::rules::inputs::{Line as InputLine, OrdersIn};
 use sys_frm::rules::produce::{Produce, ProduceIn};
 
 /// What a day's goods did.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct GoodsDay {
     pub day: u32,
     pub made: i64,
@@ -62,7 +62,7 @@ pub struct GoodsDay {
 
 /// A trade's price reviews over the run: the reviews, the prices moved, and the sum of the moves' sizes, each the
 /// new price's difference from the old over the old.
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, phx_macros::Saved)]
 pub struct PriceTally {
     pub reviews: u64,
     pub changes: u64,
@@ -70,7 +70,7 @@ pub struct PriceTally {
 }
 
 /// Goods' state on the core, kept from day to day.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct CoreGoods {
     pub spenders: Option<DueWheel>,
     pub spend_days: u32,
@@ -125,7 +125,7 @@ pub struct CoreGoods {
 
 /// A sale's goods leg awaiting its payment: the units' flow, from the seller's cover, and the money it waits for —
 /// what its buyer paid.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Delivery {
     pub goods: Flow,
     pub buyer: PartyKey,
@@ -699,9 +699,10 @@ impl Core {
                 inputs += a * input_cost(q)?;
             }
         }
-        let wage_bill: f64 = self.families.iter().find(|x| x.name == "LAB.employment").map_or(0.0, |fam| {
-            fam.store.of(0, f.key.slot()).filter_map(|e| fam.store.edges.row(e)).map(|r| from_i64(r.amount)).sum()
-        });
+        let wage_bill: f64 =
+            self.families.iter().find(|x| x.name == crate::consts::families::EMPLOYMENT).map_or(0.0, |fam| {
+                fam.store.of(0, f.key.slot()).filter_map(|e| fam.store.edges.row(e)).map(|r| from_i64(r.amount)).sum()
+            });
         let made = from_i64(self.staff_capacity(f)?);
         if made <= 0.0 {
             return None;
@@ -927,7 +928,7 @@ impl Core {
 
     /// The whole units a firm's staff's hours a day make at its hours a unit; none known where it has no hours a unit.
     fn staff_capacity(&self, f: &Firm) -> Option<i64> {
-        let family = self.families.iter().position(|x| x.name == "LAB.employment")?;
+        let family = self.families.iter().position(|x| x.name == crate::consts::families::EMPLOYMENT)?;
         let (level, ways) = (self.labour.level.get(f.country)?, self.labour.ways.get(f.country)?);
         let p = usize::from(f.product);
         let a_unit: f64 = level

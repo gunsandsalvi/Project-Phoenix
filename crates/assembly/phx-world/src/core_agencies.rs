@@ -16,10 +16,10 @@ use crate::core::Core;
 use crate::core_labour::{LabourCtx, Posting, at_country};
 
 /// The public administration's contracts.
-pub const PUBLIC: &str = "LAB.public_employment";
+pub const PUBLIC: &str = crate::consts::families::PUBLIC_EMPLOYMENT;
 
 /// An agency's day: its staff and wage bill a month, its appropriation for wages and what it posted.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct AgencyDay {
     pub day: u32,
     pub country: u8,
@@ -30,7 +30,7 @@ pub struct AgencyDay {
 }
 
 /// The agencies: the staff each keeps by region and occupation, its appropriation for wages a month, and their days.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, phx_macros::Saved)]
 pub struct Agencies {
     pub targets: BTreeMap<(PartyKey, u32, u32), u32>,
     pub budget: BTreeMap<PartyKey, i64>,
@@ -178,14 +178,16 @@ impl Core {
     /// The contracts' family an employer's jobs are in: a firm's, or the state's agency's.
     pub(crate) fn employer_family(&self, employer: PartyKey) -> Option<usize> {
         self.families.iter().position(|f| {
-            (f.name == "LAB.employment" || f.name == PUBLIC) && f.store.kinds.first() == Some(&employer.kind())
+            (f.name == crate::consts::families::EMPLOYMENT || f.name == PUBLIC)
+                && f.store.kinds.first() == Some(&employer.kind())
         })
     }
 
     /// Every job a person holds, in any employer's family, closed: it takes another.
     pub(crate) fn quit_jobs(&mut self, household: PartyKey, person: u64) -> u64 {
         let mut n = 0;
-        for f in self.families.iter_mut().filter(|f| f.name == "LAB.employment" || f.name == PUBLIC) {
+        for f in self.families.iter_mut().filter(|f| f.name == crate::consts::families::EMPLOYMENT || f.name == PUBLIC)
+        {
             let held: Vec<Slot> = f
                 .store
                 .of(1, household.slot())
