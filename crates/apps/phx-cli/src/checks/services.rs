@@ -1,4 +1,4 @@
-//! The services' reads (SRV.7): their share of the firms' sales and of the jobs, the retail margin of services and of
+//! The services' reads: their share of the firms' sales and of the jobs, the retail margin of services and of
 //! goods, and how often and by how much each's prices move at a review.
 
 use phx_num::Missing;
@@ -8,7 +8,7 @@ use phx_world::consts::firm::{EXPECTED, MARKUP, PART_ONE, PRICE, PRODUCT};
 use super::{Check, Outcome};
 use crate::live_check;
 
-/// What SRV.7 reads, services first and goods second where a pair.
+/// The services' reads, services first and goods second where a pair.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct ServicesRead {
     pub sales_share: f64,
@@ -88,7 +88,7 @@ pub fn services(w: Inspector<'_>) -> Option<ServicesRead> {
     })
 }
 
-/// SRV.7's reads are made at the close: services hold a share of the sales and of the jobs, and each kind of trade
+/// The services' reads are made at the close: services hold a share of the sales and of the jobs, and each kind of trade
 /// has reviewed its prices.
 fn services_reported(w: Inspector<'_>) -> Outcome {
     let Some(r) = services(w) else { return Outcome::NotYet("no firm in the world") };

@@ -321,7 +321,7 @@ fn population_report(w: Inspector<'_>) -> serde_json::Value {
     })
 }
 
-/// SRV.7's reads at the close: services' share of the sales and of the jobs, and services' and goods' median markups,
+/// The services' reads at the close: their share of the sales and of the jobs, and services' and goods' median markups,
 /// changes a review and mean change, as the run report publishes them.
 fn services_report(w: Inspector<'_>) -> Option<serde_json::Value> {
     crate::checks::services::services(w).map(|r| {
