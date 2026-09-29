@@ -617,6 +617,7 @@ impl Core {
                 *n += 1;
             }
         }
+        self.deliver_sales(day, &failed);
         record.arrears = self.hold_arrears(day, calendar, &failed);
         self.note_arrears(day, &failed);
         record.wages = self.record_wages_settled(&failed);

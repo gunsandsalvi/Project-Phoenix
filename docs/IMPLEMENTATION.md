@@ -977,6 +977,11 @@ world switches to the core.
     placeholder's loans), principal repaid (each amortising due's part), written off (a loan contract closing owing a
     balance: its borrower ended, or the person it names gone) — and held at each close to what its loan contracts
     owe it, a difference a finding of the loans family; LC-1-24 reads it. Not yet run.
+  - d: a sale's goods leg was moved to its buyer at the sale while its money settled with the day's, so a sale whose
+    payment failed left the buyer the goods unpaid for. Now the seller's units cover the sale (committed) until the
+    day's settlement, then each paid sale is delivered from its cover at what its buyer paid, each unpaid one released
+    to its seller, a service's capacity released then perishing as unsold capacity does; the goods' identity is read
+    over the deliveries (`core_goods::deliver_sales`). Not yet run.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

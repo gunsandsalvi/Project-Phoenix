@@ -115,6 +115,17 @@ pub struct CoreGoods {
     pub prices: BTreeMap<u16, PriceTally>,
     /// Today's sales' debits to named buyers, credits to named sellers, and sales naming neither.
     pub named: (i128, i128, u64),
+    /// Today's sales' goods legs, each covered by its seller's units until its payment settles.
+    pub deliveries: Vec<Delivery>,
+}
+
+/// A sale's goods leg awaiting its payment: the units' flow, from the seller's cover, and the money it waits for —
+/// what its buyer paid.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Delivery {
+    pub goods: Flow,
+    pub buyer: PartyKey,
+    pub paid: i64,
 }
 
 /// What the goods day reads of the world besides the core.
@@ -576,13 +587,13 @@ impl Core {
         let mut moved: Vec<Flow> = Vec::new();
         self.spoil(day, &mut moved);
         record.made = self.make(ctx, day, &mut moved);
-        record.inputs_wanted = self.buy_inputs(ctx, day, &mut moved);
+        record.inputs_wanted = self.buy_inputs(ctx, day);
         let (spenders, wants) = self.decide_spending(ctx, day);
         (record.spenders, record.wants) = (spenders, wants);
         let mut wants = std::mem::take(&mut self.goods.wants);
         wants.extend(self.public_wants(ctx.regions));
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
-        let (sales, spent) = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Final), &leg, &mut moved);
+        let (sales, spent) = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Final), &leg);
         let invest = self.investment_wants(ctx);
         // A service bought as investment is used as it is delivered, being made as it is sold; a good is held.
         let stored = self.goods.stored.clone();
@@ -592,7 +603,7 @@ impl Core {
             order: 0,
             used: !stored.get(usize::from(product)).copied().unwrap_or(true),
         };
-        let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
+        let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held);
         self.close_services(ctx, day, &mut moved);
         (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         (record.sales, record.spent) = (sales, spent);
@@ -990,7 +1001,7 @@ impl Core {
     /// cost, over what the unit takes of it; bought from the firms of its region at no more than that worth, each
     /// purchase a flow of money and one of goods to the buyer.
     #[clause("FRM.7", "GDS.5", "MKT.6")]
-    fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> u64 {
+    fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> u64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
         let slots = self.firm_slots(firm);
         let orders: Vec<Vec<(u16, Buyer)>> = match ctx.pool {
@@ -1001,7 +1012,7 @@ impl Core {
         let wants: Vec<(u16, Buyer)> = orders.into_iter().flatten().collect();
         let n = len_u64(wants.len());
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
-        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg, moved);
+        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg);
         n
     }
 
@@ -1459,7 +1470,7 @@ impl Core {
 
     /// Each product's posted-price meeting over its firms holding it free with a price, each region a place whose
     /// firms are in its reach at no distance until the finer cells: each sale's money a flow settled with the day's,
-    /// and its goods moved at once from the seller at their price. Returns the sales and what they paid.
+    /// and its goods covered by the seller's units until then. Returns the sales and what they paid.
     #[clause("SRV.4", "SRV.5", "MKT.6", "GDS.4")]
     fn meet_all(
         &mut self,
@@ -1467,7 +1478,6 @@ impl Core {
         day: Day,
         (wants, purpose): (&[(u16, Buyer)], crate::core_stats::Purchase),
         leg: &dyn Fn(u16, u16) -> GoodsLeg,
-        moved: &mut Vec<Flow>,
     ) -> (u64, i64) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
         if wants.is_empty() {
@@ -1551,7 +1561,7 @@ impl Core {
                         }
                         money.push(f);
                     } else {
-                        let _ = self.move_goods(f, Cost::At(sale.paid), day, moved);
+                        self.cover_sale(f, (sale.buyer, sale.paid));
                     }
                 }
                 if let Some(sold) = self.record_word(firm, sale.seller.slot(), SOLD_UNITS) {
@@ -1570,5 +1580,74 @@ impl Core {
         }
         self.pending.append(&mut money);
         (sales, spent)
+    }
+
+    /// A sale's goods leg covered by its seller's units until its payment settles.
+    fn cover_sale(&mut self, goods: Flow, (buyer, paid): (PartyKey, i64)) {
+        let (seller, unit) = (goods.payer, goods.denomination.unit());
+        if self.goods.stocks.bind(seller, unit, goods.amount, (Bound::Free, Bound::Committed)).is_err() {
+            violation!(clause = "GDS.2", "a sale of units its seller does not hold free", seller = seller.word());
+        }
+        self.goods.deliveries.push(Delivery { goods, buyer, paid });
+    }
+
+    /// Each of the day's sales delivered once its payment settled, the units its buyer holds at what it paid or used
+    /// up; one whose payment failed released to its seller, a service's capacity then lost as unsold capacity is. The
+    /// goods' identity read over the deliveries.
+    #[clause("GDS.2", "GDS.10", "SRV.1", "Law 5")]
+    pub(crate) fn deliver_sales(&mut self, day: Day, failed: &[Flow]) {
+        let mut unpaid: BTreeMap<(PartyKey, PartyKey, i64), u32> = BTreeMap::new();
+        for f in failed.iter().filter(|f| f.reason == SOLD && f.denomination.is_money()) {
+            *unpaid.entry((f.payer, f.payee, f.amount)).or_insert(0) += 1;
+        }
+        let open = self.goods.stocks.totals();
+        let mut moved: Vec<Flow> = Vec::new();
+        for d in std::mem::take(&mut self.goods.deliveries) {
+            let (seller, unit) = (d.goods.payer, d.goods.denomination.unit());
+            if let Some(n) = unpaid.get_mut(&(d.buyer, seller, d.paid)).filter(|n| **n > 0) {
+                *n -= 1;
+                if self.goods.stocks.bind(seller, unit, d.goods.amount, (Bound::Committed, Bound::Free)).is_err() {
+                    violation!(clause = "GDS.2", "a sale's cover gone before its release", seller = seller.word());
+                }
+                if d.goods.payee == NATURE {
+                    let lost = Flow { payee: NATURE, reason: PERISHED, ..d.goods };
+                    let _ = self.move_goods_from(lost, (Bound::Free, Cost::Carried), day, &mut moved);
+                }
+                continue;
+            }
+            let _ = self.move_goods_from(d.goods, (Bound::Committed, Cost::At(d.paid)), day, &mut moved);
+        }
+        let close = self.goods.stocks.totals();
+        for (good, expected, held) in breaks(&open, &nature_net(&moved), &close) {
+            self.found.push(phx_core::findings::Finding {
+                family: "goods",
+                clause: "GDS.10",
+                owner: phx_core::findings::FindingOwner::Run,
+                size: held - expected,
+                unit: phx_core::findings::Unit::Count,
+                day,
+                detail: format!(
+                    "good {good}: {held} units held after the day's deliveries where they leave {expected}"
+                ),
+            });
+        }
+    }
+
+    /// A goods flow applied from the payer's units in a bound, its payee receiving them at `cost`; the cost the
+    /// payer's units carried out, none where the bound held too few.
+    fn move_goods_from(
+        &mut self,
+        flow: Flow,
+        (bound, cost): (Bound, Cost),
+        day: Day,
+        moved: &mut Vec<Flow>,
+    ) -> Option<i64> {
+        match self.goods.stocks.apply(&flow, bound, cost, day) {
+            Ok(carried) => {
+                moved.push(flow);
+                carried
+            }
+            Err(_) => None,
+        }
     }
 }

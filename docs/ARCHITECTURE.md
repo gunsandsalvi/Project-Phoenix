@@ -2011,6 +2011,10 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   the party. `estates_pay` pays each rank in proportion as far as the money goes (`shares`), the rest to the heirless
   destination; an estate holding goods stays until they are sold. A household's estate holds its debts as claims
   (`debts_of`).
+- **Deliveries** (`phx_world::core_goods`, GDS.2, Law 5): a meeting's sale covers its units at its seller (`bind` to
+  committed) and waits (`CoreGoods::deliveries`); after the day's settlement `deliver_sales` delivers each paid sale
+  from the cover at what its buyer paid — to the buyer, or to nature for a service or a purchase used as delivered —
+  releases each whose money failed (a service's released capacity perishing), and reads the goods' identity over them.
 - **Loan books** (`phx_world::core_books`, BNK.11): each dated family records its moves on its creditors' books
   (`LoanMoves`: lent, principal repaid in `dues`, balances written off by `close_contract`); `book_loans` enters them
   at the day's close and holds each creditor's `LoanBook` to the balances its loan contracts owe it.
