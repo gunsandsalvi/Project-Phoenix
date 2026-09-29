@@ -1141,28 +1141,59 @@ world switches to the core.
       sector ratios, trade in a closed economy, investment, the banks' and central bank's assets, home ownership,
       household wealth to income); `FRM.industry_by_size`, `FRM.product_share` and `PEN.*` are read by nothing;
       `GEN.occupation_pay` is declared and unread.
-    - j1. **Labour from the flows**: each country's ways' hours a unit are its group's scaled by one factor, so the
-      hours its firms' output takes are the hours its employed work (its labour productivity, GDP over hours, an
-      identity of the accounts, GEN.4); a person's occupation is drawn from the ways' mix of hours at the country's
-      output, each occupation's sexes by `LAB.occupation_shares`; a job's wage an hour is its activity's compensation
-      in the flows over the activity's hours, shared over its occupations by `GEN.occupation_pay`, so the wages sum to
-      the flows' compensation and every firm's unit cost is its way's at its productivity. The income multiple is
-      retired with `DEM.income_shape` (the incomes that result are F13's to read). Built: wages from the flows at
-      the jobs' dealing, incomes and loans from them, each firm's markup its day-zero price over its own cost. Left:
-      the working owners' hours, which capacity counts and no wage pays, are costed at the self-employed's labour
-      income an hour — `GEN.labour_share` (ILO SDG 10.4.1, which includes it) less the flows' compensation share —
-      with the check that no activity's owners earn beyond its surplus; the ways' one scale factor and the
-      occupations drawn from their mix. GEN.2 and GEN.15 restated.
-    - j2. **The profile and the flows**: each drawn value the flows hold moves them as the drawn debts move the stocks
-      (the labour share splits value added; investment and collective consumption set their final uses), with the
-      dataset's closures; a drawn value nothing reads and no closure takes is dropped from the profile.
-    - j3. **Firms**: the unread firm tables deleted; firms per employed kept.
-    - j4. **The state**: the tax bands and rates and the benefits' coverage against the flows' taxes and social
-      spending, measured at the opening's first year and made one.
-    - j5. **Households' holdings**: accounts and borrowing, tenure and costs, and the wealth shape as shapes scaled
-      to the stocks' totals, each checked.
-    - j6. **The derivation's check**: one derivation writes every profile table; its check and the assembly's cover
-      every identity above.
+    - j1. **Labour and incomes from the accounts** (built, 3056d3b7, 4bbdd8c9): a job's wage an hour is its
+      activity's compensation in the flows over the hours the activity's jobs work, shared over its occupations by
+      `GEN.occupation_pay`; a working owner's hours earn the self-employed's labour income — `GEN.labour_share` (ILO
+      SDG 10.4.1, which counts it) less the flows' compensation — as they would be paid employed in their activity;
+      both count in a firm's unit cost (FRM.14); incomes and loans follow the dealt jobs; `DEM.income_shape` and the
+      income multiple are retired (F13 reads the incomes that result). The self-employed are dealt before the jobs,
+      and each firm's jobs by its need net of its owners'. Measured (150,000 persons, seed 1): wages are the accounts'
+      compensation in every product; capacity over units 0.84 to 1.2 in the developed and emerging countries. What
+      still breaks is the tables, not the mechanisms: the developing country's occupations against its ways
+      (capacity 1.3 to 5), its health firms with no staff, education's and health's owners earning beyond surplus
+      (one owner a firm, firms uniform by employment) — each settled below.
+    - **The true primitives** (owner, 2026-09-29: too many tables; reduce and organise them to the true primitives,
+      keeping those later stages need). A profile holds only what a source gives and nothing else can: each fact
+      once, in one of four files by what it describes, and nothing another table's identities fix.
+      - `economy.toml`, the group's accounts of 2019: the ways (`TEC.inputs`, `TEC.labour` for all 22 activities,
+        public administration's, finance's and real estate's among them, `TEC.capital`, `TEC.land`), the price
+        levels, the service inputs and tax rates, each final use's weight and composition (the households' column
+        their budget shares), each activity's split of value added, the balance sheet and real assets, the
+        productivity spread, the occupations' pay, and firms per person employed by activity. Computed at assembly,
+        never stored: each activity's output, (I − A)⁻¹ f; its value added and the parts of it; the final uses'
+        levels; firms' plant (`CAP.stock_per_gdp` retired); a product's share of its industry
+        (`FRM.product_share` retired).
+      - `people.toml`: demography, households and education (`DEM.*`), the labour force — employment by age and
+        sex, status by activity, each occupation's sexes, part time, unemployment by sex as ratios to the drawn
+        rate, tenure — the wealth shape and the households' banking.
+      - `law.toml`: every POLICY a country's law sets — taxes, benefits and pensions, working hours, notice,
+        severance and the minimum wage, insolvency, the payment order, statistics' calendar, the index base, the
+        currency, its units and the calendar, the ages of majority and of leaving school.
+      - `profile.toml`: the joint draw of the values a country is drawn with — its demography's levels, GDP a head,
+        employment and unemployment, the labour share, rates, growth, debts, banks' capital, deposits, reserves and
+        concentration, and the three the setup pins (inequality, openness) as conditions of the draw only. Retired
+        from it, each read by nothing or held by the accounts: inflation, household wealth to income, tax revenue,
+        social spending, the sector ratios, the banks' and central bank's assets, investment, home ownership.
+      - `later/<SYS>.toml`: tables of systems a later stage builds (`HSG.*`, `PEN.*`), copied into a world only with
+        their system.
+      The derivations write each primitive into its file by its id; the assembly reads a country's four files and
+      its `later/` tables. `SOC.public_staff_share` retires into public administration's ways; `FRM.industry_by_size`
+      and `FRM.firms_per_employed` into firms per person employed by activity (OECD SDBS enterprises over persons
+      employed, B to S; agriculture's from its self-employed, ILO status by activity).
+    - j2. **The files** reorganised to the four and `later/`, the derivations and the assembly with them; no value
+      changes, checked by reading every primitive before and after.
+    - j3. **Derived facts computed, dead tables retired**: output, value added and the final uses' levels computed
+      at assembly from their primitives; `CAP.stock_per_gdp`, `FRM.product_share`, `FRM.industry_by_size` retired;
+      `PEN.*` and `HSG.*` to `later/`; the profile's unread values dropped from its draw.
+    - j4. **Labour and firms from one source**: `TEC.labour` for all 22 activities, the public agency staffed by
+      public administration's hours; the self-employed dealt by activity from ILO status by activity; firms by
+      activity from firms per person employed; persons' occupations drawn from the ways' mix at the country's
+      output, each occupation's sexes by its share; the ways' hours scaled by one factor to the hours the employed
+      work. Predicted: capacity over units near one in every country and product, no activity's owners beyond its
+      surplus, markups within a product apart only by productivity and occupation mix.
+    - j5. **The state**: the tax rates and benefits against the flows' taxes and collective consumption, measured at
+      the opening's first year and made one.
+    - j6. **The check**: the derivation's and the assembly's checks cover every identity above.
 - **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
   birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
   by that identity, never by its place in its household (c, with the employment contracts, the pensions moving to it);
