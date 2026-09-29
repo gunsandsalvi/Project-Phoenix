@@ -76,7 +76,8 @@ pub struct DatedFamily {
 pub struct LoanMoves {
     pub lent: Vec<(PartyKey, i64)>,
     pub repaid: Vec<(PartyKey, PartyKey, i64)>,
-    pub written_off: Vec<(PartyKey, i64)>,
+    /// Each balance written off, with its creditor and its contract.
+    pub written_off: Vec<(PartyKey, i64, u32)>,
     pub arrears: Vec<Arrears>,
 }
 
@@ -281,7 +282,7 @@ impl DatedFamily {
             let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
             let terms = self.terms.get(at).is_some_and(Option::is_some);
             if terms && row.amount > 0 {
-                self.moves.written_off.push((row.ends[1], row.amount));
+                self.moves.written_off.push((row.ends[1], row.amount, edge.get()));
             }
             if row.arrears != 0 {
                 let [debtor, creditor] = row.ends;
@@ -557,12 +558,14 @@ impl Core {
         n
     }
 
-    /// The day's books kept: the contracts' moves entered as income and on the loan books, and every account and
-    /// loan book held to what the positions show.
-    fn keep_books(&mut self, day: Day) {
+    /// The day's books kept: the contracts' moves entered as income and on the loan books, every account and loan
+    /// book held to what the positions show, and on a month's first day the banks' review of their standards.
+    fn keep_books(&mut self, day: Day, calendar: &Calendar) {
         self.account_moves();
         self.book_loans(day);
         self.audit_accounts(day);
+        let date = calendar.date(day);
+        self.review_lenders(day, i64::from(date.year()) * crate::consts::MONTHS + i64::from(date.month()));
     }
 
     /// Each estate that paid all it held today ended; returns them.
@@ -686,7 +689,7 @@ impl Core {
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
         record.estates += self.end_settled(settling);
-        self.keep_books(day);
+        self.keep_books(day, calendar);
         for k in &mut self.kinds {
             k.parties.close_day();
         }

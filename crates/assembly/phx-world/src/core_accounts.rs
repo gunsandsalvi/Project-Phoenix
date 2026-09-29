@@ -206,7 +206,7 @@ impl Core {
                 events.push((payer, Line::InterestPaid, -a));
                 events.push((payee, Line::InterestReceived, -a));
             }
-            for &(creditor, a) in &family.moves.written_off {
+            for &(creditor, a, _) in &family.moves.written_off {
                 events.push((creditor, Line::WrittenOff, a));
             }
             for m in &family.moves.arrears {

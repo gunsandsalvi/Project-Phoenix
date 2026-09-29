@@ -985,9 +985,13 @@ world switches to the core.
     declines a class worse than its standard or a loan its capital cannot carry, else quotes (`sys_bnk::credit`); the
     firm takes the best quote by its taste whatever its return requires, failing its dues costing it the firm; where
     every bank declines it goes without, and what it cannot pay fails into arrears. Each bank's applications,
-    declines, quotes and loans are counted (LC-1-25, the run report's `lenders`). Remains in f: each bank's monthly
-    review of its standard against its book's losses (`sys_bnk::credit::standard`, `learned`), which needs each loan's
-    class kept with it.
+    declines, quotes and loans are counted (LC-1-25, the run report's `lenders`). Each firm loan keeps its class and
+    day (the opening's classed at their borrowers' filed cover); a bank quotes at the default rate it has learned for
+    the class (the published rate counted as the law's prior loan-years, with the defaults and loan-years its own book
+    has seen), and on each month's first day reviews its standard: the loss its write-offs showed over the month
+    against what its classes' learned rates priced for its book, a class tighter where it lost more, looser where less
+    (`sys_bnk::credit::standard`). The loss given default stays the published one until recoveries are traced to the
+    loans they recover (S2.01).
   - d: a sale's goods leg was moved to its buyer at the sale while its money settled with the day's, so a sale whose
     payment failed left the buyer the goods unpaid for. Now the seller's units cover the sale (committed) until the
     day's settlement, then each paid sale is delivered from its cover at what its buyer paid, each unpaid one released

@@ -308,7 +308,7 @@ impl Core {
             }
             let Some((_, years)) = self.lending.get(usize::from(ccy)).copied() else { continue };
             // Where every bank it asks declines, the firm goes without, and what it cannot pay fails.
-            let Some((lender, rate)) = self.apply_for_loan((key, ccy), (amount, years), (day, streams)) else {
+            let Some((lender, rate, class)) = self.apply_for_loan((key, ccy), (amount, years), (day, streams)) else {
                 continue;
             };
             let Some(months) = u32::try_from(years).ok().and_then(|y| y.checked_mul(u32::try_from(MONTHS).ok()?))
@@ -328,8 +328,9 @@ impl Core {
             let schedule = f.schedule_in(ccy, [0, 0, 0], terms);
             let due = Due { ends: [key, lender], amount, nth: 1, schedule, person: 0, arrears: 0 };
             let first = f.first(calendar, schedule);
-            let _ = f.store.open(due, first);
+            let edge = f.store.open(due, first);
             f.moves.lent.push((lender, amount));
+            self.credit.classes.insert((family, edge.get()), (class, day));
             buf.push(phx_core::flows::Flow {
                 payer: lender,
                 payee: key,

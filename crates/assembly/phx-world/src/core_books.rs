@@ -47,7 +47,8 @@ impl Core {
     /// The day's moves entered on each creditor's book, and every book held to what its loans owe it.
     #[clause("BNK.11", "N1", "II.5")]
     pub(crate) fn book_loans(&mut self, day: Day) {
-        for family in &mut self.families {
+        let mut defaults: Vec<(PartyKey, i64, usize, u32)> = Vec::new();
+        for (i, family) in self.families.iter_mut().enumerate() {
             let moves = std::mem::take(&mut family.moves);
             for (k, a) in moves.lent {
                 let b = self.loan_books.entry(k).or_default();
@@ -57,10 +58,14 @@ impl Core {
                 let b = self.loan_books.entry(k).or_default();
                 (b.book, b.repaid) = (b.book - i128::from(a), b.repaid + i128::from(a));
             }
-            for (k, a) in moves.written_off {
+            for (k, a, edge) in moves.written_off {
                 let b = self.loan_books.entry(k).or_default();
                 (b.book, b.written_off) = (b.book - i128::from(a), b.written_off + i128::from(a));
+                defaults.push((k, a, i, edge));
             }
+        }
+        for (bank, amount, family, edge) in defaults {
+            self.loan_defaulted(bank, amount, (family, edge));
         }
         let owed = self.owed_on_loans();
         for (k, b) in &self.loan_books {
