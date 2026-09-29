@@ -1628,7 +1628,8 @@ personal, fallible and heterogeneous — and able to value things that have neve
   does — a new issue, an unlisted firm, a plant not yet built, a dwelling not yet sold, an untried policy.
   A price is the market's answer; a value is each party's question.
 - **VAL.3 STATE** — Each party holds a small set of **forecasting heuristics** for each outlook, from a
-  declared menu (VAL.6), with a record of how well each has recently performed for that party.
+  declared menu (VAL.6), with a record of how well each has recently performed for that party; for a household's or
+  firm's outlook of a public variable, that record is its method's, the same for all who use it (VAL.23).
 - **VAL.4 STATE** — A **surprise** is observed minus expected, per party, variable and date, and it is
   recorded. **Confidence** is a read of the width of a party's recent surprises.
 - **VAL.23 STATE** — For households and firms (REP.1), outlooks are of two kinds:
