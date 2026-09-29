@@ -241,7 +241,7 @@ impl Core {
         })
     }
 
-    fn is_stored(&self, product: u16) -> bool {
+    pub(crate) fn is_stored(&self, product: u16) -> bool {
         self.goods.stored.get(usize::from(product)).copied().unwrap_or_else(|| {
             violation!(clause = "GDS.1", "a product the technology does not declare", product = product)
         })
@@ -553,6 +553,7 @@ impl Core {
         record.destroyed = self.destroy(day, &mut moved);
         self.complete_projects(day, &mut moved);
         self.wear_plant(day, &mut moved);
+        self.arrive_shipments(day, &mut moved);
         self.review_extraction(ctx.regions, day);
         record.made = self.make(ctx, day, &mut moved);
         record.inputs_wanted = self.buy_inputs(ctx, day);

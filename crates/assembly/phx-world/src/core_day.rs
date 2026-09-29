@@ -727,6 +727,7 @@ impl Core {
     /// and remembered from the day they began. Returns the contracts in arrears.
     fn after_settlement(&mut self, day: Day, calendar: &Calendar, failed: &[Flow]) -> u64 {
         self.deliver_sales(day, failed);
+        self.depart_shipments(day, failed);
         let n = self.hold_arrears(day, calendar, failed);
         self.note_arrears(day, failed);
         n

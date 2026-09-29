@@ -1,5 +1,6 @@
 pub mod awaiting;
 pub mod core;
+pub mod freight;
 pub mod geo;
 pub mod lives;
 pub mod observer;
@@ -155,12 +156,12 @@ pub const CHECKS: &[Check] = &[
     plant::LC_1_12,
     core::LC_1_13,
     geo::LC_1_14,
-    awaiting::LC_1_15,
+    freight::LC_1_15,
     services::LC_1_16,
     core::LC_1_17,
     core::LC_1_18,
-    awaiting::LC_1_19,
-    awaiting::LC_1_20,
+    freight::LC_1_19,
+    freight::LC_1_20,
     core::LC_1_21,
     core::LC_1_22,
     core::LC_1_23,
@@ -187,5 +188,5 @@ pub const CHECKS: &[Check] = &[
     core::LC_1_52,
     services::LC_1_45,
     geo::LC_1_46,
-    awaiting::LC_1_47,
+    freight::LC_1_47,
 ];

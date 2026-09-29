@@ -46,7 +46,8 @@ impl Default for MethodView {
 }
 
 /// A public series as its methods saw it: the day of its last print, its last two prints, the mean of every print
-/// since the opening as the level the anchor returns to, the prints counted, and each memory type's view.
+/// since the opening as the level the anchor returns to, the prints counted, each memory type's view, and its changes'
+/// squares.
 #[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Series {
     pub day: Day,
@@ -58,6 +59,8 @@ pub struct Series {
     /// The way the series last moved, and the print it last turned at.
     pub direction: i8,
     pub turned: u64,
+    /// The squares of each print's change over the one before, summed.
+    pub squares: f64,
 }
 
 /// A day's stances: the firms relying on each heuristic after the day's reviews, the stances reconsidered and those
@@ -87,6 +90,14 @@ pub struct Outlooks {
     /// change's surprise and the days it came after.
     pub awaiting: BTreeMap<u32, (Day, f64)>,
     pub responses: Vec<(f64, u32)>,
+}
+
+impl Series {
+    /// The variance of its prints' changes over the ones before, none before it has two changes.
+    #[must_use]
+    pub fn volatility(&self) -> Option<f64> {
+        (self.prints > 2).then(|| self.squares / phx_rand::float::from_u64(self.prints - 1))
+    }
 }
 
 /// The way a change goes: up, down, or nowhere.
@@ -132,7 +143,12 @@ impl Outlooks {
             methods: vec![MethodView::default(); types],
             direction: 0,
             turned: 0,
+            squares: 0.0,
         });
+        if s.prints > 0 && s.last > 0.0 {
+            let change = (value - s.last) / s.last;
+            s.squares += change * change;
+        }
         s.prints += 1;
         s.level += (value - s.level) / phx_rand::float::from_u64(s.prints);
         let moved = way(value - s.last);

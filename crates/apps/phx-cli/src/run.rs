@@ -173,6 +173,7 @@ fn sections(w: Inspector<'_>) -> Vec<(String, serde_json::Value)> {
         ("saves".to_owned(), saves_report(w)),
         ("injections".to_owned(), crate::inject::report(w.injections())),
         ("plant".to_owned(), plant_report(w)),
+        ("freight".to_owned(), freight_report(w)),
     ]
 }
 
@@ -198,6 +199,27 @@ fn plant_report(w: Inspector<'_>) -> serde_json::Value {
         })).collect::<Vec<_>>(),
         "projects": core.plant.projects.len(),
         "units_by_condition": by_condition.iter().map(|(c, u)| json!({ "condition": c, "units": u })).collect::<Vec<_>>(),
+    })
+}
+
+/// Freight's days: the gaps weighed and the trips chosen, booked and refused, the units departed and arrived and the
+/// shipments on their way; and each pair of places' basis against its freight at the close.
+fn freight_report(w: Inspector<'_>) -> serde_json::Value {
+    let core = w.core();
+    json!({
+        "days": core.freight.days.iter().map(|d| json!({
+            "day": d.day,
+            "weighed": d.weighed,
+            "chose": d.chose,
+            "booked": d.booked,
+            "no_room": d.no_room,
+            "over_capacity": d.over_capacity,
+            "unpaid": d.unpaid,
+            "departed": d.departed,
+            "arrived": d.arrived,
+            "on_the_way": d.on_the_way,
+        })).collect::<Vec<_>>(),
+        "basis": core.basis(w.regions()).iter().map(|(g, f)| json!({ "gap": g, "freight": f })).collect::<Vec<_>>(),
     })
 }
 

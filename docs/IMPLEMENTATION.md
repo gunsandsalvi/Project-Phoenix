@@ -769,8 +769,8 @@ world switches to the core.
     between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family. Begun: each firm's
     stock opens at its management's days of cover and grows by its planned output's day within what its staff's
     hours make; each product's retail meeting sells it to households at posted prices, the distance term at zero
-    until S2.13's cells (the inputs a way uses, plant, the goods legs as holdings, between-firms trade and shipments
-    remain). Until firms sell on
+    until S2.13's cells (the inputs a way uses, plant, the goods legs as holdings, between-firms trade and shipments,
+    built since). Until firms sell on
     the core they pay wages from their opening deposits alone: at the first payday 1,467 of 67,478 flows failed
     (150,000 persons, seed 1); d's revenue settles it.
   - e. Households' spending, firms' price reviews and the outlooks (HH, FRM.5, VAL), the firms' management types
@@ -1075,6 +1075,11 @@ world switches to the core.
     report's `plant` its days and its units by condition. The investment decision by CAP.3 (ARCHITECTURE §7.10)
     retired the placeholder of each country's fixed investment shared by the firms' opening turnover. CAP.4's
     maintenance, repair, sale and scrapping are S2.03's, with the plant's resale market.
+  - d: shipments on the core (FRT.1, FRT.4–FRT.10, GEO.13, GDS.11; `core_freight`, ARCHITECTURE §7.11), not yet run:
+    carriers' modes drawn at the opening; a firm with stock beyond its cover weighing carrying whole lots to its
+    country's other regions through the decision core (`FRT.ship`, added to `MND.decisions`); the carriage meeting at
+    each origin and mode; freight paid with the day's flows, the goods pledged on their way and arriving at their cost;
+    LC-1-15, LC-1-19, LC-1-20 and LC-1-47 read them, the run report's `freight` its days and the basis.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

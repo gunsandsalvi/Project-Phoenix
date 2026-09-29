@@ -235,8 +235,13 @@ pub mod reason {
     pub const WORN: u8 = 18;
     /// Plant entering service: at the opening, or a project complete.
     pub const BUILT: u8 = 19;
+    /// Freight paid for a trip.
+    pub const CARRIED: u8 = 20;
+    /// Goods leaving where they were on a trip, and arriving where they go.
+    pub const SHIPPED: u8 = 21;
+    pub const ARRIVED: u8 = 22;
     /// The reasons a day's record counts failed flows by: every reason above.
-    pub const REASONS: usize = 20;
+    pub const REASONS: usize = 23;
 }
 /// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
 pub mod draws {

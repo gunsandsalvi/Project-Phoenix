@@ -63,6 +63,9 @@ pub phx_market::carriage::FreightTech::metres_a_day: alloc::vec::Vec<u64>
 pub phx_market::carriage::FreightTech::tonne_km: alloc::vec::Vec<f64>
 pub phx_market::carriage::FreightTech::units_a_tonne: alloc::vec::Vec<f64>
 pub phx_market::carriage::FreightTech::vehicles: u32
+impl phx_store::save::Saved for phx_market::carriage::FreightTech where u32: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved, alloc::vec::Vec<u64>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, u16: phx_store::save::Saved
+pub fn phx_market::carriage::FreightTech::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_market::carriage::FreightTech::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_market::carriage::carriage(&[phx_market::carriage::Carrier], &[phx_market::carriage::Consignment], &mut [i64], &mut phx_rand::draws::Draws) -> phx_market::carriage::CarriageDay
 pub fn phx_market::carriage::freight(&phx_market::carriage::FreightTech, (u16, i64), (u16, u64), (i64, f64)) -> core::option::Option<f64>
 pub fn phx_market::carriage::transit_days(u64, u64, u32) -> u32

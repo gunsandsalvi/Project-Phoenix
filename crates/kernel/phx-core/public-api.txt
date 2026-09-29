@@ -936,15 +936,23 @@ pub phx_core::goods::Shipment::from: u16
 pub phx_core::goods::Shipment::owner: phx_id::ids::PartyKey
 pub phx_core::goods::Shipment::to: u16
 pub phx_core::goods::Shipment::units: i64
+impl phx_store::save::Saved for phx_core::goods::Shipment where phx_id::ids::PartyKey: phx_store::save::Saved, u16: phx_store::save::Saved, u32: phx_store::save::Saved, i64: phx_store::save::Saved
+pub fn phx_core::goods::Shipment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::Shipment::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::goods::Shipments
 impl phx_core::goods::Shipments
 pub fn phx_core::goods::Shipments::arrive(&mut self, phx_id::day::Day, &mut phx_core::goods::Stocks, phx_core::goods::Carriage, &mut alloc::vec::Vec<phx_core::flows::Flow>)
 pub fn phx_core::goods::Shipments::close_day(&mut self)
 pub fn phx_core::goods::Shipments::depart(&mut self, &mut phx_core::goods::Stocks, phx_core::goods::Shipment, (phx_core::goods::Bound, phx_id::day::Day)) -> core::result::Result<phx_id::ids::Slot, phx_core::goods::Short>
+pub fn phx_core::goods::Shipments::live(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::goods::Shipment> + '_
 pub fn phx_core::goods::Shipments::new(phx_id::day::Day, u32) -> phx_core::goods::Shipments
 pub fn phx_core::goods::Shipments::of(&self, phx_id::ids::PartyKey) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::Slot, &phx_core::goods::Shipment)> + '_
 pub fn phx_core::goods::Shipments::on_the_way(&self) -> usize
+pub fn phx_core::goods::Shipments::overdue(&self, phx_id::day::Day) -> usize
 pub fn phx_core::goods::Shipments::shrink(&mut self, phx_id::ids::PartyKey, u16, i64)
+impl phx_store::save::Saved for phx_core::goods::Shipments where alloc::vec::Vec<phx_core::goods::Shipment>: phx_store::save::Saved, alloc::vec::Vec<bool>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved, phx_core::wheel::DueWheel: phx_store::save::Saved
+pub fn phx_core::goods::Shipments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::goods::Shipments::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::goods::Short
 pub phx_core::goods::Short::asked: i64
 pub phx_core::goods::Short::held: i64

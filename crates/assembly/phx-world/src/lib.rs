@@ -13,6 +13,7 @@ pub mod core_decide;
 pub mod core_default;
 pub mod core_deposits;
 pub mod core_firms;
+pub mod core_freight;
 pub mod core_goods;
 pub mod core_jobs;
 pub mod core_labour;

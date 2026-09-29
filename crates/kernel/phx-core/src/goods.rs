@@ -472,7 +472,7 @@ pub fn breaks(open: &[i128], net: &[i128], close: &[i128]) -> Vec<(u16, i128, i1
 /// Goods on their way: owned by `owner`, aboard `carrier`'s room, leaving as the good `from` and arriving on `arrives`
 /// as the good `to`.
 #[clause("FRT.3", "GDS.2")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Shipment {
     pub owner: PartyKey,
     pub carrier: PartyKey,
@@ -484,7 +484,7 @@ pub struct Shipment {
 
 /// The shipments on their way: rows, each owner's threaded newest first, and each in the wheel's bucket of its day of
 /// arrival. A row closed today is handed out again after the close.
-#[derive(Debug)]
+#[derive(Debug, phx_macros::Saved)]
 pub struct Shipments {
     rows: Vec<Shipment>,
     live: Vec<bool>,
@@ -675,6 +675,18 @@ impl Shipments {
     #[must_use]
     pub fn on_the_way(&self) -> usize {
         self.live.iter().filter(|l| **l).count()
+    }
+
+    /// Shipments on their way whose day of arrival is `day` or before: none once the day's arrivals are taken.
+    #[clause("FRT.6", "FRT.8")]
+    #[must_use]
+    pub fn overdue(&self, day: Day) -> usize {
+        self.rows.iter().zip(&self.live).filter(|(s, l)| **l && s.arrives <= day.get()).count()
+    }
+
+    /// Every shipment on its way.
+    pub fn live(&self) -> impl Iterator<Item = &Shipment> + '_ {
+        self.rows.iter().zip(&self.live).filter(|(_, l)| **l).map(|(s, _)| s)
     }
 }
 

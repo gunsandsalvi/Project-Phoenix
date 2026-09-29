@@ -200,29 +200,6 @@ pub const LC_0_61: Check = live_check! {
     retired: "the ledger's run of rows due was the old kernel's; the core's dues come off its wheels, read by LC-0-62",
 };
 
-pub const LC_1_15: Check = live_check! {
-    id: "LC-1-15",
-    title: "the reads of GDS.11 are reported: volatility against stocks, the basis between places against freight, \
-            and producer prices moving before consumer prices",
-    from_step: "S1.05",
-    check: |_| Outcome::NotYet("awaits S1.24 d: the basis against freight reads shipments, the shocks the weather's"),
-};
-
-pub const LC_1_19: Check = live_check! {
-    id: "LC-1-19",
-    title: "FRT.9 and GEO.13: every shipment has one owner, one carrier and its goods pledged to it; no carrier books \
-            beyond its vehicles' room and no segment beyond its capacity, which the carriage meeting refuses",
-    from_step: "S1.07",
-    check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
-};
-
-pub const LC_1_20: Check = live_check! {
-    id: "LC-1-20",
-    title: "FRT.10: freight rates and price gaps between places are reported, and gaps track freight",
-    from_step: "S1.07",
-    check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
-};
-
 pub const LC_1_33: Check = live_check! {
     id: "LC-1-33",
     title: "Households going without their needs are recorded as events and counted",
@@ -235,12 +212,4 @@ pub const LC_1_39: Check = live_check! {
     title: "IDX.5: an index's return equals the weighted return of its constituents",
     from_step: "S1.14",
     retired: "market indices, whose returns it read, are built with S3.09",
-};
-
-pub const LC_1_47: Check = live_check! {
-    id: "LC-1-47",
-    title: "every lien of goods in transit is released on arrival (FRT.6, FRT.8): no shipment stays in transit past \
-            its day",
-    from_step: "S1.07",
-    check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
 };

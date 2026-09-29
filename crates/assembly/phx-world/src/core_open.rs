@@ -189,6 +189,7 @@ impl Core {
             weather: crate::core_weather::Weather::default(),
             deposits: crate::core_deposits::Deposits::default(),
             plant: crate::core_plant::Plant::default(),
+            freight: crate::core_freight::Freight::default(),
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),

@@ -81,6 +81,8 @@ pub struct Core {
     pub deposits: crate::core_deposits::Deposits,
     /// The plant's kinds, the projects under way and the days' records.
     pub plant: crate::core_plant::Plant,
+    /// Freight: the carriers' modes, the shipments on their way and the days' records.
+    pub freight: crate::core_freight::Freight,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,

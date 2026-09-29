@@ -411,6 +411,7 @@ fn core_of(
     core.open_insolvency(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_loan_books();
     open_core_goods(p, (&opening, &regions), (calendar, today), (own, frm), &mut core)?;
+    core.open_freight((geo, &p.c.register, &p.c.streams), &regions, today).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_rights(geo, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     open_stats(p, &opening, &mut core)?;
     core.open_accounts(today);

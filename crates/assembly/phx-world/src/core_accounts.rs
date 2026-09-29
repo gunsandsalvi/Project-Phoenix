@@ -12,7 +12,7 @@ use phx_core::flows::Flow;
 use phx_id::{Day, PartyKey};
 use phx_macros::clause;
 
-use crate::consts::reason::{REPAID, SEVERANCE, SOLD, TAXED, WAGE};
+use crate::consts::reason::{CARRIED, REPAID, SEVERANCE, SOLD, TAXED, WAGE};
 use crate::core::Core;
 
 /// A party's income since the opening, by line.
@@ -176,7 +176,7 @@ impl Core {
 
     /// The day's settled flows entered as income: wages, severance and taxes paid; what a loan's payments paid
     /// beyond the principal its dues repay, paid by the borrower and received by the creditor; and the money received
-    /// for sales, against which the revenue recognised at their delivery is held.
+    /// for sales and for freight, against which the revenue recognised at their delivery or departure is held.
     #[clause("ACC.13", "FRM.13", "FRM.17")]
     pub(crate) fn account_flows(&mut self, flows: &[Flow], failed: &[Flow]) {
         let mut unpaid: BTreeMap<(PartyKey, PartyKey, i64, u8, u32), u32> = BTreeMap::new();
@@ -194,7 +194,7 @@ impl Core {
                     self.recognise(f.payer, Line::InterestPaid, f.amount);
                     self.recognise(f.payee, Line::InterestReceived, f.amount);
                 }
-                SOLD if self.owned(f.payee) => self.accounts.sales_received += i128::from(f.amount),
+                SOLD | CARRIED if self.owned(f.payee) => self.accounts.sales_received += i128::from(f.amount),
                 _ => {}
             }
         }

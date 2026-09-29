@@ -1735,6 +1735,25 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
   or a hazard uses up, trades make nothing, and the opening plus what was made less what was used up, spoiled and
   destroyed, with what arrived less what was shipped, is what is in existence at the close.
 
+**Freight on the core** (`core_freight`, FRT.1, FRT.4–FRT.10, GEO.13): at the opening each firm selling
+`FRT.carriage_product` is given a mode, drawn by `FRT.mode_share` on stream `FRT.opening`, and every mode's route and
+length between two regions' market zones is taken once from the network. On its `FRT.shipping_days` schedule, a business
+day, a firm of a stored product holding free units beyond its expected sales times the goods' days of cover weighs
+carrying the whole lots beyond to each other region of its country that marks its product: the mark there less its own
+price less the freight of a lot out (`phx_market::carriage::freight`, at the lowest price carriage is posted at by a
+carrier of that mode with room at its region), the widest gap by any posted mode; it decides through the decision core
+(`FRT.ship`, taken by the head of the line of business, in `MND.decisions`). The consignments of each origin and mode
+meet in one carriage meeting (`phx_market::carriage::carriage`, order by `FRT.capacity_lot`): each booked with the
+cheapest carrier whose vehicles' room today (its transport equipment's efficient units times the mode's tonne-km a day)
+holds the trip out and back, one whose route crosses a segment already carrying its day's tonnes refused. A booking's
+goods are committed and its freight — whole units of carriage for its tonne-km at the carrier's posted price — is a
+day's flow under `CARRIED`; after settlement a paid trip departs (`Shipments::depart`, the goods pledged to the carrier)
+and is the carrier's revenue, the shipper's services used and a sale of carriage to the national accounts, and an
+unpaid one frees its goods. On its day, in the goods day after wear, a shipment arrives (`Shipments::arrive`): used up
+where it left under `SHIPPED`, made where it arrives under `ARRIVED`, at the cost it left with. The shipments are saved
+with the core. `Core::basis` gives each pair of places' gap between their marks a lot with the least freight between
+them, and `Core::cover_by_place` each place's days of sales its stocks cover; the run report's `freight` holds the days.
+
 ### 7.12 Labour
 
 - **Employment lines** (LAB.1, REP.3): a contract's terms carry, beside its monthly wage leg, a **class**

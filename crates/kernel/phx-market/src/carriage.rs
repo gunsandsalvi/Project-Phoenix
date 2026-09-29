@@ -14,7 +14,7 @@ use crate::market::MarketDecl;
 /// the tonne-km a unit of vehicles carries a day, the metres it runs a day, the days loading takes at each end and the
 /// units of carriage a tonne-km takes; by product, the units of a good in a tonne; and the product carriage is sold as.
 #[clause("FRT.1", "FRT.12")]
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq, phx_macros::Saved)]
 pub struct FreightTech {
     pub vehicles: u32,
     pub tonne_km: Vec<f64>,

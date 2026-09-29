@@ -3,6 +3,7 @@
 //! shipper's rule and visit, and each carrier's mode at the opening.
 
 mod consts;
+pub mod points;
 pub use phx_core::register::values::Table1;
 use phx_core::{
     Contribution, DECLARATIONS, Declarations, FactDef, HandlerTable, Opening, OpeningPhase, Register, StreamDef,
@@ -239,6 +240,7 @@ impl System for Frt {
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
         d.market(Box::new(CARRIAGE));
+        d.decision(&points::SHIP);
     }
 
     fn handlers(_: &mut HandlerTable) {}

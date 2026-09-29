@@ -99,6 +99,7 @@ impl World {
                 pool: self.pool.as_ref(),
             };
             let _ = self.core.goods_day(&gctx, day);
+            self.core.ship(&gctx, crate::world::geo_arc(&self.own), day);
         }
         let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
         self.core.audit(day);
