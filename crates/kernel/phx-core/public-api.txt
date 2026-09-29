@@ -2349,38 +2349,19 @@ pub fn phx_core::system::Declarations::visit(&mut self, phx_core::visit::VisitDe
 pub fn phx_core::system::Declarations::wear(&mut self, phx_core::wear::WearDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-pub struct phx_core::system::HandlerEntry
-pub phx_core::system::HandlerEntry::clause: &'static str
-pub phx_core::system::HandlerEntry::intents: &'static [&'static str]
-pub phx_core::system::HandlerEntry::name: &'static str
-pub phx_core::system::HandlerEntry::reads: &'static [&'static str]
-pub phx_core::system::HandlerEntry::run: phx_num::missing::Missing<phx_core::handler::RunChunk>
-pub phx_core::system::HandlerEntry::streams: &'static [&'static str]
-pub phx_core::system::HandlerEntry::substep: phx_core::substep::SubStep
-pub phx_core::system::HandlerEntry::system: &'static str
-pub phx_core::system::HandlerEntry::table: &'static str
-pub phx_core::system::HandlerEntry::writes: &'static [&'static str]
-pub struct phx_core::system::HandlerTable
-pub phx_core::system::HandlerTable::entries: alloc::vec::Vec<phx_core::system::HandlerEntry>
-impl phx_core::system::HandlerTable
-pub fn phx_core::system::HandlerTable::add<H: phx_core::handler::HandlerDecl>(&mut self)
-pub fn phx_core::system::HandlerTable::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
 pub struct phx_core::system::SetupValue
 pub phx_core::system::SetupValue::derived: &'static str
 pub phx_core::system::SetupValue::prim: &'static phx_core::register::PrimDecl
 pub struct phx_core::system::SystemEntry
 pub phx_core::system::SystemEntry::code: &'static str
 pub phx_core::system::SystemEntry::declare: fn(&mut phx_core::system::Declarations)
-pub phx_core::system::SystemEntry::handlers: fn(&mut phx_core::system::HandlerTable)
 impl phx_core::system::SystemEntry
 pub fn phx_core::system::SystemEntry::of<S: phx_core::system::System>() -> phx_core::system::SystemEntry
 pub trait phx_core::system::System: core::marker::Send + core::marker::Sync + 'static
 pub const phx_core::system::System::CODE: &'static str
 pub fn phx_core::system::System::declare(&mut phx_core::system::Declarations)
-pub fn phx_core::system::System::handlers(&mut phx_core::system::HandlerTable)
-pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
-pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
-pub fn phx_core::system::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
+pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations)
+pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations)
 pub type phx_core::system::Compile = alloc::boxed::Box<(dyn core::ops::function::FnOnce(&phx_core::register::Register, usize) -> core::result::Result<alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>, alloc::string::String> + core::marker::Send)>
 pub mod phx_core::touched
 pub struct phx_core::touched::TouchedRows
@@ -3397,22 +3378,6 @@ pub phx_core::GoodStock::instrument: phx_id::ids::InstrumentId
 pub phx_core::GoodStock::issued: i64
 pub phx_core::GoodStock::product: u16
 pub phx_core::GoodStock::zone: u32
-pub struct phx_core::HandlerEntry
-pub phx_core::HandlerEntry::clause: &'static str
-pub phx_core::HandlerEntry::intents: &'static [&'static str]
-pub phx_core::HandlerEntry::name: &'static str
-pub phx_core::HandlerEntry::reads: &'static [&'static str]
-pub phx_core::HandlerEntry::run: phx_num::missing::Missing<phx_core::handler::RunChunk>
-pub phx_core::HandlerEntry::streams: &'static [&'static str]
-pub phx_core::HandlerEntry::substep: phx_core::substep::SubStep
-pub phx_core::HandlerEntry::system: &'static str
-pub phx_core::HandlerEntry::table: &'static str
-pub phx_core::HandlerEntry::writes: &'static [&'static str]
-pub struct phx_core::HandlerTable
-pub phx_core::HandlerTable::entries: alloc::vec::Vec<phx_core::system::HandlerEntry>
-impl phx_core::system::HandlerTable
-pub fn phx_core::system::HandlerTable::add<H: phx_core::handler::HandlerDecl>(&mut self)
-pub fn phx_core::system::HandlerTable::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
 pub struct phx_core::HazardDecl
 pub phx_core::HazardDecl::acts_on: phx_core::hazards::ActsOn
 pub phx_core::HazardDecl::clause: &'static str
@@ -4005,7 +3970,6 @@ pub phx_core::SubStepInfo::step: phx_core::substep::SubStep
 pub struct phx_core::SystemEntry
 pub phx_core::SystemEntry::code: &'static str
 pub phx_core::SystemEntry::declare: fn(&mut phx_core::system::Declarations)
-pub phx_core::SystemEntry::handlers: fn(&mut phx_core::system::HandlerTable)
 impl phx_core::system::SystemEntry
 pub fn phx_core::system::SystemEntry::of<S: phx_core::system::System>() -> phx_core::system::SystemEntry
 pub struct phx_core::Table1
@@ -4392,7 +4356,6 @@ pub const phx_core::StreamDef::DECL: phx_core::streams::StreamDecl
 pub trait phx_core::System: core::marker::Send + core::marker::Sync + 'static
 pub const phx_core::System::CODE: &'static str
 pub fn phx_core::System::declare(&mut phx_core::system::Declarations)
-pub fn phx_core::System::handlers(&mut phx_core::system::HandlerTable)
 pub trait phx_core::TableSchema
 pub fn phx_core::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
@@ -4403,14 +4366,13 @@ pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
 pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction
-pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
-pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations, &mut phx_core::system::HandlerTable)
+pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations)
+pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations)
 pub fn phx_core::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
 pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_core::register::profile::Pinned], u8, &mut phx_rand::draws::Draws) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub fn phx_core::fact_scale(phx_core::facts::ItemDecl) -> f64
-pub fn phx_core::handler_refusals(&[phx_core::system::HandlerEntry]) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>

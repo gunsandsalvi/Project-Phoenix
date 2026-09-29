@@ -11,9 +11,7 @@ pub mod produce;
 pub mod rules;
 
 use phx_core::register::values::Table2;
-use phx_core::{
-    AttrDecl, Declarations, FactDef, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream,
-};
+use phx_core::{AttrDecl, Declarations, FactDef, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", table: Individuals, clause: "FRM.1" } }
@@ -168,8 +166,6 @@ impl System for Frm {
         let _: phx_core::Prim<phx_core::register::values::Distribution> = d.prim(&REQUIRED_RETURN);
         let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&PRODUCT_SHARE);
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
 
 pub type FixedPrim = phx_core::Prim<Fixed<6>>;

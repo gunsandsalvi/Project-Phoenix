@@ -2,7 +2,7 @@
 //! the level, each opening at its publisher's base.
 
 use if_state::stats::{IndexKind, Priced};
-use phx_core::{Declarations, HandlerTable, OpeningCountry, Register, System, declare_prim};
+use phx_core::{Declarations, OpeningCountry, Register, System, declare_prim};
 use phx_macros::clause;
 
 declare_prim! {
@@ -44,8 +44,6 @@ impl System for Idx {
         let _: phx_core::Prim<phx_num::Fixed<2>> = d.prim(&BASE);
         d.market(Box::new(INDEX));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
 
 #[cfg(test)]

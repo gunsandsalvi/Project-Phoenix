@@ -8,7 +8,7 @@ mod consts;
 mod opening;
 
 use if_credit::central::CentralKind;
-use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream};
+use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Fixed, Missing};
 
@@ -98,6 +98,4 @@ impl System for Cb {
         let _: phx_core::Prim<Fixed<2>> = d.prim(&CURRENCY);
         d.market(Box::new(CENTRAL));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

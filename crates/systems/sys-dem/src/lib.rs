@@ -16,8 +16,7 @@ mod school;
 use if_pop::fertility::{IDEAL, TRYING};
 use if_pop::{ADULT, CHILD, EDUCATION, HEAD, HEALTH, HOUSEHOLD, PARTNER, REGION, SEX};
 use phx_core::{
-    Declarations, EventKindDecl, HandlerTable, SetupValue, StreamDef, System, declare_hazard, declare_kind,
-    declare_stream,
+    Declarations, EventKindDecl, SetupValue, StreamDef, System, declare_hazard, declare_kind, declare_stream,
 };
 
 pub use births::{Conception, Fertility};
@@ -132,6 +131,4 @@ impl System for Dem {
         d.pop_process(Box::new(Fertility::new(prims)));
         d.pop_process(Box::new(Conception::new(prims)));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

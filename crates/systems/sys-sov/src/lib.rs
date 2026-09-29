@@ -7,7 +7,7 @@ pub mod points;
 mod rules;
 
 use if_state::kinds::{BillKind, BillLaw};
-use phx_core::{Declarations, HandlerTable, OpeningCountry, Register, System, declare_prim};
+use phx_core::{Declarations, OpeningCountry, Register, System, declare_prim};
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_ledger::line::{LineKindDecl, SideDecl};
 use phx_ledger::rows::BALANCE;
@@ -117,6 +117,4 @@ impl System for Sov {
         d.decision(&points::SIZE);
         d.decision(&points::BID);
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

@@ -5,7 +5,7 @@
 mod consts;
 mod tenancies;
 
-use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_prim};
+use phx_core::{Declarations, StreamDef, System, declare_prim};
 
 pub use tenancies::{Declared, TENANCY, Tenancies, TenancyStream};
 
@@ -35,6 +35,4 @@ impl System for Hsg {
         d.stream(TenancyStream::DECL);
         let _ = Tenancies { tenure: d.prim(&TENURE), ratio: d.prim(&RENT_POINT_RATIO) };
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

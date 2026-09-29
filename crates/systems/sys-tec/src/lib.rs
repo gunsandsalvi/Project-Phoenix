@@ -7,7 +7,7 @@ pub mod sets;
 pub mod technology;
 pub mod ways;
 
-use phx_core::{Declarations, FactDef, HandlerTable, System};
+use phx_core::{Declarations, FactDef, System};
 
 pub use technology::Technology;
 
@@ -48,6 +48,4 @@ impl System for Tec {
         d.claim(known);
         d.claim(<if_firm::known::WayUsed as FactDef>::ITEM.name);
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

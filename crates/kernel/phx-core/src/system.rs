@@ -1,5 +1,4 @@
 use phx_id::SystemCode;
-use phx_macros::clause;
 use phx_num::violation;
 
 use crate::contribution::Contribution;
@@ -7,7 +6,6 @@ use crate::decisions::DecisionPointDecl;
 use crate::events::EventKindDecl;
 use crate::facts::Claim;
 use crate::family::{AuditFamily, FamilyDecl};
-use crate::handler::HandlerDecl;
 use crate::hazards::HazardDecl;
 use crate::kind_tables::FacetDecl;
 use crate::kinds::KindDecl;
@@ -19,13 +17,11 @@ use crate::register::values::PrimType;
 use crate::register::{Prim, PrimDecl, RegisterBuilder};
 use crate::rules::{RuleSig, RuleTable};
 use crate::streams::StreamDecl;
-use crate::substep::SubStepKind;
 
-/// A system: a zero-sized type that declares what it owns and registers its handlers.
+/// A system: a zero-sized type that declares what it owns.
 pub trait System: Send + Sync + 'static {
     const CODE: &'static str;
     fn declare(d: &mut Declarations);
-    fn handlers(h: &mut HandlerTable);
 }
 
 /// A decision point as the assembly sees it, whatever its input and output.
@@ -271,109 +267,16 @@ impl Declarations {
     }
 }
 
-/// A registered handler, as the handler graph reads it.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct HandlerEntry {
-    pub system: &'static str,
-    pub name: &'static str,
-    pub substep: crate::substep::SubStep,
-    pub table: &'static str,
-    pub reads: &'static [&'static str],
-    pub writes: &'static [&'static str],
-    pub intents: &'static [&'static str],
-    pub streams: &'static [&'static str],
-    pub clause: &'static str,
-    pub run: phx_num::Missing<crate::handler::RunChunk>,
+/// Calls a system's declarations, each entry carrying its code; a system is a zero-sized type.
+pub fn declare_system<S: System>(d: &mut Declarations) {
+    declare_entry(&SystemEntry::of::<S>(), d);
 }
 
-/// Every handler the systems register.
-#[derive(Debug, Default)]
-pub struct HandlerTable {
-    system: &'static str,
-    pub entries: Vec<HandlerEntry>,
-}
-
-impl HandlerTable {
-    pub fn add<H: HandlerDecl>(&mut self) {
-        self.entries.push(HandlerEntry {
-            system: self.system,
-            name: H::NAME,
-            substep: H::SUBSTEP,
-            table: H::TABLE,
-            reads: H::READS,
-            writes: H::WRITES,
-            intents: H::INTENTS,
-            streams: H::STREAMS,
-            clause: H::CLAUSE,
-            run: H::RUN,
-        });
-    }
-
-    /// The refusals the handlers decide; see `handler_refusals`.
-    #[must_use]
-    pub fn refusals(&self) -> Vec<String> {
-        handler_refusals(&self.entries)
-    }
-}
-
-/// The refusals the handlers decide: one with no body; one at a kernel apply, where no system registers a handler; two
-/// direct writers of one (table, column) in a sub-step; and a direct write another handler of the sub-step reads.
-#[clause("TIME.6")]
-#[must_use]
-pub fn handler_refusals(entries: &[HandlerEntry]) -> Vec<String> {
-    let mut errors = Vec::new();
-    for h in entries {
-        if h.run == phx_num::Missing::Absent {
-            errors.push(format!("handler `{}` has no body", h.name));
-        }
-        if h.substep.info().kind == SubStepKind::KernelApply {
-            errors.push(format!("handler `{}` at the kernel apply {}", h.name, h.substep.info().label));
-        }
-    }
-    for (i, a) in entries.iter().enumerate() {
-        for b in entries.iter().skip(i + 1).filter(|b| b.substep == a.substep && b.table == a.table) {
-            for w in a.writes {
-                if b.writes.contains(w) {
-                    errors.push(format!(
-                        "`{}` and `{}` both write `{w}` at {}",
-                        a.name,
-                        b.name,
-                        a.substep.info().label
-                    ));
-                } else if b.reads.contains(w) {
-                    errors.push(format!(
-                        "`{}` reads `{w}`, which `{}` writes at {}",
-                        b.name,
-                        a.name,
-                        a.substep.info().label
-                    ));
-                }
-            }
-            for w in b.writes.iter().filter(|w| a.reads.contains(w) && !a.writes.contains(w)) {
-                errors.push(format!(
-                    "`{}` reads `{w}`, which `{}` writes at {}",
-                    a.name,
-                    b.name,
-                    a.substep.info().label
-                ));
-            }
-        }
-    }
-    errors
-}
-
-/// Calls a system's declarations and handler registrations, each entry carrying its code; a system is a zero-sized
-/// type.
-pub fn declare_system<S: System>(d: &mut Declarations, h: &mut HandlerTable) {
-    declare_entry(&SystemEntry::of::<S>(), d, h);
-}
-
-/// A system as the assembly lists it: its code and its two registration functions.
+/// A system as the assembly lists it: its code and its declarations.
 #[derive(Clone, Copy, Debug)]
 pub struct SystemEntry {
     pub code: &'static str,
     pub declare: fn(&mut Declarations),
-    pub handlers: fn(&mut HandlerTable),
 }
 
 impl SystemEntry {
@@ -382,31 +285,27 @@ impl SystemEntry {
         if size_of::<S>() != 0 {
             violation!(clause = "Law 4", "a system that is not zero-sized");
         }
-        SystemEntry { code: S::CODE, declare: S::declare, handlers: S::handlers }
+        SystemEntry { code: S::CODE, declare: S::declare }
     }
 }
 
-/// Calls a listed system's declarations and handler registrations, each entry carrying its code.
-pub fn declare_entry(system: &SystemEntry, d: &mut Declarations, h: &mut HandlerTable) {
+/// Calls a listed system's declarations, each entry carrying its code.
+pub fn declare_entry(system: &SystemEntry, d: &mut Declarations) {
     if SystemCode::new(system.code).is_none() {
         violation!(clause = "Law 4", "a system whose code is not two to four capital letters");
     }
     d.system = system.code;
-    h.system = system.code;
     (system.declare)(d);
-    (system.handlers)(h);
 }
 
 #[cfg(test)]
 mod tests {
     use phx_num::Missing;
 
-    use super::{Declarations, HandlerTable, System, declare_system};
+    use super::{Declarations, System, declare_system};
     use crate::decisions::DecisionPointDecl;
-    use crate::handler::HandlerDecl;
     use crate::hazards::{ActsOn, DrawScheme, HazardDecl, RateFn};
     use crate::streams::{Purpose, StreamDecl};
-    use crate::substep::SubStep;
 
     fn noop(_: &[i64; 2]) -> i64 {
         0
@@ -421,30 +320,6 @@ mod tests {
         runs_on_non_business: false,
         clause: "DEM.1",
     };
-
-    macro_rules! handler {
-        ($name:ident, $step:expr, $reads:expr, $writes:expr) => {
-            struct $name;
-            impl HandlerDecl for $name {
-                const NAME: &'static str = stringify!($name);
-                const SUBSTEP: SubStep = $step;
-                const TABLE: &'static str = "person";
-                const READS: &'static [&'static str] = $reads;
-                const WRITES: &'static [&'static str] = $writes;
-                const INTENTS: &'static [&'static str] = &[];
-                const STREAMS: &'static [&'static str] = &[];
-                const CLAUSE: &'static str = "DEM.1";
-                const RUN: Missing<crate::handler::RunChunk> = Missing::Present(idle);
-            }
-        };
-    }
-
-    fn idle(_: crate::handler::CtxParts<'_, dyn crate::handler::FactStore>, _: core::ops::Range<u32>) {}
-
-    handler!(Age, SubStep::S3c, &["DEM.age"], &["DEM.age"]);
-    handler!(Die, SubStep::S3c, &["DEM.age"], &["DEM.alive"]);
-    handler!(Grow, SubStep::S3c, &[], &["DEM.age"]);
-    handler!(AtApply, SubStep::S4b, &[], &[]);
 
     struct Dem;
     impl System for Dem {
@@ -463,26 +338,15 @@ mod tests {
             });
             d.decision(&LOOK);
         }
-        fn handlers(h: &mut HandlerTable) {
-            h.add::<Age>();
-            h.add::<Die>();
-        }
     }
 
     #[test]
     fn declarations_carry_their_system_and_are_refused_when_incomplete() {
-        let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
-        declare_system::<Dem>(&mut d, &mut h);
+        let mut d = Declarations::new();
+        declare_system::<Dem>(&mut d);
         assert_eq!(d.streams[0].0, "DEM");
         let refusals = d.refusals();
         assert!(refusals.iter().any(|r| r.contains("DEM.illness")), "a hazard drawing from an undeclared stream");
         assert!(refusals.iter().any(|r| r.contains("DEM.look")), "a decision point with no schedule or wake");
-        assert!(h.refusals().iter().any(|r| r.contains("reads `DEM.age`")), "Die reads what Age writes");
-        let mut table = HandlerTable::default();
-        table.add::<Age>();
-        table.add::<Grow>();
-        table.add::<AtApply>();
-        let r = table.refusals();
-        assert!(r.iter().any(|r| r.contains("both write")) && r.iter().any(|r| r.contains("kernel apply")), "{r:?}");
     }
 }

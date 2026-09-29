@@ -7,8 +7,8 @@ use crate::consts::{
     SERIAL_SHIFT, SERIAL_ZERO_WEEKDAY, SHORT_MONTH, THIRTY_DAY_MONTHS, YEARS_PER_ERA,
 };
 
-/// A day of the world, counted from the calendar's epoch; there is no default day.
-#[clause("TIME.1")]
+/// A day of the world, counted from the calendar's epoch; there is no default day, so nothing is recorded without one.
+#[clause("TIME.1", "TIME.9")]
 #[must_use]
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]

@@ -1,6 +1,6 @@
 use std::fmt;
 
-use phx_core::{Declarations, HandlerTable, ItemDecl, ItemKind, Writer, check_claims};
+use phx_core::{Declarations, ItemDecl, ItemKind, Writer, check_claims};
 use phx_id::SystemCode;
 use phx_macros::clause;
 
@@ -17,15 +17,13 @@ impl fmt::Display for AssemblyErrors {
     }
 }
 
-/// The refusals the declarations, the handlers and the interfaces' items decide together: each item written and
-/// claimed once by a registered system, each rule handle implemented once by its system, each fact a handler reads
-/// or writes exported by an interface, each stream a handler draws from declared, and whatever the declarations and
-/// handlers refuse on their own.
+/// The refusals the declarations and the interfaces' items decide together: each item written and claimed once by a
+/// registered system, each rule handle implemented once by its system, and whatever the declarations refuse on their
+/// own.
 #[clause("TIME.6", "Law 4")]
 #[must_use]
-pub fn refusals(d: &Declarations, h: &HandlerTable, items: &[ItemDecl], registered: &[SystemCode]) -> Vec<String> {
+pub fn refusals(d: &Declarations, items: &[ItemDecl], registered: &[SystemCode]) -> Vec<String> {
     let mut errors = d.refusals();
-    errors.extend(h.refusals());
     match d.claims() {
         Ok(claims) => {
             if let Err(e) = check_claims(items, &claims, registered) {
@@ -45,34 +43,19 @@ pub fn refusals(d: &Declarations, h: &HandlerTable, items: &[ItemDecl], register
     if let Err(e) = d.rules.check(&signatures) {
         errors.extend(e);
     }
-    let is_fact = |name: &str| items.iter().any(|i| i.name == name && matches!(i.kind, ItemKind::Fact(_)));
-    for handler in &h.entries {
-        for fact in handler.reads.iter().chain(handler.writes).filter(|f| !is_fact(f)) {
-            errors.push(format!("handler `{}` names `{fact}`, which no interface exports as a fact", handler.name));
-        }
-        for stream in handler.streams.iter().filter(|s| !d.streams.iter().any(|(_, d)| d.name == **s)) {
-            errors.push(format!("handler `{}` draws from `{stream}`, which no system declares", handler.name));
-        }
-    }
     errors
 }
 
 #[cfg(test)]
 mod tests {
     use phx_core::{
-        Audience, Declarations, FactDecl, FactType, HandlerTable, ItemDecl, ItemKind, MessageKindDecl, Purpose,
-        ReprClass, RuleSig, StreamDecl, SubStep, SystemEntry, Writer, declare_entry, declare_fact, declare_handler,
+        Audience, Declarations, FactDecl, FactType, ItemDecl, ItemKind, MessageKindDecl, Purpose, ReprClass, RuleSig,
+        StreamDecl, SystemEntry, Writer, declare_entry,
     };
     use phx_id::SystemCode;
     use phx_num::Missing;
 
     use super::refusals;
-
-    declare_fact! {
-        pub Cash = "HH.cash" { value: Money, kinds: ["household"], writer: "HH", audience: Party, repr: Position, clause: "HH.1" }
-    }
-
-    declare_handler! { pub Settle = "HH.settle" { substep: S7c, table: "household", writes: [Cash], clause: "HH.1" } }
 
     const TAX: RuleSig<[i64; 2], i64> = RuleSig::new("TAX.income_tax", "TAX");
 
@@ -96,14 +79,10 @@ mod tests {
         d.implement(TAX, fifth);
     }
 
-    fn handlers(h: &mut HandlerTable) {
-        h.add::<Settle>();
-    }
-
     #[test]
     fn refusals_are_complete() {
-        let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
-        declare_entry(&SystemEntry { code: "HH", declare, handlers }, &mut d, &mut h);
+        let mut d = Declarations::new();
+        declare_entry(&SystemEntry { code: "HH", declare }, &mut d);
         let fact = FactDecl {
             value: FactType::Money,
             unit: Missing::Absent,
@@ -120,20 +99,11 @@ mod tests {
                 clause: "TAX.1",
             },
         ];
-        let errors = refusals(&d, &h, &items, &[SystemCode::new("HH").unwrap()]);
+        let errors = refusals(&d, &items, &[SystemCode::new("HH").unwrap()]);
         let has = |text: &str| errors.iter().any(|e| e.contains(text));
         assert!(has("declared twice"), "a stream twice: {errors:?}");
         assert!(has("nothing answers"), "an unanswered addressee kind");
-        assert!(has("kernel apply"), "a system handler at a kernel apply");
         assert!(has("claimed by []"), "a fact with no claim");
         assert!(has("TAX.income_tax"), "a rule implemented by a system not its own");
-        let _ = SubStep::S7c;
-    }
-
-    #[test]
-    fn refusals_include_system_handler_at_kernel_apply() {
-        let mut h = HandlerTable::default();
-        h.add::<Settle>();
-        assert!(h.refusals().iter().any(|e| e.contains("kernel apply 7c")));
     }
 }

@@ -1,7 +1,7 @@
 //! SRV, services and distribution: the retail market every product meets its buyers in, sellers' posted prices
 //! against buyers' choices among the sellers in their reach, and the reason a purchase at the till settles under.
 
-use phx_core::{Declarations, FactDef, HandlerTable, StreamDef, System, declare_prim, declare_stream};
+use phx_core::{Declarations, FactDef, StreamDef, System, declare_prim, declare_stream};
 use phx_id::MarketId;
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_macros::clause;
@@ -89,8 +89,6 @@ impl System for Srv {
         d.stream(LotStream::DECL);
         d.market(Box::new(RETAIL));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
 
 /// A sale's retail margin, what the seller keeps of its price at the till: the price less what the good cost it at

@@ -6,8 +6,8 @@ mod consts;
 pub mod points;
 pub use phx_core::register::values::Table1;
 use phx_core::{
-    Contribution, DECLARATIONS, Declarations, FactDef, HandlerTable, Opening, OpeningPhase, Register, StreamDef,
-    System, declare_prim, declare_stream,
+    Contribution, DECLARATIONS, Declarations, FactDef, Opening, OpeningPhase, Register, StreamDef, System,
+    declare_prim, declare_stream,
 };
 use phx_id::MarketId;
 use phx_ledger::instruction::{Effect, ReasonDecl};
@@ -242,8 +242,6 @@ impl System for Frt {
         d.market(Box::new(CARRIAGE));
         d.decision(&points::SHIP);
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
 
 #[cfg(test)]

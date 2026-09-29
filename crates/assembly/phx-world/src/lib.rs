@@ -29,7 +29,6 @@ pub mod core_stats;
 pub mod core_taxes;
 pub mod core_weather;
 pub mod day;
-pub mod graph;
 pub mod inspector;
 pub mod metrics;
 pub mod observe;
@@ -42,7 +41,6 @@ pub mod state;
 pub mod systems;
 pub mod world;
 
-pub use graph::{HandlerGraph, HandlerId};
 pub use inspector::Inspector;
 pub use metrics::{InjectionRecord, Metrics, SaveMeasure, TurnRecord};
 pub use observe::Observer;

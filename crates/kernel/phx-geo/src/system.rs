@@ -1,11 +1,11 @@
-use phx_core::{Declarations, FactDef, HandlerTable, ItemDecl, StreamDef, System};
+use phx_core::{Declarations, FactDef, ItemDecl, StreamDef, System};
 
 use crate::audit::facts::{Extracted, Opening, Remaining};
-use crate::catastrophe::{CatastropheStream, Catastrophes};
+use crate::catastrophe::CatastropheStream;
 use crate::deposits::DEPOSITS_STREAM;
 use crate::hazards::HAZARDS;
 use crate::state::MAP_STREAM;
-use crate::weather::{LatentRain, LatentSunshine, LatentTemperature, LatentWind, VARIABLES, Weather, WeatherStream};
+use crate::weather::{LatentRain, LatentSunshine, LatentTemperature, LatentWind, VARIABLES, WeatherStream};
 
 /// GEO's interface items: the regions' weather latents and the deposits' quantities.
 pub const ITEMS: &[ItemDecl] = &[
@@ -40,11 +40,6 @@ impl System for Geo {
         for item in ITEMS {
             d.claim(item.name);
         }
-    }
-
-    fn handlers(h: &mut HandlerTable) {
-        h.add::<Weather>();
-        h.add::<Catastrophes>();
     }
 }
 

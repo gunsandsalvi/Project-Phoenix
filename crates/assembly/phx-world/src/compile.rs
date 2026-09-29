@@ -1,9 +1,8 @@
 use phx_core::calendar::rules::CountryRules;
-use phx_core::{Calendar, CountryEntry, DataFile, Declarations, HandlerEntry, Prim, Register, Streams};
+use phx_core::{Calendar, CountryEntry, DataFile, Declarations, Prim, Register, Streams};
 use phx_id::{CountryId, Date, Day};
 use phx_rand::Seed;
 
-use crate::graph::HandlerGraph;
 use crate::opening::prims::GenPrims;
 
 phx_core::declare_prim! {
@@ -50,26 +49,23 @@ impl KernelPrims {
     }
 }
 
-/// What compiling the declarations gives: the register checked against the data, the calendar, the streams and the
-/// handler graph.
+/// What compiling the declarations gives: the register checked against the data, the calendar and the streams.
 #[derive(Debug)]
 pub struct Compiled {
     pub register: Register,
     pub calendar: Calendar,
     pub day_zero: Day,
     pub streams: Streams,
-    pub graph: HandlerGraph,
 }
 
 /// Compiles the declarations against the data.
 ///
 /// # Errors
-/// Every entry the register refuses, a count of heuristics tracked other than the menu's, a calendar its rules cannot describe, a stream twice or a hash shared, and a
-/// handler graph with two writers of one column or a write another reads.
+/// Every entry the register refuses, a count of heuristics tracked other than the menu's, a calendar its rules cannot
+/// describe, and a stream twice or a hash shared.
 pub fn compile(
     d: &mut Declarations,
     kernel: &KernelPrims,
-    handlers: &[HandlerEntry],
     files: &[DataFile],
     countries: &[CountryEntry],
     seed: Seed,
@@ -89,6 +85,5 @@ pub fn compile(
         calendar.day(day_zero_date).ok_or_else(|| vec![format!("day zero {day_zero_date:?} before the epoch")])?;
     let decls: Vec<_> = d.streams.iter().map(|(_, s)| *s).collect();
     let streams = Streams::new(seed, &decls)?;
-    let graph = HandlerGraph::build(handlers)?;
-    Ok(Compiled { register, calendar, day_zero, streams, graph })
+    Ok(Compiled { register, calendar, day_zero, streams })
 }

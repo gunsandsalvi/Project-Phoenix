@@ -496,7 +496,6 @@ pub struct phx_geo::system::Geo
 impl phx_core::system::System for phx_geo::system::Geo
 pub const phx_geo::system::Geo::CODE: &'static str
 pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)
-pub fn phx_geo::system::Geo::handlers(&mut phx_core::system::HandlerTable)
 pub const phx_geo::system::ITEMS: &[phx_core::facts::ItemDecl]
 pub fn phx_geo::system::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>
 pub mod phx_geo::tile
@@ -587,7 +586,6 @@ pub struct phx_geo::Geo
 impl phx_core::system::System for phx_geo::system::Geo
 pub const phx_geo::system::Geo::CODE: &'static str
 pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)
-pub fn phx_geo::system::Geo::handlers(&mut phx_core::system::HandlerTable)
 pub struct phx_geo::GeoPrims
 pub phx_geo::GeoPrims::area_exponent: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>

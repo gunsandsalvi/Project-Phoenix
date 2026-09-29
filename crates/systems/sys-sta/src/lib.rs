@@ -7,7 +7,7 @@ use if_state::stats::{NAMES, Release, SERIES, Schedule, StaKind, StaLaw};
 use phx_id::Day;
 
 use crate::consts::{DAYS_A_YEAR, SHARE_PARTS};
-use phx_core::{Declarations, HandlerTable, OpeningCountry, Register, StreamDef, System, declare_prim, declare_stream};
+use phx_core::{Declarations, OpeningCountry, Register, StreamDef, System, declare_prim, declare_stream};
 use phx_macros::clause;
 
 declare_stream! { pub SampleStream = "STA.sample" { purpose: Sample, keyed: true, clause: "STA.2" } }
@@ -133,8 +133,6 @@ impl System for Sta {
         d.stream(ReturnsStream::DECL);
         d.market(Box::new(AGENCY));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
 
 #[cfg(test)]

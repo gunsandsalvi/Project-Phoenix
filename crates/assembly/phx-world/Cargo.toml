@@ -14,7 +14,6 @@ if-credit = { path = "../../interfaces/if-credit" }
 if-labour = { path = "../../interfaces/if-labour" }
 if-state = { path = "../../interfaces/if-state" }
 phx-acct = { path = "../../kernel/phx-acct" }
-phx-audit = { path = "../../kernel/phx-audit" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
 phx-geo = { path = "../../kernel/phx-geo" }

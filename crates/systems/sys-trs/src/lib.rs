@@ -2,7 +2,7 @@
 //! are the lines it owes on; its funding plan arrives with its own step.
 
 use if_state::kinds::{PaymentOrder, TreasuryKind};
-use phx_core::{Declarations, HandlerTable, OpeningCountry, Register, System, declare_prim};
+use phx_core::{Declarations, OpeningCountry, Register, System, declare_prim};
 use phx_macros::clause;
 
 declare_prim! {
@@ -47,6 +47,4 @@ impl System for Trs {
         let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&PAYMENT_ORDER);
         d.market(Box::new(TREASURY));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

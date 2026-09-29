@@ -9,7 +9,7 @@ pub mod points;
 pub use buffer::{Model, Solution, solve, spend};
 
 use if_pop::facts::{After, Income, Looked, Received};
-use phx_core::{AttrDecl, Declarations, HandlerTable, StreamDef, System, declare_prim, declare_stream};
+use phx_core::{AttrDecl, Declarations, StreamDef, System, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
 use crate::consts::DAYS_A_YEAR;
@@ -169,6 +169,4 @@ impl System for Hh {
             Ok(Box::new(Own { rule, gain: register.fixed(INCOME_GAIN.id)?, period, shares, types }))
         }));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

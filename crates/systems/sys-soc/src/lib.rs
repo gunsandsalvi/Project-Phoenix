@@ -7,7 +7,7 @@ mod consts;
 pub mod points;
 mod state_pension;
 
-use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, declare_prim};
+use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim};
 use phx_num::{Count, Fixed};
 
 pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, STATE_PENSION, StatePension};
@@ -105,6 +105,4 @@ impl System for Soc {
         d.decision(&points::STAFF);
         d.market(Box::new(PENSIONS));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

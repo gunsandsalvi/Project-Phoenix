@@ -343,13 +343,13 @@ impl Stocks {
         (cost, cut)
     }
 
-    /// Applies one flow of units: the payer delivers them from `bound` and the payee receives them at `cost`; nature
-    /// on either side is a transformation, which delivers or receives nothing. Returns the cost the payer's units
-    /// carried out, or nothing where nature gave them.
+    /// Applies one flow of units: the payer delivers them from `bound` and the payee receives them at `cost`, so each
+    /// holder's holding changes by exactly what its flows move; nature on either side is a transformation, which
+    /// delivers or receives nothing. Returns the cost the payer's units carried out, or nothing where nature gave them.
     ///
     /// # Errors
     /// `Short`, when the payer's bound holds fewer units than the flow moves.
-    #[clause("Law 5", "SET.4", "GDS.10")]
+    #[clause("Law 5", "SET.4", "SET.8", "GDS.10")]
     pub fn apply(&mut self, flow: &Flow, bound: Bound, cost: Cost, day: Day) -> Result<Option<i64>, Short> {
         if flow.denomination.is_money() {
             violation!(clause = "Law 5", "money applied to goods", reason = flow.reason);

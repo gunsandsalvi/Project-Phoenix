@@ -117,10 +117,7 @@ pub use schema::{FactColumn, TableSchema};
 pub use spoilage::SpoilageDecl;
 pub use streams::{NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, Streams};
 pub use substep::{SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
-pub use system::{
-    DecisionMeta, Declarations, HandlerEntry, HandlerTable, SetupValue, System, SystemEntry, declare_entry,
-    declare_system, handler_refusals,
-};
+pub use system::{DecisionMeta, Declarations, SetupValue, System, SystemEntry, declare_entry, declare_system};
 pub use touched::TouchedRows;
 pub use visit::{Cadence, VisitDecl};
 pub use wear::{WearDecl, WearSpec};

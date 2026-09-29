@@ -10,8 +10,8 @@ pub mod rules;
 
 use phx_core::register::values::{Table1, Table2};
 use phx_core::{
-    Contribution, DECLARATIONS, Declarations, HandlerTable, Opening, OpeningPhase, Register, StreamDef, System,
-    declare_prim, declare_stream,
+    Contribution, DECLARATIONS, Declarations, Opening, OpeningPhase, Register, StreamDef, System, declare_prim,
+    declare_stream,
 };
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_macros::clause;
@@ -206,8 +206,6 @@ impl System for Gds {
         d.compile(Box::new(move |register, _| Ok(Box::new(extract::Own::compile(&prims, register)?))));
         d.decision(&points::EXTRACT);
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
 
 /// The handles the table of two axes is read by, which is not one of a kind's own.

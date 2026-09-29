@@ -12,7 +12,7 @@ pub use opening::{bank_site, bank_weights, rate};
 pub mod zipf;
 
 use if_credit::kind::CreditKind;
-use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_kind, declare_prim, declare_stream};
+use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed};
 
@@ -196,6 +196,4 @@ impl System for Bnk {
         d.decision(&points::CHOOSE);
         d.decision(&points::REQUEST);
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

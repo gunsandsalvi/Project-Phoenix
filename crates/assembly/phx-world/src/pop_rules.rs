@@ -218,8 +218,8 @@ fn open(
 mod tests {
     use phx_core::streams::Purpose;
     use phx_core::{
-        ActsOn, AgentView, Declarations, DrawScheme, EventKindDecl, HandlerTable, HazardDecl, PopEntry, PopItem,
-        PopProcess, RateFn, Register, RoleDecl, StreamDecl, System, declare_system,
+        ActsOn, AgentView, Declarations, DrawScheme, EventKindDecl, HazardDecl, PopEntry, PopItem, PopProcess, RateFn,
+        Register, RoleDecl, StreamDecl, System, declare_system,
     };
     use phx_pop::kind::PopKindDecl;
 
@@ -270,7 +270,6 @@ mod tests {
                 source: "life tables",
             });
         }
-        fn handlers(_: &mut HandlerTable) {}
     }
 
     fn kinds() -> Vec<PopKindDecl> {
@@ -284,8 +283,8 @@ mod tests {
 
     #[test]
     fn processes_bind_to_their_owners_hazards() {
-        let (mut d, mut h) = (Declarations::new(), HandlerTable::default());
-        declare_system::<Dem>(&mut d, &mut h);
+        let mut d = Declarations::new();
+        declare_system::<Dem>(&mut d);
         let kinds = kinds();
         let bound = bind_one("DEM", Box::new(Proc("DEM.death")), &d, &kinds).unwrap();
         assert_eq!((bound.kind, bound.event, bound.stream.name), (0, 0, "DEM.mortality"));

@@ -3,7 +3,7 @@
 //! charges; the annual return and the full system arrive with their own steps.
 
 use if_state::kinds::{TaxKind, TaxLaw};
-use phx_core::{Declarations, HandlerTable, OpeningCountry, Register, System, declare_prim};
+use phx_core::{Declarations, OpeningCountry, Register, System, declare_prim};
 use phx_macros::clause;
 use phx_num::Fixed;
 
@@ -98,6 +98,4 @@ impl System for Tax {
         let _: phx_core::Prim<phx_num::Count> = d.prim(&REMIT_DAY);
         d.market(Box::new(TAXES));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }

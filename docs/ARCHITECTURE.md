@@ -77,7 +77,7 @@ L2 systems         sys-dem sys-hh sys-est ... sys-sta                    (depend
 IF interfaces      if-base if-pop if-labour if-property if-firm if-banking if-credit
                    if-securities if-risk if-energy if-open if-state      (data and pure rule signatures only)
 L1 kernel          phx-store phx-exec phx-core phx-geo phx-ledger phx-pop
-                   phx-market phx-acct phx-val phx-audit
+                   phx-market phx-acct phx-val
 L0 foundation      phx-num phx-rand phx-id phx-macros
 ```
 
@@ -86,8 +86,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 - A crate depends only on lower layers. Inside L0 the order is `phx-macros → phx-num → phx-rand → phx-id`; inside L3
   it is `phx-world → phx-obs`, so the observer reads the world through its inspector and the world never reads the
   observer; inside L1
-  it is `phx-store → phx-exec → phx-core → phx-geo → phx-ledger → phx-pop → phx-market → phx-acct → phx-val →
-  phx-audit`. Interface crates may depend on L0, L1 and the interface crates before them in the order `if-base →
+  it is `phx-store → phx-exec → phx-core → phx-geo → phx-ledger → phx-pop → phx-market → phx-acct → phx-val`. Interface crates may depend on L0, L1 and the interface crates before them in the order `if-base →
   if-pop → if-labour → if-property → if-firm → if-banking → if-credit → if-securities → if-risk → if-energy → if-open
   → if-state`. `if-base` holds the vocabulary several domains share — product, occupation-family, skill, capital-kind
   and way identifiers and their declared data, rating scales and notches, money-market tenors, segments and collateral
@@ -188,7 +187,7 @@ Weibull by inversion.
 | `phx-market` | MKT | The six forms (§8), the coupled call and the **linked call** among them; prints, marks, and instruments' and currency pairs' fixings at 6b by the pricing service's declared method; admission hooks; market failures. On the core it holds the posted-price meeting (`meet`), the hiring kernel, the calls, reach and carriage; the administered, book, bilateral and dealer forms, admission, grants, the markets' instances and their audit, which only the old kernel ran, were deleted at S1.24 and are rebuilt on the core with the stages whose markets need them (S2.06, S3.06, S4). |
 | `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing; an instruction's money effects are taken on each party's net money in it, so a bank through which two customers pay each other, one deposit down and another up, neither pays nor is paid. On the core it declares the accounting bases alone: the valuations, statements, consolidation and equity accounts read the old kernel's books, were deleted at S1.24 with them, and are rebuilt on the core's contracts in its part h. |
 | `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day, and for registered series only per registered pair on days with a new print; surprise and confidence arithmetic; the investor schedule. |
-| `phx-audit` | N1 | Families; streaming checks, the `AuditStream` the apply routine feeds; independent records (§15); incremental and rolling checks; injection mode. |
+| `phx-audit` | — | Deleted at S1.24 with the old kernel, whose books, apply routine and records it checked: the audit's families run on the core (`phx_world::core_audit`, §7.17). |
 
 ### 3.4 Interfaces
 
@@ -619,7 +618,6 @@ pub trait System: Send + Sync + 'static {        // zero-sized implementors only
     fn declare(d: &mut Declarations);             // kinds, facts, stores, lines, messages, levies, markets, rules,
                                                   // primitives, policy values, hazards, occasions, kinks, decision
                                                   // points, schedules, audits, metrics, views, opening contributions
-    fn handlers(h: &mut HandlerTable);            // kernels per sub-step, with reads and writes
 }
 ```
 
@@ -633,7 +631,9 @@ carries no meaning (§6.2).
 
 ### 5.2 Handlers
 
-A handler is a kernel over chunks of one table — its agenda rows, or every row where the sub-step declares a sweep —
+No system registers a handler: the world runs on the core (§7.17), whose day calls each system's rules and decision
+points itself, and the handler table, its graph and the refusals they decided were deleted with the old kernel. What
+follows described them. A handler was a kernel over chunks of one table — its agenda rows, or every row where the sub-step declares a sweep —
 declared with its sub-step, the facts and columns it reads and writes, the messages and intents it emits, its
 streams, and its body, a function of the context and a row. The declaration generates the handler's run over a chunk:
 its context built from the day's parts, then the body for each row. Its context grants exactly what it declares; it
@@ -648,8 +648,7 @@ place the system resolved at assembly, and is recorded at the apply point, dated
 
 Declarations compile into: fact and facet columns; the record of each agent kind and its persons' layout (§7.1); kink
 sets; relationship-row layouts per line kind; point tables; message, instrument, market and levy profiles; the stream
-registry; the primitive register checked against `data/` (NUM.3); schedules and wake conditions; the handler graph;
-audits and metrics. An attribute or count field whose value outgrows its width is a **contract violation** calling for a
+registry; the primitive register checked against `data/` (NUM.3); schedules and wake conditions; audits and metrics. An attribute or count field whose value outgrows its width is a **contract violation** calling for a
 layout change; nothing saturates (Law 6). A policy schedule's count of bands is declared with it (the constitution's,
 POL) and fixed here: a platform or a budget moves its values and edges, never the count, so the kink signature's
 compiled width holds for the run.

@@ -12,8 +12,7 @@ pub mod wages;
 
 use if_labour::kind::LabourKind;
 use phx_core::{
-    Declarations, EventKindDecl, HandlerTable, PersonAttrDecl, StreamDef, System, declare_hazard, declare_prim,
-    declare_stream,
+    Declarations, EventKindDecl, PersonAttrDecl, StreamDef, System, declare_hazard, declare_prim, declare_stream,
 };
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed, Missing};
@@ -314,6 +313,4 @@ impl System for Lab {
         d.pop_process(Box::new(retire::Retirement::default()));
         d.market(Box::new(LABOUR));
     }
-
-    fn handlers(_: &mut HandlerTable) {}
 }
