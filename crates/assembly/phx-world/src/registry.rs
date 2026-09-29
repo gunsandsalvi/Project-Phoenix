@@ -399,7 +399,7 @@ fn core_of(
             .iter()
             .find(|(c, _)| *c == <sys_frm::Frm as phx_core::System>::CODE)
             .and_then(|(_, s)| s.downcast_ref::<sys_frm::Own>())
-            .map(|f| f.management().cover_days);
+            .map(|f| (f.management().cover_days, f.management().adjustment_days));
         let Some(cover) = cover else {
             return Err(AssemblyErrors(vec!["the firms' management not compiled for the goods' opening".to_owned()]));
         };

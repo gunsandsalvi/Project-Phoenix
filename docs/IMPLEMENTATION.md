@@ -862,9 +862,17 @@ world switches to the core.
     the others' posted prices, whose ratio to a firm's own price averages above one over any spread of prices and
     raised every markup by about three points a fortnight. Measured now (120 days, 150,000 persons, seed 1): the flows
     settle every day but month ends; consumer prices rise 13% in February and 29% by March in the developed country
-    (15% and 41% in the emerging and in the developing), unemployment there from 2.3% to 6.6%. To settle in e: what
-    drives the rest — the reviews' pressure against the stock's target — read against the management types' spread
-    and the self-employed of c3.
+    (15% and 41% in the emerging and in the developing), unemployment there from 2.3% to 6.6%. Traced: the goods
+    makers' stocks fall from their 42 days' cover to about ten in ten weeks, and their stock's shortfall is what
+    raises their prices, because their staff make 0.4 to 0.5 of what the world's buyers ask of them at the opening
+    (services' staff make what is asked). The demand is the households': in their first year they spend 1.39 times
+    their income (the developed country: 395 of 285 billion), the buffer-stock rule drawing their deposits — 1.28
+    years of income at the opening — toward its target of 0.28 years beyond the year's income, and the budget shares,
+    renormalised over the products the world makes, put onto goods what the accounts' households pay for dwellings
+    and finance. The wealth a household holds beyond its buffer is held by its savings for a dwelling and its rent or
+    mortgage (HH.8, HH.10, HSG, S2.05) and its portfolio (HH.7, S2.05 and S3.05); until they hold it, the opening's
+    deposits are spent. To settle there, with the self-employed of c3 (the own-account workers the staff count leaves
+    out).
   - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
@@ -2028,6 +2036,13 @@ receivables by name; references resolve to the estate.
 ### S2.05 — `sys-hsg`: housing, land, mortgages, foreclosure, construction and moving
 
 **Status**: planned
+
+**Found at S1.24** (150,000 persons, seed 1): the households spend 1.39 times their income in their first year, the
+buffer-stock rule drawing down deposits of 1.28 years' income, and the budget shares renormalised over the products
+the world makes put the accounts' spending on dwellings onto goods, whose makers' staff make half of it; consumer
+prices rise 29% to 41% by March. Here a household's rent or mortgage, its savings for a dwelling and its bills
+(HH.7's part) take their share of what it holds and spends; the step's run reads the first year's spending against
+income and the consumer index again.
 
 **Clauses**:
 - DECISION: POP.10 *(completes it, moved from S1.13: the child's cost at the prices and rents in reach and the

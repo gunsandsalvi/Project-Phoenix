@@ -60,9 +60,11 @@ pub struct CoreGoods {
     /// Each country's ways' inputs of each product a unit of each, by country index; and which products are stored.
     pub inputs: Vec<Vec<Vec<f64>>>,
     pub stored: Vec<bool>,
-    /// Each product's days a unit takes to make, and the days of sales a firm's stock covers.
+    /// Each product's days a unit takes to make, the days of sales a firm's stock covers and the days over which it
+    /// closes the gap to that cover.
     pub lead: Vec<f64>,
     pub cover: f64,
+    pub adjustment: f64,
     /// Each country's GDP, and each product's collective consumption and fixed investment over it, by country.
     pub gdp: Vec<f64>,
     pub final_uses: Vec<Vec<[f64; 2]>>,
@@ -206,7 +208,7 @@ impl Core {
     pub fn open_goods(
         &mut self,
         ctx: &GoodsCtx<'_>,
-        (countries, cover): (&[OpeningCountry], f64),
+        (countries, (cover, adjustment)): (&[OpeningCountry], (f64, f64)),
         today: Day,
     ) -> Result<(), String> {
         let (Some(place), Some(firm)) =
@@ -216,7 +218,7 @@ impl Core {
         };
         let days = floor_to_i64((ctx.rule.period * DAYS_A_YEAR).round()).and_then(|d| u32::try_from(d).ok());
         let Some(days) = days.filter(|d| *d > 0) else { return Err("a spending schedule of no days".to_owned()) };
-        let mut goods = CoreGoods { spend_days: days, began: today.get(), cover, ..CoreGoods::default() };
+        let mut goods = CoreGoods { spend_days: days, began: today.get(), cover, adjustment, ..CoreGoods::default() };
         let products = ctx.register.products("TEC.products")?;
         goods.stored = products.iter().map(|p| p.storable).collect();
         let lead = ctx.register.table1("TEC.lead_time")?;
@@ -804,12 +806,7 @@ impl Core {
             let Some(unit_cost) = self.unit_cost(&f) else { continue };
             let lot = sys_frm::FilingPrims::lot(ctx.register, f.product);
             let margin = from_i64(f.price) / lot - unit_cost;
-            let planned = if self.is_stored(f.product) {
-                let stock = from_i64(self.free_units(f.key, f.product, f.region));
-                expected + (m.cover_days * expected - stock) / m.adjustment_days
-            } else {
-                expected
-            };
+            let planned = self.planned(&f, expected);
             let financing = self.labour.financing.get(f.country).copied().unwrap_or(0.0) / DAYS_A_YEAR;
             // What it holds beyond what its contracts take before its next schedule is what it can spend on inputs.
             let Some(money) = self.kinds.get(firm).and_then(|k| k.accounts.as_ref()).and_then(|a| a.balance.get(slot))
@@ -953,6 +950,18 @@ impl Core {
         let n = len_u64(wants.len());
         self.goods.wants = wants;
         (spenders, n)
+    }
+
+    /// A firm's planned output a day: the sales it expects and, of a stored product, the gap between the stock it aims
+    /// for and what it holds closed over its adjustment days; none below nothing.
+    fn planned(&self, f: &Firm, expected: f64) -> f64 {
+        let wanted = if self.is_stored(f.product) {
+            let stock = from_i64(self.free_units(f.key, f.product, f.region));
+            expected + (self.goods.cover * expected - stock) / self.goods.adjustment
+        } else {
+            expected
+        };
+        if wanted > 0.0 { wanted } else { 0.0 }
     }
 
     /// What a firm keeps of its own product for its own making, never offered: what its way uses of it over the days
