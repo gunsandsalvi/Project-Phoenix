@@ -377,6 +377,7 @@ impl Core {
                     stance: phx_num::Missing::Present(stance),
                     required_return: phx_num::Missing::Present(required),
                     management: phx_num::Missing::Present(0),
+                    window: phx_num::Missing::Absent,
                 };
                 let wanted = lot * snap.price_at(product, log);
                 let price = self.decide_founding(pricing, &prefs, |_| sys_frm::rules::review::DayZeroIn {

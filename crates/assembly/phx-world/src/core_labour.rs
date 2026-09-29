@@ -566,13 +566,13 @@ impl Core {
             Missing::Present(v) => Some(usize::from(v)),
             Missing::Absent => None,
         };
-        let (Some(product), Some(region), Some(memory), Some(stance), Some(price)) =
-            (read(PRODUCT), read(REGION), as_index(prefs.memory), as_index(prefs.stance), read(PRICE))
+        let (Some(product), Some(region), Some(view), Some(stance), Some(price)) =
+            (read(PRODUCT), read(REGION), self.goods.outlooks.view(prefs), as_index(prefs.stance), read(PRICE))
         else {
             return 0.0;
         };
         let series = (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX));
-        match self.goods.outlooks.outlook(series, memory, stance) {
+        match self.goods.outlooks.outlook(series, view, stance) {
             Missing::Present(mark) => mark / lot,
             Missing::Absent => from_u64(u64::try_from(price).unwrap_or(0)) / lot,
         }
@@ -608,7 +608,7 @@ impl Core {
     }
 
     /// A person's whole years on a day, where its household still holds it.
-    fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
+    pub(crate) fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
         let place = self.names.iter().position(|n| *n == "household")?;
         let decl = self.household_decl.as_ref()?;
         let ps = self.persons.get(place)?.as_ref()?;

@@ -918,8 +918,11 @@ world switches to the core.
     5,349 and 5,547 ms, every ratchet kept). Each
     method's lag behind a series' turns is counted in prints (VAL.13, LC-1-43 passes): over 120 days the trend and the
     last value follow each turn at once, the anchor 0.04 prints behind, the adaptive rule 0.09 prints behind at the
-    fastest memory and 0.17 at the slowest. Remain in e: the anchor's level by each age class's experience weights
-    (VAL.23) once a series holds two closed years; and attention (REP.38, REP.35, VAL.14, LC-1-44): a firm's price is
+    fastest memory and 0.17 at the slowest. The anchor's level by each age class's experience weights (VAL.23) is
+    built, not yet run (ARCHITECTURE §7.17, Outlooks): the classes `VAL.age_windows` (under 35, 35 to 54, 55 and over),
+    each household's its head's and each office holder's its own, an institution no one holds none; from two closed
+    years a class's level is the closed years' means weighted at the mean age of the household heads in it. And
+    attention (REP.38, REP.35, VAL.14, LC-1-44): a firm's price is
     reviewed on its production schedule, a fixed rate, where REP.38 makes each day's chance of a review the firm's own
     (`sys_frm::rules::attention::review_chance`: its revenue, its markup's curvature, the variances of what its price
     should be — its stance's surprises' width on its series among them — against a review's cost), so a surprise

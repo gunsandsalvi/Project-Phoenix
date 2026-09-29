@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 use phx_core::opening_subject;
 use phx_id::{Day, PartyKey};
 use phx_macros::clause;
+use phx_num::Missing;
 use phx_rand::float::len_u64;
 
 use crate::consts::firm::{OWNERS_PURPOSE, PURPOSES};
@@ -27,13 +28,15 @@ pub(crate) struct OpenOwner {
     pub region: u32,
 }
 
-/// An owner working in its firm: its household, identity, occupation and weekly hours.
+/// An owner working in its firm: its household, identity, occupation, weekly hours and age class.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Worker {
     pub household: PartyKey,
     pub person: u64,
     pub occupation: u32,
     pub hours: u32,
+    /// Its age class at the last year's close, or at the opening.
+    pub window: Missing<u16>,
 }
 
 /// Who owns what: each owned party's holders, a share each, and each holder's owned parties; each firm's working
@@ -70,7 +73,7 @@ impl Core {
     /// # Errors
     /// A primitive the dealing reads that the register does not hold.
     #[clause("FRM.1", "FRM.23", "PTY.16", "GEN.2")]
-    pub fn open_owners(&mut self, o: &JobsOpening<'_>) -> Result<(), String> {
+    pub fn open_owners(&mut self, o: &JobsOpening<'_>, types: &phx_val::types::Types) -> Result<(), String> {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
         let firms = self.firm_hours(o, firm)?;
         let mut by_region: BTreeMap<u32, Vec<OpenOwner>> = BTreeMap::new();
@@ -84,6 +87,7 @@ impl Core {
                 return Err(format!("self-employed drawn in country {country}, which the world does not hold"));
             };
             let hours = u32::try_from(o.register.count_in("LAB.full_time_hours", c.id)?).map_err(|e| e.to_string())?;
+            let date = o.calendar.date(o.today);
             let subject = opening_subject(u32::from(country) * PURPOSES + OWNERS_PURPOSE, region);
             let mut lot = o.streams.open(o.stream, subject, Day::new(0), 0);
             // An order drawn by lot, so no household's place in the books decides the firm it owns.
@@ -95,7 +99,7 @@ impl Core {
             let mut next = members.into_iter();
             for (slot, _) in here {
                 match next.next() {
-                    Some(m) => self.own(PartyKey::new(kind_number(firm), *slot), &m, hours),
+                    Some(m) => self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, date), types),
                     None => self.owners.unowned += 1,
                 }
             }
@@ -112,7 +116,7 @@ impl Core {
                 let mut left = ms.into_iter();
                 for ((slot, _), n) in here.iter().zip(deal(len_u64(left.len()), &weights)) {
                     for m in left.by_ref().take(usize::try_from(n).unwrap_or(usize::MAX)) {
-                        self.own(PartyKey::new(kind_number(firm), *slot), &m, hours);
+                        self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, date), types);
                     }
                 }
             }
@@ -121,17 +125,27 @@ impl Core {
     }
 
     /// A self-employed person owning a share of a firm and working in it, managing it where it is the first.
-    fn own(&mut self, firm: PartyKey, m: &OpenOwner, hours: u32) {
+    fn own(
+        &mut self,
+        firm: PartyKey,
+        m: &OpenOwner,
+        (hours, date): (u32, phx_id::Date),
+        types: &phx_val::types::Types,
+    ) {
+        let window = match self.age_of((m.household, m.person), date) {
+            Some(age) => types.window_of(age),
+            None => Missing::Absent,
+        };
         let o = &mut self.owners;
         let workers = o.working.entry(firm).or_default();
         let first = workers.is_empty();
-        workers.push(Worker { household: m.household, person: m.person, occupation: m.occupation, hours });
+        workers.push(Worker { household: m.household, person: m.person, occupation: m.occupation, hours, window });
         o.works_at.insert((m.household, m.person), firm);
         o.of.entry(firm).or_default().push(m.household);
         o.holds.entry(m.household).or_default().push(firm);
         o.dealt += 1;
         if first {
-            let prefs = self.decisions.founding_of(firm);
+            let prefs = phx_core::Prefs { window, ..self.decisions.founding_of(firm) };
             self.decisions.appoint(firm, m.person, prefs);
         }
     }
@@ -144,14 +158,14 @@ impl Core {
         let Some(workers) = self.owners.working.get_mut(&firm) else { return };
         let managed = workers.first().is_some_and(|w| w.household == household && w.person == person);
         workers.retain(|w| !(w.household == household && w.person == person));
-        let next = workers.first().map(|w| w.person);
+        let next = workers.first().map(|w| (w.person, w.window));
         if workers.is_empty() {
             self.owners.working.remove(&firm);
         }
         if managed {
             self.decisions.vacate(firm, Some(person));
-            if let Some(p) = next {
-                let prefs = self.decisions.founding_of(firm);
+            if let Some((p, window)) = next {
+                let prefs = phx_core::Prefs { window, ..self.decisions.founding_of(firm) };
                 self.decisions.appoint(firm, p, prefs);
             }
         }

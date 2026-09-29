@@ -2099,13 +2099,20 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
 - **Outlooks** (`phx_world::core_outlooks`, VAL.3–VAL.7, VAL.13, VAL.23): a public series is keyed by a code and a
   place — each product's mark in a region for the firms (`CoreGoods::outlooks`), each country's consumer index for
   the households (`CoreStats::outlooks`, its monthly change printed on its release day). A print scores and forms, for
-  every memory type, every heuristic of the menu (`phx_val::types::Types`, compiled once for firms and households):
-  its error in the method's width enters the heuristic's performance, and each forms its outlook of the next print;
-  the anchor's level is the mean of the prints since the opening. A party's memory type, switching type and stance are
+  every view — each memory type at each age class of `VAL.age_windows` and at none — every heuristic of the menu
+  (`phx_val::types::Types`, compiled once for firms and households; a view's place `phx_val::types::view`): its error
+  in the method's width enters the heuristic's performance, and each forms its outlook of the next print. A series
+  keeps each calendar year's prints summed and counted, and the first print of a year closes the last into its mean
+  (`Series::annual`, newest first). The anchor's level is the mean of the prints since the opening, and, once two years
+  have closed, at an age class the closed years' means weighted by its lived years (`phx_val::experience::long_mean`,
+  `VAL.experience_theta`, `Series::experienced`). A class's lived years are the mean age of the household heads in it
+  (`Outlooks::lived`); a household's class is its head's (`HH.window`), an office holder's its own, both set at the
+  opening and on each year's first day (`Core::refresh_windows`); an institution no person holds has none and reads
+  the view of no age. A party's memory type, switching type and stance are
   words of its record (the firm's `MEMORY`, `SWITCHING`, `STANCE`; the household's `HH.memory`, `HH.switching`,
   `HH.stance`), drawn at the opening, the first stance by taste alone; a firm reconsiders its stance at each price
-  review, a household on each spending occasion (`Outlooks::reconsider`, stream `FRM.stance` or `HH.stance`). Each
-  method's lag behind a series' turns is counted in prints (`Outlooks::lags`).
+  review, a household on each spending occasion (`Outlooks::reconsider`, stream `FRM.stance` or `HH.stance`), each at
+  its view. Each method's lag behind a series' turns is counted in prints on the view of no age (`Outlooks::lags`).
 - **Attention** (`phx_world::core_goods`, REP.38, REP.35, VAL.14): after the day's meetings every firm looks at its
   sales since its review (`SOLD` less `SEEN_SOLD`) against those it expects, the surprise entering its sales' width at
   its memory type's gain (`SALES_WIDTH`), and draws from `FRM.visits` whether it reviews its price today at
@@ -2413,8 +2420,8 @@ without a decision moving.
 print. The heuristic menu is one sealed trait (`Heuristic`, `MENU`: adaptive, trend, anchor, announcement), so no
 other crate adds a way of forecasting; assembly refuses `VAL.heuristics_tracked` other than the menu's length. The
 world's methods are compiled at assembly, every heuristic on the menu by every memory type (a type of
-`VAL.adaptive_gain`'s distribution, its λ), a method's index its heuristic times the memory types plus its memory
-type; γ and κ are shared, and the age window is none. The public series (`PublicSeries`) keeps its last and previous
+`VAL.adaptive_gain`'s distribution, its λ), each at every age class and at none; γ and κ are shared. The public
+series (`PublicSeries`) keeps its last and previous
 print, their running sum and count and each method's outlook; an anchor's level is the mean of its prints.
 Attention is λ_k = g_k·sqrt(σ²_own + σ²_pub), g_k = ½·sqrt(ψ_k ÷ c_k), its daily chance −expm1(−λ_k), and the
 exposure over spans of constant public variance one term a span (`attention::exposure`); switching shares are the

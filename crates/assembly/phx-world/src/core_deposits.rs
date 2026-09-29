@@ -200,9 +200,9 @@ impl Core {
             let Missing::Present(rate) = prefs.required_return else {
                 violation!(clause = "FRM.15", "an extractor with no required return", firm = key.word());
             };
-            let outlook = match (prefs.memory, prefs.stance) {
-                (Missing::Present(m), Missing::Present(h)) => {
-                    match self.goods.outlooks.outlook((f.product, f.region), usize::from(m), usize::from(h)) {
+            let outlook = match (self.goods.outlooks.view(&prefs), prefs.stance) {
+                (Some(view), Missing::Present(h)) => {
+                    match self.goods.outlooks.outlook((f.product, f.region), view, usize::from(h)) {
                         Missing::Present(mark) => mark / from_i64(lot),
                         Missing::Absent => price,
                     }

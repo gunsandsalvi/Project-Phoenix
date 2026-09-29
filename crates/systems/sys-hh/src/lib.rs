@@ -25,6 +25,8 @@ pub const SWITCHING_ATTR: AttrDecl =
     AttrDecl { name: "HH.switching", values: crate::consts::MOST_TYPES, clause: "VAL.22" };
 /// The heuristic of the menu a household's outlooks of public series rely on.
 pub const STANCE_ATTR: AttrDecl = AttrDecl { name: "HH.stance", values: crate::consts::MOST_TYPES, clause: "VAL.7" };
+/// The age class of a household's head, whose lived years weight its outlooks of public series.
+pub const WINDOW_ATTR: AttrDecl = AttrDecl { name: "HH.window", values: crate::consts::MOST_TYPES, clause: "VAL.23" };
 
 declare_prim! {
     /// A household type's yearly patience, the weight of next year's utility.
@@ -127,7 +129,7 @@ impl System for Hh {
             d.claim(fact);
         }
         let mut household = d.pop_kind(if_pop::HOUSEHOLD);
-        household.attr(MEMORY_ATTR).attr(SWITCHING_ATTR).attr(STANCE_ATTR);
+        household.attr(MEMORY_ATTR).attr(SWITCHING_ATTR).attr(STANCE_ATTR).attr(WINDOW_ATTR);
         for p in if_pop::facts::POSITIONS {
             household.position(p);
         }

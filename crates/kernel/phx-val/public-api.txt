@@ -96,6 +96,7 @@ pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>
 pub mod phx_val::prims
 pub struct phx_val::prims::ValPrims
 pub phx_val::prims::ValPrims::adaptive_gain: phx_core::register::Prim<phx_core::register::values::Distribution>
+pub phx_val::prims::ValPrims::age_windows: phx_core::register::Prim<phx_core::register::values::Partition>
 pub phx_val::prims::ValPrims::anchor_kappa: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_val::prims::ValPrims::attention_sensitivity: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_val::prims::ValPrims::experience_theta: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
@@ -109,6 +110,7 @@ impl phx_val::prims::ValPrims
 pub fn phx_val::prims::ValPrims::check(&self, &phx_core::register::Register) -> core::result::Result<(), alloc::string::String>
 pub fn phx_val::prims::ValPrims::declare(&mut phx_core::system::Declarations) -> phx_val::prims::ValPrims
 pub const phx_val::prims::ADAPTIVE_GAIN: phx_core::register::PrimDecl
+pub const phx_val::prims::AGE_WINDOWS: phx_core::register::PrimDecl
 pub const phx_val::prims::ANCHOR_KAPPA: phx_core::register::PrimDecl
 pub const phx_val::prims::ATTENTION_SENSITIVITY: phx_core::register::PrimDecl
 pub const phx_val::prims::EXPERIENCE_THETA: phx_core::register::PrimDecl
@@ -149,9 +151,15 @@ pub phx_val::types::Types::intensities: alloc::vec::Vec<f64>
 pub phx_val::types::Types::memory: phx_core::register::values::TypeSet
 pub phx_val::types::Types::performance_memory: f64
 pub phx_val::types::Types::switching: phx_core::register::values::TypeSet
+pub phx_val::types::Types::theta: f64
 pub phx_val::types::Types::trend: f64
+pub phx_val::types::Types::windows: alloc::vec::Vec<i64>
 impl phx_val::types::Types
 pub fn phx_val::types::Types::compile(&phx_core::register::Register) -> core::result::Result<phx_val::types::Types, alloc::string::String>
+pub fn phx_val::types::Types::of_view(&self, usize) -> (usize, phx_num::missing::Missing<usize>)
+pub fn phx_val::types::Types::views(&self) -> usize
+pub fn phx_val::types::Types::window_of(&self, u32) -> phx_num::missing::Missing<u16>
+pub fn phx_val::types::view(usize, u16, phx_num::missing::Missing<u16>) -> usize
 pub mod phx_val::value
 pub struct phx_val::value::Flow
 pub phx_val::value::Flow::amount: f64

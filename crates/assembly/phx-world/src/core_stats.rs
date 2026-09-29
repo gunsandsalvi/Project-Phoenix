@@ -227,7 +227,7 @@ impl Core {
                 && before > 0
             {
                 let change = phx_rand::float::from_i64(level) / phx_rand::float::from_i64(before) - 1.0;
-                self.stats.outlooks.print(cpi_series(r.country), change, (day, None), p);
+                self.stats.outlooks.print(cpi_series(r.country), change, (day, calendar.date(day).year(), None), p);
             }
         }
         self.stats.published.extend(due);

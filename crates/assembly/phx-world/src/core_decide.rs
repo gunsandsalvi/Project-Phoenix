@@ -39,7 +39,7 @@ pub struct Decisions {
     founding: Vec<Vec<Prefs>>,
     holders: BTreeMap<(PartyKey, u8), (u64, Prefs)>,
     taken: Vec<Vec<phx_exec::Tally>>,
-    household: Option<(usize, [usize; 3])>,
+    pub(crate) household: Option<(usize, [usize; 4])>,
 }
 
 impl Decisions {
@@ -106,6 +106,15 @@ impl Decisions {
         }
     }
 
+    /// The age class of a party's office holder, where a person holds its offices.
+    pub(crate) fn set_window(&mut self, party: PartyKey, person: u64, window: Missing<u16>) {
+        for (_, (holder, prefs)) in self.holders.range_mut((party, 0)..=(party, u8::MAX)) {
+            if *holder == person {
+                prefs.window = window;
+            }
+        }
+    }
+
     /// The preferences a party's institution was founded with.
     pub(crate) fn founding_of(&self, party: PartyKey) -> Prefs {
         self.founding
@@ -165,7 +174,12 @@ impl Core {
             let at = |name: &str| decl.attrs.iter().position(|a| a.item.name == name);
             Some((
                 place,
-                [at(sys_hh::MEMORY_ATTR.name)?, at(sys_hh::SWITCHING_ATTR.name)?, at(sys_hh::STANCE_ATTR.name)?],
+                [
+                    at(sys_hh::MEMORY_ATTR.name)?,
+                    at(sys_hh::SWITCHING_ATTR.name)?,
+                    at(sys_hh::STANCE_ATTR.name)?,
+                    at(sys_hh::WINDOW_ATTR.name)?,
+                ],
             ))
         });
         self.decisions = Decisions {
@@ -210,15 +224,16 @@ impl Core {
         Bound { at, point }
     }
 
-    /// A household's preferences: its record's memory and switching types and its stance.
+    /// A household's preferences: its record's memory and switching types, its stance and its age class.
     fn household_prefs(&self, slot: Slot) -> Prefs {
-        let Some((place, [m, s, h])) = self.decisions.household else { return Prefs::NONE };
+        let Some((place, [m, s, h, w])) = self.decisions.household else { return Prefs::NONE };
         let Some(store) = self.kinds.get(place) else { return Prefs::NONE };
         let record = store.record(slot);
         Prefs {
             memory: index_of(record.get(m)),
             switching: index_of(record.get(s)),
             stance: index_of(record.get(h)),
+            window: index_of(record.get(w)),
             ..Prefs::NONE
         }
     }
@@ -320,7 +335,7 @@ impl Core {
                 }
             }
             Standing::Household | Standing::Person => {
-                let Some((place, [_, _, h])) = self.decisions.household else { return };
+                let Some((place, [_, _, h, _])) = self.decisions.household else { return };
                 if let Some(w) = self.kinds.get_mut(place).and_then(|k| k.record_mut(party.slot()).get_mut(h)) {
                     *w = MaybeI64::present(i64::from(stance));
                 }

@@ -1,7 +1,7 @@
 //! The primitives the outlook methods read: memory and switching-intensity types, the heuristics' parameters, the
 //! experience weighting, attention sensitivity, and how many heuristics a party tracks.
 
-use phx_core::register::values::Distribution;
+use phx_core::register::values::{Distribution, Partition};
 use phx_core::{Declarations, Prim, Register, declare_prim};
 use phx_num::{Count, Fixed};
 
@@ -32,6 +32,11 @@ declare_prim! {
     pub EXPERIENCE_THETA = "VAL.experience_theta" {
         kind: Preference, value: Fixed { exp: 2 }, clause: "VAL.23", scope: Shared
     }
+}
+
+declare_prim! {
+    /// The age classes whose lived years weight a public series' history, by their first ages.
+    pub AGE_WINDOWS = "VAL.age_windows" { kind: Resolution, value: Partition { exp: 0 }, clause: "VAL.23", scope: Shared }
 }
 
 declare_prim! {
@@ -76,6 +81,7 @@ pub struct ValPrims {
     pub trend_gamma: Prim<Fixed<2>>,
     pub anchor_kappa: Prim<Fixed<2>>,
     pub experience_theta: Prim<Fixed<2>>,
+    pub age_windows: Prim<Partition>,
     pub performance_memory: Prim<Fixed<2>>,
     pub switching_types: Prim<Count>,
     pub switching_intensity: Prim<Distribution>,
@@ -91,6 +97,7 @@ impl ValPrims {
             trend_gamma: d.prim(&TREND_GAMMA),
             anchor_kappa: d.prim(&ANCHOR_KAPPA),
             experience_theta: d.prim(&EXPERIENCE_THETA),
+            age_windows: d.prim(&AGE_WINDOWS),
             performance_memory: d.prim(&PERFORMANCE_MEMORY),
             switching_types: d.prim(&SWITCHING_TYPES),
             switching_intensity: d.prim(&SWITCHING_INTENSITY),

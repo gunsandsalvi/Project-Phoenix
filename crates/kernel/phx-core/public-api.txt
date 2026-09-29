@@ -452,6 +452,7 @@ pub phx_core::decisions::Prefs::memory: phx_num::missing::Missing<u16>
 pub phx_core::decisions::Prefs::required_return: phx_num::missing::Missing<f64>
 pub phx_core::decisions::Prefs::stance: phx_num::missing::Missing<u16>
 pub phx_core::decisions::Prefs::switching: phx_num::missing::Missing<u16>
+pub phx_core::decisions::Prefs::window: phx_num::missing::Missing<u16>
 impl phx_core::decisions::Prefs
 pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs
 impl phx_store::save::Saved for phx_core::decisions::Prefs where phx_num::missing::Missing<u16>: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved
@@ -3804,6 +3805,7 @@ pub phx_core::Prefs::memory: phx_num::missing::Missing<u16>
 pub phx_core::Prefs::required_return: phx_num::missing::Missing<f64>
 pub phx_core::Prefs::stance: phx_num::missing::Missing<u16>
 pub phx_core::Prefs::switching: phx_num::missing::Missing<u16>
+pub phx_core::Prefs::window: phx_num::missing::Missing<u16>
 impl phx_core::decisions::Prefs
 pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs
 impl phx_store::save::Saved for phx_core::decisions::Prefs where phx_num::missing::Missing<u16>: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved

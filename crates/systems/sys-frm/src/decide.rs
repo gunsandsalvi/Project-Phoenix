@@ -221,6 +221,8 @@ mod tests {
                 trend: 0.4,
                 anchor: 0.5,
                 performance_memory: 0.3,
+                theta: 3.0,
+                windows: vec![0],
             },
             sensitivity: 2.0,
             required_return: phx_core::register::values::Distribution {

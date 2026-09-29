@@ -68,6 +68,13 @@ impl World {
             processes: &self.processes,
             regions: &regions,
         };
+        let date = self.calendar.date(day);
+        if date.month() == 1 && date.day() == 1 {
+            let hh = self.own.iter().find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE);
+            if let Some(types) = hh.and_then(|(_, s)| s.downcast_ref::<sys_hh::Own>()).map(|h| &h.types) {
+                self.core.refresh_windows(types, date);
+            }
+        }
         self.core.weather_day(crate::world::geo_arc(&self.own), (&self.streams, &self.calendar), day);
         self.core.measure_rates(&ctx, day);
         let pop_day = self.core.run_hazards(&ctx, day);

@@ -101,6 +101,7 @@ struct CountryDraw<'a> {
     money: Money,
     loans: Vec<OpenLoan>,
     types: &'a phx_val::types::Types,
+    date: phx_id::Date,
 }
 
 /// The rules the households' draws follow, from the register alone.
@@ -272,6 +273,7 @@ impl Core {
                 money: Money::default(),
                 loans: Vec::new(),
                 types: &rules.types,
+                date,
             };
             for (region, formed) in sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c, decl) {
                 for f in formed {
@@ -324,6 +326,13 @@ impl Core {
         h.set_attr(sys_hh::MEMORY_ATTR.name, u32::from(memory));
         h.set_attr(sys_hh::SWITCHING_ATTR.name, u32::from(switching));
         h.set_attr(sys_hh::STANCE_ATTR.name, u32::try_from(stance).unwrap_or(u32::MAX));
+        // Its age class is its head's, whose lived years weight its outlooks of public series.
+        let head = h.persons.iter().find(|p| p.role == if_pop::HEAD.name).or_else(|| h.persons.first());
+        let window = head.and_then(|p| u32::try_from(p.age_on(draw.date)).ok()).map(|age| draw.types.window_of(age));
+        let Some(Missing::Present(window)) = window else {
+            violation!(clause = "VAL.23", "a household drawn with no head of an age class");
+        };
+        h.set_attr(sys_hh::WINDOW_ATTR.name, u32::from(window));
         for l in &labour {
             let Some(p) = h.persons.get_mut(l.place) else {
                 violation!(clause = "REP.26", "labour drawn for a person the household does not hold");

@@ -86,7 +86,8 @@ impl DecisionKinds {
 }
 
 /// What a decider brings to a decision's rule before minds: its memory type, switching type and stance on the
-/// heuristics' menu, the return it requires a year and its management type, each absent where it holds none.
+/// heuristics' menu, the return it requires a year, its management type and its age class, each absent where it holds
+/// none.
 #[clause("MND.20", "MND.16", "VAL.6", "VAL.7")]
 #[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct Prefs {
@@ -95,6 +96,8 @@ pub struct Prefs {
     pub stance: Missing<u16>,
     pub required_return: Missing<f64>,
     pub management: Missing<u16>,
+    /// The age class whose lived years weight its outlooks of public series; none for an institution no person holds.
+    pub window: Missing<u16>,
 }
 
 impl Prefs {
@@ -105,6 +108,7 @@ impl Prefs {
         stance: Missing::Absent,
         required_return: Missing::Absent,
         management: Missing::Absent,
+        window: Missing::Absent,
     };
 }
 

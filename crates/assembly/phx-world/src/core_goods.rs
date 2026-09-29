@@ -586,7 +586,8 @@ impl Core {
                 let lot = self.lot(product);
                 let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
                 self.goods.marks.insert((product, region), mark);
-                self.goods.outlooks.print((product, region), mark, (day, Some(ctx.management.sensitivity)), types);
+                let at = (day, ctx.calendar.date(day).year(), Some(ctx.management.sensitivity));
+                self.goods.outlooks.print((product, region), mark, at, types);
                 printed.push(((product, region), mark));
             }
         }
@@ -1211,6 +1212,7 @@ impl Core {
             else {
                 continue;
             };
+            let Some(view) = self.goods.outlooks.view(&prefs) else { continue };
             let memory = usize::from(memory);
             let Some(gain) = m.types.gains.get(memory).copied() else {
                 violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = s);
@@ -1233,7 +1235,7 @@ impl Core {
             let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
             let series = (f.product, f.region);
             let chosen = self.decide(reconsidering, f.key, |_| {
-                self.goods.outlooks.stance_in((series, memory, beta), (ctx.streams, &stance_stream), (id, day))
+                self.goods.outlooks.stance_in((series, view, beta), (ctx.streams, &stance_stream), (id, day))
             });
             stances.0 += 1;
             if let Ok(chosen) = u16::try_from(chosen)
@@ -1242,7 +1244,7 @@ impl Core {
                 stances.1 += 1;
                 self.set_stance(reconsidering, f.key, chosen);
             }
-            let seen = self.goods.outlooks.outlook(series, memory, chosen);
+            let seen = self.goods.outlooks.outlook(series, view, chosen);
             // A service is never held, so its provider's pressure is its demand's alone.
             let (stock, cover) = if self.is_stored(f.product) {
                 (from_i64(self.free_units(f.key, f.product, f.region)), m.cover_days)
@@ -1377,7 +1379,7 @@ impl Core {
         &self,
         ctx: &GoodsCtx<'_>,
         (firm, slot): (usize, Slot),
-        memory: u16,
+        view: usize,
     ) -> Option<sys_frm::rules::review::AttendIn> {
         let m = ctx.management;
         let f = self.goods_firm(ctx.regions, firm, slot)?;
@@ -1390,13 +1392,12 @@ impl Core {
         }
         let relative = width / expected;
         let own = relative * relative;
-        let memory = usize::from(memory);
         let public: Vec<f64> = self
             .goods
             .outlooks
             .series
             .get(&(f.product, f.region))
-            .and_then(|s| Some((s.methods.get(memory)?.width, s.last)))
+            .and_then(|s| Some((s.methods.get(view)?.width, s.last)))
             .and_then(|(w, level)| match w {
                 Missing::Present(w) if level > 0.0 => Some(w / level * (w / level)),
                 _ => None,
@@ -1426,9 +1427,12 @@ impl Core {
         let attends = self.bind(&sys_frm::points::ATTEND);
         for slot in slots {
             let key = PartyKey::new(kind_number(firm), slot);
-            let Missing::Present(memory) = self.decider(attends, key).1.memory else { continue };
+            let prefs = self.decider(attends, key).1;
+            let (Missing::Present(memory), Some(view)) = (prefs.memory, self.goods.outlooks.view(&prefs)) else {
+                continue;
+            };
             self.look_at_sales(ctx, (firm, slot), (day, memory));
-            let Some(weighed) = self.review_chance(ctx, (firm, slot), memory) else { continue };
+            let Some(weighed) = self.review_chance(ctx, (firm, slot), view) else { continue };
             let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
             let mut d = ctx.streams.open(&stream, Subject::new(SubjectTag::Party, id.get()), day, 0);
             let draw = phx_rand::open_unit(&mut d);
@@ -1457,8 +1461,8 @@ impl Core {
             return;
         }
         let mut by: BTreeMap<((u16, u32), usize, usize), f64> = BTreeMap::new();
-        for (key, memory, h, size) in surprised {
-            let e = by.entry((key, memory, h)).or_insert(size);
+        for (key, view, h, size) in surprised {
+            let e = by.entry((key, view, h)).or_insert(size);
             if size > *e {
                 *e = size;
             }
@@ -1474,14 +1478,14 @@ impl Core {
                 _ => None,
             };
             let prefs = self.decider(reads, PartyKey::new(kind_number(firm), slot)).1;
-            let (Some(product), Some(region), Missing::Present(memory), Missing::Present(stance)) =
-                (read(PRODUCT), read(REGION), prefs.memory, prefs.stance)
+            let (Some(product), Some(region), Some(view), Missing::Present(stance)) =
+                (read(PRODUCT), read(REGION), self.goods.outlooks.view(&prefs), prefs.stance)
             else {
                 continue;
             };
             let key = (
                 (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX)),
-                usize::from(memory),
+                view,
                 usize::from(stance),
             );
             if let Some(size) = by.get(&key) {

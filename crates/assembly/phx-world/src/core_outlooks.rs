@@ -1,7 +1,10 @@
 //! Outlooks of public series on the core. What a product last sold for in a region, its mark, is a public series
 //! printed each day it trades, read by the firms; each country's consumer index, its change printed on its release
-//! day, is read by the households. Every method — a heuristic of the menu at a memory type — forms its outlook of the
-//! next print once for every party using it, and scores each of its heuristics by its error in the method's widths.
+//! day, is read by the households. Every method — a heuristic of the menu at a memory type and an age class — forms its
+//! outlook of the next print once for every party using it, and scores each of its heuristics by its error in the
+//! method's widths. The anchor's level is the mean of the prints since the opening until two years have closed, then
+//! for each age class the mean of the closed years' means weighted by the years its members have lived; an institution
+//! no person holds has no age and keeps the prints' mean.
 //! A party relies on one heuristic, its stance, reconsidered on its occasions — a firm's price review, a household's
 //! spending — by the heuristics' recent performance at its switching type's intensity and its own taste. A firm's
 //! markup reads its stance's outlook of its product's mark; a household's employed persons answer their pay rounds
@@ -13,7 +16,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::StreamDef;
-use phx_id::{Day, PartyId};
+use phx_id::{Day, PartyId, PartyKey};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::{Subject, SubjectTag};
@@ -23,8 +26,8 @@ use phx_val::types::Types;
 /// The heuristics on the menu.
 pub const HEURISTICS: usize = MENU.len();
 
-/// A memory type's view of a series: each heuristic's outlook of the next print and its performance, and the width
-/// of the method's recent surprises; absent before the print that forms or scores them.
+/// A memory type's view of a series at an age class, or at none: each heuristic's outlook of the next print and its
+/// performance, and the width of the method's recent surprises; absent before the print that forms or scores them.
 #[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
 pub struct MethodView {
     pub outlook: [Missing<f64>; HEURISTICS],
@@ -46,8 +49,9 @@ impl Default for MethodView {
 }
 
 /// A public series as its methods saw it: the day of its last print, its last two prints, the mean of every print
-/// since the opening as the level the anchor returns to, the prints counted, each memory type's view, and its changes'
-/// squares.
+/// since the opening as the level the anchor returns to, the prints counted, each view, and its changes' squares; the
+/// year it last printed in, that year's prints summed and counted, each closed year's mean, newest first, and each age
+/// class's level from them once two years have closed.
 #[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
 pub struct Series {
     pub day: Day,
@@ -61,6 +65,11 @@ pub struct Series {
     pub turned: u64,
     /// The squares of each print's change over the one before, summed.
     pub squares: f64,
+    pub year: i32,
+    pub year_sum: f64,
+    pub year_prints: u64,
+    pub annual: Vec<f64>,
+    pub experienced: Vec<Missing<f64>>,
 }
 
 /// A day's stances: the firms relying on each heuristic after the day's reviews, the stances reconsidered and those
@@ -75,10 +84,13 @@ pub struct StanceDay {
     pub surprised: u64,
 }
 
-/// The public series by product and region, and the days' stances.
+/// The public series by product and region, the age classes and the years each one's members have lived, and the days'
+/// stances.
 #[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Outlooks {
     pub series: BTreeMap<(u16, u32), Series>,
+    pub classes: usize,
+    pub lived: Vec<Missing<u16>>,
     pub days: Vec<StanceDay>,
     /// By memory type and heuristic: the prints its outlooks took to turn after the series turned, summed, and the
     /// turns they followed.
@@ -93,6 +105,26 @@ pub struct Outlooks {
 }
 
 impl Series {
+    /// A print's value counted in its year; a new year closes the last into its mean, and once two years have closed
+    /// each age class's level is their means weighted by its lived years.
+    #[clause("VAL.23")]
+    fn enter_year(&mut self, (year, value): (i32, f64), lived: &[Missing<u16>], theta: f64) {
+        if self.year != year && self.year_prints > 0 {
+            self.annual.insert(0, self.year_sum / phx_rand::float::from_u64(self.year_prints));
+            (self.year_sum, self.year_prints) = (0.0, 0);
+            if self.annual.len() >= 2 {
+                self.experienced = lived
+                    .iter()
+                    .map(|l| match l {
+                        Missing::Present(l) => phx_val::experience::long_mean(&self.annual, u32::from(*l), theta),
+                        Missing::Absent => Missing::Absent,
+                    })
+                    .collect();
+            }
+        }
+        (self.year, self.year_sum, self.year_prints) = (year, self.year_sum + value, self.year_prints + 1);
+    }
+
     /// The variance of its prints' changes over the ones before, none before it has two changes.
     #[must_use]
     pub fn volatility(&self) -> Option<f64> {
@@ -128,23 +160,28 @@ fn params(types: &Types, memory: usize) -> Params {
 }
 
 impl Outlooks {
-    /// A series' print: every memory type's heuristics scored on it, their errors in the method's width, where they
-    /// had an outlook of it, and each forming its outlook of the next; the first print, with no outlook before it,
-    /// stands for the outlook it did not have.
+    /// A series' print: every view's heuristics scored on it, their errors in the method's width, where they had an
+    /// outlook of it, and each forming its outlook of the next; the first print, with no outlook before it, stands for
+    /// the outlook it did not have. The first print of a year closes the last.
     #[clause("VAL.3", "VAL.4", "VAL.5", "VAL.6", "VAL.23")]
-    pub fn print(&mut self, key: (u16, u32), value: f64, (day, sensitivity): (Day, Option<f64>), p: &Types) {
-        let types = p.gains.len();
+    pub fn print(&mut self, key: (u16, u32), value: f64, (day, year, sensitivity): (Day, i32, Option<f64>), p: &Types) {
         let s = self.series.entry(key).or_insert_with(|| Series {
             day,
             last: value,
             before: value,
             level: 0.0,
             prints: 0,
-            methods: vec![MethodView::default(); types],
+            methods: vec![MethodView::default(); p.views()],
             direction: 0,
             turned: 0,
             squares: 0.0,
+            year,
+            year_sum: 0.0,
+            year_prints: 0,
+            annual: Vec::new(),
+            experienced: Vec::new(),
         });
+        s.enter_year((year, value), &self.lived, p.theta);
         if s.prints > 0 && s.last > 0.0 {
             let change = (value - s.last) / s.last;
             s.squares += change * change;
@@ -161,11 +198,21 @@ impl Outlooks {
         if turn {
             s.turned = s.prints;
         }
-        for (memory, view) in s.methods.iter_mut().enumerate() {
+        for (at, view) in s.methods.iter_mut().enumerate() {
             if turn {
                 view.behind = [true; HEURISTICS];
             }
+            let (memory, window) = p.of_view(at);
             let params = params(p, memory);
+            // Before two years have closed every age class has lived the whole series, whose level is its prints'; so
+            // has a class that lived none of the closed years.
+            let level = match window {
+                Missing::Present(w) => match s.experienced.get(w) {
+                    Some(Missing::Present(m)) => *m,
+                    _ => s.level,
+                },
+                Missing::Absent => s.level,
+            };
             let errors: Vec<Option<f64>> = view.outlook.iter().map(|o| present(*o).map(|o| value - o)).collect();
             let scored: Vec<f64> = errors.iter().flatten().map(|e| e.abs()).collect();
             if let (Missing::Present(width), Some(s)) = (view.width, sensitivity)
@@ -175,7 +222,7 @@ impl Outlooks {
                     if let Some(e) = e
                         && phx_val::surprise::wakes(*e, width, s)
                     {
-                        self.surprised.push((key, memory, h, e.abs() / value.abs()));
+                        self.surprised.push((key, at, h, e.abs() / value.abs()));
                     }
                 }
             }
@@ -197,13 +244,15 @@ impl Outlooks {
                     previous,
                     last: s.last,
                     before: s.before,
-                    level: s.level,
+                    level,
                     announced: Missing::Absent,
                     horizon_end: day,
                 };
                 let heuristic = HeuristicId::new(u8::try_from(h).unwrap_or(u8::MAX));
                 let next = heuristic.rule().outlook(&seen, &params);
+                // The lag behind a turn is counted by memory type on the view of no age.
                 if let Some(behind) = view.behind.get_mut(h)
+                    && window == Missing::Absent
                     && *behind
                     && present(*outlook).is_some_and(|o| way(next - o) == s.direction)
                 {
@@ -216,26 +265,35 @@ impl Outlooks {
         }
     }
 
-    /// A stance's outlook of a series' next print, where the series has printed.
-    pub fn outlook(&self, key: (u16, u32), memory: usize, stance: usize) -> Missing<f64> {
-        let Some(view) = self.series.get(&key).and_then(|s| s.methods.get(memory)) else { return Missing::Absent };
+    /// The view of a decider's preferences: its memory type at its age class; none where it holds no memory type.
+    #[must_use]
+    pub fn view(&self, prefs: &phx_core::Prefs) -> Option<usize> {
+        match prefs.memory {
+            Missing::Present(m) => Some(phx_val::types::view(self.classes, m, prefs.window)),
+            Missing::Absent => None,
+        }
+    }
+
+    /// A stance's outlook of a series' next print at a view, where the series has printed.
+    pub fn outlook(&self, key: (u16, u32), view: usize, stance: usize) -> Missing<f64> {
+        let Some(view) = self.series.get(&key).and_then(|s| s.methods.get(view)) else { return Missing::Absent };
         view.outlook.get(stance).copied().unwrap_or(Missing::Absent)
     }
 
-    /// What a party's stance is reconsidered over: the heuristics' performance for its memory type on its series,
-    /// none where none is scored yet, its switching intensity, and its taste drawn from its own stream.
+    /// What a party's stance is reconsidered over: the heuristics' performance at its view of its series, none where
+    /// none is scored yet, its switching intensity, and its taste drawn from its own stream.
     #[clause("VAL.7", "REP.22")]
     #[must_use]
     pub fn stance_in(
         &self,
-        (key, memory, beta): ((u16, u32), usize, f64),
+        (key, view, beta): ((u16, u32), usize, f64),
         (streams, stream): (&phx_core::Streams, &phx_core::StreamDecl),
         (party, day): (PartyId, Day),
     ) -> phx_val::switching::StanceIn {
         let performance = self
             .series
             .get(&key)
-            .and_then(|s| s.methods.get(memory))
+            .and_then(|s| s.methods.get(view))
             .map_or([Missing::Absent; HEURISTICS], |v| v.performance);
         let mut d = streams.open(stream, Subject::new(SubjectTag::Party, party.get()), day, 0);
         phx_val::switching::StanceIn { performance, intensity: beta, taste: phx_rand::open_unit(&mut d) }
@@ -243,6 +301,65 @@ impl Outlooks {
 }
 
 impl crate::core::Core {
+    /// Each decider's age class at a year's close, and at the opening: a household's its head's, a working owner's its
+    /// own, the offices it holds carrying it; and each class's lived years, the mean age of the household heads in it,
+    /// by which the public series weight their closed years.
+    #[clause("VAL.23")]
+    pub(crate) fn refresh_windows(&mut self, types: &Types, date: phx_id::Date) {
+        let mut ages = vec![(0_u64, 0_u64); types.windows.len()];
+        if let (Some((place, [_, _, _, w])), Some(decl)) = (self.decisions.household, self.household_decl.clone()) {
+            let slots: Vec<phx_id::Slot> =
+                self.kinds.get(place).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+            for slot in slots {
+                let Some(Some(ps)) = self.persons.get(place) else { break };
+                let persons: Vec<phx_core::Person> =
+                    ps.of(slot).map(|x| phx_pop::person::unpack(&decl, x.word)).collect();
+                let head = persons.iter().find(|p| p.role == if_pop::HEAD.name).or_else(|| persons.first());
+                let Some(age) = head.and_then(|p| u32::try_from(p.age_on(date)).ok()) else { continue };
+                let window = types.window_of(age);
+                if let Missing::Present(c) = window
+                    && let Some(a) = ages.get_mut(usize::from(c))
+                {
+                    *a = (a.0 + u64::from(age), a.1 + 1);
+                }
+                if let Some(word) = self.kinds.get_mut(place).and_then(|k| k.record_mut(slot).get_mut(w)) {
+                    *word = match window {
+                        Missing::Present(c) => phx_num::MaybeI64::present(i64::from(c)),
+                        Missing::Absent => phx_num::MaybeI64::ABSENT,
+                    };
+                }
+            }
+        }
+        let lived: Vec<Missing<u16>> = ages
+            .iter()
+            .map(|(sum, n)| match sum.checked_div(*n).and_then(|m| u16::try_from(m).ok()) {
+                Some(m) => Missing::Present(m),
+                None => Missing::Absent,
+            })
+            .collect();
+        for o in [&mut self.goods.outlooks, &mut self.stats.outlooks] {
+            (o.classes, o.lived) = (types.windows.len(), lived.clone());
+        }
+        let working: Vec<(PartyKey, usize, PartyKey, u64)> = self
+            .owners
+            .working
+            .iter()
+            .flat_map(|(firm, ws)| ws.iter().enumerate().map(|(i, w)| (*firm, i, w.household, w.person)))
+            .collect();
+        for (firm, i, household, person) in working {
+            let window = match self.age_of((household, person), date) {
+                Some(age) => types.window_of(age),
+                None => Missing::Absent,
+            };
+            if let Some(w) = self.owners.working.get_mut(&firm).and_then(|ws| ws.get_mut(i)) {
+                w.window = window;
+            }
+            if i == 0 {
+                self.decisions.set_window(firm, person, window);
+            }
+        }
+    }
+
     /// A household's stance reconsidered on its occasion, over its country's consumer index as published.
     #[clause("VAL.7", "MND.20")]
     pub(crate) fn reconsider_household(
@@ -256,8 +373,8 @@ impl crate::core::Core {
         };
         let reconsidering = self.bind(&sys_hh::points::STANCE);
         let (_, prefs) = self.decider(reconsidering, household);
-        let (Missing::Present(memory), Missing::Present(switching), Missing::Present(stance)) =
-            (prefs.memory, prefs.switching, prefs.stance)
+        let (Some(view), Missing::Present(switching), Missing::Present(stance)) =
+            (self.stats.outlooks.view(&prefs), prefs.switching, prefs.stance)
         else {
             return;
         };
@@ -270,7 +387,7 @@ impl crate::core::Core {
         };
         let key = crate::core_stats::cpi_series(country);
         let chosen = self.decide_own(reconsidering, household, |_| {
-            self.stats.outlooks.stance_in((key, usize::from(memory), beta), (streams, &stream), (id, day))
+            self.stats.outlooks.stance_in((key, view, beta), (streams, &stream), (id, day))
         });
         let Some(chosen) = chosen else { return };
         if let Ok(chosen) = u16::try_from(chosen)
@@ -285,9 +402,10 @@ impl crate::core::Core {
     /// opening's present prices being all it has seen.
     #[clause("VAL.10", "VAL.23")]
     pub(crate) fn price_outlook(&self, prefs: &phx_core::Prefs, country: u8, months: u32) -> f64 {
-        let (Missing::Present(memory), Missing::Present(stance)) = (prefs.memory, prefs.stance) else { return 1.0 };
-        let (memory, stance) = (usize::from(memory), usize::from(stance));
-        match self.stats.outlooks.outlook(crate::core_stats::cpi_series(country), memory, stance) {
+        let (Some(view), Missing::Present(stance)) = (self.stats.outlooks.view(prefs), prefs.stance) else {
+            return 1.0;
+        };
+        match self.stats.outlooks.outlook(crate::core_stats::cpi_series(country), view, usize::from(stance)) {
             Missing::Present(change) => (0..months).fold(1.0, |level, _| level * (1.0 + change)),
             Missing::Absent => 1.0,
         }

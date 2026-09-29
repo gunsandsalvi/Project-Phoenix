@@ -83,3 +83,11 @@ source = "assumed"
 source_ref = "The menu's four rules, adaptive, trend, anchor and announcement (VAL.6), each scored on every print of the series it forecasts."
 shape = "standing:how people forecast: no mechanism in the world derives the rules deciders use, so the menu is the accepted stand-in from the experimental and behavioural literature"
 value = 4
+
+[[primitive]]
+id = "VAL.age_windows"
+kind = "RESOLUTION"
+owner = "VAL"
+source = "assumed"
+source_ref = "Resolution (NUM.4): the first ages of the classes whose lived years weight a public series' history — under 35, 35 to 54, 55 and over, the age groups (18-34, 35-54, 55 and over) by which the University of Michigan's Surveys of Consumers, whose inflation expectations Malmendier and Nagel (2016) read, report; the first class begins at birth so that every age has one. A finer cut costs one method per class and series."
+value = [0, 35, 55]
