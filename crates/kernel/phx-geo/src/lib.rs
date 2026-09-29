@@ -1,4 +1,3 @@
-pub mod audit;
 pub mod catastrophe;
 pub mod climate;
 pub mod consts;
@@ -22,4 +21,4 @@ pub mod weather;
 
 pub use prims::GeoPrims;
 pub use state::{Allotment, GeoState};
-pub use system::{Geo, ITEMS, tables};
+pub use system::Geo;

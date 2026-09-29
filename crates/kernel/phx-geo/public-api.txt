@@ -1,47 +1,8 @@
 pub mod phx_geo
-pub mod phx_geo::audit
-pub mod phx_geo::audit::facts
-pub struct phx_geo::audit::facts::Extracted
-impl phx_core::facts::FactDef for phx_geo::audit::facts::Extracted
-pub const phx_geo::audit::facts::Extracted::ITEM: phx_core::facts::ItemDecl
-pub struct phx_geo::audit::facts::Opening
-impl phx_core::facts::FactDef for phx_geo::audit::facts::Opening
-pub const phx_geo::audit::facts::Opening::ITEM: phx_core::facts::ItemDecl
-pub struct phx_geo::audit::facts::Remaining
-impl phx_core::facts::FactDef for phx_geo::audit::facts::Remaining
-pub const phx_geo::audit::facts::Remaining::ITEM: phx_core::facts::ItemDecl
-pub struct phx_geo::audit::Deposits
-impl phx_core::family::AuditFamily for phx_geo::audit::Deposits
-pub fn phx_geo::audit::Deposits::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
-pub fn phx_geo::audit::Deposits::decl(&self) -> phx_core::family::FamilyDecl
-pub fn phx_geo::audit::Deposits::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
-pub struct phx_geo::audit::Places
-pub phx_geo::audit::Places::countries: usize
-impl phx_core::family::AuditFamily for phx_geo::audit::Places
-pub fn phx_geo::audit::Places::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
-pub fn phx_geo::audit::Places::decl(&self) -> phx_core::family::FamilyDecl
-pub fn phx_geo::audit::Places::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
-pub const phx_geo::audit::DEPOSITS: phx_core::family::FamilyDecl
-pub const phx_geo::audit::DEPOSIT_TABLE: &str
-pub const phx_geo::audit::PLACES: phx_core::family::FamilyDecl
 pub mod phx_geo::catastrophe
 pub struct phx_geo::catastrophe::CatastropheStream
-impl phx_core::handler::DrawsFrom<phx_geo::catastrophe::CatastropheStream> for phx_geo::catastrophe::Catastrophes
 impl phx_core::streams::StreamDef for phx_geo::catastrophe::CatastropheStream
 pub const phx_geo::catastrophe::CatastropheStream::DECL: phx_core::streams::StreamDecl
-pub struct phx_geo::catastrophe::Catastrophes
-impl phx_core::handler::DrawsFrom<phx_geo::catastrophe::CatastropheStream> for phx_geo::catastrophe::Catastrophes
-impl phx_core::handler::Emits<phx_core::events::EventIntent> for phx_geo::catastrophe::Catastrophes
-impl phx_core::handler::HandlerDecl for phx_geo::catastrophe::Catastrophes
-pub const phx_geo::catastrophe::Catastrophes::CLAUSE: &'static str
-pub const phx_geo::catastrophe::Catastrophes::INTENTS: &'static [&'static str]
-pub const phx_geo::catastrophe::Catastrophes::NAME: &'static str
-pub const phx_geo::catastrophe::Catastrophes::READS: &'static [&'static str]
-pub const phx_geo::catastrophe::Catastrophes::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
-pub const phx_geo::catastrophe::Catastrophes::STREAMS: &'static [&'static str]
-pub const phx_geo::catastrophe::Catastrophes::SUBSTEP: phx_core::substep::SubStep
-pub const phx_geo::catastrophe::Catastrophes::TABLE: &'static str
-pub const phx_geo::catastrophe::Catastrophes::WRITES: &'static [&'static str]
 pub fn phx_geo::catastrophe::days_in_year(phx_id::day::Date) -> u32
 pub fn phx_geo::catastrophe::distinct_picks(&mut phx_rand::draws::Draws, u64, u64) -> alloc::vec::Vec<u64>
 pub fn phx_geo::catastrophe::footprint(&phx_geo::grid::Grid, &[core::option::Option<u8>], &[f64], phx_id::ids::TileId, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
@@ -115,7 +76,6 @@ pub fn phx_geo::deposits::Deposit::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::deposits::DEPOSITS_STREAM: phx_core::streams::StreamDecl
 pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>
 pub fn phx_geo::deposits::everywhere(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> alloc::vec::Vec<alloc::string::String>
-pub fn phx_geo::deposits::extract(&mut phx_core::columns::FactColumns, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
 pub fn phx_geo::deposits::row_of(&[phx_geo::deposits::Deposit], u32) -> phx_num::missing::Missing<phx_id::ids::Slot>
 pub mod phx_geo::distance
 pub struct phx_geo::distance::Terrain<'a>
@@ -496,8 +456,6 @@ pub struct phx_geo::system::Geo
 impl phx_core::system::System for phx_geo::system::Geo
 pub const phx_geo::system::Geo::CODE: &'static str
 pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)
-pub const phx_geo::system::ITEMS: &[phx_core::facts::ItemDecl]
-pub fn phx_geo::system::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>
 pub mod phx_geo::tile
 pub struct phx_geo::tile::Region
 pub phx_geo::tile::Region::country: phx_id::ids::CountryId
@@ -526,52 +484,10 @@ pub fn phx_geo::tile::Zone::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_geo::tile::LAND: u8
 pub const phx_geo::tile::WATER: u8
 pub mod phx_geo::weather
-pub struct phx_geo::weather::LatentRain
-impl phx_core::facts::FactDef for phx_geo::weather::LatentRain
-pub const phx_geo::weather::LatentRain::ITEM: phx_core::facts::ItemDecl
-impl phx_core::handler::Reads<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
-pub struct phx_geo::weather::LatentSunshine
-impl phx_core::facts::FactDef for phx_geo::weather::LatentSunshine
-pub const phx_geo::weather::LatentSunshine::ITEM: phx_core::facts::ItemDecl
-impl phx_core::handler::Reads<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
-pub struct phx_geo::weather::LatentTemperature
-impl phx_core::facts::FactDef for phx_geo::weather::LatentTemperature
-pub const phx_geo::weather::LatentTemperature::ITEM: phx_core::facts::ItemDecl
-impl phx_core::handler::Reads<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
-pub struct phx_geo::weather::LatentWind
-impl phx_core::facts::FactDef for phx_geo::weather::LatentWind
-pub const phx_geo::weather::LatentWind::ITEM: phx_core::facts::ItemDecl
-impl phx_core::handler::Reads<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
 pub struct phx_geo::weather::Variable
 pub phx_geo::weather::Variable::event: phx_core::events::EventKindDecl
 pub phx_geo::weather::Variable::units_per: f64
-pub struct phx_geo::weather::Weather
-impl phx_core::handler::DrawsFrom<phx_geo::weather::WeatherStream> for phx_geo::weather::Weather
-impl phx_core::handler::Emits<phx_core::events::EventIntent> for phx_geo::weather::Weather
-impl phx_core::handler::HandlerDecl for phx_geo::weather::Weather
-pub const phx_geo::weather::Weather::CLAUSE: &'static str
-pub const phx_geo::weather::Weather::INTENTS: &'static [&'static str]
-pub const phx_geo::weather::Weather::NAME: &'static str
-pub const phx_geo::weather::Weather::READS: &'static [&'static str]
-pub const phx_geo::weather::Weather::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
-pub const phx_geo::weather::Weather::STREAMS: &'static [&'static str]
-pub const phx_geo::weather::Weather::SUBSTEP: phx_core::substep::SubStep
-pub const phx_geo::weather::Weather::TABLE: &'static str
-pub const phx_geo::weather::Weather::WRITES: &'static [&'static str]
-impl phx_core::handler::Reads<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
-impl phx_core::handler::Reads<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
-impl phx_core::handler::Reads<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
-impl phx_core::handler::Reads<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentRain> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentSunshine> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentTemperature> for phx_geo::weather::Weather
-impl phx_core::handler::Writes<phx_geo::weather::LatentWind> for phx_geo::weather::Weather
 pub struct phx_geo::weather::WeatherStream
-impl phx_core::handler::DrawsFrom<phx_geo::weather::WeatherStream> for phx_geo::weather::Weather
 impl phx_core::streams::StreamDef for phx_geo::weather::WeatherStream
 pub const phx_geo::weather::WeatherStream::DECL: phx_core::streams::StreamDecl
 pub const phx_geo::weather::VARIABLES: [phx_geo::weather::Variable; 4]
@@ -647,5 +563,3 @@ pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)
-pub const phx_geo::ITEMS: &[phx_core::facts::ItemDecl]
-pub fn phx_geo::tables(&phx_geo::state::GeoState, u32) -> alloc::vec::Vec<phx_core::columns::KernelTable>

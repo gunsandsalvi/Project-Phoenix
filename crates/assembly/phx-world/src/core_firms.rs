@@ -329,8 +329,9 @@ impl Core {
     }
 
     /// A country's firms drawn, cell by cell in product order: each one's productivity and site from its own subjects,
-    /// its bank by the banks' deposits, and its day-zero price posted at the point nearest its own cost's.
-    #[clause("FRM.2", "FRM.5", "GEN.13", "PTY.5", "REP.34")]
+    /// its site among its region's own tiles, a region with no land stopping the run, its bank by the banks' deposits,
+    /// and its day-zero price posted at the point nearest its own cost's.
+    #[clause("FRM.2", "FRM.5", "GEN.13", "PTY.5", "REP.34", "GEO.11")]
     fn drafts(
         &self,
         o: &FirmsOpening<'_>,

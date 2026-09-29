@@ -1,8 +1,7 @@
 use std::collections::{BTreeSet, VecDeque};
-use std::sync::Arc;
 
-use phx_core::{Ctx, EventIntent, FactStore, annual_to_daily, declare_handler, declare_stream};
-use phx_id::{Date, Slot, TileId};
+use phx_core::{EventIntent, annual_to_daily, declare_stream};
+use phx_id::{Date, TileId};
 use phx_macros::clause;
 use phx_num::{Fixed, Round, violation};
 use phx_rand::{Draws, Subject, SubjectTag, accept, below_u64, beta, binomial};
@@ -95,31 +94,6 @@ pub fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d:
         }
     }
     out
-}
-
-/// A country's day of catastrophes: every declared hazard in turn, from the country's own draws.
-#[clause("GEO.8", "CHN.3")]
-fn day<S: FactStore + ?Sized>(ctx: &mut Ctx<'_, Catastrophes, S>, row: Slot) {
-    let geo: &GeoState = ctx.own::<Arc<GeoState>>();
-    let days = days_in_year(ctx.date());
-    let mut d = ctx.draws::<CatastropheStream>(Subject::new(SubjectTag::Country, u64::from(row.get())));
-    let country = usize::try_from(row.get()).unwrap_or(usize::MAX);
-    for h in &geo.hazards {
-        for event in hazard_day(geo, h, country, days, &mut d) {
-            ctx.emit(&event);
-        }
-    }
-}
-
-declare_handler! {
-    pub Catastrophes = "GEO.catastrophes" {
-        substep: S3a,
-        table: "country",
-        intents: [EventIntent],
-        streams: [CatastropheStream],
-        clause: "GEO.8",
-        body: day,
-    }
 }
 
 #[cfg(test)]
