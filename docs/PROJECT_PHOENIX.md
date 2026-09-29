@@ -4796,7 +4796,7 @@ age, and a stream of news generated from real events.
 - **OBS.10 PROCESS** — **A life's record.** Every person's life is recorded compactly as it happens — birth,
   schooling, jobs and pay, partnering, children, homes, firms founded, offices held, elections, illness, the concern
   that tipped each of its decisions (MND.15) — and deleted at its death, except the records of those who held an office
-  (PTY.16) or founded a firm, which are kept as the world's history.
+  (PTY.16) or founded a firm, which are kept as the world's history for its declared horizon (SET.13).
 - **OBS.11 PROCESS** — **A biography.** The observer surface may write a person's life as prose from its record, by a
   language model on the device; it reads the record only, and nothing it writes enters the world (Law 17).
 
