@@ -8,12 +8,22 @@ mod consts;
 pub use buffer::{Model, Solution, solve, spend};
 
 use if_pop::facts::{After, Income, Looked, Received};
-use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_prim, declare_stream};
+use phx_core::{AttrDecl, Declarations, HandlerTable, StreamDef, System, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
 use crate::consts::DAYS_A_YEAR;
 
 declare_stream! { pub VisitStream = "HH.visits" { purpose: SchedulePhase, keyed: false, clause: "HH.4" } }
+declare_stream! { pub TypesStream = "HH.outlook_types" { purpose: Opening, keyed: false, clause: "VAL.22" } }
+declare_stream! { pub StanceStream = "HH.stance" { purpose: Occasion, keyed: false, clause: "VAL.7" } }
+
+/// A household's memory type, at which its outlooks of public series correct.
+pub const MEMORY_ATTR: AttrDecl = AttrDecl { name: "HH.memory", values: crate::consts::MOST_TYPES, clause: "VAL.22" };
+/// A household's switching type: how strongly its stance moves toward the heuristic that has forecast best.
+pub const SWITCHING_ATTR: AttrDecl =
+    AttrDecl { name: "HH.switching", values: crate::consts::MOST_TYPES, clause: "VAL.22" };
+/// The heuristic of the menu a household's outlooks of public series rely on.
+pub const STANCE_ATTR: AttrDecl = AttrDecl { name: "HH.stance", values: crate::consts::MOST_TYPES, clause: "VAL.7" };
 
 declare_prim! {
     /// A household type's yearly patience, the weight of next year's utility.
@@ -81,6 +91,8 @@ pub struct Own {
     pub gain: f64,
     pub period: f64,
     pub shares: Vec<Vec<f64>>,
+    /// The outlook types households are drawn by and the heuristics' parameters.
+    pub types: phx_val::types::Types,
 }
 
 /// Households.
@@ -92,6 +104,8 @@ impl System for Hh {
 
     fn declare(d: &mut Declarations) {
         d.stream(VisitStream::DECL);
+        d.stream(TypesStream::DECL);
+        d.stream(StanceStream::DECL);
         let _: phx_core::Prim<Fixed<3>> = d.prim(&PATIENCE);
         let _: phx_core::Prim<Fixed<2>> = d.prim(&RISK_AVERSION);
         for p in [&PERMANENT_SD, &TRANSITORY_SD, &REAL_RETURN, &INCOME_GROWTH] {
@@ -110,6 +124,7 @@ impl System for Hh {
             d.claim(fact);
         }
         let mut household = d.pop_kind(if_pop::HOUSEHOLD);
+        household.attr(MEMORY_ATTR).attr(SWITCHING_ATTR).attr(STANCE_ATTR);
         for p in if_pop::facts::POSITIONS {
             household.position(p);
         }
@@ -141,7 +156,12 @@ impl System for Hh {
                 .collect::<Result<Vec<Vec<f64>>, String>>()?;
             let days = register.count(SPENDING_DAYS.id)?;
             let period = phx_rand::float::from_u64(days) / DAYS_A_YEAR;
-            Ok(Box::new(Own { rule, gain: register.fixed(INCOME_GAIN.id)?, period, shares }))
+            let types = phx_val::types::Types::compile(register)?;
+            let most = usize::try_from(crate::consts::MOST_TYPES).map_err(|e| e.to_string())?;
+            if types.gains.len() > most || types.intensities.len() > most || phx_val::heuristic::MENU.len() > most {
+                return Err(format!("more outlook types or heuristics than a household's attribute holds ({most})"));
+            }
+            Ok(Box::new(Own { rule, gain: register.fixed(INCOME_GAIN.id)?, period, shares, types }))
         }));
     }
 

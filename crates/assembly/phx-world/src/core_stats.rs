@@ -69,6 +69,15 @@ pub struct CoreStats {
     levels: Vec<[f64; 2]>,
     waiting: Vec<Release>,
     pub published: Vec<Release>,
+    /// The households' outlooks of the published series, and each country's consumer index as last published.
+    pub outlooks: crate::core_outlooks::Outlooks,
+    last_cpi: BTreeMap<u8, i64>,
+}
+
+/// The consumer index's key among the households' public series in a country.
+#[must_use]
+pub fn cpi_series(country: u8) -> (u16, u32) {
+    (u16::try_from(CPI).unwrap_or(u16::MAX), u32::from(country))
 }
 
 impl CoreStats {
@@ -183,8 +192,13 @@ impl Core {
 
     /// The day's statistics: at a new month, the month past computed and queued for each series' release day; and
     /// every release whose day has come published.
-    #[clause("STA.1", "STA.2", "STA.3", "STA.4", "IDX.3", "IDX.4")]
-    pub(crate) fn stats_day(&mut self, day: Day, calendar: &Calendar, regions: &[phx_id::CountryId]) {
+    #[clause("STA.1", "STA.2", "STA.3", "STA.4", "IDX.3", "IDX.4", "VAL.5", "VAL.23")]
+    pub(crate) fn stats_day(
+        &mut self,
+        day: Day,
+        (calendar, regions): (&Calendar, &[phx_id::CountryId]),
+        params: Option<&crate::core_outlooks::MethodParams<'_>>,
+    ) {
         let period = period_of(calendar, day);
         match self.stats.period {
             None => self.stats.period = Some(period),
@@ -197,6 +211,19 @@ impl Core {
         let (due, later): (Vec<Release>, Vec<Release>) =
             std::mem::take(&mut self.stats.waiting).into_iter().partition(|r| r.published <= day);
         self.stats.waiting = later;
+        // The households' methods read the consumer index's change on the day it is published, and no sooner.
+        for r in &due {
+            let Some(level) = r.values.first().copied() else { continue };
+            if usize::from(r.series) != CPI {
+                continue;
+            }
+            if let (Some(before), Some(p)) = (self.stats.last_cpi.insert(r.country, level), params)
+                && before > 0
+            {
+                let change = phx_rand::float::from_i64(level) / phx_rand::float::from_i64(before) - 1.0;
+                self.stats.outlooks.print(cpi_series(r.country), change, day, p);
+            }
+        }
         self.stats.published.extend(due);
     }
 

@@ -7,6 +7,8 @@ pub fn phx_val::attention::exposure(f64, f64, &[phx_val::attention::Span]) -> f6
 pub fn phx_val::attention::gain(f64, f64) -> f64
 pub fn phx_val::attention::intensity(f64, f64, f64) -> f64
 pub fn phx_val::attention::probability(f64) -> f64
+pub mod phx_val::consts
+pub const phx_val::consts::DECADE: f64
 pub mod phx_val::experience
 pub fn phx_val::experience::long_mean(&[f64], u32, f64) -> phx_num::missing::Missing<f64>
 pub fn phx_val::experience::weight(u32, u32, f64) -> f64
@@ -134,6 +136,17 @@ pub fn phx_val::surprise::width(phx_num::missing::Missing<f64>, f64, f64) -> f64
 pub mod phx_val::switching
 pub fn phx_val::switching::performance(phx_num::missing::Missing<f64>, f64, f64) -> f64
 pub fn phx_val::switching::shares(&[phx_num::missing::Missing<f64>], f64, &mut [f64])
+pub mod phx_val::types
+pub struct phx_val::types::Types
+pub phx_val::types::Types::anchor: f64
+pub phx_val::types::Types::gains: alloc::vec::Vec<f64>
+pub phx_val::types::Types::intensities: alloc::vec::Vec<f64>
+pub phx_val::types::Types::memory: phx_core::register::values::TypeSet
+pub phx_val::types::Types::performance_memory: f64
+pub phx_val::types::Types::switching: phx_core::register::values::TypeSet
+pub phx_val::types::Types::trend: f64
+impl phx_val::types::Types
+pub fn phx_val::types::Types::compile(&phx_core::register::Register) -> core::result::Result<phx_val::types::Types, alloc::string::String>
 pub mod phx_val::value
 pub struct phx_val::value::Flow
 pub phx_val::value::Flow::amount: f64

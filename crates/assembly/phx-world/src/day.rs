@@ -99,7 +99,14 @@ impl World {
         }
         let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
         self.core.audit(day);
-        self.core.stats_day(day, &self.calendar, &regions);
+        let types = hh.map(|h| &h.types);
+        let params = types.map(|t| crate::core_outlooks::MethodParams {
+            gains: &t.gains,
+            trend: t.trend,
+            anchor: t.anchor,
+            performance_memory: t.performance_memory,
+        });
+        self.core.stats_day(day, (&self.calendar, &regions), params.as_ref());
         for f in self.core.found.drain(..) {
             self.findings.record(f);
         }

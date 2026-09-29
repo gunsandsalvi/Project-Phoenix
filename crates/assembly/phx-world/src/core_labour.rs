@@ -660,7 +660,13 @@ impl Core {
                 reservation: ctx.wage_at(law, current),
             };
             let (best, seen) = self.seen_vacancies(ctx, day, (law, &standing), seeker);
-            let input = AnswerIn { offer, reservation, best, outlook: law.price_outlook, ratio: law.point_ratio };
+            let input = AnswerIn {
+                offer,
+                reservation,
+                best,
+                outlook: self.price_outlook(row.ends[1], ctx.country_of(region), law.review_months),
+                ratio: law.point_ratio,
+            };
             let answer = (ctx.kind.answer.rule)(&input);
             self.labour.reviewing.reviewed += 1;
             // A counter the work cannot pay is not a quit into search: the employee works on at the offer and applies

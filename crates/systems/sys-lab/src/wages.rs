@@ -77,7 +77,6 @@ mod tests {
             education_skill: Vec::new(),
             pension_months: Vec::new(),
             review_months: 12,
-            price_outlook: 1.0,
         }
     }
 

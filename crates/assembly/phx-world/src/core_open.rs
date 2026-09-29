@@ -99,6 +99,7 @@ struct CountryDraw<'a> {
     banks: Vec<PartyKey>,
     money: Money,
     loans: Vec<OpenLoan>,
+    types: &'a phx_val::types::Types,
 }
 
 /// The rules the households' draws follow, from the register alone.
@@ -107,6 +108,7 @@ struct Rules {
     jobs: sys_lab::Jobs,
     banks: sys_bnk::households::HouseholdLines,
     pensions: sys_soc::StatePension,
+    types: phx_val::types::Types,
 }
 
 impl Rules {
@@ -116,6 +118,7 @@ impl Rules {
             jobs: sys_lab::Jobs::of(register)?,
             banks: sys_bnk::households::HouseholdLines::of(register)?,
             pensions: sys_soc::StatePension::of(register)?,
+            types: phx_val::types::Types::compile(register)?,
         })
     }
 }
@@ -235,6 +238,7 @@ impl Core {
                 banks,
                 money: Money::default(),
                 loans: Vec::new(),
+                types: &rules.types,
             };
             for (region, formed) in sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c, decl) {
                 for f in formed {
@@ -279,6 +283,14 @@ impl Core {
         let banked =
             draw.banking.draw(&h, drawn, &mut ctx.draws(&sys_bnk::households::HouseholdsStream::DECL, subject));
         let pensioners = draw.paid.draw(&h, &mut ctx.draws(&sys_soc::PensionStream::DECL, subject));
+        // Its outlook types by their shares, and its first stance by its taste alone, no heuristic being scored yet.
+        let mut t = ctx.draws(&sys_hh::TypesStream::DECL, subject);
+        let memory = phx_core::register::values::draw_type(&draw.types.memory, &mut t).get();
+        let switching = phx_core::register::values::draw_type(&draw.types.switching, &mut t).get();
+        let stance = phx_rand::below_u64(&mut t, phx_rand::float::len_u64(phx_val::heuristic::MENU.len()));
+        h.set_attr(sys_hh::MEMORY_ATTR.name, u32::from(memory));
+        h.set_attr(sys_hh::SWITCHING_ATTR.name, u32::from(switching));
+        h.set_attr(sys_hh::STANCE_ATTR.name, u32::try_from(stance).unwrap_or(u32::MAX));
         for l in &labour {
             let Some(p) = h.persons.get_mut(l.place) else {
                 violation!(clause = "REP.26", "labour drawn for a person the household does not hold");

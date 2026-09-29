@@ -24,3 +24,5 @@ pub const HALF: f64 = 0.5;
 pub const DAYS_A_YEAR: f64 = 365.2425;
 /// Parts of a whole a budget share is written in.
 pub const SHARE_PARTS: f64 = 1_000_000.0;
+/// The most memory or switching types a household's attribute can hold.
+pub const MOST_TYPES: u32 = 16;

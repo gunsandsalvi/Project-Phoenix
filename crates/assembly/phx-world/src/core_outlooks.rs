@@ -6,6 +6,7 @@
 
 use std::collections::BTreeMap;
 
+use phx_core::StreamDef;
 use phx_id::{Day, PartyId};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
@@ -172,5 +173,64 @@ impl Outlooks {
             u -= share;
         }
         HEURISTICS - 1
+    }
+}
+
+/// Where a household's outlook attributes sit in its record: its memory type, its switching type and its stance.
+fn household_places(decl: &phx_pop::kind::PopKindDecl) -> Option<[usize; 3]> {
+    let at = |name: &str| decl.attrs.iter().position(|a| a.item.name == name);
+    Some([at(sys_hh::MEMORY_ATTR.name)?, at(sys_hh::SWITCHING_ATTR.name)?, at(sys_hh::STANCE_ATTR.name)?])
+}
+
+impl crate::core::Core {
+    /// A household's outlook attributes: its memory type, its switching type and its stance.
+    fn household_types(&self, place: usize, slot: phx_id::Slot) -> Option<[usize; 3]> {
+        let places = household_places(self.household_decl.as_ref()?)?;
+        let record = self.kinds.get(place)?.record(slot);
+        let read = |i: usize| match record.get(i).map(|w| w.get()) {
+            Some(Missing::Present(v)) => usize::try_from(v).ok(),
+            _ => None,
+        };
+        let [m, s, h] = places;
+        Some([read(m)?, read(s)?, read(h)?])
+    }
+
+    /// A household's stance reconsidered on its occasion, over its country's consumer index as published.
+    #[clause("VAL.7")]
+    pub(crate) fn reconsider_household(
+        &mut self,
+        (streams, types): (&phx_core::Streams, &phx_val::types::Types),
+        (place, slot, id): (usize, phx_id::Slot, PartyId),
+        (country, day): (u8, Day),
+    ) {
+        let Some([memory, switching, stance]) = self.household_types(place, slot) else { return };
+        let Some(beta) = types.intensities.get(switching).copied() else {
+            violation!(clause = "VAL.7", "a household's switching type beyond the types", slot = slot.get());
+        };
+        let Some(stream) = streams.named(sys_hh::StanceStream::DECL.name) else {
+            violation!(clause = "VAL.7", "the households' stance stream is not declared");
+        };
+        let key = crate::core_stats::cpi_series(country);
+        let chosen = self.stats.outlooks.reconsider((key, memory, beta), (streams, &stream), (id, day));
+        if chosen != stance
+            && let Some(places) = self.household_decl.as_ref().and_then(household_places)
+            && let Some(store) = self.kinds.get_mut(place)
+            && let Some(w) = store.record_mut(slot).get_mut(places[2])
+        {
+            *w = phx_num::MaybeI64::present(i64::try_from(chosen).unwrap_or(i64::MAX));
+        }
+    }
+
+    /// The price level a household expects `months` months on over today's: its stance's outlook of its country's
+    /// consumer index's monthly change, compounded; prices held before the index's first change is published, the
+    /// opening's present prices being all it has seen.
+    #[clause("VAL.10", "VAL.23")]
+    pub(crate) fn price_outlook(&self, household: phx_id::PartyKey, country: u8, months: u32) -> f64 {
+        let Some(place) = self.names.iter().position(|n| *n == "household") else { return 1.0 };
+        let Some([memory, _, stance]) = self.household_types(place, household.slot()) else { return 1.0 };
+        match self.stats.outlooks.outlook(crate::core_stats::cpi_series(country), memory, stance) {
+            Missing::Present(change) => (0..months).fold(1.0, |level, _| level * (1.0 + change)),
+            Missing::Absent => 1.0,
+        }
     }
 }

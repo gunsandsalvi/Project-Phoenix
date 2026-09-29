@@ -1023,6 +1023,12 @@ impl Core {
                 continue;
             };
             spenders += 1;
+            if let Some(Missing::Present(region)) =
+                self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
+                && let Some(country) = usize::try_from(region).ok().and_then(|r| ctx.regions.get(r))
+            {
+                self.reconsider_household((ctx.streams, &ctx.rule.types), (place, slot, id), (country.get(), day));
+            }
             let read = |at: usize| self.record_word(place, slot, at);
             let (received, looked) = match (read(after_at), read(received_at), read(looked_at)) {
                 (Some(after), Some(received), Some(looked)) => (received + money - after, looked),

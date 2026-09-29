@@ -430,13 +430,6 @@ pub const LC_1_33: Check = live_check! {
     check: |_| Outcome::NotYet("awaits needs by quantity, with the households' finances (S2.05)"),
 };
 
-pub const LC_1_38: Check = live_check! {
-    id: "LC-1-38",
-    title: "STA.4: no party read a statistic before its publication day",
-    from_step: "S1.14",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks that read statistics"),
-};
-
 pub const LC_1_39: Check = live_check! {
     id: "LC-1-39",
     title: "IDX.5: an index's return equals the weighted return of its constituents",

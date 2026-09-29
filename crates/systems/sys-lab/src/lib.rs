@@ -196,14 +196,6 @@ declare_prim! {
     pub REVIEW_MONTHS = "LAB.review_months" { kind: Preference, value: Count, clause: "LAB.17", scope: Shared }
 }
 
-declare_prim! {
-    /// The price level an employee expects at its contract's next review over today's, until households hold their
-    /// own outlooks.
-    pub PRICE_OUTLOOK = "LAB.price_outlook" {
-        kind: Shape, value: Fixed { exp: 3 }, clause: "LAB.17", scope: Shared, shape: placeholder("HH")
-    }
-}
-
 /// A hire joining its employment line.
 pub const HIRED: ReasonDecl =
     ReasonDecl { name: "LAB hired", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
@@ -306,7 +298,6 @@ impl System for Lab {
         let _: phx_core::Prim<Fixed<4>> = d.prim(&SEEN_CHANCE);
         let _: phx_core::Prim<Fixed<3>> = d.prim(&WAGE_WEIGHT);
         let _: phx_core::Prim<Fixed<3>> = d.prim(&RESERVATION_SHARE);
-        let _: phx_core::Prim<Fixed<3>> = d.prim(&PRICE_OUTLOOK);
         d.decision(&points::SEARCH);
         d.decision(&points::ACCEPT);
         d.decision(&points::RETIRE);

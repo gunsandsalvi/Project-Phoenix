@@ -3,6 +3,7 @@
 //! simple models. Pure functions only: nothing here reads the world, so nothing here can run it forward.
 
 pub mod attention;
+pub mod consts;
 pub mod experience;
 pub mod heuristic;
 pub mod heuristics;
@@ -13,6 +14,7 @@ pub mod registered;
 pub mod schedule;
 pub mod surprise;
 pub mod switching;
+pub mod types;
 pub mod value;
 
 #[cfg(test)]

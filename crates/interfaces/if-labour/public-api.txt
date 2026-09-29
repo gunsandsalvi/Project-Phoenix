@@ -131,7 +131,6 @@ pub if_labour::law::Law::occupation_skill: alloc::vec::Vec<u32>
 pub if_labour::law::Law::patience_days: u32
 pub if_labour::law::Law::pension_months: alloc::vec::Vec<i64>
 pub if_labour::law::Law::point_ratio: f64
-pub if_labour::law::Law::price_outlook: f64
 pub if_labour::law::Law::reservation_share: f64
 pub if_labour::law::Law::review_months: u32
 pub if_labour::law::Law::seen_chance: f64

@@ -94,3 +94,29 @@ pub const LC_1_03: Check = live_check! {
     from_step: "S1.01",
     check: shares_move,
 };
+
+/// Every households' outlook of a published series was formed on a day that series was published in its country.
+fn read_when_published(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let series = &core.stats.outlooks.series;
+    if series.is_empty() {
+        return Outcome::NotYet("no statistic's change was published in the run");
+    }
+    let published = |(s, c): (u16, u32), day: phx_id::Day| {
+        core.stats.published.iter().any(|r| u16::from(r.series) == s && u32::from(r.country) == c && r.published == day)
+    };
+    match series.iter().find(|(k, s)| !published(**k, s.day) || s.day > w.today()) {
+        Some(((s, c), v)) => Outcome::Fail(format!(
+            "series {s} of country {c}: the households' outlooks formed on day {}, no day it was published",
+            v.day.get()
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_38: Check = live_check! {
+    id: "LC-1-38",
+    title: "STA.4: no party read a statistic before its publication day",
+    from_step: "S1.14",
+    check: read_when_published,
+};

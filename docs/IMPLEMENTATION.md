@@ -894,9 +894,16 @@ world switches to the core.
     firms by heuristic each day. Measured (120 days, 150,000 persons, seed 1): of about 20,500 firms, the anchor's
     share fell from 25% to 13% as prices rose away from their long means, the adaptive and the last value's rose to
     29% each; 73% of reconsiderations change the stance, the heuristics' errors in widths lying close together at
-    the declared intensities. The households' outlooks of the published statistics (read by their wage reviews'
-    answers, LAB.17, in place of `LAB.price_outlook`'s placeholder), each outlook's lag behind the turning points
-    (LC-1-43) and the days to a changed decision after a surprise (LC-1-44) remain in e.
+    the declared intensities. The households hold theirs of each country's consumer index as published (VAL.23): its
+    monthly change is printed into every method on its release day (STA.4, LC-1-38 passes); each household draws its
+    memory and switching types and its first stance at the opening (`HH.outlook_types`), reconsiders its stance on each
+    spending occasion, and its employed persons' answers at their pay rounds read its stance's outlook compounded to
+    the next round, where `LAB.price_outlook`'s placeholder stood (retired; before the index's first change is
+    published, prices held, the opening's present prices being all a household has seen). Measured (120 days,
+    150,000 persons, seed 1): after February's 16% rise in the developed country's index, 4,619 of 9,158 reviewed
+    asked more than their work pays and applied on from their jobs (2,770 before), 128 moving job to job. Remain in e:
+    the anchor's level by each age class's experience weights (VAL.23) once a series holds two closed years; each
+    outlook's lag behind the turning points (LC-1-43) and the days to a changed decision after a surprise (LC-1-44).
   - e: the pay rounds on the core (LAB.17, LAB.6, LAB.9). Each employer draws the day of its first round within the
     review period and reviews every contract not under notice once a period: it offers the lesser of the point its
     fills show the market pays and the most the job's month pays — its wage and what a unit leaves over its cost at
@@ -917,14 +924,14 @@ world switches to the core.
     goods' moves follow their stock's pressure, which at an empty stock is 43 (their cover's days and one) and moves
     the wanted price 6.5 times at its curvature, and back as the stock returns. To settle in e, the reviews read
     against the management types' spread and FRM.19's measure against the retail data (Levy et al., 2011).
-  - The live checks on the core (120 days, 150,000 persons, seed 1): 43 pass — the turns (LC-0-02), the map (LC-0-11,
+  - The live checks on the core (120 days, 150,000 persons, seed 1): 44 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
     drift (LC-0-59, LC-0-60), persons, their events and rates (LC-0-39, LC-0-41, LC-0-54, LC-0-63, LC-1-36,
-    LC-1-49, LC-1-51), prices and outlooks (LC-1-01 to LC-1-04, LC-1-07, LC-1-08), goods and sales (LC-1-17, LC-1-18,
+    LC-1-49, LC-1-51), prices and outlooks (LC-1-01 to LC-1-04, LC-1-07, LC-1-08, LC-1-38), goods and sales (LC-1-17, LC-1-18,
     LC-1-32), jobs and the labour rounds (LC-1-21, LC-1-22, LC-1-23), loans and benefits (LC-1-26, LC-1-30), the
     accounts (LC-1-37); 28 are retired, each with the old kernel's concept it read and the core's check that holds
-    instead; 41 report "not yet", each naming the part of this step or the later step that brings what it reads.
+    instead; 40 report "not yet", each naming the part of this step or the later step that brings what it reads.
     None fails.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
