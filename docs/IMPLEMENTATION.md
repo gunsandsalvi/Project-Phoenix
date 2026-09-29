@@ -907,7 +907,14 @@ world switches to the core.
     method's lag behind a series' turns is counted in prints (VAL.13, LC-1-43 passes): over 120 days the trend and the
     last value follow each turn at once, the anchor 0.04 prints behind, the adaptive rule 0.09 prints behind at the
     fastest memory and 0.17 at the slowest. Remain in e: the anchor's level by each age class's experience weights
-    (VAL.23) once a series holds two closed years, and the days to a changed decision after a surprise (LC-1-44).
+    (VAL.23) once a series holds two closed years; and attention (REP.38, REP.35, VAL.14, LC-1-44): a firm's price is
+    reviewed on its production schedule, a fixed rate, where REP.38 makes each day's chance of a review the firm's own
+    (`sys_frm::rules::attention::review_chance`: its revenue, its markup's curvature, the variances of what its price
+    should be — its stance's surprises' width on its series among them — against a review's cost), so a surprise
+    raises it. Tried and set aside (120 days, 150,000 persons, seed 1): waking every firm a surprise wider than the
+    attention sensitivity bears on for a review the next day woke about 7,300 firms a day of 20,500, the consumer
+    index rose 74% by March in the developed country (35% without), and the more surprised half changed its price no
+    sooner (3.4 days against 3.0).
   - e: the pay rounds on the core (LAB.17, LAB.6, LAB.9). Each employer draws the day of its first round within the
     review period and reviews every contract not under notice once a period: it offers the lesser of the point its
     fills show the market pays and the most the job's month pays — its wage and what a unit leaves over its cost at
