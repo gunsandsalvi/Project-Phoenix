@@ -17,7 +17,7 @@ pub struct if_state::kinds::Allotment
 pub if_state::kinds::Allotment::price: f64
 pub if_state::kinds::Allotment::won: alloc::vec::Vec<(u32, i64)>
 pub struct if_state::kinds::BenefitKind
-pub if_state::kinds::BenefitKind::claim: fn(&if_state::kinds::ClaimIn) -> bool
+pub if_state::kinds::BenefitKind::claim: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>
 pub if_state::kinds::BenefitKind::claimed: &'static str
 pub if_state::kinds::BenefitKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BenefitLaw, alloc::string::String>
 pub if_state::kinds::BenefitKind::line: &'static str

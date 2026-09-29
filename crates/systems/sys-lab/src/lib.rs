@@ -250,10 +250,10 @@ pub const LABOUR: LabourKind = LabourKind {
     accept: &points::ACCEPT,
     retire: &points::RETIRE,
     answer: &points::ANSWER,
-    review: rules::renegotiate::review,
+    offer: &points::OFFER,
     conclude: rules::renegotiate::conclude,
-    select: rules::select::select,
-    post: rules::post::post,
+    select: &points::SELECT,
+    post: &points::POST,
     wage_at: wages::wage_at,
     point_near: wages::point_near,
     least_point: wages::least_point,
@@ -302,6 +302,9 @@ impl System for Lab {
         d.decision(&points::ACCEPT);
         d.decision(&points::RETIRE);
         d.decision(&points::ANSWER);
+        d.decision(&points::POST);
+        d.decision(&points::SELECT);
+        d.decision(&points::OFFER);
         for t in [&OCCUPATION_SKILL, &EDUCATION_SKILL] {
             let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(t);
         }

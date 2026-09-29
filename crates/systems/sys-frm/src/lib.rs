@@ -6,6 +6,7 @@
 mod consts;
 pub mod decide;
 pub mod industry;
+pub mod points;
 pub mod produce;
 pub mod rules;
 
@@ -156,6 +157,14 @@ impl System for Frm {
         d.claim(<if_firm::known::Industry as FactDef>::ITEM.name);
         d.claim(<if_firm::known::Product as FactDef>::ITEM.name);
         declare_decisions(d);
+        d.decision(&points::DAY_ZERO_PRICE);
+        d.decision(&points::PRODUCE);
+        d.decision(&points::INPUTS);
+        d.decision(&points::ATTEND);
+        d.decision(&points::REVIEW_PRICE);
+        d.decision(&points::REPRICE);
+        d.decision(&points::STANCE);
+        d.decision(&points::CLOSE);
         let _: phx_core::Prim<phx_core::register::values::Distribution> = d.prim(&REQUIRED_RETURN);
         let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&PRODUCT_SHARE);
     }

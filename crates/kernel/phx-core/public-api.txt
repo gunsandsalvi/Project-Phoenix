@@ -377,6 +377,37 @@ pub enum phx_core::decisions::Decider
 pub phx_core::decisions::Decider::Player
 pub phx_core::decisions::Decider::Player::delegate_when_unqueued: bool
 pub phx_core::decisions::Decider::Rule
+pub enum phx_core::decisions::Mode
+pub phx_core::decisions::Mode::Best
+pub phx_core::decisions::Mode::Satisfice
+pub enum phx_core::decisions::Standing
+pub phx_core::decisions::Standing::Founding
+pub phx_core::decisions::Standing::Holder
+pub phx_core::decisions::Standing::Household
+pub phx_core::decisions::Standing::Person
+pub phx_core::decisions::Standing::Player
+impl phx_core::decisions::Standing
+pub const phx_core::decisions::Standing::ALL: [phx_core::decisions::Standing; 5]
+pub fn phx_core::decisions::Standing::name(self) -> &'static str
+pub enum phx_core::decisions::TakenIn
+pub phx_core::decisions::TakenIn::Household
+pub phx_core::decisions::TakenIn::Office(alloc::string::String)
+pub phx_core::decisions::TakenIn::Person
+pub struct phx_core::decisions::DecisionKind
+pub phx_core::decisions::DecisionKind::concerns: alloc::vec::Vec<u8>
+pub phx_core::decisions::DecisionKind::mode: phx_core::decisions::Mode
+pub phx_core::decisions::DecisionKind::name: alloc::string::String
+pub phx_core::decisions::DecisionKind::taken_in: phx_core::decisions::TakenIn
+pub struct phx_core::decisions::DecisionKinds
+pub phx_core::decisions::DecisionKinds::concerns: alloc::vec::Vec<alloc::string::String>
+pub phx_core::decisions::DecisionKinds::kinds: alloc::vec::Vec<phx_core::decisions::DecisionKind>
+impl phx_core::decisions::DecisionKinds
+pub fn phx_core::decisions::DecisionKinds::check(&self, &[&str], &[phx_core::kinds::LegalForm]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::decisions::DecisionKinds::position(&self, &str) -> core::option::Option<usize>
+impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
+pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::decisions::DecisionPointDecl<I, O>
 pub phx_core::decisions::DecisionPointDecl::clause: &'static str
 pub phx_core::decisions::DecisionPointDecl::name: &'static str
@@ -406,6 +437,14 @@ pub fn phx_core::decisions::PlayerQueue::unseated() -> phx_core::decisions::Play
 impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where phx_num::missing::Missing<phx_core::decisions::Player>: phx_store::save::Saved, alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
 pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::decisions::Prefs
+pub phx_core::decisions::Prefs::management: phx_num::missing::Missing<u16>
+pub phx_core::decisions::Prefs::memory: phx_num::missing::Missing<u16>
+pub phx_core::decisions::Prefs::required_return: phx_num::missing::Missing<f64>
+pub phx_core::decisions::Prefs::stance: phx_num::missing::Missing<u16>
+pub phx_core::decisions::Prefs::switching: phx_num::missing::Missing<u16>
+impl phx_core::decisions::Prefs
+pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs
 pub struct phx_core::decisions::QueuedIntent
 pub phx_core::decisions::QueuedIntent::party: phx_id::ids::PartyId
 pub phx_core::decisions::QueuedIntent::point: &'static str
@@ -413,6 +452,7 @@ pub phx_core::decisions::QueuedIntent::words: alloc::vec::Vec<i64>
 impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)
+pub const phx_core::decisions::DECISIONS: phx_core::register::PrimDecl
 pub trait phx_core::decisions::QueuedPayload: core::marker::Sized
 pub fn phx_core::decisions::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
 impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
@@ -1229,9 +1269,11 @@ pub phx_core::kinds::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
 pub phx_core::kinds::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
 pub phx_core::kinds::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
 pub phx_core::kinds::LegalForm::name: alloc::string::String
+pub phx_core::kinds::LegalForm::offices: alloc::vec::Vec<alloc::string::String>
 pub phx_core::kinds::LegalForm::owners: alloc::string::String
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
+pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub const phx_core::kinds::ESTATE_KIND: phx_core::kinds::KindDecl
 pub const phx_core::kinds::LEGAL_FORMS: phx_core::register::PrimDecl
@@ -1438,8 +1480,11 @@ pub struct phx_core::pop_process::AgentView<'a>
 pub phx_core::pop_process::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
 pub phx_core::pop_process::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
 pub phx_core::pop_process::AgentView::date: phx_id::day::Date
+pub phx_core::pop_process::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Prefs
 pub phx_core::pop_process::AgentView::kind: &'static str
 pub phx_core::pop_process::AgentView::party: phx_id::ids::PartyId
+impl phx_core::pop_process::AgentView<'_>
+pub fn phx_core::pop_process::AgentView<'_>::decide<I, O>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> O
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::pop_process::Household
@@ -1677,6 +1722,7 @@ pub phx_core::register::values::PrimValue::Calendar(phx_core::calendar::rules::C
 pub phx_core::register::values::PrimValue::CarryingBases(alloc::vec::Vec<phx_core::accounting::Permitted>)
 pub phx_core::register::values::PrimValue::Count(phx_num::qty::Count)
 pub phx_core::register::values::PrimValue::Date(phx_id::day::Date)
+pub phx_core::register::values::PrimValue::Decisions(phx_core::decisions::DecisionKinds)
 pub phx_core::register::values::PrimValue::Distribution(phx_core::register::values::Distribution)
 pub phx_core::register::values::PrimValue::Fixed
 pub phx_core::register::values::PrimValue::Fixed::exp: u8
@@ -1697,6 +1743,7 @@ pub phx_core::register::values::ValueType::Calendar
 pub phx_core::register::values::ValueType::CarryingBases
 pub phx_core::register::values::ValueType::Count
 pub phx_core::register::values::ValueType::Date
+pub phx_core::register::values::ValueType::Decisions
 pub phx_core::register::values::ValueType::Distribution
 pub phx_core::register::values::ValueType::Distribution::exp: u8
 pub phx_core::register::values::ValueType::Fixed
@@ -1797,6 +1844,10 @@ impl phx_core::register::values::PrimType for phx_core::calendar::rules::Country
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
+pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>
@@ -2524,6 +2575,9 @@ pub phx_core::MessageState::Answered
 pub phx_core::MessageState::Failed
 pub phx_core::MessageState::Lapsed
 pub phx_core::MessageState::Open
+pub enum phx_core::Mode
+pub phx_core::Mode::Best
+pub phx_core::Mode::Satisfice
 pub enum phx_core::Notice
 pub phx_core::Notice::Always
 pub phx_core::Notice::LargestAtLeast(u64)
@@ -2569,6 +2623,7 @@ pub phx_core::PrimValue::Calendar(phx_core::calendar::rules::CountryRules)
 pub phx_core::PrimValue::CarryingBases(alloc::vec::Vec<phx_core::accounting::Permitted>)
 pub phx_core::PrimValue::Count(phx_num::qty::Count)
 pub phx_core::PrimValue::Date(phx_id::day::Date)
+pub phx_core::PrimValue::Decisions(phx_core::decisions::DecisionKinds)
 pub phx_core::PrimValue::Distribution(phx_core::register::values::Distribution)
 pub phx_core::PrimValue::Fixed
 pub phx_core::PrimValue::Fixed::exp: u8
@@ -2637,6 +2692,15 @@ pub phx_core::Source::Assumed
 pub phx_core::Source::Estimated
 pub phx_core::Source::Measured
 pub phx_core::Source::Placeholder
+pub enum phx_core::Standing
+pub phx_core::Standing::Founding
+pub phx_core::Standing::Holder
+pub phx_core::Standing::Household
+pub phx_core::Standing::Person
+pub phx_core::Standing::Player
+impl phx_core::decisions::Standing
+pub const phx_core::decisions::Standing::ALL: [phx_core::decisions::Standing; 5]
+pub fn phx_core::decisions::Standing::name(self) -> &'static str
 pub enum phx_core::SubStep
 pub phx_core::SubStep::S10a
 pub phx_core::SubStep::S10b
@@ -2694,6 +2758,10 @@ pub phx_core::SubStepKind::Index
 pub phx_core::SubStepKind::KernelApply
 pub phx_core::SubStepKind::Stream
 pub phx_core::SubStepKind::Sweep
+pub enum phx_core::TakenIn
+pub phx_core::TakenIn::Household
+pub phx_core::TakenIn::Office(alloc::string::String)
+pub phx_core::TakenIn::Person
 pub enum phx_core::Transform
 pub phx_core::Transform::Identity
 pub phx_core::Transform::Log
@@ -2722,6 +2790,7 @@ pub phx_core::ValueType::Calendar
 pub phx_core::ValueType::CarryingBases
 pub phx_core::ValueType::Count
 pub phx_core::ValueType::Date
+pub phx_core::ValueType::Decisions
 pub phx_core::ValueType::Distribution
 pub phx_core::ValueType::Distribution::exp: u8
 pub phx_core::ValueType::Fixed
@@ -2805,8 +2874,11 @@ pub struct phx_core::AgentView<'a>
 pub phx_core::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
 pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
 pub phx_core::AgentView::date: phx_id::day::Date
+pub phx_core::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Prefs
 pub phx_core::AgentView::kind: &'static str
 pub phx_core::AgentView::party: phx_id::ids::PartyId
+impl phx_core::pop_process::AgentView<'_>
+pub fn phx_core::pop_process::AgentView<'_>::decide<I, O>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> O
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::Announcement<T>
@@ -2972,6 +3044,21 @@ impl phx_core::messages::DayMessages
 pub fn phx_core::messages::DayMessages::all(&self) -> &[phx_core::messages::Message]
 pub fn phx_core::messages::DayMessages::lapse(&mut self)
 pub fn phx_core::messages::DayMessages::push(&mut self, phx_core::messages::Message)
+pub struct phx_core::DecisionKind
+pub phx_core::DecisionKind::concerns: alloc::vec::Vec<u8>
+pub phx_core::DecisionKind::mode: phx_core::decisions::Mode
+pub phx_core::DecisionKind::name: alloc::string::String
+pub phx_core::DecisionKind::taken_in: phx_core::decisions::TakenIn
+pub struct phx_core::DecisionKinds
+pub phx_core::DecisionKinds::concerns: alloc::vec::Vec<alloc::string::String>
+pub phx_core::DecisionKinds::kinds: alloc::vec::Vec<phx_core::decisions::DecisionKind>
+impl phx_core::decisions::DecisionKinds
+pub fn phx_core::decisions::DecisionKinds::check(&self, &[&str], &[phx_core::kinds::LegalForm]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
+pub fn phx_core::decisions::DecisionKinds::position(&self, &str) -> core::option::Option<usize>
+impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
+pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool
 pub struct phx_core::DecisionMeta
 pub phx_core::DecisionMeta::name: &'static str
 pub phx_core::DecisionMeta::system: &'static str
@@ -3419,9 +3506,11 @@ pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
 pub phx_core::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
 pub phx_core::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
 pub phx_core::LegalForm::name: alloc::string::String
+pub phx_core::LegalForm::offices: alloc::vec::Vec<alloc::string::String>
 pub phx_core::LegalForm::owners: alloc::string::String
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
+pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::Made
 pub phx_core::Made::instruction: u64
@@ -3634,6 +3723,14 @@ pub struct phx_core::PositionDecl
 pub phx_core::PositionDecl::clause: &'static str
 pub phx_core::PositionDecl::name: &'static str
 pub phx_core::PositionDecl::opening: phx_core::pop::PositionOpening
+pub struct phx_core::Prefs
+pub phx_core::Prefs::management: phx_num::missing::Missing<u16>
+pub phx_core::Prefs::memory: phx_num::missing::Missing<u16>
+pub phx_core::Prefs::required_return: phx_num::missing::Missing<f64>
+pub phx_core::Prefs::stance: phx_num::missing::Missing<u16>
+pub phx_core::Prefs::switching: phx_num::missing::Missing<u16>
+impl phx_core::decisions::Prefs
+pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs
 pub struct phx_core::Prim<T>
 impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
 pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl
@@ -3916,6 +4013,7 @@ pub const phx_core::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl
 pub const phx_core::CONTRACTS: phx_core::streams::OpeningPhase
 pub const phx_core::DAY_ZERO: phx_core::register::PrimDecl
+pub const phx_core::DECISIONS: phx_core::register::PrimDecl
 pub const phx_core::DECLARATIONS: phx_core::streams::OpeningPhase
 pub const phx_core::EPOCH: phx_core::register::PrimDecl
 pub const phx_core::ESTATE_KIND: phx_core::kinds::KindDecl
@@ -4136,6 +4234,10 @@ impl phx_core::register::values::PrimType for phx_core::calendar::rules::Country
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
+impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
+pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>

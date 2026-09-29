@@ -974,3 +974,25 @@ pub const LC_1_25: Check = live_check! {
     from_step: "S1.09",
     check: declines_counted,
 };
+
+/// Every decision the world declares was taken through the decision core by the run's close, each counted by its
+/// decider.
+fn decisions_taken(w: Inspector<'_>) -> Outcome {
+    let taken = w.core().decisions.taken();
+    if taken.is_empty() {
+        return Outcome::NotYet("no decision declared on the core");
+    }
+    let never: Vec<&str> = taken.iter().filter(|(_, by)| by.iter().sum::<u64>() == 0).map(|(name, _)| *name).collect();
+    if never.is_empty() {
+        Outcome::Pass
+    } else {
+        Outcome::Fail(format!("{} decisions never taken: {}", never.len(), never.join(", ")))
+    }
+}
+
+pub const LC_1_52: Check = live_check! {
+    id: "LC-1-52",
+    title: "Every decision the world declares is taken through the decision core, by a named decider",
+    from_step: "S1.26",
+    check: decisions_taken,
+};

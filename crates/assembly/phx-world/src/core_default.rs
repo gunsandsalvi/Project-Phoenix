@@ -129,22 +129,23 @@ impl Core {
     #[clause("FRM.11", "FRM.15")]
     pub(crate) fn winds_down(&self, ctx: &LabourCtx<'_>, (firm, slot): (usize, Slot), day: Day) -> bool {
         let key = PartyKey::new(crate::core::kind_number(firm), slot);
-        let (Some(product), Some(region), Some(expected), Some(required)) = (
+        let closing = self.bind(&sys_frm::points::CLOSE);
+        let (_, prefs) = self.decider(closing, key);
+        let (Some(product), Some(region), Some(expected), phx_num::Missing::Present(rate)) = (
             self.record_of(firm, slot, PRODUCT),
             self.record_of(firm, slot, REGION),
             self.record_of(firm, slot, crate::consts::firm::EXPECTED),
-            self.record_of(firm, slot, crate::consts::firm::REQUIRED),
+            prefs.required_return,
         ) else {
             return false;
         };
-        let rate = phx_rand::float::from_i64(required) / crate::consts::firm::PART_ONE;
         if rate <= 0.0 {
             return false;
         }
         let Ok(product) = u16::try_from(product) else { return false };
         let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) else { return false };
         let lot = sys_frm::FilingPrims::lot(ctx.register, product);
-        let price = self.price_expected(firm, slot, lot);
+        let price = self.price_expected(firm, slot, lot, &prefs);
         let expected = phx_rand::float::from_i64(expected) / crate::consts::firm::PART_ONE;
         let continuing = (price - cost) * expected * crate::consts::DAYS_A_YEAR / rate;
         let money = self
@@ -166,10 +167,11 @@ impl Core {
         let country = ctx.country_of(u32::try_from(region).unwrap_or(u32::MAX));
         let (claims, _) = self.claims_of(ctx, (key, country), day);
         let owed: i64 = claims.iter().map(|c| c.amount).sum();
-        sys_frm::rules::endings::closes(
+        self.decide(closing, key, |_| sys_frm::rules::review::CloseIn {
             continuing,
-            (phx_rand::float::from_i64(money) + goods, phx_rand::float::from_i64(owed)),
-        )
+            held: phx_rand::float::from_i64(money) + goods,
+            owed: phx_rand::float::from_i64(owed),
+        })
     }
 
     fn record_of(&self, kind: usize, slot: Slot, at: usize) -> Option<i64> {

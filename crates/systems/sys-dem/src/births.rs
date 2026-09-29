@@ -13,7 +13,7 @@ use phx_rand::Draws;
 use phx_rand::float::from_i64;
 
 use crate::Prims;
-use crate::fertility::{ChildIn, Scale, logistic, tries};
+use crate::fertility::{ChildIn, Scale, logistic};
 use crate::processes::{age, of_country, per_country, sex};
 
 /// The decision to try for a child, taken on the head's birthday: the household's inputs read from its persons, its
@@ -115,8 +115,10 @@ impl PopProcess for Fertility {
                 adults += 1;
             }
         }
-        let decided = ChildIn { income, adults, children, youngest, ideal, taste };
-        h.set_attr(TRYING.name, if tries(&decided, self.scale()) { TRYING_FOR_CHILD } else { NOT_TRYING });
+        let child = ChildIn { income, adults, children, youngest, ideal, taste };
+        let tries =
+            agent.decide(&crate::points::TRY_FOR_CHILD, |_| crate::points::TryIn { child, scale: self.scale() });
+        h.set_attr(TRYING.name, if tries { TRYING_FOR_CHILD } else { NOT_TRYING });
     }
 }
 

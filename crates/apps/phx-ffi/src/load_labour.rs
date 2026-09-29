@@ -93,7 +93,7 @@ impl LabourLoad {
         };
         let lot = self.lot;
         let lots = |v: u32| Draws::new(lot, Subject::new(SubjectTag::Market, u64::from(v)), day, 0);
-        let by_skill = |a: &[Applicant], open: u32| {
+        let by_skill = |_: &Vacancy, a: &[Applicant], open: u32| {
             let mut order: Vec<u32> = (0..to_u32(index_u64(a.len()))).collect();
             order.sort_by_key(|k| {
                 a.get(to_usize(u64::from(*k)))
@@ -137,8 +137,13 @@ impl LabourLoad {
             })
             .collect();
         let draws = |subject: u64| Draws::new(taste, Subject::new(SubjectTag::Party, subject), day, 0);
-        self.applications =
-            search(Some(pool), (&self.vacancies, &standing), &seekers, (WAGE_WEIGHT, APPLICATIONS_A_DAY), &draws);
+        self.applications = search(
+            Some(pool),
+            (&self.vacancies, &standing),
+            &seekers,
+            (WAGE_WEIGHT, APPLICATIONS_A_DAY),
+            (&draws, &|_: &Seeker, reach: Vec<(u32, f64)>, units: Vec<f64>| phx_market::hiring::pick(&reach, &units)),
+        );
         count + index_u64(applications.len() + offers.len() + hires.len())
     }
 }

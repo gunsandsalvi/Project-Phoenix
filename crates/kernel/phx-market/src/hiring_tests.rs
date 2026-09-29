@@ -6,7 +6,7 @@
 use phx_id::{PartyKey, Slot};
 use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
-use super::{Applicant, Application, Seeker, Standing, Vacancy, answer, search, select};
+use super::{Applicant, Application, Seeker, Standing, Vacancy, answer, pick, search, select};
 
 fn firm(i: u32) -> PartyKey {
     PartyKey::new(2, Slot::new(i))
@@ -27,6 +27,11 @@ fn seeker(i: u32, skill: u32, reservation: f64) -> Seeker {
         experience: i % 7,
         reservation,
     }
+}
+
+/// The searchers' choice, drawn in proportion to the pulls.
+fn picker() -> impl Fn(&Seeker, Vec<(u32, f64)>, Vec<f64>) -> Vec<u32> + Sync {
+    |_, reach, units| pick(&reach, &units)
 }
 
 fn draws(subject: u64) -> Draws {
@@ -61,7 +66,7 @@ fn applications_follow_the_logit_above_the_reservation() {
     let n = 30_000_u32;
     let seekers: Vec<Seeker> = (0..n).map(|i| seeker(i, 1, 1_000.0)).collect();
     let weight = 2.0;
-    let apps = search(None, (&v, &st), &seekers, (weight, 1.0), &draws);
+    let apps = search(None, (&v, &st), &seekers, (weight, 1.0), (&draws, &picker()));
     assert_eq!(apps.len(), 30_000, "one application a day each");
     let pulls: Vec<f64> = [1_200.0_f64, 1_500.0, 2_000.0].iter().map(|w| w.powf(weight)).collect();
     let total: f64 = pulls.iter().sum();
@@ -71,7 +76,7 @@ fn applications_follow_the_logit_above_the_reservation() {
         assert!((share - p / total).abs() < 0.01, "vacancy {}: {share} against {}", k + 1, p / total);
     }
     assert!(apps.iter().all(|a| a.vacancy != 0), "none to a wage below the reservation");
-    let many = search(None, (&v, &st), &seekers[..50], (weight, 5.0), &draws);
+    let many = search(None, (&v, &st), &seekers[..50], (weight, 5.0), (&draws, &picker()));
     for s in 0..50 {
         let mine: Vec<u32> = many.iter().filter(|a| a.seeker.subject == s).map(|a| a.vacancy).collect();
         let mut distinct = mine.clone();
@@ -81,8 +86,8 @@ fn applications_follow_the_logit_above_the_reservation() {
     }
     let pool = phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(4)).unwrap();
     assert_eq!(
-        search(Some(&pool), (&v, &st), &seekers, (weight, 1.4), &draws),
-        search(None, (&v, &st), &seekers, (weight, 1.4), &draws)
+        search(Some(&pool), (&v, &st), &seekers, (weight, 1.4), (&draws, &picker())),
+        search(None, (&v, &st), &seekers, (weight, 1.4), (&draws, &picker()))
     );
 }
 
@@ -93,7 +98,7 @@ fn employers_select_up_to_their_jobs() {
         (0..5).map(|i| Application { vacancy: i % 2, seeker: seeker(i, 1 + i, 0.0) }).collect();
     let lots =
         |v: u32| Draws::new(stream_key(Seed::new(1), "LAB.lot"), Subject::new(SubjectTag::Market, u64::from(v)), 5, 7);
-    let by_skill = |a: &[Applicant], open: u32| {
+    let by_skill = |_: &Vacancy, a: &[Applicant], open: u32| {
         let mut order: Vec<u32> = (0..u32::try_from(a.len()).unwrap()).collect();
         order.sort_by_key(|k| std::cmp::Reverse(a[usize::try_from(*k).unwrap()].skill));
         order.truncate(usize::try_from(open).unwrap());

@@ -91,6 +91,15 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .collect()
 }
 
+/// Decisions the register and the systems do not declare alike, or taken in an office no legal form has.
+fn undeclared_decisions(d: &Declarations, kernel: &KernelPrims, register: &phx_core::Register) -> Vec<String> {
+    let points: Vec<&str> = d.decisions.iter().map(|m| m.name).collect();
+    match kernel.decisions.shared(register).check(&points, kernel.legal_forms.shared(register)) {
+        Ok(()) => Vec::new(),
+        Err(refused) => refused,
+    }
+}
+
 /// The setup's countries as the opening reads them, and the world's persons they were split from. Everything the
 /// opening derives follows from the countries' persons; a world larger than the setup's population is refused.
 fn opening_countries(
@@ -196,6 +205,7 @@ fn prepare(
         return Err(AssemblyErrors(errors));
     };
     errors.extend(unlawful_kinds(&d, &kernel, &c.register));
+    errors.extend(undeclared_decisions(&d, &kernel, &c.register));
     let (pop, processes) = match population_kinds(&mut d, &c.register) {
         Ok(bound) => bound,
         Err(e) => {
@@ -309,6 +319,17 @@ fn open_core(
     .map_err(|e| AssemblyErrors(vec![e]))
 }
 
+/// The decisions the world takes opened on the core, each office found among its kinds' legal forms.
+fn open_decisions(p: &Prepared, core: &mut crate::core::Core) {
+    let forms = p.kernel.legal_forms.shared(&p.c.register);
+    let form_of = |name: &str| {
+        let kind = p.d.kinds.iter().find(|(_, k)| k.name == name)?;
+        forms.iter().find(|f| f.name == kind.1.legal_form)
+    };
+    let by_kind: Vec<Option<&phx_core::LegalForm>> = core.names.iter().map(|n| form_of(n)).collect();
+    core.open_decisions(p.kernel.decisions.shared(&p.c.register), &by_kind);
+}
+
 /// The world on the core, drawn by its own opening: its parties and their accounts, then its firms, jobs, loans,
 /// labour, state and goods.
 fn core_of(
@@ -324,6 +345,7 @@ fn core_of(
         .collect::<Result<Vec<_>, String>>()
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let mut core = open_core(p, (&opening, &sheets), calendar, today)?;
+    open_decisions(p, &mut core);
     let regions: Vec<phx_id::CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
     let ctx = crate::core_pop::Ctx {
         register: &p.c.register,

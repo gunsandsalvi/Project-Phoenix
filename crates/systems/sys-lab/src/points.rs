@@ -1,7 +1,7 @@
-//! Labour's decision points: the household's, which the player takes for its own, and the rules that take them for
-//! every other.
+//! Labour's decision points: the persons' — searching, accepting, answering, retiring — and the employers' —
+//! posting, selecting and offering at a pay round.
 
-use if_labour::decisions::{AcceptIn, AnswerIn, RetireIn, SearchIn};
+use if_labour::decisions::{AcceptIn, AnswerIn, PostIn, PostOut, RetireIn, ReviewIn, SearchIn, SelectIn};
 use phx_core::WakeKind;
 use phx_core::decisions::DecisionPointDecl;
 use phx_num::Missing;
@@ -49,5 +49,38 @@ pub const ANSWER: DecisionPointDecl<AnswerIn, i64> = DecisionPointDecl {
     schedule: Missing::Absent,
     wakes: &[WakeKind::Message],
     runs_on_non_business: true,
+    clause: "LAB.17",
+};
+
+/// An employer's vacancies posted and withdrawn and the jobs it lays off, on its production schedule.
+pub const POST: DecisionPointDecl<PostIn, PostOut> = DecisionPointDecl {
+    name: "LAB.post",
+    system: "LAB",
+    rule: rules::post::post,
+    schedule: Missing::Present("FRM.production_days"),
+    wakes: &[],
+    runs_on_non_business: false,
+    clause: "LAB.4",
+};
+
+/// An employer's choice among the applicants to a vacancy.
+pub const SELECT: DecisionPointDecl<SelectIn, Vec<u32>> = DecisionPointDecl {
+    name: "LAB.select",
+    system: "LAB",
+    rule: rules::select::select,
+    schedule: Missing::Absent,
+    wakes: &[WakeKind::Message],
+    runs_on_non_business: false,
+    clause: "LAB.5",
+};
+
+/// An employer's offer at a contract's pay round.
+pub const OFFER: DecisionPointDecl<ReviewIn, i64> = DecisionPointDecl {
+    name: "LAB.offer",
+    system: "LAB",
+    rule: rules::renegotiate::review,
+    schedule: Missing::Present("LAB.review_months"),
+    wakes: &[],
+    runs_on_non_business: false,
     clause: "LAB.17",
 };

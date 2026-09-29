@@ -57,7 +57,8 @@ pub fn claim(i: &ClaimIn) -> bool {
 }
 
 /// The benefit, which the kernel binds.
-pub const BENEFITS: BenefitKind = BenefitKind { line: BENEFIT.name, claimed: CLAIMED.name, law, claim };
+pub const BENEFITS: BenefitKind =
+    BenefitKind { line: BENEFIT.name, claimed: CLAIMED.name, law, claim: &crate::points::CLAIM };
 
 #[cfg(test)]
 mod tests {

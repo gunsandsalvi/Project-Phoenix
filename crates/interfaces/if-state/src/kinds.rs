@@ -62,7 +62,7 @@ pub struct BenefitKind {
     pub line: &'static str,
     pub claimed: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<BenefitLaw, String>,
-    pub claim: fn(&ClaimIn) -> bool,
+    pub claim: &'static phx_core::decisions::DecisionPointDecl<ClaimIn, bool>,
 }
 
 /// A country's bills: their face, the weeks they run, the weekday their auctions are held on, and the weeks of

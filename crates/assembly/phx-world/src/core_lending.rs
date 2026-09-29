@@ -13,7 +13,7 @@ use if_credit::law::Law;
 use phx_core::StreamDef;
 use phx_id::{Day, PartyKey};
 use phx_macros::clause;
-use phx_num::Missing;
+use phx_num::{Missing, violation};
 use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::firm::{MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT};
@@ -122,6 +122,7 @@ impl Core {
             },
         );
         self.credit = Credit { laws, filed, lenders, ..Credit::default() };
+        let mut founded = Vec::new();
         for (bank, lender) in &mut self.credit.lenders {
             let country = self.banks_of.iter().position(|bs| bs.iter().any(|(s, _)| *s == bank.slot().get()));
             let Some(law) = country.and_then(|c| self.credit.laws.get(c)) else { continue };
@@ -130,6 +131,14 @@ impl Core {
                 law.default_rates.iter().position(|r| *r < 1.0).and_then(|p| u32::try_from(p).ok()).unwrap_or(0);
             lender.loan_years = vec![0.0; law.default_rates.len()];
             lender.defaults = vec![0; law.default_rates.len()];
+            // The return its shareholders require is its preference at its founding, every bank's the same.
+            founded.push((
+                *bank,
+                phx_core::Prefs { required_return: Missing::Present(law.required_return), ..phx_core::Prefs::NONE },
+            ));
+        }
+        for (bank, prefs) in founded {
+            self.found(bank, prefs);
         }
         self.class_opening_loans(today);
         Ok(())
@@ -210,6 +219,7 @@ impl Core {
                 slot.1 += phx_rand::float::from_i64(row.amount);
             }
         }
+        let reviewing = self.bind(&sys_bnk::points::STANDARD);
         let countries: Vec<(PartyKey, usize)> = self
             .credit
             .lenders
@@ -220,7 +230,7 @@ impl Core {
             .collect();
         for (bank, country) in countries {
             let Some(law) = self.credit.laws.get(country).cloned() else { continue };
-            let Some(lender) = self.credit.lenders.get_mut(&bank) else { continue };
+            let Some(mut lender) = self.credit.lenders.remove(&bank) else { continue };
             let by = held.remove(&bank).unwrap_or_default();
             let mut book = 0.0;
             let mut priced = 0.0;
@@ -228,20 +238,20 @@ impl Core {
                 if let Some(y) = lender.loan_years.get_mut(c) {
                     *y += years;
                 }
-                let rate = learned_rate(&law, lender, c);
+                let rate = learned_rate(&law, &lender, c);
                 book += balance;
                 priced += balance * rate * law.loss_given_default * span / year;
             }
             let written = i64::try_from(std::mem::take(&mut lender.written)).map_or(0.0, phx_rand::float::from_i64);
-            if book <= 0.0 {
-                continue;
+            if book > 0.0 {
+                lender.standard = self.decide(reviewing, bank, |_| if_credit::decisions::StandardIn {
+                    seen_loss: written / book,
+                    priced_loss: priced / book,
+                    standard: lender.standard,
+                    classes: u32::try_from(law.default_rates.len()).unwrap_or(u32::MAX),
+                });
             }
-            lender.standard = sys_bnk::credit::standard(&if_credit::decisions::StandardIn {
-                seen_loss: written / book,
-                priced_loss: priced / book,
-                standard: lender.standard,
-                classes: u32::try_from(law.default_rates.len()).unwrap_or(u32::MAX),
-            });
+            self.credit.lenders.insert(bank, lender);
         }
     }
 
@@ -300,6 +310,11 @@ impl Core {
         let class = sys_bnk::credit::class_of(&law, self.cover(key, (principal, self.lending_rate(country)), day));
         let amount = phx_rand::float::from_i64(principal);
         let mut quotes: Vec<(PartyKey, f64)> = Vec::new();
+        let (declining, quoting, choosing) = (
+            self.bind(&sys_bnk::points::DECLINE),
+            self.bind(&sys_bnk::points::QUOTE),
+            self.bind(&sys_bnk::points::CHOOSE),
+        );
         for bank in chosen {
             let capital =
                 self.accounts.equity(bank).map_or(0.0, |e| i64::try_from(e).map_or(0.0, phx_rand::float::from_i64));
@@ -307,39 +322,49 @@ impl Core {
                 .loan_books
                 .get(&bank)
                 .map_or(0.0, |b| i64::try_from(b.book).map_or(0.0, phx_rand::float::from_i64));
-            let Some(lender) = self.credit.lenders.get_mut(&bank) else { continue };
-            lender.applications += 1;
-            let refused = sys_bnk::credit::decline(&DeclineIn {
+            let Some(lender) = self.credit.lenders.get(&bank) else { continue };
+            let standard = lender.standard;
+            let default_rate = learned_rate(&law, lender, usize::try_from(class).unwrap_or(usize::MAX));
+            let refused = self.decide(declining, bank, |_| DeclineIn {
                 class,
-                standard: lender.standard,
+                standard,
                 capital,
                 weighted: (book + amount) * law.risk_weight,
                 capital_requirement: law.capital_requirement,
             });
-            if refused {
-                lender.declined += 1;
-                continue;
-            }
-            let default_rate = learned_rate(&law, lender, usize::try_from(class).unwrap_or(usize::MAX));
-            let rate = sys_bnk::credit::quote(&QuoteIn {
-                default_rate,
-                loss_given_default: law.loss_given_default,
-                cost_of_funds: law.cost_of_funds,
-                risk_weight: law.risk_weight,
-                capital_requirement: law.capital_requirement,
-                required_return: law.required_return,
-                loan_cost: law.loan_cost,
-                principal: amount,
-                years: phx_rand::float::from_u64(years),
-                rate_step: law.rate_step,
+            let rate = (!refused).then(|| {
+                self.decide(quoting, bank, |prefs| QuoteIn {
+                    default_rate,
+                    loss_given_default: law.loss_given_default,
+                    cost_of_funds: law.cost_of_funds,
+                    risk_weight: law.risk_weight,
+                    capital_requirement: law.capital_requirement,
+                    required_return: match prefs.required_return {
+                        Missing::Present(r) => r,
+                        Missing::Absent => {
+                            violation!(clause = "MND.16", "a bank quoting with no return required at its founding")
+                        }
+                    },
+                    loan_cost: law.loan_cost,
+                    principal: amount,
+                    years: phx_rand::float::from_u64(years),
+                    rate_step: law.rate_step,
+                })
             });
-            lender.quoted += 1;
-            quotes.push((bank, rate));
+            let Some(lender) = self.credit.lenders.get_mut(&bank) else { continue };
+            lender.applications += 1;
+            match rate {
+                None => lender.declined += 1,
+                Some(rate) => {
+                    lender.quoted += 1;
+                    quotes.push((bank, rate));
+                }
+            }
         }
         let taste_stream = streams.named(sys_bnk::TasteStream::DECL.name)?;
         let mut taste = streams.open(&taste_stream, Subject::new(SubjectTag::Party, u64::from(key.word())), day, 0);
         let tastes: Vec<f64> = quotes.iter().map(|_| phx_rand::gumbel(&mut taste, 0.0, 1.0)).collect();
-        let pick = sys_bnk::credit::choose(&ChooseIn {
+        let pick = self.decide(choosing, key, |_| ChooseIn {
             rates: quotes.iter().map(|q| q.1).collect(),
             tastes,
             required_return: f64::MAX,

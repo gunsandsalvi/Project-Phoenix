@@ -2,7 +2,138 @@ use phx_id::PartyId;
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 
+use crate::declare_prim;
+use crate::kinds::LegalForm;
 use crate::schedule::WakeKind;
+
+declare_prim! {
+    /// The concerns an option is weighed on, and for each decision the world takes who takes it — an office, a
+    /// household or a person — the concerns it touches and whether it takes the best option or the first good enough.
+    pub DECISIONS = "MND.decisions" {
+        kind: Shape, value: Decisions, clause: "MND.19", scope: Shared,
+        shape: standing("what people care about and where each decision is taken: no mechanism in the world derives the concerns or an institution's division of its decisions, so both are the accepted stand-in from the literature on preferences and on corporate governance")
+    }
+}
+
+/// Who takes a decision: the holder of an office its institution's form declares, a household's adults as one, or a
+/// person for itself.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum TakenIn {
+    Office(String),
+    Household,
+    Person,
+}
+
+/// Whether a decision takes the best of its options or the first that is good enough.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
+    Best,
+    Satisfice,
+}
+
+/// A kind of decision as the register declares it: its name, its taker, the concerns it touches by their place in the
+/// concern list, and its mode.
+#[clause("MND.20", "MND.2", "MND.7")]
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DecisionKind {
+    pub name: String,
+    pub taken_in: TakenIn,
+    pub concerns: Vec<u8>,
+    pub mode: Mode,
+}
+
+/// The concern list and every decision kind the world takes.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DecisionKinds {
+    pub concerns: Vec<String>,
+    pub kinds: Vec<DecisionKind>,
+}
+
+impl DecisionKinds {
+    /// Where a decision sits among the kinds, by its name.
+    #[must_use]
+    pub fn position(&self, name: &str) -> Option<usize> {
+        self.kinds.iter().position(|k| k.name == name)
+    }
+
+    /// The kinds held to the decision points the systems declare, both ways, and each office a decision is taken in
+    /// to the legal forms that declare it.
+    ///
+    /// # Errors
+    /// Every point the register does not list, every listed decision no system declares, and every office no form
+    /// declares.
+    #[clause("MND.20", "PTY.16")]
+    pub fn check(&self, points: &[&str], forms: &[LegalForm]) -> Result<(), Vec<String>> {
+        let mut refused = Vec::new();
+        for p in points {
+            if self.position(p).is_none() {
+                refused.push(format!("decision `{p}` is declared by a system but not in `MND.decisions`"));
+            }
+        }
+        for k in &self.kinds {
+            if !points.contains(&k.name.as_str()) {
+                refused.push(format!("decision `{}` is in `MND.decisions` but no system declares it", k.name));
+            }
+            if let TakenIn::Office(office) = &k.taken_in
+                && !forms.iter().any(|f| f.office(office).is_some())
+            {
+                refused
+                    .push(format!("decision `{}` is taken in the office `{office}`, which no legal form has", k.name));
+            }
+        }
+        if refused.is_empty() { Ok(()) } else { Err(refused) }
+    }
+}
+
+/// What a decider brings to a decision's rule before minds: its memory type, switching type and stance on the
+/// heuristics' menu, the return it requires a year and its management type, each absent where it holds none.
+#[clause("MND.20", "MND.16", "VAL.6", "VAL.7")]
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Prefs {
+    pub memory: Missing<u16>,
+    pub switching: Missing<u16>,
+    pub stance: Missing<u16>,
+    pub required_return: Missing<f64>,
+    pub management: Missing<u16>,
+}
+
+impl Prefs {
+    /// A decider holding no preference a rule reads.
+    pub const NONE: Prefs = Prefs {
+        memory: Missing::Absent,
+        switching: Missing::Absent,
+        stance: Missing::Absent,
+        required_return: Missing::Absent,
+        management: Missing::Absent,
+    };
+}
+
+/// Who a decision was taken by: the player, an office's holder, an institution's founding preferences for an office no
+/// one holds, a household or a person.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Standing {
+    Player,
+    Holder,
+    Founding,
+    Household,
+    Person,
+}
+
+impl Standing {
+    pub const ALL: [Standing; 5] =
+        [Standing::Player, Standing::Holder, Standing::Founding, Standing::Household, Standing::Person];
+
+    #[must_use]
+    pub fn name(self) -> &'static str {
+        match self {
+            Standing::Player => "player",
+            Standing::Holder => "holder",
+            Standing::Founding => "founding",
+            Standing::Household => "household",
+            Standing::Person => "person",
+        }
+    }
+}
 
 /// A decision a party takes: its system, its rule — one pure function, which is also its evaluation form — its
 /// schedule or the wakes that bring it on, and whether it runs on days no market opens.
@@ -171,7 +302,11 @@ mod tests {
     use phx_id::PartyId;
     use phx_num::Missing;
 
-    use super::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
+    use super::{
+        Decider, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Player, PlayerQueue, QueuedIntent,
+        QueuedPayload, TakenIn, dispatch,
+    };
+    use crate::kinds::{Feature, LegalForm};
     use crate::schedule::WakeKind;
 
     #[derive(Debug, PartialEq)]
@@ -241,5 +376,44 @@ mod tests {
         );
         assert_eq!(dispatch(&SPEND, keeps, None, &[100, 0]), None, "no decision that day");
         assert!(queue.is_empty());
+    }
+
+    #[test]
+    fn decisions_held_to_points() {
+        let kind = |name: &str, taken_in: TakenIn| DecisionKind {
+            name: name.to_owned(),
+            taken_in,
+            concerns: vec![0],
+            mode: Mode::Best,
+        };
+        let kinds = DecisionKinds {
+            concerns: vec!["means".to_owned()],
+            kinds: vec![
+                kind("FRM.close", TakenIn::Office("chief_executive".to_owned())),
+                kind("HH.spend", TakenIn::Household),
+            ],
+        };
+        let company = LegalForm {
+            name: "company".to_owned(),
+            may_hold: Vec::new(),
+            features: vec![Feature::SeparateParty],
+            endings: vec!["dissolution".to_owned()],
+            owners: "shareholders".to_owned(),
+            offices: vec!["chief_executive".to_owned()],
+        };
+        assert!(kinds.check(&["FRM.close", "HH.spend"], std::slice::from_ref(&company)).is_ok());
+        let refused = kinds.check(&["FRM.close", "HH.spend", "LAB.post"], std::slice::from_ref(&company)).unwrap_err();
+        assert_eq!(refused.len(), 1, "a declared point the register does not list");
+        assert_eq!(
+            kinds.check(&["FRM.close"], std::slice::from_ref(&company)).unwrap_err().len(),
+            1,
+            "a listed decision undeclared"
+        );
+        let officeless = LegalForm { offices: Vec::new(), ..company };
+        assert_eq!(
+            kinds.check(&["FRM.close", "HH.spend"], &[officeless]).unwrap_err().len(),
+            1,
+            "an office no form has"
+        );
     }
 }

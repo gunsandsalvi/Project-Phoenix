@@ -479,11 +479,13 @@ is a party with a permanent identity.
 - **PTY.8 STATE** — A party's **private state** (positions, limits, intentions, outlooks) is its own; its
   **public state** is what it has published or what is visible by law (OBS).
 - **PTY.16 STATE** — **Every office is a person's.** Each office an institution decides through — an owner-managed
-  firm's owner, a firm's or a bank's board members and chief executive, a fund's managers, a political party's leader
-  and candidates, the members of parliament, the head of state and of government and the ministers, a central bank's
-  governor and board, a public agency's head — is held by one named person under a contract naming it (an
-  appointment, a mandate, an employment) and paid under it. An office is empty only while the process that fills it
-  runs.
+  firm's owner, a firm's or a bank's board members and chief executive, the head of each of a firm's lines, a bank's
+  loan officers, a fund's managers, a political party's leader and candidates, the members of parliament, the head of
+  state and of government and the ministers, a central bank's governor and board, a public agency's head — is held by
+  one named person under a contract naming it (an appointment, a mandate, an employment) and paid under it. Each legal
+  form declares the offices it decides through, and each decision the office it is taken in (Law 10); one person may
+  hold several, as an owner managing its own firm holds them all. An office is empty only while the process that
+  fills it runs.
 
 **Processes**
 
@@ -1782,6 +1784,14 @@ differently, a person decides differently after what it has lived, and a new hol
 - **MND.10 DECISION** — **Goals formed and given up.** At a life event — coming of age, partnering, a child, a
   promotion, a loss — a person forms the goals its character and circumstances favour. A goal raises the weight of the
   concerns it serves until it is reached, or until the person's aspiration has fallen below it and it is given up.
+- **MND.20 PROCESS** — **The decision core** (Appendix E 50). Every decision in the world, of a person, a household or
+  an institution, is taken through one mechanism, called each time the decision is taken. Its kind is declared: the
+  office it is taken in, or that it is a household's (its adults deciding as one) or a person's own; the concerns it
+  touches; and whether it takes the best option or the first good enough (MND.7). At the moment of deciding the
+  mechanism names the decider — the player where the player keeps the decision (OBS.4), else the office's holder,
+  else, for an office no one holds, the institution's preferences drawn at its founding (MND.16) — hands the decision's
+  rule that decider's own preferences and outlooks and nothing else, and records the decision with its decider. No
+  rule reads an institution's preferences except through the office a decision is taken in.
 - **MND.11 DECISION** — **Learning.** A person switches among its strategies by their record for it, and by the
   outcomes it saw of persons it knows — colleagues, kin, neighbours — who use others, as VAL.7 does for forecasts; it
   learns only from what it could have observed (Law 12).
@@ -5063,8 +5073,9 @@ saving in deposits), TEC (opening ways, no innovation), FRM with its births and 
 SRV, FRT within each country, LAB, one tier of banks with BNK and deposits (their marginal cost of funds a placeholder
 for BFL), the central bank's settlement and a fixed policy rate (a placeholder for CB), a treasury with income and
 consumption tax, one benefit and bills sold at auction (SOV's bills), the consumer price index (IDX.3) and published
-statistics, VAL (adaptive outlooks and values), and the opening dwellings held without a housing market (a placeholder
-for HSG). *Exit:* households earn wages, spend them at firms that pay wages, firms are born and die, banks lend and are
+statistics, VAL (adaptive outlooks and values), the opening dwellings held without a housing market (a placeholder
+for HSG), and the decision core (MND.20) every decision is taken through, its offices empty and read at their
+institutions' founding preferences. *Exit:* households earn wages, spend them at firms that pay wages, firms are born and die, banks lend and are
 repaid, the treasury taxes and spends — and the world keeps doing so without anything imposed — **and a simulated year
 of it, with the population its representation holds at the play resolution, meets the performance budget (N8) on the
 target device.** This is the first go/no-go point: if the thin circular flow cannot meet it, the representation is
@@ -5084,8 +5095,9 @@ RAT, L2 (forced seller), L4 (cost of capital). *Exit:* the policy rate reaches l
 investment through markets; a margin spiral and a fund run can happen.
 
 **Stage 8 — Minds** (built after Stage 3, numbered for its place in this document's history). MND: every person's
-character, experience, aspirations and goals, and every decision built so far moved to the mind, rule by rule; office
-holders deciding with their own minds under their contracts; the life record and the biography (OBS.10–11).
+character, experience, aspirations and goals, attached to the decision core every decision already runs through
+(MND.20), each decision's rule then generating options weighed by its decider's mind; offices filled by persons deciding
+with their own minds under their contracts; the life record and the biography (OBS.10–11).
 *Exit:* two persons in the same position decide differently, and a change of chief executive changes the firm's
 decisions; the stages after it build their decisions on the mind.
 
@@ -5471,6 +5483,15 @@ Decisions taken in writing this version, and decisions still open.
     those who can remove it. Building concentrates by commuting, land bid by the parcel, agglomeration and migration;
     a settlement is recognised by the statistical definition, never created by a threshold, and may incorporate as a
     municipality with elected offices. The mind is built in its own stage after Stage 3; places with housing.
+
+50. **Every decision through one decision core** (MND.20, MND.16, PTY.16, OBS.4; owner, 2026-09-29). Abstract
+    entities never decide; people do — a loan officer approves a loan, the head of a firm's line sets its prices and
+    hires and dismisses, a chief executive decides the firm's strategy, a household's adults decide together. Every
+    decision is therefore taken through one decision core, called every time a decision is made, which names the
+    decider and hands the decision's rule that decider's preferences. The core is built in Stage 1, before Stage 2, with
+    every office empty and read at the institution's founding preferences and every household deciding by its own;
+    Stage 8 attaches persons to the offices and minds to the deciders, and no decision is moved then, since each
+    already runs through the core.
 
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.

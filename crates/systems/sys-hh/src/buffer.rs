@@ -187,7 +187,14 @@ fn target(model: &Model, psi: &[f64], m: Vec<f64>, c: Vec<f64>) -> Result<Soluti
 #[clause("HH.4", "HH.18")]
 #[must_use]
 pub fn spend(s: &Solution, cash: f64) -> f64 {
-    let c = s.at_target + s.kappa * (cash - s.target);
+    spend_near((s.at_target, s.kappa, s.target), cash)
+}
+
+/// The same spending, from the rule's spending at its target, its propensity beyond it and the target.
+#[clause("HH.4", "HH.18")]
+#[must_use]
+pub fn spend_near((at_target, kappa, target): (f64, f64, f64), cash: f64) -> f64 {
+    let c = at_target + kappa * (cash - target);
     if c > cash {
         cash
     } else if c > 0.0 {

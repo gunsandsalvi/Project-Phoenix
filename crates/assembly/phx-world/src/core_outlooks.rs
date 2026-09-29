@@ -206,77 +206,60 @@ impl Outlooks {
         view.outlook.get(stance).copied().unwrap_or(Missing::Absent)
     }
 
-    /// A firm's stance reconsidered: the heuristics' shares at its switching intensity over their performance for its
-    /// memory type on its series, equal where none is scored yet, and one chosen by its own taste.
+    /// What a party's stance is reconsidered over: the heuristics' performance for its memory type on its series,
+    /// none where none is scored yet, its switching intensity, and its taste drawn from its own stream.
     #[clause("VAL.7", "REP.22")]
     #[must_use]
-    pub fn reconsider(
+    pub fn stance_in(
         &self,
         (key, memory, beta): ((u16, u32), usize, f64),
         (streams, stream): (&phx_core::Streams, &phx_core::StreamDecl),
         (party, day): (PartyId, Day),
-    ) -> usize {
+    ) -> phx_val::switching::StanceIn {
         let performance = self
             .series
             .get(&key)
             .and_then(|s| s.methods.get(memory))
             .map_or([Missing::Absent; HEURISTICS], |v| v.performance);
-        let mut shares = [0.0; HEURISTICS];
-        phx_val::switching::shares(&performance, beta, &mut shares);
         let mut d = streams.open(stream, Subject::new(SubjectTag::Party, party.get()), day, 0);
-        let mut u = phx_rand::open_unit(&mut d);
-        for (h, share) in shares.iter().enumerate() {
-            if u < *share {
-                return h;
-            }
-            u -= share;
-        }
-        HEURISTICS - 1
+        phx_val::switching::StanceIn { performance, intensity: beta, taste: phx_rand::open_unit(&mut d) }
     }
-}
-
-/// Where a household's outlook attributes sit in its record: its memory type, its switching type and its stance.
-fn household_places(decl: &phx_pop::kind::PopKindDecl) -> Option<[usize; 3]> {
-    let at = |name: &str| decl.attrs.iter().position(|a| a.item.name == name);
-    Some([at(sys_hh::MEMORY_ATTR.name)?, at(sys_hh::SWITCHING_ATTR.name)?, at(sys_hh::STANCE_ATTR.name)?])
 }
 
 impl crate::core::Core {
-    /// A household's outlook attributes: its memory type, its switching type and its stance.
-    fn household_types(&self, place: usize, slot: phx_id::Slot) -> Option<[usize; 3]> {
-        let places = household_places(self.household_decl.as_ref()?)?;
-        let record = self.kinds.get(place)?.record(slot);
-        let read = |i: usize| match record.get(i).map(|w| w.get()) {
-            Some(Missing::Present(v)) => usize::try_from(v).ok(),
-            _ => None,
-        };
-        let [m, s, h] = places;
-        Some([read(m)?, read(s)?, read(h)?])
-    }
-
     /// A household's stance reconsidered on its occasion, over its country's consumer index as published.
-    #[clause("VAL.7")]
+    #[clause("VAL.7", "MND.20")]
     pub(crate) fn reconsider_household(
         &mut self,
         (streams, types): (&phx_core::Streams, &Types),
-        (place, slot, id): (usize, phx_id::Slot, PartyId),
+        (household, id): (phx_id::PartyKey, PartyId),
         (country, day): (u8, Day),
     ) {
-        let Some([memory, switching, stance]) = self.household_types(place, slot) else { return };
-        let Some(beta) = types.intensities.get(switching).copied() else {
-            violation!(clause = "VAL.7", "a household's switching type beyond the types", slot = slot.get());
-        };
         let Some(stream) = streams.named(sys_hh::StanceStream::DECL.name) else {
             violation!(clause = "VAL.7", "the households' stance stream is not declared");
         };
+        let reconsidering = self.bind(&sys_hh::points::STANCE);
+        let (_, prefs) = self.decider(reconsidering, household);
+        let (Missing::Present(memory), Missing::Present(switching), Missing::Present(stance)) =
+            (prefs.memory, prefs.switching, prefs.stance)
+        else {
+            return;
+        };
+        let Some(beta) = types.intensities.get(usize::from(switching)).copied() else {
+            violation!(
+                clause = "VAL.7",
+                "a household's switching type beyond the types",
+                slot = household.slot().get()
+            );
+        };
         let key = crate::core_stats::cpi_series(country);
-        let chosen = self.stats.outlooks.reconsider((key, memory, beta), (streams, &stream), (id, day));
-        if chosen != stance
-            && let Some(places) = self.household_decl.as_ref().and_then(household_places)
-            && let Some(store) = self.kinds.get_mut(place)
-            && let Some(w) = store.record_mut(slot).get_mut(places[2])
+        let chosen = self.decide(reconsidering, household, |_| {
+            self.stats.outlooks.stance_in((key, usize::from(memory), beta), (streams, &stream), (id, day))
+        });
+        if let Ok(chosen) = u16::try_from(chosen)
+            && chosen != stance
         {
-            *w = phx_num::MaybeI64::present(i64::try_from(chosen).unwrap_or(i64::MAX));
+            self.set_stance(reconsidering, household, chosen);
         }
     }
 
@@ -284,9 +267,9 @@ impl crate::core::Core {
     /// consumer index's monthly change, compounded; prices held before the index's first change is published, the
     /// opening's present prices being all it has seen.
     #[clause("VAL.10", "VAL.23")]
-    pub(crate) fn price_outlook(&self, household: phx_id::PartyKey, country: u8, months: u32) -> f64 {
-        let Some(place) = self.names.iter().position(|n| *n == "household") else { return 1.0 };
-        let Some([memory, _, stance]) = self.household_types(place, household.slot()) else { return 1.0 };
+    pub(crate) fn price_outlook(&self, prefs: &phx_core::Prefs, country: u8, months: u32) -> f64 {
+        let (Missing::Present(memory), Missing::Present(stance)) = (prefs.memory, prefs.stance) else { return 1.0 };
+        let (memory, stance) = (usize::from(memory), usize::from(stance));
         match self.stats.outlooks.outlook(crate::core_stats::cpi_series(country), memory, stance) {
             Missing::Present(change) => (0..months).fold(1.0, |level, _| level * (1.0 + change)),
             Missing::Absent => 1.0,

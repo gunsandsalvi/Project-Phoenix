@@ -4,6 +4,7 @@
 
 pub mod benefit;
 mod consts;
+pub mod points;
 mod state_pension;
 
 use phx_core::{Declarations, HandlerTable, StreamDef, System, declare_prim};
@@ -75,6 +76,8 @@ impl System for Soc {
         let _: phx_core::Prim<Count> = d.prim(&BENEFIT_MONTHS);
         let _: phx_core::Prim<Fixed<1>> = d.prim(&CLAIM_HOURS);
         d.market(Box::new(benefit::BENEFITS));
+        d.decision(&points::CLAIM);
+        d.decision(&points::CONSUME);
         d.market(Box::new(PENSIONS));
     }
 

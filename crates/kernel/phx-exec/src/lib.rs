@@ -13,6 +13,7 @@ pub mod probe;
 pub mod radix;
 pub mod site;
 pub mod spec;
+pub mod tally;
 pub mod traverse;
 pub mod tree;
 
@@ -27,5 +28,6 @@ pub use pool::{Pool, PoolError};
 pub use radix::{RadixKey, radix_sort};
 pub use site::Site;
 pub use spec::{PoolSpec, select_cores};
+pub use tally::Tally;
 pub use traverse::{agenda_units, for_agenda, for_chunks};
 pub use tree::reduce_tree;

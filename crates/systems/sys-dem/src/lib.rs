@@ -8,6 +8,7 @@ mod fertility;
 mod household;
 mod life;
 mod opening;
+pub mod points;
 mod prims;
 mod processes;
 mod school;
@@ -124,6 +125,7 @@ impl System for Dem {
         }
         let prims = Prims::declare(d);
         d.setup_value(SetupValue { prim: &prims::LIFE_EXPECTANCY, derived: "GEN.life_expectancy" });
+        d.decision(&points::TRY_FOR_CHILD);
         d.pop_process(Box::new(Mortality::new(prims)));
         d.pop_process(Box::new(Onset { prims }));
         d.pop_process(Box::new(LeavingSchool::new(prims)));

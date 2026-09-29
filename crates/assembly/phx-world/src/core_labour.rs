@@ -11,7 +11,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use if_labour::class;
-use if_labour::decisions::{AcceptIn, AnswerIn, Need, PostIn, ReviewIn, SelectIn};
+use if_labour::decisions::{AcceptIn, AnswerIn, Need, PostIn, ReviewIn, SearchIn, SelectIn};
 use if_labour::kind::LabourKind;
 use if_labour::law::Law;
 use phx_core::calendar::Calendar;
@@ -490,14 +490,15 @@ impl Core {
             Missing::Present(m) => m / (law.weeks_a_month * full),
             Missing::Absent => 0.0,
         };
-        // What a unit leaves over its cost of making it at the price the firm expects.
+        // What a unit leaves over its cost of making it at the price the head of its line expects.
         if let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) {
-            let margin = self.price_expected(firm, slot, lot) - cost;
+            let (_, prefs) = self.decider(self.bind(ctx.kind.offer), key);
+            let margin = self.price_expected(firm, slot, lot, &prefs) - cost;
             self.review_wages(ctx, day, (family, key, &law), (margin, &needs, &staff, f.region));
         }
         let Some(units_a_day) = self.expected_of(firm, slot) else { return (0, 0, 0) };
         let input = PostIn { price: from_i64(f.price) / lot, units_a_day, financing, minimum_hour, needs };
-        let out = (ctx.kind.post)(&input);
+        let out = self.decide(self.bind(ctx.kind.post), key, |_| input);
         let mut posted = 0;
         for &(occupation, open) in &out.post {
             let Some(skill) = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied()
@@ -545,16 +546,19 @@ impl Core {
 
     /// The price a unit a firm expects its product to sell for: its stance's outlook of its product's mark in its
     /// region, or, before the mark has printed there, its own price.
-    pub(crate) fn price_expected(&self, firm: usize, slot: Slot, lot: f64) -> f64 {
-        use crate::consts::firm::{MEMORY, STANCE};
+    pub(crate) fn price_expected(&self, firm: usize, slot: Slot, lot: f64, prefs: &phx_core::Prefs) -> f64 {
         let Some(store) = self.kinds.get(firm) else { return 0.0 };
         let rec = store.record(slot);
         let read = |i: usize| match rec.get(i).map(|w| w.get()) {
             Some(Missing::Present(v)) => usize::try_from(v).ok(),
             _ => None,
         };
+        let as_index = |m: Missing<u16>| match m {
+            Missing::Present(v) => Some(usize::from(v)),
+            Missing::Absent => None,
+        };
         let (Some(product), Some(region), Some(memory), Some(stance), Some(price)) =
-            (read(PRODUCT), read(REGION), read(MEMORY), read(STANCE), read(PRICE))
+            (read(PRODUCT), read(REGION), as_index(prefs.memory), as_index(prefs.stance), read(PRICE))
         else {
             return 0.0;
         };
@@ -628,6 +632,7 @@ impl Core {
             .filter_map(|e| Some((e, f.store.edges.row(e)?)))
             .collect();
         let full = f64::from(law.full_time_hours);
+        let offering = self.bind(ctx.kind.offer);
         for (edge, row) in contracts {
             let Some([occupation, hours, _]) =
                 self.families.get(family).and_then(|f| f.classes.get(usize::try_from(row.schedule).ok()?)).copied()
@@ -653,7 +658,7 @@ impl Core {
                 Missing::Absent => Missing::Absent,
             };
             let market = self.offer_point(ctx, law, (key, occupation), staff);
-            let offer = (ctx.kind.review)(&ReviewIn { current, revenue, market, least });
+            let offer = self.decide(offering, key, |_| ReviewIn { current, revenue, market, least });
             let reservation = law.reservation_share * ctx.wage_at(law, current);
             let Some(skill) = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied()
             else {
@@ -697,6 +702,7 @@ impl Core {
             return;
         }
         let standing = Standing::new(&self.labour.vacancies);
+        let searching = self.bind(ctx.kind.search);
         let mut seen: BTreeMap<(PartyKey, u64), Vec<Application>> = BTreeMap::new();
         for (c, law) in self.labour.laws.iter().enumerate() {
             let mine: Vec<Seeker> = offered.iter().filter(|o| usize::from(o.country) == c).map(|o| o.seeker).collect();
@@ -704,16 +710,20 @@ impl Core {
                 continue;
             }
             let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            let choose = |s: &Seeker, reach: Vec<(u32, f64)>, draws: Vec<f64>| {
+                self.decide(searching, s.household, |_| SearchIn { reach, draws })
+            };
             for a in search(
                 None,
                 (&self.labour.vacancies, &standing),
                 &mine,
                 (law.wage_weight, law.applications_a_week),
-                &draws,
+                (&draws, &choose),
             ) {
                 seen.entry((a.seeker.household, a.seeker.person)).or_default().push(a);
             }
         }
+        let answering = self.bind(ctx.kind.answer);
         for o in offered {
             let law = at_country(&self.labour.laws, o.country).clone();
             let apps = seen.remove(&(o.seeker.household, o.seeker.person)).unwrap_or_default();
@@ -722,14 +732,13 @@ impl Core {
                 .filter_map(|a| self.labour.vacancies.get(usize::try_from(a.vacancy).ok()?).map(|v| v.wage))
                 .reduce(|a, b| if b > a { b } else { a })
                 .map_or(Missing::Absent, Missing::Present);
-            let input = AnswerIn {
+            let answer = self.decide(answering, o.seeker.household, |prefs| AnswerIn {
                 offer: o.offer,
                 reservation: o.reservation,
                 best,
-                outlook: self.price_outlook(o.seeker.household, o.country, law.review_months),
+                outlook: self.price_outlook(prefs, o.country, law.review_months),
                 ratio: law.point_ratio,
-            };
-            let answer = (ctx.kind.answer.rule)(&input);
+            });
             let concluded = match (ctx.kind.conclude)(o.offer, answer, o.revenue) {
                 Missing::Present(point) => point,
                 // An offer below what it works for is one it leaves for search; above it, it works on at the offer
@@ -875,6 +884,7 @@ impl Core {
     fn search_round(&mut self, ctx: &LabourCtx<'_>, day: Day) -> (u64, u64) {
         let seekers = self.seekers(ctx, day);
         let standing = Standing::new(&self.labour.vacancies);
+        let searching = self.bind(ctx.kind.search);
         let mut sent = Vec::new();
         for (c, law) in self.labour.laws.iter().enumerate() {
             let mine: Vec<Seeker> = seekers.iter().filter(|(k, _)| usize::from(*k) == c).map(|(_, s)| *s).collect();
@@ -882,12 +892,15 @@ impl Core {
                 continue;
             }
             let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            let choose = |s: &Seeker, reach: Vec<(u32, f64)>, draws: Vec<f64>| {
+                self.decide(searching, s.household, |_| SearchIn { reach, draws })
+            };
             sent.extend(search(
                 None,
                 (&self.labour.vacancies, &standing),
                 &mine,
                 (law.wage_weight, law.applications_a_week / DAYS_A_WEEK),
-                &draws,
+                (&draws, &choose),
             ));
         }
         sent.append(&mut self.labour.on_the_job);
@@ -912,14 +925,17 @@ impl Core {
             let id = postings.get(usize::try_from(v).unwrap_or(usize::MAX)).map_or(0, |p| p.id);
             ctx.draws(ctx.kind.lot_stream, Subject::new(SubjectTag::Market, id), day)
         };
-        let choose = |applicants: &[phx_market::hiring::Applicant], open: u32| {
+        let selecting = self.bind(ctx.kind.select);
+        let mut vacancies = std::mem::take(&mut self.labour.vacancies);
+        let choose = |v: &Vacancy, applicants: &[phx_market::hiring::Applicant], open: u32| {
             let applicants = applicants
                 .iter()
                 .map(|a| if_labour::decisions::Applicant { skill: a.skill, experience: a.experience, lot: a.lot })
                 .collect();
-            (ctx.kind.select)(&SelectIn { applicants, open })
+            self.decide(selecting, v.employer, |_| SelectIn { applicants, open })
         };
-        let offers = select(&mut self.labour.vacancies, &apps, met, (lots, choose));
+        let offers = select(&mut vacancies, &apps, met, (lots, choose));
+        self.labour.vacancies = vacancies;
         let n = len_u64(offers.len());
         self.labour.offers = offers;
         n
@@ -933,19 +949,22 @@ impl Core {
         let offers = std::mem::take(&mut self.labour.offers);
         let laws = self.labour.laws.clone();
         let postings = self.labour.postings.clone();
+        let accepting = self.bind(ctx.kind.accept);
+        let mut vacancies = std::mem::take(&mut self.labour.vacancies);
         let accepts = |o: &Application, v: &Vacancy| {
             let Some(p) = postings.get(usize::try_from(o.vacancy).unwrap_or(usize::MAX)) else { return false };
             let law = at_country(&laws, p.country);
             let mut d = ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, o.seeker.person), day);
             let taste = phx_rand::gumbel(&mut d, 0.0, 1.0) - phx_rand::gumbel(&mut d, 0.0, 1.0);
-            (ctx.kind.accept.rule)(&AcceptIn {
+            self.decide(accepting, o.seeker.household, |_| AcceptIn {
                 wage: v.wage,
                 reservation: o.seeker.reservation,
                 taste,
                 wage_weight: law.wage_weight,
             })
         };
-        let hires = answer(&mut self.labour.vacancies, &offers, accepts);
+        let hires = answer(&mut vacancies, &offers, accepts);
+        self.labour.vacancies = vacancies;
         let accepted = len_u64(hires.len());
         let mut n = 0;
         for h in hires {
@@ -1183,7 +1202,7 @@ impl Core {
             months: f64::from(benefit.months),
             claiming_cost: benefit.claim_hours * hour,
         };
-        if !claim(&input) {
+        if !self.decide(self.bind(claim), household, |_| input) {
             return;
         }
         let date = ctx.calendar.date(day);

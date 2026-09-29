@@ -232,12 +232,14 @@ impl Core {
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let attrs = h.attrs.clone();
         let attr = |name: &str| attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
+        let decider = |name: &str| self.decided_in_process(name, slot);
         let view = phx_core::pop_process::AgentView {
             kind: decl.kind,
             party: id,
             attr: &attr,
             country_of: &country_of,
             date: ctx.calendar.date(day),
+            decider: &decider,
         };
         for (_, process, reached) in hits {
             let Some(b) = ctx.processes.get(*process) else { continue };

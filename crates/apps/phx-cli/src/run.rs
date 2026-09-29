@@ -462,6 +462,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "labour": labour_report(w),
         "services": services_report(w),
         "outlooks": outlooks_report(w),
+        "decisions": decisions_report(w),
         "lenders": w.core().credit.lenders.iter().map(|(b, l)| json!({
             "bank": b.word(),
             "standard": l.standard,
@@ -543,6 +544,20 @@ pub fn measure_budget(build_run: &Path, device: &Path, out: &Path) -> Result<boo
     std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
     println!("{}", out.display());
     Ok(true)
+}
+
+/// Each decision the world declares, with how many times each standing of decider took it.
+fn decisions_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .decisions
+        .taken()
+        .iter()
+        .map(|(name, by)| {
+            let by: std::collections::BTreeMap<&str, u64> =
+                phx_core::Standing::ALL.iter().zip(by).map(|(s, n)| (s.name(), *n)).collect();
+            json!({ "decision": name, "by": by })
+        })
+        .collect()
 }
 
 #[cfg(test)]

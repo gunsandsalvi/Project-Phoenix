@@ -149,7 +149,7 @@ pub const CORE_WHEEL_DAYS: u32 = 64;
 /// management's memory and switching types, the heuristic it relies on, the width of its sales' surprises and its sales as last seen, the return its management requires; the purposes its opening draws and its
 /// jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
-    pub const RECORD: usize = 16;
+    pub const RECORD: usize = 12;
     pub const PRODUCT: usize = 0;
     pub const REGION: usize = 1;
     pub const SITE: usize = 2;
@@ -160,18 +160,10 @@ pub mod firm {
     pub const EXPECTED: usize = 7;
     pub const SOLD: usize = 8;
     pub const REVIEWED: usize = 9;
-    /// The memory type a firm's outlooks correct at.
-    pub const MEMORY: usize = 10;
-    /// How strongly its stance moves toward the heuristic that has forecast best.
-    pub const SWITCHING: usize = 11;
-    /// The heuristic of the menu its outlooks of public series rely on.
-    pub const STANCE: usize = 12;
     /// The width of its surprises at its own sales a day, in millionths, absent before its first look has seen one;
     /// and its units sold since its last review as it last looked at them.
-    pub const SALES_WIDTH: usize = 13;
-    pub const SEEN_SOLD: usize = 14;
-    /// The return its management requires a year, in millionths.
-    pub const REQUIRED: usize = 15;
+    pub const SALES_WIDTH: usize = 10;
+    pub const SEEN_SOLD: usize = 11;
     pub const PART_ONE: f64 = 1_000_000.0;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
     pub const PURPOSES: u32 = 5;

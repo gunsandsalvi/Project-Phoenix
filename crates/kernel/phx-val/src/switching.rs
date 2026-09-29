@@ -60,6 +60,31 @@ pub fn shares(perf: &[Missing<f64>], beta: f64, out: &mut [f64]) {
     }
 }
 
+/// What a stance's reconsideration reads: each heuristic's performance on the series for the party's memory type, its
+/// switching intensity, and its taste, a draw in the unit interval.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct StanceIn {
+    pub performance: [Missing<f64>; crate::heuristic::MENU.len()],
+    pub intensity: f64,
+    pub taste: f64,
+}
+
+/// The heuristic a party relies on: the one its taste falls in among the shares its intensity gives.
+#[clause("VAL.7", "REP.22")]
+#[must_use]
+pub fn choose(i: &StanceIn) -> usize {
+    let mut out = [0.0; crate::heuristic::MENU.len()];
+    shares(&i.performance, i.intensity, &mut out);
+    let mut u = i.taste;
+    for (h, share) in out.iter().enumerate() {
+        if u < *share {
+            return h;
+        }
+        u -= share;
+    }
+    out.len() - 1
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -545,8 +545,9 @@ decision and an effective day before the next business day of the policy's count
 
 - Every decision the spec names is a **decision point**: an input view type and an output intent type from an
   interface crate, a rule function registered by its system, a declared **schedule** (TIME.5) and **wake conditions**,
-  and a pure evaluation form usable off-world (REP.15). The **decider** is the kind's rule or the player, derived for
-  a party from `PlayerQueue` (§12), not stored per party. The kernel dispatches inside the decision point.
+  and a pure evaluation form usable off-world (REP.15). The **decider** — the player, an office's holder, an
+  institution's founding preferences, a household or a person — is named each time the decision is taken by the
+  decision core (§7.18), never stored per decision.
 
   A decision point's rule is one pure function and is its own evaluation form, so REP.15's estimates evaluate the
   function that decides. A point needs a schedule or wakes. `Ctx::decide` takes the player's queued intent for the
@@ -2148,6 +2149,60 @@ failed about 3% of its flows, since the bench's random economy drifts short over
 
 These numbers compare kernels with their targets; the budget is judged on the phone (N8.8, owner 2026-09-28: "the
 target is on phone benchmark"). The old kernel's bench gave 7.7 s, 29 s and 9 GB at a smaller world.
+
+### 7.18 The decision core
+
+Every decision the world takes runs through one call, `Core::decide`, taken each time the decision is (MND.20,
+Appendix E 50). It exists before anyone holds an office, so persons and minds attach to it later (S3.05, Stage 8)
+without a decision moving.
+
+- **Decision kinds.** A system declares each of its decisions as a decision point (§4.7) in its `points.rs`: a name,
+  its input and output types and its rule, one pure function. The register declares the concern list (MND.2) and, for
+  each point by name, who takes it and how (`MND.decisions`, a SHAPE primitive of MND.19): the office it is taken in,
+  or `household` (its adults as one) or `person` (a person's own); the concerns it touches; and its mode, `best` or
+  `satisfice` (MND.7). At assembly `DecisionKinds` is built from the register and held to the points the systems
+  declared, both ways: a declared point the register does not list, a listed decision no system declares, a concern
+  not on the list or an office no legal form declares is refused.
+- **The decisions taken** (25 at S1.26): in a firm's line head's office its first price, what it makes, the inputs it
+  orders, its attention, its price review and move, its stance, its posting (with its lay-offs), its selection among
+  applicants and its offers at pay rounds; in its chief executive's, winding down, its choice among loan quotes and its
+  investment; in a bank's loan officer's, declining and quoting, and in its chief executive's, its standard; in a
+  treasury's minister's, its consumption; a household's spending, stance and trying for a child; a person's search,
+  answer to an offer, answer at a pay round, retirement and benefit claim. Inside a decision some parts are drawn
+  rather than chosen: whom a lay-off falls on by lot, a buyer's seller in the meeting by its taste from its own
+  stream, a posted wage's point by the fill history's arithmetic; each is the decision's own execution, counted with
+  it.
+- **Offices.** Each legal form lists the offices it decides through (`PTY.legal_forms`, PTY.16): a company its chief
+  executive and the head of its line, a bank its chief executive and its loan officers, a treasury its minister, a
+  central bank its governor. The core's `Offices` holds, per institution kind, each institution's founding preferences
+  by its slot, drawn at its opening (MND.16), and the offices' holders, a map from (institution, office) to a person,
+  empty until the processes that fill offices exist (S3.05); a person holding several offices, as an owner managing its
+  own firm, is several entries naming one person.
+- **Preferences** (`phx_core::decisions::Prefs`): what a decider brings to a rule before minds — its memory type, its
+  switching type and its stance on the heuristics' menu (VAL.6, VAL.7), the return it requires (FRM.15) and its
+  management type (FRM.5's speeds and curvature, one declared type while no source measures their spread); each
+  `Missing` where the decider holds none. A firm's are its founding preferences, moved out of its record; a household's
+  are its record's outlook attributes (VAL.23); a person's are its household's until S8.01 draws each person's.
+- **Resolution.** `decide(point, party, input)` binds the point's kind once per pass (`bind`, an index, no lookup by
+  name on the path), then for each party names the decider: the player where it keeps the decision (S1.24 h seats the
+  player on the core), else the office's holder, else the institution's founding preferences; a household's or a
+  person's decision is its own. It hands the input builder the decider's preferences — a rule reads an institution's
+  preferences only there — calls the rule on the input, and counts the decision by its kind and the decider's standing
+  (player, holder, founding preferences, household, person), counts any worker adds to (`phx_exec::Tally`, an integer
+  sum the same on any pool) that the run report's `decisions` and LC-1-52 read. A decision whose taker is an office
+  the party's form does not declare stops the run (MND.20).
+- **A decider's outlooks change with its decisions.** A reconsidered stance is written back to where the decider's
+  preferences live: the founding preferences for an office no one holds, the household's record for a household.
+- **Processes' decisions.** A decision taken inside a population process (retiring, trying for a child) reads its
+  decider through the process view's `decider`, which the core supplies and counts; the rule is then called as any
+  other's.
+- **Search as a decision.** The hiring kernel's search hands each searcher's reach — each vacancy above its reservation
+  with its pull — and its draws to a `choose` the core supplies, which takes LAB.search; the rule draws without
+  replacement in proportion to the pulls (`phx_market::hiring::pick`). The kernel's selection hands `choose` the
+  vacancy, so the employer's LAB.select names its decider.
+- **Cost.** A decision's resolution is an index into the kinds, one into the party kind's offices, an empty-map check,
+  the founding row and a count: a few nanoseconds beside the rule's own arithmetic. A point is bound by name once a
+  pass, never per party.
 
 ## 8. Markets, valuation and expectations
 

@@ -217,10 +217,8 @@ struct Draft {
     bank: u32,
     price: i64,
     output: f64,
-    memory: u16,
-    switching: u16,
-    stance: u8,
-    required: f64,
+    /// Its preferences drawn at its founding, which its offices read while no one holds them.
+    prefs: phx_core::Prefs,
 }
 
 /// What the firms' opening reads besides the core: the register, the countries with their sheets, the stream its
@@ -312,12 +310,8 @@ impl Core {
                     MaybeI64::present(parts(from_i64(output) / crate::consts::DAYS_A_YEAR)),
                     MaybeI64::present(0),
                     MaybeI64::present(i64::from(o.today.get())),
-                    MaybeI64::present(i64::from(d.memory)),
-                    MaybeI64::present(i64::from(d.switching)),
-                    MaybeI64::present(i64::from(d.stance)),
                     MaybeI64::from_missing(phx_num::Missing::Absent),
                     MaybeI64::present(0),
-                    MaybeI64::present(parts(d.required)),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;
@@ -325,6 +319,7 @@ impl Core {
                 let key = PartyKey::new(crate::core::kind_number(firm), party.slot());
                 let at_key = self.keys.partition_point(|(i, _)| *i < id);
                 self.keys.insert(at_key, (id, key));
+                self.found(key, d.prefs);
             }
         }
         if let Some(k) = self.kinds.get_mut(firm) {
@@ -352,6 +347,7 @@ impl Core {
         }
         let mut out = Vec::new();
         let mut ordinal = 0_u32;
+        let pricing = self.bind(&sys_frm::points::DAY_ZERO_PRICE);
         for cell in &cells {
             let Some((_, tiles)) = c.regions.iter().find(|(r, _)| *r == cell.region) else { continue };
             let product = phx_rand::float::index(u64::from(cell.product));
@@ -373,11 +369,21 @@ impl Core {
                 let switching = phx_core::register::values::draw_type(&o.management.types.switching, &mut m).get();
                 // With no heuristic scored yet nothing favours one, so its first stance is its taste's alone.
                 let menu = len_u64(phx_val::heuristic::MENU.len());
-                let stance = u8::try_from(below_u64(&mut m, menu)).unwrap_or(u8::MAX);
+                let stance = u16::try_from(below_u64(&mut m, menu)).unwrap_or(u16::MAX);
                 let required = o.management.required_return.draw(&mut m);
+                let prefs = phx_core::Prefs {
+                    memory: phx_num::Missing::Present(memory),
+                    switching: phx_num::Missing::Present(switching),
+                    stance: phx_num::Missing::Present(stance),
+                    required_return: phx_num::Missing::Present(required),
+                    management: phx_num::Missing::Present(0),
+                };
                 let wanted = lot * snap.price_at(product, log);
-                let Some(price) = sys_frm::rules::price::nearest_point(&o.management.points_near(wanted), wanted)
-                else {
+                let price = self.decide_founding(pricing, &prefs, |_| sys_frm::rules::review::DayZeroIn {
+                    points: o.management.points_near(wanted),
+                    wanted,
+                });
+                let Some(price) = price else {
                     return Err(format!("country {}: product {product} priced at no point", c.id.get()));
                 };
                 out.push(Draft {
@@ -388,10 +394,7 @@ impl Core {
                     bank,
                     price,
                     output: 0.0,
-                    memory,
-                    switching,
-                    stance,
-                    required,
+                    prefs,
                 });
                 ordinal += 1;
             }

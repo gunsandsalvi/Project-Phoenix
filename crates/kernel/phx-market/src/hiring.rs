@@ -95,18 +95,52 @@ impl Standing {
     }
 }
 
+/// The vacancies a seeker applies to among those it weighs, each with its pull: drawn one by one without replacement,
+/// each at a draw of the unit interval, with chances in proportion to their pulls; as many as it has draws, or all it
+/// weighs.
+#[clause("LAB.5", "LAB.8", "REP.22")]
+#[must_use]
+pub fn pick(weighed: &[(u32, f64)], draws: &[f64]) -> Vec<u32> {
+    let mut reach = weighed.to_vec();
+    let mut out = Vec::new();
+    for u in draws {
+        let total: f64 = reach.iter().map(|(_, w)| w).sum();
+        if reach.is_empty() || total.is_nan() || total <= 0.0 {
+            break;
+        }
+        let u = u * total;
+        let mut acc = 0.0;
+        // A draw at the very top falls to the last.
+        let mut at = reach.len() - 1;
+        for (k, (_, w)) in reach.iter().enumerate() {
+            acc += w;
+            if u < acc {
+                at = k;
+                break;
+            }
+        }
+        let (vacancy, _) = reach.remove(at);
+        out.push(vacancy);
+    }
+    out
+}
+
 /// The searchers' round: each seeker sends a round's share of a week's applications — the whole part, and one more
-/// at the chance of the rest — to vacancies in its reach paying above its reservation, drawn one by one without
-/// replacement with chances in proportion to their wage to the power of `wage_weight`: the logit over the weight of the
-/// wage's log with a standard Gumbel taste for each, as a taste per vacancy would rank them. Each seeker draws from
-/// `draws` of its subject; the applications are in the seekers' order, the same for any workers.
+/// at the chance of the rest — to vacancies in its reach paying above its reservation, chosen by `choose` from their
+/// pulls, their wage to the power of `wage_weight`, and a draw for each application; drawn one by one without
+/// replacement in proportion to the pulls, this is the logit over the weight of the wage's log with a standard Gumbel
+/// taste for each. Each seeker draws from `draws` of its subject; the applications are in the seekers' order, the same
+/// for any workers.
 #[clause("LAB.5", "LAB.8", "REP.22")]
 pub fn search(
     pool: Option<&Pool>,
     (vacancies, standing): (&[Vacancy], &Standing),
     seekers: &[Seeker],
     (wage_weight, a_day): (f64, f64),
-    draws: &(impl Fn(u64) -> Draws + Sync),
+    (draws, choose): (
+        &(impl Fn(u64) -> Draws + Sync),
+        &(impl Fn(&Seeker, Vec<(u32, f64)>, Vec<f64>) -> Vec<u32> + Sync),
+    ),
 ) -> Vec<Application> {
     if a_day.is_nan() || a_day < 0.0 || a_day.is_infinite() {
         violation!(clause = "LAB.16", "a round's applications neither none nor a count");
@@ -120,35 +154,23 @@ pub fn search(
     let chunks: Vec<&[Seeker]> = seekers.chunks(SEARCH_CHUNK).collect();
     phx_exec::pool::map(pool, chunks.len(), |c| {
         let mut out = Vec::new();
-        let mut reach: Vec<(u32, f64)> = Vec::new();
         for s in chunks.get(c).copied().unwrap_or(&[]) {
             let mut d = draws(s.subject);
             let sends = whole + u64::from(open_unit(&mut d) < rest);
-            reach.clear();
-            reach.extend(standing.in_reach(vacancies, s).iter().filter_map(|i| {
-                let at = usize::try_from(*i).ok()?;
-                let (v, w) = (vacancies.get(at)?, pull.get(at)?);
-                (v.wage > s.reservation).then_some((*i, *w))
-            }));
-            for _ in 0..sends {
-                let total: f64 = reach.iter().map(|(_, w)| w).sum();
-                if reach.is_empty() || total.is_nan() || total <= 0.0 {
-                    break;
-                }
-                let u = open_unit(&mut d) * total;
-                let mut acc = 0.0;
-                // A draw at the very top falls to the last.
-                let mut pick = reach.len() - 1;
-                for (k, (_, w)) in reach.iter().enumerate() {
-                    acc += w;
-                    if u < acc {
-                        pick = k;
-                        break;
-                    }
-                }
-                let (vacancy, _) = reach.remove(pick);
-                out.push(Application { vacancy, seeker: *s });
+            let reach: Vec<(u32, f64)> = standing
+                .in_reach(vacancies, s)
+                .iter()
+                .filter_map(|i| {
+                    let at = usize::try_from(*i).ok()?;
+                    let (v, w) = (vacancies.get(at)?, pull.get(at)?);
+                    (v.wage > s.reservation).then_some((*i, *w))
+                })
+                .collect();
+            if reach.is_empty() || sends == 0 {
+                continue;
             }
+            let units: Vec<f64> = (0..sends).map(|_| open_unit(&mut d)).collect();
+            out.extend(choose(s, reach, units).into_iter().map(|vacancy| Application { vacancy, seeker: *s }));
         }
         out
     })
@@ -156,7 +178,8 @@ pub fn search(
 }
 
 /// The employers' round over yesterday's applications: each is met at the chance `met` gives it; each vacancy's met
-/// applicants, in the order they were sent, are handed with their lots, drawn from `lots` of the vacancy, to `choose`,
+/// applicants, in the order they were sent, are handed with the vacancy and their lots, drawn from `lots` of the
+/// vacancy, to `choose`,
 /// which returns the places of those offered its jobs, no more than it has open. Returns the offers, in the vacancies'
 /// order, each vacancy's jobs taken off as they are offered.
 #[clause("LAB.7", "LAB.8")]
@@ -164,7 +187,7 @@ pub fn select(
     vacancies: &mut [Vacancy],
     applications: &[Application],
     met: impl Fn(&Application) -> bool,
-    (lots, choose): (impl Fn(u32) -> Draws, impl Fn(&[Applicant], u32) -> Vec<u32>),
+    (lots, choose): (impl Fn(u32) -> Draws, impl Fn(&Vacancy, &[Applicant], u32) -> Vec<u32>),
 ) -> Vec<Application> {
     let mut seen: Vec<(u32, usize)> =
         applications.iter().enumerate().filter(|(_, a)| met(a)).map(|(k, a)| (a.vacancy, k)).collect();
@@ -188,7 +211,7 @@ pub fn select(
                 lot: phx_rand::uniform::below_u64(&mut d, u64::MAX),
             })
             .collect();
-        let chosen = choose(&ranked, v.open);
+        let chosen = choose(v, &ranked, v.open);
         if chosen.len() > usize::try_from(v.open).unwrap_or(usize::MAX) {
             violation!(clause = "LAB.7", "more offered than a vacancy's jobs open", open = v.open);
         }

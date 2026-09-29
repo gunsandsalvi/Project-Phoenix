@@ -142,6 +142,11 @@ pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
 pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize
 pub fn phx_exec::spec::read_capacity(usize) -> core::option::Option<u32>
 pub fn phx_exec::spec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>
+pub mod phx_exec::tally
+pub struct phx_exec::tally::Tally(_)
+impl phx_exec::tally::Tally
+pub fn phx_exec::tally::Tally::add(&self, u64)
+pub fn phx_exec::tally::Tally::get(&self) -> u64
 pub mod phx_exec::traverse
 pub fn phx_exec::traverse::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
 pub fn phx_exec::traverse::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
@@ -199,6 +204,10 @@ pub phx_exec::Site::chunk: u32
 pub phx_exec::Site::day: u32
 pub phx_exec::Site::handler: u16
 pub phx_exec::Site::substep: u8
+pub struct phx_exec::Tally(_)
+impl phx_exec::tally::Tally
+pub fn phx_exec::tally::Tally::add(&self, u64)
+pub fn phx_exec::tally::Tally::get(&self) -> u64
 pub trait phx_exec::Clock: core::marker::Sync
 pub fn phx_exec::Clock::now_ns(&self) -> u64
 pub trait phx_exec::PerfHint

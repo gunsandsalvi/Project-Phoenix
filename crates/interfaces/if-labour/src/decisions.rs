@@ -1,16 +1,13 @@
 //! Each labour decision's input and output. A searcher's and an employee's decisions are the household's, which the
 //! player takes for its own; an employer's are its rule's.
 
-/// What a searcher reads when it chooses where to apply: the monthly wage each vacancy it can see offers, a taste
-/// drawn for each, its reservation, the applications it sends a round, and the weight of the wage in its choice.
-/// The output is the places, among those seen, it applies to.
+/// What a searcher reads when it chooses where to apply: each vacancy in its reach paying above its reservation, with
+/// its pull — its wage to the weight of the wage in its choice — and a draw of the unit interval for each application
+/// it sends. The output is the vacancies it applies to.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SearchIn {
-    pub wages: Vec<f64>,
-    pub tastes: Vec<f64>,
-    pub reservation: f64,
-    pub applications: u32,
-    pub wage_weight: f64,
+    pub reach: Vec<(u32, f64)>,
+    pub draws: Vec<f64>,
 }
 
 /// What a searcher reads when an offer reaches it: the offer's monthly wage, its reservation, the match's quality

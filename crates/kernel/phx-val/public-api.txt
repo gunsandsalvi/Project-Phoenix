@@ -134,6 +134,11 @@ pub fn phx_val::surprise::surprise(f64, f64) -> f64
 pub fn phx_val::surprise::wakes(f64, f64, f64) -> bool
 pub fn phx_val::surprise::width(phx_num::missing::Missing<f64>, f64, f64) -> f64
 pub mod phx_val::switching
+pub struct phx_val::switching::StanceIn
+pub phx_val::switching::StanceIn::intensity: f64
+pub phx_val::switching::StanceIn::performance: [phx_num::missing::Missing<f64>; 4]
+pub phx_val::switching::StanceIn::taste: f64
+pub fn phx_val::switching::choose(&phx_val::switching::StanceIn) -> usize
 pub fn phx_val::switching::performance(phx_num::missing::Missing<f64>, f64, f64) -> f64
 pub fn phx_val::switching::shares(&[phx_num::missing::Missing<f64>], f64, &mut [f64])
 pub mod phx_val::types

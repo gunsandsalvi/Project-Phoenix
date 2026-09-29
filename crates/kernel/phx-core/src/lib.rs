@@ -61,7 +61,10 @@ pub use contribution::{
     Adjustment, Apportioned, BALANCES, CONTRACTS, Contribution, DECLARATIONS, GenReport, Opening, OpeningCountry,
     OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, ReportSink, WriteRecord, apportion, opening_subject,
 };
-pub use decisions::{Decider, DecisionPointDecl, Player, PlayerQueue, QueuedIntent, QueuedPayload, dispatch};
+pub use decisions::{
+    DECISIONS, Decider, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Player, PlayerQueue, Prefs, QueuedIntent,
+    QueuedPayload, Standing, TakenIn, dispatch,
+};
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
 pub use events_rule::{EventsRule, NewsEntry, Notice, PUBLIC_EVENTS};

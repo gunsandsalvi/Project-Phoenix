@@ -5,6 +5,7 @@
 
 mod consts;
 pub mod kinds;
+pub mod points;
 pub mod rules;
 
 use phx_core::register::values::Table1;
@@ -161,6 +162,7 @@ impl System for Cap {
         let _ = d.prim::<Table1>(&STOCK_PER_GDP);
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
+        d.decision(&points::INVEST);
         d.compile(Box::new(move |register, countries| Ok(Box::new(CapOwn::compile(&prims, register, countries)?))));
         for item in [
             <if_firm::facts::Capacity as phx_core::FactDef>::ITEM,

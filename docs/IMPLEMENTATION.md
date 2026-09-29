@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a, b and c done; the committed world is the core's; d–g on the core; e's outlooks, stances, pay rounds and attention built, attention to be read at the next run; then h, the old kernel's crates, the core's day on the pool)
+**Status**: building (a, b and c done; the committed world is the core's; d–g on the core; e's outlooks, stances, pay rounds and attention built, attention to be read at the next run; S1.26's decision core done, every decision on it; then the rest: h, the old kernel's crates, the core's day on the pool)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2; ACC.3, ACC.4, ACC.8, ACC.10–ACC.13, ACC.16 and FRM.17 *(moved from S0.19
@@ -1008,6 +1008,11 @@ world switches to the core.
     difference (ACC.3) waits for positions carried at a price other than cost (S3.05); a withheld tax or a severance
     whose payment fails is lost to its payee, the accounts reading it as never owed — to settle with the collectors
     (g).
+  - The decision core (S1.26, done 2026-09-29; ARCHITECTURE §7.18): every decision the core takes runs through
+    `decide`, which names its decider — the office's holder, none yet, else the institution's founding preferences; the
+    household; the person — and counts it; the firms' memory and switching types, stance and required return moved
+    from their record to their founding preferences, the banks' required return likewise. LC-1-52 reads the counts, the
+    run report publishes them as `decisions`; not yet run.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
@@ -5544,8 +5549,9 @@ stage's macro reads from the run.
 ## 6b. Stage 8 — Minds (built after Stage 3)
 
 Built after Stage 3 and before Stage 4 (spec Part O; numbered 8 because identifiers are permanent). Every decision
-built so far moves to the mind, rule by rule, each rule retired in the change that moves it; the stages after it build
-their decisions on the mind from the start (owner, 2026-09-28, spec Appendix E 47, 49).
+already runs through the decision core (S1.26, MND.20); this stage attaches minds to its deciders and persons to its
+offices, each rule becoming its decision's option generator in the change that attaches its mind; the stages after it
+build their decisions on the mind from the start (owner, 2026-09-28 and 2026-09-29, spec Appendix E 47, 49, 50).
 
 ### S8.01 — `phx-mind`: the kernel, characters and their storage
 
@@ -5572,7 +5578,7 @@ and held on the core, with the bench carrying a mind for every person and a choi
 | `crates/kernel/phx-mind/src/lib.rs` | `Options`, `Mind`, `choose`, `satisfice`, `explain`: pure functions over `libm` |
 | `crates/kernel/phx-mind/src/character.rs` | the character types by country, from the declared simulation over the GPS profile |
 | `crates/kernel/phx-pop/src/persons.rs` | the character index in the identity word's spare bits; the adults' mind column |
-| `data/shared/MND.toml` | concerns, loss aversion, experience weights, aspiration speed, age profiles, attention, goal menu, household weights, with sources |
+| `data/shared/MND.toml` | beside S1.26's concerns and decisions: loss aversion, experience weights, aspiration speed, age profiles, attention, goal menu, household weights, with sources |
 
 **Design**
 - **The kernel**: an option is its consequences on the concerns its decision touches; `choose` weighs each against the
@@ -5639,8 +5645,10 @@ and house search, satisficing (owner, 2026-09-28).
 | `crates/systems/sys-hsg/src/rules/` | the dwelling search as satisficing |
 
 **Design**
-- Each rule's options are the ones it already works on (price points, wage points, dwellings in reach); its
-  consequences by concern come from the household's own outlooks and values (VAL.8).
+- Each decision already runs through the decision core (S1.26), which hands its rule the household's preferences;
+  here the core hands it the adults' minds instead. Each rule's options are the ones it already works on (price
+  points, wage points, dwellings in reach); its consequences by concern come from the household's own outlooks and
+  values (VAL.8), on the concerns and in the mode `MND.decisions` declares.
 - A long divergence between partners' weighings is recorded as an input to POP.17 (built at S6.02).
 - The player's household: its persons' minds advise — what each would do and why — and the player decides or leaves it
   to them (OBS.4).
@@ -5693,7 +5701,8 @@ differently, and a new chief executive changes the firm.
   where its contracts and oversight allow; boards and auditors find it out and remove it. Crime is out of scope.
 - Selection (PTY.17): candidates by their records, public reputation, whether the choosers know them, and the pay the
   institution offers against others bidding for them.
-- An office no one holds yet reads the institution's founding preferences (MND.16).
+- An office no one holds yet reads the institution's founding preferences (MND.16), as the decision core has since
+  S1.26; here its holder's mind is attached to it, and no decision moves.
 
 **Unit tests**: `pay_in_shares_weighs_the_share_price`; `removal_threat_enters_security`.
 
@@ -10884,6 +10893,7 @@ and are not mapped.
 | VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
 | VAL | S1.05 | 23 |
 | VAL | S1.15 | 12, 13, 14, 15 |
+| MND | S1.26 | 20 |
 | MND | S8.01 | 1, 2, 18, 19 |
 | MND | S8.02 | 8 |
 | MND | S8.03 | 7, 9, 16 |

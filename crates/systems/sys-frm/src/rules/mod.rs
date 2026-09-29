@@ -7,4 +7,5 @@ pub mod inputs;
 pub mod markup;
 pub mod price;
 pub mod produce;
+pub mod review;
 pub mod way;

@@ -98,7 +98,7 @@ pub struct CoreState {
     pub withholding: Vec<Option<phx_ledger::levy::Withholding>>,
     pub consumption: Vec<Option<f64>>,
     pub benefit: Vec<Option<if_state::kinds::BenefitLaw>>,
-    pub claim: Option<fn(&if_state::kinds::ClaimIn) -> bool>,
+    pub claim: Option<&'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>>,
     pub included: Option<fn(f64, f64) -> f64>,
 }
 

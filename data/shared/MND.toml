@@ -1,0 +1,40 @@
+# The minds' declarations (spec MND): what a decision's options are weighed on, and, for each decision the world takes,
+# who takes it and how (MND.2, MND.7, MND.19, MND.20).
+
+[[primitive]]
+id = "MND.decisions"
+kind = "SHAPE"
+owner = "MND"
+source = "assumed"
+source_ref = "The concerns are the spec's list (MND.2). Each decision is taken where its institution's governance puts it: prices, output, inputs, hiring and pay by the head of the line of business, the firm's survival, borrowing and investment by its chief executive, a loan's approval and price by a bank's loan officer and its credit standard by its chief executive, the state's consumption by its minister; spending, outlooks and children by a household's adults as one; work, search, retirement and claims by the person. Job search and the answer to an offer satisfice, options arriving one at a time (MND.7, owner 2026-09-28); every other decision takes the best option."
+shape = "standing:what people care about and where each decision is taken: no mechanism in the world derives the concerns or an institution's division of its decisions, so both are the accepted stand-in from the literature on preferences and on corporate governance"
+
+[primitive.value]
+concerns = ["means", "security", "wealth_and_legacy", "standing", "family", "leisure_and_health", "place", "principle"]
+decisions = [
+  { name = "FRM.day_zero_price", taken_in = "line_head", concerns = ["means", "standing"], mode = "best" },
+  { name = "FRM.produce", taken_in = "line_head", concerns = ["means", "security"], mode = "best" },
+  { name = "FRM.inputs", taken_in = "line_head", concerns = ["means", "security"], mode = "best" },
+  { name = "FRM.attend", taken_in = "line_head", concerns = ["means", "leisure_and_health"], mode = "best" },
+  { name = "FRM.review_price", taken_in = "line_head", concerns = ["means", "standing"], mode = "best" },
+  { name = "FRM.reprice", taken_in = "line_head", concerns = ["means", "standing"], mode = "best" },
+  { name = "FRM.stance", taken_in = "line_head", concerns = ["means"], mode = "best" },
+  { name = "FRM.close", taken_in = "chief_executive", concerns = ["means", "security", "wealth_and_legacy", "standing"], mode = "best" },
+  { name = "BNK.choose", taken_in = "chief_executive", concerns = ["means", "security"], mode = "best" },
+  { name = "CAP.invest", taken_in = "chief_executive", concerns = ["means", "wealth_and_legacy", "standing"], mode = "best" },
+  { name = "LAB.post", taken_in = "line_head", concerns = ["means", "standing"], mode = "best" },
+  { name = "LAB.select", taken_in = "line_head", concerns = ["means"], mode = "best" },
+  { name = "LAB.offer", taken_in = "line_head", concerns = ["means", "principle"], mode = "best" },
+  { name = "BNK.decline", taken_in = "loan_officer", concerns = ["means", "security"], mode = "best" },
+  { name = "BNK.quote", taken_in = "loan_officer", concerns = ["means", "security"], mode = "best" },
+  { name = "BNK.standard", taken_in = "chief_executive", concerns = ["means", "security", "standing"], mode = "best" },
+  { name = "SOC.consume", taken_in = "minister", concerns = ["principle", "standing"], mode = "best" },
+  { name = "HH.spend", taken_in = "household", concerns = ["means", "security", "family", "leisure_and_health"], mode = "best" },
+  { name = "HH.stance", taken_in = "household", concerns = ["means"], mode = "best" },
+  { name = "DEM.try_for_child", taken_in = "household", concerns = ["family", "means", "leisure_and_health"], mode = "best" },
+  { name = "LAB.search", taken_in = "person", concerns = ["means", "security", "standing", "place"], mode = "satisfice" },
+  { name = "LAB.accept", taken_in = "person", concerns = ["means", "security", "leisure_and_health", "place"], mode = "satisfice" },
+  { name = "LAB.answer", taken_in = "person", concerns = ["means", "security", "principle"], mode = "best" },
+  { name = "LAB.retire", taken_in = "person", concerns = ["leisure_and_health", "means", "family"], mode = "best" },
+  { name = "SOC.claim", taken_in = "person", concerns = ["means", "standing"], mode = "best" },
+]

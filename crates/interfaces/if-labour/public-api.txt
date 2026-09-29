@@ -77,11 +77,8 @@ pub if_labour::decisions::ReviewIn::least: phx_num::missing::Missing<i64>
 pub if_labour::decisions::ReviewIn::market: i64
 pub if_labour::decisions::ReviewIn::revenue: i64
 pub struct if_labour::decisions::SearchIn
-pub if_labour::decisions::SearchIn::applications: u32
-pub if_labour::decisions::SearchIn::reservation: f64
-pub if_labour::decisions::SearchIn::tastes: alloc::vec::Vec<f64>
-pub if_labour::decisions::SearchIn::wage_weight: f64
-pub if_labour::decisions::SearchIn::wages: alloc::vec::Vec<f64>
+pub if_labour::decisions::SearchIn::draws: alloc::vec::Vec<f64>
+pub if_labour::decisions::SearchIn::reach: alloc::vec::Vec<(u32, f64)>
 pub struct if_labour::decisions::SelectIn
 pub if_labour::decisions::SelectIn::applicants: alloc::vec::Vec<if_labour::decisions::Applicant>
 pub if_labour::decisions::SelectIn::open: u32
@@ -102,16 +99,16 @@ pub if_labour::kind::LabourKind::line: &'static str
 pub if_labour::kind::LabourKind::lot_stream: &'static str
 pub if_labour::kind::LabourKind::meeting_stream: &'static str
 pub if_labour::kind::LabourKind::occupation: &'static str
+pub if_labour::kind::LabourKind::offer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::ReviewIn, i64>
 pub if_labour::kind::LabourKind::owed: fn(&if_labour::law::Law, f64, u32, i64, u32) -> f64
 pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
-pub if_labour::kind::LabourKind::post: fn(&if_labour::decisions::PostIn) -> if_labour::decisions::PostOut
+pub if_labour::kind::LabourKind::post: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::PostIn, if_labour::decisions::PostOut>
 pub if_labour::kind::LabourKind::renegotiated: &'static str
 pub if_labour::kind::LabourKind::retire: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::RetireIn, bool>
 pub if_labour::kind::LabourKind::retirement: &'static str
-pub if_labour::kind::LabourKind::review: fn(&if_labour::decisions::ReviewIn) -> i64
 pub if_labour::kind::LabourKind::review_stream: &'static str
 pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>
-pub if_labour::kind::LabourKind::select: fn(&if_labour::decisions::SelectIn) -> alloc::vec::Vec<u32>
+pub if_labour::kind::LabourKind::select: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SelectIn, alloc::vec::Vec<u32>>
 pub if_labour::kind::LabourKind::separated: &'static str
 pub if_labour::kind::LabourKind::severance: &'static str
 pub if_labour::kind::LabourKind::state: &'static str

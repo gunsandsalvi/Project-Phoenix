@@ -4,6 +4,7 @@
 
 pub mod buffer;
 mod consts;
+pub mod points;
 
 pub use buffer::{Model, Solution, solve, spend};
 
@@ -106,6 +107,8 @@ impl System for Hh {
         d.stream(VisitStream::DECL);
         d.stream(TypesStream::DECL);
         d.stream(StanceStream::DECL);
+        d.decision(&points::SPEND);
+        d.decision(&points::STANCE);
         let _: phx_core::Prim<Fixed<3>> = d.prim(&PATIENCE);
         let _: phx_core::Prim<Fixed<2>> = d.prim(&RISK_AVERSION);
         for p in [&PERMANENT_SD, &TRANSITORY_SD, &REAL_RETURN, &INCOME_GROWTH] {

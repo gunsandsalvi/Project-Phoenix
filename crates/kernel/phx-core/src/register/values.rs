@@ -60,6 +60,8 @@ pub enum ValueType {
     Partition {
         exp: u8,
     },
+    /// The concern list and each decision's taker, concerns and mode.
+    Decisions,
 }
 
 /// What a table does with a point outside its axes: its declared rule, never an implicit one.
@@ -366,6 +368,7 @@ pub enum PrimValue {
     CarryingBases(Vec<crate::accounting::Permitted>),
     Profile(JointProfile),
     Partition(Partition),
+    Decisions(crate::decisions::DecisionKinds),
 }
 
 /// A range cut into steps at strictly increasing boundaries, each a decimal written as an integer scaled by 10^`exp`.
@@ -555,6 +558,7 @@ fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
             features,
             endings: names(t, "endings")?,
             owners: text(t, "owners")?.to_owned(),
+            offices: names(t, "offices")?,
         };
         form.validate()?;
         if forms.iter().any(|g: &LegalForm| g.name == form.name) {
@@ -563,6 +567,49 @@ fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
         forms.push(form);
     }
     Ok(forms)
+}
+
+fn decisions(v: &Value) -> Result<crate::decisions::DecisionKinds, String> {
+    use crate::decisions::{DecisionKind, DecisionKinds, Mode, TakenIn};
+    let t = table(v)?;
+    let concerns = names(t, "concerns")?;
+    if concerns.iter().enumerate().any(|(i, c)| concerns.iter().position(|d| d == c) != Some(i)) {
+        return Err("a concern listed twice".to_owned());
+    }
+    let list = t.get("decisions").and_then(Value::as_array).ok_or("no list `decisions`")?;
+    let mut kinds: Vec<DecisionKind> = Vec::with_capacity(list.len());
+    for d in list {
+        let d = table(d)?;
+        let name = text(d, "name")?.to_owned();
+        let taken_in = match text(d, "taken_in")? {
+            "household" => TakenIn::Household,
+            "person" => TakenIn::Person,
+            office => TakenIn::Office(office.to_owned()),
+        };
+        let touched = names(d, "concerns")?
+            .iter()
+            .map(|c| {
+                concerns
+                    .iter()
+                    .position(|k| k == c)
+                    .and_then(|i| u8::try_from(i).ok())
+                    .ok_or_else(|| format!("`{name}`: `{c}` is not a concern"))
+            })
+            .collect::<Result<Vec<u8>, String>>()?;
+        if touched.is_empty() {
+            return Err(format!("`{name}` touches no concern"));
+        }
+        let mode = match text(d, "mode")? {
+            "best" => Mode::Best,
+            "satisfice" => Mode::Satisfice,
+            other => return Err(format!("`{name}`: `{other}` is not a mode of choosing")),
+        };
+        if kinds.iter().any(|k| k.name == name) {
+            return Err(format!("two decisions named `{name}`"));
+        }
+        kinds.push(DecisionKind { name, taken_in, concerns: touched, mode });
+    }
+    Ok(DecisionKinds { concerns, kinds })
 }
 
 fn products(v: &Value) -> Result<Vec<crate::ProductEntry>, String> {
@@ -716,6 +763,7 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         }
         ValueType::Calendar => Ok(PrimValue::Calendar(calendar(v)?)),
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
+        ValueType::Decisions => Ok(PrimValue::Decisions(decisions(v)?)),
         ValueType::Products => Ok(PrimValue::Products(products(v)?)),
         ValueType::NewsRule => Ok(PrimValue::NewsRule(news_rule(v)?)),
         ValueType::CarryingBases => Ok(PrimValue::CarryingBases(carrying_bases(v)?)),
@@ -801,6 +849,7 @@ read_ref!(Vec<NewsEntry>, NewsRule, ValueType::NewsRule);
 read_ref!(Vec<crate::accounting::Permitted>, CarryingBases, ValueType::CarryingBases);
 read_ref!(JointProfile, Profile, ValueType::Profile { .. });
 read_ref!(Partition, Partition, ValueType::Partition { .. });
+read_ref!(crate::decisions::DecisionKinds, Decisions, ValueType::Decisions);
 
 #[cfg(test)]
 mod tests {

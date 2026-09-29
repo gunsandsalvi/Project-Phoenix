@@ -117,7 +117,8 @@ pub(crate) fn chances(
 ) -> Missing<Day> {
     let date = reading.calendar.date(day);
     let attr = |name: &str| household.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
-    let view = AgentView { kind, party, attr: &attr, country_of: reading.country_of, date };
+    let decider = |_: &str| violation!(clause = "MND.20", "a decision taken while a chance is read");
+    let view = AgentView { kind, party, attr: &attr, country_of: reading.country_of, date, decider: &decider };
     let mut change = None::<Day>;
     s.places.clear();
     s.qs.clear();

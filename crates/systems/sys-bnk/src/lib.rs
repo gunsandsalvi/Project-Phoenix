@@ -7,6 +7,7 @@ mod consts;
 pub mod credit;
 pub mod households;
 mod opening;
+pub mod points;
 pub use opening::{bank_site, bank_weights, rate};
 pub mod zipf;
 
@@ -189,6 +190,10 @@ impl System for Bnk {
         let _: phx_core::Prim<Fixed<4>> = d.prim(&LOAN_COST);
         let _: phx_core::Prim<Fixed<5>> = d.prim(&RATE_STEP);
         d.market(Box::new(CREDIT));
+        d.decision(&points::DECLINE);
+        d.decision(&points::QUOTE);
+        d.decision(&points::STANDARD);
+        d.decision(&points::CHOOSE);
     }
 
     fn handlers(_: &mut HandlerTable) {}

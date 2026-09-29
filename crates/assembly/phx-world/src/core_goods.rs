@@ -24,14 +24,17 @@ use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::firm::{
-    EXPECTED, MARKUP, MEMORY, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
-    SALES_WIDTH, SEEN_SOLD, SOLD as SOLD_UNITS, STANCE, SWITCHING,
+    EXPECTED, MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED, SALES_WIDTH,
+    SEEN_SOLD, SOLD as SOLD_UNITS,
 };
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
 use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_accounts::Line;
+use crate::core_decide::Bound as Decided;
 use crate::opening::economy::table;
+use sys_frm::rules::inputs::{Line as InputLine, OrdersIn};
+use sys_frm::rules::produce::{Produce, ProduceIn};
 
 /// What a day's goods did.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -339,13 +342,15 @@ impl Core {
     /// at — at the nearest point of its trade's table.
     #[clause("FRM.5", "GEN.13", "REP.34")]
     fn open_prices(&mut self, ctx: &GoodsCtx<'_>, firm: usize, prices: &[Vec<f64>]) {
+        let pricing = self.bind(&sys_frm::points::DAY_ZERO_PRICE);
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
             let Some(markup) = self.record_word(firm, slot, MARKUP).map(|m| from_i64(m) / PART_ONE) else { continue };
             let Some(price) = prices.get(f.country) else { continue };
             let Some(cost) = self.cost_at(&f, &|q| price.get(usize::from(q)).copied()) else { continue };
             let wanted = (1.0 + markup) * cost * self.lot(f.product);
-            if let Some(p) = sys_frm::rules::price::nearest_point(&ctx.management.points_near(wanted), wanted) {
+            let points = ctx.management.points_near(wanted);
+            if let Some(p) = self.decide(pricing, f.key, |_| sys_frm::rules::review::DayZeroIn { points, wanted }) {
                 self.set_record_word(firm, slot, PRICE, p);
             }
         }
@@ -495,6 +500,7 @@ impl Core {
     #[clause("SOC.2", "GEN.2")]
     fn public_wants(&self, regions: &[CountryId]) -> Vec<(u16, Buyer)> {
         let mut wants = Vec::new();
+        let consuming = self.bind(&sys_soc::points::CONSUME);
         for (r, c) in regions.iter().enumerate() {
             let country = usize::from(c.get());
             let Some(Some(treasury)) = self.treasuries.get(country).copied() else { continue };
@@ -504,8 +510,11 @@ impl Core {
                 continue;
             };
             let Ok(region) = u32::try_from(r) else { continue };
-            for (p, u) in (0_u16..).zip(uses) {
-                let amount = floor_to_i64(u[0] * gdp / DAYS_A_YEAR * share).unwrap_or(0);
+            let amounts = self.decide(consuming, treasury, |_| sys_soc::points::ConsumeIn {
+                per_day: gdp / DAYS_A_YEAR * share,
+                shares: uses.iter().map(|u| u[0]).collect(),
+            });
+            for (p, amount) in (0_u16..).zip(amounts) {
                 if amount > 0 {
                     let subject = packed(u64::from(treasury.word()), u64::from(region), REGION_BITS);
                     wants.push((p, Buyer { party: treasury, subject, want: Want::Money(amount), place: region }));
@@ -522,6 +531,7 @@ impl Core {
     fn investment_wants(&self, ctx: &GoodsCtx<'_>) -> Vec<(u16, Buyer)> {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Vec::new() };
         let mut wants = Vec::new();
+        let investing = self.bind(&sys_cap::points::INVEST);
         for s in &self.labour.due_today {
             let Some(f) = self.goods_firm(ctx.regions, firm, Slot::new(*s)) else { continue };
             let (Some(gdp), Some(uses), Some(share)) =
@@ -529,9 +539,11 @@ impl Core {
             else {
                 continue;
             };
-            for (p, u) in (0_u16..).zip(uses) {
-                let amount =
-                    floor_to_i64(u[1] * gdp * ctx.management.production_days / DAYS_A_YEAR * share).unwrap_or(0);
+            let amounts = self.decide(investing, f.key, |_| sys_cap::points::InvestIn {
+                per_period: gdp * ctx.management.production_days / DAYS_A_YEAR * share,
+                shares: uses.iter().map(|u| u[1]).collect(),
+            });
+            for (p, amount) in (0_u16..).zip(amounts) {
                 if amount > 0 {
                     let buyer = Buyer {
                         party: f.key,
@@ -699,7 +711,12 @@ impl Core {
     }
 
     /// A firm's making today by the production rule: the units, none where it makes nothing.
-    fn making(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot)) -> Option<(Firm, i64)> {
+    fn making(
+        &self,
+        ctx: &GoodsCtx<'_>,
+        (firm, slot): (usize, Slot),
+        producing: Decided<ProduceIn, Produce>,
+    ) -> Option<(Firm, i64)> {
         let m = ctx.management;
         let f = self.goods_firm(ctx.regions, firm, slot)?;
         let expected = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE)?;
@@ -717,7 +734,7 @@ impl Core {
         if !stored && !capacity.is_finite() {
             return None;
         }
-        let input = sys_frm::rules::produce::ProduceIn {
+        let input = ProduceIn {
             expected_demand: if stored { expected } else { capacity },
             stock: from_i64(stock),
             cover: if stored { m.cover_days } else { 0.0 },
@@ -728,7 +745,7 @@ impl Core {
             financing_rate: rate / DAYS_A_YEAR,
             lead: self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0),
         };
-        let sys_frm::rules::produce::Produce::Make(units) = sys_frm::rules::produce::target(&input) else {
+        let Produce::Make(units) = self.decide(producing, f.key, |_| input) else {
             return None;
         };
         let today = floor_to_i64(units.floor()).unwrap_or(0);
@@ -743,9 +760,10 @@ impl Core {
     fn make(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> i64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
         let slots = self.firm_slots(firm);
+        let producing = self.bind(&sys_frm::points::PRODUCE);
         let plans: Vec<Option<(Firm, i64)>> = match ctx.pool {
-            Some(pool) => pool.map(slots.len(), |i| slots.get(i).and_then(|s| self.making(ctx, (firm, *s)))),
-            None => slots.iter().map(|s| self.making(ctx, (firm, *s))).collect(),
+            Some(pool) => pool.map(slots.len(), |i| slots.get(i).and_then(|s| self.making(ctx, (firm, *s), producing))),
+            None => slots.iter().map(|s| self.making(ctx, (firm, *s), producing)).collect(),
         };
         let mut made = 0;
         for (slot, (f, today)) in slots.into_iter().zip(plans).filter_map(|(s, p)| p.map(|p| (s, p))) {
@@ -950,7 +968,12 @@ impl Core {
     }
 
     /// A firm's orders of its stored inputs for its planned output, within the money it can spend on them.
-    fn input_orders(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), day: Day) -> Vec<(u16, Buyer)> {
+    fn input_orders(
+        &self,
+        ctx: &GoodsCtx<'_>,
+        (firm, slot): (usize, Slot),
+        (day, ordering): (Day, Decided<OrdersIn, Vec<f64>>),
+    ) -> Vec<(u16, Buyer)> {
         let m = ctx.management;
         let mut wants: Vec<(u16, Buyer)> = Vec::new();
         let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { return wants };
@@ -970,25 +993,23 @@ impl Core {
         };
         let next = after(day, u64::from(self.labour.production_days));
         let free = from_i64(money - self.owed_until(f.key, (day, next), ctx.calendar));
-        let mut orders: Vec<(u16, f64, f64, i64)> = Vec::new();
+        let mut inputs: Vec<(u16, InputLine)> = Vec::new();
         for (q, a) in self.stored_inputs(&f).into_iter().filter(|(q, _)| *q != f.product) {
             let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
-            let input_lot = self.lot(q);
             let worth = per_unit + margin / a;
-            let carried = sys_frm::rules::inputs::carried_cost(per_unit, financing, lead + m.cover_days);
+            let Some(limit) = floor_to_i64(worth * self.lot(q)) else { continue };
             let held = from_i64(self.free_units(f.key, q, f.region));
             let use_a_day = if planned > 0.0 { a * planned } else { 0.0 };
-            let short = sys_frm::rules::inputs::order(use_a_day, (lead, m.cover_days), held, worth, carried);
-            let Some(limit) = floor_to_i64(worth * input_lot) else { continue };
-            if short > 0.0 && limit > 0 {
-                orders.push((q, short, per_unit, limit));
-            }
+            inputs.push((q, InputLine { use_a_day, held, price: per_unit, worth, limit }));
         }
-        // Its orders at the least prices posted, cut alike to what it can spend.
-        let cost: f64 = orders.iter().map(|(_, units, price, _)| units * price).sum();
-        let scale = if cost > free { free / cost } else { 1.0 };
-        for (q, short, _, limit) in orders {
-            let Some(units) = floor_to_i64((short * scale).floor()) else { continue };
+        if inputs.is_empty() {
+            return wants;
+        }
+        let lines = inputs.iter().map(|(_, l)| *l).collect();
+        let ordered = self.decide(ordering, f.key, |_| OrdersIn { lines, lead, cover: m.cover_days, financing, free });
+        for ((q, line), short) in inputs.into_iter().zip(ordered) {
+            let limit = line.limit;
+            let Some(units) = floor_to_i64(short.floor()) else { continue };
             if units > 0 {
                 let buyer = Buyer {
                     party: f.key,
@@ -1011,10 +1032,12 @@ impl Core {
     fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> u64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
         let slots = self.firm_slots(firm);
+        let ordering = self.bind(&sys_frm::points::INPUTS);
         let orders: Vec<Vec<(u16, Buyer)>> = match ctx.pool {
-            Some(pool) => pool
-                .map(slots.len(), |i| slots.get(i).map_or_else(Vec::new, |s| self.input_orders(ctx, (firm, *s), day))),
-            None => slots.iter().map(|s| self.input_orders(ctx, (firm, *s), day)).collect(),
+            Some(pool) => pool.map(slots.len(), |i| {
+                slots.get(i).map_or_else(Vec::new, |s| self.input_orders(ctx, (firm, *s), (day, ordering)))
+            }),
+            None => slots.iter().map(|s| self.input_orders(ctx, (firm, *s), (day, ordering))).collect(),
         };
         let wants: Vec<(u16, Buyer)> = orders.into_iter().flatten().collect();
         let n = len_u64(wants.len());
@@ -1051,6 +1074,7 @@ impl Core {
         let month = months(ctx.calendar.date(day));
         let mut wants = Vec::new();
         let mut spenders = 0;
+        let spending = self.bind(&sys_hh::points::SPEND);
         for s in due {
             let slot = Slot::new(s);
             let Some(id) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { continue };
@@ -1067,26 +1091,11 @@ impl Core {
                 self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
                 && let Some(country) = usize::try_from(region).ok().and_then(|r| ctx.regions.get(r))
             {
-                self.reconsider_household((ctx.streams, &ctx.rule.types), (place, slot, id), (country.get(), day));
+                let household = PartyKey::new(kind_number(place), slot);
+                self.reconsider_household((ctx.streams, &ctx.rule.types), (household, id), (country.get(), day));
             }
-            let read = |at: usize| self.record_word(place, slot, at);
-            let (received, looked) = match (read(after_at), read(received_at), read(looked_at)) {
-                (Some(after), Some(received), Some(looked)) => (received + money - after, looked),
-                _ => (0, month),
-            };
-            let mut outlook = read(income_at).map(from_i64);
-            let (received, looked) = if month > looked {
-                let seen = from_i64(received) * MONTHS_A_YEAR / from_i64(month - looked);
-                outlook = Some(match outlook {
-                    Some(p) => phx_val::heuristics::adaptive(p, seen, ctx.rule.gain),
-                    None => seen,
-                });
-                (0, month)
-            } else {
-                (received, looked)
-            };
-            self.set_record_word(place, slot, received_at, received);
-            self.set_record_word(place, slot, looked_at, looked);
+            let at = [income_at, after_at, received_at, looked_at];
+            let outlook = self.income_outlook((place, slot), at, (money, month), ctx.rule.gain);
             let Some(income) = outlook.filter(|y| *y > 0.0) else {
                 self.set_record_word(place, slot, after_at, money);
                 continue;
@@ -1098,10 +1107,16 @@ impl Core {
                 self.set_record_word(place, slot, after_at, money);
                 continue;
             }
-            let cash = from_i64(free) / income + 1.0;
-            let wanted = sys_hh::buffer::spend(&ctx.rule.rule, cash) * income * ctx.rule.period;
-            let held = from_i64(free);
-            let spent = if wanted < held { wanted } else { held };
+            let rule = &ctx.rule.rule;
+            let spent = self.decide(spending, party, |_| sys_hh::points::SpendIn {
+                at_target: rule.at_target,
+                kappa: rule.kappa,
+                target: rule.target,
+                cash: from_i64(free) / income + 1.0,
+                income,
+                period: ctx.rule.period,
+                free: from_i64(free),
+            });
             let Some(Missing::Present(region)) =
                 self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
             else {
@@ -1128,6 +1143,36 @@ impl Core {
         let n = len_u64(wants.len());
         self.goods.wants = wants;
         (spenders, n)
+    }
+
+    /// A household's outlook of its income a year: what it received since it last decided taken in, and once a month
+    /// its receipts a year since its last look into its outlook at its gain.
+    fn income_outlook(
+        &mut self,
+        (place, slot): (usize, Slot),
+        [income_at, after_at, received_at, looked_at]: [usize; 4],
+        (money, month): (i64, i64),
+        gain: f64,
+    ) -> Option<f64> {
+        let read = |at: usize| self.record_word(place, slot, at);
+        let (received, looked) = match (read(after_at), read(received_at), read(looked_at)) {
+            (Some(after), Some(received), Some(looked)) => (received + money - after, looked),
+            _ => (0, month),
+        };
+        let mut outlook = read(income_at).map(from_i64);
+        let (received, looked) = if month > looked {
+            let seen = from_i64(received) * MONTHS_A_YEAR / from_i64(month - looked);
+            outlook = Some(match outlook {
+                Some(p) => phx_val::heuristics::adaptive(p, seen, gain),
+                None => seen,
+            });
+            (0, month)
+        } else {
+            (received, looked)
+        };
+        self.set_record_word(place, slot, received_at, received);
+        self.set_record_word(place, slot, looked_at, looked);
+        outlook
     }
 
     /// A firm's planned output a day: the sales it expects and, of a stored product, the gap between the stock it aims
@@ -1166,25 +1211,33 @@ impl Core {
             violation!(clause = "VAL.7", "the firms' stance stream is not declared");
         };
         let mut stances = (0_u64, 0_u64);
+        let (reconsidering, reviewing, repricing) = (
+            self.bind(&sys_frm::points::STANCE),
+            self.bind(&sys_frm::points::REVIEW_PRICE),
+            self.bind(&sys_frm::points::REPRICE),
+        );
         for s in due {
             let slot = Slot::new(s);
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let (Some(markup), Some(expected), Some(sold), Some(last), Some(memory), Some(switching), Some(stance)) = (
+            let (_, prefs) = self.decider(reviewing, f.key);
+            let (Some(markup), Some(expected), Some(sold), Some(last)) = (
                 self.record_word(firm, slot, MARKUP),
                 self.record_word(firm, slot, EXPECTED),
                 self.record_word(firm, slot, SOLD_UNITS),
                 self.record_word(firm, slot, REVIEWED),
-                self.record_word(firm, slot, MEMORY),
-                self.record_word(firm, slot, SWITCHING),
-                self.record_word(firm, slot, STANCE),
             ) else {
                 continue;
             };
-            let memory = usize::try_from(memory).unwrap_or(usize::MAX);
+            let (Missing::Present(memory), Missing::Present(switching), Missing::Present(stance)) =
+                (prefs.memory, prefs.switching, prefs.stance)
+            else {
+                continue;
+            };
+            let memory = usize::from(memory);
             let Some(gain) = m.types.gains.get(memory).copied() else {
                 violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = s);
             };
-            let Some(beta) = usize::try_from(switching).ok().and_then(|t| m.types.intensities.get(t)).copied() else {
+            let Some(beta) = m.types.intensities.get(usize::from(switching)).copied() else {
                 violation!(clause = "VAL.7", "a firm's switching type beyond the types", slot = s);
             };
             let days = i64::from(day.get()) - last;
@@ -1201,58 +1254,48 @@ impl Core {
             // the mark has printed there.
             let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
             let series = (f.product, f.region);
-            let chosen =
-                self.goods.outlooks.reconsider((series, memory, beta), (ctx.streams, &stance_stream), (id, day));
+            let chosen = self.decide(reconsidering, f.key, |_| {
+                self.goods.outlooks.stance_in((series, memory, beta), (ctx.streams, &stance_stream), (id, day))
+            });
             stances.0 += 1;
-            if i64::try_from(chosen).ok() != Some(stance) {
+            if let Ok(chosen) = u16::try_from(chosen)
+                && chosen != stance
+            {
                 stances.1 += 1;
-                self.set_record_word(firm, slot, STANCE, i64::try_from(chosen).unwrap_or(i64::MAX));
+                self.set_stance(reconsidering, f.key, chosen);
             }
             let seen = self.goods.outlooks.outlook(series, memory, chosen);
-            let markup = match sys_frm::rules::markup::update(
-                markup,
-                (m.sales_speed, m.seen_speed),
-                (demand, expected),
-                seen,
-                price,
-            ) {
-                Missing::Present(x) => x,
-                Missing::Absent => markup,
-            };
-            self.set_record_word(firm, slot, MARKUP, whole_units(markup * PART_ONE));
-            let expected = phx_val::heuristics::adaptive(expected, demand, gain);
-            self.set_record_word(firm, slot, EXPECTED, whole_units(expected * PART_ONE));
-            self.set_record_word(firm, slot, SOLD_UNITS, 0);
-            self.set_record_word(firm, slot, SEEN_SOLD, 0);
             // A service is never held, so its provider's pressure is its demand's alone.
             let (stock, cover) = if self.is_stored(f.product) {
                 (from_i64(self.free_units(f.key, f.product, f.region)), m.cover_days)
             } else {
                 (0.0, 0.0)
             };
-            let Some(unit_cost) = self.unit_cost(&f) else { continue };
+            let unit_cost = self.unit_cost(&f).map_or(Missing::Absent, Missing::Present);
             let Some(lot) = floor_to_i64(self.lot(f.product)) else { continue };
             let lot = from_i64(lot);
-            let pressure = match sys_frm::rules::price::pressure_stocked(demand, expected, cover * expected, stock) {
-                Missing::Present(p) => p,
-                Missing::Absent => continue,
-            };
-            if unit_cost <= 0.0 {
-                continue;
-            }
-            let wanted = sys_frm::rules::price::desired(markup, unit_cost * lot, pressure, m.curvature);
-            let law = self.labour.laws.get(f.country);
-            let hour = law.map_or(0.0, |l| l.mean_monthly / (l.weeks_a_month * f64::from(l.full_time_hours)));
-            // What a gap costs it is read on the sales it expects, so a firm that sold nothing at a price it cannot
-            // make at still weighs moving it.
-            let revenue = expected * from_i64(f.price) / lot * m.production_days;
-            let points = m.points_near(wanted);
-            if let Some(p) =
-                sys_frm::rules::price::reprice(&points, f.price, wanted, revenue, markup, m.menu_hours * hour)
-            {
-                self.set_record_word(firm, slot, PRICE, p);
+            let reviewed = self.decide(reviewing, f.key, |_| sys_frm::rules::review::ReviewIn {
+                markup,
+                speeds: (m.sales_speed, m.seen_speed),
+                curvature: m.curvature,
+                demand,
+                expected,
+                seen,
+                price,
+                gain,
+                stock,
+                cover,
+                unit_cost,
+                lot,
+            });
+            let (markup, expected) = (reviewed.markup, reviewed.expected);
+            self.set_record_word(firm, slot, MARKUP, whole_units(markup * PART_ONE));
+            self.set_record_word(firm, slot, EXPECTED, whole_units(expected * PART_ONE));
+            self.set_record_word(firm, slot, SOLD_UNITS, 0);
+            self.set_record_word(firm, slot, SEEN_SOLD, 0);
+            let Missing::Present(wanted) = reviewed.wanted else { continue };
+            if self.move_price(ctx, (&f, slot, lot), (wanted, expected, markup), (repricing, day)) {
                 repriced += 1;
-                self.note_repriced((s, f.product), (f.price, p), day);
             }
         }
         self.goods.outlooks.days.push(crate::core_outlooks::StanceDay {
@@ -1264,17 +1307,46 @@ impl Core {
         (reviews, repriced)
     }
 
+    /// A reviewed firm's move to the point nearest the price it would like, where the move gains more than it costs; a
+    /// gap's cost read on the sales it expects, so a firm that sold nothing at a price it cannot make at still weighs
+    /// moving it.
+    fn move_price(
+        &mut self,
+        ctx: &GoodsCtx<'_>,
+        (f, slot, lot): (&Firm, Slot, f64),
+        (wanted, expected, markup): (f64, f64, f64),
+        (repricing, day): (Decided<sys_frm::rules::review::RepriceIn, Option<i64>>, Day),
+    ) -> bool {
+        let m = ctx.management;
+        let law = self.labour.laws.get(f.country);
+        let hour = law.map_or(0.0, |l| l.mean_monthly / (l.weeks_a_month * f64::from(l.full_time_hours)));
+        let revenue = expected * from_i64(f.price) / lot * m.production_days;
+        let points = m.points_near(wanted);
+        let moved = self.decide(repricing, f.key, |_| sys_frm::rules::review::RepriceIn {
+            points,
+            current: f.price,
+            wanted,
+            revenue,
+            markup,
+            menu_cost: m.menu_hours * hour,
+        });
+        let Some(p) = moved else { return false };
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return false };
+        self.set_record_word(firm, slot, PRICE, p);
+        self.note_repriced((slot.get(), f.product), (f.price, p), day);
+        true
+    }
+
     /// A firm's look at its day's sales against those it expects: the surprise taken into the width its attention
     /// weighs, and one wider than its attention's sensitivity kept until its next price change, by its size over what
     /// it expected.
     #[clause("VAL.4", "VAL.5", "REP.35")]
-    fn look_at_sales(&mut self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), day: Day) {
+    fn look_at_sales(&mut self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), (day, memory): (Day, u16)) {
         let m = ctx.management;
-        let (Some(sold), Some(seen), Some(expected), Some(memory)) = (
+        let (Some(sold), Some(seen), Some(expected)) = (
             self.record_word(firm, slot, SOLD_UNITS),
             self.record_word(firm, slot, SEEN_SOLD),
             self.record_word(firm, slot, EXPECTED),
-            self.record_word(firm, slot, MEMORY),
         ) else {
             return;
         };
@@ -1283,7 +1355,7 @@ impl Core {
         if expected <= 0.0 {
             return;
         }
-        let Some(gain) = usize::try_from(memory).ok().and_then(|t| m.types.gains.get(t)).copied() else {
+        let Some(gain) = m.types.gains.get(usize::from(memory)).copied() else {
             violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = slot.get());
         };
         let e = phx_val::surprise::surprise(from_i64(sold - seen), expected);
@@ -1319,11 +1391,16 @@ impl Core {
         due
     }
 
-    /// A firm's chance of reviewing its price today: the loss a price left standing costs it, by its revenue
-    /// and its markup's curvature, growing with the variances of what its price should be — its own sales' surprises
-    /// and those of its stance on its product's mark — against what a review costs its staff's hours; none known before
-    /// its first surprise.
-    fn review_chance(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot)) -> Option<f64> {
+    /// What a firm's attention weighs, for its chance of reviewing its price today: the loss a price left standing costs
+    /// it, by its revenue and its markup's curvature, growing with the variances of what its price should be — its own
+    /// sales' surprises and those of its stance on its product's mark — against what a review costs its staff's hours;
+    /// none known before its first surprise, and nothing to weigh where it expects to sell nothing.
+    fn review_chance(
+        &self,
+        ctx: &GoodsCtx<'_>,
+        (firm, slot): (usize, Slot),
+        memory: u16,
+    ) -> Option<sys_frm::rules::review::AttendIn> {
         let m = ctx.management;
         let f = self.goods_firm(ctx.regions, firm, slot)?;
         let width = from_i64(self.record_word(firm, slot, SALES_WIDTH)?) / PART_ONE;
@@ -1331,11 +1408,11 @@ impl Core {
         let markup = from_i64(self.record_word(firm, slot, MARKUP)?) / PART_ONE;
         // A firm that expects to sell nothing loses nothing by a price left standing.
         if expected <= 0.0 {
-            return Some(0.0);
+            return None;
         }
         let relative = width / expected;
         let own = relative * relative;
-        let memory = usize::try_from(self.record_word(firm, slot, MEMORY)?).ok()?;
+        let memory = usize::from(memory);
         let public: Vec<f64> = self
             .goods
             .outlooks
@@ -1355,7 +1432,7 @@ impl Core {
             return None;
         }
         let revenue_per_day = expected * from_i64(f.price) / self.lot(f.product);
-        Some(sys_frm::rules::attention::review_chance(revenue_per_day, markup, (own, &public), cost))
+        Some(sys_frm::rules::review::AttendIn { revenue_per_day, markup, own, public, cost, draw: 0.0 })
     }
 
     /// Each firm looks at its day's sales, and one that has weighed its attention draws, at its chance, whether it
@@ -1368,12 +1445,16 @@ impl Core {
         };
         let slots: Vec<Slot> = self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
         let mut attending = Vec::new();
+        let attends = self.bind(&sys_frm::points::ATTEND);
         for slot in slots {
-            self.look_at_sales(ctx, (firm, slot), day);
-            let Some(chance) = self.review_chance(ctx, (firm, slot)) else { continue };
+            let key = PartyKey::new(kind_number(firm), slot);
+            let Missing::Present(memory) = self.decider(attends, key).1.memory else { continue };
+            self.look_at_sales(ctx, (firm, slot), (day, memory));
+            let Some(weighed) = self.review_chance(ctx, (firm, slot), memory) else { continue };
             let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
             let mut d = ctx.streams.open(&stream, Subject::new(SubjectTag::Party, id.get()), day, 0);
-            if phx_rand::open_unit(&mut d) < chance {
+            let draw = phx_rand::open_unit(&mut d);
+            if self.decide(attends, key, |_| sys_frm::rules::review::AttendIn { draw, ..weighed }) {
                 attending.push(slot.get());
             }
         }
@@ -1406,6 +1487,7 @@ impl Core {
         }
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
         let Some(store) = self.kinds.get(firm) else { return };
+        let reads = self.bind(&sys_frm::points::STANCE);
         let mut surprised = Vec::new();
         for slot in store.parties.live_slots() {
             let rec = store.record(slot);
@@ -1413,15 +1495,16 @@ impl Core {
                 Some(Missing::Present(v)) => Some(v),
                 _ => None,
             };
-            let (Some(product), Some(region), Some(memory), Some(stance)) =
-                (read(PRODUCT), read(REGION), read(MEMORY), read(STANCE))
+            let prefs = self.decider(reads, PartyKey::new(kind_number(firm), slot)).1;
+            let (Some(product), Some(region), Missing::Present(memory), Missing::Present(stance)) =
+                (read(PRODUCT), read(REGION), prefs.memory, prefs.stance)
             else {
                 continue;
             };
             let key = (
                 (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX)),
-                usize::try_from(memory).unwrap_or(usize::MAX),
-                usize::try_from(stance).unwrap_or(usize::MAX),
+                usize::from(memory),
+                usize::from(stance),
             );
             if let Some(size) = by.get(&key) {
                 surprised.push((slot.get(), *size));
@@ -1439,10 +1522,11 @@ impl Core {
     fn count_stances(&mut self, day: Day) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
         let Some(store) = self.kinds.get(firm) else { return };
+        let reads = self.bind(&sys_frm::points::STANCE);
         let mut by = [0_u64; crate::core_outlooks::HEURISTICS];
         for slot in store.parties.live_slots() {
-            if let Some(Missing::Present(h)) = store.record(slot).get(STANCE).map(|w| w.get())
-                && let Some(n) = usize::try_from(h).ok().and_then(|h| by.get_mut(h))
+            if let Missing::Present(h) = self.decider(reads, PartyKey::new(kind_number(firm), slot)).1.stance
+                && let Some(n) = by.get_mut(usize::from(h))
             {
                 *n += 1;
             }

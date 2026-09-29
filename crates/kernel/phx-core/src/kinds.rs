@@ -62,9 +62,9 @@ pub enum Feature {
     IssuesCurrency,
 }
 
-/// What a legal form permits, as its country declares it: what it may hold, its features, how it can end, and who
-/// owns it.
-#[clause("PTY.4", "PTY.15")]
+/// What a legal form permits, as its country declares it: what it may hold, its features, how it can end, who owns
+/// it, and the offices it decides through.
+#[clause("PTY.4", "PTY.15", "PTY.16")]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LegalForm {
     pub name: String,
@@ -72,6 +72,7 @@ pub struct LegalForm {
     pub features: Vec<Feature>,
     pub endings: Vec<String>,
     pub owners: String,
+    pub offices: Vec<String>,
 }
 
 impl LegalForm {
@@ -80,14 +81,23 @@ impl LegalForm {
         self.features.contains(&feature)
     }
 
-    /// Every party can end, except an issuer of its own currency.
+    /// Where an office sits among the form's offices.
+    #[must_use]
+    pub fn office(&self, name: &str) -> Option<usize> {
+        self.offices.iter().position(|o| o == name)
+    }
+
+    /// Every party can end, except an issuer of its own currency; no office is named twice.
     ///
     /// # Errors
-    /// When a form has no ending and issues no currency.
-    #[clause("PTY.13")]
+    /// When a form has no ending and issues no currency, or names an office twice.
+    #[clause("PTY.13", "PTY.16")]
     pub fn validate(&self) -> Result<(), String> {
         if self.endings.is_empty() && !self.has(Feature::IssuesCurrency) {
             return Err(format!("legal form `{}` has no way to end", self.name));
+        }
+        if self.offices.iter().enumerate().any(|(i, o)| self.office(o) != Some(i)) {
+            return Err(format!("legal form `{}` names an office twice", self.name));
         }
         Ok(())
     }
@@ -105,6 +115,7 @@ mod tests {
             features: vec![Feature::SeparateParty, Feature::LimitedLiability],
             endings: vec![],
             owners: "shareholders".to_owned(),
+            offices: vec!["chief_executive".to_owned()],
         };
         assert!(form.validate().is_err());
         form.features.push(Feature::IssuesCurrency);

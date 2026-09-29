@@ -73,10 +73,9 @@ impl PopProcess for Retirement {
             let Some(p) = h.persons.get(*i) else { continue };
             let months = age_months(p, agent.date);
             let Some(pension) = self.pension_months(agent, p) else { continue };
-            let input = RetireIn { age_months: months, pension_months: pension };
-            if crate::rules::retire::retire(&input)
-                && let Some(p) = h.persons.get_mut(*i)
-            {
+            let retires =
+                agent.decide(&crate::points::RETIRE, |_| RetireIn { age_months: months, pension_months: pension });
+            if retires && let Some(p) = h.persons.get_mut(*i) {
                 p.set_attr(crate::STATE.name, RETIRED);
             }
         }

@@ -88,7 +88,9 @@ impl Core {
         for &(slot, party) in &sample {
             self.read_household((place, &decl), slot, &mut h);
             let attr = |name: &str| h.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
-            let view = AgentView { kind: decl.kind, party, attr: &attr, country_of: &country_of, date };
+            let decider = |_: &str| phx_num::violation!(clause = "MND.20", "a decision taken while a chance is read");
+            let view =
+                AgentView { kind: decl.kind, party, attr: &attr, country_of: &country_of, date, decider: &decider };
             for hz in &self.hazards {
                 let Some(b) = ctx.processes.get(hz.process) else { continue };
                 for (_, person) in h.present() {
