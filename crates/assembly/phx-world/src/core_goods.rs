@@ -667,6 +667,43 @@ impl Core {
         (own < 1.0).then(|| (inputs + labour) / (1.0 - own))
     }
 
+    /// A firm's making today by the production rule: the units, none where it makes nothing.
+    fn making(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot)) -> Option<(Firm, i64)> {
+        let m = ctx.management;
+        let f = self.goods_firm(ctx.regions, firm, slot)?;
+        let expected = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE)?;
+        let stored = self.is_stored(f.product);
+        let stock = if stored { self.free_units(f.key, f.product, f.region) } else { 0 };
+        let mut capacity = self.staff_capacity(&f).map_or(f64::INFINITY, from_i64);
+        for (q, a) in self.recipe(&f) {
+            let can = from_i64(self.free_units(f.key, *q, f.region)) / a;
+            capacity = if can < capacity { can } else { capacity };
+        }
+        let lot = floor_to_i64(self.lot(f.product))?;
+        let unit_cost = self.unit_cost(&f)?;
+        let rate = self.labour.financing.get(f.country).copied().unwrap_or(0.0);
+        // A service's stall is the day's capacity, where a unit pays: it is made as it sells.
+        if !stored && !capacity.is_finite() {
+            return None;
+        }
+        let input = sys_frm::rules::produce::ProduceIn {
+            expected_demand: if stored { expected } else { capacity },
+            stock: from_i64(stock),
+            cover: if stored { m.cover_days } else { 0.0 },
+            adjustment: m.adjustment_days,
+            capacity,
+            expected_price: from_i64(f.price) / from_i64(lot),
+            unit_cost,
+            financing_rate: rate / DAYS_A_YEAR,
+            lead: self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0),
+        };
+        let sys_frm::rules::produce::Produce::Make(units) = sys_frm::rules::produce::target(&input) else {
+            return None;
+        };
+        let today = floor_to_i64(units.floor()).unwrap_or(0);
+        (today > 0).then_some((f, today))
+    }
+
     /// Each firm's making today by the production rule: the sales a day it expects and the gap to the stock its
     /// management aims to hold closed over its production period, within what its staff's hours make at its hours a
     /// unit and what its stored inputs allow, and nothing where a unit would not pay; the inputs used up and the
@@ -674,47 +711,15 @@ impl Core {
     #[clause("FRM.4", "FRM.14", "GDS.4", "TEC.9")]
     fn make(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> i64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
-        let m = ctx.management;
+        let slots = self.firm_slots(firm);
+        let plans: Vec<Option<(Firm, i64)>> = match ctx.pool {
+            Some(pool) => pool.map(slots.len(), |i| slots.get(i).and_then(|s| self.making(ctx, (firm, *s)))),
+            None => slots.iter().map(|s| self.making(ctx, (firm, *s))).collect(),
+        };
         let mut made = 0;
-        for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
-                continue;
-            };
+        for (slot, (f, today)) in slots.into_iter().zip(plans).filter_map(|(s, p)| p.map(|p| (s, p))) {
             let stored = self.is_stored(f.product);
-            let stock = if stored { self.free_units(f.key, f.product, f.region) } else { 0 };
             let inputs = self.stored_inputs(&f);
-            let mut capacity = self.staff_capacity(&f).map_or(f64::INFINITY, from_i64);
-            for (q, a) in &inputs {
-                let can = from_i64(self.free_units(f.key, *q, f.region)) / a;
-                capacity = if can < capacity { can } else { capacity };
-            }
-            let Some(lot) = floor_to_i64(self.lot(f.product)) else { continue };
-            let Some(unit_cost) = self.unit_cost(&f) else { continue };
-            let rate = self.labour.financing.get(f.country).copied().unwrap_or(0.0);
-            // A service's stall is the day's capacity, where a unit pays: it is made as it sells.
-            if !stored && !capacity.is_finite() {
-                continue;
-            }
-            let input = sys_frm::rules::produce::ProduceIn {
-                expected_demand: if stored { expected } else { capacity },
-                stock: from_i64(stock),
-                cover: if stored { m.cover_days } else { 0.0 },
-                adjustment: m.adjustment_days,
-                capacity,
-                expected_price: from_i64(f.price) / from_i64(lot),
-                unit_cost,
-                financing_rate: rate / DAYS_A_YEAR,
-                lead: self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0),
-            };
-            let outcome = sys_frm::rules::produce::target(&input);
-            let sys_frm::rules::produce::Produce::Make(units) = outcome else {
-                continue;
-            };
-            let today = floor_to_i64(units.floor()).unwrap_or(0);
-            if today <= 0 {
-                continue;
-            }
             if !stored {
                 let unit = self.unit_of(f.product, f.region);
                 let flow = Flow {
@@ -890,6 +895,59 @@ impl Core {
         out
     }
 
+    /// A firm's orders of its stored inputs for its planned output, within the money it can spend on them.
+    fn input_orders(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), day: Day) -> Vec<(u16, Buyer)> {
+        let m = ctx.management;
+        let mut wants: Vec<(u16, Buyer)> = Vec::new();
+        let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { return wants };
+        let lead = self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0);
+        let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
+            return wants;
+        };
+        let Some(unit_cost) = self.unit_cost(&f) else { return wants };
+        let lot = self.lot(f.product);
+        let margin = from_i64(f.price) / lot - unit_cost;
+        let planned = self.planned(&f, expected);
+        let financing = self.labour.financing.get(f.country).copied().unwrap_or(0.0) / DAYS_A_YEAR;
+        // What it holds beyond what its contracts take before its next schedule is what it can spend on inputs.
+        let Some(money) = self.kinds.get(firm).and_then(|k| k.accounts.as_ref()).and_then(|a| a.balance.get(slot))
+        else {
+            return wants;
+        };
+        let next = after(day, u64::from(self.labour.production_days));
+        let free = from_i64(money - self.owed_until(f.key, (day, next), ctx.calendar));
+        let mut orders: Vec<(u16, f64, f64, i64)> = Vec::new();
+        for (q, a) in self.stored_inputs(&f).into_iter().filter(|(q, _)| *q != f.product) {
+            let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
+            let input_lot = self.lot(q);
+            let worth = per_unit + margin / a;
+            let carried = sys_frm::rules::inputs::carried_cost(per_unit, financing, lead + m.cover_days);
+            let held = from_i64(self.free_units(f.key, q, f.region));
+            let use_a_day = if planned > 0.0 { a * planned } else { 0.0 };
+            let short = sys_frm::rules::inputs::order(use_a_day, (lead, m.cover_days), held, worth, carried);
+            let Some(limit) = floor_to_i64(worth * input_lot) else { continue };
+            if short > 0.0 && limit > 0 {
+                orders.push((q, short, per_unit, limit));
+            }
+        }
+        // Its orders at the least prices posted, cut alike to what it can spend.
+        let cost: f64 = orders.iter().map(|(_, units, price, _)| units * price).sum();
+        let scale = if cost > free { free / cost } else { 1.0 };
+        for (q, short, _, limit) in orders {
+            let Some(units) = floor_to_i64((short * scale).floor()) else { continue };
+            if units > 0 {
+                let buyer = Buyer {
+                    party: f.key,
+                    subject: u64::from(f.key.word()),
+                    want: Want::UpTo(units, limit),
+                    place: f.region,
+                };
+                wants.push((q, buyer));
+            }
+        }
+        wants
+    }
+
     /// Each firm's stored inputs other than its own product, which it uses from its own stock, ordered up to what its
     /// planned output uses over the days a unit takes and its stock's cover, where a unit of the input is worth its
     /// least price in the region financed over those days — that price and the margin a unit made earns over its
@@ -898,56 +956,13 @@ impl Core {
     #[clause("FRM.7", "GDS.5", "MKT.6")]
     fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> u64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
-        let m = ctx.management;
-        let mut wants: Vec<(u16, Buyer)> = Vec::new();
-        for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let lead = self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0);
-            let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
-                continue;
-            };
-            let Some(unit_cost) = self.unit_cost(&f) else { continue };
-            let lot = self.lot(f.product);
-            let margin = from_i64(f.price) / lot - unit_cost;
-            let planned = self.planned(&f, expected);
-            let financing = self.labour.financing.get(f.country).copied().unwrap_or(0.0) / DAYS_A_YEAR;
-            // What it holds beyond what its contracts take before its next schedule is what it can spend on inputs.
-            let Some(money) = self.kinds.get(firm).and_then(|k| k.accounts.as_ref()).and_then(|a| a.balance.get(slot))
-            else {
-                continue;
-            };
-            let next = after(day, u64::from(self.labour.production_days));
-            let free = from_i64(money - self.owed_until(f.key, (day, next), ctx.calendar));
-            let mut orders: Vec<(u16, f64, f64, i64)> = Vec::new();
-            for (q, a) in self.stored_inputs(&f).into_iter().filter(|(q, _)| *q != f.product) {
-                let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
-                let input_lot = self.lot(q);
-                let worth = per_unit + margin / a;
-                let carried = sys_frm::rules::inputs::carried_cost(per_unit, financing, lead + m.cover_days);
-                let held = from_i64(self.free_units(f.key, q, f.region));
-                let use_a_day = if planned > 0.0 { a * planned } else { 0.0 };
-                let short = sys_frm::rules::inputs::order(use_a_day, (lead, m.cover_days), held, worth, carried);
-                let Some(limit) = floor_to_i64(worth * input_lot) else { continue };
-                if short > 0.0 && limit > 0 {
-                    orders.push((q, short, per_unit, limit));
-                }
-            }
-            // Its orders at the least prices posted, cut alike to what it can spend.
-            let cost: f64 = orders.iter().map(|(_, units, price, _)| units * price).sum();
-            let scale = if cost > free { free / cost } else { 1.0 };
-            for (q, short, _, limit) in orders {
-                let Some(units) = floor_to_i64((short * scale).floor()) else { continue };
-                if units > 0 {
-                    let buyer = Buyer {
-                        party: f.key,
-                        subject: u64::from(f.key.word()),
-                        want: Want::UpTo(units, limit),
-                        place: f.region,
-                    };
-                    wants.push((q, buyer));
-                }
-            }
-        }
+        let slots = self.firm_slots(firm);
+        let orders: Vec<Vec<(u16, Buyer)>> = match ctx.pool {
+            Some(pool) => pool
+                .map(slots.len(), |i| slots.get(i).map_or_else(Vec::new, |s| self.input_orders(ctx, (firm, *s), day))),
+            None => slots.iter().map(|s| self.input_orders(ctx, (firm, *s), day)).collect(),
+        };
+        let wants: Vec<(u16, Buyer)> = orders.into_iter().flatten().collect();
         let n = len_u64(wants.len());
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
         let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg, moved);

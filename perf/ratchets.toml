@@ -340,8 +340,11 @@ direction = "down"
 # (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups,
 # which the failed firms' released staff pass while no firm posts.
 
-# The core's flows a day (S1.24): the greatest a day of the smoke came to, at the committed resolution.
+# The core's flows a day (S1.24): the greatest a day of the smoke came to, at the committed resolution. Raised
+# (2026-09-29) to 1 376 923 by the mechanisms S1.24 d and e added to the day — the services' capacity lost and their
+# inputs used as they sell, goods spoiling in stock, the firms' input orders by the inputs rule — each a flow the world
+# makes.
 [[ratchet]]
 counter = "phx_core.flows_a_day"
-value = 1337370
+value = 1376923
 direction = "down"
