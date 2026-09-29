@@ -5,7 +5,8 @@
 //! cost. Each firm then tops up its stored inputs from the firms of its region at their posted prices, and each
 //! household due decides by the buffer-stock rule what it spends and asks each product's share of it at retail. Each
 //! sale is a flow of money from buyer to seller and one of goods from the seller, held by a firm, used up by a
-//! household. The goods' identity is read each day.
+//! household. A service is never held: its provider offers the day's capacity, makes what sells as it is sold, using
+//! its inputs then, and the capacity no sale took is lost at the day's end. The goods' identity is read each day.
 
 use std::collections::BTreeMap;
 
@@ -26,7 +27,7 @@ use crate::consts::firm::{
     EXPECTED, MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
     SOLD as SOLD_UNITS,
 };
-use crate::consts::reason::{DELIVERED, MADE, SOLD, USED};
+use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, USED};
 use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::opening::economy::table;
@@ -168,11 +169,17 @@ impl Core {
     }
 
     /// A firm's stored inputs a unit of its output, each with its product.
+    fn is_stored(&self, product: u16) -> bool {
+        self.goods.stored.get(usize::from(product)).copied().unwrap_or_else(|| {
+            violation!(clause = "GDS.1", "a product the technology does not declare", product = product)
+        })
+    }
+
     fn stored_inputs(&self, f: &Firm) -> Vec<(u16, f64)> {
         let Some(ways) = self.goods.inputs.get(f.country) else { return Vec::new() };
         (0_u16..)
             .zip(ways)
-            .filter(|(q, _)| self.goods.stored.get(usize::from(*q)).copied().unwrap_or(false))
+            .filter(|(q, _)| self.is_stored(*q))
             .filter_map(|(q, row)| row.get(usize::from(f.product)).copied().filter(|a| *a > 0.0).map(|a| (q, a)))
             .collect()
     }
@@ -338,7 +345,7 @@ impl Core {
             let per_day = f.output / DAYS_A_YEAR;
             let price = |q: u16| prices.get(f.country).and_then(|p| p.get(usize::from(q))).copied().unwrap_or(0.0);
             let mut wanted: Vec<(u16, f64)> = Vec::new();
-            if self.goods.stored.get(usize::from(f.product)).copied().unwrap_or(false) {
+            if self.is_stored(f.product) {
                 wanted.push((f.product, self.goods.cover * per_day));
             }
             let lead = self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0);
@@ -378,6 +385,7 @@ impl Core {
         let invest = self.investment_wants(ctx);
         let held = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
         let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
+        self.close_services(ctx, day, &mut moved);
         (record.sales, record.spent) = (sales, spent);
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
         let close = self.goods.stocks.totals();
@@ -410,16 +418,32 @@ impl Core {
         }
     }
 
-    /// A firm's unit cost: its output's stock's average cost and its wage bill a unit of what it expects to sell.
-    fn unit_cost(&self, f: &Firm, expected: f64) -> f64 {
-        let unit = self.goods.units.find(Held::Good(Good { product: f.product, grade: 0, zone: f.region }));
-        let held = unit.and_then(|u| self.goods.stocks.holding(f.key, u)).copied();
-        let stock_cost = held.filter(|h| h.units > 0).map_or(0.0, |h| from_i64(h.cost) / from_i64(h.units));
+    /// A held good's average cost a unit; none known while none is held.
+    fn average_cost(&self, holder: PartyKey, product: u16, region: u32) -> Option<f64> {
+        let unit = self.goods.units.find(Held::Good(Good { product, grade: 0, zone: region }))?;
+        let held = self.goods.stocks.holding(holder, unit).filter(|h| h.units > 0)?;
+        Some(from_i64(held.cost) / from_i64(held.units))
+    }
+
+    /// A firm's cost of making a unit now: its wage bill a unit of what it expects to sell and the inputs a unit uses
+    /// at what they cost it. What it uses of its own product costs what making it costs, so the rest is grossed up
+    /// by the share of a unit it uses of itself; its stock's cost, which mixes units it bought at others' prices, is
+    /// not its cost of making. None known while an input it uses is not held.
+    fn unit_cost(&self, f: &Firm, expected: f64) -> Option<f64> {
+        let mut inputs = 0.0;
+        let mut own = 0.0;
+        for (q, a) in self.stored_inputs(f) {
+            if q == f.product {
+                own = a;
+            } else {
+                inputs += a * self.average_cost(f.key, q, f.region)?;
+            }
+        }
         let wage_bill: f64 = self.families.iter().find(|x| x.name == "LAB.employment").map_or(0.0, |fam| {
             fam.store.of(0, f.key.slot()).filter_map(|e| fam.store.edges.row(e)).map(|r| from_i64(r.amount)).sum()
         });
         let labour = if expected > 0.0 { wage_bill * MONTHS_A_YEAR / DAYS_A_YEAR / expected } else { 0.0 };
-        stock_cost + labour
+        (own < 1.0).then(|| (inputs + labour) / (1.0 - own))
     }
 
     /// Each firm's making today by the production rule: the sales a day it expects and the gap to the stock its
@@ -436,7 +460,7 @@ impl Core {
             let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
                 continue;
             };
-            let stored = self.goods.stored.get(usize::from(f.product)).copied().unwrap_or(false);
+            let stored = self.is_stored(f.product);
             let stock = if stored { self.free_units(f.key, f.product, f.region) } else { 0 };
             let inputs = self.stored_inputs(&f);
             let mut capacity = self.staff_capacity(&f).map_or(f64::INFINITY, from_i64);
@@ -445,15 +469,20 @@ impl Core {
                 capacity = if can < capacity { can } else { capacity };
             }
             let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, f.product)) else { continue };
+            let Some(unit_cost) = self.unit_cost(&f, expected) else { continue };
             let rate = self.labour.financing.get(f.country).copied().unwrap_or(0.0);
+            // A service's stall is the day's capacity, where a unit pays: it is made as it sells.
+            if !stored && !capacity.is_finite() {
+                continue;
+            }
             let input = sys_frm::rules::produce::ProduceIn {
-                expected_demand: expected,
+                expected_demand: if stored { expected } else { capacity },
                 stock: from_i64(stock),
                 cover: if stored { m.cover_days } else { 0.0 },
                 adjustment: m.production_days,
                 capacity,
                 expected_price: from_i64(f.price) / from_i64(lot),
-                unit_cost: self.unit_cost(&f, expected),
+                unit_cost,
                 financing_rate: rate / DAYS_A_YEAR,
                 lead: self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0),
             };
@@ -462,6 +491,21 @@ impl Core {
             };
             let today = floor_to_i64(units.floor()).unwrap_or(0);
             if today <= 0 {
+                continue;
+            }
+            if !stored {
+                let unit = self.unit_of(f.product, f.region);
+                let flow = Flow {
+                    payer: NATURE,
+                    payee: f.key,
+                    amount: today,
+                    source: slot.get(),
+                    denomination: Denom::units(unit),
+                    reason: MADE,
+                    order: 0,
+                };
+                let _ = self.move_goods(flow, Cost::At(0), day, moved);
+                made += today;
                 continue;
             }
             let mut cost = 0;
@@ -496,6 +540,55 @@ impl Core {
             made += today;
         }
         made
+    }
+
+    /// Each provider's day closed: the inputs its sales used, and the capacity no sale took lost.
+    #[clause("SRV.1", "SRV.8", "GDS.4")]
+    fn close_services(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) {
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let mut made_by: BTreeMap<u32, i64> = BTreeMap::new();
+        for x in moved.iter().filter(|x| x.payer == NATURE && x.reason == MADE) {
+            *made_by.entry(x.payee.word()).or_insert(0) += x.amount;
+        }
+        for slot in self.firm_slots(firm) {
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            if self.is_stored(f.product) {
+                continue;
+            }
+            let made = made_by.get(&f.key.word()).copied().unwrap_or(0);
+            let left = self.free_units(f.key, f.product, f.region);
+            let sold = made - left;
+            for (q, a) in self.stored_inputs(&f) {
+                let used = whole_units(from_i64(sold) * a);
+                if used <= 0 {
+                    continue;
+                }
+                let unit = self.unit_of(q, f.region);
+                let flow = Flow {
+                    payer: f.key,
+                    payee: NATURE,
+                    amount: used,
+                    source: slot.get(),
+                    denomination: Denom::units(unit),
+                    reason: USED,
+                    order: 0,
+                };
+                let _ = self.move_goods(flow, Cost::Carried, day, moved);
+            }
+            if left > 0 {
+                let unit = self.unit_of(f.product, f.region);
+                let flow = Flow {
+                    payer: f.key,
+                    payee: NATURE,
+                    amount: left,
+                    source: slot.get(),
+                    denomination: Denom::units(unit),
+                    reason: PERISHED,
+                    order: 0,
+                };
+                let _ = self.move_goods(flow, Cost::Carried, day, moved);
+            }
+        }
     }
 
     /// The whole units a firm's staff's hours a day make at its hours a unit; none known where it has no hours a unit.
@@ -688,15 +781,19 @@ impl Core {
             let expected = expected + m.sales_speed * (demand - expected);
             self.set_record_word(firm, slot, EXPECTED, whole_units(expected * PART_ONE));
             self.set_record_word(firm, slot, SOLD_UNITS, 0);
-            let stock = from_i64(self.free_units(f.key, f.product, f.region));
-            let unit_cost = self.unit_cost(&f, expected);
+            // A service is never held, so its provider's pressure is its demand's alone.
+            let (stock, cover) = if self.is_stored(f.product) {
+                (from_i64(self.free_units(f.key, f.product, f.region)), m.cover_days)
+            } else {
+                (0.0, 0.0)
+            };
+            let Some(unit_cost) = self.unit_cost(&f, expected) else { continue };
             let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, f.product)) else { continue };
             let lot = from_i64(lot);
-            let pressure =
-                match sys_frm::rules::price::pressure_stocked(demand, expected, m.cover_days * expected, stock) {
-                    Missing::Present(p) => p,
-                    Missing::Absent => continue,
-                };
+            let pressure = match sys_frm::rules::price::pressure_stocked(demand, expected, cover * expected, stock) {
+                Missing::Present(p) => p,
+                Missing::Absent => continue,
+            };
             if unit_cost <= 0.0 {
                 continue;
             }

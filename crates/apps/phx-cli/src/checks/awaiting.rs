@@ -200,25 +200,11 @@ pub const LC_0_38: Check = live_check! {
     retired: "every agent is one party; there are no twins (decision 44)",
 };
 
-pub const LC_0_39: Check = live_check! {
-    id: "LC-0-39",
-    title: "Every hazard's realised hit rate is within its sampling error of its declared rate",
-    from_step: "S0.22",
-    check: |_| Outcome::NotYet("awaits each hazard's hits counted on the core (S1.24 h)"),
-};
-
 pub const LC_0_40: Check = live_check! {
     id: "LC-0-40",
     title: "Every booking the agenda holds for a day is read that day, and no other",
     from_step: "S0.22",
     retired: "the agenda was the old population's; the core books each household's processes on its wheels",
-};
-
-pub const LC_0_41: Check = live_check! {
-    id: "LC-0-41",
-    title: "Every hazard occurrence has its event recorded at the sub-step that drew it",
-    from_step: "S0.22",
-    check: |_| Outcome::NotYet("awaits the events recorded on the core (S1.24 h)"),
 };
 
 pub const LC_0_42: Check = live_check! {
@@ -289,13 +275,6 @@ pub const LC_0_53: Check = live_check! {
     title: "Every death has a cause and a destination for everything held and owed; every estate settles or waits, named",
     from_step: "S0.25",
     check: |_| Outcome::NotYet("awaits estates' destinations named on the core (S1.24 f)"),
-};
-
-pub const LC_0_54: Check = live_check! {
-    id: "LC-0-54",
-    title: "Realised mortality and illness per age class match their declared tables within sampling error",
-    from_step: "S0.25",
-    check: |_| Outcome::NotYet("awaits the period life table on the core (S1.24 h)"),
 };
 
 pub const LC_0_56: Check = live_check! {
@@ -587,14 +566,6 @@ pub const LC_1_49: Check = live_check! {
             inflow is published",
     from_step: "S1.13",
     check: |_| Outcome::NotYet("awaits S1.24 h, the population's reads"),
-};
-
-pub const LC_1_51: Check = live_check! {
-    id: "LC-1-51",
-    title: "STA.1: the period life table is published on its calendar, each rate traceable to the sampled events and \
-            exposures it came from",
-    from_step: "S1.14",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the period life table"),
 };
 
 pub const LC_1_45: Check = live_check! {

@@ -518,3 +518,25 @@ pub const LC_1_34: Check = live_check! {
     from_step: "S1.12",
     check: circular_flow_lives,
 };
+
+/// Every hazard's hit on a day has its event recorded that day: the day's events number its hits.
+fn hits_have_events(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    for ((day, pop), (_, events)) in core.pop_days.iter().zip(&core.events) {
+        let recorded: u64 = events.iter().map(|e| e.events).sum();
+        if recorded != pop.hits {
+            return Outcome::Fail(format!("day {}: {} hits, {recorded} events", day.get(), pop.hits));
+        }
+    }
+    if core.events.iter().all(|(_, e)| e.is_empty()) {
+        return Outcome::Fail("no hazard hit anyone over the run".to_owned());
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_41: Check = live_check! {
+    id: "LC-0-41",
+    title: "Every hazard occurrence has its event recorded at the sub-step that drew it",
+    from_step: "S0.22",
+    check: hits_have_events,
+};

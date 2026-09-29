@@ -66,8 +66,11 @@ impl World {
             processes: &self.processes,
             regions: &regions,
         };
+        self.core.measure_rates(&ctx, day);
         let pop_day = self.core.run_hazards(&ctx, day);
         self.core.pop_days.push((day, pop_day));
+        let events = std::mem::take(&mut self.core.events_today);
+        self.core.events.push((day, events));
         if let Some(kind) = self.labour.as_ref() {
             let lctx = crate::core_labour::LabourCtx {
                 register: &self.register,

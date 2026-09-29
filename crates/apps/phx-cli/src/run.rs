@@ -193,7 +193,7 @@ impl Observing {
         w: Inspector<'_>,
         definitions: &phx_obs::Definitions,
     ) -> Result<(Observing, std::sync::Arc<phx_obs::View>), String> {
-        let watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads)? };
+        let watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
         let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
         let opening = views.close(w, &watch.recorder);
         Ok((Observing { watch, views, settled: None }, opening))

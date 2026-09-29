@@ -28,6 +28,8 @@ pub struct World {
     /// The processes acting on the households' persons, in order of kind, then hazard.
     pub(crate) processes: Vec<crate::pop_rules::Bound>,
     pub(crate) labour: Option<if_labour::kind::LabourKind>,
+    /// The event kinds the systems declare, by their place.
+    pub(crate) event_kinds: Vec<&'static str>,
     /// The country each region lies in, by the region's number.
     pub(crate) regions: Vec<CountryId>,
     pub(crate) game: NewGame,

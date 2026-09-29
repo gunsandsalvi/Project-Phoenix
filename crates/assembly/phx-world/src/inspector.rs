@@ -82,6 +82,12 @@ impl<'a> Inspector<'a> {
         &self.world.countries
     }
 
+    /// The event kinds the systems declare, by their place.
+    #[must_use]
+    pub fn event_kinds(&self) -> &'a [&'static str] {
+        &self.world.event_kinds
+    }
+
     /// The firms' management, as their system compiled it.
     #[must_use]
     pub fn management(&self) -> Option<&'a sys_frm::decide::Management> {
@@ -114,5 +120,11 @@ impl<'a> Inspector<'a> {
     #[must_use]
     pub fn register_hash(&self) -> u128 {
         self.world.register_hash
+    }
+
+    /// The processes on persons, in the world's order: each one's hazard, kind and event.
+    #[must_use]
+    pub fn processes(&self) -> Vec<(&'static str, usize, u16)> {
+        self.world.processes.iter().map(|b| (b.process.hazard(), b.kind, b.event)).collect()
     }
 }

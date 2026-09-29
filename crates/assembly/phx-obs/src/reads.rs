@@ -33,6 +33,8 @@ pub enum SettlementCount {
 pub enum Measure {
     Agents(AgentCount),
     Settlement(SettlementCount),
+    /// The persons the day's events of one declared kind reached.
+    Events(u16),
     /// A measure of a system not yet built, read from the step named on; until then the read records nothing.
     NotYet(&'static str),
 }
@@ -113,14 +115,11 @@ impl Definitions {
     }
 }
 
-/// The event measures, read again once the core records its events.
-const EVENTS_STEP: &str = "S1.24";
-
-/// A measure named in the declarations.
+/// A measure named in the declarations, with the event kinds the world declares.
 ///
 /// # Errors
-/// A name that is no measure.
-pub fn measure(name: &str) -> Result<Measure, String> {
+/// A name that is no measure, or an event kind the world does not declare.
+pub fn measure(name: &str, event_kinds: &[&str]) -> Result<Measure, String> {
     use AgentCount as A;
     use SettlementCount as S;
     let m = match name {
@@ -138,10 +137,13 @@ pub fn measure(name: &str) -> Result<Measure, String> {
             if let Some((_, step)) = PLANNED.iter().find(|(m, _)| *m == other) {
                 return Ok(Measure::NotYet(step));
             }
-            if other.strip_prefix("events.").is_none() {
+            let Some(kind) = other.strip_prefix("events.") else {
                 return Err(format!("`{other}` is no measure"));
-            }
-            Measure::NotYet(EVENTS_STEP)
+            };
+            let Some(i) = event_kinds.iter().position(|k| *k == kind) else {
+                return Err(format!("`{kind}` is no event kind the world declares"));
+            };
+            Measure::Events(u16::try_from(i).map_err(|e| e.to_string())?)
         }
     };
     Ok(m)
@@ -165,11 +167,12 @@ pub struct Recorder {
 }
 
 impl Recorder {
-    /// A recorder of the declared reads.
+    /// A recorder of the declared reads, resolved against the world's event kinds.
     ///
     /// # Errors
     /// Every read whose measure the world cannot give, and a read declared twice.
-    pub fn new(decls: &[ReadDecl]) -> Result<Recorder, String> {
+    pub fn new(decls: &[ReadDecl], w: Inspector<'_>) -> Result<Recorder, String> {
+        let kinds = w.event_kinds();
         let mut errors = Vec::new();
         let mut measures = Vec::with_capacity(decls.len());
         for (i, d) in decls.iter().enumerate() {
@@ -180,7 +183,7 @@ impl Recorder {
                 errors
                     .push(format!("read `{}` names a relationship without its source, or a source without one", d.id));
             }
-            match measure(&d.measure) {
+            match measure(&d.measure, kinds) {
                 Ok(m) => measures.push(m),
                 Err(e) => errors.push(format!("read `{}`: {e}", d.id)),
             }
@@ -203,10 +206,15 @@ impl Recorder {
         }
         let day = settled.day;
         let chance = core.pop_days.iter().rev().find(|(d, _)| *d == day).map(|(_, p)| p);
+        let events = core.events.iter().rev().find(|(d, _)| *d == day).map(|(_, e)| e.as_slice());
         for (m, s) in self.measures.iter().zip(&mut self.series) {
             let value = match m {
                 Measure::Agents(c) => chance.map(|p| agent_count(core, p, *c)),
                 Measure::Settlement(c) => Some(settlement_count(settled, *c)),
+                // A day the run closed with no event of the kind had none: its sum is nought, not unknown.
+                Measure::Events(k) => {
+                    events.map(|e| i128::from(e.iter().filter(|x| x.kind == *k).map(|x| x.persons).sum::<u64>()))
+                }
                 Measure::NotYet(_) => None,
             };
             if let Some(v) = value {
@@ -261,9 +269,11 @@ mod tests {
 
     #[test]
     fn measures_are_named_or_refused() {
-        assert_eq!(measure("agents.persons"), Ok(Measure::Agents(AgentCount::Persons)));
-        assert_eq!(measure("events.DEM.died"), Ok(Measure::NotYet("S1.24")));
-        assert!(measure("agents.happiness").is_err());
-        assert_eq!(measure("sta.output"), Ok(Measure::NotYet("S1.14")));
+        let kinds = ["GEO.rain", "DEM.died"];
+        assert_eq!(measure("agents.persons", &kinds), Ok(Measure::Agents(AgentCount::Persons)));
+        assert_eq!(measure("events.DEM.died", &kinds), Ok(Measure::Events(1)));
+        assert!(measure("events.DEM.born", &kinds).is_err());
+        assert!(measure("agents.happiness", &kinds).is_err());
+        assert_eq!(measure("sta.output", &kinds), Ok(Measure::NotYet("S1.14")));
     }
 }

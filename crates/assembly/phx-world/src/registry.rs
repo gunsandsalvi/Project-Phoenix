@@ -281,7 +281,8 @@ fn open_stats(
         }
         None => Vec::new(),
     };
-    core.open_stats(laws, (index, bases));
+    let classes = p.c.register.partition(sta.classes).map_err(one)?.bounds.to_vec();
+    core.open_stats((laws, Some(sta.rate), classes), (index, bases));
     Ok(())
 }
 
@@ -436,6 +437,7 @@ pub fn assemble(
     let calendar = p.c.calendar.clone();
     let core = core_of(&p, &geo, (&state, &calendar, today), (&own, labour.as_ref()))?;
     let regions: Vec<CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
+    let event_kinds = p.d.events.iter().map(|(_, e)| e.name).collect();
     let settling_years = p.kernel.opening.settling_years.shared(&p.c.register).get();
     Ok(World {
         settling_years,
@@ -449,6 +451,7 @@ pub fn assemble(
         core,
         processes: p.processes,
         labour,
+        event_kinds,
         regions,
         game: p.game,
         metrics: Metrics::default(),

@@ -1,6 +1,5 @@
-//! Retirement as a person's process: on the first birthday an adult not yet retired has reached the age its
-//! country's pension begins at, it decides whether to retire; one who does leaves its jobs at the next day's start of
-//! work.
+//! Retirement as a person's process: on each birthday of an adult not yet retired at or past the age its country's
+//! pension begins at, it decides whether to retire; one who does leaves its jobs at the next day's start of work.
 
 use if_labour::class::RETIRED;
 use if_labour::decisions::RetireIn;
@@ -60,9 +59,11 @@ impl PopProcess for Retirement {
     fn kind(&self) -> &'static str {
         if_pop::HOUSEHOLD
     }
-    /// Certain once an adult not yet retired has reached its pension's age, and nothing before.
+    /// Certain on each birthday of an adult not yet retired at or past its pension's age, and nothing on any other
+    /// day: a person who stays on decides again at its next birthday.
     fn rate(&self, _: &Register, agent: &AgentView<'_>, p: &Person) -> f64 {
-        if self.deciding(agent, p, agent.date) { 1.0 } else { 0.0 }
+        let birthday = p.birthday_in(agent.date.year()) == agent.date;
+        if birthday && self.deciding(agent, p, agent.date) { 1.0 } else { 0.0 }
     }
     fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
         (p.attr(crate::STATE.name) != Some(RETIRED)).then(|| p.next_birthday(date))

@@ -9,11 +9,12 @@ use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
 use phx_rand::Draws;
 
-/// A process on a kind's persons as the world runs it: its kind, its place among its kind's processes, the stream it
-/// draws from, and the system's process.
+/// A process on a kind's persons as the world runs it: its kind, its place among its kind's processes, the event kind
+/// each hit records, the stream it draws from, and the system's process.
 pub(crate) struct Bound {
     pub kind: usize,
     pub reason: usize,
+    pub event: u16,
     pub stream: StreamDecl,
     pub process: Box<dyn PopProcess>,
 }
@@ -61,10 +62,11 @@ fn bind_one(
     let Some((_, stream)) = d.streams.iter().find(|(_, s)| s.name == hazard.stream) else {
         return Err(format!("hazard `{name}` draws from `{}`, no declared stream", hazard.stream));
     };
-    if !d.events.iter().any(|(_, e)| e.name == hazard.outcome) {
+    let Some(event) = d.events.iter().position(|(_, e)| e.name == hazard.outcome) else {
         return Err(format!("hazard `{name}`'s outcome `{}` is no declared event kind", hazard.outcome));
-    }
-    Ok(Bound { kind, reason: 0, stream: *stream, process })
+    };
+    let event = u16::try_from(event).map_err(|e| e.to_string())?;
+    Ok(Bound { kind, reason: 0, event, stream: *stream, process })
 }
 
 /// The population kinds, each with the number of processes on its persons, and the processes bound to them.
@@ -285,7 +287,7 @@ mod tests {
         declare_system::<Dem>(&mut d, &mut h);
         let kinds = kinds();
         let bound = bind_one("DEM", Box::new(Proc("DEM.death")), &d, &kinds).unwrap();
-        assert_eq!((bound.kind, bound.stream.name), (0, "DEM.mortality"));
+        assert_eq!((bound.kind, bound.event, bound.stream.name), (0, 0, "DEM.mortality"));
         let refused = |system, p: Proc| bind_one(system, Box::new(p), &d, &kinds).map(|_| ()).unwrap_err();
         assert!(refused("DEM", Proc("DEM.birth")).contains("no declared hazard"));
         assert!(refused("HH", Proc("DEM.death")).contains("its hazard is DEM's"));

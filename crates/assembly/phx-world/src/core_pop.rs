@@ -38,6 +38,14 @@ pub struct PopDay {
     pub ended: u64,
 }
 
+/// A day's events of one kind: how many were recorded and the persons they reached.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct EventCount {
+    pub kind: u16,
+    pub events: u64,
+    pub persons: u64,
+}
+
 /// A household's hit by a process: its slot, the process, and the places of the persons it reached.
 type Hit = (Slot, usize, Vec<usize>);
 
@@ -51,6 +59,14 @@ pub(crate) struct Ctx<'a> {
 }
 
 impl Core {
+    /// An event of a kind counted today, with the persons it reached.
+    fn count_event(&mut self, kind: u16, persons: u64) {
+        match self.events_today.iter_mut().find(|e| e.kind == kind) {
+            Some(count) => (count.events, count.persons) = (count.events + 1, count.persons + persons),
+            None => self.events_today.push(EventCount { kind, events: 1, persons }),
+        }
+    }
+
     /// The household kind's place on the core and among the population's kinds.
     fn household(&self) -> Option<(usize, usize)> {
         let place = self.names.iter().position(|n| *n == "household")?;
@@ -59,7 +75,7 @@ impl Core {
 
     /// A household read into its explicit form: its attributes and positions by name from its record, its persons
     /// unpacked.
-    fn read_household(&self, (place, decl): (usize, &PopKindDecl), slot: Slot, h: &mut Household) {
+    pub(crate) fn read_household(&self, (place, decl): (usize, &PopKindDecl), slot: Slot, h: &mut Household) {
         h.attrs.clear();
         h.persons.clear();
         h.positions.clear();
@@ -169,6 +185,10 @@ impl Core {
                 }
                 if !f.reached.is_empty() {
                     record.hits += 1;
+                    self.count_event(b.event, phx_rand::float::len_u64(f.reached.len()));
+                    if crate::core_rates::sampled(id) {
+                        self.rates.realised(process, &h, &f.reached, ctx.calendar.date(day));
+                    }
                     hits.push((slot, process, f.reached));
                 }
             }
@@ -229,6 +249,7 @@ impl Core {
             );
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
+        self.record_vitals((decl, &h), &held, (ctx, day));
         self.write_changed((place, decl), key, &h.persons, &held);
         // The household's own attributes an outcome changed, as its decision to try for a child, are its record's.
         if h.attrs != attrs
@@ -277,6 +298,35 @@ impl Core {
         let rest = Household { attrs: h.attrs, persons: left, positions: h.positions };
         let mut buffers = Buffers::default();
         self.book_all(ctx, (place, decl), slot, (&rest, &mut buffers), day.succ());
+    }
+
+    /// The deaths an outcome made and the onsets of disability, each counted in its household's country's month by the
+    /// person's age class and health before it.
+    fn record_vitals(
+        &mut self,
+        (decl, h): (&PopKindDecl, &Household),
+        held: &[phx_pop::persons::Held],
+        (ctx, day): (&Ctx<'_>, Day),
+    ) {
+        let phx_num::Missing::Present(region_at) = decl.sited_by else { return };
+        let Some(region) = decl.attrs.get(region_at).and_then(|a| h.attrs.iter().find(|(n, _)| *n == a.item.name))
+        else {
+            return;
+        };
+        let Some(country) = ctx.regions.get(usize::try_from(region.1).unwrap_or(usize::MAX)).map(|c| c.get()) else {
+            return;
+        };
+        let date = ctx.calendar.date(day);
+        for (p, was) in h.persons.iter().zip(held) {
+            let before = unpack(decl, was.word);
+            let health = before.attr(if_pop::HEALTH.name).unwrap_or(if_pop::ABLE);
+            let age = before.age_on(date);
+            if p.gone {
+                self.record_vital(country, (age, health), crate::core_stats::DEATH);
+            } else if health == if_pop::ABLE && p.attr(if_pop::HEALTH.name) == Some(if_pop::DISABLED) {
+                self.record_vital(country, (age, health), crate::core_stats::ONSET);
+            }
+        }
     }
 
     /// The persons an outcome changed and kept, written back; one who retired leaves its jobs and the searchers.

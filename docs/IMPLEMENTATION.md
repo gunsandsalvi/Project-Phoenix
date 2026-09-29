@@ -824,6 +824,25 @@ world switches to the core.
     they reprice by the pressure's power, so buyers move to dearer sellers. To settle in e: each firm's expected
     sales at the opening read only the uses the world has buyers for, and the price reviews read against the
     management types' spread.
+  - h: each hazard's hits are counted as events of its kind the day it draws them (LC-0-41), and each agency
+    publishes a period life table a month (STA.1): by age class and health, its deaths and onsets over the person-days
+    exposed at the month's close, each rate their quotient (LC-1-51). The realised rates are measured live over one
+    household in 64 by its identity's mix, each person's declared chance summed each day before the day's draws beside
+    the hits drawn (CHN.7; LC-0-39, LC-0-54 pass at 100 days). Measuring found retirement's chance declared certain
+    on every day past the pension's age while its booking decides only at birthdays; retirement is now certain on each
+    birthday at or past the age, a person who stays on deciding again at the next (LAB.6).
+  - d: services are never held (SRV.1, SRV.8): a provider offers the day's capacity where a unit pays, makes what
+    sells as it is sold, using its stored inputs for the units sold, and the capacity no sale took perishes at the
+    day's end. Until then services were made to a stock that grew without end and priced against a stock target
+    of 42 days they never reached, and their prices rose up to a hundredfold in two weeks. A firm's unit cost is its
+    cost of making a unit now — its wage bill a unit of expected sales and its inputs at what they cost it, its own
+    product as an input grossed up — never its stock's average cost, which mixes units bought from competitors at
+    their prices and fed each firm's price back into the others'. Measured after (120 days, 150,000 persons, seed 1):
+    the flows settle every day but month ends; but the goods makers' stocks in the developed country still run down
+    (tobacco-to-chemicals and metals: 42 days of cover at the opening to none by April), their staff's hours making
+    about nine tenths of what they expect to sell while their employers post few vacancies, and the producer index
+    doubles in February. To settle in d and e: planned output within staff read against the stock's target, the
+    postings' response, and the input buyers' orders.
   - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

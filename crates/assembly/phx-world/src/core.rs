@@ -41,6 +41,9 @@ pub struct Core {
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.
     pub banks_of: Vec<Vec<(u32, u64)>>,
     pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
+    /// Each day's events by kind, as the hazards' hits recorded them, and today's being counted.
+    pub events: Vec<(phx_id::Day, Vec<crate::core_pop::EventCount>)>,
+    pub(crate) events_today: Vec<crate::core_pop::EventCount>,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,
@@ -54,6 +57,8 @@ pub struct Core {
     pub(crate) found: Vec<phx_core::findings::Finding>,
     /// The jobs and households' loans the opening drew, until the openings after the firms' take them.
     pub(crate) drawn: crate::core_open::Drawn,
+    /// The realised rates over the sampled households, beside their expectations.
+    pub rates: crate::core_rates::Rates,
 }
 
 pub(crate) fn kind_number(place: usize) -> u8 {

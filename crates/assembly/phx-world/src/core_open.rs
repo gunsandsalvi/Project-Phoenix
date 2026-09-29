@@ -162,6 +162,8 @@ impl Core {
             next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),
+            events: Vec::new(),
+            events_today: Vec::new(),
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),
@@ -170,6 +172,7 @@ impl Core {
             found: Vec::new(),
             lending: Vec::new(),
             drawn: Drawn::default(),
+            rates: crate::core_rates::Rates::default(),
         }
     }
 

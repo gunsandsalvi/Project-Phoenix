@@ -7,13 +7,17 @@
 
 use std::collections::BTreeMap;
 
-use if_state::stats::{ACCOUNTS, CPI, IndexKind, LABOUR_FORCE, MONEY, PPI, Priced, Release, StaLaw};
+use if_state::stats::{ACCOUNTS, CPI, IndexKind, LABOUR_FORCE, LIFE_TABLE, MONEY, PPI, Priced, Release, StaLaw};
 use phx_core::calendar::Calendar;
 use phx_id::{Day, PartyKey};
 use phx_macros::clause;
 use phx_num::violation;
 
 use crate::core::Core;
+
+/// A life table's events: a death, and an onset of disability.
+pub(crate) const DEATH: u8 = 0;
+pub(crate) const ONSET: u8 = 1;
 
 /// What a sale at a meeting was for.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -38,6 +42,8 @@ pub(crate) struct Month {
     investment: i128,
     inputs: i128,
     wages: i128,
+    /// The month's deaths and onsets by age class, health before and event.
+    vital: BTreeMap<(u32, u32, u8), u64>,
 }
 
 impl Month {
@@ -53,6 +59,9 @@ impl Month {
 pub struct CoreStats {
     laws: Vec<StaLaw>,
     index: Option<IndexKind>,
+    /// The rate of events over the exposure they happened in, and the age classes' lower bounds.
+    rate: Option<Rate>,
+    classes: Vec<i64>,
     period: Option<u32>,
     months: Vec<Month>,
     before: Vec<Month>,
@@ -62,8 +71,21 @@ pub struct CoreStats {
     pub published: Vec<Release>,
 }
 
+impl CoreStats {
+    /// The day a country's series for a period falls due under its law, where the law publishes it.
+    #[must_use]
+    pub fn due(&self, calendar: &Calendar, (country, series, period): (u8, usize, u32)) -> Option<Day> {
+        let schedule = self.laws.get(usize::from(country))?.series.get(series)?;
+        release_day(calendar, (period, country), schedule)
+    }
+}
+
+/// A rate a year from events over person-days exposed.
+pub type Rate = fn(f64, f64) -> Option<f64>;
+
 /// The months from the calendar's year nought a day falls in.
-fn period_of(calendar: &Calendar, day: Day) -> u32 {
+#[must_use]
+pub fn period_of(calendar: &Calendar, day: Day) -> u32 {
     let date = calendar.date(day);
     let months = i64::from(date.year()) * i64::from(phx_core::consts::MONTHS_PER_YEAR) + i64::from(date.month());
     u32::try_from(months).unwrap_or_else(|_| violation!(clause = "STA.2", "a period before the calendar's year nought"))
@@ -95,11 +117,17 @@ fn link(index: &IndexKind, before: &BTreeMap<u16, (i128, i128)>, now: &BTreeMap<
 
 impl Core {
     /// The agencies opened: each country's law and the indices' base levels.
-    pub(crate) fn open_stats(&mut self, laws: Vec<StaLaw>, (index, bases): (Option<IndexKind>, Vec<f64>)) {
+    pub(crate) fn open_stats(
+        &mut self,
+        (laws, rate, classes): (Vec<StaLaw>, Option<Rate>, Vec<i64>),
+        (index, bases): (Option<IndexKind>, Vec<f64>),
+    ) {
         let n = laws.len();
         self.stats = CoreStats {
             laws,
             index,
+            rate,
+            classes,
             months: vec![Month::default(); n],
             before: vec![Month::default(); n],
             levels: bases.into_iter().map(|b| [b, b]).collect(),
@@ -138,6 +166,14 @@ impl Core {
         }
     }
 
+    /// A death or an onset recorded in its country's month by the person's age class and health.
+    pub(crate) fn record_vital(&mut self, country: u8, (age, health): (i64, u32), event: u8) {
+        let class = u32::try_from(self.stats.classes.iter().filter(|b| **b <= age).count()).unwrap_or(u32::MAX);
+        if let Some(m) = self.stats.months.get_mut(usize::from(country)) {
+            *m.vital.entry((class, health, event)).or_insert(0) += 1;
+        }
+    }
+
     /// Wages settled today, recorded in their country's month.
     pub(crate) fn record_wages(&mut self, ccy: u8, amount: i64) {
         if let Some(m) = self.stats.months.get_mut(usize::from(ccy)) {
@@ -168,6 +204,7 @@ impl Core {
     fn close_month(&mut self, period: u32, calendar: &Calendar, regions: &[phx_id::CountryId]) {
         let labour = self.labour_force(regions);
         let money = self.money_stock(regions);
+        let exposed = self.exposed(regions, period);
         let months = std::mem::take(&mut self.stats.months);
         let n = months.len();
         let before = std::mem::replace(&mut self.stats.before, months.clone());
@@ -191,11 +228,13 @@ impl Core {
             let income = m.wages + surplus;
             let whole =
                 |x: i128| i64::try_from(x).unwrap_or_else(|_| phx_num::capacity_exceeded!("a total", i64::MAX, 0));
-            let values: [(usize, Option<Vec<i64>>); 5] = [
+            let life = self.life_table(&m.vital, exposed.get(c));
+            let values: [(usize, Option<Vec<i64>>); 6] = [
                 (CPI, levels.map(|l| vec![at_places(l[0], if_state::stats::PLACES[CPI])])),
                 (PPI, levels.map(|l| vec![at_places(l[1], if_state::stats::PLACES[PPI])])),
                 (LABOUR_FORCE, labour.get(c).map(|l| l.to_vec())),
                 (MONEY, money.get(c).cloned()),
+                (LIFE_TABLE, life),
                 (
                     ACCOUNTS,
                     Some(vec![whole(production), whole(expenditure), whole(income), whole(expenditure - income)]),
@@ -214,6 +253,70 @@ impl Core {
                 });
             }
         }
+    }
+
+    /// A country's period life table for the month: for each age class and health exposed, its deaths and, for the
+    /// able, its onsets, each with its person-days exposed and its rate a year.
+    fn life_table(
+        &self,
+        vital: &BTreeMap<(u32, u32, u8), u64>,
+        exposed: Option<&BTreeMap<(u32, u32), u64>>,
+    ) -> Option<Vec<i64>> {
+        let (rate, exposed) = (self.stats.rate?, exposed?);
+        let mut out = Vec::new();
+        for ((class, health), days) in exposed {
+            let events: &[u8] = if *health == if_pop::ABLE { &[DEATH, ONSET] } else { &[DEATH] };
+            for event in events {
+                let n = vital.get(&(*class, *health, *event)).copied().unwrap_or(0);
+                let r = rate(phx_rand::float::from_u64(n), phx_rand::float::from_u64(*days))?;
+                let at = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+                out.extend([
+                    i64::from(*class),
+                    i64::from(*health),
+                    i64::from(*event),
+                    at(n),
+                    at(*days),
+                    at_places(r, if_state::stats::PLACES[LIFE_TABLE]),
+                ]);
+            }
+        }
+        Some(out)
+    }
+
+    /// Each country's person-days exposed over a month by age class and health: the persons at its close, over the
+    /// month's days.
+    fn exposed(&self, regions: &[phx_id::CountryId], period: u32) -> Vec<BTreeMap<(u32, u32), u64>> {
+        let mut out = vec![BTreeMap::new(); self.stats.laws.len()];
+        let (Some(place), Some(decl)) =
+            (self.names.iter().position(|n| *n == "household"), self.household_decl.as_ref())
+        else {
+            return out;
+        };
+        let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
+        let phx_num::Missing::Present(region_at) = decl.sited_by else { return out };
+        let Some((year, month)) = month_of(period) else { return out };
+        let (Some(date), Some(days)) = (phx_id::Date::new(year, month, 1), phx_id::Date::days_in_month(year, month))
+        else {
+            return out;
+        };
+        let days = u64::from(days);
+        for slot in store.parties.live_slots() {
+            let Some(region) = store.record(slot).get(region_at).and_then(|w| match w.get() {
+                phx_num::Missing::Present(v) => usize::try_from(v).ok(),
+                phx_num::Missing::Absent => None,
+            }) else {
+                continue;
+            };
+            let Some(table) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
+            for p in persons.of(slot) {
+                let person = phx_pop::person::unpack(decl, p.word);
+                let age = person.age_on(date);
+                let class = u32::try_from(self.stats.classes.iter().filter(|b| **b <= age).count()).unwrap_or(u32::MAX);
+                let Some(health) = person.attr(if_pop::HEALTH.name) else { continue };
+                *table.entry((class, health)).or_insert(0) += days;
+            }
+        }
+        out
     }
 
     /// Each country's labour force at the day: its persons employed (holding a job), unemployed and searching, and the
@@ -322,13 +425,23 @@ impl Core {
     }
 }
 
+/// A period's year and month.
+#[must_use]
+pub fn month_of(period: u32) -> Option<(i32, u8)> {
+    let per_year = u32::from(phx_core::consts::MONTHS_PER_YEAR);
+    let (year, month) = (i32::try_from(period / per_year).ok()?, u8::try_from(period % per_year).ok()?);
+    if month == 0 { Some((year - 1, u8::try_from(per_year).ok()?)) } else { Some((year, month)) }
+}
+
 /// The day a period's series is released in its country: the business day of its schedule, counted in the month its
 /// law's lag after the period's month.
-fn release_day(calendar: &Calendar, (period, country): (u32, u8), schedule: &if_state::stats::Schedule) -> Option<Day> {
-    let months = period + 1 + schedule.lag;
-    let per_year = u32::from(phx_core::consts::MONTHS_PER_YEAR);
-    let (year, month) = (i32::try_from(months / per_year).ok()?, u8::try_from(months % per_year).ok()?);
-    let (year, month) = if month == 0 { (year - 1, u8::try_from(per_year).ok()?) } else { (year, month) };
+#[must_use]
+pub fn release_day(
+    calendar: &Calendar,
+    (period, country): (u32, u8),
+    schedule: &if_state::stats::Schedule,
+) -> Option<Day> {
+    let (year, month) = month_of(period + 1 + schedule.lag)?;
     let country = phx_id::CountryId::new(country);
     let mut day = calendar.on_or_after(country, calendar.day(phx_id::Date::new(year, month, 1)?)?);
     for _ in 1..schedule.day {

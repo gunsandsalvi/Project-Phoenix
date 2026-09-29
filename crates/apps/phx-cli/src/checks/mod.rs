@@ -1,6 +1,7 @@
 pub mod awaiting;
 pub mod core;
 pub mod geo;
+pub mod lives;
 
 use phx_world::Inspector;
 
@@ -107,9 +108,9 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_0_36,
     awaiting::LC_0_37,
     awaiting::LC_0_38,
-    awaiting::LC_0_39,
+    lives::LC_0_39,
     awaiting::LC_0_40,
-    awaiting::LC_0_41,
+    core::LC_0_41,
     awaiting::LC_0_42,
     awaiting::LC_0_43,
     awaiting::LC_0_44,
@@ -122,7 +123,7 @@ pub const CHECKS: &[Check] = &[
     core::LC_0_51,
     core::LC_0_52,
     awaiting::LC_0_53,
-    awaiting::LC_0_54,
+    lives::LC_0_54,
     core::LC_0_55,
     awaiting::LC_0_56,
     awaiting::LC_0_57,
@@ -177,7 +178,7 @@ pub const CHECKS: &[Check] = &[
     core::LC_1_40,
     awaiting::LC_1_41,
     awaiting::LC_1_49,
-    awaiting::LC_1_51,
+    lives::LC_1_51,
     awaiting::LC_1_45,
     awaiting::LC_1_46,
     awaiting::LC_1_47,

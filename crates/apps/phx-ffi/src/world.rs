@@ -126,7 +126,7 @@ pub fn measure(host: &dyn BenchHost, data: &str, run_dir: &str, turns: u32) -> R
     let opening_ms = clock.now_ns().checked_sub(started).map(|n| n / NS_PER_MS);
     let opened_peak = proc_kib("status", "VmHWM:");
     let w = Inspector::new(&world);
-    let mut watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads)? };
+    let mut watch = phx_obs::Watch { recorder: phx_obs::Recorder::new(&definitions.reads, w)? };
     let mut views = phx_obs::Views::new(&definitions.histograms, w)?;
     let opened = opening_ms.map_or_else(|| "unclocked".to_owned(), |ms| format!("{ms} ms"));
     show(host, "world", "opening", format!("{opened}, peak {}", mib(opened_peak)), String::new(), "");
