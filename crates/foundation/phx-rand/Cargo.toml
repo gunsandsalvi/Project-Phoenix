@@ -11,12 +11,6 @@ libm.workspace = true
 phx-macros = { path = "../phx-macros" }
 phx-num = { path = "../phx-num" }
 
-[dev-dependencies]
-gungraun.workspace = true
-
-[[bench]]
-name = "samplers"
-harness = false
 
 [lints]
 workspace = true

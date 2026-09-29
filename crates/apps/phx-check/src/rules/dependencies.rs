@@ -12,13 +12,11 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
     ("rayon-core", &["phx-exec"]),
     ("libc", &["phx-exec", "phx-store"]),
     ("zstd", &["phx-store"]),
-    ("serde", &["phx-core", "phx-world", "phx-obs", "phx-cli", "phx-ffi", "phx-check"]),
-    ("toml", &["phx-core", "phx-world", "phx-obs", "phx-cli", "phx-ffi", "phx-check"]),
+    ("serde", &["phx-core", "phx-world", "phx-obs", "phx-cli", "phx-check"]),
+    ("toml", &["phx-core", "phx-world", "phx-obs", "phx-cli", "phx-check"]),
     ("serde_json", &["phx-cli", "phx-check", "phx-world"]),
     ("clap", &["phx-cli", "phx-check"]),
     ("regex", &["phx-check"]),
-    ("uniffi", &["phx-ffi"]),
-    ("ndk-sys", &["phx-ffi"]),
     ("syn", &["phx-macros", "phx-check"]),
     ("quote", &["phx-macros", "phx-check"]),
     ("proc-macro2", &["phx-macros", "phx-check"]),
@@ -26,7 +24,7 @@ pub const ALLOWED: &[(&str, &[&str])] = &[
 ];
 
 /// Allowed anywhere, as development dependencies only.
-pub const DEV_ANYWHERE: &[&str] = &["proptest", "trybuild", "gungraun"];
+pub const DEV_ANYWHERE: &[&str] = &["proptest", "trybuild"];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();

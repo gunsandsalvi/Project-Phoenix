@@ -421,6 +421,7 @@ fn core_of(
             streams: &p.c.streams,
             kind,
             regions: &regions,
+            clock: None,
         };
         core.open_labour(&lctx, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
@@ -463,6 +464,7 @@ fn open_core_goods(
             regions,
             weights: retail_weights(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?,
             pool: None,
+            clock: None,
         };
         let cover = own
             .iter()

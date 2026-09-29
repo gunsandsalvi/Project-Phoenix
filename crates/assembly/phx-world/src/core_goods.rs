@@ -149,6 +149,8 @@ pub struct GoodsCtx<'a> {
     pub weights: Weights,
     /// The workers a meeting's choices and sales run on, whose outcome is the same on any.
     pub pool: Option<&'a phx_exec::Pool>,
+    /// The run's clock its stages are timed by for the bench; none at the opening.
+    pub clock: Option<&'a dyn phx_exec::Clock>,
 }
 
 impl std::fmt::Debug for GoodsCtx<'_> {
@@ -594,26 +596,33 @@ impl Core {
             return record;
         }
         let open = self.goods.stocks.totals();
-        self.goods.cheapest = self.cheapest(ctx);
+        let t = ctx.clock;
+        self.goods.cheapest = self.timed(t, "goods.cheapest", |c| c.cheapest(ctx));
         let mut moved: Vec<Flow> = Vec::new();
-        self.spoil(day, &mut moved);
-        record.destroyed = self.destroy(day, &mut moved);
-        self.complete_projects(day, &mut moved);
-        self.wear_plant(day, &mut moved);
-        self.arrive_shipments(day, &mut moved);
-        self.review_extraction(ctx.regions, day);
-        record.made = self.make(ctx, day, &mut moved);
-        record.inputs_wanted = self.buy_inputs(ctx, day) + self.buy_services(ctx, day);
-        let (spenders, wants) = self.decide_spending(ctx, day);
+        self.timed(t, "goods.stock", |c| {
+            c.spoil(day, &mut moved);
+            record.destroyed = c.destroy(day, &mut moved);
+            c.complete_projects(day, &mut moved);
+            c.wear_plant(day, &mut moved);
+            c.arrive_shipments(day, &mut moved);
+            c.review_extraction(ctx.regions, day);
+        });
+        record.made = self.timed(t, "goods.make", |c| c.make(ctx, day, &mut moved));
+        record.inputs_wanted = self.timed(t, "goods.inputs", |c| c.buy_inputs(ctx, day));
+        record.inputs_wanted += self.timed(t, "goods.services", |c| c.buy_services(ctx, day));
+        let (spenders, wants) = self.timed(t, "goods.spending", |c| c.decide_spending(ctx, day));
         (record.spenders, record.wants) = (spenders, wants);
         let wants = std::mem::take(&mut self.goods.wants);
         let public = self.public_wants(ctx.regions);
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
         let bought = crate::core_stats::Purchase::Final;
-        let (sales, spent) = self.meet_all(ctx, day, (&wants, bought, Some(final_use::HOUSEHOLDS)), &leg);
-        let (state_sales, state_spent) = self.meet_all(ctx, day, (&public, bought, Some(final_use::COLLECTIVE)), &leg);
+        let (sales, spent) = self.timed(t, "goods.households", |c| {
+            c.meet_all(ctx, day, (&wants, bought, Some(final_use::HOUSEHOLDS)), &leg)
+        });
+        let (state_sales, state_spent) = self
+            .timed(t, "goods.state", |c| c.meet_all(ctx, day, (&public, bought, Some(final_use::COLLECTIVE)), &leg));
         let (sales, spent) = (sales + state_sales, spent + state_spent);
-        let invest = self.investment_wants(ctx, day);
+        let invest = self.timed(t, "goods.investment_wants", |c| c.investment_wants(ctx, day));
         // A service bought as investment is used as it is delivered, being made as it is sold; a good is held.
         let stored = self.goods.stored.clone();
         let plant = self.plant_products();
@@ -624,22 +633,21 @@ impl Core {
             order: 0,
             used: !stored.get(usize::from(product)).copied().unwrap_or(true) || plant.contains(&product),
         };
-        let _ = self.meet_all(
-            ctx,
-            day,
-            (&invest, crate::core_stats::Purchase::Investment, Some(final_use::INVESTMENT)),
-            &held,
-        );
-        self.close_services(ctx, day, &mut moved);
+        let _ = self.timed(t, "goods.investment", |c| {
+            c.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment, Some(final_use::INVESTMENT)), &held)
+        });
+        self.timed(t, "goods.close_services", |c| c.close_services(ctx, day, &mut moved));
         (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         (record.sales, record.spent) = (sales, spent);
         (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
-        let printed = self.mark(ctx, day);
+        let printed = self.timed(t, "goods.mark", |c| c.mark(ctx, day));
         self.note_rises(day, &printed);
-        self.attend(ctx, day);
-        (record.reviews, record.repriced) = self.review_prices(ctx, day);
-        self.count_stances(day);
-        self.mark_surprised(day);
+        self.timed(t, "goods.attend", |c| c.attend(ctx, day));
+        (record.reviews, record.repriced) = self.timed(t, "goods.review", |c| c.review_prices(ctx, day));
+        self.timed(t, "goods.stances", |c| {
+            c.count_stances(day);
+            c.mark_surprised(day);
+        });
         let close = self.goods.stocks.totals();
         let broken = breaks(&open, &nature_net(&moved), &close);
         record.breaks = len_u64(broken.len());

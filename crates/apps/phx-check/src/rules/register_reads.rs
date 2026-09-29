@@ -10,7 +10,7 @@ const RULE: &str = "PC-18";
 /// Each token of a limit's origin, and the crates that may build one.
 const TOKENS: &[(&str, &[&str])] = &[("TermsToken", &["phx-ledger"]), ("PhysicalToken", &["phx-ledger", "phx-geo"])];
 /// The data-reading crates besides the kernel's register; the observer reads only its own declarations.
-const DATA_READERS: &[&str] = &["phx-world", "phx-obs", "phx-cli", "phx-ffi"];
+const DATA_READERS: &[&str] = &["phx-world", "phx-obs", "phx-cli"];
 /// The one module of the kernel that reads data.
 const REGISTER: (&str, &str) = ("phx-core", "/src/register/");
 const DATA_CRATES: [&str; 2] = ["toml", "serde"];

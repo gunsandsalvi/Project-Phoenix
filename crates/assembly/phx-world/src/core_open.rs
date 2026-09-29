@@ -229,6 +229,8 @@ impl Core {
             touched: std::collections::BTreeSet::new(),
             apportioned: Vec::new(),
             closures: Vec::new(),
+            timings: Vec::new(),
+            stage_ns: Vec::new(),
         }
     }
 

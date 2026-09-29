@@ -50,17 +50,17 @@ The forces:
 | --- | --- | --- |
 | Engine | **Rust**, stable, pinned in `rust-toolchain.toml`, edition 2024 | Layout and allocation control, no GC pauses, data-race freedom, Android and Linux targets, crates as compiler-enforced boundaries. |
 | World mathematics | **`libm`** (pure Rust) for transcendental functions in world code | Platform-independent results. |
-| Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. As built at Stage 0 the world runs on one thread: the pool serves only `phx-ffi`'s benches, and performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing); the performance-hint session is built at the plan's S1.16. |
+| Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. The world's meetings, making and input orders run on the pool; performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing), and come with the phone's run of the world. |
 | Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type iterated in key order where order matters (`sorted`) and in no set order only for order-free reads such as sums (`each`), sharded where written in parallel | Fast lookups; no outcome depends on hash order. |
 | Randomness | **Own Philox4x32-10** in `phx-rand`, batch-first, NEON-vectorised samplers | Draws addressable by (stream, identity, day, index): parallel, order-free, reproducible (CHN.1, CHN.6). |
 | Compression | **zstd** level 1 after per-column transforms (delta, zigzag, bit-packing) | Fast; transforms double the ratio on integer columns. |
 | Declared data | **TOML** + **serde**, at assembly only | Diffable, never on a hot path. |
-| Android bridge | **UniFFI** in `phx-ffi` | One foreign surface; data crosses in pages. |
+| Android bridge | *(none as built: the bench's phone library was deleted at S1.24, 2026-09-29; the phone's run of the world brings one back)* | One foreign surface; data crosses in pages. |
 | Android build | **cargo-ndk** + **Gradle**; 16 KiB page alignment | Required by current Android targets. |
 | Interface | **Kotlin + Jetpack Compose** | Native; off the hot path. |
 | Command line | **clap** in `phx-cli` | Runs, measurements, reports. |
 | Checks | **`phx-check`** (`syn`, `cargo metadata`) + **clippy** `disallowed-*` lists | Structural and type-aware rules (§16). |
-| Counters | **`gungraun`** (formerly `iai-callgrind`, on valgrind) for kernel micro-benchmarks; the engine's own counters | Deterministic ratchets; wall time only on the phone. |
+| Counters | **The bench** (`tools/bench.sh`): the world run, each stage of its day timed by the run's clock; the engine's own counters | One tool for every measure; the kernels' micro-benchmarks were deleted at S1.24 (owner, 2026-09-29). |
 | API snapshots | **cargo-public-api** for kernel and interface crates | Kernel surfaces change only on purpose. |
 | CI | **GitHub Actions** on x86-64 Linux, with an Android build job. The world runs on the build machine, never in CI | See §14.7. |
 
@@ -71,7 +71,7 @@ External crates are an allow-list in `phx-check`; adding one is recorded in §18
 ## 3. Layers and crates
 
 ```text
-L4 apps            phx-cli · phx-ffi → android/ · phx-check
+L4 apps            phx-cli · phx-check  (android/: the game's interface)
 L3 assembly        phx-world · phx-obs
 L2 systems         sys-dem sys-hh sys-est ... sys-sta                    (depend on L0, L1, IF only)
 IF interfaces      if-base if-pop if-labour if-property if-firm if-banking if-credit
@@ -105,8 +105,7 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 - **Interface crates** contain types, handles, schemas and rule *signatures*; `phx-check` refuses any function with a
   body other than a constructor or a field accessor.
 - **A system crate never depends on another system crate.** Only `phx-world` knows every system (§5). Only
-  `phx-exec` depends on rayon. Only `phx-store`, `phx-exec` and `phx-ffi` (the foreign boundary: UniFFI's
-  scaffolding and Android's performance-hint calls) may use `unsafe`; the one other `unsafe` is the `unsafe impl`
+  `phx-exec` depends on rayon. Only `phx-store` and `phx-exec` may use `unsafe`; the one other `unsafe` is the `unsafe impl`
   that `#[derive(Pod)]` expands to, whose layout the derive has checked, and no source outside those three crates
   may write `allow(unsafe_code)`.
 - A crate is created when its first step starts, never in advance.
@@ -179,7 +178,7 @@ Weibull by inversion.
 | Crate | Carries | Owns |
 | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
-| `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. At Stage 0 the world calls none of the pool's traversals or `KeyedReduce` (§6.3); `phx-ffi`'s benches and the crates' tests do. |
+| `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. The world's meetings, making and input orders run on the pool; the crates' tests exercise the rest. |
 | `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | The **vocabulary every system and kernel crate declares with** — the `System` trait and `Declarations` (primitives, kinds, claims of interface items, streams, hazards, decision points, event kinds, the kinds of market and of law a system declares, population items and processes, setup values, compiled state), the facts' interface items and their claims, kinds and legal forms, the sub-step table, hazard and event declarations and the public events' rule, findings; the calendar and conventions, decision schedules and phases; the primitive register, `DeclaredLimit` and **policy values** (§4.6); the opening's context and countries (`contribution`); the decision core (§7.18); and **the core** (§7.17): the kinds' stores and families' contracts (`store`), the due wheel, flows and their grouping, settlement, goods and capital units with their wear and spoilage. The old kernel's handlers, their contexts and columns, the kind tables of individuals, messages, records, kinks, the agenda, the directory and the audit families were deleted at S1.24. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.8). |
 | `phx-ledger` | REG.5, TAX.2, TAX.7 | The **contract algebra** the core reads (§4.4): terms, legs and schedules, and the dues they give, whole (`due_at`) or by shape (`shape_plan`, `due_by_shape`, §7.17); the reasons and line kinds systems declare (`ReasonDecl`, `LineKindDecl`, `name_code`); the withholding levy's bands (`levy::Withholding`, §4.3); the opening's helpers (`opening`); and the online choice of a household's bank (`online::Online`). The old kernel's books — lines, rows, instruments, holdings, liens, commitments, instructions and their settlement, transfers, estates and the waterfall — were deleted at S1.24: the core keeps the parties, contracts, flows, settlement and goods (`phx-core`, §7.17). |
@@ -232,26 +231,21 @@ interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx
 | --- | --- |
 | `phx-world` | Registry and schema compilation (§5.3); stages and sub-steps (§6); GEN (§10); saving (§11); the player's decider (§12); metrics. |
 | `phx-obs` | Views, the agent's view (OBS.8), and in the inspector build the realism recorder (§14.8); read-only. |
-| `phx-cli` | `run` (with its report), `inject`, `measure` (`calendar` and `budget` at Stage 0; `realism`, `chains` and `register-report` arrive with Stage 7, §14.4); the live-check suite. |
-| `phx-ffi` | The engine as an Android library. At Stage 0 it exports `run_bench`, `run_world`, `run_load` and `run_programme` (§12). |
-| `android/` | The Compose app and its `bench` flavour. |
+| `phx-cli` | `run` (with its report, each day's stages timed, which `tools/bench.sh` reads) and `inject`; the live-check suite. `realism`, `chains` and `register-report` arrive with Stage 7 (§14.4). |
+| `android/` | The Compose app, its `play` flavour. |
 | `phx-check` | Law, layering and document checks (§16). |
 
-`phx-ffi`'s bench harness (`bench.rs`) runs inside the app's process: the probe of the phone (`phx_exec::probe`: each
-allowed core's rate of fixed work alone and with every core busy, at the run's start, middle and end beside the
-thermal status; random 8-byte reads over 1–3 GiB by every worker at once, with and without prefetch; sequential
-bandwidth; an empty dispatch hot) and the kernels' micro-benchmarks, each line sent to the app through the
-`BenchHost` callback as it completes and judged against its target, and the report written as JSON. An ignored test
-runs it whole on the build machine. The `android/` app has `play` and `bench` flavours, its AGP, Gradle and Kotlin
-versions pinned in `gradle/libs.versions.toml` and the wrapper; the bench flavour runs off the interface thread with
-the screen kept on.
+The `android/` app's AGP, Gradle and Kotlin versions are pinned in `gradle/libs.versions.toml` and the wrapper. Its
+bench flavour and the engine's Android library (`phx-ffi`: the phone's probe, its micro-benchmarks, the world's turns
+and the full-load bench) were deleted at S1.24 (owner, 2026-09-29), for the one bench below (§14.7); the phone's run of
+the world is rebuilt on the same report when the owner calls the device run.
 
 ### 3.7 Repository
 
 ```text
 Cargo.toml · rust-toolchain.toml · rust-toolchain-miri.toml · clippy.toml · .cargo/config.toml · CODEOWNERS
 crates/{foundation,kernel,interfaces,systems,assembly,apps}/
-android/  data/  perf/  docs/  tools/{build-run.sh,versions.toml,data/}  .github/workflows/ci.yml
+android/  data/  perf/  docs/  tools/{bench.sh,versions.toml,data/}  .github/workflows/ci.yml
 ```
 
 `data/world.toml` holds the calendar's constants (the epoch, day zero) and the world's units; the generator's constants
@@ -266,15 +260,14 @@ only with it; the derivations write every profile primitive by id through `tools
 `data/observer/READS.toml` the observer's declared macro reads, which no world crate reads; `data/inventory.toml` the
 opening's inventory of derived values and distributions with their sources; `data/sources/` the fetched raw series and
 their notes. `tools/data/*.py` fetch the sources and derive the profiles from them; `tools/versions.toml` pins every
-tool beyond the Rust toolchain (the NDK and Android levels, the cargo tools, valgrind, the nightlies `miri` and
-`public-api` use). A country's `data/<country>/` is instantiated at a new game into the run's directory, never
+tool beyond the Rust toolchain (the NDK and Android levels, the cargo tools, the nightlies `miri` and `public-api`
+use). A country's `data/<country>/` is instantiated at a new game into the run's directory, never
 committed. `data/measure/` holds the realism reads' registered definitions, which no world crate reads, and
 `perf/{realism,chains,register}/` their reports, append-only (§14.8). They are registered before any read of the world
 uses them: N3's facts `N3/F01.toml` to `F28.toml`, N4's chains `N4/L01.toml` to `L12.toml`, and the shared
 `CREDIT.toml`; later work adds estimators, never edits a definition. `phx-check`'s `preregistration` and `no_tuning`
-rules guard them (§16 item 10). `perf/device/` and `perf/measure/` hold the
-gates' reports; `perf/build-run/` the build runs' reports (§14.7); `perf/load/volumes.toml` the full-load bench's
-volumes (§14.6); `perf/schema/` the device report's schema; `perf/ratchets.toml` the counters' values.
+rules guard them (§16 item 10). `perf/budget.toml` holds the budget's ratchets, `perf/ratchets.toml` the counters',
+and `perf/bench/` the bench's kept reports (§14.7), which a resolution change cites.
 
 ---
 
@@ -585,7 +578,7 @@ read whole only sorted by key (`sorted`, `drain_sorted` for saves) or, for an or
 Decision kernels read what their party may: its own rows and facts; the relationship rows it is holder or counterparty
 of; records whose audience includes it; earlier prints and marks. As built, a handler's `Ctx` reads and writes a
 declared fact by slot (`read::<F>(slot)`, `write::<F>(slot, v)`), and has no per-party accessor. Audience is checked at
-compile and assembly time from declarations; `read-trace`, a run-time flag of release builds, on in every build run
+compile and assembly time from declarations; `read-trace`, a run-time flag of release builds, on in every gate's run
 (§14.7), samples chunks and verifies reads at run time. Store-wide views go only to processes and applies.
 
 The sample is the first chunk of each (handler, table) in the run and every chunk whose index is congruent to the day
@@ -2173,7 +2166,7 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   kinds, and `deposits_of` sums what each bank owes. A family (`Family`) keeps its `EdgeTable`, each listed side's heads,
   one a party of its kind's capacity, and its `DueWheel`: `open` threads a contract on its sides' lists and on the wheel
   at its first due and refuses a side of another kind; `close` takes it off its lists and leaves its wheel entry for
-  its reader to skip. The world and the full-load bench build on them.
+  its reader to skip. The world builds on them.
 - **Persons** (`phx_pop::persons::Persons`): each household's persons on the core, two words each — its word as its
   kind packs it (birth date, role, attributes: the word is full) and its identity (`Held`) — a list per household in
   its chunk's arena and found by its slot; `set`, `push`, `remove` (the rest keep their order) and `clear` keep the
@@ -2260,49 +2253,11 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over
   its three sustained cores, never below the wall; page faults per day stand for allocation during the day.
 
-**The full-load bench** (`phx-ffi`'s `load`, `perf/load/volumes.toml`) builds the finished world at the design point
-— every kind's parties with records and money, twelve contract families with their list links and dues — and runs a
-month through these kernels:
-- hazards, and handlers over the day's agenda by phase, spending their rules' declared arithmetic;
-- purchases at the posted-price meeting, a product's buyers against its sellers' stalls (price, a good's free stock or
-  a service's 1.3 times the product's demand spread evenly, a few km from their region's buyers), products side by
-  side, one kept `Meeting` a worker, each sale a money flow and, for a good, a goods leg covering the seller's units;
-  a firm buys a good between firms instead, region by region, at a limit drawn for it;
-- goods (`load_goods.rs`), in stocks sharded by the firms' netting ranges, each range's worker writing its own:
-  - each goods firm holds its product and two inputs at the opening;
-  - after settlement each covered sale is delivered, used up by a household or held by a firm at what it paid, or
-    released where its payment failed;
-  - every firm holds four conditions of its product's plant, worn at its monthly review;
-  - each goods firm uses up a unit of each input it holds and makes a day's sales, no more than its plant can;
-  - a third of the products spoil, weekly, and a hundredth of the goods firms ship a quarter of their stock to the next
-    region, arriving three days on;
-  - the goods' identity is read every day;
-- a labour round (`load_labour.rs`) on business days: a book of a vacancy for every three of the day's searchers, about
-  3% of persons searching, each day's offers answered, applications met and selected, and applications drawn, a
-  filled vacancy posted again;
-- the wheel's dues, monthly and quarterly, the quarterly through the far list, each reckoned through its family's shape
-  of terms (a fixed sum, interest, an annuity, a principal once) from its contract's row, a row a few dues ahead asked
-  for early;
-- contracts closed and opened, family by family on the pool, and a tenth as many parties ended and begun;
-- settlement: accounts at banks drawn for them, reserves a tenth of deposits, balances spread over four decades, cash
-  lines of what each party paid and received, closed days' flows committed;
-- the audit: reserves conserved, each bank owing what its customers hold, and a rolling thirtieth of the contracts;
-- full saves.
-
-Its day's work is three halves of the finished world's estimate (owner, 2026-09-28). Unit costs are CPU time over
-units, the rules' declared arithmetic taken off handler rows. On the build machine at S1.20's end (2026-09-28), a
-flow grouped, netted, posted and applied cost 86 core-ns, a due 179, a handler row 127, a purchase 159; a business day
-failed about 3% of its flows, since the bench's random economy drifts short over its month; the peak was 4 427 MiB,
-928 bytes a person. At S1.21's end (2026-09-28), with the markets, goods, plant and the labour round in the month:
-- a purchase cost 340 core-ns, with 1.75 choices a buyer, since the bench's service stalls hold even units and the
-  logit crowds the cheap and near. By itself one product's meeting at 370 000 buyers costs about 250 ns a buyer on one
-  core: draws and alias picks about 45 ns a choice, grouping by stall 40, service 25, the tables 12;
-- the goods about 250 ms a business day, the labour round about 130 ms;
-- a median turn of 2.4 s and a heavy day of 3.0 s here;
-- a peak of 5 186 MiB, 1 087 bytes a person.
-
-These numbers compare kernels with their targets; the budget is judged on the phone (N8.8, owner 2026-09-28: "the
-target is on phone benchmark"). The old kernel's bench gave 7.7 s, 29 s and 9 GB at a smaller world.
+**The full-load bench** (random data at the finished world's volumes through the core's kernels, `phx-ffi`'s `load`)
+was deleted at S1.24 (owner, 2026-09-29), with the phone's bench app: the world's own run through `tools/bench.sh`
+(§14.7) times these kernels as the world uses them, stage by stage. Its last measures, at S1.21's end (2026-09-28):
+a flow grouped, netted, posted and applied 86 core-ns, a due 179, a purchase 340; a median turn of 2.4 s and a heavy
+day of 3.0 s at 1.5 times the finished world's counts; 1 087 bytes a person.
 
 ### 7.18 The decision core
 
@@ -2898,11 +2853,11 @@ world on the phone. CI never runs the world.
   naming its reason (N5); it assembles the world from the build and the data as the save's was, draws no opening,
   reads the core and its day, holds them to the manifest's world hash, binds the declarations again, moves the
   calendar's window to the save's year and reads the run's measures.
-- **The save check** (LC-0-35): each periodic save of the build run is read back from its files alone, hashed and
+- **The save check** (LC-0-35): each periodic save of a gate's run is read back from its files alone, hashed and
   dropped, and its hash held to the manifest's; its sizes and its write and check times are the run's (LC-0-36).
 - **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
   audited and discarded, never run on (N1).
-- **Injection** (N1, `save/inject.rs`): the build run takes one more save, at the close of the 30th day after
+- **Injection** (N1, `save/inject.rs`): a gate's run takes one more save, at the close of the 30th day after
   settling, into its own directory, and after its last day hands it to `phx inject` in a process of its own, so the
   run's memory stays the world's alone. Each family (`core_audit::FAMILIES`: money, goods, contracts, persons, taxes,
   debt, loans, accounts, revenue) has its discrepancy put into a fresh load of it — a unit where only that family's
@@ -2927,7 +2882,7 @@ world on the phone. CI never runs the world.
 
 - **Views** are built at 10e on a turn's last day from records and the state at its close, into fixed-bin histograms,
   and swapped in behind an `Arc`; tables cross the FFI in pages; `phx-obs` writes nothing
-  (Law 17). As built, the host (`phx-cli`'s run, `phx-ffi`'s bench) drives the observer after each turn: its
+  (Law 17). As built, the host (`phx-cli`'s run) drives the observer after each turn: its
   `Recorder` reads each day the turn closed from the run's own records — the day's work on the agents, the day's
   settlement and the day's events — into the **macro reads** `data/observer/READS.toml` declares, each a named
   measure (`agents.persons`, `settlement.gross`, `events.<kind>` summing the sizes of the day's events of a declared
@@ -2972,17 +2927,10 @@ world on the phone. CI never runs the world.
   passes the player. A turn's intents are queued before its first day; at each close each decision that came for the
   household is recorded with how it was taken (`PlayerDay`) and the intent it took leaves the queue, so an intent is
   taken on the first day its decision comes. LC-0-57 reads the record.
-- **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
-  a view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). As built at
-  Stage 0 that play surface is not built: `phx-ffi` exports `run_bench` (the probe and micro-benchmarks), `run_world`,
-  `run_load` (the full-load bench, §14.6) and `run_programme`, each run on the app's calling thread, the world on that
-  one thread. `run_world` assembles the world, settles it for the owner's length (`GEN.settling_years`), reporting the
-  settling's turns, days and time, runs the measured turns (the app passes 60), each reporting its wall time, days,
-  whether it ends on a business day, its payments and rows scanned, its sub-steps' wall times (summed from the world's
-  `SubStepRecord`s, kept by the application's clock), `VmHWM`, PSS and thermal status, then saves the world whole,
-  drops it and reads it back, timing both and checking the world hash. The bench flavour shows each result live as it
-  completes; `Run all` (`run_programme`) runs the probe, the world's turns and the full-load bench in turn and writes
-  the device report's second version (`perf/schema/device-report.json`).
+- **On the phone**, the engine is to run on its own thread with the pinned pool: create, load, step a turn, read a
+  view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). As built nothing
+  runs on the phone: the bench app and its library (`phx-ffi`) were deleted at S1.24 (owner, 2026-09-29), and the
+  phone's run of the world is built when the owner calls the device run, reporting as the bench's run does (§14.7).
 
 ---
 
@@ -3061,7 +3009,7 @@ The firm table's agenda has about eight reasons: two hazards, reviews, wakes, sc
 ### 13.2 Time (1 s median, 2 s worst, N8.2)
 
 **Measured** (2026-09-28, build machine, 750 000 persons): a median turn of about 8 s and a worst of 26 s (the smoke,
-§14.7), eight to thirteen times the budget, with Stage 1's systems only; the full-load bench at 1.5 times the finished
+since replaced by the bench, §14.7), eight to thirteen times the budget, with Stage 1's systems only; the since-deleted full-load bench at 1.5 times the finished
 world's counts gave 7.7 s and 29 s, its unit costs 5 to 50 times the estimates below (settlement about 1.5 µs a payment
 against 30 ns). The estimates below were never met; the restructure (the plan's S1.17–S1.25) replaces the layout they
 cost and sets unit targets for a finished world of 5 million persons, and this section is restated with its bench.
@@ -3219,8 +3167,8 @@ through Stage 6, the whole world, the median is about **1 302 ms, 30% over the b
 2 034 ms, 2% over, and a heavy Monday about 2 676 ms. For the worst turn, three closed days before a
 quarter-end payday, to keep 10% headroom the non-business day must cost at most (1 800 − 1 401) ÷ 3 ≈ **133 ms** at
 Stage 1, two-fifths of the estimate, and through Stage 6 the business day must fall by about 400 ms for the median's
-headroom. The closed runs are read from the declared calendars (TIME.2) by `phx measure calendar`
-(`perf/measure/S0.11-calendar.json`), the calendars committed with their sources before the first read, so no holiday
+headroom. The closed runs were read from the declared calendars (TIME.2) at S0.11
+(`perf/measure/S0.11-calendar.json`, in the history since S1.24 deleted the command and its reports), the calendars committed with their sources before the first read, so no holiday
 rule was chosen with the budget in view (N8.9): over the 63-year window the longest run is four days, once, ending on an
 ordinary business day; none of four days ends on a payday; three runs of three end on a quarter-end payday. At these
 estimates the worst turn, not the median, binds first, so the worst-turn rows set the play resolution. Stage 0's
@@ -3278,7 +3226,7 @@ observers, the audit and the realism recorder reaching the world only through `&
 PC-85). Every state that carries across days and can change an outcome is saved or canonical: a solver's warm start
 is saved (§8), derived indexes are rebuilt in canonical order (§11), and the resolution valve is a setting of the
 register, which the manifest's hash covers, changed only between runs or at a save boundary, never from the run's own
-timing (§7.9). The build run checks that each save, decoded store by store without building a second world, hashes
+timing (§7.9). A gate's run checks that each save, decoded store by store without building a second world, hashes
 to the world hash of the close it was written at (SET.15); the check is not meant to run on the phone, and as built it
 runs only in `phx run`.
 
@@ -3286,9 +3234,7 @@ runs only in `phx run`.
 
 | Command | Measures |
 | --- | --- |
-| `phx measure calendar` | the declared calendars' longest closed runs and their paydays after holidays (§13.2), into `perf/measure/` |
-| `phx measure budget` | from a build run's report and the device report of the same commit's world: the phone's business and closed turns, each sub-step's median, memory (the opening's and the run's `VmHWM`), stage 7's unit costs — each phone turn's own 7c time, the block that runs all of stage 7, over that turn's own payments and rows scanned, the median and worst of those — and the full-load bench against its criteria |
-| `phx measure` *(not built)* | read from the device run's report (§14.6), the representation's own numbers: agents and rows per kind, relationship rows per agent by line kind, persons per agent, bytes per store and peak resident bytes, agenda rows, draws and hits per process, occasions, agents changed and new agents per day by cause, legs per batch, rows and bytes per sub-step, unit costs per line of §13.2 |
+| `tools/bench.sh` | the world run on this machine at any persons, days, seed and workers, or a gate's run (§14.7): its whole report, each day's stages timed, the budget's block against `perf/budget.toml`, and a summary |
 | `phx inject` | audit independence (N1), on the build machine, on a save loaded apart, audited and discarded |
 | `phx realism` *(Stage 7)* | the stylised facts (N3) read from the run: recording, statistics, verdicts, GEN.10 (§14.8) |
 | `phx chains` *(Stage 7)* | the chains' relationships (N4) read from the run (§14.8) |
@@ -3297,103 +3243,65 @@ runs only in `phx run`.
 
 , and the population's age structure by `DEM.age_classes` and sex, births, the general fertility rate and school leavers
 
-At Stage 0 `phx measure` has two subcommands, `calendar` and `budget`; the representation's numbers of the third row
-are not yet read.
+The representation's own numbers the budget needs — rows per kind, contracts per party, bytes per store, draws and
+hits per process, flows per day, the stages' times — are read from the run's report by the bench; those the report
+does not yet carry are added to it when a step needs them.
 
 ### 14.5 Gates
 
-Every stage ends with: CI green, and a clean build run of the gate commit (§14.7), whose audit and live checks are the
-gate's; the **device run**: the bench flavour, built by CI with fat LTO (§18 item 33) and carrying the inspector's
-recorder (§14.8), runs a settled simulated year on the phone and exports its report and series,
-and the owner commits the report to `perf/device/`; `phx measure` within the memory and time budgets; from Stage 1,
+Every stage ends with: CI green, and a clean gate run of the gate commit (`tools/bench.sh -g`, §14.7), whose audit
+and live checks are the gate's; the **device run**, when the owner calls it: the world run on the phone for a
+settled simulated year, carrying the inspector's recorder (§14.8), its report read as the bench reads its own, within
+the memory and time budgets; from Stage 1,
 the stage's macro reads, which `phx-cli` reads from the device run's series, against real economies' relationships
 (spec Appendix E 25), each miss a finding that does not block the gate. The budget is judged on that same run, so the
-recorder's cost is inside it. The **go/no-go** reads the device report: the median turn ≤ 1 000 ms and the worst ≤
+recorder's cost is inside it. The **go/no-go** reads the device run's report: the median turn ≤ 1 000 ms and the worst ≤
 2 000 ms over the settled year, peak `VmHWM` and PSS ≤ 4.5 GB, a full save ≤ 5 s; §13's 10%
 headroom is reported, and a gate passes without it only as a recorded finding. Stage 7's gate adds the realism reads
-(§14.8): realism misses are findings and do not block it; the budget does (N8.8). As built at Stage 0 the device run
-settles for the owner's length and then runs the turns the app passes, 60, not yet a year of them (§12).
-
-From Stage 0's gate on, every gate also runs the **full-load bench** on the phone (§14.6, item 7) and holds it to the
-same criteria: a gate does not pass without it, so a finished world too slow or too large is found at Stage 0, not at
-Stage 6.
+(§14.8): realism misses are findings and do not block it; the budget does (N8.8). The phone's run is rebuilt on the
+bench's report when the owner calls the device run (owner, 2026-09-27: no device run until the world has enough in
+it); the full-load bench that ran random data at the finished world's volumes was deleted at S1.24 (owner,
+2026-09-29), each gate's world run at the committed resolution and, beside it, at the design point's five million
+persons (`tools/bench.sh -p 5000000`) standing in for it.
 
 ### 14.6 Measure first
 
-Stage 0 carries the opening world's employment, tenancy, deposit and loan lines and its pensions in payment paying
-as their terms say (spec Part O), so its world already has paydays, dues, pensions, deaths, illness, ageing and
-catastrophes. Before any behaviour is built, the Stage 0 gate's device run measures these on the phone, its bench
-flavour writing the counts and histograms each needs into its report, and `phx measure` reads them from that report
-on the build machine:
-
-1. **Rows per agent by line kind** — employment, tenancy, deposit, loan and the rest — and persons per agent, across
-   **the one run's own agents**, at the play resolution only (spec Appendix E 40), at the opening and after a
-   simulated year; banking arrangements per region. *(Pending: the bench flavour does not yet write
-   these counts and `phx measure` does not read them.)*
-2. **The phone**: core-seconds per second by core class across the run, with the thermal status; random-gather
-   nanoseconds per row over 1–3 GB with 16 KiB pages and prefetch, with all cores gathering together; sweep
-   bandwidth; barrier cost.
-3. **An agent's change end to end** at the measured rows per agent, per component: its rows' recounts, holder-list
-   maintenance, instruction (agenda redraws are item 5's); agents changed and new agents per day by cause.
-4. **Settlement on the heaviest payday and on an ordinary weekday**: run heads read, the share of holders' due-day
-   segments scanned and the rows in them not due, rows read and legs, nanoseconds per head, per row and per leg
-   including levies, the fixed point's iterations, and the peak of the day buffers.
-5. **Hazards and agenda**: draws, redraws and agenda rows per day, with their unit costs; `NextDays` reasons
-   per table.
-6. **The worst turn**: the worst closed run in the declared calendars (§13.2), its closed days at the measured
-   non-business day and the day that ends it at its measured type.
-7. **The finished world's load**: the full-load bench, in the bench flavour after the world's year. It allocates the
-   population its representation holds at the play resolution with every store at the finished world's size (§13.1's
-   Stage 1–6 lines), fills it with random data from its own seeded stream, outside the world's, and runs a simulated
-   month at most, holding each of the calendars' day types — ordinary, the Monday after a weekend, the heavy Monday, the
-   worst closed run — with the real kernels at each day type's finished-world counts (§13.2): settlement, hazard draws
-   and the agenda, each visit's gathers with its ledger's arithmetic for the mechanisms not yet built, the audit, the
-   views and full saves. It is judged by the gate's criteria (§14.5); each later gate reruns it with the built stages'
-   measured counts. Its numbers are costs, never the world's. As built (`phx-ffi`'s `load.rs` over
-   `perf/load/volumes.toml`), it runs after the world's turns in `Run all`, on the pool: it builds the core's stores
-   at the design point's sizes from its own random data — every kind's parties with their records and money, every
-   family's contracts with their due days — and runs the day types' work through the core's kernels: hazards, the
-   agenda's handlers spending their declared arithmetic, the posted-price and between-firms meetings, the dues the
-   wheel hands each day read by shape, contracts opened and closed and parties begun and ended, settlement through
-   `phx_core::settle`, and full saves. Its audit holds the reserves and the money every account holds together to what
-   they were, and reads a thirtieth of the contracts in full; there are no views. Its households for the device
-   report — random persons in the core's persons store, `phx-ffi`'s `agents.rs` — measure a household's next hit
-   drawn and a hit's outcome applied on the fastest core.
-
-Stage 1's gate adds retail and labour: draws, sellers in reach, occasion evaluations and choices by decision,
-vacancies visible and labour rounds, surprise wakes, physical realisations, outlook methods in use, and agents per
-stance. From these, §13 is
-rewritten with measured numbers for every stage — the measured unit costs times each later stage's ledger counts — so
-each gate reports the whole world's projection, not only its own stage's, beside the full-load bench that decides it.
-If they do not fit, the remedies are, in order (N8.7): how the world is represented and traversed; then the play
-resolution — the size and the zones. If none suffices, that is a finding, and the owner decides; no mechanism is
-weakened. Before Stage 4's steps are built, `phx measure` also measures policy rows per (agent, cover) on GEN's draws
-(the plan's S4.03) and the rows per agent of defined-benefit rights and DC pots (S4.04).
+The world's run measures itself: each day the core times its stages by the run's clock — the hazards, the rates, the
+labour round and its parts, the goods day and its parts, freight, settlement, the audit, the statistics — and the
+report carries them day by day beside the day's flows, settled and failed payments, the budget's block (the turns'
+median and worst, bytes a person, cores busy, page faults a day) and every mechanism's own section. The bench reads
+them at any size of world, so the representation is measured before it is built on: at each gate, at the committed
+resolution and at the design point, and at any step whose change could move a stage's cost. From these, §13 is
+rewritten with measured numbers — the measured unit costs times each later stage's counts — so each gate reports the
+whole world's projection, not only its own stage's. If they do not fit, the remedies are, in order (N8.7): how the
+world is represented and traversed; then the play resolution — the size and the zones. If none suffices, that is a
+finding, and the owner decides; no mechanism is weakened.
 
 ### 14.7 Continuous integration
 
 | Workflow | When | What |
 | --- | --- | --- |
-| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test` in the debug and the release profile; `phx-check`; `miri` over `phx-store`'s tests on the pinned nightly; `public-api`, the kernel and interface crates' API snapshots; the workspace built for Android; `android-app`, the engine built for the phone with the `device` profile, its Kotlin bindings and the bench flavour's APK, uploaded as an artifact (§18 item 33); kernel micro-benchmark instruction counts under valgrind, whose ratchets fail CI. The world is not run |
+| `ci.yml` | every push | format; clippy with disallowed lists; `cargo test` in the debug and the release profile; `phx-check`; `miri` over `phx-store`'s tests on the pinned nightly; `public-api`, the kernel and interface crates' API snapshots; the workspace built for Android; `android-app`, the game app's APK, uploaded as an artifact. The world is not run |
 
 Every job runs on push and pull request on a pinned runner image with a 30-minute timeout, reads its tools' versions
 from `tools/versions.toml`, caches on `Cargo.lock` and the toolchains, and may not fail. CODEOWNERS gives the owner
-`/perf/` (but `perf/build-run/`), `docs/PROJECT_PHOENIX.md` and `data/profiles/`.
+`/perf/`, `docs/PROJECT_PHOENIX.md` and `data/profiles/`.
 
-**The build run** (`tools/build-run.sh`, on the build machine — the development VM, 4 cores and 15 GB): a `--release`
-build (thin LTO; only the `device` profile is fat, §17); the world at the play resolution (§10.5), with `read-trace` on,
-the audit and every live check, 120 days from day zero; the engine's counter ratchets, whose moves fail the build run,
-not CI (§16.8); peak memory; wall time, build and run apart. It uses no other resolution or seed, and its numbers are the
-code's, never the world's. It is **clean** when the audit reports nothing, every failing live check is recorded as a
-finding in the plan's §11, and no ratchet moves the wrong way. Since S1.09 a step is done on its fast checks and the
-world runs at the gates; a stage gate's settled two-year run is the device run, on the phone (owner, 2026-09-28).
-
-**The smoke** (`tools/smoke.sh`) reads the budget at every step: twenty days from day zero at the committed resolution,
-no live checks, the report's `budget` block — the turns' median and worst wall time, peak bytes a person, cores busy
-(the process's CPU time over the days' wall time) and minor page faults a day — against `perf/budget.toml`'s ratchets,
-which may only fall (the cores only rise). A step that must raise one says so and why. `--bench` adds the full-load
-bench. The first measure, 2026-09-28 at 750 000 persons: a median turn of 8.0 s, the worst 26.2 s, 6 748 bytes a person,
-1.13 cores busy and 138 057 faults a day; 7c 3.4 s, 10d 1.2 s and 6d 1.1 s of the median day.
+**The bench** (`tools/bench.sh`, on the build machine — the development VM, 4 cores and 15 GB; owner, 2026-09-29: the
+one benchmarking tool, replacing the smoke, the build run, the full-load bench, the phone's bench app and the kernels'
+micro-benchmarks) builds `--release` (thin LTO, §17) and runs the world: `-p` the persons (the committed resolution by
+default, where the budget is judged), `-d` the days from day zero (twenty, the span the budget's ratchets are measured
+over), `-s` the seed, `-w` the workers, `-c` the live checks; `-g` a stage gate's run instead — settled, two years,
+the audit and every live check; `-k` keeps the report in `perf/bench/`. It writes the run's whole report (each day's
+stages in microseconds under `core_days[].stages_us`), the run's log and a summary: the run, the budget's block against
+`perf/budget.toml`'s ratchets — which may only fall (the cores only rise), a step that must raise one saying so and
+why — every stage's median, worst and share of the day, memory, cores, page faults, the day's flows and the findings.
+Its numbers are the code's, never the world's. A gate's run is **clean** when the audit reports nothing, every failing
+live check is recorded where it is settled, and no ratchet moves the wrong way. Since S1.09 a step is done on its fast
+checks, the budget read by the bench, and the world's long run is at the gates; a stage gate's settled two-year run is
+also the device run's, on the phone (owner, 2026-09-28). The first measure of the budget (the smoke's, 2026-09-28, at
+750 000 persons): a median turn of 8.0 s, the worst 26.2 s, 6 748 bytes a person, 1.13 cores busy and 138 057 faults a
+day.
 
 ### 14.8 The realism reads
 
@@ -3452,8 +3360,8 @@ credited while the world holds it (GEN.10).
 
 `phx-check` and clippy fail the build on:
 
-1. **Layering** (§3.1), the external allow-list, rayon only in `phx-exec`, `unsafe` only in `phx-store`, `phx-exec`
-   and `phx-ffi` and in `#[derive(Pod)]`'s expansion.
+1. **Layering** (§3.1), the external allow-list, rayon only in `phx-exec`, `unsafe` only in `phx-store` and `phx-exec`
+   and in `#[derive(Pod)]`'s expansion.
 2. **Type-aware rules** (clippy disallowed lists over world crates): `min`, `max`, `clamp` on numbers; `Instant::now`,
    `SystemTime::now`; `RandomState`, std `HashMap`/`HashSet`; atomics, `Mutex`, `RwLock`, `OnceLock`, `LazyLock`,
    `thread_local!`; `println!`. Declared real limits go through `DeclaredLimit::bind` (Law 6), built from the
@@ -3481,14 +3389,14 @@ it takes the world, a table or a handler's context.
 7. **Process**: live-check identifiers never disappear; a primitive's value in `data/` changes only with its `source`
    in the same diff; the placeholder count only falls except by placeholders a stage introduces, and no system is done
    while a placeholder naming it remains; public-API snapshots of kernel and interface crates change only with the
-   change that needs them; `perf/` changes need the owner's review (CODEOWNERS), except the append-only build-run
-   reports (§14.7).
-8. **Ratchets** on deterministic counters (§14.7): kernel instruction counts, in CI; in the build run, bytes per
+   change that needs them; `perf/` changes need the owner's review (CODEOWNERS), except the bench's kept reports
+   (§14.7).
+8. **Ratchets** on deterministic counters (§14.7): in the world's run, bytes per
    store, per row and at peak; rows and bytes touched per sub-step; agenda rows, draws, occasions, agents changed and
    new agents per day; legs per batch; barriers per day; agents per kind; rows per agent by line kind.
    Declared-but-never-read primitives, streams and hazards are reported. As built at Stage 0 (`perf/ratchets.toml`,
-   `phx-cli`'s `run.rs`): CI ratchets the kernels' instruction counts; `phx-check` the counts of `allow` and `expect`
-   attributes and of placeholders; the build run only the barriers per empty day, the map's bytes and seven stage-7
+   `phx-cli`'s `run.rs`): `phx-check` the counts of `allow` and `expect`
+   attributes and of placeholders; the world's run only the barriers per empty day, the map's bytes and seven stage-7
    counters, each the most on any day — rows streamed, run heads read, run rows scanned and those not due, payments,
    the fixed point's iterations and the day buffers' peak bytes. The day's draws, redraws, outcomes and new agents are
    the world's day records (`AgentDay`), which the live checks read, neither reported nor
@@ -3520,8 +3428,8 @@ it takes the world, a table or a handler's context.
     | Id | Refuses |
     | --- | --- |
     | PC-01 | a dependency against §3.1's layers and orders |
-    | PC-02 | a direct external dependency outside the allow-list (`rules/dependencies.rs`, by crate or layer; `proptest`, `trybuild` and `gungraun` as development dependencies anywhere) |
-    | PC-03 | `allow(unsafe_code)` outside `phx-store`, `phx-exec` and `phx-ffi` |
+    | PC-02 | a direct external dependency outside the allow-list (`rules/dependencies.rs`, by crate or layer; `proptest` and `trybuild` as development dependencies anywhere) |
+    | PC-03 | `allow(unsafe_code)` outside `phx-store` and `phx-exec` |
     | PC-04 | `rayon` anywhere, `rayon-core` outside `phx-exec`, `libc` outside `phx-exec` and `phx-store` |
     | PC-05 | a `static` item in a world crate, but `phx-exec/src/site.rs`'s thread-local |
     | PC-06 | a numeric literal other than 0, 1, −1 and 2 in a world crate outside `consts.rs`, type positions, tests and benches, with the arguments of the assert, format, write, `vec!` and `violation!` macros parsed as expressions; a constant in `consts.rs` without a doc comment |
@@ -3543,13 +3451,11 @@ it takes the world, a table or a handler's context.
     The clippy exemptions are declared per crate in `phx-check` and realised by that crate's `clippy.toml`: `phx-exec`
     the atomics, `std::thread::spawn` and `thread_local!`; `phx-rand`, `phx-store` and `phx-exec` the wrapping
     integer methods, through named helpers; `phx-cli` `Instant::now`, `env::var` and the printing macros;
-    `phx-check` the printing macros; `phx-ffi` `Instant::now`. Its subcommands: `layering` (PC-01 to PC-04), `rules`
+    `phx-check` the printing macros. Its subcommands: `layering` (PC-01 to PC-04), `rules`
     (the table), `docs` (PC-09 and §19 against the table `coverage` would write), `clauses` (the clause map and
-    carriers, item 5), `coverage [--write]`, `all`; `bench-ratchets` (the `gungraun` summaries against
-    `perf/ratchets.toml`, a count with no entry refused) and `public-api [--write]` (with the pinned
+    carriers, item 5), `coverage [--write]`, `all`; `public-api [--write]` (with the pinned
     `cargo-public-api` and nightly) run in their own CI jobs; `check-all` (the cargo alias `check-all`) runs format,
-    clippy and tests as CI does, then `all`. `phx-check all` also refuses a committed device report that does not
-    validate against `perf/schema/device-report.json`.
+    clippy and tests as CI does, then `all`.
 
 A rule changes only with its reason recorded in §18.
 
@@ -3558,8 +3464,7 @@ A rule changes only with its reason recorded in §18.
 ## 17. Build and target
 
 - Release: `lto = "thin"`, `codegen-units = 1`, `panic = "abort"` with a hook that writes the violation report,
-  overflow checks on; the build run builds it. The `device` profile, which CI builds the phone's library with,
-  inherits it with `lto = "fat"`.
+  overflow checks on; the bench builds it. The phone's own profile comes back with the phone's run of the world.
 
 The hook (`phx-cli`'s `panic_hook`) writes `violations/<run>.json`: the clause or the capacity exceeded, its keys, and
 the site the day runner last entered (`phx_exec::site`: day, sub-step, handler, chunk). `violation!` builds a
@@ -3877,6 +3782,16 @@ hashes read their bytes as little-endian.
     keyed streams on the core (the state's claims); PC-21 guards the sub-steps the code names, the macros' copy of the
     table gone with the macros; PC-94 is added, refusing a mechanism split by size. S1.25 restates or retires the
     rules over the retired machinery.
+37. **One bench** (2026-09-29, the owner: one benchmarking file for the new world, every other deleted): the world
+    itself, run by `tools/bench.sh` on this machine, is the one measure. Each day the core times its stages by the
+    run's clock (`Core::timed`), never a world state, and the report carries them; the bench's flags set the persons,
+    days, seed, workers and checks, `-g` a gate's run and `-k` a kept report in `perf/bench/`. Deleted with it: the
+    smoke and the build run (`tools/smoke.sh`, `tools/build-run.sh`), the build runs', device and measurement reports
+    and the device report's schema, the full-load bench and its volumes, the phone's bench app and its library
+    (`phx-ffi`, the `bench` flavour, CI's phone library and bench APK), the kernels' micro-benchmarks with their
+    instruction ratchets, their CI job and `phx-check`'s `bench-ratchets`, and `phx measure`. Superseded: items 30 and
+    33's device-report and phone-library provisions. The phone's run of the world is rebuilt on the bench's report
+    when the owner calls the device run.
 ---
 
 ## 19. Coverage
@@ -3939,5 +3854,5 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | M2 | STA | `sys-sta` | 1 | 5 | building |
 | L3 | estates | `phx-world` until `sys-est` at Stage 2 | 0 | 2 | building |
 | L1, L2, L4–L12 | transmission chains | read from the run by `phx chains` (N4) | 2 | 7 | planned |
-| N1 | audit | `phx-audit` and every system's families, run in every build run | 0 | 6 | building |
+| N1 | audit | `phx-audit` and every system's families, run in every gate's run | 0 | 6 | building |
 | N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | building |

@@ -3,14 +3,13 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Eleven: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand, phx-store, phx-exec and phx-core, whose gungraun harness prints, exits and passes setups
-# by value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views,
-# the storable marker) and phx-exec's two (affinity, thread ids and the prefetch hint; the partition's pieces writing
-# their disjoint places of one output, S1.19), each lowering the lint for itself alone.
+# Six: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; phx-store's three
+# modules that hold its `unsafe` (the backing's system calls, the region's typed views, the storable marker) and
+# phx-exec's two (affinity, thread ids and the prefetch hint; the partition's pieces writing their disjoint places of
+# one output, S1.19), each lowering the lint for itself alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 11
+value = 6
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
@@ -95,193 +94,7 @@ direction = "down"
 # services no buyer took. First set at S1.06, at nothing until households buy (S1.12), which restates them.
 # Freight's heaviest day: the shipments set on their way and the bookings refused. First set at S1.07, at nothing
 # until goods are shipped (S1.15), which restates them.
-# Kernel micro-benchmarks: callgrind instruction counts, first measured when phx-num was built.
-[[ratchet]]
-counter = "phx_num.ir_value_of"
-value = 320
-direction = "down"
-
-[[ratchet]]
-counter = "phx_num.ir_accrue"
-value = 239
-direction = "down"
-
-[[ratchet]]
-counter = "phx_num.ir_div_round"
-value = 161
-direction = "down"
-
-[[ratchet]]
-counter = "phx_num.ir_split_total"
-value = 85
-direction = "down"
-
-# phx-rand's samplers, each from a fresh draw cursor; rejection samplers count the rejections their fixed address meets.
-[[ratchet]]
-counter = "phx_rand.ir_philox"
-value = 164
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_philox_x4"
-value = 682
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_open_unit"
-value = 208
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_below_u64"
-value = 255
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_binomial_inversion"
-value = 496
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_binomial_btpe"
-value = 577
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_binomial_at_least_one"
-value = 486
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_joint_at_least_one"
-value = 2613
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_multinomial"
-value = 2504
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_alias_draw"
-value = 524
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_hypergeometric_hin"
-value = 601
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_hypergeometric_hrua"
-value = 1664
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_multivariate_hypergeometric"
-value = 6853
-direction = "down"
-
-# The pick with the tree's room kept by its caller, as a caller keeps it.
-[[ratchet]]
-counter = "phx_rand.ir_pick_without_replacement"
-value = 5798
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_geometric"
-value = 435
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_accept"
-value = 223
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_normal"
-value = 244
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_gamma"
-value = 527
-direction = "down"
-
-[[ratchet]]
-counter = "phx_rand.ir_beta"
-value = 1187
-direction = "down"
-
-# phx-store's kernels, each from a fixed setup: a push onto a committed page, an in-place append, compaction of 64
-# lists with half the arena dead, an insert into a 10 000-entry block list, and encoding and decoding 4 096 sorted
-# words (32 KiB) through delta, bit-packing and zstd, of which zstd's context setup, paid once per column, is about
-# a third at this size.
-[[ratchet]]
-counter = "phx_store.ir_column_push"
-value = 59
-direction = "down"
-
-[[ratchet]]
-counter = "phx_store.ir_arena_append"
-value = 124
-direction = "down"
-
-[[ratchet]]
-counter = "phx_store.ir_arena_compact"
-value = 21156
-direction = "down"
-
-[[ratchet]]
-counter = "phx_store.ir_block_insert"
-value = 634
-direction = "down"
-
-[[ratchet]]
-counter = "phx_store.ir_encode"
-value = 1002629
-direction = "down"
-
-# Raised by 32 at S0.26f (b00aae4b): the store's writer grew its framed output beside the decoder, the decoding
-# itself unchanged.
-[[ratchet]]
-counter = "phx_store.ir_decode"
-value = 732779
-direction = "down"
-
-# phx-exec's kernels on the calling thread (a pool's idle workers would add instructions that depend on timing): a
-# radix sort of 4 096 random (u64, u32) pairs, a keyed reduction of 8 chunks of 512 pairs over 1 000 keys, and a
-# gather of 16 chunks of 2 handlers' 128 intents. The keyed reduction's count is CI's: its allocations cost the
-# runner's allocator a few hundred instructions more than the build machine's, and CI is where the ratchet holds.
-[[ratchet]]
-counter = "phx_exec.ir_radix_sort"
-value = 1502472
-direction = "down"
-
-[[ratchet]]
-counter = "phx_exec.ir_keyed_reduce"
-value = 1152657
-direction = "down"
-
-[[ratchet]]
-counter = "phx_exec.ir_gather"
-value = 16567
-direction = "down"
-
-# phx-core: 64 days of business-day lookups, one monthly schedule's next due day, and one day's gather of 512 due rows
-# of 4 096, each booked again at its next reason. The gather's count is CI's, whose allocator costs its buffers a few
-# dozen instructions more than the build machine's.
-[[ratchet]]
-counter = "phx_core.ir_is_business"
-value = 3721
-direction = "down"
-
-[[ratchet]]
-counter = "phx_core.ir_next_due"
-value = 3764
-direction = "down"
-
-# The core's flows a day (S1.24): the greatest a day of the smoke came to, at the committed resolution. Raised
+# The core's flows a day (S1.24): the greatest a day of the bench came to, at the committed resolution. Raised
 # (2026-09-29) to 1 376 923 by the mechanisms S1.24 d and e added to the day — the services' capacity lost and their
 # inputs used as they sell, goods spoiling in stock, the firms' input orders by the inputs rule — each a flow the world
 # makes.

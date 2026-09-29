@@ -82,7 +82,7 @@ A live check:
 - reads a live run's records, metrics and state through the inspector's read-only surface;
 - returns pass, fail (with the facts that failed) or not applicable.
 
-Every build run (§2.10) runs every live check, forever. A check that stops applying is marked `retired` with its
+Every gate's bench run (§2.10) runs every live check, forever. A check that stops applying is marked `retired` with its
 reason; its identifier is never reused, and `phx-check` enforces both.
 
 A live check never repairs, never writes, and never sets up the world it reads (§2.10). The one exception is N1's
@@ -90,12 +90,11 @@ injection, which is a test of the audit, not a run of the world: `phx inject` lo
 declared injection, runs the audit and discards the load without stepping a day (S0.12). Its checks read the tool's
 report.
 
-**The gate run** of a stage is the device run of the gate's commit: the bench flavour on the phone (S0.26), whose
-device report judges the budget and carries the macro reads, computed on the phone from the run's public records by
-the read-only observer. The gate's live checks are those of the same commit's build run (§2.10), whose numbers test
-the code and are never read as the world's. From S0.26 every gate also runs the **full-load bench** on the phone:
-random data at the finished world's volumes and shapes through the real kernels, with the built stages' counts
-measured, judged by the same budget as the gate run; it is a cost, never a world.
+**The gate run** of a stage is the bench's gate run of the gate's commit (`tools/bench.sh -g`, §2.10): settled, run
+two years with every live check, its report carrying the budget, each stage's time and the macro reads, computed from
+the run's public records by the read-only observer. Its numbers test the code and are never read as the world's. The
+device run, the same world on the phone, is rebuilt on the bench's report when the owner says the world has enough in
+it; until then the budget is judged on the bench (owner, 2026-09-29, §12).
 
 The world runs once (spec Appendix E 36). A check reads that run and nothing else: no copy, no second seed, no other
 resolution. A check about a shock or a policy change reads the run's own occurrences of it — a hazard's event, a
@@ -200,8 +199,8 @@ from them. A convention changes only by a change to this section, in its own com
 crates/foundation/{phx-num,phx-rand,phx-id,phx-macros}/
 crates/kernel/{phx-store,phx-exec,phx-core,phx-geo,phx-ledger,phx-pop,phx-market,phx-acct,phx-val,phx-audit}/
 crates/interfaces/if-*/        crates/systems/sys-*/
-crates/assembly/{phx-world,phx-obs}/        crates/apps/{phx-cli,phx-ffi,phx-check}/
-android/                        the Compose app and its bench flavour
+crates/assembly/{phx-world,phx-obs}/        crates/apps/{phx-cli,phx-check}/
+android/                        the Compose app
 data/world.toml                 world constants: epoch, total population, map, three countries, 25 regions, settling
                                 length, save interval (spec GEN.14)
 data/setup/default.toml         the default new game: population split and each country's choices and name (GEN.14)
@@ -217,10 +216,9 @@ data/shared/<SYS>.toml          primitives common to all countries
 data/<country>/                 one country's primitives, instantiated at a new game from its level's files and its
                                 derived values (GEN.15); never edited by hand
 perf/ratchets.toml              counter ratchets (§2.11)
-perf/device/                    device reports, committed by the owner
-perf/measure/                   `phx measure` reports, one per step that changes a budget line
-perf/build-run/                 build-run reports, one per step (§2.10)
-tools/                          the build run's script and the pinned tool versions (S0.01, S0.11)
+perf/budget.toml                the budget's ratchets at the committed resolution (§2.10)
+perf/bench/                     the bench's kept reports, the measures a resolution change cites (`tools/bench.sh -k`)
+tools/                          the bench (`tools/bench.sh`) and the pinned tool versions (S0.01)
 docs/                           the spec, the architecture, this file
 ```
 
@@ -395,25 +393,24 @@ live_check! {
 - `Inspector` is the read-only surface of `phx-world`. It has no method that writes, and PC-20 refuses a `&mut`
   reaching the world from `checks/`.
 - A check reads only what the run left: records, metrics, findings, state at a close.
-- The live run is `phx run --settle <declared> --days <n> --checks all`. It runs on the build machine, the
-  development VM where the world is built, after each step's build, at the play resolution (architecture §14.7).
+- **The bench** (`tools/bench.sh`, owner 2026-09-29) is the one tool that runs the world: `phx run` on the build
+  machine, the development VM where the world is built (architecture §14.7), writing the run's whole report — each
+  day's stages and their time, the budget, memory, cores, the flows, the findings and the checks — and a summary.
   CI builds and runs unit tests and `phx-check`, never the world.
-- **The build run** (S0.11) is required from S0.11 on; S0.01 to S0.10 have no world to run. It judges the commit that
-  last changed code; the step's last commit adds only the report, the status and the coverage table (§0.1 rule 7).
+- **Every step** runs the bench at the committed resolution for 20 days from day zero, the budget's ratchets
+  (`perf/budget.toml`) read against it; a step does not end with one broken unless it says why. A step is `done` on
+  its fast checks and that bench (owner, §12).
+- **A stage gate** runs `tools/bench.sh -g`: settled for the owner's length and run two years with every live check.
   It is **clean** when the audit reports no finding and every failing live check is written into the step that
-  fixes it (§0.1 rule 5). Its report records the build's and the run's wall times on the build machine, which are
-  never ratcheted. An ordinary step's build run lasts 120 days from day zero (`phx run --total-days 120`), cutting
-  settling short and holding one quarter's save, with the injections' save on its 30th day; a stage gate's
-  (`tools/build-run.sh --gate`) settles the owner's length and runs two years after it (the owner's decision, §12).
+  fixes it (§0.1 rule 5).
 - The play resolution is a declared RESOLUTION setting, changed only by a recorded change between runs, never by
-  in-run timing. Until S0.26 first measures it, the build runs use the declared initial resolution. "No other
-  setting" means no other resolution or seed; the run's length is the build run's own.
+  in-run timing, citing a report the bench kept (`-k`, `perf/bench/`). A run at fewer persons (`-p`) is for speed,
+  for that run only. "No other setting" means no other resolution or seed.
 
 ### 2.11 Counters and ratchets
 
-- Kernel micro-benchmarks count instructions with `gungraun` (formerly `iai-callgrind`), under valgrind in CI. The
-  engine counts rows, bytes, parts, legs and barriers.
-- Wall time is measured only on the phone, and CI's wall time is never ratcheted.
+- The engine counts rows, bytes, parts, legs and barriers; the bench times each stage of the day.
+- CI's wall time is never ratcheted; the bench's is, at the committed resolution only (`perf/budget.toml`).
 - `perf/ratchets.toml` holds each counter's value and direction:
 
   ```toml
@@ -423,10 +420,8 @@ live_check! {
   direction = "down"
   ```
 
-- Micro-benchmark counters are checked per push by CI's `bench` job (S0.01): `cargo bench` with
-  `GUNGRAUN_SAVE_SUMMARY=json`, then `phx-check bench-ratchets` (S0.03), which fails when a count has no entry or moves
-  the wrong way. A benchmark is named `ir_<kernel>` and its counter `<crate>.ir_<kernel>`. The engine's counters come
-  from the build run of the world, which fails when one does.
+- The engine's counters come from the bench's run of the world, which fails when one has no entry or moves the wrong
+  way.
 - A counter may worsen only in a commit that edits its entry, with the reason, reviewed by the owner (CODEOWNERS).
 - A counter with no entry is refused, never read as zero (NUM.8).
 
@@ -446,10 +441,9 @@ Each crate is allowed only in the crates named.
 | `serde_json` | `phx-cli`, `phx-check`, `phx-world` (reports) |
 | `clap` | `phx-cli`, `phx-check` |
 | `regex` | `phx-check` |
-| `uniffi`, `ndk-sys` | `phx-ffi` |
 | `syn`, `quote`, `proc-macro2` | `phx-macros`, `phx-check` |
 | `cargo_metadata` | `phx-check` |
-| `proptest`, `trybuild`, `gungraun` | dev-dependencies anywhere |
+| `proptest`, `trybuild` | dev-dependencies anywhere |
 
 Random-number crates (`rand`, `rand_core`, `getrandom`) and other hashers (`ahash`, `fxhash`) are refused as direct
 dependencies of world crates (PC-13). Adding a crate is a change to this table and to architecture §18, in its own
@@ -1272,9 +1266,9 @@ world switches to the core.
   roles on the core (the household, the treasury, the estate) are declared rather than found by name.
 - **What ends with the old kernel.** The per-payment settlement path, the agents' kernel, the cells' rows and their
   measured costs describe code this step deletes; the core's costs are this step's budget and S1.16's.
-- **The checks and the bench.** The checks' instruments run in the build run only, never in the phone's day; every
-  counter the architecture names for the core is built or retired with its reason; the full-load bench runs the real
-  kernels, the audit's families, the posting and each turn's views included.
+- **The checks and the bench.** The checks' instruments run in the bench's run only, never in the phone's day; every
+  counter the architecture names for the core is built or retired with its reason; the bench times each stage of the
+  core's day, the audit's families, the posting and each turn's views included.
 - **Firms earn from the opening** (their share of the SAM's sales), so defaults at the first grace's end, the
   searchers their staff become and the banks' declined refinancing are read at S1.16 as the world's.
 - **Firms at the opening.**
@@ -1317,8 +1311,7 @@ world switches to the core.
 
 **Live checks**: every Stage 0 and Stage 1 live check on the core world.
 
-**Budget**: the smoke at the committed resolution meets the build machine's budget line, and the bench at the design
-point meets its targets.
+**Budget**: the bench at the committed resolution meets the build machine's budget line (`perf/budget.toml`).
 
 **Guards**: `phx-check` refuses a name ending `_small` or `_large` in a world crate (PC-94, built): the handlers it first named are deleted, so it reads every identifier and declared name.
 
@@ -1327,8 +1320,8 @@ branch on size.
 
 **Done when**
 - [ ] The committed world runs on the core; every live check passes, or is written into the step that will fix it.
-- [ ] The smoke and the bench are within budget.
-- [ ] The values listed above come from the data in hand; the bench runs the real kernels.
+- [ ] The bench is within budget.
+- [ ] The values listed above come from the data in hand.
 - [ ] Two independent reviews are done (a major step).
 
 ---
@@ -1362,7 +1355,7 @@ retired, each by its identity.
 
 **Live checks**: none.
 
-**Budget**: §13 restated with the bench's and the smoke's numbers.
+**Budget**: §13 restated with the bench's numbers.
 
 **Guards**: `phx-check docs`.
 
@@ -1508,9 +1501,9 @@ completed at S0.26)*; the Stage 1 exit.
 
 | File | Purpose |
 | --- | --- |
-| `perf/device/S1.16-*.json`, `perf/measure/S1.16-*.json` | the device report and the measurements |
+| `perf/bench/<commit>-committed-gate.json` | the gate run's report, kept by the bench (`-k`) |
 | `data/observer/READS.toml` | the declared macro reads, **frozen** before the gate run: declared at S0.26 for Stage 0's reads and extended at the start of S1.01 |
-| `perf/reads/S1.16-*.json` | the macro reads from the gate run's device report |
+| `perf/reads/S1.16-*.json` | the macro reads from the gate run's report |
 | `data/measure/N3/F<nn>.toml` | for each macro read that is one of N3's facts, its definition in S7.01's form, brought forward to this step (spec Part O), committed with `READS.toml` before the gate run |
 
 **Design**:
@@ -1524,8 +1517,9 @@ completed at S0.26)*; the Stage 1 exit.
   is read against, with its source. A read that is one of N3's facts is registered in its `data/measure/N3/` file at
   S1.01, before any read exists, and S7.01 reuses it unchanged; PC-90 checks that registration against every report,
   since it reads commit order.
-- **The device run** is the gate run (§0.3): the settled Stage 1 world on the phone, a simulated year; its device
-  report carries the macro reads. The gate's live checks are the gate commit's build run's (§2.10).
+- **The gate run** (§0.3) is the bench's (`tools/bench.sh -g -k`): the settled Stage 1 world run two years at the
+  committed resolution with every live check; its report carries the budget, each stage's time and the macro reads.
+  The phone's run of the same world waits for the owner's call (no device run until the world has enough in it).
 - **Pass criteria**, fixed here before the run (architecture §14.5):
   - the median turn ≤ 1 000 ms and the worst ≤ 2 000 ms over the settled year;
   - peak `VmHWM` and PSS ≤ 4.5 GB; a full save ≤ 5 s; the retention peak — two full saves
@@ -1533,44 +1527,40 @@ completed at S0.26)*; the Stage 1 exit.
   - the exit's reads: households earn wages and spend them; firms are founded and end in every industry that has
     firms; banks lend and loans are repaid; the treasury taxes and pays; all through the run;
   - §13's 10% headroom is reported; a pass without it is recorded as a finding;
-  - the full-load bench (S0.26), rerun with Stage 1's measured counts in place of their estimates, within the same
-    criteria;
-  - CI green, and a clean build run of the gate's commit (§2.10).
+  - CI green, and a clean gate run of the gate's commit (§2.10).
 - **Reported beside the criteria, not deciding them**: S0.26's full-world projection redone with Stage 1's measured
-  unit costs and counts, beside the bench, and the key floor with stances in the key.
+  unit costs and counts, from the bench's stage times, and the key floor with stances in the key.
 - **The macro reads** are reported from the run against their declared relationships. A miss is a finding about a
   mechanism (spec Appendix E 25), never a reason to tune, and does not block the exit.
 - **A budget miss** is a finding. N8.7's remedies apply in order: how the world is represented and traversed, then the
   play resolution, a valve set by measurement. If none suffices, the owner decides the budget (N8.7); the stage ends
   only when the budget in force is met (N8.8), and the plan does not continue to Stage 2 until then.
 - Architecture §13 is rewritten with the measured numbers.
-- **Carried from Stage 0's gate**, closed here: the phone's device run in the bench flavour, a settled simulated year,
-  its report with save and load times and the measurements from it; the full-load bench on the phone within its
-  criteria; `phx measure`'s representation numbers (rows per agent by line kind, persons per agent, banking
-  arrangements per region, the other §13.2 unit costs with the overflow checks' cost, and the full-world projection),
-  the bench flavour writing their counts; LC-0-57 to LC-0-60 on the phone run; the cost bounds not yet built (a row
-  index, the due index on the agenda's timing wheel, interned routes and payments in compressed sparse rows, 7b by
-  parallel rounds, 7c's writes by target shard, running sums for the money and contract families' unlisted sides, the
-  accruals and arrears, each §13.1 memory line against measured bytes); the bench's `load_month_holds_every_day_type`
-  test; and `phx-ffi`'s `PerfHint` over Android's performance-hint API.
+- **Carried from Stage 0's gate**, closed here: the gate run's save and load times; the representation numbers read
+  from the bench's report (rows by line kind, banking arrangements per region, the other §13.2 unit costs with the
+  overflow checks' cost, and the full-world projection); LC-0-57 to LC-0-60 on the gate run; the cost bounds not yet
+  built (a row index, the due index on the agenda's timing wheel, interned routes and payments in compressed sparse
+  rows, 7b by parallel rounds, 7c's writes by target shard, running sums for the money and contract families'
+  unlisted sides, the accruals and arrears, each §13.1 memory line against measured bytes). The phone's bridge and its
+  performance hint are rebuilt when the owner calls the device run.
 
 **Unit tests**: none.
 
 **Live checks**: `LC-1-42`: the run keeps the circular flow alive (N2): money stuck on ended parties is zero at every
 close; no stock or rate grows with no named cause (each growing quantity is traced to the flows that feed it, read
-from the ledger); and no state repeats unchanged for a year. `LC-1-50`: the exit's reads above hold on the gate
-commit's build run; the same reads in the gate run's device report are the exit's evidence.
+from the ledger); and no state repeats unchanged for a year. `LC-1-50`: the exit's reads above hold on the gate run;
+its report is the exit's evidence.
 
 **Budget**: this is the budget's gate.
 
 **Guards**: none.
 
-**Not allowed**: a gate judged off the device; a second run of the world used to judge the first; reads chosen after
+**Not allowed**: a gate judged on anything but the gate run of its commit; a second run of the world used to judge the first; reads chosen after
 seeing the run; a tuned primitive.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, and every miss is written into the step that will fix it.
-- [ ] Every pass criterion above holds, the full-load bench's with them, or the owner's decision under N8.7 is
+- [ ] The gate run's report and the macro reads are committed, and every miss is written into the step that will fix it.
+- [ ] Every pass criterion above holds, or the owner's decision under N8.7 is
   recorded in §12 and the budget then in force is met.
 - [ ] LC-1-42 and LC-1-50 pass.
 - [ ] Architecture §13 is updated with measured numbers.
@@ -2776,7 +2766,7 @@ commute walked daily.
 - [ ] Every unit of the world stands in a building on a cell, and land trades by the parcel.
 - [ ] Towns grow and shrink during settling from the mechanisms; the opening's largest cities stand from data.
 - [ ] The settlements are published by the agency, and the checks pass.
-- [ ] The bench and the smoke are within budget.
+- [ ] The bench is within budget.
 
 ---
 
@@ -3677,7 +3667,7 @@ measured)*; N8 *(judged again: the budget at Stage 2)*; N2 *(judged again)*; the
 
 | File | Purpose |
 | --- | --- |
-| `perf/device/S2.12-*.json`, `perf/measure/S2.12-*.json` | the device report and the measurements |
+| `perf/bench/<commit>-committed-gate.json` | the gate run's report, kept by the bench (`-k`) |
 | `data/observer/READS.toml` | extended at the start of S2.01 with Stage 2's reads, and frozen before the gate run |
 | `perf/reads/S2.12-*.json` | the macro reads from the run |
 
@@ -3728,7 +3718,7 @@ measured)*; N8 *(judged again: the budget at Stage 2)*; N2 *(judged again)*; the
 the world.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, and every miss is written into the step that will fix it.
+- [ ] The gate run's report and the macro reads are committed, and every miss is written into the step that will fix it.
 - [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
   is met.
 - [ ] LC-2-23 and LC-2-49 to LC-2-51 pass.
@@ -5707,7 +5697,7 @@ stage's macro reads from the run.
 | File | Purpose |
 | --- | --- |
 | `data/observer/READS.toml` | Stage 3's reads, declared at the start of S3.01 and frozen before the gate run |
-| `perf/device/S3.11-*.json`, `perf/measure/S3.11-*.json` | the device report and the measurements |
+| `perf/bench/<commit>-committed-gate.json` | the gate run's report, kept by the bench (`-k`) |
 | `perf/reads/S3.11-*.json` | the macro reads from the run |
 
 **Design**
@@ -5771,7 +5761,7 @@ stage's macro reads from the run.
 - a tuned primitive.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, and every miss is written into the step that will fix it.
+- [ ] The gate run's report and the macro reads are committed, and every miss is written into the step that will fix it.
 - [ ] Every pass criterion holds, or the owner's decision under N8.7 is recorded in §12 and the budget then in force
   is met.
 - [ ] LC-3-14 and LC-3-44 to LC-3-47 pass.
@@ -5900,7 +5890,7 @@ and house search, satisficing (owner, 2026-09-28).
 **Not allowed**: a household rule left beside its mind's version.
 
 **Done when**
-- [ ] Every household decision is its mind's; its checks pass; the smoke and the bench are within budget.
+- [ ] Every household decision is its mind's; its checks pass; the bench is within budget.
 
 ---
 
@@ -6082,7 +6072,7 @@ read by the world.
 
 | File | Purpose |
 | --- | --- |
-| `perf/device/` | the phone's run |
+| `perf/bench/` | the gate run's report |
 
 **Design**
 - The measures of MND.17 are read from the run: manager effects in firms' policies, policy after changes of chief
@@ -7742,7 +7732,7 @@ estate's succession (`phx-check` over the reasons allowed to request those trans
 | `data/<country>/SUP.toml` | tests, consequences, licensing criteria and minimum capital (POLICY) |
 | `data/shared/SHAPES.toml` | the founders' form |
 | `data/observer/READS.toml` | Stage 4's reads, frozen before the run |
-| `perf/{device,measure,reads}/S4.07-*.json` | the device report, the measurements and the macro reads |
+| `perf/bench/<commit>-committed-gate.json`, `perf/reads/S4.07-*.json` | the gate run's report, kept by the bench (`-k`), and the macro reads |
 
 **Design**
 
@@ -7871,7 +7861,7 @@ S4.03).
 **Done when**
 - [ ] Insurers and clearing houses are tested and licensed, and a breach of a minimum resolves them through named
   parties — in the run (LC-4-09, LC-4-30).
-- [ ] The device report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion holds,
+- [ ] The gate run's report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion holds,
   or the owner's decision under N8.7 is recorded in §12 and the budget then in force is met.
 - [ ] Architecture §13 carries Stage 4's measured lines.
 - [ ] No placeholder naming DRV, DRX, INS, PEN, SEC or MNA remains, and none names SUP for insurers or houses.
@@ -9313,7 +9303,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
 | File | Purpose |
 | --- | --- |
 | `data/observer/READS.toml` | Stage 5's reads, frozen before the run |
-| `perf/{device,measure,reads}/S5.06-*.json` | the device report, the measurements and the macro reads |
+| `perf/bench/<commit>-committed-gate.json`, `perf/reads/S5.06-*.json` | the gate run's report, kept by the bench (`-k`), and the macro reads |
 
 **Design**
 - **The macro reads** (`READS.toml`, frozen before the gate run), each with its declared relationship and source: tax
@@ -9364,7 +9354,7 @@ placeholder naming TAX, SOC, POL, FX or XB remains.
 - removing members, lines or a system to fit the budget.
 
 **Done when**
-- [ ] The device report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion
+- [ ] The gate run's report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion
   holds at the play resolution then set; any reset of it is recorded with its measurement.
 - [ ] Architecture §13 carries Stage 5's measured lines.
 - [ ] No placeholder naming TAX, SOC, POL, FX or XB remains.
@@ -10185,7 +10175,7 @@ ratchet.
 | `src/history.rs` | tracers' histories: the last year in memory, older change entries paged from the save's history store |
 | `crates/kernel/phx-core/src/events_rule.rs` | an extension this step makes to S0.26's public-event rule: per event kind, the declared follow-ups that develop from it; no existing item changes |
 | `crates/assembly/phx-world/src/save/history.rs` | an extension this step makes to S0.20's saves: one append-only **history store** beside the save units, which both units' manifests reference, so it is stored once; change entries only (splits, landings, events), delta-coded; a tracer's history dropped when the tracer ends |
-| `crates/apps/phx-ffi/src/*.rs` | the play surface S0.26 left here — create from a setup, load, step a turn, read a view page, submit an action, save, and export the recorder's series — with `ffi_types_roundtrip`; pages in chunks; `submit(action)` into the player's queue; marking; delegation settings per decision point |
+| `crates/apps/phx-ffi/src/*.rs` | the play surface, rebuilt with the phone's bridge when the owner calls the device run — create from a setup, load, step a turn, read a view page, submit an action, save, and export the recorder's series — with `ffi_types_roundtrip`; pages in chunks; `submit(action)` into the player's queue; marking; delegation settings per decision point |
 | `android/app/` | Compose screens for the participant build; `android/inspector/`, the inspector flavour |
 | `data/shared/OBS.toml` | the event rule's follow-ups per kind (SHAPE, standing); staleness horizons are each market's (MKT); marks count against S0.26's declared number of tracers (OBS.9) |
 
@@ -10311,7 +10301,7 @@ beside the saves (§13.3); a page ≤ 64 KB; the UI at 60 frames per second whil
 | `crates/kernel/phx-audit/src/families.rs` | the map from N1's ten families to the system families that make them up, with each one's owner |
 | `crates/apps/phx-cli/src/inject.rs` | `phx inject --all`: every family's injection into a loaded save, and the independence report |
 | `data/observer/READS.toml` | Stage 6's reads, frozen before the run |
-| `perf/{device,measure,reads,inject}/S6.05-*.json` | the device report, the measurements, the macro reads and the independence report |
+| `perf/bench/<commit>-committed-gate.json`, `perf/{reads,inject}/S6.05-*.json` | the gate run's report, kept by the bench (`-k`), the macro reads and the independence report |
 
 **Design**
 
@@ -10394,7 +10384,7 @@ measured value, `phx_audit.families`, `phx_audit.injections_passed`, `phx_gen.co
 **Done when**
 - [ ] The whole world opens, balances, passes every family on day one and settles; the GEN report is committed.
 - [ ] The independence report is committed and every family lights alone.
-- [ ] The device report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion
+- [ ] The gate run's report and the macro reads are committed, every miss is written into the step that will fix it, and every pass criterion
   holds at the play resolution then set; any reset of it is recorded with its measurement.
 - [ ] Architecture §13 carries Stage 6's measured lines.
 - [ ] No placeholder remains.
@@ -10522,8 +10512,8 @@ mechanisms its file named beforehand.
     check against it; a value changed under its old citation is refused;
   - a rename is a removal and an addition, or one `Primitive-Rename: <old> → <new>` when value, unit, kind and source
     are unchanged;
-  - a RESOLUTION entry whose value changes carries `Resolution-Change: <id> — <report>` instead, citing a `perf/device` or `perf/measure`
-    report that shows a budget miss for a coarsening, or measured headroom for a refinement: the resolution is
+  - a RESOLUTION entry whose value changes carries `Resolution-Change: <id> — <report>` instead, citing a report the bench kept
+    (`perf/bench/`) that shows a budget miss for a coarsening, or measured headroom for a refinement: the resolution is
     representation, set by measurement of the budget (N8.5); or `Resolution-Change: <id> — plan §12, <decision>`, a
     row of the owner's decisions that the commit's plan holds, for a resolution the owner set;
   - a later commit may carry an earlier one's citations, naming it in a `Cited-For: <commit>` trailer, so history
@@ -10598,7 +10588,7 @@ mechanisms its file named beforehand.
 **Unit tests**
 - `registry_diff_by_id`: two given dumps give their changed, added, removed and renamed ids (PC-91).
 - `trailers_refuse_result_citations`: a `Primitive-Change` naming a `perf/realism` path or a finding is refused; a
-  `Resolution-Change` citing a `perf/device` report passes.
+  `Resolution-Change` citing a `perf/bench` report passes.
 - `value_change_needs_new_source_or_transcription_fix`: over two given dumps, a changed value under its old
   `source_ref` is refused unless a `Transcription-Fix` names it.
 - `resolution_change_direction_matches_report`: a coarsening citing a report with no budget miss is refused, as is a
@@ -11054,6 +11044,7 @@ S5.02 and S6.04, or deleted where the core's restructure retired what they measu
 | Every person a party, every office a person's (PTY.1, PTY.3, PTY.16–18, Appendix E 46) | wealth is individual: each person owns its accounts, holdings and debts, a household is its persons and what it holds their sum; each person keeps one identity from birth to death, whichever household it lives in; every office (board member, chief executive, governor, member of parliament, head of state or government, minister, a party's leader and candidates) is held by a named person filled by its declared process, so a person's life can be followed; built in S1.24 (identity, accounts), S3.02, S2.08, S3.05 and S5.03 (offices) | 2026-09-28 |
 | Office holders and household budgets (Appendix E 47, 48) | an institution's rule reads its office holders' own preferences and outlooks, so a new chief executive, governor or minister changes how it decides; a household's shared payments are drawn from its members' accounts in proportion to what each holds, each income paid to its earner's own account and a person's own debts paid from its own first | 2026-09-28 |
 | Minds and places (spec MND, Appendix E 49; S2.13, Stage 8) | accepted with the owner's answers: a mind for every person (eight concerns, weights simulated from the GPS, character by country, experience, aspirations, goals, learning from own record and peers) built in its own stage after Stage 3 (Stage 8, numbered so because identifiers are permanent), replacing each decision's rule one by one; office holders under their contracts and removal, self-interest within the law; everyone's life recorded compactly and deleted at death except office holders'; a narrator on the phone; places (cells at a budget-set resolution, buildings with position, commuting with congestion and transit, agglomeration, municipalities, farms on cells) built right after housing, in S2.13; a one-time fetch of the sources S2.13 and S8.01 list | 2026-09-28 |
+| One bench (§2.10, §2.11; architecture decision 37) | `tools/bench.sh` is the one tool that runs and measures the world: flags set its persons, days, seed, workers and checks; it writes the whole report with each day's stages timed, and a summary; a step reads the budget on it at the committed resolution, a gate runs it with `-g`, and `-k` keeps the report a resolution change cites. The smoke, the build run, the full-load bench, `phx measure`, the phone's bench flavour and bridge (`phx-ffi`) and the kernels' instruction counts are deleted with their reports; the phone's bridge is rebuilt when the owner calls the device run | 2026-09-29 |
 
 ---
 

@@ -150,6 +150,8 @@ pub struct LabourCtx<'a> {
     pub kind: &'a LabourKind,
     /// Each region's country, by region.
     pub regions: &'a [CountryId],
+    /// The run's clock its stages are timed by for the bench; none at the opening.
+    pub clock: Option<&'a dyn phx_exec::Clock>,
 }
 
 impl std::fmt::Debug for LabourCtx<'_> {
@@ -341,18 +343,19 @@ impl Core {
         if self.labour.employers.is_none() {
             return record;
         }
-        record.defaults = self.end_defaulted(ctx, day);
-        record.separated = self.separate(ctx, day);
-        (record.acceptances, record.hires) = self.answer_offers(ctx, day);
-        record.offers = self.select_applicants(ctx, day);
-        let (posted, withdrawn, layoffs, employers) = self.post(ctx, day);
-        record.public_posted = self.post_agencies(ctx, day);
-        self.answer_reviews(ctx, day);
+        let t = ctx.clock;
+        record.defaults = self.timed(t, "labour.defaults", |c| c.end_defaulted(ctx, day));
+        record.separated = self.timed(t, "labour.separations", |c| c.separate(ctx, day));
+        (record.acceptances, record.hires) = self.timed(t, "labour.answers", |c| c.answer_offers(ctx, day));
+        record.offers = self.timed(t, "labour.selection", |c| c.select_applicants(ctx, day));
+        let (posted, withdrawn, layoffs, employers) = self.timed(t, "labour.posting", |c| c.post(ctx, day));
+        record.public_posted = self.timed(t, "labour.agencies", |c| c.post_agencies(ctx, day));
+        self.timed(t, "labour.pay_rounds", |c| c.answer_reviews(ctx, day));
         (record.posted, record.withdrawn, record.layoffs_wanted, record.employers) =
             (posted, withdrawn, layoffs, employers);
         record.closures =
             len_u64(self.insolvency.endings.iter().filter(|e| e.day == day.get() && !e.defaulted).count());
-        (record.searchers, record.applications) = self.search_round(ctx, day);
+        (record.searchers, record.applications) = self.timed(t, "labour.search", |c| c.search_round(ctx, day));
         let r = std::mem::take(&mut self.labour.reviewing);
         (record.reviewed, record.raised, record.cut, record.searching_on) =
             (r.reviewed, r.raised, r.cut, r.searching_on);

@@ -1,4 +1,4 @@
-# The budget's ratchets (N8.2, N8.4), read by tools/smoke.sh at every step: twenty days from day zero at the committed
+# The budget's ratchets (N8.2, N8.4), read by tools/bench.sh at every step: twenty days from day zero at the committed
 # resolution on the build machine. A time or a size may only fall and the cores busy only rise; a step that must raise
 # one says so and why. The first values are the measure of 2026-09-28, before the restructure (S1.17–S1.25), with the
 # noise of this shared machine: two smokes of one commit differed by 13% in time, 4% in bytes and 30% in faults, so the

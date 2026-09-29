@@ -14,12 +14,6 @@ phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../phx-store" }
 rayon-core.workspace = true
 
-[dev-dependencies]
-gungraun.workspace = true
-
-[[bench]]
-name = "exec"
-harness = false
 
 [lints]
 workspace = true

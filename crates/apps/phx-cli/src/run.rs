@@ -296,7 +296,7 @@ fn saves_report(w: Inspector<'_>) -> serde_json::Value {
         .iter()
         .map(|s| {
             json!({
-                "day": crate::measure::calendar::date_text(w.date(s.day)),
+                "day": date_text(w.date(s.day)),
                 "bytes": s.stores.iter().map(|(_, b, _)| *b).sum::<u64>() + s.run_bytes,
                 "raw_bytes": s.stores.iter().map(|(_, _, r)| *r).sum::<u64>(),
                 "stores": s.stores.iter().map(|(n, b, r)| json!({ "name": n, "bytes": b, "raw_bytes": r })).collect::<Vec<_>>(),
@@ -484,7 +484,7 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
     }
     let endings = core.insolvency.endings.iter().filter(|e| in_turn(phx_id::Day::new(e.day)));
     let (wound, defaulted) = endings.fold((0, 0), |(w, d), e| if e.defaulted { (w, d + 1) } else { (w + 1, d) });
-    let date = |d| crate::measure::calendar::date_text(w.date(d));
+    let date = |d| date_text(w.date(d));
     let phase = if turn.last < settle_end { "settling" } else { "running" };
     let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
     format!(
@@ -630,14 +630,29 @@ fn statistics_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
 }
 
 /// The core's days: each one's time, flows and what came of them.
+/// A date as the report writes it.
+fn date_text(d: phx_id::Date) -> String {
+    format!("{:04}-{:02}-{:02}", d.year(), d.month(), d.day())
+}
+
 fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    let timings: std::collections::BTreeMap<u32, &Vec<(&'static str, u64)>> =
+        w.core().timings.iter().map(|(d, t)| (d.get(), t)).collect();
     w.core()
         .days
         .iter()
         .map(|d| {
+            // Each stage's time in microseconds, by the run's clock.
+            let stages: serde_json::Map<String, serde_json::Value> = timings
+                .get(&d.day.get())
+                .into_iter()
+                .flat_map(|t| t.iter())
+                .map(|(name, ns)| ((*name).to_owned(), json!(ns / 1_000)))
+                .collect();
             json!({
                 "day": d.day.get(),
                 "ms": d.ns / 1_000_000,
+                "stages_us": stages,
                 "flows": d.flows,
                 "settled": d.settled,
                 "failed": d.failed,
@@ -703,9 +718,9 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "days": args.days,
         "total_days": args.total_days,
         "workers": args.workers,
-        "first_day": crate::measure::calendar::date_text(w.date(w.day_zero().succ())),
-        "last_day": crate::measure::calendar::date_text(w.date(w.today())),
-        "settled_on": crate::measure::calendar::date_text(w.date(settle_end)),
+        "first_day": date_text(w.date(w.day_zero().succ())),
+        "last_day": date_text(w.date(w.today())),
+        "settled_on": date_text(w.date(settle_end)),
         "turns": turns.len(),
         "days_run": turns.iter().map(|t| u64::from(t.days)).sum::<u64>(),
         "longest_turn_days": greatest(turns.iter().map(|t| u64::from(t.days))),
@@ -757,43 +772,6 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         if budget_kept { "kept" } else { "missed" }
     );
     Ok(clean && budget_kept)
-}
-
-/// Assembles the world and writes its calendar's measurement.
-pub fn measure_calendar(data: &Path, setup: &Path, run_dir: &Path, out: &Path) -> Result<bool, String> {
-    let config = WorldConfig {
-        seed: 0,
-        data: data.to_path_buf(),
-        setup: setup.to_path_buf(),
-        run_dir: run_dir.to_path_buf(),
-        representation: phx_num::Missing::Absent,
-    };
-    let world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
-    let report = crate::measure::calendar::measure(Inspector::new(&world));
-    let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
-    if let Some(dir) = out.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    }
-    std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
-    println!("{}", out.display());
-    Ok(true)
-}
-
-/// The budget as measured, from a build run's report and a device report of the same commit's world, written to
-/// `out`.
-pub fn measure_budget(build_run: &Path, device: &Path, out: &Path) -> Result<bool, String> {
-    let read = |p: &Path| -> Result<serde_json::Value, String> {
-        let text = std::fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()))?;
-        serde_json::from_str(&text).map_err(|e| format!("{}: {e}", p.display()))
-    };
-    let report = crate::measure::budget::measure(&read(build_run)?, &read(device)?);
-    let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
-    if let Some(dir) = out.parent() {
-        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-    }
-    std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
-    println!("{}", out.display());
-    Ok(true)
 }
 
 /// Each country's fund stage a day: what its banks placed and borrowed, what stood overdue, what was remitted.

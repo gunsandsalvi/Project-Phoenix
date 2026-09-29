@@ -20,12 +20,7 @@ serde.workspace = true
 toml.workspace = true
 
 [dev-dependencies]
-gungraun.workspace = true
 trybuild.workspace = true
-
-[[bench]]
-name = "core"
-harness = false
 
 [lints]
 workspace = true

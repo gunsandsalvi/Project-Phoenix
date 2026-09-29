@@ -45,7 +45,6 @@ pub fn exemptions(krate: &str) -> Vec<String> {
             e
         }
         "phx-check" => owned(PRINTING),
-        "phx-ffi" => owned(&["std::time::Instant::now"]),
         _ => Vec::new(),
     }
 }
@@ -111,7 +110,7 @@ mod tests {
         check.clippy = Some(ROOT.to_owned());
         let mut core = krate("phx-core", Layer::Kernel);
         core.clippy = Some(ROOT.to_owned());
-        ws.crates = vec![check, core, krate("phx-ffi", Layer::Apps)];
+        ws.crates = vec![check, core, krate("phx-cli", Layer::Apps)];
         assert_eq!(run(&ws).len(), 3);
     }
 }

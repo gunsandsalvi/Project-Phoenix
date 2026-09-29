@@ -4,7 +4,7 @@ use crate::workspace::Workspace;
 const RULE: &str = "PC-03";
 
 /// The storage, the pool and the foreign boundary are the only crates that may lower the `unsafe_code` lint.
-const ALLOWED: &[&str] = &["phx-store", "phx-exec", "phx-ffi"];
+const ALLOWED: &[&str] = &["phx-store", "phx-exec"];
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();

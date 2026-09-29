@@ -43,23 +43,23 @@ about how to build.
   for a later system is met by bringing it forward, or by a placeholder that names the system that retires it.
 - **Clauses in code** are carried by the `#[clause]` attribute (plan §2.4), never by comments.
 - **The budget is a requirement** (N8): 1 s median and 2 s worst per business day on a Pixel 11 Pro, sustained, within
-  4.5 GB of memory and 4 GB of saves. It is measured on the device at the end of every stage, on the stage's world and
-  on the **full-load bench** — random data at the finished world's volumes and shapes through the real kernels — from
-  Stage 0 on. When it is missed, change how the world is represented and traversed, then the play resolution — never a
-  mechanism, never the population.
+  4.5 GB of memory and 4 GB of saves. It is measured at every step on this machine by **the bench** (`tools/bench.sh`,
+  owner 2026-09-29: the one benchmarking tool, the world itself run, every stage timed), and on the device once the
+  owner calls the device run. When it is missed, change how the world is represented and traversed, then the play
+  resolution — never a mechanism, never the population.
 - **The world runs once** (Appendix E 36). There is only the normal world run, on the phone: no reference run, no
   re-run at another resolution or seed, no copy for an experiment. Whether it makes sense is judged by its macro
   outcomes against the relationships real economies show between macro variables (N3, N4), from Stage 1 on. The
   population representation (REP, Appendix E 14) is judged the same way. The resolution is a valve, set and reset
   by measuring the budget.
-- **The build run**: after each step's build, the world runs on the build machine (the development VM) at the play
-  resolution with the audit and every live check (`tools/build-run.sh`): an ordinary step's for 120 days from day
-  zero, a stage gate's (`--gate`) settled and run two years (the owner's decision, plan §12); from S1.09 the owner
-  dropped the per-step build run (plan §12): a step is `done` on its fast checks, and the world runs at each gate. Its numbers test the code and are never read as the world's. CI builds and
-  tests and never runs the world; nothing runs the world twice, not even to prove determinism.
-- **The smoke at every step** (`tools/smoke.sh`, owner 2026-09-28): the budget is read at the committed resolution
-  against `perf/budget.toml`, whose ratchets only tighten; a step does not end with one broken, unless the step says
-  why. The stage gate's two-year run is on the phone.
+- **The bench** (`tools/bench.sh`, owner 2026-09-29), the one tool that runs the world on this machine; its flags set
+  the persons, days, seed, workers and checks, and it writes the run's whole report, each day's stages timed, and a
+  summary. At every step it reads the budget at the committed resolution against `perf/budget.toml`, whose ratchets
+  only tighten; a step does not end with one broken, unless the step says why. A stage gate's run is `-g`: settled,
+  two years, the audit and every live check (the owner's decision, plan §12); from S1.09 a step is `done` on its fast
+  checks, and the world's long run is at each gate. `-k` keeps a report in `perf/bench/`, the measure a resolution
+  change cites. Its numbers test the code and are never read as the world's. CI builds and tests and never runs the
+  world; nothing runs the world twice, not even to prove determinism.
 - **One change, one commit**, saying what and why.
 
 ## Findings

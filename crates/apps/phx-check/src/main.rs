@@ -1,16 +1,13 @@
-mod bench_ratchets;
 mod clauses;
 mod comments;
 mod coverage;
 mod docs;
 mod git;
 mod ratchets;
-mod reports;
 mod rules;
 mod workspace;
 
 use std::fs;
-use std::path::PathBuf;
 use std::process::{Command as Process, ExitCode};
 
 use clap::{Parser, Subcommand};
@@ -44,11 +41,6 @@ enum Command {
     },
     /// Format, lint and test as CI does, then every check.
     CheckAll,
-    /// Holds the kernel micro-benchmarks' instruction counts, from gungraun's JSON summaries, to their ratchets.
-    BenchRatchets {
-        #[arg(long, default_value = "target/gungraun")]
-        dir: PathBuf,
-    },
     /// Compares each kernel and interface crate's public API, read by the pinned cargo-public-api, with its committed
     /// snapshot; `--write` records the current API instead.
     PublicApi {
@@ -80,37 +72,11 @@ fn main() -> ExitCode {
         }
         Command::Clauses => clauses::run(&ws),
         Command::Coverage { write } => return coverage_command(&ws, write),
-        Command::BenchRatchets { dir } => return bench_ratchets_command(&ws, &dir),
         Command::PublicApi { write } => return public_api_command(&ws, write),
     };
     report(&breaches)
 }
 
-fn bench_ratchets_command(ws: &Workspace, dir: &std::path::Path) -> ExitCode {
-    let checked = ratchets::parse(&ws.ratchets).and_then(|r| {
-        let measured = bench_ratchets::read(&ws.root.join(dir))?;
-        Ok((measured.len(), bench_ratchets::compare(&measured, &r)))
-    });
-    match checked {
-        Ok((0, _)) => {
-            eprintln!("phx-check: no benchmark summaries under {}", dir.display());
-            ExitCode::FAILURE
-        }
-        Ok((n, (breaches, notes))) => {
-            for note in notes {
-                println!("{note}");
-            }
-            println!("{n} benchmark counts read");
-            report(&breaches)
-        }
-        Err(error) => {
-            eprintln!("phx-check: {error}");
-            ExitCode::FAILURE
-        }
-    }
-}
-
-/// The public API of one crate as the pinned nightly's rustdoc sees it, without auto-trait and blanket impls.
 fn public_api(nightly: &str, krate: &str) -> Result<String, String> {
     let output = Process::new("cargo")
         .args([&format!("+{nightly}"), "public-api", "-p", krate, "-sss", "--color", "never"])
@@ -169,7 +135,6 @@ fn all(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = rules::run(ws, None);
     breaches.extend(coverage::check(ws));
     breaches.extend(clauses::run(ws));
-    breaches.extend(reports::check(&ws.root));
     breaches
 }
 

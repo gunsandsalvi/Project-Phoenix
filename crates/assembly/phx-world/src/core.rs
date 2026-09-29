@@ -106,6 +106,11 @@ pub struct Core {
     /// share of its GDP: the opening report.
     pub apportioned: Vec<Apportioned>,
     pub closures: Vec<(u8, String, f64)>,
+    /// Each day's stages and their time by the run's clock, for the bench; never world state, so never saved.
+    #[saved(skip)]
+    pub timings: Vec<(phx_id::Day, Vec<(&'static str, u64)>)>,
+    #[saved(skip)]
+    pub(crate) stage_ns: Vec<(&'static str, u64)>,
 }
 
 /// Why an estate that has paid what it can still stands.
@@ -146,6 +151,23 @@ impl Core {
         }
         self.stats.rate = rate;
         self.stats.index = rate.and(index);
+    }
+
+    /// A stage of the day run and timed by the run's clock where there is one, its time kept for today's timings; no
+    /// outcome reads it.
+    pub(crate) fn timed<T>(
+        &mut self,
+        clock: Option<&dyn phx_exec::Clock>,
+        name: &'static str,
+        stage: impl FnOnce(&mut Core) -> T,
+    ) -> T {
+        let Some(clock) = clock else { return stage(self) };
+        let start = clock.now_ns();
+        let out = stage(self);
+        if let Some(ns) = clock.now_ns().checked_sub(start) {
+            self.stage_ns.push((name, ns));
+        }
+        out
     }
 
     /// An amount shared over weights exactly, and recorded in the opening report.

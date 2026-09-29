@@ -15,8 +15,9 @@ const RULE: &str = "PC-91";
 /// The rule's own file: the commit that added it is the registration.
 const REGISTRATION: &str = "crates/apps/phx-check/src/rules/no_tuning.rs";
 const DATA: &str = "data";
-/// Where the budget's measurements are, which a resolution change may cite.
-const BUDGET_REPORTS: &[&str] = &["perf/device/", "perf/measure/"];
+/// Where the budget's measurements are, which a resolution change may cite: the bench's kept reports, and the retired
+/// device and measurement reports earlier changes cite, each read at the commit that cites it.
+const BUDGET_REPORTS: &[&str] = &["perf/bench/", "perf/device/", "perf/measure/"];
 /// A resolution changed by the owner cites the decision's row in the plan's owner decisions instead.
 const OWNER: &str = "plan §12, ";
 const PLAN: &str = "docs/IMPLEMENTATION.md";
@@ -305,8 +306,8 @@ mod tests {
         assert!(!judge(&before, &after, "Primitive-Change: X.a — as F-012 showed", NONE).is_empty());
         let before = file(&[("X.r", "RESOLUTION", "256", "s")]);
         let after = file(&[("X.r", "RESOLUTION", "128", "s")]);
-        let device = |p: &str| p == "perf/device/abc.json";
-        assert!(judge(&before, &after, "Resolution-Change: X.r — perf/device/abc.json", &device).is_empty());
+        let device = |p: &str| p == "perf/bench/abc.json";
+        assert!(judge(&before, &after, "Resolution-Change: X.r — perf/bench/abc.json", &device).is_empty());
         assert_eq!(judge(&before, &after, "Resolution-Change: X.r — perf/realism/F01/r.json", &device).len(), 2);
         assert!(judge(&Dump::new(), &after, "Primitive-Change: X.r — s", NONE).is_empty());
         let decided = |p: &str| p == "plan §12, The factor";

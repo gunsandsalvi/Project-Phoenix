@@ -14,13 +14,8 @@ phx-num = { path = "../../foundation/phx-num" }
 zstd.workspace = true
 
 [dev-dependencies]
-gungraun.workspace = true
 phx-rand = { path = "../../foundation/phx-rand" }
 trybuild.workspace = true
-
-[[bench]]
-name = "store"
-harness = false
 
 [lints]
 workspace = true

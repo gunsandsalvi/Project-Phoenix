@@ -2,7 +2,6 @@ mod budget;
 mod checks;
 mod clock;
 mod inject;
-mod measure;
 mod panic_hook;
 mod run;
 
@@ -23,9 +22,6 @@ struct Cli {
 enum Command {
     /// Assembles the world, settles it and runs it, with its live checks and report.
     Run(RunArgs),
-    /// Measures what the budget reads.
-    #[command(subcommand)]
-    Measure(Measure),
     /// Injects a family's discrepancy into a save loaded apart, audits it and discards it.
     Inject(InjectArgs),
 }
@@ -95,40 +91,10 @@ pub struct RunArgs {
     persons: Option<u64>,
 }
 
-#[derive(Debug, Subcommand)]
-enum Measure {
-    /// The calendar's longest closed runs and its paydays after holidays.
-    Calendar {
-        #[arg(long)]
-        data: PathBuf,
-        #[arg(long)]
-        setup: PathBuf,
-        #[arg(long)]
-        run_dir: PathBuf,
-        #[arg(long)]
-        out: PathBuf,
-    },
-    /// The budget as measured: the phone's turns, sub-steps, memory and unit costs, and the full-load bench.
-    Budget {
-        /// The build run's report of the commit the phone ran.
-        #[arg(long)]
-        build_run: PathBuf,
-        /// The phone's device report.
-        #[arg(long)]
-        device: PathBuf,
-        #[arg(long)]
-        out: PathBuf,
-    },
-}
-
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let outcome = match cli.command {
         Command::Run(args) => run::run(&args),
-        Command::Measure(Measure::Calendar { data, setup, run_dir, out }) => {
-            run::measure_calendar(&data, &setup, &run_dir, &out)
-        }
-        Command::Measure(Measure::Budget { build_run, device, out }) => run::measure_budget(&build_run, &device, &out),
         Command::Inject(a) => {
             inject::run(&a.from, &a.data, &a.setup, &a.run_dir, a.family.as_deref(), a.report.as_deref())
         }

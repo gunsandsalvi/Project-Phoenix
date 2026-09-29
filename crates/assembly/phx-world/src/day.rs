@@ -77,9 +77,11 @@ impl World {
                 self.core.refresh_windows(types, date);
             }
         }
-        self.core.weather_day(crate::world::geo_arc(&self.own), (&self.streams, &self.calendar), day);
-        self.core.measure_rates(&ctx, day);
-        let pop_day = self.core.run_hazards(&ctx, day);
+        let t = Some(clock);
+        let geo = crate::world::geo_arc(&self.own);
+        self.core.timed(t, "weather", |c| c.weather_day(geo, (&self.streams, &self.calendar), day));
+        self.core.timed(t, "rates", |c| c.measure_rates(&ctx, day));
+        let pop_day = self.core.timed(t, "hazards", |c| c.run_hazards(&ctx, day));
         self.core.pop_days.push((day, pop_day));
         let events = std::mem::take(&mut self.core.events_today);
         self.core.events.push((day, events));
@@ -90,8 +92,9 @@ impl World {
                 streams: &self.streams,
                 kind,
                 regions: &regions,
+                clock: t,
             };
-            let _ = self.core.labour_day(&lctx, day);
+            let _ = self.core.timed(t, "labour", |c| c.labour_day(&lctx, day));
         }
         let own_of = |code: &str| self.own.iter().find(|(c, _)| *c == code).map(|(_, s)| s);
         let hh = own_of(<sys_hh::Hh as phx_core::System>::CODE).and_then(|s| s.downcast_ref::<sys_hh::Own>());
@@ -106,15 +109,20 @@ impl World {
                 regions: &regions,
                 weights,
                 pool: self.pool.as_ref(),
+                clock: t,
             };
-            let _ = self.core.goods_day(&gctx, day);
-            self.core.ship(&gctx, crate::world::geo_arc(&self.own), day);
+            let _ = self.core.timed(t, "goods", |c| c.goods_day(&gctx, day));
+            self.core.timed(t, "freight", |c| c.ship(&gctx, geo, day));
         }
-        let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
-        self.core.audit(day);
-        self.core.stats_day(day, (&self.calendar, &regions), hh.map(|h| &h.types));
+        let (calendar, streams) = (&self.calendar, &self.streams);
+        let _ =
+            self.core.timed(t, "settle", |c| c.run_day(day, calendar, streams, &crate::opening::prims::SETTLE_ORDER));
+        self.core.timed(t, "audit", |c| c.audit(day));
+        self.core.timed(t, "statistics", |c| c.stats_day(day, (calendar, &regions), hh.map(|h| &h.types)));
         let _ = self.core.happened.publish(day, &self.news);
-        self.core.player_day(day);
+        self.core.timed(t, "player", |c| c.player_day(day));
+        let stages = std::mem::take(&mut self.core.stage_ns);
+        self.core.timings.push((day, stages));
         for f in self.core.found.drain(..) {
             self.findings.record(f);
         }
