@@ -1,7 +1,6 @@
 pub mod if_labour
 pub mod if_labour::class
 pub const if_labour::class::BAND: usize
-pub const if_labour::class::EMPLOYMENT_LINE: &str
 pub const if_labour::class::HOURS: usize
 pub const if_labour::class::NOTICE: usize
 pub const if_labour::class::NOT_SEARCHING: u32
@@ -19,7 +18,6 @@ pub const if_labour::class::STATES: u32
 pub const if_labour::class::WAGE_POINTS: u32
 pub mod if_labour::consts
 pub const if_labour::consts::BAND: usize
-pub const if_labour::consts::EMPLOYMENT_LINE: &str
 pub const if_labour::consts::HOURS: usize
 pub const if_labour::consts::NOTICE: usize
 pub const if_labour::consts::NOT_SEARCHING: u32

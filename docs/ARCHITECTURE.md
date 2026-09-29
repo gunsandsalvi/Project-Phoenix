@@ -589,7 +589,7 @@ compile and assembly time from declarations; `read-trace`, a run-time flag of re
 (§14.7), samples chunks and verifies reads at run time. Store-wide views go only to processes and applies.
 
 The sample is the first chunk of each (handler, table) in the run and every chunk whose index is congruent to the day
-modulo `TRACE_PERIOD` (64). A traced chunk's writes are stamped with their (sub-step, handler), and each read is checked
+modulo 64. A traced chunk's writes are stamped with their (sub-step, handler), and each read is checked
 against the reader's declaration and against a later stamp; every `Streams::open` is recorded unsampled, and at the
 close the day's opens are sorted and each repeated (stream, subject, sub-step) counted (`TraceLog`). What the trace
 finds is reported through the audit's Time family (§15); the stamps live for a day and the log is kept outside the
@@ -1214,7 +1214,7 @@ agenda of their own beside the processes' (`Population::visits`), one table per 
 with the population. Every row is booked once the opening is done; the rows due are gathered on the day's first decision
 sub-step, each visit's handler runs on its rows due in runs of consecutive slots over its kind's table — an agent
 table's positions (REP.20, declared on the kind with `PopKindBuilder::position`) or a kind table's facts — and each row is
-booked again after it. A visit of at least `VISIT_SHARD_ROWS` rows runs in `VISIT_SHARDS` fixed shards on the pool
+booked again after it. A visit of enough rows runs in fixed shards on the pool
 (`World::visit_sharded`): each shard reads its rows' declared facts into a `phx_core::FactOverlay` before its handler
 runs and keeps the handler's writes aside, with its own intents and bindings; the shard holding the player's row runs
 after the others with the player's queue; and the writes, intents and bindings are taken in the shards' order, so the
@@ -1633,7 +1633,7 @@ by CAP.4 (`rules::maintain`) come with the plant's resale market (S2.03).
   one instance a product and country, so each market's prints are in one currency and it meets that country's
   sellers only, the kinds that sell, the facts naming what a seller sells and its posted price, the weights
   of price and distance, the reach and the stream of tastes). A buyer's want (`ShopIntent`, units or money) is
-  admitted at 5d. At 6a, every day, the day's stalls are read in `STALL_SHARDS` fixed shards of the sellers on the pool:
+  admitted at 5d. At 6a, every day, the day's stalls are read in fixed shards of the sellers on the pool:
   each posted price and the free units of the good where it stands, less what the day's matches between firms take;
   a service's good is issued, and its maker named, afterwards in the sellers' order. Each market then meets on the
   pool, its buyers, sellers and draws none of another's, and the outcomes are covered in the markets' order. The stalls in reach of each
@@ -1786,7 +1786,7 @@ them, and `Core::cover_by_place` each place's days of sales its stocks cover; th
   their applicants; applications sent yesterday seen by their employers at the meeting hazard and selected by skill,
   then experience, then lot, up to the jobs open; the searchers' applications to the vacancies standing at the start of the day; and the employers whose
   production schedule came due today posting, withdrawing and laying off. The searchers are read in
-  `SEARCH_SHARDS` fixed shards on the pool, each with its own taste stream, and their applications entered in the
+  fixed shards on the pool, each with its own taste stream, and their applications entered in the
   searchers' order; the player's agent chooses from its queue after the others are read. At **4a** of the next day, the hires join
   their lines and the separations whose notice has run leave them, their severance paid at stage 7 as legs of the
   separation's instruction. A match therefore takes at least three days.

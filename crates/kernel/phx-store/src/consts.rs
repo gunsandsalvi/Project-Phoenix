@@ -5,18 +5,9 @@ pub const VA_BUDGET: usize = 1 << 36;
 /// Page size of the heap backing, which stands in for the system's pages under Miri and in tests; phones use 16 KiB.
 pub const HEAP_PAGE: usize = 1 << 14;
 
-/// Rows per chunk when a table declares none: 4 096 rows keep a chunk's hot columns within a core's L2 cache and give
-/// a few hundred chunks to share among the pool's threads.
-pub const DEFAULT_ROWS_PER_CHUNK: u32 = 1 << 12;
-
 /// Words a chunk's arena reserves when its table declares none: 32 MiB of address space, 1 024 words per row of a
 /// full chunk. Reservation costs no memory until committed.
 pub const ARENA_RESERVED_WORDS: u32 = 1 << 22;
-
-/// Words a chunk's arena of individuals reserves: 128 MiB of address space, 4 096 words per row of a full chunk, since
-/// an individual — a firm, a bank — holds a row on each of the many lines of the households' terms it is party to, one
-/// per wage or rent point. Their tables are few chunks, so the reservation stays small against the budget.
-pub const INDIVIDUAL_ARENA_WORDS: u32 = 1 << 24;
 
 /// A relocated list's capacity grows by 5/4 of the length it needs, so repeated appends relocate a logarithmic number
 /// of times while the slack stays near an eighth on average.

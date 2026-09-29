@@ -160,12 +160,9 @@ pub const phx_core::consts::EASTER_H: [i32; 2]
 pub const phx_core::consts::EASTER_L: [i32; 2]
 pub const phx_core::consts::EASTER_M: [i32; 3]
 pub const phx_core::consts::EASTER_MONTH: [i32; 3]
-pub const phx_core::consts::ID_PAGE_BITS: u32
 pub const phx_core::consts::KEYED_ORDINAL: u8
 pub const phx_core::consts::LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8)
-pub const phx_core::consts::MAP_SEED: u64
 pub const phx_core::consts::MAX_NTH: i8
-pub const phx_core::consts::MAX_REASONS: usize
 pub const phx_core::consts::MONTHS: i32
 pub const phx_core::consts::MONTHS_PER_QUARTER: u16
 pub const phx_core::consts::MONTHS_PER_YEAR: u16
@@ -185,8 +182,6 @@ pub const phx_core::consts::PPM: u32
 pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
 pub const phx_core::consts::UNITS_BIT: u16
-pub const phx_core::consts::WHEEL_BITS: u32
-pub const phx_core::consts::WHEEL_BUCKETS: usize
 pub mod phx_core::contribution
 pub struct phx_core::contribution::Adjustment
 pub phx_core::contribution::Adjustment::drawn: i128

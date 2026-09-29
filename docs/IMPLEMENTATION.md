@@ -806,9 +806,12 @@ world switches to the core.
     the wanted products' stalls, and the world holds the device's pool, on which each meeting's choices and sales run
     (their outcome the same on any pool): a median turn of 1,637 ms, a worst of 5,147 ms, 1.52 cores busy, every
     ratchet kept. The rest of the goods day — making, input orders, the sales' flows — runs on one thread; it is the
-    next to shard. Left: the old kernel's crates
-    and the systems' handlers, which nothing runs now (the books, the agents' tables, the markets' old instances, the
-    accounts, the old audit), deleted with the primitives only they read.
+    next to shard. The old kernel's crates and the systems' handlers are gone (the books, the agents' tables, the
+    markets' old instances, the old audit); a hand pass (2026-09-29) deleted the constants they left (the books' rows
+    and holder blocks, the read trace's period, the visits', stalls', searches' and gathers' shards, the agenda
+    wheel, the old meeting's key tags, the individuals' arena). The items nothing reaches yet that the plan's later
+    steps build on — the valuation kernel's values and registered outlooks, the ledger's dues by date, the map's
+    paths, the systems' unwired rules, `DeclaredLimit`, the accounting bases — are kept.
   - Measured at the first 35-day run on the core (150,000 persons, seed 1): at the month's end payday 4,326 of
     354,198 flows failed — 1,468 wages, 1,056 sales, 877 loan repayments, 925 taxes. Settled since: a firm short of its
     day's dues borrows the shortfall from its own bank (the lending placeholder, a term loan at the lending rate over

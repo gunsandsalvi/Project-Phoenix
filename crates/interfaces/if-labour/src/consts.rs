@@ -35,5 +35,3 @@ pub const OCCUPATIONS: u32 = 11;
 pub const WAGE_POINTS: u32 = 128;
 /// The last wage point of a person never counted in work.
 pub const NO_POINT: u32 = WAGE_POINTS - 1;
-/// The line kind a job is a contract on, the household holding the job and its employer owing its wage.
-pub const EMPLOYMENT_LINE: &str = "employment";

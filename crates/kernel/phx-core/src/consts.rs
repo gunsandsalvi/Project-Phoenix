@@ -48,12 +48,6 @@ pub const SHORTEST_MONTH_DAYS: u16 = 28;
 
 /// Business days per word of a country's bitset.
 pub const CALENDAR_WORD_BITS: i64 = 64;
-/// Buckets of the agenda wheel's day level, and days of its block level's buckets: 1 024 days, 2.8 years.
-pub const WHEEL_BITS: u32 = 10;
-/// See `WHEEL_BITS`.
-pub const WHEEL_BUCKETS: usize = 1 << WHEEL_BITS;
-/// Reasons a table's rows may be on the agenda for; each is a `u32` day, so 16 fill one cache line.
-pub const MAX_REASONS: usize = 16;
 
 /// Parts per million, the unit of every share of a whole: a type set's shares sum to exactly this.
 pub const PPM: u32 = 1_000_000;
@@ -79,9 +73,6 @@ pub const CF_TINY: f64 = 1e-300;
 pub const MONTHS_PER_YEAR: u16 = 12;
 /// See `MONTHS_PER_YEAR`.
 pub const MONTHS_PER_QUARTER: u16 = 3;
-/// The kernel map's hash seed: any fixed value, since the map is read whole only sorted and its hash reaches no
-/// outcome.
-pub const MAP_SEED: u64 = 0x5048_5820_4d41_5021;
 /// The draw address's ordinal of an opening phase: beyond every sub-step of a day, so opening draws share no address
 /// with a day's.
 pub const OPENING_ORDINAL_BASE: u8 = 64;
@@ -106,9 +97,6 @@ pub const PERCENT_F64: f64 = 100.0;
 
 /// The month and day a birthday on the 29th of February falls on in a common year: the 1st of March.
 pub const LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8) = (3, 1);
-/// The ids a page of an id map holds: a page is freed when its last id goes, so a map of ids issued in order follows
-/// the ids still held; 4 096 keeps a page of 16-byte entries at 64 KiB.
-pub const ID_PAGE_BITS: u32 = 12;
 
 /// Ten, the base a fixed point's places count.
 pub const DECIMAL_BASE: f64 = 10.0;

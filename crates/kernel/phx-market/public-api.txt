@@ -44,19 +44,11 @@ pub fn phx_market::carriage::freight(&phx_market::carriage::FreightTech, (u16, i
 pub fn phx_market::carriage::transit_days(u64, u64, u32) -> u32
 pub mod phx_market::consts
 pub const phx_market::consts::CHOICE_CHUNK: usize
-pub const phx_market::consts::KEY_SHIFT: u32
 pub const phx_market::consts::METRES_A_KM: f64
-pub const phx_market::consts::NODE_BITS: u32
 pub const phx_market::consts::ROUND_BLOCKS: u32
 pub const phx_market::consts::SEARCH_CHUNK: usize
 pub const phx_market::consts::STALL_CHUNK: usize
 pub const phx_market::consts::STALL_DIGIT_BITS: u32
-pub const phx_market::consts::TAG_BID: u128
-pub const phx_market::consts::TAG_EDGE: u128
-pub const phx_market::consts::TAG_NODE: u128
-pub const phx_market::consts::TAG_OFFER: u128
-pub const phx_market::consts::TAG_RETURN: u128
-pub const phx_market::consts::TAG_SHIFT: u32
 pub mod phx_market::hiring
 pub struct phx_market::hiring::Applicant
 pub phx_market::hiring::Applicant::experience: u32
