@@ -5047,12 +5047,14 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.7** — **The budget never changes a mechanism.** When the budget is missed, the remedies are, in order: how
   the world is represented and traversed; then the play resolution (fewer persons, REP.40). The population is
   fitted to the phone by the size alone, and no law, mechanism or requirement is weakened to meet it.
-- **N8.8** — The budget is **measured on the device** at the end of every stage from Stage 0 on, and a stage does
-  not end with the budget missed. At each stage's end it is measured twice on the phone: on the stage's own world, and
-  on the finished world's volumes — random data at every store's final size run through the stage's own kernels at
-  the final daily counts — so a finished world too slow or too large is found at Stage 0, not at the end.
+- **N8.8** — The budget is **measured** at the end of every stage from Stage 0 on, and a stage does not end with the
+  budget missed. At each stage's end it is measured twice: on the stage's own world, and on the finished world's
+  volumes at the **design point** the owner declares (decision 51) — random data at every store's size there run
+  through the stage's own kernels at its daily counts — so a finished world too slow or too large is found at Stage 0,
+  not at the end. Every measure of the budget is taken on the target device once the owner calls the device run, and
+  until then on the build machine against a declared model of the device.
 - **N8.10** — **Saving is budgeted apart from turns.** A snapshot is written at the moments SET.12 declares, within
-  the memory and storage budgets, and its duration is measured and budgeted on the device separately from the
+  the memory and storage budgets, and its duration is measured where N8.8 measures and budgeted separately from the
   turn's.
 - **N8.9** — **Heavy days are spread as far as real calendars spread them**: companies' report dates differ
   across the reporting window (RAT.2), tax returns across the filing window (TAX.2), voting intentions across the
@@ -5078,7 +5080,7 @@ can pay each other and hold and transfer instruments and physical units, every m
 whenever its participants post, with every family of the audit that applies running clean — **and the opening population
 and its firms, carried in the build's representation (REP.40) with their persons, holdings and the contracts
 of Stage 0's systems, live a simulated year of deaths, illness, ageing and catastrophes within the memory budget (N8.4)
-and the time budget (N8.2) on the target device.** No order is placed for a party by anything but its own decision
+and the time budget (N8.2), measured as N8.8 says.** No order is placed for a party by anything but its own decision
 (MKT.9), so each form forms live prices from the stage whose systems post in it. This bounds what the representation
 holds before any behaviour is built on it. It does not bound the daily flows — shopping, pay, hiring — which are Stage
 1's go/no-go.
@@ -5092,8 +5094,8 @@ statistics, VAL (adaptive outlooks and values), the opening dwellings held witho
 for HSG), and the decision core (MND.20) every decision is taken through, its offices empty and read at their
 institutions' founding preferences. *Exit:* households earn wages, spend them at firms that pay wages, firms are born and die, banks lend and are
 repaid, the treasury taxes and spends — and the world keeps doing so without anything imposed — **and a simulated year
-of it, with the population its representation holds at the play resolution, meets the performance budget (N8) on the
-target device.** This is the first go/no-go point: if the thin circular flow cannot meet it, the representation is
+of it, with the population its representation holds at the play resolution, meets the performance budget (N8),
+measured as N8.8 says.** This is the first go/no-go point: if the thin circular flow cannot meet it, the representation is
 revisited before anything is built on top of it.
 
 **Stage 2 — Credit and failure.** L1 (loss as event), L3 (estates), TCR, the full firm lifecycle, bank provisions
@@ -5507,6 +5509,19 @@ Decisions taken in writing this version, and decisions still open.
     every office empty and read at the institution's founding preferences and every household deciding by its own;
     Stage 8 attaches persons to the offices and minds to the deciders, and no decision is moved then, since each
     already runs through the core.
+
+51. **The budget's measures, the design point and where markets meet** (N8.8, REP.24, GEO.3; owner, 2026-09-29).
+    - **The design point** of the finished-volume measure (N8.8) is **7.5 million persons**, with every count per
+      person the finished world is expected to hold — households, firms, contracts, accounts, holdings, the day's
+      flows and purchases — raised by half again, so the finished world is measured with room above it. It measures
+      the code, not the world: the play resolution is still set by the budget in the one run (N8.5, decisions 36,
+      40).
+    - **Where it is measured**: on the target device once the owner calls the device run; until then on the build
+      machine, against a declared model of the device.
+    - **The order of refinement** is decision 41's.
+    - **A local market meets per region** — labour, housing, services, retail — and within a region a buyer's choice
+      weighs distance at zone resolution (REP.24, GEO.3), so a region's buyers and sellers meet in one market and
+      nearness still counts in every choice.
 
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.
