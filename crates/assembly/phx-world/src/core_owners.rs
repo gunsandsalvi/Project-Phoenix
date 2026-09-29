@@ -14,9 +14,11 @@ use phx_macros::clause;
 use phx_num::Missing;
 use phx_rand::float::len_u64;
 
-use crate::consts::firm::{OWNERS_PURPOSE, PURPOSES};
+use crate::consts::WEEKS_A_YEAR;
+use crate::consts::firm::{COMPENSATION, OWNERS_PURPOSE, PURPOSES, SURPLUS};
 use crate::core::{Core, kind_number};
-use crate::core_jobs::{JobsOpening, deal};
+use crate::core_jobs::{JobsOpening, deal, month_point};
+use crate::opening::economy::table;
 
 /// A self-employed person the opening drew: its household, identity, occupation, country and region.
 #[derive(Clone, Copy, Debug, phx_macros::Saved)]
@@ -66,6 +68,23 @@ impl Owners {
 }
 
 impl Core {
+    /// What a firm's working owners' hours earn a month: each one's last wage point; none where an owner holds none.
+    pub(crate) fn owners_pay(&self, firm: PartyKey, country: usize) -> Option<f64> {
+        let law = self.labour.laws.get(country)?;
+        let decl = self.household_decl.as_ref()?;
+        let mut pay = 0.0;
+        for w in self.owners.working.get(&firm).into_iter().flatten() {
+            let ps = self.persons.get(usize::from(w.household.kind()))?.as_ref()?;
+            let at = ps.place_of(w.household.slot(), w.person)?;
+            let word = ps.of(w.household.slot()).nth(at)?.word;
+            let point = phx_pop::person::unpack(decl, word)
+                .attr(sys_lab::LAST_POINT.name)
+                .filter(|p| *p != if_labour::class::NO_POINT)?;
+            pay += sys_lab::wages::wage_at(law, i64::from(point));
+        }
+        Some(pay)
+    }
+
     /// The self-employed dealt to the firms of their regions: in each region, in an order drawn by lot, one to each
     /// firm, and the rest of each occupation over its firms by the hours their output takes of it, evenly where none
     /// takes it.
@@ -96,8 +115,15 @@ impl Core {
                 members.swap(i, j);
             }
             let here = firms.get(&region).map_or(&[][..], Vec::as_slice);
+            // The firms each take their first owner in an order drawn by lot, so no product's place in the books
+            // decides which firms go unowned.
+            let mut order: Vec<usize> = (0..here.len()).collect();
+            for i in (1..order.len()).rev() {
+                let j = phx_rand::float::index(phx_rand::below_u64(&mut lot, len_u64(i + 1)));
+                order.swap(i, j);
+            }
             let mut next = members.into_iter();
-            for (slot, _) in here {
+            for (slot, _) in order.iter().filter_map(|i| here.get(*i)) {
                 match next.next() {
                     Some(m) => self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, date), types),
                     None => self.owners.unowned += 1,
@@ -118,6 +144,96 @@ impl Core {
                     for m in left.by_ref().take(usize::try_from(n).unwrap_or(usize::MAX)) {
                         self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, date), types);
                     }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// A firm's working owners' hours a year in an occupation.
+    pub(crate) fn owner_hours(&self, firm: PartyKey, occupation: u32) -> f64 {
+        self.owners.hours_of(firm).filter(|(o, _)| *o == occupation).map(|(_, h)| f64::from(h) * WEEKS_A_YEAR).sum()
+    }
+
+    /// What each working owner's hours earn: the self-employed's labour income in its country's accounts — its
+    /// labour share, which counts it, less its employees' compensation — shared over the owners as their hours would
+    /// be paid at their activity's and occupation's employee wage, and held as the owner's last wage point. An
+    /// activity whose owners' labour income passes its operating surplus and mixed income, which holds it, is a
+    /// finding: its tables disagree.
+    ///
+    /// # Errors
+    /// A primitive the income reads that the register does not hold, or a country whose labour share is no more than
+    /// its compensation, so its self-employed would earn nothing.
+    #[clause("GEN.4", "GEN.15", "FRM.14")]
+    pub fn price_owners(&mut self, o: &JobsOpening<'_>) -> Result<(), String> {
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
+        let working: Vec<(PartyKey, Vec<Worker>)> = self.owners.working.iter().map(|(k, w)| (*k, w.clone())).collect();
+        for c in o.countries {
+            let id = c.id.get();
+            let added = table(o.register, "GEN.value_added", c.id)?.0;
+            let part = |col: usize| -> Vec<f64> {
+                added.iter().map(|r| r.get(col).copied().unwrap_or(f64::NAN) * c.gdp).collect()
+            };
+            let (compensation, surplus) = (part(COMPENSATION), part(SURPLUS));
+            let Some(share) = c.derived("GEN.labour_share").map(|v| v / phx_core::consts::PERCENT_F64) else {
+                return Err(format!("country {id}: no labour share"));
+            };
+            let income = share * c.gdp - compensation.iter().sum::<f64>();
+            if income <= 0.0 {
+                return Err(format!("country {id}: a labour share of {share} leaves the self-employed nothing"));
+            }
+            let law = sys_lab::law::law(o.register, c)?;
+            // Each owner with the employee wage an hour of its activity and occupation, where its activity has one.
+            let mut owners: Vec<(Worker, usize, f64)> = Vec::new();
+            for (key, workers) in &working {
+                let (Some(product), Some(region)) = (
+                    self.record_word(firm, key.slot(), crate::consts::firm::PRODUCT),
+                    self.record_word(firm, key.slot(), crate::consts::firm::REGION),
+                ) else {
+                    continue;
+                };
+                if !c.regions.iter().any(|(r, _)| i64::from(*r) == region) {
+                    continue;
+                }
+                let activity = usize::try_from(product).unwrap_or(usize::MAX);
+                for w in workers {
+                    if let Some(wage) = self.drawn.wage_in((id, activity), w.occupation) {
+                        owners.push((*w, activity, wage));
+                    }
+                }
+            }
+            let at_wages: f64 = owners.iter().map(|(w, _, wage)| wage * f64::from(w.hours) * WEEKS_A_YEAR).sum();
+            if at_wages <= 0.0 {
+                continue;
+            }
+            let earned = income / at_wages;
+            let mut by_activity: BTreeMap<usize, f64> = BTreeMap::new();
+            for (w, activity, wage) in owners {
+                let Some(point) = month_point(&law, earned * wage, w.hours) else {
+                    phx_num::violation!(
+                        clause = "REP.34",
+                        "an owner's income beyond the wage points",
+                        activity = activity
+                    );
+                };
+                self.put_last_point((w.household, w.person), point);
+                *by_activity.entry(activity).or_insert(0.0) += earned * wage * f64::from(w.hours) * WEEKS_A_YEAR;
+            }
+            for (activity, owed) in by_activity {
+                let held = surplus.get(activity).copied().unwrap_or(f64::NAN);
+                if owed > held {
+                    self.found.push(phx_core::findings::Finding {
+                        family: "opening",
+                        clause: "GEN.4",
+                        owner: phx_core::findings::FindingOwner::Run,
+                        size: i128::from(phx_ledger::opening::whole(owed - held)),
+                        unit: phx_core::findings::Unit::Count,
+                        day: o.today,
+                        detail: format!(
+                            "country {id}, activity {activity}: its owners' labour income {owed:.0} a year passes its \
+                             operating surplus and mixed income {held:.0}"
+                        ),
+                    });
                 }
             }
         }

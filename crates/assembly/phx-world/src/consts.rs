@@ -207,6 +207,8 @@ pub mod firm {
     pub const MANAGEMENT_PURPOSE: u32 = 4;
     pub const OWNERS_PURPOSE: u32 = 5;
     pub const COMPENSATION: usize = 0;
+    /// The column of the value added's parts that is its gross operating surplus and mixed income.
+    pub const SURPLUS: usize = 1;
     /// The flows' activity the public agencies' staff work in: public administration, after the products, finance and
     /// real estate.
     pub const PUBLIC_ADMINISTRATION: usize = 21;

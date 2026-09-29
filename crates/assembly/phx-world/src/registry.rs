@@ -391,9 +391,10 @@ fn core_of(
         streams: &p.c.streams,
         stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
     };
-    let _ = core.open_jobs(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
     let types = &frm.management().types;
     core.open_owners(&jobs, types).map_err(|e| AssemblyErrors(vec![e]))?;
+    let _ = core.open_jobs(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
+    core.price_owners(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
     core.refresh_windows(types, calendar.date(today));
     core.open_loans(&crate::core_credit::CreditOpening {
         register: &p.c.register,

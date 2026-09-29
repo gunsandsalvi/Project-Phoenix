@@ -100,6 +100,26 @@ pub(crate) fn month_point(law: &if_labour::law::Law, hourly: f64, hours: u32) ->
     sys_lab::wages::point_near(law, hourly * f64::from(hours) * WEEKS_A_YEAR / MONTHS_A_YEAR)
 }
 
+/// Each firm's need of an occupation's hours net of its working owners': the hours its output takes, scaled so
+/// that all the firms' take what their owners and the jobs to deal work, less its owners' own; none where its owners
+/// meet its need.
+#[must_use]
+pub fn net_needs(asked: &[f64], owners: &[f64], jobs: f64) -> Vec<f64> {
+    let whole: f64 = asked.iter().sum();
+    if whole <= 0.0 {
+        return vec![0.0; asked.len()];
+    }
+    let scale = (jobs + owners.iter().sum::<f64>()) / whole;
+    asked
+        .iter()
+        .zip(owners)
+        .map(|(a, o)| {
+            let net = scale * a - o;
+            if net > 0.0 { net } else { 0.0 }
+        })
+        .collect()
+}
+
 /// A job's next date, read from its schedule.
 fn first_date(family: &DatedFamily, calendar: &Calendar, j: &Job) -> Option<Day> {
     family.schedules.get(usize::try_from(j.schedule).unwrap_or(usize::MAX)).map(|s| s.0.nth(calendar, j.nth))
@@ -297,7 +317,14 @@ impl Core {
             let Some(rest) = n.checked_sub(public_n) else {
                 violation!(clause = "SOC.2", "more public jobs than jobs", region = region);
             };
-            let parts = deal(rest, &weights);
+            let left: Vec<usize> = next.collect();
+            let hours: f64 = left.iter().filter_map(|j| jobs.get(*j)).map(|j| f64::from(j.hours) * WEEKS_A_YEAR).sum();
+            let owners: Vec<f64> = here
+                .iter()
+                .map(|(slot, _)| self.owner_hours(PartyKey::new(kind_number(firm), *slot), occupation))
+                .collect();
+            let parts = deal(rest, &net_needs(&weights, &owners, hours));
+            let mut next = left.into_iter();
             for ((slot, _), n) in here.iter().zip(parts) {
                 let Some(product) = self.record_word(firm, *slot, PRODUCT).and_then(|p| usize::try_from(p).ok()) else {
                     violation!(clause = "FRM.23", "a firm with no product", slot = slot.get());

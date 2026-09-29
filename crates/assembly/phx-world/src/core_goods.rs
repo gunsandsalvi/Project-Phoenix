@@ -338,8 +338,8 @@ impl Core {
     }
 
     /// Each firm's markup at the opening: the day-zero price it posted, its product's in the accounts at its
-    /// productivity, over what a unit costs it to make — its staff's wages over what they make, and its inputs at the
-    /// opening's prices. What its owners' hours earn is in the margin, as the accounts hold mixed income in surplus.
+    /// productivity, over what a unit costs it to make — its staff's wages and what its working owners' hours earn,
+    /// over what they make, and its inputs at the opening's prices.
     #[clause("FRM.5", "FRM.14", "GEN.13")]
     fn open_markups(&mut self, ctx: &GoodsCtx<'_>, firm: usize, prices: &[Vec<f64>]) {
         for slot in self.firm_slots(firm) {
@@ -637,7 +637,8 @@ impl Core {
         Some(from_i64(held.cost) / from_i64(held.units))
     }
 
-    /// A firm's cost of making a unit now: its wage bill a day over what its staff make a day and the inputs a unit uses
+    /// A firm's cost of making a unit now: its wage bill a day, with what its working owners' hours earn, over what its
+    /// staff and owners make a day, and the inputs a unit uses
     /// at what they cost it, what it holds at what it paid and what it must buy at the least price it is sold at in its
     /// region.
     /// What it uses of its own product costs what making it costs, so the rest is grossed up by the share of a unit it
@@ -673,7 +674,9 @@ impl Core {
         if made <= 0.0 {
             return None;
         }
-        let labour = wage_bill * MONTHS_A_YEAR / DAYS_A_YEAR / made;
+        // Its working owners' hours are labour it uses as its staff's are, at what the accounts say they earn.
+        let owners = self.owners_pay(f.key, f.country)?;
+        let labour = (wage_bill + owners) * MONTHS_A_YEAR / DAYS_A_YEAR / made;
         (own < 1.0).then(|| (inputs + labour) / (1.0 - own))
     }
 

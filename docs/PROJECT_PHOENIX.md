@@ -996,8 +996,11 @@ takes on day zero.
   (NUM.3) with its sources:
   - population by age, household composition and region, from life tables and censuses, with education and
     skills by age, region and occupation family;
-  - incomes (a log-normal body with a Pareto top), drawn as the contracts and holdings that pay them (Law 4), and
-    wealth, by preference type;
+  - incomes as the contracts and holdings that pay them (Law 4), none drawn apart from them: an employee's wage is
+    its activity's compensation in the accounts over the hours the activity's jobs work, each hour weighed by its
+    occupation's pay; a working owner's hours earn the self-employed's labour income — the labour share less the
+    employees' compensation — shared as their hours would be paid employed in their activity; and wealth, by
+    preference type. The income distribution that results is an outcome, read against its stylised fact (N3);
   - firms by industry, productivity and sites, their debts and owners, the ways they know and the patents they
     hold. A firm's size is not drawn: its output is its share of its industry's output, by the demand its day-zero
     prices win in its reach (GEN.13), and its staff, plant and stocks follow from that output and its way, so the
@@ -2210,8 +2213,9 @@ to owners, can belong to a group, and can be born and die.
 - **FRM.13 PROCESS** — **Revenue** is quantity sold times price achieved, recognised on delivery, from named
   buyers. **Costs** are named lines with named payees: inputs, wages, energy, rent, services, interest,
   taxes, depreciation. **Operating profit** is a read, and can be negative.
-- **FRM.14 PROCESS** — **Unit cost** is the inputs a batch consumed at their own cost, plus its labour, plus
-  the capital charge its plant's period carries, over the units that survive. A line run below its rate
+- **FRM.14 PROCESS** — **Unit cost** is the inputs a batch consumed at their own cost, plus its labour — its
+  staff's wages and what its working owners' hours earn — plus the capital charge its plant's period carries, over
+  the units that survive. A line run below its rate
   carries its plant's whole cost over fewer units; a line that ran nothing charges its plant's cost to the
   period.
 - **FRM.15 PROCESS** — **Two ways to fail**: a firm that cannot pay something due is in **default of
