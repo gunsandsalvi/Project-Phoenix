@@ -61,6 +61,42 @@ pub struct Core {
     pub rates: crate::core_rates::Rates,
     /// The households whose persons the day's labour changed, booked again for every process from the next day.
     pub(crate) touched: std::collections::BTreeSet<u32>,
+    /// Every amount the opening shared over parties by weight: the opening report's apportionments.
+    pub apportioned: Vec<Apportioned>,
+}
+
+/// An amount the opening shared over parties by their weights: what it was, in which country, the amount, what the
+/// parties were given, how many there were and how many of no weight were given anything.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Apportioned {
+    pub stratum: &'static str,
+    pub country: u8,
+    pub total: i64,
+    pub given: i64,
+    pub parties: u64,
+    pub unfounded: u64,
+}
+
+impl Core {
+    /// An amount shared over weights exactly, and recorded in the opening report.
+    pub(crate) fn apportion(
+        &mut self,
+        (stratum, country): (&'static str, u8),
+        total: i64,
+        weights: &[u64],
+    ) -> Vec<i64> {
+        let parts = crate::core_firms::apportion_amount(total, weights);
+        let unfounded = weights.iter().zip(&parts).filter(|(w, p)| **w == 0 && **p != 0).count();
+        self.apportioned.push(Apportioned {
+            stratum,
+            country,
+            total,
+            given: parts.iter().sum(),
+            parties: phx_rand::float::len_u64(parts.len()),
+            unfounded: phx_rand::float::len_u64(unfounded),
+        });
+        parts
+    }
 }
 
 pub(crate) fn kind_number(place: usize) -> u8 {

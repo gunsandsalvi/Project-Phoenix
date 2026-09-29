@@ -25,7 +25,6 @@ use crate::consts::{
 };
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, PENSION};
-use crate::core_firms::apportion_amount;
 use crate::opening::sheet::Sheet;
 
 use crate::consts::kinds::{BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, KINDS, TREASURY};
@@ -174,6 +173,7 @@ impl Core {
             drawn: Drawn::default(),
             rates: crate::core_rates::Rates::default(),
             touched: std::collections::BTreeSet::new(),
+            apportioned: Vec::new(),
         }
     }
 
@@ -214,7 +214,7 @@ impl Core {
             core.issuers.push(issuer);
             core.treasuries.push(Some(treasury));
             let (_, _, weights) = sys_bnk::bank_weights(c);
-            let reserves = apportion_amount(at(RESERVES, BANKS), &weights);
+            let reserves = core.apportion(("banks' reserves", c.id.get()), at(RESERVES, BANKS), &weights);
             let mut banks = Vec::with_capacity(weights.len());
             for (k, balance) in (0_u32..).zip(reserves) {
                 let site = sys_bnk::bank_site(&ctx, c, k);
@@ -252,7 +252,7 @@ impl Core {
                     })
                 })
                 .collect();
-            for (l, amount) in loans.iter_mut().zip(apportion_amount(debt, &weights)) {
+            for (l, amount) in loans.iter_mut().zip(core.apportion(("households' loans", c.id.get()), debt, &weights)) {
                 l.weight = u64::try_from(amount).unwrap_or(0);
             }
             core.drawn.loans.extend(loans);
@@ -398,16 +398,18 @@ impl Core {
         }
         let weights: Vec<u64> = money.banked.iter().map(|(_, _, w)| *w).collect();
         let mut at_bank = vec![0_u64; banks.len()];
+        let shares = self.apportion(("households' deposits", c.id.get()), deposits, &weights);
+        let cash: Vec<u64> = money.unbanked.iter().map(|(_, n)| *n).collect();
+        let cash = self.apportion(("households' currency", c.id.get()), currency, &cash);
         let Some(store) = self.kinds.get_mut(HOUSEHOLD) else { return Ok(()) };
-        for ((slot, bank, _), balance) in money.banked.iter().zip(apportion_amount(deposits, &weights)) {
+        for ((slot, bank, _), balance) in money.banked.iter().zip(shares) {
             let Some(b) = banks.get(*bank) else { continue };
             store.open_account(*slot, Opening { bank: b.slot().get(), balance });
             if let Some(w) = at_bank.get_mut(*bank) {
                 *w += u64::try_from(balance).unwrap_or(0);
             }
         }
-        let weights: Vec<u64> = money.unbanked.iter().map(|(_, n)| *n).collect();
-        for ((slot, _), balance) in money.unbanked.iter().zip(apportion_amount(currency, &weights)) {
+        for ((slot, _), balance) in money.unbanked.iter().zip(cash) {
             store.open_account(*slot, Opening { bank: AT_ISSUER, balance });
         }
         let country = usize::from(c.id.get());

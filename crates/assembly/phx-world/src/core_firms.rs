@@ -293,7 +293,8 @@ impl Core {
                 };
                 turnover.push(t);
             }
-            for (d, share) in drafts.iter().zip(apportion_amount(deposits, &turnover)) {
+            let shares = self.apportion(("firms' deposits", c.id.get()), deposits, &turnover);
+            for (d, share) in drafts.iter().zip(shares) {
                 let Some(output) = floor_to_i64(d.output.round()) else {
                     return Err(format!("country {}: a firm's output beyond a count", c.id.get()));
                 };

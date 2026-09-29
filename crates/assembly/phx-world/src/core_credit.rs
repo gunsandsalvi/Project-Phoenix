@@ -206,7 +206,7 @@ impl Core {
                 firms.push((PartyKey::new(kind_number(firm), slot), turnover));
             }
             let weights: Vec<u64> = firms.iter().map(|(_, t)| *t).collect();
-            let shares = crate::core_firms::apportion_amount(lent, &weights);
+            let shares = self.apportion(("firms' loans", c.id.get()), lent, &weights);
             let first_schedule = len_u64(family.schedules.len());
             for years in min..=max {
                 let Some(months) = u32::try_from(years).ok().and_then(|y| y.checked_mul(u32::try_from(MONTHS).ok()?))

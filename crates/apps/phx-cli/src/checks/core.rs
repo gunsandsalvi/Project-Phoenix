@@ -831,3 +831,26 @@ pub const LC_0_25: Check = live_check! {
     from_step: "S0.16",
     check: payments_on_business_days,
 };
+
+/// The opening reports every amount it shared by weight — its stratum, country, amount and what the parties were
+/// given, the difference being what no party was — and no party of no weight was given any.
+fn apportionments_reported(w: Inspector<'_>) -> Outcome {
+    let report = &w.core().apportioned;
+    if report.is_empty() {
+        return Outcome::Fail("the opening reports no apportionment".to_owned());
+    }
+    match report.iter().find(|a| a.unfounded > 0) {
+        Some(a) => Outcome::Fail(format!(
+            "{} in country {}: {} parties of no weight given a share",
+            a.stratum, a.country, a.unfounded
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_0_56: Check = live_check! {
+    id: "LC-0-56",
+    title: "The GEN report lists every apportionment difference and every unmatched stratum",
+    from_step: "S0.25",
+    check: apportionments_reported,
+};

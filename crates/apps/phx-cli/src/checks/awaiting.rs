@@ -270,13 +270,6 @@ pub const LC_0_53: Check = live_check! {
     check: |_| Outcome::NotYet("awaits estates' destinations named on the core (S1.24 f)"),
 };
 
-pub const LC_0_56: Check = live_check! {
-    id: "LC-0-56",
-    title: "The GEN report lists every apportionment difference and every unmatched stratum",
-    from_step: "S0.25",
-    check: |_| Outcome::NotYet("awaits the core's opening report (S1.24 h)"),
-};
-
 pub const LC_0_57: Check = live_check! {
     id: "LC-0-57",
     title: "the player's queued intents are decided on the first day their point runs; with none, the rule decides",
