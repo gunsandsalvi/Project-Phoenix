@@ -1304,7 +1304,8 @@ instruction, settled atomically or failed visibly.
   outlives the day is the state itself — holdings, lots, contracts, and each party's own records of what it will
   need (SET.16) — and what the world publishes or keeps as history: statistics (STA), statements and reports
   (ACC.9, RAT.2), each market's daily mark and volume, dated events, and each party's own bounded memory of what
-  it observed (VAL). Each kind of history is kept for a declared horizon (RESOLUTION); a kept record naming a party
+  it observed (VAL). Each kind of history is kept for a declared horizon (RESOLUTION), never shorter than a POLICY
+  its keeper must follow (BNK.21, HH.21, DRV.10, STA.5); a kept record naming a party
   that ended before the horizon reads as ended, on its date.
 - **SET.14** — _Retired_: rebuilding past days is not required; a save restores the world as it was (SET.15).
 - **SET.15 INVARIANT** — A world restored from a snapshot holds exactly the state that was saved, and continues
