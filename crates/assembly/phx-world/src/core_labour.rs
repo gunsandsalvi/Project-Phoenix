@@ -56,6 +56,9 @@ pub struct LabourDay {
     /// The offers accepted, and the contracts they made: an acceptance whose person left first makes none.
     pub acceptances: u64,
     pub hires: u64,
+    /// The jobs open at the round's close, and the persons searching then.
+    pub open: u64,
+    pub searching: u64,
 }
 
 /// Labour's state on the core, kept from day to day.
@@ -292,6 +295,8 @@ impl Core {
             (posted, withdrawn, layoffs, employers);
         (record.searchers, record.applications) = self.search_round(ctx, day);
         self.keep_vacancies();
+        record.open = self.labour.vacancies.iter().map(|v| u64::from(v.open)).sum();
+        record.searching = len_u64(self.labour.searching.len());
         self.labour.days.push(record);
         record
     }

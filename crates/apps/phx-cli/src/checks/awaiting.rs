@@ -424,14 +424,6 @@ pub const LC_1_20: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
 };
 
-pub const LC_1_22: Check = live_check! {
-    id: "LC-1-22",
-    title: "LAB.14: the Beveridge relation, Okun's co-movement, unemployment durations, wage dispersion within \
-            occupation families and job-to-job flows are reported",
-    from_step: "S1.08",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the labour reads"),
-};
-
 pub const LC_1_24: Check = live_check! {
     id: "LC-1-24",
     title: "BNK.11: each bank's loan book equals the sum of its loan lines, and its change reconciles",

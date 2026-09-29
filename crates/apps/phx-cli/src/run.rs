@@ -285,6 +285,26 @@ fn prices_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
         .collect()
 }
 
+/// Each labour round's jobs open and persons searching at its close, its hires and separations: the Beveridge
+/// relation's points and the flows between jobs and search, as the run report publishes them.
+fn labour_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .labour
+        .days
+        .iter()
+        .map(|d| {
+            json!({
+                "day": d.day,
+                "open": d.open,
+                "searching": d.searching,
+                "hires": d.hires,
+                "separated": d.separated,
+                "posted": d.posted,
+            })
+        })
+        .collect()
+}
+
 /// The age structure and fertility at the close, as the run report publishes them.
 fn population_report(w: Inspector<'_>) -> serde_json::Value {
     let Some(s) = crate::checks::lives::structure(w) else { return serde_json::Value::Null };
@@ -388,6 +408,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "statistics": statistics_report(w),
         "population": population_report(w),
         "prices": prices_report(w),
+        "labour": labour_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "peak_resident_bytes": peak,

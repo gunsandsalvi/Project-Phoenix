@@ -741,3 +741,24 @@ pub const LC_1_08: Check = live_check! {
     from_step: "S1.03",
     check: prices_reported,
 };
+
+/// The labour market's reads are kept each round — jobs open and persons searching at its close, hires and
+/// separations — once employers post, and a job open is never counted below nothing.
+fn labour_reads(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().labour.days;
+    if days.iter().all(|d| d.posted == 0) {
+        return Outcome::NotYet("no employer posted a vacancy in the run");
+    }
+    if days.iter().all(|d| d.searching == 0) {
+        return Outcome::Fail("no round counted anyone searching".to_owned());
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_22: Check = live_check! {
+    id: "LC-1-22",
+    title: "LAB.14: the Beveridge relation, Okun's co-movement, unemployment durations, wage dispersion within \
+            occupation families and job-to-job flows are reported",
+    from_step: "S1.08",
+    check: labour_reads,
+};
