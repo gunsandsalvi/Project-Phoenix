@@ -906,7 +906,9 @@ world switches to the core.
     offer: over 120 days the 1,389 offers of a cut all fell below their employees' reservations and each quit, and
     unemployment in the developed country reached 8.5% by March (6.9% when they worked on at the cut). The day's
     pay rounds are answered together, one search per country: answered one by one, each search weighed every open
-    vacancy, and the smoke's median turn rose from 1,569 ms to 2,674 ms (now 1,601 ms, worst 4,861 ms). Each
+    vacancy, and the smoke's median turn rose from 1,569 ms to 2,674 ms (then 1,601 ms, worst 4,861 ms; with the quits
+    at a round below the reservation, whose searchers the rounds then carry, 1,773 and 1,862 ms in two smokes, worst
+    5,349 and 5,547 ms, every ratchet kept). Each
     method's lag behind a series' turns is counted in prints (VAL.13, LC-1-43 passes): over 120 days the trend and the
     last value follow each turn at once, the anchor 0.04 prints behind, the adaptive rule 0.09 prints behind at the
     fastest memory and 0.17 at the slowest. Remain in e: the anchor's level by each age class's experience weights
