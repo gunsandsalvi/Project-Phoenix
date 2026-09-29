@@ -1168,12 +1168,15 @@ impl Core {
             self.goods.meeting = meeting;
             let by_seller: BTreeMap<PartyKey, usize> =
                 stalls.iter().enumerate().map(|(i, x)| (x.0.seller, i)).collect();
+            let mut out = Vec::new();
+            // The meeting's sales by currency and the buyer's kind, recorded for the statistics at once.
+            let mut recorded: BTreeMap<(u8, u8), (i64, i64)> = BTreeMap::new();
             for sale in made {
                 let Some((_, unit, ccy, region)) = by_seller.get(&sale.seller).and_then(|i| stalls.get(*i)).copied()
                 else {
                     continue;
                 };
-                let mut out = Vec::new();
+                out.clear();
                 sale.flows((Denom::money(ccy), SOLD, 0), Some(leg(unit)), sale.seller.slot().get(), &mut out);
                 if let (true, Some(Some(rate)), Some(included), Some(Some(treasury))) = (
                     leg(unit).used,
@@ -1195,7 +1198,7 @@ impl Core {
                         });
                     }
                 }
-                for f in out {
+                for f in out.drain(..) {
                     if f.denomination.is_money() {
                         money.push(f);
                     } else {
@@ -1209,7 +1212,11 @@ impl Core {
                 (t.0, t.1) = (t.0 + i128::from(sale.paid), t.1 + i128::from(sale.units));
                 sales += 1;
                 spent += sale.paid;
-                self.record_sale(ccy, (sale.buyer.kind(), purpose), (product, sale.paid, sale.units));
+                let r = recorded.entry((ccy, sale.buyer.kind())).or_insert((0, 0));
+                (r.0, r.1) = (r.0 + sale.paid, r.1 + sale.units);
+            }
+            for ((ccy, kind), (paid, units)) in recorded {
+                self.record_sale(ccy, (kind, purpose), (product, paid, units));
             }
         }
         self.pending.append(&mut money);
