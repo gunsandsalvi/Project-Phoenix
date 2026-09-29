@@ -2885,8 +2885,9 @@ written off as events.
   small-business loans, mortgages, consumer loans and credit lines, loans to other banks. A **facility**
   is a commitment the borrower may draw; its undrawn part is a real obligation that consumes the bank's
   capital and liquidity and earns a commitment fee.
-- **BNK.3 STATE** — A **syndicated loan** is one loan with several lenders of record, each holding its share
-  against its own capital and limits, arranged by a lead that takes a fee.
+- **BNK.3 STATE** — A **syndicated loan** is one set of terms shared by several lenders of record: each lender's
+  share is its own contract with the borrower (REP.3), held against its own capital and limits, arranged by a lead
+  that takes a fee.
 - **BNK.17 STATE** — A **term loan** is disbursed once (or in stated tranches for a construction or investment
   programme) and repaid on a stated profile: **amortising** in equal instalments, **bullet** at maturity, or
   **balloon** (partly amortising, the rest at maturity), with any grace period on principal. Its terms state
