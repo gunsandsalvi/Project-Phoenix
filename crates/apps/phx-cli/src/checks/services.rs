@@ -1,5 +1,6 @@
-//! The services' reads: their share of the firms' sales and of the jobs, the retail margin of services and of
-//! goods, and how often and by how much each's prices move at a review.
+//! What the firms make and sell: every production's inputs used as its way states, and the services' reads — their
+//! share of the firms' sales and of the jobs, the retail margin of services and of goods, and how often and by how
+//! much each's prices move at a review.
 
 use phx_num::Missing;
 use phx_world::Inspector;
@@ -107,4 +108,28 @@ pub const LC_1_16: Check = live_check! {
             wholesale costs rise, and the frequency and size of retail price changes are reported",
     from_step: "S1.06",
     check: services_reported,
+};
+
+/// Every production by a way that uses stored inputs used them as the way states: no day made a unit whose inputs its
+/// maker did not hold to use.
+fn made_by_way(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().goods.days;
+    let made: u64 = days.iter().map(|d| d.productions).sum();
+    if made == 0 {
+        return Outcome::NotYet("nothing was made from stored inputs in the run");
+    }
+    match days.iter().find(|d| d.unfed > 0) {
+        Some(d) => Outcome::Fail(format!(
+            "day {}: {} of {} productions made without the inputs their way uses",
+            d.day, d.unfed, d.productions
+        )),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_05: Check = live_check! {
+    id: "LC-1-05",
+    title: "every production names a way its producer knew, with the inputs it consumed as the way states",
+    from_step: "S1.02",
+    check: made_by_way,
 };

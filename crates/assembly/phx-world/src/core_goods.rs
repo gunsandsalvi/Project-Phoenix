@@ -37,6 +37,9 @@ use crate::opening::economy::table;
 pub struct GoodsDay {
     pub day: u32,
     pub made: i64,
+    /// The productions made today, and those whose way's inputs were not all there to use.
+    pub productions: u64,
+    pub unfed: u64,
     pub spenders: u64,
     pub wants: u64,
     pub sales: u64,
@@ -103,6 +106,8 @@ pub struct CoreGoods {
     pub marks: BTreeMap<(u16, u32), f64>,
     /// The marks as public series, each method's outlooks of them, and the firms' stances by day.
     pub outlooks: crate::core_outlooks::Outlooks,
+    /// Today's productions by a way that uses stored inputs, and those whose inputs were not all there to use.
+    pub production: (u64, u64),
     /// Each trade's price reviews over the run.
     pub prices: BTreeMap<u16, PriceTally>,
     /// Today's sales' debits to named buyers, credits to named sellers, and sales naming neither.
@@ -568,6 +573,7 @@ impl Core {
         let mut moved: Vec<Flow> = Vec::new();
         self.spoil(day, &mut moved);
         record.made = self.make(ctx, day, &mut moved);
+        (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         record.inputs_wanted = self.buy_inputs(ctx, day, &mut moved);
         let (spenders, wants) = self.decide_spending(ctx, day);
         (record.spenders, record.wants) = (spenders, wants);
@@ -744,6 +750,7 @@ impl Core {
                 continue;
             }
             let mut cost = 0;
+            let mut fed = true;
             for (q, a) in inputs {
                 let used = whole_units(from_i64(today) * a);
                 if used <= 0 {
@@ -759,7 +766,14 @@ impl Core {
                     reason: USED,
                     order: 0,
                 };
-                cost += self.move_goods(flow, Cost::Carried, day, moved).unwrap_or(0);
+                match self.move_goods(flow, Cost::Carried, day, moved) {
+                    Some(c) => cost += c,
+                    None => fed = false,
+                }
+            }
+            self.goods.production.0 += 1;
+            if !fed {
+                self.goods.production.1 += 1;
             }
             let unit = self.unit_of(f.product, f.region);
             let flow = Flow {

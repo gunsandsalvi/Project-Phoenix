@@ -143,7 +143,7 @@ pub const CHECKS: &[Check] = &[
     core::LC_1_04,
     outlooks::LC_1_43,
     awaiting::LC_1_44,
-    awaiting::LC_1_05,
+    services::LC_1_05,
     awaiting::LC_1_06,
     core::LC_1_07,
     core::LC_1_08,

@@ -298,13 +298,6 @@ pub const LC_1_44: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
 };
 
-pub const LC_1_05: Check = live_check! {
-    id: "LC-1-05",
-    title: "every production names a way its producer knew, with the inputs it consumed as the way states",
-    from_step: "S1.02",
-    check: |_| Outcome::NotYet("awaits S1.24 d, production read by its way"),
-};
-
 pub const LC_1_06: Check = live_check! {
     id: "LC-1-06",
     title: "the family of the firms' revenue (FRM.17) is clean; the claims' (FRM.18) joins with the invoices (S2.02)",

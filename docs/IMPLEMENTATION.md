@@ -955,14 +955,17 @@ world switches to the core.
     41% on average, goods at 55% by 157%. The goods' share of sales and their markups follow the goods' prices, which
     the households' demand beyond the goods makers' staff drives up (S2.05). The margin's compression when wholesale
     costs rise is read once the retail and wholesale trades are apart (S1.24 d, shipments).
-  - The live checks on the core (120 days, 150,000 persons, seed 1): 46 pass — the turns (LC-0-02), the map (LC-0-11,
+  - d: each day's productions from stored inputs are counted with those whose inputs were not all there to use
+    (`GoodsDay::productions`, `unfed`); LC-1-05 reads them and passes over 120 days (150,000 persons, seed 1): no firm
+    made a unit without the inputs its way uses.
+  - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
     drift (LC-0-59, LC-0-60), persons, their events and rates (LC-0-39, LC-0-41, LC-0-54, LC-0-63, LC-1-36,
-    LC-1-49, LC-1-51), prices and outlooks (LC-1-01 to LC-1-04, LC-1-07, LC-1-08, LC-1-16, LC-1-38, LC-1-43), goods and sales (LC-1-17, LC-1-18,
+    LC-1-49, LC-1-51), prices and outlooks (LC-1-01 to LC-1-04, LC-1-07, LC-1-08, LC-1-16, LC-1-38, LC-1-43), production by its way (LC-1-05), goods and sales (LC-1-17, LC-1-18,
     LC-1-32), jobs and the labour rounds (LC-1-21, LC-1-22, LC-1-23), loans and benefits (LC-1-26, LC-1-30), the
     accounts (LC-1-37); 28 are retired, each with the old kernel's concept it read and the core's check that holds
-    instead; 38 report "not yet", each naming the part of this step or the later step that brings what it reads.
+    instead; 37 report "not yet", each naming the part of this step or the later step that brings what it reads.
     None fails.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.
