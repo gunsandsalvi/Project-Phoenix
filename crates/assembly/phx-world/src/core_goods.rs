@@ -106,7 +106,8 @@ pub struct CoreGoods {
     pub marks: BTreeMap<(u16, u32), f64>,
     /// The marks as public series, each method's outlooks of them, and the firms' stances by day.
     pub outlooks: crate::core_outlooks::Outlooks,
-    /// Today's productions by a way that uses stored inputs, and those whose inputs were not all there to use.
+    /// Today's productions by a way that uses stored inputs — a good's making, a service's sales — and those whose
+    /// inputs were not all there to use.
     pub production: (u64, u64),
     /// Each trade's price reviews over the run.
     pub prices: BTreeMap<u16, PriceTally>,
@@ -573,7 +574,6 @@ impl Core {
         let mut moved: Vec<Flow> = Vec::new();
         self.spoil(day, &mut moved);
         record.made = self.make(ctx, day, &mut moved);
-        (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         record.inputs_wanted = self.buy_inputs(ctx, day, &mut moved);
         let (spenders, wants) = self.decide_spending(ctx, day);
         (record.spenders, record.wants) = (spenders, wants);
@@ -592,6 +592,7 @@ impl Core {
         };
         let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
         self.close_services(ctx, day, &mut moved);
+        (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         (record.sales, record.spent) = (sales, spent);
         (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
         let types = &ctx.management.types;
@@ -842,7 +843,10 @@ impl Core {
             let made = made_by.get(&f.key.word()).copied().unwrap_or(0);
             let left = self.free_units(f.key, f.product, f.region);
             let sold = made - left;
-            for (q, a) in self.stored_inputs(&f) {
+            let inputs = self.stored_inputs(&f);
+            let mut fed = true;
+            for (q, a) in &inputs {
+                let (q, a) = (*q, *a);
                 let used = whole_units(from_i64(sold) * a);
                 if used <= 0 {
                     continue;
@@ -857,7 +861,13 @@ impl Core {
                     reason: USED,
                     order: 0,
                 };
-                let _ = self.move_goods(flow, Cost::Carried, day, moved);
+                fed &= self.move_goods(flow, Cost::Carried, day, moved).is_some();
+            }
+            if sold > 0 && !inputs.is_empty() {
+                self.goods.production.0 += 1;
+                if !fed {
+                    self.goods.production.1 += 1;
+                }
             }
             if left > 0 {
                 let unit = self.unit_of(f.product, f.region);
