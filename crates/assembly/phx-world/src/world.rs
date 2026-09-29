@@ -32,6 +32,8 @@ pub struct World {
     pub(crate) labour: Option<if_labour::kind::LabourKind>,
     /// The event kinds the systems declare, by their place.
     pub(crate) event_kinds: Vec<&'static str>,
+    /// The declared rule of which events become public.
+    pub(crate) news: phx_core::EventsRule,
     /// The country each region lies in, by the region's number.
     pub(crate) regions: Vec<CountryId>,
     pub(crate) game: NewGame,

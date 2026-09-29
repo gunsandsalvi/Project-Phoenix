@@ -100,6 +100,7 @@ impl World {
         let _ = self.core.run_day(day, &self.calendar, &self.streams, &crate::opening::prims::SETTLE_ORDER);
         self.core.audit(day);
         self.core.stats_day(day, (&self.calendar, &regions), hh.map(|h| &h.types));
+        let _ = self.core.happened.publish(day, &self.news);
         for f in self.core.found.drain(..) {
             self.findings.record(f);
         }

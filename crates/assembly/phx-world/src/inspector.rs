@@ -111,6 +111,18 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.turns
     }
 
+    /// Every event the world recorded.
+    #[must_use]
+    pub fn events(&self) -> &'a phx_core::EventStore {
+        &self.world.core.happened
+    }
+
+    /// The declared rule of which events become public.
+    #[must_use]
+    pub fn news(&self) -> &'a phx_core::EventsRule {
+        &self.world.news
+    }
+
     /// The saves the run took, as measured.
     #[must_use]
     pub fn saves(&self) -> &'a [crate::metrics::SaveMeasure] {

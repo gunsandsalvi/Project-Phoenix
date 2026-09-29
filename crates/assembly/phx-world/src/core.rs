@@ -71,6 +71,8 @@ pub struct Core {
     /// Each day's events by kind, as the hazards' hits recorded them, and today's being counted.
     pub events: Vec<(phx_id::Day, Vec<crate::core_pop::EventCount>)>,
     pub(crate) events_today: Vec<crate::core_pop::EventCount>,
+    /// Every event, dated, with the parties it names, and whether the declared rule has made it public.
+    pub happened: phx_core::EventStore,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,

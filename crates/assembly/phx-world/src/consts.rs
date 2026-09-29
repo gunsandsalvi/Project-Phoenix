@@ -1,9 +1,12 @@
 /// Records the world's store reserves room for: sixteen million, beyond a decade's publications and reports, in
 /// 512 MiB of address space, committed only as written.
 pub const RECORD_ROWS: u32 = 1 << 24;
-/// Events the store reserves room for, as records, in 768 MiB of address space.
+/// Events the store reserves room for, in 768 MiB of address space, committed only as written: some fifty years of a
+/// world's persons' events.
 pub const EVENT_ROWS: u32 = 1 << 24;
-/// Words of the records' and events' arenas: 1 GiB of address space each, committed as written.
+/// Events per chunk of their column.
+pub const EVENT_ROWS_PER_CHUNK: u32 = 1 << 14;
+/// Words of the events' arena, their subjects and details: 1 GiB of address space, committed as written.
 pub const STORE_ARENA_WORDS: u32 = 1 << 27;
 /// One chunk in this many is read-traced each day, the chunk whose index is congruent to the day.
 pub const TRACE_PERIOD: u32 = 64;

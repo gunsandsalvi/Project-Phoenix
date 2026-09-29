@@ -87,6 +87,30 @@ impl Core {
         }
     }
 
+    /// A hit recorded as an event: its household the subject, each person it reached a detail of one person.
+    #[clause("OBS.3", "CHN.4")]
+    fn record_event(&mut self, kind: u16, (place, slot, household): (usize, Slot, u64), reached: &[usize], day: Day) {
+        let ids: Vec<u64> = self
+            .persons
+            .get(place)
+            .and_then(Option::as_ref)
+            .map(|p| p.of(slot).map(|x| x.id).collect())
+            .unwrap_or_default();
+        let details: Vec<(Subject, i64)> = reached
+            .iter()
+            .filter_map(|at| ids.get(*at))
+            .map(|person| (Subject::new(SubjectTag::Party, *person), 1))
+            .collect();
+        self.happened.record(phx_core::NewEvent {
+            day,
+            substep: SubStep::S3b,
+            kind,
+            subjects: &[Subject::new(SubjectTag::Party, household)],
+            details: &details,
+            develops_from: phx_num::Missing::Absent,
+        });
+    }
+
     /// The household kind's place on the core and among the population's kinds.
     fn household(&self) -> Option<(usize, usize)> {
         let place = self.names.iter().position(|n| *n == "household")?;
@@ -215,6 +239,7 @@ impl Core {
                 if !f.reached.is_empty() {
                     record.hits += 1;
                     self.count_event(b.event, phx_rand::float::len_u64(f.reached.len()));
+                    self.record_event(b.event, (place, slot, id.get()), &f.reached, day);
                     if crate::core_rates::sampled(id) {
                         self.rates.realised(process, &h, &f.reached, ctx.calendar.date(day));
                     }

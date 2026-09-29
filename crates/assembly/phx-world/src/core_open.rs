@@ -143,6 +143,12 @@ impl Core {
             kinds.push(store);
             persons.push((place == HOUSEHOLD).then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK)));
         }
+        let happened = phx_core::EventStore::new(
+            &mut space,
+            crate::consts::EVENT_ROWS,
+            crate::consts::EVENT_ROWS_PER_CHUNK,
+            crate::consts::STORE_ARENA_WORDS,
+        );
         Core {
             space,
             household_pop,
@@ -178,6 +184,7 @@ impl Core {
             pop_days: Vec::new(),
             events: Vec::new(),
             events_today: Vec::new(),
+            happened,
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),

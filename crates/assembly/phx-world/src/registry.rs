@@ -462,6 +462,7 @@ struct Parts {
     own: Vec<(&'static str, OwnState)>,
     labour: Option<if_labour::kind::LabourKind>,
     state: crate::state::State,
+    news: phx_core::EventsRule,
 }
 
 fn parts(
@@ -474,12 +475,15 @@ fn parts(
     let own = own_states(&mut p, &geo)?;
     let labour = labour_kind(&p.d)?;
     let state = state_of(&p, &geo)?;
-    Ok(Parts { p, geo, own, labour, state })
+    let kinds: Vec<phx_core::EventKindDecl> = p.d.events.iter().map(|(_, e)| *e).collect();
+    let news = phx_core::EventsRule::new(p.kernel.public_events.shared(&p.c.register), &kinds)
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    Ok(Parts { p, geo, own, labour, state, news })
 }
 
 /// The world of its parts and its core, at the day given.
 fn world_of(parts: Parts, core: crate::core::Core, (today, seed): (phx_id::Day, u64)) -> World {
-    let Parts { p, geo, own, labour, .. } = parts;
+    let Parts { p, geo, own, labour, news, .. } = parts;
     let regions: Vec<CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
     let event_kinds = p.d.events.iter().map(|(_, e)| e.name).collect();
     let settling_years = p.kernel.opening.settling_years.shared(&p.c.register).get();
@@ -498,6 +502,7 @@ fn world_of(parts: Parts, core: crate::core::Core, (today, seed): (phx_id::Day, 
         processes: p.processes,
         labour,
         event_kinds,
+        news,
         regions,
         game: p.game,
         metrics: Metrics::default(),

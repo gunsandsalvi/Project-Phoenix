@@ -2926,6 +2926,11 @@ world on the phone. CI never runs the world.
   page from its point's input view and intent.
 - **The representation**: the inspector's pages show REP.15's report — the representation, its factor and its
   counts — beside every distributional number (N5).
+- **Events on the core** (OBS.3, CHN.4): each hazard's hit is recorded in the core's `EventStore` (`Core::happened`),
+  dated, its household the subject and each person it reached a detail of one person, beside the day's counts by kind;
+  at each close the world makes public, by the declared rule (`OBS.public_events`, compiled at assembly into the
+  world's `EventsRule`), each event of the day that the rule makes public. The store is saved with the core. LC-0-58
+  reads it.
 - **An agent's page** (OBS.8) shows the agent itself: its attributes, persons, positions and rows, and the recorded
   events that name it. Nothing is drawn to show it.
 - **The player** is an agent (REP.1, OBS.4) whose decider fact names the player. A queued intent is

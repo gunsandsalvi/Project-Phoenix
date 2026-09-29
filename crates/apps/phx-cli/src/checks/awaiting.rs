@@ -228,13 +228,6 @@ pub const LC_0_57: Check = live_check! {
     check: |_| Outcome::NotYet("awaits the player's party on the core (S1.24 h)"),
 };
 
-pub const LC_0_58: Check = live_check! {
-    id: "LC-0-58",
-    title: "every public event was made public by the declared rule, with a date and subjects",
-    from_step: "S0.26",
-    check: |_| Outcome::NotYet("awaits the public events on the core (S1.24 h)"),
-};
-
 pub const LC_0_61: Check = live_check! {
     id: "LC-0-61",
     title: "On sampled holders, every row due was read in the holder's run, and no head was later than its segment's earliest due day",

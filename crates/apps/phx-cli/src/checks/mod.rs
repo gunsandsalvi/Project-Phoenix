@@ -2,6 +2,7 @@ pub mod awaiting;
 pub mod core;
 pub mod geo;
 pub mod lives;
+pub mod observer;
 pub mod outlooks;
 pub mod saves;
 pub mod services;
@@ -130,7 +131,7 @@ pub const CHECKS: &[Check] = &[
     core::LC_0_55,
     core::LC_0_56,
     awaiting::LC_0_57,
-    awaiting::LC_0_58,
+    observer::LC_0_58,
     core::LC_0_59,
     core::LC_0_60,
     awaiting::LC_0_61,
