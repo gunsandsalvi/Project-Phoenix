@@ -13,7 +13,7 @@ declare_prim! {
 crate::declare_kind! {
     /// An estate: the members of a cell who end on one occasion, holding their count of what they held until it is
     /// sold and passed on.
-    pub ESTATE_KIND = "estate" { legal_form: "estate", table: Individuals, clause: "PTY.9" }
+    pub ESTATE_KIND = "estate" { legal_form: "estate", clause: "PTY.9" }
 }
 
 /// A kind of party, numbered at assembly in declaration order.
@@ -33,20 +33,12 @@ impl KindId {
     }
 }
 
-/// Where a kind's parties are rows: the kernel's table of its individuals, or the population's agent tables.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum KindTableRef {
-    Individuals,
-    Agents,
-}
-
-/// A kind of party, its legal form named from its country's declared forms, and where its parties are rows.
+/// A kind of party, its legal form named from its country's declared forms.
 #[clause("PTY.4")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct KindDecl {
     pub name: &'static str,
     pub legal_form: &'static str,
-    pub table: KindTableRef,
     pub clause: &'static str,
 }
 

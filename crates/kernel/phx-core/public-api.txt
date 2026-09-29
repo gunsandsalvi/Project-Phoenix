@@ -726,14 +726,10 @@ pub phx_core::kinds::Feature::IssuesCurrency
 pub phx_core::kinds::Feature::LimitedLiability
 pub phx_core::kinds::Feature::SeparateParty
 pub phx_core::kinds::Feature::TakesDeposits
-pub enum phx_core::kinds::KindTableRef
-pub phx_core::kinds::KindTableRef::Agents
-pub phx_core::kinds::KindTableRef::Individuals
 pub struct phx_core::kinds::KindDecl
 pub phx_core::kinds::KindDecl::clause: &'static str
 pub phx_core::kinds::KindDecl::legal_form: &'static str
 pub phx_core::kinds::KindDecl::name: &'static str
-pub phx_core::kinds::KindDecl::table: phx_core::kinds::KindTableRef
 #[repr(transparent)] pub struct phx_core::kinds::KindId(_)
 impl phx_core::kinds::KindId
 pub const fn phx_core::kinds::KindId::get(self) -> u16
@@ -1760,9 +1756,6 @@ impl phx_core::calendar::rules::HolidayRule
 pub fn phx_core::calendar::rules::HolidayRule::name(&self) -> &str
 pub enum phx_core::ItemKind
 pub phx_core::ItemKind::Fact(phx_core::facts::FactDecl)
-pub enum phx_core::KindTableRef
-pub phx_core::KindTableRef::Agents
-pub phx_core::KindTableRef::Individuals
 pub enum phx_core::Lag
 pub phx_core::Lag::Days(u16)
 pub phx_core::Lag::Months(u16)
@@ -2308,7 +2301,6 @@ pub struct phx_core::KindDecl
 pub phx_core::KindDecl::clause: &'static str
 pub phx_core::KindDecl::legal_form: &'static str
 pub phx_core::KindDecl::name: &'static str
-pub phx_core::KindDecl::table: phx_core::kinds::KindTableRef
 #[repr(transparent)] pub struct phx_core::KindId(_)
 impl phx_core::kinds::KindId
 pub const fn phx_core::kinds::KindId::get(self) -> u16

@@ -67,9 +67,6 @@ declare_prim! {
     }
 }
 
-/// The kinds of firm that hold plant.
-pub const HOLDERS: [&str; 2] = ["firm", "small_firm"];
-
 /// What the plant's handlers read, compiled once: the kinds, and each way's plant of each kind per unit of its output
 /// a year, by the way's identity, each country's ways in the products' order after the country before's, as the
 /// technology registers them.

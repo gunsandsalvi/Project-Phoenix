@@ -142,14 +142,26 @@ struct Prepared {
     register_hash: u128,
 }
 
-/// The population kinds the systems declare, each compiled from every system's items for it, with the processes on
-/// its persons.
+/// The population kinds, the kinds the systems declare items of their persons for, each compiled from every system's
+/// items for it, with the processes on its persons; items for a kind no system declares are refused.
 fn population_kinds(
     d: &mut Declarations,
     register: &phx_core::Register,
 ) -> Result<crate::pop_rules::Kinds, Vec<String>> {
-    let kinds: Vec<&'static str> =
-        d.kinds.iter().filter(|(_, k)| k.table == phx_core::KindTableRef::Agents).map(|(_, k)| k.name).collect();
+    let mut kinds: Vec<&'static str> = Vec::new();
+    for e in &d.pop {
+        if !kinds.contains(&e.kind) {
+            kinds.push(e.kind);
+        }
+    }
+    let undeclared: Vec<String> = kinds
+        .iter()
+        .filter(|k| !d.kinds.iter().any(|(_, decl)| decl.name == **k))
+        .map(|k| format!("population items for `{k}`, which no system declares a kind"))
+        .collect();
+    if !undeclared.is_empty() {
+        return Err(undeclared);
+    }
     let decls = phx_pop::kind::compile_kinds(&kinds, &d.pop)?;
     crate::pop_rules::bind(d, register, decls)
 }

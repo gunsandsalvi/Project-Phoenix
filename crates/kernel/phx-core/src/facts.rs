@@ -174,7 +174,7 @@ mod tests {
         }
     }
 
-    crate::declare_kind! { BANK = "bank" { legal_form: "bank", table: Individuals, clause: "BNK.1" } }
+    crate::declare_kind! { BANK = "bank" { legal_form: "bank", clause: "BNK.1" } }
 
     #[test]
     fn declarations_expand_to_their_items() {

@@ -14,7 +14,7 @@ pub mod zipf;
 use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
-declare_kind! { pub BANK = "bank" { legal_form: "bank", table: Individuals, clause: "BNK.1" } }
+declare_kind! { pub BANK = "bank" { legal_form: "bank", clause: "BNK.1" } }
 
 declare_stream! { pub OpeningStream = "BNK.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub AskedStream = "BNK.lenders_asked" { purpose: Meeting, keyed: false, clause: "BNK.6" } }

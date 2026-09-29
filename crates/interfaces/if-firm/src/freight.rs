@@ -5,6 +5,6 @@ use phx_core::declare_fact;
 declare_fact! {
     /// The mode a carrier's vehicles run on, by the network's modes' places.
     pub Mode = "FRT.mode" {
-        value: Count, kinds: ["firm", "small_firm"], writer: "FRT", audience: Public, repr: Position, clause: "FRT.1",
+        value: Count, kinds: ["firm"], writer: "FRT", audience: Public, repr: Position, clause: "FRT.1",
     }
 }

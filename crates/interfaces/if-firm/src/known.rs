@@ -8,28 +8,28 @@ use crate::consts::{INDUSTRIES, PRODUCTS, WAY_SETS};
 declare_fact! {
     /// The industry whose products the firm makes, an index of the industries the products declare.
     pub Industry = "FRM.industry" {
-        value: Type, kinds: ["firm", "small_firm"], writer: "FRM", audience: Public, repr: Key, clause: "TEC.4",
+        value: Type, kinds: ["firm"], writer: "FRM", audience: Public, repr: Key, clause: "TEC.4",
     }
 }
 
 declare_fact! {
     /// The product the firm makes and sells, an index of the products: one of its industry's.
     pub Product = "FRM.product" {
-        value: Type, kinds: ["firm", "small_firm"], writer: "FRM", audience: Public, repr: Key, clause: "FRM.1",
+        value: Type, kinds: ["firm"], writer: "FRM", audience: Public, repr: Key, clause: "FRM.1",
     }
 }
 
 declare_fact! {
     /// The set of ways the firm knows, an identity of the technology's interned sets.
     pub Known = "TEC.known" {
-        value: Count, kinds: ["firm", "small_firm"], writer: "TEC", audience: Party, repr: Key, clause: "TEC.4",
+        value: Count, kinds: ["firm"], writer: "TEC", audience: Party, repr: Key, clause: "TEC.4",
     }
 }
 
 declare_fact! {
     /// The way the firm makes its product by, an identity of the technology's ways.
     pub WayUsed = "TEC.way" {
-        value: Count, kinds: ["firm", "small_firm"], writer: "TEC", audience: Party, repr: Key, clause: "TEC.4",
+        value: Count, kinds: ["firm"], writer: "TEC", audience: Party, repr: Key, clause: "TEC.4",
     }
 }
 

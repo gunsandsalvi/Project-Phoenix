@@ -12,7 +12,7 @@ use phx_num::{Count, Fixed};
 
 pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, StatePension};
 
-declare_kind! { pub AGENCY = "agency" { legal_form: "public agency", table: Individuals, clause: "SOC.2" } }
+declare_kind! { pub AGENCY = "agency" { legal_form: "public agency", clause: "SOC.2" } }
 
 declare_prim! {
     /// Each occupation's share of its employed working in public administration, whose staff the public agencies are.

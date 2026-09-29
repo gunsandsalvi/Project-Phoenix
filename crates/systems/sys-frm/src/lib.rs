@@ -14,8 +14,7 @@ use phx_core::register::values::Table2;
 use phx_core::{AttrDecl, Declarations, FactDef, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
-declare_kind! { pub FIRM = "firm" { legal_form: "company", table: Individuals, clause: "FRM.1" } }
-declare_kind! { pub SMALL_FIRM = "small_firm" { legal_form: "company", table: Agents, clause: "FRM.23" } }
+declare_kind! { pub FIRM = "firm" { legal_form: "company", clause: "FRM.1" } }
 
 declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub SmallStream = "FRM.opening_small" { purpose: Opening, keyed: false, clause: "GEN.3" } }
