@@ -76,13 +76,10 @@ VA_SECTIONS = {
     "public administration": ["O"],
 }
 
-SECTORS = ["households", "firms", "banks", "central bank", "government"]
-H, F, B, C, G = range(len(SECTORS))
-INSTRUMENTS = ["currency", "deposits", "loans to households", "loans to firms", "firms' bonds",
-               "government paper", "reserves", "central bank loans to banks", "banks' bonds", "banks' equity",
-               "firms' equity"]
-REAL = [f"plant: {a[0]}" for a in tec.ASSETS] + ["inventories", "firms' land", "dwellings", "households' land",
-                                                  "government's fixed assets"]
+# GEN.holdings' places and GEN.real_assets', in the order phx-world's consts::sheet reads them.
+HOLDINGS = ["currency", "currency_households", "deposits_households", "deposits_firms", "firm_debt_loans",
+            "government_paper_banks"]
+MEASURED = ["inventories", "firms_land", "dwellings", "households_land", "government_fixed"]
 OECD_DWELLINGS, OECD_LAND, OECD_INVENTORIES = "N111N", "N211N", "N12N"
 OECD_FIXED = ["N111N", "N112N", "N11MN", "N115N", "N117N"]
 # ISCO-08 major groups, 0 the armed forces.
@@ -399,86 +396,32 @@ def group_median(frame: pd.DataFrame, column: str, members: list, developed: lis
     return value, note
 
 
-def group_stocks(level: str, members: list, developed: list, plant: np.ndarray) -> dict:
+def group_stocks(level: str, members: list, developed: list) -> dict:
+    """The group's holdings and measured real assets: the currency's level and who holds what, each the group's
+    median. The levels a country draws — its debts, deposits and banks' ratios — and the plant its ways need are its
+    own, and the opening closes the rest (phx-world's opening::sheet)."""
     b = broad().join(splits(*sector_accounts()), how="outer")
     val, notes = {}, {}
-    for col in ["currency", "deposits", "household_debt", "firm_debt", "government_debt", "reserves_to_assets",
-                "capital_to_assets", "currency_households", "deposits_households", "deposits_firms",
-                "firm_debt_loans", "government_paper_banks"]:
+    for col in ["currency", "currency_households", "deposits_households", "deposits_firms", "firm_debt_loans",
+                "government_paper_banks"]:
         val[col], notes[col] = group_median(b, col, members, developed)
     for col in ["dwellings", "households_land", "inventories", "firms_land", "government_fixed"]:
         val[col], notes[col] = group_median(b, col, members, developed, scale_by="structures")
-    m = np.zeros((len(INSTRUMENTS), len(SECTORS)))
-    r = {k: i for i, k in enumerate(INSTRUMENTS)}
-    cur, dep = val["currency"], val["deposits"]
-    m[r["currency"], [H, F, C]] = [cur * val["currency_households"], cur * (1 - val["currency_households"]), -cur]
-    dep_g = dep * max(0.0, 1.0 - val["deposits_households"] - val["deposits_firms"])
-    m[r["deposits"], [H, F, G, B]] = [dep * val["deposits_households"], dep * val["deposits_firms"], dep_g,
-                                      -(dep * (val["deposits_households"] + val["deposits_firms"]) + dep_g)]
-    deposits = -m[r["deposits"], B]
-    loans_h, debt_f = val["household_debt"], val["firm_debt"]
-    loans_f = debt_f * val["firm_debt_loans"]
-    bonds_f = debt_f - loans_f
-    m[r["loans to households"], [B, H]] = [loans_h, -loans_h]
-    m[r["loans to firms"], [B, F]] = [loans_f, -loans_f]
-    m[r["firms' bonds"], [H, F]] = [bonds_f, -bonds_f]
-    gov = val["government_debt"]
-    paper_b = gov * val["government_paper_banks"]
-    # Banks' reserves are their ratio of what they lend and hold, reserves included.
-    lent = loans_h + loans_f + paper_b
-    reserves = lent * val["reserves_to_assets"] / (1 - val["reserves_to_assets"])
-    # The central bank holds government paper for its currency and reserves, and lends banks what paper cannot cover.
-    paper_c = min(cur + reserves, gov - paper_b)
-    cb_loans = cur + reserves - paper_c
-    paper_h = gov - paper_b - paper_c
-    assets_b = lent + reserves
-    equity_b = assets_b * val["capital_to_assets"]
-    bonds_b = assets_b - deposits - equity_b - cb_loans
-    if bonds_b < 0:
-        # Deposits beyond what banks lend are held as more government paper, taken from households'.
-        extra = min(-bonds_b, paper_h)
-        paper_b, paper_h = paper_b + extra, paper_h - extra
-        assets_b += extra
-        equity_b = assets_b * val["capital_to_assets"]
-        reserves = (lent + extra) * val["reserves_to_assets"] / (1 - val["reserves_to_assets"])
-        assets_b = lent + extra + reserves
-        paper_c = min(cur + reserves, gov - paper_b)
-        cb_loans = cur + reserves - paper_c
-        paper_h = gov - paper_b - paper_c
-        equity_b = assets_b * val["capital_to_assets"]
-        bonds_b = assets_b - deposits - equity_b - cb_loans
-    if bonds_b < -1e-12 or paper_h < -1e-12:
-        fail(f"{level}: banks' or households' government paper below nothing ({bonds_b}, {paper_h})")
-    m[r["government paper"], [H, B, C, G]] = [paper_h, paper_b, paper_c, -gov]
-    m[r["reserves"], [B, C]] = [reserves, -reserves]
-    m[r["central bank loans to banks"], [C, B]] = [cb_loans, -cb_loans]
-    m[r["banks' bonds"], [H, B]] = [bonds_b, -bonds_b]
-    m[r["banks' equity"], [H, B]] = [equity_b, -equity_b]
-    real = np.zeros((len(REAL), len(SECTORS)))
-    real[:len(tec.ASSETS), F] = plant
-    real[REAL.index("inventories"), F] = val["inventories"]
-    real[REAL.index("firms' land"), F] = val["firms_land"]
-    real[REAL.index("dwellings"), H] = val["dwellings"]
-    real[REAL.index("households' land"), H] = val["households_land"]
-    real[REAL.index("government's fixed assets"), G] = val["government_fixed"]
-    firm_worth = real[:, F].sum() + m[:, F].sum()
-    if firm_worth < 0:
-        fail(f"{level}: firms owe more than they hold ({firm_worth})")
-    m[r["firms' equity"], [H, F]] = [firm_worth, -firm_worth]
-    return {"financial": m, "real": real, "notes": notes, "values": val}
+    return {"values": val, "notes": notes}
 
 
 def check_stocks(level: str, s: dict) -> None:
-    """Each instrument's assets are its liabilities; firms and the central bank are worth nothing beyond their
-    equity; a sector's net worth is its assets less its liabilities."""
-    tol = 10.0 ** -(EXP - 3)
-    rows = np.abs(s["financial"].sum(axis=1))
-    if rows.max() > tol:
-        fail(f"{level}: an instrument's assets are not its liabilities: {INSTRUMENTS[int(rows.argmax())]}")
-    worth = s["financial"].sum(axis=0) + s["real"].sum(axis=0)
-    for sector in (F, B, C):
-        if abs(worth[sector]) > tol:
-            fail(f"{level}: {SECTORS[sector]} worth {worth[sector]} beyond their equity")
+    """Each part of the holdings is a share of its whole, households and firms hold no more than the deposits, and no
+    real asset is below nothing."""
+    v = s["values"]
+    for col in HOLDINGS[1:]:
+        if not 0.0 <= v[col] <= 1.0:
+            fail(f"{level}: {col} {v[col]} is no share")
+    if v["deposits_households"] + v["deposits_firms"] > 1.0:
+        fail(f"{level}: households and firms hold more than the deposits")
+    for col in MEASURED:
+        if v[col] < 0.0:
+            fail(f"{level}: {col} {v[col]} below nothing")
 
 
 # ---------------------------------------------------------------------------------------------------------------
@@ -578,38 +521,37 @@ def write(level: str, members: dict, f: dict, s: dict, m: dict) -> None:
     profile_files.put_text(level, "\n".join(lines) + "\n")
     notes = s["notes"]
     oecd = m["sources"].get("oecd_sectors", {})
-    src = (f"IMF currency in circulation (MFS) over GDP, {notes['currency']}; World Bank GFDD bank deposits "
-           f"(GFDD.OI.02), {notes['deposits']}; IMF Global Debt Database household (HH_LS), {notes['household_debt']}, "
-           f"and firm debt (NFC_LS), {notes['firm_debt']}; IMF World Economic Outlook government debt (GGXWDG_NGDP), "
-           f"{notes['government_debt']}; World Bank bank liquid reserves to assets (FD.RES.LIQU.AS.ZS), "
-           f"{notes['reserves_to_assets']}, and bank capital to assets (FB.BNK.CAPA.ZS), {notes['capital_to_assets']}; "
-           f"who holds them from the OECD's financial balance sheets (Table 720, {YEAR}, fetched {oecd.get('fetched')}): "
-           f"households' part of currency {notes['currency_households']}, of deposits {notes['deposits_households']}, "
-           f"firms' {notes['deposits_firms']}, the government the rest; firms' debt in loans {notes['firm_debt_loans']}, "
-           f"the rest bonds; banks' part of government paper {notes['government_paper_banks']}; each observation "
-           f"{YEAR}'s or the nearest within {NEAR_YEARS} years")
+    src = (f"IMF currency in circulation (MFS) over GDP, {notes['currency']}; who holds what from the OECD's "
+           f"financial balance sheets (Table 720, {YEAR}, fetched {oecd.get('fetched')}): households' part of currency "
+           f"{notes['currency_households']}, firms the rest; of deposits {notes['deposits_households']}, firms' "
+           f"{notes['deposits_firms']}, the government the rest; firms' debt in loans {notes['firm_debt_loans']}, the "
+           f"rest bonds; banks' part of government paper {notes['government_paper_banks']}; each observation {YEAR}'s "
+           f"or the nearest within {NEAR_YEARS} years")
     closures = ("The central bank holds government paper for its currency and reserves and lends banks what the paper "
                 "cannot cover; banks hold reserves at their ratio of what they lend and hold, their equity at their "
                 "capital ratio of their assets, and bonds, held by households, that balance them, holding more "
                 "government paper where deposits exceed what they lend; firms' equity, held by households, is their "
                 "assets less their debts; households hold the rest of each instrument.")
-    lines = [f"# The {level} group's balance sheets at the end of {YEAR} in shares of its GDP (spec GEN.15, GEN.4),",
+    v = s["values"]
+    lines = [f"# The {level} group's holdings and real assets at the end of {YEAR} in shares of its GDP (spec GEN.15),",
              "# derived by tools/data/derive_economy.py; never edited by hand."]
     lines += primitive(
-        "GEN.balance_sheet", "GEN", "ENDOWMENT", "measured",
-        f"Each sector's (columns: {'; '.join(f'{i} {x}' for i, x in enumerate(SECTORS))}) holdings of each "
-        f"instrument (rows: {'; '.join(f'{i} {x}' for i, x in enumerate(INSTRUMENTS))}) over GDP, assets positive "
-        f"and liabilities negative, each row summing to nothing: {src}. {closures}",
-        matrix(len(INSTRUMENTS), len(SECTORS), s["financial"]))
+        "GEN.holdings", "GEN", "ENDOWMENT", "measured",
+        f"The currency in circulation over GDP and who holds what (axis: "
+        f"{'; '.join(f'{i} {x}' for i, x in enumerate(HOLDINGS))}): "
+        f"{src}. The levels a country draws (its households', firms' and government's debt, its banks' deposits, "
+        f"capital and reserves) and its firms' plant are its own; the opening closes the rest: {closures}",
+        axis(np.array([v[c] for c in HOLDINGS])))
     lines += primitive(
         "GEN.real_assets", "GEN", "ENDOWMENT", "measured",
-        f"Each sector's (columns as GEN.balance_sheet's) real assets (rows: {'; '.join(f'{i} {x}' for i, x in enumerate(REAL))}) "
-        f"over GDP, net, at current prices: the firms' plant by kind their stocks (CAP.stock_per_gdp); their "
-        f"inventories {notes['inventories']}, and land {notes['firms_land']}; households' dwellings {notes['dwellings']} "
-        f"and land {notes['households_land']}; the government's fixed assets {notes['government_fixed']}; from the "
-        f"OECD's balance sheets for non-financial assets (Table 9B, {YEAR}), a group with too few reporters scaled by "
-        f"its Penn World Table structures per unit of GDP over the developed group's.",
-        matrix(len(REAL), len(SECTORS), s["real"]))
+        f"The real assets measured apart from plant, over GDP, net, at current prices (axis: "
+        f"{'; '.join(f'{i} {x}' for i, x in enumerate(MEASURED))}): "
+        f"firms' inventories {notes['inventories']} and land {notes['firms_land']}; households' dwellings "
+        f"{notes['dwellings']} and land {notes['households_land']}; the government's fixed assets "
+        f"{notes['government_fixed']}; from the OECD's balance sheets for non-financial assets (Table 9B, {YEAR}), a "
+        f"group with too few reporters scaled by its Penn World Table structures per unit of GDP over the developed "
+        f"group's. Firms' plant is what their ways need for the accounts' output, computed where it is read.",
+        axis(np.array([v[c] for c in MEASURED])))
     profile_files.put_text(level, "\n".join(lines) + "\n")
 
 
@@ -651,16 +593,15 @@ def main() -> None:
         members = {c: e for c, e in economies.items() if levels.get(c) == level}
         f = group_flows(level, members, levels)
         check_flows(level, f)
-        plant = np.array(profile_files.get(level, "CAP.stock_per_gdp")["values"], dtype=float)
-        s = group_stocks(level, [c for c, lv in levels.items() if lv == level], developed, plant)
+        s = group_stocks(level, [c for c, lv in levels.items() if lv == level], developed)
         check_stocks(level, s)
-        profile_files.retire(level, ["GEN.output", "GEN.value_added", "GEN.final_uses", "HH.budget_shares"])
+        profile_files.retire(level, ["GEN.output", "GEN.value_added", "GEN.final_uses", "HH.budget_shares",
+                                     "GEN.balance_sheet", "CAP.stock_per_gdp"])
         write(level, members, f, s, m)
         check_shapes(level, spread[level], pay[level])
         write_shapes(level, spread[level], pay[level], economies_paid[level], m)
-        worth = s["financial"].sum(axis=0) + s["real"].sum(axis=0)
         print(f"{level}: output {f['output'].sum():.3f} GDP, compensation {f['split'][:, 0].sum():.3f}, "
-              f"households' worth {worth[H]:.3f}, government's {worth[G]:.3f}")
+              f"currency {s['values']['currency']:.3f} GDP")
 
 
 if __name__ == "__main__":

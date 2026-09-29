@@ -69,6 +69,47 @@ pub struct Plant {
     reviewed: BTreeMap<PartyKey, (i64, i64)>,
 }
 
+/// A kind's steady-path classes at a growth rate: each class's weight, newest first, and the efficient units a unit
+/// held of that spread yields; what a unit of need is worth follows, each class's units at its share of cost new.
+fn steady_path(kind: &sys_cap::kinds::Kind, classes: usize, growth: f64) -> (Vec<f64>, f64, f64) {
+    let weights = sys_cap::rules::wear::steady_weights(classes, kind.life, growth);
+    let per_efficient: f64 = weights.iter().zip(kind.efficiencies(classes)).map(|(w, e)| w * e).sum();
+    let worth: f64 = weights.iter().zip(kind.values(classes)).map(|(w, v)| w * v).sum::<f64>() / per_efficient;
+    (weights, per_efficient, worth)
+}
+
+/// Each kind's plant a country's firms hold at the opening, over its GDP: what their ways need for the accounts'
+/// output, held at the steady path of the country's growth and valued at the price of the product the kind is bought
+/// as — the plant the opening gives each firm, summed.
+///
+/// # Errors
+/// The accounts or a drawn growth the plant reads missing.
+#[clause("CAP.1", "GEN.5", "GEN.15")]
+pub(crate) fn opening_plant(
+    cap: &sys_cap::CapOwn,
+    register: &phx_core::Register,
+    (c, index): (&OpeningCountry, usize),
+) -> Result<Vec<f64>, String> {
+    let snap = crate::core_firms::snapshot(register, c)?;
+    let growth = c.derived("GEN.growth").ok_or("no drawn `GEN.growth`")? / PERCENT;
+    let classes = cap.kinds.classes;
+    let products = snap.units.len();
+    let mut plant = vec![0.0; cap.kinds.kinds.len()];
+    for (p, units) in snap.units.iter().enumerate() {
+        for (kind, per) in cap.needs.get(index * products + p).into_iter().flatten() {
+            let (Some(k), Some(bought)) = (cap.kinds.kinds.get(*kind), cap.bought_as.get(*kind)) else {
+                return Err(format!("plant of kind {kind} the kinds do not hold"));
+            };
+            let price = snap.price.get(usize::from(*bought)).copied().unwrap_or(f64::NAN);
+            let (_, _, worth) = steady_path(k, classes, growth);
+            if let Some(v) = plant.get_mut(*kind) {
+                *v += per * units * worth * price / c.gdp;
+            }
+        }
+    }
+    Ok(plant)
+}
+
 impl Core {
     /// Each firm's plant at the opening: of each kind its way needs, its output a year times the way's plant of the
     /// kind a unit in efficient units, spread over the classes as a stock grown at its country's growth since its
@@ -134,8 +175,7 @@ impl Core {
                 let product = self.plant.bought_as.get(kind).copied().ok_or("a kind bought as no product")?;
                 let price = prices.get(f.country).and_then(|p| p.get(usize::from(product))).copied().unwrap_or(0.0);
                 let g = growth.get(f.country).copied().unwrap_or(0.0);
-                let weights = sys_cap::rules::wear::steady_weights(classes, k.life, g);
-                let per_efficient: f64 = weights.iter().zip(&chain.efficiency).map(|(w, e)| w * e).sum();
+                let (weights, per_efficient, _) = steady_path(k, classes, g);
                 let need = per * f.output;
                 let kind16 = u16::try_from(kind).map_err(|e| e.to_string())?;
                 let newest = Class { kind: kind16, band: 0, condition: 0, zone: f.region };

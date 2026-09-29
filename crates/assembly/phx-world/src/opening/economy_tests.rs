@@ -35,7 +35,7 @@ fn register_refuses_unbalanced_dataset() {
         real: vec![vec![0.0, 0.4, 0.0, 0.0, 0.0]],
     };
     let breaks = stocks_breaks(&stocks, UNIT);
-    assert!(breaks.iter().any(|b| b.starts_with("GEN.balance_sheet: instrument 1")), "{breaks:?}");
+    assert!(breaks.iter().any(|b| b.starts_with("the sheet: instrument 1")), "{breaks:?}");
     assert!(breaks.iter().any(|b| b.contains("sector 2")), "banks worth what their unmatched deposits leave");
 }
 

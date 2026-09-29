@@ -443,7 +443,7 @@ def write_level(level: str, members: dict, m: dict) -> None:
            if own_capital else
            "The OECD reports the stocks of no economy of the group, so each section's stock per unit of value added is "
            "the developed economies' median scaled, kind by kind, by the group's stock of each Penn World Table asset "
-           "per unit of GDP over the developed group's (as CAP.stock_per_gdp's note gives)."),
+           "per unit of GDP over the developed group's."),
         table2(range(len(ASSETS)), capital))
     lines += primitive(
         "TEC.land", thin(len(members)),

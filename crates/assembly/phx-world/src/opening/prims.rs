@@ -96,16 +96,18 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// Each sector's holdings of each financial instrument over GDP, assets positive and liabilities negative.
-    pub BALANCE_SHEET = "GEN.balance_sheet" {
-        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    /// The currency in circulation over GDP, households' part of it, households' and firms' parts of the deposits, the
+    /// part of firms' debt borrowed from banks, and banks' part of the government's paper.
+    pub HOLDINGS = "GEN.holdings" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
     }
 }
 
 declare_prim! {
-    /// Each sector's real assets over GDP.
+    /// The real assets measured apart from plant, over GDP: firms' inventories and land, households' dwellings and
+    /// land, the government's fixed assets.
     pub REAL_ASSETS = "GEN.real_assets" {
-        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
     }
 }
 
@@ -157,8 +159,8 @@ pub struct GenPrims {
     pub value_added_parts: Prim<Table2>,
     pub final_weights: Prim<Table1>,
     pub final_composition: Prim<Table2>,
-    pub balance_sheet: Prim<Table2>,
-    pub real_assets: Prim<Table2>,
+    pub holdings: Prim<Table1>,
+    pub real_assets: Prim<Table1>,
     pub productivity_spread: Prim<Fixed<2>>,
     pub occupation_pay: Prim<Table1>,
 }
@@ -185,7 +187,7 @@ impl GenPrims {
             value_added_parts: d.prim(&VALUE_ADDED_PARTS),
             final_weights: d.prim(&FINAL_WEIGHTS),
             final_composition: d.prim(&FINAL_COMPOSITION),
-            balance_sheet: d.prim(&BALANCE_SHEET),
+            holdings: d.prim(&HOLDINGS),
             real_assets: d.prim(&REAL_ASSETS),
             productivity_spread: d.prim(&PRODUCTIVITY_SPREAD),
             occupation_pay: d.prim(&OCCUPATION_PAY),

@@ -169,6 +169,25 @@ pub mod sheet {
     pub const FIRMS_EQUITY: usize = 10;
     pub const INSTRUMENTS: usize = 11;
     pub const SECTORS: usize = 5;
+    /// `GEN.holdings`' places: the currency over GDP, households' part of it, households' and firms' parts of the
+    /// deposits, the part of firms' debt borrowed from banks, and banks' part of the government's paper.
+    pub mod holdings {
+        pub const CURRENCY: usize = 0;
+        pub const CURRENCY_HOUSEHOLDS: usize = 1;
+        pub const DEPOSITS_HOUSEHOLDS: usize = 2;
+        pub const DEPOSITS_FIRMS: usize = 3;
+        pub const FIRM_DEBT_LOANS: usize = 4;
+        pub const GOVERNMENT_PAPER_BANKS: usize = 5;
+    }
+    /// `GEN.real_assets`' places, the real assets measured apart from plant.
+    pub mod real {
+        pub const INVENTORIES: usize = 0;
+        pub const FIRMS_LAND: usize = 1;
+        pub const DWELLINGS: usize = 2;
+        pub const HOUSEHOLDS_LAND: usize = 3;
+        pub const GOVERNMENT_FIXED: usize = 4;
+        pub const MEASURED: usize = 5;
+    }
 }
 /// A percentage's whole.
 pub const PERCENT: f64 = 100.0;

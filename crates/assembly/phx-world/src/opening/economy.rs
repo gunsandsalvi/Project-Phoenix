@@ -1,6 +1,6 @@
-//! The opening dataset's identities, checked at assembly: a country group's flows and stocks, each in shares of its
-//! GDP, must balance before anything is drawn from them, and a dataset that does not is refused, naming the primitive
-//! and the residue. Every number is stored to a declared number of places, so a sum of stored numbers may miss by
+//! The opening dataset's identities, checked at assembly: a country group's flows, in shares of its GDP, must balance
+//! before anything is drawn from them, and a dataset that does not is refused, naming the primitive and the residue;
+//! each country's stocks are checked as its sheet is closed. Every number is stored to a declared number of places, so a sum of stored numbers may miss by
 //! the rounding of its terms and no more.
 
 use phx_core::Register;
@@ -98,13 +98,13 @@ pub fn stocks_breaks(s: &Stocks, unit: f64) -> Vec<String> {
         let residue: f64 = row.iter().sum();
         let size = row.iter().fold(0.0_f64, |a, v| if v.abs() > a { v.abs() } else { a });
         if residue.is_nan() || residue.abs() > slack(row.len(), size, unit) {
-            out.push(format!("GEN.balance_sheet: instrument {r}'s assets miss its liabilities by {residue}"));
+            out.push(format!("the sheet: instrument {r}'s assets miss its liabilities by {residue}"));
         }
     }
     for sector in SECTORS_WORTH_NOTHING {
         let worth: f64 = s.financial.iter().chain(&s.real).map(|row| at(row, sector)).sum();
         if worth.is_nan() || worth.abs() > slack(s.financial.len() + s.real.len(), 1.0, unit) {
-            out.push(format!("GEN.balance_sheet: sector {sector} is worth {worth} beyond its equity"));
+            out.push(format!("the sheet: sector {sector} is worth {worth} beyond its equity"));
         }
     }
     out
@@ -224,21 +224,33 @@ pub fn accounts(register: &Register, country: CountryId) -> Result<(Flows, f64),
     Ok((Flows { output, inputs, taxes, added, finals }, unit))
 }
 
-/// The dataset's cross-primitive identities: firms' plant is CAP's stock, and no activity's output or value added is
-/// below nothing.
-fn cross_breaks(register: &Register, country: CountryId, s: &Stocks, f: &Flows) -> Result<Vec<String>, String> {
+/// What the accounts must hold beyond their identities: no activity's output or value added below nothing, every part
+/// of the holdings a share of its whole, and no real asset below nothing.
+fn level_breaks(register: &Register, country: CountryId, f: &Flows) -> Result<Vec<String>, String> {
     let mut out = Vec::new();
-    let (plant, unit) = table(register, "CAP.stock_per_gdp", country)?;
-    for (k, v) in plant.into_iter().next().unwrap_or_default().iter().enumerate() {
-        let firms = cell(&s.real, k, SECTORS_WORTH_NOTHING.first().copied().unwrap_or(usize::MAX));
-        if (firms - v).is_nan() || (firms - v).abs() > slack(2, *v, unit) {
-            out.push(format!("GEN.real_assets: firms' plant of kind {k}, {firms}, is not CAP.stock_per_gdp's {v}"));
-        }
-    }
     for (j, x) in f.output.iter().enumerate() {
         let va: f64 = f.added.get(j).map_or(f64::NAN, |r| r.iter().sum());
         if x.is_nan() || *x < 0.0 || va.is_nan() || va < 0.0 {
             out.push(format!("GEN.final_composition: activity {j}'s output {x} or value added {va} is below nothing"));
+        }
+    }
+    let held = row(register, "GEN.holdings", country)?;
+    for (i, v) in held.iter().enumerate().skip(1) {
+        if v.is_nan() || *v < 0.0 || *v > 1.0 {
+            out.push(format!("GEN.holdings: part {i}, {v}, is no share of its whole"));
+        }
+    }
+    let deposits: f64 =
+        [crate::consts::sheet::holdings::DEPOSITS_HOUSEHOLDS, crate::consts::sheet::holdings::DEPOSITS_FIRMS]
+            .iter()
+            .map(|i| at(&held, *i))
+            .sum();
+    if deposits > 1.0 {
+        out.push(format!("GEN.holdings: households and firms hold {deposits} of the deposits"));
+    }
+    for (i, v) in row(register, "GEN.real_assets", country)?.iter().enumerate() {
+        if v.is_nan() || *v < 0.0 {
+            out.push(format!("GEN.real_assets: asset {i}, {v}, below nothing"));
         }
     }
     Ok(out)
@@ -256,12 +268,8 @@ pub fn check(register: &Register, countries: usize) -> Result<(), Vec<String>> {
         let country = CountryId::new(id);
         let read = || -> Result<Vec<String>, String> {
             let (flows, unit) = accounts(register, country)?;
-            let (financial, _) = table(register, "GEN.balance_sheet", country)?;
-            let (real, _) = table(register, "GEN.real_assets", country)?;
-            let stocks = Stocks { financial, real };
             let mut breaks = flows_breaks(&flows, unit);
-            breaks.extend(stocks_breaks(&stocks, unit));
-            breaks.extend(cross_breaks(register, country, &stocks, &flows)?);
+            breaks.extend(level_breaks(register, country, &flows)?);
             Ok(breaks)
         };
         match read() {

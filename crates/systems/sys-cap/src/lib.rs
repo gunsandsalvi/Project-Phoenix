@@ -60,13 +60,6 @@ declare_prim! {
     pub REVIEW_DAYS = "CAP.review_days" { kind: Preference, value: Count, clause: "CAP.13", scope: Shared }
 }
 
-declare_prim! {
-    /// Each kind's net stock per unit of GDP at the opening.
-    pub STOCK_PER_GDP = "CAP.stock_per_gdp" {
-        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
-    }
-}
-
 /// What the plant's handlers read, compiled once: the kinds, and each way's plant of each kind per unit of its output
 /// a year, by the way's identity, each country's ways in the products' order after the country before's, as the
 /// technology registers them.
@@ -156,7 +149,6 @@ impl System for Cap {
         let _ = d.prim::<Table1>(&LEAD_DAYS);
         let _ = d.prim::<Table1>(&BOUGHT_AS);
         let _ = d.prim::<Count>(&REVIEW_DAYS);
-        let _ = d.prim::<Table1>(&STOCK_PER_GDP);
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
         d.decision(&points::INVEST);

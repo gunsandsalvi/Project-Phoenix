@@ -323,26 +323,6 @@ def write_kinds(m: dict) -> None:
     (SHARED / "CAP_kinds.toml").write_text("\n".join(lines) + "\n")
 
 
-def stock_ratios() -> dict:
-    """Each reporting economy's net stock of each kind in the firms' sections over its whole gross value added."""
-    k = pd.read_csv(RAW / "oecd" / "fixed_assets_by_activity.csv")
-    v = pd.read_csv(RAW / "oecd" / "value_added_by_activity.csv")
-    k, v = k[k.year <= YEAR], v[v.year <= YEAR]
-    out = {}
-    for iso3, g in k.groupby("iso3"):
-        vg = v[(v.iso3 == iso3) & (v.activity == "_T")]
-        years = set(g.year) & set(vg.year)
-        if not years:
-            continue
-        year = max(years)
-        g, total = g[(g.year == year) & g.activity.isin(FIRM_SECTIONS)], float(vg[vg.year == year].value.sum())
-        stock = g.groupby("item").value.sum()
-        if total <= 0 or not all(a in stock.index for a in ASSETS):
-            continue
-        out[iso3] = np.array([stock[a] / total for a in ASSETS])
-    return out
-
-
 # Each kind's Penn World Table asset: structures and transport equipment their own, ICT and other machinery its
 # machinery, cultivated assets and intellectual property its other assets.
 PWT_OF_KIND = ["Nc_Struc", "Nc_TraEq", "Nc_Mach", "Nc_Mach", "Nc_Other", "Nc_Other"]
@@ -362,45 +342,9 @@ def pwt_scale(level: str) -> tuple:
     return scale, int((d.level == level).sum()), int((d.level == "developed").sum())
 
 
-def write_levels(m: dict) -> None:
-    ratios = stock_ratios()
-    c = pd.read_csv(RAW / "wb" / "countries.csv").set_index("iso3").income_group.map(LEVELS).dropna()
-    oecd = m["sources"]["oecd_nad"]
-    developed = [r for iso3, r in ratios.items() if c.get(iso3) == "developed"]
-    for level in sorted(set(LEVELS.values())):
-        own = {iso3: r for iso3, r in ratios.items() if c.get(iso3) == level}
-        if own:
-            values = np.median(np.stack(list(own.values())), axis=0)
-            source = "measured" if len(own) >= MIN_COUNTRIES else "estimated"
-            who = f"the median over the {len(own)} economies of the group the OECD reports ({', '.join(sorted(own))})"
-        else:
-            scale, n, n_dev = pwt_scale(level)
-            values = np.median(np.stack(developed), axis=0) * scale
-            source = "estimated"
-            pwt = m["sources"]["pwt"]
-            who = (f"the OECD reports no economy of the group, so the developed group's median over {len(developed)} "
-                   f"economies is scaled, kind by kind, by the group's median stock per unit of GDP over the developed "
-                   f"group's in the Penn World Table's assets (structures, transport equipment, machinery for ICT and "
-                   f"other machinery, other assets for cultivated assets and intellectual property; {n} and {n_dev} "
-                   f"economies, current national prices, the latest year to {YEAR}; {pwt['title']}, fetched "
-                   f"{pwt['fetched']}): " + ", ".join(f"{x:.3f}" for x in scale))
-        lines = [f"# The {level} group's stock of plant (spec CAP.1, GEN.2), derived by tools/data/derive_cap.py; never",
-                 "# edited by hand."]
-        lines += ["", "[[primitive]]", 'id = "CAP.stock_per_gdp"', 'kind = "ENDOWMENT"', 'owner = "CAP"',
-                  f'source = "{source}"',
-                  "source_ref = " + json.dumps(
-                      "Each kind's net stock (axis: " + ", ".join(KINDS) + ") per unit of GDP: the closing net stock "
-                      "at current prices of the sections the firms work in (ISIC A to J, M, N, P to S) over all gross "
-                      f"value added, OECD Table 9A over Table 6 in national currency, the latest year to {YEAR} "
-                      f"({oecd['title']}, fetched {oecd['fetched']}); {who}."),
-                  f"value = {table1(list(values))}"]
-        profile_files.put_text(level, "\n".join(lines) + "\n")
-
-
 def main() -> None:
     m = manifest()
     write_kinds(m)
-    write_levels(m)
 
 
 if __name__ == "__main__":

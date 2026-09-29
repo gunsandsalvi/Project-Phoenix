@@ -435,10 +435,10 @@ status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<l
 
 [[row]]
 id = "GEN.stocks"
-what = "the balance-sheet matrix: each sector's financial instruments and real assets"
+what = "the balance sheet's primitives: the currency and who holds what, and the real assets measured apart from plant; the sheet closed per country from its drawn levels and its firms' plant"
 owner = "GEN"
 first_read = "S1.23"
-source = "IMF MFS currency, GDD and WEO debt; World Bank GFDD deposits, bank reserves and capital; OECD Tables 720 and 9B; CAP.stock_per_gdp"
+source = "IMF MFS currency; OECD Tables 720 and 9B"
 status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml; checked at assembly"
 
 [[row]]

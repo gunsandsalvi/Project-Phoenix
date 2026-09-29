@@ -27,8 +27,8 @@ HEADERS = {
 
 ECONOMY = {
     "TEC.inputs", "TEC.labour", "TEC.capital", "TEC.land", "GDS.price_level", "GEN.service_inputs",
-    "GEN.product_taxes", "GEN.value_added_parts", "GEN.final_weights", "GEN.final_composition", "GEN.balance_sheet",
-    "GEN.real_assets", "GEN.productivity_spread", "GEN.occupation_pay", "CAP.stock_per_gdp",
+    "GEN.product_taxes", "GEN.value_added_parts", "GEN.final_weights", "GEN.final_composition", "GEN.holdings",
+    "GEN.real_assets", "GEN.productivity_spread", "GEN.occupation_pay",
     "FRM.firms_per_employed", "SOC.public_staff_share",
 }
 LAW = {

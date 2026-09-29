@@ -2611,13 +2611,17 @@ first reruns the ways and price levels (`derive_tec.py`), reads the budget share
   assembly (`opening::economy::accounts`), read by the snapshot, the jobs' wages, the owners' income and the goods'
   opening, so no stored number repeats what the identities fix.
 - **The stocks**: five sectors (households, firms, banks, the central bank, the government) holding
-  currency, deposits, loans, bonds, government paper, reserves, central bank loans and equity
-  (`GEN.balance_sheet`, assets positive, each row summing to nothing) and real assets (`GEN.real_assets`: firms'
-  plant, which is `CAP.stock_per_gdp`, inventories and land; households' dwellings and land; the government's fixed
-  assets). Levels are broad sources' group medians (IMF, World Bank), holdings the OECD's sector accounts, and the
-  declared closures balance them: the central bank holds government paper for its currency and reserves; banks
-  hold reserves at their ratio, equity at their capital ratio, and bonds that balance them; firms' equity is their
-  assets less their debts; households hold the rest.
+  currency, deposits, loans, bonds, government paper, reserves, central bank loans and equity, and real assets.
+  Stored are only the currency in circulation and who holds what (`GEN.holdings`: households' part of currency,
+  households' and firms' parts of deposits, firms' debt in loans, banks' part of government paper; the OECD's sector
+  accounts), and the real assets measured apart from plant (`GEN.real_assets`: firms' inventories and land,
+  households' dwellings and land, the government's fixed assets; OECD Table 9B). Each country's debts, deposits and
+  banks' ratios are its drawn levels (the profile), its firms' plant what their ways need for the accounts' output
+  at the steady path of its drawn growth, valued as the opening's plant is (`core_plant::opening_plant`), and
+  `opening::sheet` closes the rest once: the central bank holds government paper for its currency and reserves;
+  banks hold reserves at their ratio, equity at their capital ratio, and bonds that balance them; firms' equity is
+  their assets less their debts; households hold the rest. At seed 1 the sheet's plant was 1.54, 1.38 and 1.15 of
+  GDP from the stored stocks while the firms opened holding 0.93, 1.00 and 1.01; they are one now.
 - A group with too few reporters of a sector table takes the developed group's figure scaled by a broad measure of
   its own (the Penn World Table's structures per GDP, the labour share), and the note says so.
 - **The shapes**: distributions the opening scales to the matrices' totals — the spread of firms'
@@ -2633,9 +2637,10 @@ first reruns the ways and price levels (`derive_tec.py`), reads the budget share
 
 Assembly checks every country's dataset (`opening::economy::check`, at compile) and refuses it with each break
 named, primitive and residue: each activity's supply is its uses, its output its inputs, taxes and value added, GDP
-by production and by expenditure one; each instrument's assets its liabilities; firms, banks and the central bank
-worth nothing beyond their equity; firms' plant `CAP.stock_per_gdp`; households' spending their budget shares. The
-tolerance is the rounding of the stored places over the terms summed (Law 7).
+by production and by expenditure one, no output or value added below nothing, each holding a share of its whole and
+no real asset below nothing; and each country's closed sheet (`opening::sheet::country_sheet`): each instrument's
+assets its liabilities, firms, banks and the central bank worth nothing beyond their equity. The tolerance is the
+rounding of the stored places over the terms summed (Law 7).
 
 ### 10.1 Phases
 

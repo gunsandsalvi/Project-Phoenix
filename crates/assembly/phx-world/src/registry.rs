@@ -349,9 +349,18 @@ fn core_of(
     (own, labour): (&[(&'static str, OwnState)], Option<&if_labour::kind::LabourKind>),
 ) -> Result<crate::core::Core, AssemblyErrors> {
     let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    let cap = own
+        .iter()
+        .find(|(c, _)| *c == <sys_cap::Cap as phx_core::System>::CODE)
+        .and_then(|(_, s)| s.downcast_ref::<sys_cap::CapOwn>())
+        .ok_or_else(|| AssemblyErrors(vec!["the plant's kinds not compiled for the opening's sheets".to_owned()]))?;
     let sheets = opening
         .iter()
-        .map(|c| crate::opening::sheet::country_sheet(&p.c.register, c))
+        .enumerate()
+        .map(|(i, c)| {
+            let plant = crate::core_plant::opening_plant(cap, &p.c.register, (c, i))?;
+            crate::opening::sheet::country_sheet(&p.c.register, c, plant)
+        })
         .collect::<Result<Vec<_>, String>>()
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let mut core = open_core(p, (&opening, &sheets), calendar, today)?;
