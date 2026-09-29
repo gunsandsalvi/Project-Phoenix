@@ -75,6 +75,10 @@ pub struct CoreGoods {
     pub days: Vec<GoodsDay>,
     /// Each product's least posted price a unit at each region, as the day opened.
     pub cheapest: BTreeMap<(u16, u32), f64>,
+    /// Each product's sales at each region today, what they paid and their units; and its mark, the price a lot its
+    /// last day of sales there paid on average.
+    pub traded: BTreeMap<(u16, u32), (i128, i128)>,
+    pub marks: BTreeMap<(u16, u32), f64>,
 }
 
 /// What the goods day reads of the world besides the core.
@@ -512,6 +516,15 @@ impl Core {
         let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
         self.close_services(ctx, day, &mut moved);
         (record.sales, record.spent) = (sales, spent);
+        for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
+            if units > 0 {
+                let lot = sys_frm::FilingPrims::lot(ctx.register, product);
+                self.goods.marks.insert(
+                    (product, region),
+                    phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot,
+                );
+            }
+        }
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
         let close = self.goods.stocks.totals();
         let broken = breaks(&open, &nature_net(&moved), &close);
@@ -951,20 +964,9 @@ impl Core {
         whole_units(a * expected * (lead + ctx.management.cover_days))
     }
 
-    /// Each product's posted prices at each region: their sum and their count.
-    fn posted(&self, ctx: &GoodsCtx<'_>, firm: usize) -> BTreeMap<(u16, u32), (f64, f64)> {
-        let mut out: BTreeMap<(u16, u32), (f64, f64)> = BTreeMap::new();
-        for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let e = out.entry((f.product, f.region)).or_insert((0.0, 0.0));
-            (e.0, e.1) = (e.0 + from_i64(f.price), e.1 + 1.0);
-        }
-        out
-    }
-
     /// The firms whose production schedule came today review their price: their markup moved by their sales since
-    /// their last review against those they expected and by what the competitors of their region post; the sales a day
-    /// they expect corrected toward those sales at their memory type's gain; the pressure of that demand and their
+    /// their last review against those they expected and by what their product last sold for in their region, its
+    /// mark; the sales a day they expect corrected toward those sales at their memory type's gain; the pressure of that demand and their
     /// stock against its target; the price they would like, their markup over their cost of making a unit raised by
     /// that pressure; and the move made only where it gains more than changing the price costs their staff's hours.
     #[clause("FRM.5", "FRM.14", "REP.34", "VAL.6")]
@@ -972,7 +974,6 @@ impl Core {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
         let m = ctx.management;
         let due = std::mem::take(&mut self.labour.due_today);
-        let posted = if due.is_empty() { BTreeMap::new() } else { self.posted(ctx, firm) };
         let (mut reviews, mut repriced) = (0, 0);
         for s in due {
             let slot = Slot::new(s);
@@ -998,11 +999,8 @@ impl Core {
             let (markup, expected) = (from_i64(markup) / PART_ONE, from_i64(expected) / PART_ONE);
             let demand = from_i64(sold) / from_i64(days);
             let price = from_i64(f.price);
-            // What the others of its region post, where it has any competitor there.
-            let seen = match posted.get(&(f.product, f.region)) {
-                Some((sum, n)) if *n > 1.0 => Missing::Present((sum - price) / (n - 1.0)),
-                _ => Missing::Absent,
-            };
+            // What its product last sold for in its region, where it has sold there.
+            let seen = self.goods.marks.get(&(f.product, f.region)).copied().map_or(Missing::Absent, Missing::Present);
             let markup = match sys_frm::rules::markup::update(
                 markup,
                 (m.sales_speed, m.seen_speed),
@@ -1148,6 +1146,10 @@ impl Core {
                 }
                 if let Some(sold) = self.record_word(firm, sale.seller.slot(), SOLD_UNITS) {
                     self.set_record_word(firm, sale.seller.slot(), SOLD_UNITS, sold + sale.units);
+                }
+                if let Some((_, _, _, region)) = stalls.iter().find(|x| x.0.seller == sale.seller) {
+                    let t = self.goods.traded.entry((product, *region)).or_insert((0, 0));
+                    (t.0, t.1) = (t.0 + i128::from(sale.paid), t.1 + i128::from(sale.units));
                 }
                 sales += 1;
                 spent += sale.paid;

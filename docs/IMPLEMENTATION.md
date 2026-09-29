@@ -857,11 +857,14 @@ world switches to the core.
     shares, the state's and investment's final uses and the ways' use of each stored product, to the fixed point — so
     no firm expects a buyer the world does not hold (the exports among the accounts' uses wait for XB). The cost the
     accounts give a unit was up to 75% below the core's (agriculture, whose own-account workers the core pays as
-    employees until c3), and each first review raised the price to it. Measured now (120 days, 150,000 persons, seed
-    1): the flows settle every day but month ends; consumer prices rise 19% in February and 36% by March in the
-    developed country (27% and 59% in the emerging, 22% and 53% in the developing), unemployment there from 2.3% to
-    6.9%. To settle in e: what drives the rest — the reviews' pressure against the stock's target and the markups'
-    drift — read against the management types' spread and the self-employed of c3.
+    employees until c3), and each first review raised the price to it. The markup's competitors' term reads its
+    product's mark in its region — what its last day of sales there paid a lot on average — where it read the mean of
+    the others' posted prices, whose ratio to a firm's own price averages above one over any spread of prices and
+    raised every markup by about three points a fortnight. Measured now (120 days, 150,000 persons, seed 1): the flows
+    settle every day but month ends; consumer prices rise 13% in February and 29% by March in the developed country
+    (15% and 41% in the emerging and in the developing), unemployment there from 2.3% to 6.6%. To settle in e: what
+    drives the rest — the reviews' pressure against the stock's target — read against the management types' spread
+    and the self-employed of c3.
   - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
