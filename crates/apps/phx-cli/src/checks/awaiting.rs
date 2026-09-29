@@ -116,13 +116,6 @@ pub const LC_0_24: Check = live_check! {
     check: |_| Outcome::NotYet("awaits the core's opening report (S1.24 h)"),
 };
 
-pub const LC_0_25: Check = live_check! {
-    id: "LC-0-25",
-    title: "Every opening contract's payments fall on business days by its convention",
-    from_step: "S0.16",
-    check: |_| Outcome::NotYet("awaits the opening contracts' dates read against the calendar's conventions (S1.24 h)"),
-};
-
 pub const LC_0_28: Check = live_check! {
     id: "LC-0-28",
     title: "The settled set is sound and maximal, recomputed on the state at the start of stage 7",

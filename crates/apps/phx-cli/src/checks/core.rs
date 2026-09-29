@@ -794,3 +794,40 @@ pub const LC_1_32: Check = live_check! {
     from_step: "S1.12",
     check: sales_named,
 };
+
+/// Every dated contract's next payment falls on a business day of its schedule's country, where its convention moves
+/// its dates to one.
+fn payments_on_business_days(w: Inspector<'_>) -> Outcome {
+    let (core, calendar) = (w.core(), w.calendar());
+    let mut read = 0_u64;
+    for f in &core.families {
+        for e in f.store.edges.open_slots() {
+            let Some(row) = f.store.edges.row(e) else { continue };
+            let Some((dates, _, _)) = usize::try_from(row.schedule).ok().and_then(|s| f.schedules.get(s)) else {
+                return Outcome::Fail(format!("{} contract {} names no schedule", f.name, e.get()));
+            };
+            if dates.convention == phx_core::BusinessDayConvention::Unadjusted {
+                continue;
+            }
+            let day = dates.nth(calendar, row.nth);
+            if !calendar.is_business(dates.country, day) {
+                return Outcome::Fail(format!(
+                    "{} contract {}: its payment {} falls on {:?}, no business day",
+                    f.name,
+                    e.get(),
+                    row.nth,
+                    calendar.date(day)
+                ));
+            }
+            read += 1;
+        }
+    }
+    if read == 0 { Outcome::NotYet("no contract with an adjusted schedule is open") } else { Outcome::Pass }
+}
+
+pub const LC_0_25: Check = live_check! {
+    id: "LC-0-25",
+    title: "Every opening contract's payments fall on business days by its convention",
+    from_step: "S0.16",
+    check: payments_on_business_days,
+};
