@@ -1558,7 +1558,7 @@ what happens when a market does not clear.
 - **MKT.12 PROCESS** — A print becomes the **mark** for everybody whose carrying basis marks to it (ACC.2),
   in the market where the holder's units are. Each form declares which print is the day's mark: a call auction's
   price; a continuous book's closing auction; a dealer or bilateral market's **fixing** — the day's trades taken
-  by a named publisher's declared method (MKT.20); a posted-price market's sales at the posted price.
+  by a named publisher's declared method (MKT.20); a posted-price market's day's sales at their posted prices, as their mean weighted by units sold.
 - **MKT.20 PROCESS** — **Valuation.** Where a position has no print of its own — a seasoned swap or option, a bond
   that did not trade, a loan, a dwelling not sold, a liability to policyholders or members — a **named valuer**
   values it by a **published method** whose inputs are prints: a clearing house's settlement price from its
