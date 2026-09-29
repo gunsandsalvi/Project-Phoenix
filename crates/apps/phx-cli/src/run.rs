@@ -465,6 +465,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "decisions": decisions_report(w),
         "fund_stages": fund_report(w),
         "auctions": auctions_report(w),
+        "agencies": agencies_report(w),
         "lenders": lenders_report(w),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
@@ -588,6 +589,25 @@ fn auctions_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
             })
         })
         .collect()
+}
+
+/// Each agency's day: its staff, wage bill and appropriation, and what it posted.
+fn agencies_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .agencies_kept
+        .days
+        .iter()
+        .map(|d| {
+            json!({
+                "day": d.day,
+                "country": d.country,
+                "staff": d.staff,
+                "wage_bill": d.bill,
+                "appropriation": d.budget,
+                "posted": d.posted,
+            })
+        })
+        .collect::<Vec<_>>()
 }
 
 /// Each bank's applications, declines, quotes and loans, and its standard.

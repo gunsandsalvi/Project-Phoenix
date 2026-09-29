@@ -402,6 +402,7 @@ fn core_of(
         };
         core.open_labour(&lctx, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
+    core.open_agencies();
     core.open_central(&p.c.register, (&opening, &sheets), (calendar, today)).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_bills(state, (&opening, &sheets), (calendar, today)).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_state(state, today);

@@ -1,10 +1,9 @@
 //! Jobs on the core. Each job the opening drew for a household's person is dealt to one of the core's firms in
 //! its region: a region's jobs of an occupation are shared over its firms by the hours their output takes of that
 //! occupation, and dealt to them in an order drawn by lot. Each job is a contract from its firm to the household,
-//! naming the person by its identity and paying the job's wage on its dates. A job whose occupation no firm's way in
-//! its region takes — the armed forces' — is the state's, a contract from its country's treasury until the public
-//! agencies take their staff. The employed are the persons drawn employed, so the staff is exactly the employed the
-//! population gives.
+//! naming the person by its identity and paying the job's wage on its dates. Public administration's share of each
+//! occupation's jobs, and every job whose occupation no firm's way in its region takes, is its country's public
+//! agency's. The employed are the persons drawn employed, so the staff is exactly the employed the population gives.
 
 use std::collections::BTreeMap;
 
@@ -170,12 +169,13 @@ impl Core {
         }
     }
 
-    /// The jobs on the core: each region's jobs of an occupation dealt over its firms by the hours their output takes
-    /// of it, in an order drawn by lot, each a contract from its firm to the household naming the person; those no
-    /// firm's way in their region takes, from their country's treasury. Returns the jobs the state holds.
+    /// The jobs on the core: each region's jobs of an occupation, in an order drawn by lot, public administration's
+    /// share of them its country's public agency's and the rest dealt over its firms by the hours their output takes
+    /// of it — all the agency's where no firm's way takes the occupation — each a contract from its employer to the
+    /// household naming the person. Returns the jobs the agencies hold.
     ///
     /// # Errors
-    /// A primitive the dealing reads that the register does not hold, or a country with no treasury to employ.
+    /// A primitive the dealing reads that the register does not hold, or a country with no agency to employ.
     #[clause("LAB.1", "REP.40", "GEN.2", "PTY.3", "SOC.2")]
     pub fn open_jobs(&mut self, o: &JobsOpening<'_>) -> Result<u64, String> {
         let (Some(firm), Some(household)) =
@@ -183,11 +183,11 @@ impl Core {
         else {
             return Ok(0);
         };
-        let Some(treasury) = self.names.iter().position(|n| *n == "treasury") else {
-            return Err("no treasury kind to employ the state's staff".to_owned());
+        let Some(agency) = self.names.iter().position(|n| *n == "agency") else {
+            return Err("no agency kind to employ the state's staff".to_owned());
         };
         let mut family = self.job_family("LAB.employment", firm, household, o.today);
-        let mut public = self.job_family("LAB.public_employment", treasury, household, o.today);
+        let mut public = self.job_family("LAB.public_employment", agency, household, o.today);
         let jobs = self.drawn_jobs(o, &mut family)?;
         public.schedules.clone_from(&family.schedules);
         public.classes.clone_from(&family.classes);
@@ -202,26 +202,20 @@ impl Core {
             let here = firms.get(&region).map_or(&[][..], Vec::as_slice);
             let o_at = usize::try_from(occupation).unwrap_or(usize::MAX);
             let weights: Vec<f64> = here.iter().map(|(_, h)| h.get(o_at).copied().unwrap_or(0.0)).collect();
-            let parts = deal(len_u64(members.len()), &weights);
             let Some(country) = o.countries.iter().find(|c| c.regions.iter().any(|(x, _)| *x == region)) else {
                 return Err(format!("jobs in region {region}, in no country"));
             };
-            if parts.iter().sum::<u64>() == 0 {
-                let Some(Some(state)) = self.treasuries.get(usize::from(country.id.get())).copied() else {
-                    return Err(format!("country {}: no treasury to employ the state's staff", country.id.get()));
-                };
-                for job in members {
-                    let Some(j) = jobs.get(job) else { continue };
-                    let _ = public.store.open(j.due(state), first_date(&public, o.calendar, j));
-                    public_jobs += 1;
-                }
-                continue;
-            }
-            let country = u32::from(country.id.get());
+            let Some(Some(state)) = self.agencies.get(usize::from(country.id.get())).copied() else {
+                return Err(format!("country {}: no agency to employ the state's staff", country.id.get()));
+            };
+            let shares = sys_soc::public_staff_shares(o.register, country.id)?;
+            let Some(share) = shares.get(usize::try_from(occupation).unwrap_or(usize::MAX)).copied() else {
+                return Err(format!("country {}: no public staff share for occupation {occupation}", country.id.get()));
+            };
             let mut lot = o.streams.open(
                 o.stream,
                 opening_subject(
-                    country * PURPOSES + JOBS_PURPOSE,
+                    u32::from(country.id.get()) * PURPOSES + JOBS_PURPOSE,
                     region * if_labour::consts::OCCUPATIONS + occupation,
                 ),
                 Day::new(0),
@@ -232,7 +226,23 @@ impl Core {
                 let j = phx_rand::float::index(phx_rand::below_u64(&mut lot, len_u64(i + 1)));
                 members.swap(i, j);
             }
+            let firms_take = weights.iter().any(|w| *w > 0.0);
+            let n = len_u64(members.len());
+            let public_n = if firms_take {
+                u64::try_from(phx_ledger::opening::whole(share * phx_rand::float::from_u64(n))).unwrap_or(0)
+            } else {
+                n
+            };
             let mut next = members.into_iter();
+            for job in next.by_ref().take(usize::try_from(public_n).unwrap_or(usize::MAX)) {
+                let Some(j) = jobs.get(job) else { continue };
+                let _ = public.store.open(j.due(state), first_date(&public, o.calendar, j));
+                public_jobs += 1;
+            }
+            let Some(rest) = n.checked_sub(public_n) else {
+                violation!(clause = "SOC.2", "more public jobs than jobs", region = region);
+            };
+            let parts = deal(rest, &weights);
             for ((slot, _), n) in here.iter().zip(parts) {
                 for job in next.by_ref().take(usize::try_from(n).unwrap_or(usize::MAX)) {
                     let Some(j) = jobs.get(job) else { continue };

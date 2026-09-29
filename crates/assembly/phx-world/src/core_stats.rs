@@ -32,8 +32,9 @@ pub(crate) enum Purchase {
 }
 
 /// A month's records of one country: each product's retail purchases by households and each product's sales between
-/// firms, as money paid and units; spending by households, the state and on investment; inputs bought; wages paid.
-/// Every sale is a firm's, so the firms' sales are the final purchases and the inputs together.
+/// firms, as money paid and units; spending by households, the state and on investment; inputs bought; wages paid,
+/// and of them those the state's agencies paid. Every sale is a firm's, so the firms' sales are the final purchases
+/// and the inputs together; the agencies' output is valued at its cost.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Month {
     retail: BTreeMap<u16, (i128, i128)>,
@@ -43,6 +44,7 @@ pub(crate) struct Month {
     investment: i128,
     inputs: i128,
     wages: i128,
+    public: i128,
     /// The month's deaths and onsets by age class, health before and event.
     vital: BTreeMap<(u32, u32, u8), u64>,
 }
@@ -184,10 +186,11 @@ impl Core {
         }
     }
 
-    /// Wages settled today, recorded in their country's month.
-    pub(crate) fn record_wages(&mut self, ccy: u8, amount: i64) {
+    /// Wages settled today, recorded in their country's month, with those the state's agencies paid.
+    pub(crate) fn record_wages(&mut self, ccy: u8, (amount, public): (i64, i64)) {
         if let Some(m) = self.stats.months.get_mut(usize::from(ccy)) {
             m.wages += i128::from(amount);
+            m.public += i128::from(public);
         }
     }
 
@@ -248,11 +251,12 @@ impl Core {
                 }
             }
             let levels = self.stats.levels.get(c).copied();
-            // Output by production is the firms' sales less the inputs they bought; by expenditure, the final
-            // purchases; by income, the wages paid and the surplus the firms' sales left over their inputs and wages.
-            let production = m.sales() - m.inputs;
-            let expenditure = m.consumption + m.government + m.investment;
-            let surplus = m.sales() - m.inputs - m.wages;
+            // Output by production is the firms' sales less the inputs they bought, and the agencies' staff; by
+            // expenditure, the final purchases, the state's valued with its agencies' staff; by income, the wages paid
+            // and the surplus the firms' sales left over their inputs and their own wages.
+            let production = m.sales() - m.inputs + m.public;
+            let expenditure = m.consumption + m.government + m.public + m.investment;
+            let surplus = m.sales() - m.inputs - (m.wages - m.public);
             let income = m.wages + surplus;
             let whole =
                 |x: i128| i64::try_from(x).unwrap_or_else(|_| phx_num::capacity_exceeded!("a total", i64::MAX, 0));
@@ -448,6 +452,7 @@ impl Core {
             "firm" => region(crate::consts::firm::REGION),
             "bank" => self.banks_of.iter().position(|b| b.iter().any(|(s, _)| *s == party.slot().get())),
             "treasury" => self.treasuries.iter().position(|t| *t == Some(party)),
+            "agency" => self.agencies.iter().position(|t| *t == Some(party)),
             _ => self.estates.iter().find(|(e, _, _)| *e == party).map(|(_, c, _)| usize::from(c.get())),
         }
     }

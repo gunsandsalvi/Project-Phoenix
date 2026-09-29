@@ -103,13 +103,15 @@ pub const SECTORS_WORTH_NOTHING: [usize; 3] = [1, 2, 3];
 /// dataset's derivation lays them out.
 /// The kinds of party on the core, in their order, and each one's place: those sited by a tile, then the households.
 pub mod kinds {
-    pub const KINDS: [&str; 6] = ["central_bank", "treasury", "bank", "firm", phx_core::ESTATE_KIND.name, "household"];
+    pub const KINDS: [&str; 7] =
+        ["central_bank", "treasury", "bank", "firm", phx_core::ESTATE_KIND.name, "household", "agency"];
     pub const CENTRAL_BANK: usize = 0;
     pub const TREASURY: usize = 1;
     pub const BANK: usize = 2;
     pub const FIRM: usize = 3;
     pub const ESTATE: usize = 4;
     pub const HOUSEHOLD: usize = 5;
+    pub const AGENCY: usize = 6;
 }
 /// The statistics' numbers: the base the published places are powers of, and the money stock's classes — the banks'
 /// reserves, then deposits held by households, by firms and by everyone else.
@@ -194,8 +196,10 @@ pub mod reason {
     pub const SPOILED: u8 = 14;
     /// A central bank's income paid to its treasury.
     pub const REMITTED: u8 = 15;
+    /// A treasury's money to its public agency for what the agency pays that day.
+    pub const FUNDED: u8 = 16;
     /// The reasons a day's record counts failed flows by: every reason above.
-    pub const REASONS: usize = 16;
+    pub const REASONS: usize = 17;
 }
 /// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
 pub mod draws {

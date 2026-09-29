@@ -27,10 +27,10 @@ use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, PENSION};
 use crate::opening::sheet::Sheet;
 
-use crate::consts::kinds::{BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, KINDS, TREASURY};
+use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, KINDS, TREASURY};
 
 /// The kinds that hold an account.
-const HOLDS_MONEY: [usize; 5] = [TREASURY, BANK, FIRM, ESTATE, HOUSEHOLD];
+const HOLDS_MONEY: [usize; 6] = [TREASURY, BANK, FIRM, ESTATE, HOUSEHOLD, AGENCY];
 
 /// A job drawn at the opening, before its employer is dealt: its household, its person, its month's wage, its
 /// country, its class — occupation, hours and the band its tenure began in — and its region.
@@ -160,6 +160,8 @@ impl Core {
             household_decl: Some(household.clone()),
             persons_opened: 0,
             treasuries: Vec::new(),
+            agencies: Vec::new(),
+            agencies_kept: crate::core_agencies::Agencies::default(),
             estates: Vec::new(),
             waiting: std::collections::BTreeMap::new(),
             deaths: Vec::new(),
@@ -228,6 +230,13 @@ impl Core {
             );
             core.issuers.push(issuer);
             core.treasuries.push(Some(treasury));
+            // Its public agency, sited with it, holds its account at the issuer and is funded as it pays.
+            let agency = core.begin_party(
+                AGENCY,
+                &[MaybeI64::present(i64::from(site.get()))],
+                Some(Opening { bank: AT_ISSUER, balance: 0 }),
+            );
+            core.agencies.push(Some(agency));
             let (_, _, weights) = sys_bnk::bank_weights(c);
             let reserves = core.apportion(("banks' reserves", c.id.get()), at(RESERVES, BANKS), &weights);
             let mut banks = Vec::with_capacity(weights.len());

@@ -1,0 +1,9 @@
+# The developing group's public administration's staff (spec SOC.2, GEN.2), derived by tools/data/derive_pop.py; never edited by hand.
+
+[[primitive]]
+id = "SOC.public_staff_share"
+kind = "ENDOWMENT"
+owner = "SOC"
+source = "measured"
+source_ref = "Each ISCO-08 major group's share of its employed working in public administration and defence, ISIC section O (rows: 0 armed forces to 9 elementary occupations): the median over the group's 12 economies of section O's employed over all the group's employed at their latest survey or census 2010-2025 (a group an economy does not report left out of its median; none where no economy reports it), from ILOSTAT SDMX API (fetched 2026-09-27). Public administration is the state's own output, paid by taxes; its staff are its public agencies'."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [0.933765, 0.096912, 0.028638, 0.073706, 0.166514, 0.026428, 0.000619, 0.002917, 0.008102, 0.009636], outside = "refuse" }

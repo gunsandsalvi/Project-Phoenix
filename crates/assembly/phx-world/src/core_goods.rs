@@ -495,29 +495,29 @@ impl Core {
         by.into_iter().map(|(s, c, t)| (s, totals.get(&c).filter(|w| **w > 0.0).map_or(0.0, |w| t / w))).collect()
     }
 
-    /// Each country's treasury's collective consumption today: each product's share of GDP a day, asked at retail in
-    /// each region by its share of the country's persons, until the public agencies buy in its place.
+    /// Each country's public agency's purchases today, its head's decision: each product's share of GDP a day in the
+    /// state's final uses, asked at retail in each region by its share of the country's persons.
     #[clause("SOC.2", "GEN.2")]
     fn public_wants(&self, regions: &[CountryId]) -> Vec<(u16, Buyer)> {
         let mut wants = Vec::new();
         let consuming = self.bind(&sys_soc::points::CONSUME);
         for (r, c) in regions.iter().enumerate() {
             let country = usize::from(c.get());
-            let Some(Some(treasury)) = self.treasuries.get(country).copied() else { continue };
+            let Some(Some(agency)) = self.agencies.get(country).copied() else { continue };
             let (Some(gdp), Some(uses), Some(share)) =
                 (self.goods.gdp.get(country), self.goods.final_uses.get(country), self.goods.region_share.get(r))
             else {
                 continue;
             };
             let Ok(region) = u32::try_from(r) else { continue };
-            let amounts = self.decide(consuming, treasury, |_| sys_soc::points::ConsumeIn {
+            let amounts = self.decide(consuming, agency, |_| sys_soc::points::ConsumeIn {
                 per_day: gdp / DAYS_A_YEAR * share,
                 shares: uses.iter().map(|u| u[0]).collect(),
             });
             for (p, amount) in (0_u16..).zip(amounts) {
                 if amount > 0 {
-                    let subject = packed(u64::from(treasury.word()), u64::from(region), REGION_BITS);
-                    wants.push((p, Buyer { party: treasury, subject, want: Want::Money(amount), place: region }));
+                    let subject = packed(u64::from(agency.word()), u64::from(region), REGION_BITS);
+                    wants.push((p, Buyer { party: agency, subject, want: Want::Money(amount), place: region }));
                 }
             }
         }

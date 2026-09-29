@@ -592,6 +592,30 @@ def employment(level: str, members: set, m: dict) -> list:
     return out
 
 
+def public_staff(level: str, members: set, m: dict) -> list:
+    """Each occupation's share of its employed working in public administration and defence (ISIC section O), the
+    median over the group's economies at their latest survey 2010-2025."""
+    classes = [str(c) for c in range(10)]
+    d = pd.read_csv(RAW / "ilo" / "employment_by_activity.csv", dtype={"occupation": str})
+    d = d[d.iso3.isin(members) & (d.year >= 2010) & d.occupation.isin(classes) & d.activity.isin(["O", "TOTAL"])]
+    d = latest_survey(d.rename(columns={"value": "employed"}))
+    x = d.pivot_table(index=["iso3", "occupation"], columns="activity", values="employed", aggfunc="sum")
+    x = x[(x["TOTAL"] > 0) & x["O"].notna()]
+    share = (x["O"] / x["TOTAL"]).unstack("occupation").reindex(columns=classes)
+    med = share.median().fillna(0.0).to_numpy()
+    n = share.index.nunique()
+    ref = (f"Each ISCO-08 major group's share of its employed working in public administration and defence, ISIC "
+           f"section O (rows: 0 armed forces to 9 elementary occupations): the median over the group's {n} economies "
+           f"of section O's employed over all the group's employed at their latest survey or census 2010-2025 (a "
+           f"group an economy does not report left out of its median; none where no economy reports it), from "
+           f"{fetched(m, 'ilo_activity')}. Public administration is the state's own output, paid by taxes; its staff "
+           f"are its public agencies'.")
+    rows = ", ".join(classes)
+    values = ", ".join(num(v) for v in med)
+    return [entry("SOC.public_staff_share", "ENDOWMENT", "SOC", "measured", ref,
+                  f'{{ axis = [{rows}], values = [{values}], outside = "refuse" }}')]
+
+
 # ---- Tenure, housing costs, accounts and borrowing ---------------------------------------------------------------
 
 FIRST_YEAR = 2015
@@ -797,6 +821,9 @@ def main() -> None:
         bnk = banking(level, members, m)
         write(level, "BNK", f"# The {level} group's accounts and borrowing (spec GEN.2, BNK), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", bnk)
+        write(level, "SOC_agencies", f"# The {level} group's public administration's staff (spec SOC.2, GEN.2), "
+                                     "derived by tools/data/derive_pop.py; never edited by hand.",
+              public_staff(level, members, m))
         soc, occ = pen[level]
         write(level, "SOC", f"# The {level} group's state pension and benefit coverage (spec GEN.2, SOC), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", soc)

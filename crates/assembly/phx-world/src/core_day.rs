@@ -138,6 +138,8 @@ pub struct CoreDay {
 #[derive(Debug, Default)]
 pub struct Work {
     pub flows: FlowBufs,
+    /// The fund stage's flows, apart from the day's, which the day's reads still read after it.
+    pub fund: FlowBufs,
     pub settle: Settle,
     pub due: Vec<u32>,
 }
@@ -173,19 +175,27 @@ impl Core {
     /// The wages the day's dues made and did not fail, recorded in their countries' months; returns them.
     fn record_wages_settled(&mut self, failed: &[Flow]) -> i64 {
         let wage = crate::consts::reason::WAGE;
-        let mut by: BTreeMap<u8, i64> = BTreeMap::new();
-        if let Some(buf) = self.work.flows.chunks_mut().first_mut() {
+        let agencies: Vec<PartyKey> = self.agencies.iter().flatten().copied().collect();
+        let mut by: BTreeMap<u8, (i64, i64)> = BTreeMap::new();
+        let mut add = |f: &Flow, sign: i64| {
+            let e = by.entry(f.denomination.ccy()).or_insert((0, 0));
+            e.0 += sign * f.amount;
+            if agencies.contains(&f.payer) {
+                e.1 += sign * f.amount;
+            }
+        };
+        if let Some(buf) = self.work.flows.chunks_mut().first() {
             for f in buf.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
-                *by.entry(f.denomination.ccy()).or_insert(0) += f.amount;
+                add(f, 1);
             }
         }
         for f in failed.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
-            *by.entry(f.denomination.ccy()).or_insert(0) -= f.amount;
+            add(f, -1);
         }
         let mut all = 0;
-        for (ccy, amount) in by {
-            self.record_wages(ccy, amount);
-            all += amount;
+        for (ccy, paid) in by {
+            self.record_wages(ccy, paid);
+            all += paid.0;
         }
         all
     }
@@ -588,6 +598,39 @@ impl Core {
         moved
     }
 
+    /// Each public agency funded by its treasury for what it pays today beyond what it holds: the state keeps one purse,
+    /// its agencies drawing on it as they pay, within their appropriations.
+    #[clause("SOC.8", "TRS.10")]
+    fn fund_agencies(&self, buf: &mut Vec<Flow>) {
+        let mut due: BTreeMap<PartyKey, (i64, u8)> = BTreeMap::new();
+        for f in buf.iter().filter(|f| f.denomination.is_money() && self.agencies.contains(&Some(f.payer))) {
+            let e = due.entry(f.payer).or_insert((0, f.denomination.ccy()));
+            e.0 += f.amount;
+        }
+        for (agency, (out, ccy)) in due {
+            let (Some(Some(treasury)), Some(held)) = (
+                self.treasuries.get(usize::from(ccy)).copied(),
+                self.kinds
+                    .get(usize::from(agency.kind()))
+                    .and_then(|k| k.accounts.as_ref())
+                    .and_then(|a| Some(a.balance.get(agency.slot())? + a.pending.get(agency.slot())?)),
+            ) else {
+                continue;
+            };
+            if out > held {
+                buf.push(Flow {
+                    payer: treasury,
+                    payee: agency,
+                    amount: out - held,
+                    source: agency.slot().get(),
+                    denomination: Denom::money(ccy),
+                    reason: crate::consts::reason::FUNDED,
+                    order: 0,
+                });
+            }
+        }
+    }
+
     /// What a day's settled money flows moved: into the parties other than banks from the banks and the issuers, and
     /// each class of the issuers' money, a flow taking from its payer's class and adding to its payee's.
     fn money_moves(&self, flows: &[Flow], failed: &[Flow]) -> (i128, [i128; 3]) {
@@ -712,6 +755,7 @@ impl Core {
             settling = self.estates_pay(day, calendar, buf);
             buf.append(&mut self.pending);
             self.lend_shortfalls((day, calendar, streams), buf);
+            self.fund_agencies(buf);
             for f in buf.iter().filter(|f| f.reason == crate::consts::reason::LENT) {
                 record.lent += 1;
                 if self.bank_of(f.payee) != Some(f.payer) {

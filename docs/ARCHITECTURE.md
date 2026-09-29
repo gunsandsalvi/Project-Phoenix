@@ -1841,6 +1841,20 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
   portfolios. Each auction's offer, bids, sales, price, cover and tail are kept (the run report's `auctions`,
   LC-1-31); each issue is held to what its holders paid while it stands (LC-0-16); and at each close the debt family
   holds the bills outstanding to what was issued less what was redeemed and written off (TRS.6, LC-1-29).
+- **Public agencies** (`sys-soc`'s kind `agency`, legal form `public agency`; on the core `core_agencies`, SOC.2,
+  SOC.8): each country has one, producing its public administration, which is no product and is paid by taxes. At the
+  opening it takes each occupation's public administration share of its jobs in every region
+  (`SOC.public_staff_share`, derived from the ILO's employment by activity), and every job no firm's way takes (the
+  armed forces'); the rest are dealt to firms. Its head buys the state's final uses at retail (`SOC.consume`, what the
+  treasury bought before) and keeps its staff: each business day it posts what it lacks of its opening staff by region
+  and occupation, as far as its appropriation for wages pays (`SOC.staff`; the appropriation is its opening staff's
+  wages a month, a placeholder naming POL until the budget votes it); its vacancies are met, selected by the head of
+  its service and raised when they stand, as any employer's, and a person it hires leaves the job it held, whoever the
+  employer. Its account is at the issuer beside the treasury's, the state's money, and its treasury funds it each day
+  for what it pays beyond what it holds (a flow of `FUNDED`), so a treasury short of cash leaves its agency's wages and
+  purchases unpaid. The national accounts value its output at its staff's wages: by production and expenditure they
+  are added, by income they are wages, not taken off the firms' surplus. Its staff's pay rounds wait for public pay
+  scales (POL).
 - **Taxes' collectors on the core** (`core_taxes`, TAX.2, TAX.5): a tax arises on its base's payment once it settles —
   income tax withheld by the employer from the wage it pays (the wage flow carries the net), consumption tax in a
   final sale's price charged by the seller — and is then its collector's debt to its treasury, a contract of the

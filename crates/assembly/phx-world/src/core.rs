@@ -35,6 +35,10 @@ pub struct Core {
     pub persons_opened: u64,
     /// Each country's treasury, and the estates waiting to settle: each with its country and the day it opened.
     pub treasuries: Vec<Option<PartyKey>>,
+    /// Each country's public agency, the state's producer of public administration, and the staff and appropriation
+    /// each keeps.
+    pub agencies: Vec<Option<PartyKey>>,
+    pub agencies_kept: crate::core_agencies::Agencies,
     pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
     /// Why each estate that has paid what it can still stands: the goods it holds waiting for their liquidation.
     pub waiting: std::collections::BTreeMap<PartyKey, &'static str>,

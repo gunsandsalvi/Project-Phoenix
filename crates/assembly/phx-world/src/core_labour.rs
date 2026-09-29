@@ -73,6 +73,8 @@ pub struct LabourDay {
     pub searching_on: u64,
     pub job_to_job: u64,
     pub quits: u64,
+    /// The jobs the state's agencies posted.
+    pub public_posted: u64,
 }
 
 /// A contract's offer at its pay round, waiting for its employee's answer: the contract, its household and person, its
@@ -177,7 +179,7 @@ fn after(day: Day, n: u64) -> Day {
     }
 }
 
-fn at_country<T>(v: &[T], c: u8) -> &T {
+pub(crate) fn at_country<T>(v: &[T], c: u8) -> &T {
     v.get(usize::from(c)).unwrap_or_else(|| violation!(clause = "LAB.16", "a country with no labour law", country = c))
 }
 
@@ -196,7 +198,7 @@ impl LabourCtx<'_> {
         self.streams.open(&stream, subject, day, SubStep::S5c.ordinal())
     }
 
-    fn wage_at(&self, law: &Law, point: i64) -> f64 {
+    pub(crate) fn wage_at(&self, law: &Law, point: i64) -> f64 {
         (self.kind.wage_at)(law, point)
     }
 }
@@ -231,7 +233,7 @@ impl Core {
     }
 
     /// A firm's staff not under notice: each job's occupation and weekly hours, and its monthly wage.
-    fn staff_of(&self, family: usize, firm: PartyKey) -> Vec<(u32, u32, i64)> {
+    pub(crate) fn staff_of(&self, family: usize, firm: PartyKey) -> Vec<(u32, u32, i64)> {
         let Some(f) = self.families.get(family) else { return Vec::new() };
         f.store
             .of(0, firm.slot())
@@ -343,6 +345,7 @@ impl Core {
         (record.acceptances, record.hires) = self.answer_offers(ctx, day);
         record.offers = self.select_applicants(ctx, day);
         let (posted, withdrawn, layoffs, employers) = self.post(ctx, day);
+        record.public_posted = self.post_agencies(ctx, day);
         self.answer_reviews(ctx, day);
         (record.posted, record.withdrawn, record.layoffs_wanted, record.employers) =
             (posted, withdrawn, layoffs, employers);
@@ -409,7 +412,7 @@ impl Core {
     /// The point an employer offers in an occupation: by the labour kind's arithmetic, from its last fill there and
     /// the days it stood, its staff's wage there, and the mean wage; never below the law's least.
     #[clause("LAB.4", "LAB.11", "REP.34")]
-    fn offer_point(
+    pub(crate) fn offer_point(
         &self,
         ctx: &LabourCtx<'_>,
         law: &Law,
@@ -798,7 +801,7 @@ impl Core {
     }
 
     /// An employer's vacancies that stood past the law's patience raised a point.
-    fn raise_stale(&mut self, ctx: &LabourCtx<'_>, day: Day, own: &[usize], law: &Law) {
+    pub(crate) fn raise_stale(&mut self, ctx: &LabourCtx<'_>, day: Day, own: &[usize], law: &Law) {
         for i in own {
             let (Some(v), Some(p)) = (self.labour.vacancies.get_mut(*i), self.labour.postings.get_mut(*i)) else {
                 continue;
@@ -977,8 +980,8 @@ impl Core {
 
     /// A hire made a contract, and its person's state, occupation and last point written.
     fn hire(&mut self, ctx: &LabourCtx<'_>, day: Day, hired: &Application) -> bool {
-        let (Some(family), Some(place), Some(decl)) =
-            (self.employment(), self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+        let (Some(place), Some(decl)) =
+            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
         else {
             return false;
         };
@@ -988,6 +991,7 @@ impl Core {
         ) else {
             return false;
         };
+        let Some(family) = self.employer_family(v.employer) else { return false };
         let household = hired.seeker.household;
         let Some(ps) = self.persons.get(place).and_then(Option::as_ref) else { return false };
         let Some(at) = ps.place_of(household.slot(), hired.seeker.person) else {
@@ -999,6 +1003,10 @@ impl Core {
         };
         let law = at_country(&self.labour.laws, p.country).clone();
         let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return false };
+        // An employee hired quits the job it holds for this one, whoever its employer.
+        if self.quit_jobs(household, hired.seeker.person) > 0 {
+            self.labour.job_to_job += 1;
+        }
         let Some(f) = self.families.get_mut(family) else { return false };
         let year = u32::try_from(ctx.calendar.date(day).year()).unwrap_or(0);
         let class = [v.occupation, law.full_time_hours, year];
@@ -1025,19 +1033,6 @@ impl Core {
             person: hired.seeker.person,
             arrears: 0,
         };
-        // An employee hired quits the job it holds for this one.
-        let held: Vec<Slot> = f
-            .store
-            .of(1, household.slot())
-            .filter(|e| f.store.edges.row(*e).is_some_and(|r| r.person == hired.seeker.person))
-            .collect();
-        if !held.is_empty() {
-            self.labour.job_to_job += 1;
-        }
-        for e in held {
-            f.store.close(e);
-            self.labour.noticed.remove(&e.get());
-        }
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, nth)));
         let mut person = unpack(&decl, word);
         person.set_attr(ctx.kind.state, class::NOT_SEARCHING);

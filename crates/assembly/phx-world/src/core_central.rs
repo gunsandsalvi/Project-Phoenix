@@ -46,7 +46,8 @@ pub struct FundDay {
     pub remitted: i64,
 }
 
-/// The issuer's money by what it owes it as: banks' reserves, the treasuries' accounts, banknotes.
+/// The issuer's money by what it owes it as: banks' reserves, the state's accounts — its treasury's and its
+/// agencies' — and banknotes.
 pub const RESERVES: usize = 0;
 pub const TREASURY_ACCOUNT: usize = 1;
 pub const NOTES: usize = 2;
@@ -250,8 +251,8 @@ impl Core {
         steps.extend(buys);
         steps.extend(self.requests((deposit, lending), &open, &steps));
         let flows: Vec<Flow> = (0_u32..).zip(&steps).filter_map(|(i, s)| self.flow_of(*s, i)).collect();
-        work.flows.reset(1);
-        if let Some(buf) = work.flows.chunks_mut().first_mut() {
+        work.fund.reset(1);
+        if let Some(buf) = work.fund.chunks_mut().first_mut() {
             buf.extend_from_slice(&flows);
         }
         let banks = self.bank_kind.map_or(0, |b| {
@@ -262,8 +263,8 @@ impl Core {
         let mut failed: Vec<Flow> = Vec::new();
         for c in &open {
             let (Ok(ccy), Some(issuer)) = (u8::try_from(*c), self.issuers.get(*c).copied()) else { continue };
-            work.flows.group(None, ranges, Denom::money(ccy));
-            let grouped = Grouped::new(&[&work.flows], ranges);
+            work.fund.group(None, ranges, Denom::money(ccy));
+            let grouped = Grouped::new(&[&work.fund], ranges);
             let mut b = books(&mut self.kinds, self.bank_kind.unwrap_or(u8::MAX), (&mut deposits, &closed), issuer);
             let lot = |p: PartyKey| {
                 streams.open(order, Subject::new(SubjectTag::Party, u64::from(p.word())), day, SubStep::S8e.ordinal())
@@ -553,7 +554,7 @@ impl Core {
     #[must_use]
     pub fn issuer_held(&self) -> [i128; 3] {
         let mut held = [0_i128; 3];
-        let treasury = self.names.iter().position(|n| *n == "treasury");
+        let state = |k: usize| self.names.get(k).is_some_and(|n| *n == "treasury" || *n == "agency");
         for (k, store) in self.kinds.iter().enumerate() {
             let Some(a) = store.accounts.as_ref() else { continue };
             let bank = self.bank_kind.is_some_and(|b| usize::from(b) == k);
@@ -562,7 +563,7 @@ impl Core {
                     RESERVES
                 } else if *b != phx_core::settle::AT_ISSUER {
                     continue;
-                } else if treasury == Some(k) {
+                } else if state(k) {
                     TREASURY_ACCOUNT
                 } else {
                     NOTES
@@ -587,7 +588,7 @@ impl Core {
         let b = self.kinds.get(usize::from(p.kind()))?.accounts.as_ref()?.bank.get(p.slot())?;
         if b != phx_core::settle::AT_ISSUER {
             Some(RESERVES)
-        } else if self.names.get(usize::from(p.kind())).is_some_and(|n| *n == "treasury") {
+        } else if self.names.get(usize::from(p.kind())).is_some_and(|n| *n == "treasury" || *n == "agency") {
             Some(TREASURY_ACCOUNT)
         } else {
             Some(NOTES)

@@ -1031,6 +1031,12 @@ world switches to the core.
     a uniform price, each bill a contract paid at maturity; the banks' government paper from the sheet opened as bills
     maturing weekly; the central bank's paper waits for CB.5 (Stage 3) and the households' for their portfolios
     (S3.05). LC-0-16, LC-1-29 and LC-1-31 read them.
+  - g: the public agencies on the core (SOC.2, SOC.8; `core_agencies`, ARCHITECTURE §7.16), not yet run: one a country,
+    taking public administration's share of each occupation's jobs (`SOC.public_staff_share`, derived from the ILO's
+    employment by activity) and the armed forces', the treasury employing no one; buying the state's final uses; keeping
+    its staff within its appropriation; funded daily by its treasury; its output valued at its wages in the national
+    accounts. Its staff's pay rounds wait for public pay scales (POL, Stage 5). Found on the way and settled: the fund
+    stage shared the day's flow buffer, which the day's wage statistics read after it; it keeps its own.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

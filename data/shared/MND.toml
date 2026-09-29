@@ -6,7 +6,7 @@ id = "MND.decisions"
 kind = "SHAPE"
 owner = "MND"
 source = "assumed"
-source_ref = "The concerns are the spec's list (MND.2). Each decision is taken where its institution's governance puts it: prices, output, inputs, hiring and pay by the head of the line of business, the firm's survival, borrowing and investment by its chief executive, a loan's approval and price by a bank's loan officer, its credit standard and its reserves at the central bank's facilities by its chief executive, the state's consumption and its bills' auctions by its minister, a bank's bids for them by its chief executive; spending, outlooks and children by a household's adults as one; work, search, retirement and claims by the person. Job search and the answer to an offer satisfice, options arriving one at a time (MND.7, owner 2026-09-28); every other decision takes the best option."
+source_ref = "The concerns are the spec's list (MND.2). Each decision is taken where its institution's governance puts it: prices, output, inputs, hiring and pay by the head of the line of business, the firm's survival, borrowing and investment by its chief executive, a loan's approval and price by a bank's loan officer, its credit standard and its reserves at the central bank's facilities by its chief executive, the state's bills' auctions by its minister, a public agency's staff and purchases by its head, a bank's bids for them by its chief executive; spending, outlooks and children by a household's adults as one; work, search, retirement and claims by the person. Job search and the answer to an offer satisfice, options arriving one at a time (MND.7, owner 2026-09-28); every other decision takes the best option."
 shape = "standing:what people care about and where each decision is taken: no mechanism in the world derives the concerns or an institution's division of its decisions, so both are the accepted stand-in from the literature on preferences and on corporate governance"
 
 [primitive.value]
@@ -31,7 +31,8 @@ decisions = [
   { name = "BNK.request", taken_in = "chief_executive", concerns = ["means", "security"], mode = "best" },
   { name = "SOV.size", taken_in = "minister", concerns = ["means", "principle", "standing"], mode = "best" },
   { name = "SOV.bid", taken_in = "chief_executive", concerns = ["means", "security"], mode = "best" },
-  { name = "SOC.consume", taken_in = "minister", concerns = ["principle", "standing"], mode = "best" },
+  { name = "SOC.staff", taken_in = "head", concerns = ["means", "principle", "standing"], mode = "best" },
+  { name = "SOC.consume", taken_in = "head", concerns = ["principle", "standing"], mode = "best" },
   { name = "HH.spend", taken_in = "household", concerns = ["means", "security", "family", "leisure_and_health"], mode = "best" },
   { name = "HH.stance", taken_in = "household", concerns = ["means"], mode = "best" },
   { name = "DEM.try_for_child", taken_in = "household", concerns = ["family", "means", "leisure_and_health"], mode = "best" },
