@@ -38,6 +38,8 @@ pub struct Core {
     pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
     /// The insolvency law on the core: graces, contracts in arrears, estates' claims and firms ended.
     pub insolvency: crate::core_default::Insolvency,
+    /// Each creditor's loan book, kept by what moves it.
+    pub loan_books: std::collections::BTreeMap<PartyKey, crate::core_books::LoanBook>,
     /// The next identity the core hands a party or person it begins.
     pub next_id: u64,
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.

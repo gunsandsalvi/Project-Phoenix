@@ -382,6 +382,7 @@ fn core_of(
     }
     core.open_state(state, today);
     core.open_insolvency(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
+    core.open_loan_books();
     if let Some(rule) = own
         .iter()
         .find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE)

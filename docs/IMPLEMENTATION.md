@@ -971,7 +971,12 @@ world switches to the core.
     take the rest once ownership is a contract naming them (FRM.1, S3.05). An estate holding goods waits for S2.04's
     liquidation to sell them. LC-1-45 reads that no firm is in arrears past its grace and a day, and after a year that
     firms of every industry ended. Households in arrears past a grace (HH.21) wait for a personal insolvency law the
-    data in hand does not declare: that primitive is S2.11's.
+    data in hand does not declare: that primitive is S2.11's. A household that ends leaves its debts to its estate as
+    claims beside a firm's, where before its loans closed unpaid and unseen.
+  - f: the banks' loan books (BNK.11, `core_books`): each creditor's book is kept by what moves it — lent (the lending
+    placeholder's loans), principal repaid (each amortising due's part), written off (a loan contract closing owing a
+    balance: its borrower ended, or the person it names gone) — and held at each close to what its loan contracts
+    owe it, a difference a finding of the loans family; LC-1-24 reads it. Not yet run.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

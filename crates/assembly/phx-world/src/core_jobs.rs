@@ -165,6 +165,7 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            moves: crate::core_day::LoanMoves::default(),
         }
     }
 

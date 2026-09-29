@@ -265,11 +265,13 @@ impl Core {
             if family.store.kinds.first() != Some(&key.kind()) {
                 continue;
             }
-            let employment = family.name == "LAB.employment";
+            if family.name != "LAB.employment" {
+                continue;
+            }
             for edge in family.store.of(0, key.slot()) {
                 let Some(row) = family.store.edges.row(edge) else { continue };
                 let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
-                if employment {
+                {
                     let band = family.classes.get(at).and_then(|k| k.get(2)).copied();
                     let years = band.map_or(0, |b| i64::from(year) - i64::from(b));
                     let severance = law.map_or(0, |l| {
@@ -294,20 +296,36 @@ impl Core {
                         rank: EMPLOYEES,
                     });
                     staff.push((row.ends[1], row.person, row.amount));
-                } else {
-                    // A contract reckoned from its terms owes what it still has to repay beside its arrears.
-                    let balance = if family.terms.get(at).and_then(Option::as_ref).is_some() { row.amount } else { 0 };
-                    claims.push(Claim {
-                        creditor: row.ends[1],
-                        amount: row.arrears + balance,
-                        reason: family.reason,
-                        rank: CREDITORS,
-                    });
                 }
             }
         }
+        claims.extend(self.debts_of(key));
         claims.retain(|c| c.amount > 0);
         (claims, staff)
+    }
+
+    /// What a party owes its creditors beside its employees, as claims on its estate: on each contract it pays other
+    /// than a job, its arrears, and, on one reckoned from its terms, the balance it still has to repay.
+    pub(crate) fn debts_of(&self, key: PartyKey) -> Vec<Claim> {
+        let mut claims = Vec::new();
+        for family in self.families.iter().filter(|f| f.name != "LAB.employment") {
+            if family.store.kinds.first() != Some(&key.kind()) {
+                continue;
+            }
+            for edge in family.store.of(0, key.slot()) {
+                let Some(row) = family.store.edges.row(edge) else { continue };
+                let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
+                let balance = if family.terms.get(at).and_then(Option::as_ref).is_some() { row.amount } else { 0 };
+                claims.push(Claim {
+                    creditor: row.ends[1],
+                    amount: row.arrears + balance,
+                    reason: family.reason,
+                    rank: CREDITORS,
+                });
+            }
+        }
+        claims.retain(|c| c.amount > 0);
+        claims
     }
 
     /// Every contract a firm was party to closed into its claims on the estate, and each of its employees searching
@@ -319,7 +337,7 @@ impl Core {
             let Some(side) = family.store.kinds.iter().position(|k| *k == key.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, key.slot()).collect();
             for edge in mine {
-                family.store.close(edge);
+                family.close_contract(edge);
                 self.insolvency.since.remove(&(i, edge.get()));
                 self.labour.noticed.remove(&edge.get());
             }

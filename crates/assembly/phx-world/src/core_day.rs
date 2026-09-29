@@ -64,6 +64,17 @@ pub struct DatedFamily {
     pub finishing: Vec<u32>,
     /// Each schedule's last date by its place, where its contracts end: a benefit's months.
     pub ends_after: Vec<Option<u32>>,
+    /// What its contracts reckoned from their terms moved on their creditors' books since the books last read them.
+    pub moves: LoanMoves,
+}
+
+/// A family's moves on its creditors' loan books: each amount lent, principal repaid and balance written off, with
+/// the creditor whose book it moves.
+#[derive(Debug, Default)]
+pub struct LoanMoves {
+    pub lent: Vec<(PartyKey, i64)>,
+    pub repaid: Vec<(PartyKey, i64)>,
+    pub written_off: Vec<(PartyKey, i64)>,
 }
 
 /// The state's laws on the core, by country: the income tax withheld from wages, the consumption tax's rate, the
@@ -201,7 +212,7 @@ impl Core {
         }
         for family in &mut self.families {
             for edge in std::mem::take(&mut family.finishing) {
-                family.store.close(Slot::new(edge));
+                family.close_contract(Slot::new(edge));
             }
         }
         n
@@ -240,6 +251,19 @@ impl Core {
 }
 
 impl DatedFamily {
+    /// A contract closed; one reckoned from its terms that still owes a balance has it written off its creditor's
+    /// book.
+    #[clause("BNK.11")]
+    pub(crate) fn close_contract(&mut self, edge: Slot) {
+        if let Some(row) = self.store.edges.row(edge).filter(|_| self.store.edges.is_open(edge)) {
+            let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
+            if self.terms.get(at).is_some_and(Option::is_some) && row.amount > 0 {
+                self.moves.written_off.push((row.ends[1], row.amount));
+            }
+        }
+        self.store.close(edge);
+    }
+
     /// The contracts due today made flows, each rescheduled at its next date.
     #[clause("SET.4", "TIME.4")]
     fn dues(&mut self, day: Day, calendar: &Calendar, due: &mut Vec<u32>, out: &mut Vec<Flow>) -> u64 {
@@ -261,6 +285,9 @@ impl DatedFamily {
                 Some(terms) => {
                     let (paid, repaid) = reckoned(terms, (row.amount, *ccy), row.nth, (day, calendar));
                     row.amount -= repaid;
+                    if repaid > 0 {
+                        self.moves.repaid.push((row.ends[1], repaid));
+                    }
                     paid
                 }
                 None => row.amount,
@@ -289,7 +316,7 @@ impl DatedFamily {
             if last.is_some_and(|n| row.nth > n) {
                 // A contract past its last date ends once nothing it owes is left to fail.
                 if amount == 0 {
-                    self.store.close(slot);
+                    self.close_contract(slot);
                 } else {
                     self.finishing.push(edge);
                 }
@@ -596,6 +623,7 @@ impl Core {
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
         record.estates += self.end_settled(settling);
+        self.book_loans(day);
         for k in &mut self.kinds {
             k.parties.close_day();
         }

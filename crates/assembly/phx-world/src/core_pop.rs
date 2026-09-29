@@ -374,14 +374,14 @@ impl Core {
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
             for edge in mine {
                 if family.store.edges.row(edge).is_some_and(|r| r.person == person) {
-                    family.store.close(edge);
+                    family.close_contract(edge);
                 }
             }
         }
     }
 
-    /// A household no one is left in ends: its contracts close, what its account holds passes to an estate that
-    /// opens at the same bank, and its slot is released after the day.
+    /// A household no one is left in ends: what its account holds passes to an estate that opens at the same bank,
+    /// owing what the household owed, its contracts close, and its slot is released after the day.
     #[clause("PTY.9")]
     fn end_household(&mut self, key: PartyKey, (country, day): (CountryId, Day)) {
         let place = usize::from(key.kind());
@@ -390,8 +390,10 @@ impl Core {
             let pending = a.pending.get(key.slot())?;
             Some((bank, balance + pending))
         });
+        let debts = self.debts_of(key);
         if let Some((bank, money)) = account.filter(|(_, m)| *m != 0) {
-            let _ = self.open_estate((bank, money), (country, day));
+            let estate = self.open_estate((bank, money), (country, day));
+            self.insolvency.claims.insert(estate, debts);
             if let Some(a) = self.kinds.get_mut(place).and_then(|k| k.accounts.as_mut()) {
                 a.balance.set(key.slot(), 0);
                 a.pending.set(key.slot(), 0);
@@ -401,7 +403,7 @@ impl Core {
             let Some(side) = family.store.kinds.iter().position(|k| *k == key.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, key.slot()).collect();
             for edge in mine {
-                family.store.close(edge);
+                family.close_contract(edge);
             }
         }
         if let Some(Some(p)) = self.persons.get_mut(place) {

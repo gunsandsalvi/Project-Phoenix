@@ -2009,7 +2009,11 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   money, passes its goods, closes every contract it is party to into claims (`claims_of`: employees' wages owed and
   severance at the first rank, other creditors at the second), sends its staff to search, zeroes its vacancies and ends
   the party. `estates_pay` pays each rank in proportion as far as the money goes (`shares`), the rest to the heirless
-  destination; an estate holding goods stays until they are sold.
+  destination; an estate holding goods stays until they are sold. A household's estate holds its debts as claims
+  (`debts_of`).
+- **Loan books** (`phx_world::core_books`, BNK.11): each dated family records its moves on its creditors' books
+  (`LoanMoves`: lent, principal repaid in `dues`, balances written off by `close_contract`); `book_loans` enters them
+  at the day's close and holds each creditor's `LoanBook` to the balances its loan contracts owe it.
 - **The world's stores** (`phx_core::store`): a kind (`KindStore`) keeps its `Parties`, each party's record of `stride`
   words in one column, and, if it holds money, its accounts (bank, balance, pending, held, facility) and cash lines,
   each a column indexed by slot, so a party begun in a released slot writes its own words over the ended one's; a

@@ -96,6 +96,7 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            moves: crate::core_day::LoanMoves::default(),
         };
         self.families.push(family);
     }
@@ -116,6 +117,7 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            moves: crate::core_day::LoanMoves::default(),
         }
     }
 
@@ -322,6 +324,7 @@ impl Core {
             let due = Due { ends: [key, lender], amount, nth: 1, schedule, person: 0, arrears: 0 };
             let first = f.first(calendar, schedule);
             let _ = f.store.open(due, first);
+            f.moves.lent.push((lender, amount));
             buf.push(phx_core::flows::Flow {
                 payer: lender,
                 payee: key,

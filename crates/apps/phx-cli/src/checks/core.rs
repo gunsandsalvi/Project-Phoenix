@@ -890,3 +890,23 @@ pub const LC_1_41: Check = live_check! {
     from_step: "S1.15",
     check: opening_reported,
 };
+
+/// Each creditor's loan book, kept by what was lent, repaid and written off, equals what its loans owe it at every
+/// close: the loans family found nothing.
+fn loan_books_reconcile(w: Inspector<'_>) -> Outcome {
+    let books = &w.core().loan_books;
+    if books.is_empty() {
+        return Outcome::NotYet("no creditor holds a loan in the run");
+    }
+    match w.findings().iter().find(|f| f.family == "loans") {
+        Some(f) => Outcome::Fail(format!("day {}: {}", f.day.get(), f.detail)),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_24: Check = live_check! {
+    id: "LC-1-24",
+    title: "BNK.11: each bank's loan book equals the sum of its loan lines, and its change reconciles",
+    from_step: "S1.09",
+    check: loan_books_reconcile,
+};

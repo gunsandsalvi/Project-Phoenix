@@ -162,6 +162,7 @@ impl Core {
             treasuries: Vec::new(),
             estates: Vec::new(),
             insolvency: crate::core_default::Insolvency::default(),
+            loan_books: std::collections::BTreeMap::new(),
             next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),
@@ -454,6 +455,7 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            moves: crate::core_day::LoanMoves::default(),
         }
     }
 }
