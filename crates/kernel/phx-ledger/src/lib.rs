@@ -1,51 +1,12 @@
+//! What remains of the contract algebra the core reads: terms, legs, schedules and the dues they give (`algebra`); the
+//! reasons and line kinds systems declare; the levies' bands; the opening's helpers; and the online choice of a
+//! household's bank.
+
 pub mod algebra;
-pub mod apply;
-pub mod apply_batch;
-pub mod audit;
-pub mod books;
-pub mod chains;
-pub mod check;
-pub mod cleared;
-pub mod commitment;
 pub mod consts;
-pub mod contract_process;
-pub mod covered;
-pub mod due;
-pub mod dues;
-pub mod effects;
-pub mod estate;
-pub mod events;
-pub mod fails;
-pub mod fixed_point;
-pub mod goods;
-pub mod holder;
-pub mod holding;
 pub mod instruction;
-pub mod instrument;
 pub mod levy;
-pub mod lien;
 pub mod line;
-pub mod money;
 pub mod online;
 pub mod opening;
-pub mod pending;
-pub mod positions;
-pub mod rounding;
 pub mod rows;
-pub mod runs;
-pub mod stream;
-pub mod succession;
-pub mod terms;
-pub mod transfer;
-pub mod units;
-pub mod waterfall;
-pub mod words;
-
-#[cfg(test)]
-mod dues_tests;
-mod fixed_point_tests;
-mod runs_tests;
-mod settle_tests;
-#[cfg(test)]
-mod tests;
-mod transfer_tests;

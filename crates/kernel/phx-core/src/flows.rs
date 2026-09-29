@@ -56,7 +56,7 @@ impl Denom {
 
 /// One movement: from the payer to the payee, an amount of a denomination, for a reason, at the payer's payment
 /// order for the reason, from a source the reason names (a contract, a match, a transformation).
-#[clause("Law 5", "SET.4", "MON.5")]
+#[clause("Law 5", "SET.1", "SET.4", "MON.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Flow {
     pub payer: PartyKey,

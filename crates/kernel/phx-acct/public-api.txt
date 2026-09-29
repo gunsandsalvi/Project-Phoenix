@@ -7,4 +7,3 @@ pub fn phx_acct::basis::AcctPrims::declare(&mut phx_core::system::Declarations) 
 pub const phx_acct::basis::CARRYING_BASES: phx_core::register::PrimDecl
 pub fn phx_acct::basis::at_opening(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor) -> phx_num::missing::Missing<phx_core::accounting::CarryingBasis>
 pub fn phx_acct::basis::choose(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor, phx_core::accounting::CarryingBasis) -> core::result::Result<phx_core::accounting::CarryingBasis, phx_core::accounting::CarryingBasis>
-pub fn phx_acct::basis::held_for(phx_ledger::instrument::InstrumentFamily) -> phx_core::accounting::HeldFor

@@ -91,7 +91,7 @@ impl UnitIds {
 
 /// A party's holding of one good: its units, what they cost, the day they came in averaged by units, and what of them
 /// is committed to sales or pledged to carriers; the rest is free. Its party is the list it is on.
-#[clause("GDS.2", "ACC.6")]
+#[clause("GDS.2", "ACC.6", "ACC.15", "REG.1", "REG.2", "REG.9")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Holding {
     pub unit: u16,
@@ -249,7 +249,7 @@ impl Stocks {
     ///
     /// # Errors
     /// `Short`, when the bound holds fewer units than asked.
-    #[clause("GDS.12", "ACC.6", "SET.3")]
+    #[clause("GDS.12", "ACC.6", "SET.3", "REG.15")]
     pub fn deliver(&mut self, holder: PartyKey, unit: u16, units: i64, bound: Bound) -> Result<i64, Short> {
         if units < 0 {
             violation!(clause = "GDS.12", "a delivery of fewer than no units", units = units);
@@ -284,7 +284,7 @@ impl Stocks {
     ///
     /// # Errors
     /// `Short`, when the source bound holds fewer units than asked.
-    #[clause("GDS.2", "FRT.6")]
+    #[clause("GDS.2", "FRT.6", "REG.15", "REG.16")]
     pub fn bind(&mut self, holder: PartyKey, unit: u16, units: i64, (from, to): (Bound, Bound)) -> Result<(), Short> {
         if units < 0 {
             violation!(clause = "GDS.12", "fewer than no units bound", units = units);

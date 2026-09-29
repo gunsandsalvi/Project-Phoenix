@@ -61,7 +61,7 @@ impl Core {
     }
 
     /// The day's audit of the contracts and the persons, its findings kept for the run.
-    #[clause("REP.3", "REP.26", "PTY.11", "II.5")]
+    #[clause("REP.3", "REP.26", "REP.31", "PTY.11", "II.5")]
     pub(crate) fn audit(&mut self, day: Day) {
         let mut found = Vec::new();
         for family in &self.families {

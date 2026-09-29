@@ -451,7 +451,7 @@ impl Core {
     /// to what it is owed as far as the money goes, and the rest to its owners, a share each — a firm's estate's are the
     /// firm's — or, where it has none, to the party the law names where no heir is drawn, its country's treasury, to
     /// which what it owns passes too; it is ended after the day's settlement once it holds nothing.
-    #[clause("PTY.9", "POP.15", "L3")]
+    #[clause("PTY.9", "POP.15", "L3", "TIME.7")]
     fn estates_pay(&mut self, day: Day, calendar: &Calendar, out: &mut Vec<Flow>) -> Vec<PartyKey> {
         let mut settling = Vec::new();
         let mut heirless = Vec::new();
@@ -544,7 +544,7 @@ impl Core {
     /// customers hold; the money the parties hold moved only by what they, the banks and the issuers paid each other;
     /// and the issuers' money — reserves, the treasuries' accounts and banknotes — what their own record of the flows
     /// that moved it says.
-    #[clause("MON.5", "MON.7", "MON.8", "MON.9", "N1", "REP.14")]
+    #[clause("MON.5", "MON.7", "MON.8", "MON.9", "MON.11", "N1", "REP.14")]
     pub(crate) fn money_breaks(
         &mut self,
         (day, before): (Day, i128),

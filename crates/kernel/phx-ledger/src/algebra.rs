@@ -832,32 +832,6 @@ pub fn due_at(terms: &Terms, k: Option<u32>, day: Day, state: &DueState<'_>, out
 mod shape;
 pub use shape::{ShapePlan, due_by_shape, shape_of, shape_plan, terms_of};
 
-/// Whether every floating or indexed leg reads a series some market prints, as a floating reference must.
-#[must_use]
-pub fn unprinted_series(terms: &Terms, printed: &dyn Fn(SeriesId) -> bool) -> Vec<SeriesId> {
-    fn walk(leg: &Leg, printed: &dyn Fn(SeriesId) -> bool, out: &mut Vec<SeriesId>) {
-        match leg {
-            Leg::RateOnNotional { reference: Reference::Floating(f), .. } if !printed(f.series) => out.push(f.series),
-            Leg::Indexed { series, leg, .. } => {
-                if !printed(*series) {
-                    out.push(*series);
-                }
-                walk(leg, printed, out);
-            }
-            Leg::Elective { legs, .. } => legs.iter().for_each(|l| walk(l, printed, out)),
-            _ => {}
-        }
-    }
-    let mut out = Vec::new();
-    terms.legs.iter().for_each(|l| walk(l, printed, &mut out));
-    if let Missing::Present(Underlying::Series(s)) = terms.underlying
-        && !printed(s)
-    {
-        out.push(s);
-    }
-    out
-}
-
 #[cfg(test)]
 mod tests {
     use phx_core::calendar::Calendar;

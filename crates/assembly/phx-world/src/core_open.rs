@@ -456,6 +456,7 @@ impl Core {
     /// A country's households' money: its deposits over those that bank by their wealth, each at its bank; its
     /// currency over those that bank nowhere by their persons, held at the issuer. Each bank weighed for the firms'
     /// choice by the deposits its households hold with it.
+    #[clause("MON.14")]
     fn open_deposits(
         &mut self,
         c: &OpeningCountry,

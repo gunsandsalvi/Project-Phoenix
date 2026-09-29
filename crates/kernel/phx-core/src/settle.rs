@@ -209,7 +209,7 @@ impl Settle {
     /// order — ties among one payer's flows of one order by the lot `lot` draws for it — and a bank still short once
     /// its customers are done losing every flow through it, until nothing changes. What is left is the greatest set
     /// of flows that can settle given one another, rings included, and it is added to the accounts.
-    #[clause("SET.4", "SET.6", "MON.3", "MON.5", "TIME.6")]
+    #[clause("SET.4", "SET.5", "SET.6", "MON.3", "MON.5", "MON.12", "MON.13", "TIME.6")]
     pub fn settle(
         &mut self,
         pool: Option<&Pool>,

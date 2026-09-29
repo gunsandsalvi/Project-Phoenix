@@ -1,5 +1,4 @@
 use phx_core::{CarryingBasis, Declarations, HeldFor, Permitted, Prim, declare_prim};
-use phx_ledger::instrument::InstrumentFamily;
 use phx_macros::clause;
 use phx_num::Missing;
 
@@ -46,17 +45,6 @@ pub fn at_opening(permitted: &[Permitted], form: &str, held_for: HeldFor) -> Mis
     match permitted.iter().find(|p| p.form == form && p.held_for == held_for).and_then(|p| p.bases.first()) {
         Some(b) => Missing::Present(*b),
         None => Missing::Absent,
-    }
-}
-
-/// What a position of an instrument family is held for, where its holder has not said: a contract or a debt to
-/// collect, a share or a fund's unit to trade, a real asset to use, banknotes as money held.
-#[must_use]
-pub fn held_for(family: InstrumentFamily) -> HeldFor {
-    match family {
-        InstrumentFamily::Debt | InstrumentFamily::Contract | InstrumentFamily::Banknote => HeldFor::Collect,
-        InstrumentFamily::Equity | InstrumentFamily::FundUnit => HeldFor::Trade,
-        InstrumentFamily::RealAsset => HeldFor::Use,
     }
 }
 

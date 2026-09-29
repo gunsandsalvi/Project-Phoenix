@@ -93,7 +93,7 @@ impl Core {
     }
 
     /// The firms whose arrears have outlasted their country's grace today, each ended into an estate.
-    #[clause("FRM.15", "L3", "PTY.9")]
+    #[clause("FRM.15", "L3", "PTY.9", "TIME.7")]
     pub(crate) fn end_defaulted(&mut self, ctx: &LabourCtx<'_>, day: Day) -> u64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
         let firm_kind = crate::core::kind_number(firm);
@@ -184,7 +184,7 @@ impl Core {
     /// A firm ended into an estate: its money, goods and rights to deposits pass to it, each contract it was party to
     /// closes into a claim on it, its owners own the estate, its employees and working owners search again, and its
     /// vacancies close.
-    #[clause("PTY.9", "LAB.12", "L3")]
+    #[clause("PTY.9", "LAB.12", "L3", "SET.7")]
     pub(crate) fn end_firm(
         &mut self,
         ctx: &LabourCtx<'_>,
@@ -242,7 +242,8 @@ impl Core {
         });
     }
 
-    /// Every good a firm holds passed to its estate at its cost.
+    /// Every good a firm holds passed to its estate at its cost, where it lies: title moves, never the goods.
+    #[clause("GEO.15", "CAP.12")]
     fn pass_goods(&mut self, from: PartyKey, to: PartyKey, day: Day) {
         let held: Vec<(u16, i64)> = self.goods.stocks.holdings(from).map(|h| (h.unit, h.units)).collect();
         for (unit, units) in held.into_iter().filter(|(_, u)| *u > 0) {

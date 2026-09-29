@@ -1673,7 +1673,7 @@ impl Core {
     /// Each of the day's sales delivered once its payment settled, the units its buyer holds at what it paid or used
     /// up; one whose payment failed released to its seller, a service's capacity then lost as unsold capacity is. The
     /// goods' identity read over the deliveries.
-    #[clause("GDS.2", "GDS.10", "SRV.1", "Law 5")]
+    #[clause("GDS.2", "GDS.10", "SRV.1", "Law 5", "ACC.14")]
     pub(crate) fn deliver_sales(&mut self, day: Day, failed: &[Flow]) {
         let mut unpaid: BTreeMap<(PartyKey, PartyKey, i64), u32> = BTreeMap::new();
         for f in failed.iter().filter(|f| f.reason == SOLD && f.denomination.is_money()) {

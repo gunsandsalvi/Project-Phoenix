@@ -15,6 +15,7 @@ use crate::wheel::DueWheel;
 
 /// A kind's accounts in its currency: the bank each is held at, its balance, the card payments pending, what it paid
 /// through a closed bank and is held, and the facility its terms grant.
+#[clause("MON.2")]
 #[derive(Debug, phx_macros::Saved)]
 pub struct Accounts<B: Backing> {
     pub bank: Column<u32, B>,

@@ -182,7 +182,7 @@ Weibull by inversion.
 | `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. At Stage 0 the world calls none of the pool's traversals or `KeyedReduce` (§6.3); `phx-ffi`'s benches and the crates' tests do. |
 | `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3 | The **vocabulary every system and kernel crate declares with**: the `System` trait, `Declarations`, handler declarations and contexts (`Ctx`), the sub-step table, audit-family declarations and their read-only context, the **audit sink** (`trait AuditStream` and the touched-row bitmap, which `phx-audit` implements and `phx-world` injects, so `phx-ledger`'s apply feeds the audit without depending on it), opening contributions, the kink registry, the traits kernel crates meet through without depending on each other (`BooksAudit`, `MarketsAudit`, `AccountsAudit`, `LegRecords` and `CellsAudit`, the books, the tape, the accounts, the settled legs and the agent tables as the audit reads them, §10.4c); calendar and conventions; **decision schedules, wakes and the agenda** (§7.3); the party directory with bounded tombstones; **kind tables of individuals** with facet columns (§4.1); kinds; the primitive register, `DeclaredLimit` (a real limit constructible only from the register, a contract's terms, or a physical token that only `phx-ledger`'s holdings and `phx-geo`'s stock can build, for a capacity) and **policy values** (§4.6); **facts** (§4.1); **messages** (§4.2); **rule handles** (§4.7); hazard and occasion declarations; **public records** with audiences (§4.9); events; findings; party creation and ending. |
 | `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.8). |
-| `phx-ledger` | MON, SET, REG, L3's ranking | The **contract algebra** (§4.4); lines and their holder lists; **relationship rows** in holders' arenas (§4.5); instruments, holdings with the holder index, lots, liens, **commitments**; instrument events and the instrument's state, of which it is the one writer; `Covered<Qty>`, the quantity an offer of held units takes, which places a commitment on them; **levies** (§4.3); **instructions**, composite instructions and implicit batches; settlement (§6.5); fail records and payment records; transformation records; **line transfers**, including the split at a kink (§4.4); the estate waterfall. |
+| `phx-ledger` | REG.5, TAX.2, TAX.7 | The **contract algebra** the core reads (§4.4): terms, legs and schedules, and the dues they give, whole (`due_at`) or by shape (`shape_plan`, `due_by_shape`, §7.17); the reasons and line kinds systems declare (`ReasonDecl`, `LineKindDecl`, `name_code`); the withholding levy's bands (`levy::Withholding`, §4.3); the opening's helpers (`opening`); and the online choice of a household's bank (`online::Online`). The old kernel's books — lines, rows, instruments, holdings, liens, commitments, instructions and their settlement, transfers, estates and the waterfall — were deleted at S1.24: the core keeps the parties, contracts, flows, settlement and goods (`phx-core`, §7.17). |
 | `phx-pop` | REP | The population kinds compiled from the systems' items (`kind::compile_kinds`); each person packed into its word and the core's store of every household's persons (`persons::Persons`), a person keeping its identity; hazards drawn ahead per household and the persons a hit reaches (§7.3); the representation (§7.6). The agent tables, their attachments and their explicit households were deleted at S1.24 with the old kernel. |
 | `phx-market` | MKT | On the core: the posted-price meeting (`meet`), the between-firms meeting, the hiring kernel, carriage, reach, and the market kinds' declared data (`market`). The calls — the plain, coupled and linked call, with the simplex they solved by — their orders, prints and failures, the administered, book, bilateral and dealer forms, admission, grants, the markets' instances and their audit, which only the old kernel ran, were deleted at S1.24 and are rebuilt on the core with the steps whose markets need them (S2.09, S3.01, S3.06, S4). |
 | `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing; an instruction's money effects are taken on each party's net money in it, so a bank through which two customers pay each other, one deposit down and another up, neither pays nor is paid. On the core it declares the accounting bases alone: the valuations, statements, consolidation and equity accounts read the old kernel's books, were deleted at S1.24 with them, and are rebuilt on the core's contracts in its part h. |
@@ -372,18 +372,15 @@ and, where the payee system turns the money into something the holder holds, its
 by the payee system from the levy's legs (a defined-contribution subscription into fund units at the next net asset
 value, PEN.3; an accrual of defined-benefit rights on the holder's DB row, a `Row` leg in a unit that is not money,
 §4.5). The amount for a side entry is computed **per contract, rounded per contract, then multiplied by the count**
-(REP.9, TAX.7). `phx-ledger` composes levies into the flow's instruction; the levies of one flow that share a base are
+(REP.9, TAX.7). The core composes levies into the flow's instruction; the levies of one flow that share a base are
 evaluated in one pass with one search of their fused kinks, each rounded by its own convention. A **holding levy**
 (property tax) is declared on held classes, not on a flow: on its dates `phx-geo`'s (zone, class) index lists the
 holders (§7.8), and each holder's amount joins its (party, bank) leg in the payer pass (§6.5). A crossing is not a flow,
 so duty and import tax at a border are not levies: customs computes them per shipment through the tax's rule handles and
 issues a demand (§4.2).
 
-As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per (employment line kind, currency), bound on `Books` when the world opens or loads, its payee the country's treasury: each member's levy is the year's share of `TAX.income_band_*`'s marginal bands over the payment's per-member amount times the line's payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once and multiplied by the members; the payer pass routes it to the treasury in the payment's own instruction (§6.5, `DayBook::levied`), and on a pooled line the losers drawn give up both parts. The consumption tax is inside the posted price: the seller owes `TAX.consumption_rate`'s share of the price paid, paid to the treasury in the sale's instruction; a country that declares a value-added tax is charged it this way (a placeholder naming TAX).
+As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per currency, set in the core's state when the world opens or loads, its payee the country's treasury: a wage's levy is the year's share of `TAX.income_band_*`'s marginal bands over the wage times the payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once; the core takes it from each wage the day's dues pay (`Core::withhold`), and the employer, its collector, remits it to the treasury on the tax's remittance day. The consumption tax is inside the posted price: the seller owes `TAX.consumption_rate`'s share of the price paid, paid to the treasury in the sale's instruction; a country that declares a value-added tax is charged it this way (a placeholder naming TAX).
 
-A levy's rates are read as `Rates`: a policy value's marginal bands, or one share from the line's terms or the payee's
-fact. Withholding (`levy::withhold`) splits a member's gross into the net paid and the remittance, which sum to the
-gross.
 
 ### 4.4 Contract algebra, lines, instructions and transfers
 
@@ -410,9 +407,9 @@ it retires, written by `sys-bnk`): the buyer's deposit, the loan paid out, the p
 title and the new loan row, all or none. A commitment may also be **drawn by a match**: a between-firm purchase whose
 buyer holds the seller's terms grant becomes at 6d an instruction whose `Row` leg adds the amount to the buyer's
 payable and the seller's receivable rows on the invoice line of (market, terms, statement period), in place of the
-money leg, up to the grant's undrawn limit (TCR.1). An offer of held units places a commitment on them (a
-`Covered<Qty>`, built only by `phx-ledger` from free units held or borrowed), released when its trade settles or its
-order lapses at 1a, so no unit covers two offers (MKT.16, REG.16).
+money leg, up to the grant's undrawn limit (TCR.1). An offer of held units binds them: the core's goods keep a
+holding's units free, committed to sales or pledged to carriers (`phx_core::goods::Stocks::bind`), and only free units
+are bound, so no unit covers two offers (MKT.16, REG.16).
 
 A **line transfer** moves a count of a side to a new party — a sale of loans (BNK.10, SEC.2), a client moved to
 another clearing member (DRV.9), an estate succeeding a party (L3), a foreclosure (HSG.11) — as an instruction with a
@@ -482,7 +479,7 @@ holders' arenas once, a declared sweep. The line's side totals are kept incremen
   shares, bonds, fund units — is its **participation**, an attribute (REP.41), and income on a holding reaches the
   agent as one leg. An individual's
   holding is its lots, its basis read from them. The instrument's state (live, suspended, defaulted, ceased) has one
-  writer, `phx-ledger`'s instrument events, applying the event intents the deciding systems declare.
+  writer, the instrument events of the core's register (S3.04), applying the event intents the deciding systems declare.
 - **Due-day runs**: a holder's rows of **dated** line kinds (loans, rents, employment, invoices, policies, annuities,
   benefits and pensions, derivatives) are one segment of its row list, and its record keeps the run's **head** — the
   earliest day any of them can be due, and the segment's offset and length — with no list reference of its own: 12 bytes
@@ -880,7 +877,7 @@ rounded split lands its residue on the payer, the payee with the largest share, 
   over the claimant rows' counts from the line's own stream on the day, made afresh from the same start each time the
   failed count grows, so the fixed point stays a function of the failures alone; each claimant row is paid for its
   contracts not drawn. The draw is one sequence of contracts, each picked by the contracts its row has left (a Fenwick
-  tree over the claimant rows, `phx_ledger::cleared::Losers`), from the stream `REP.cleared` keyed by the line and the
+  tree over the claimant rows), from the stream `REP.cleared` keyed by the line and the
   day, so the first n drawn are the same contracts whatever n the failures reach and a growing count only takes credits
   away. A line is cleared when its holder list shows at least two holders on each side, a side that keeps no list
   (households, depositors) counting as many; the reading stops there, and two listed holders are the whole line only
@@ -1473,8 +1470,9 @@ not yet kept: every extracted unit is of its product's one class, until the comm
 
 - **Condition classes** (REP.24): each kind of plant is held in `CAP.condition_classes` classes of age, each an
   instrument per (country, kind, class), so plant of one class is alike: an agent holds it at average cost like any
-  holding (§4.4) and nothing is kept per unit. A system declares each kind's classes to the ledger as a **chain**
-  (`phx_ledger::chains::Chains`, saved with the ledger), tagged with its kind; no instrument is in two chains.
+  holding (§4.4) and nothing is kept per unit. The core keeps each kind's classes as a **chain**
+  (`phx_core::units::Chain`, its conditions issued together by `issue_chain`), a class of one kind alone
+  (`phx_core::units::Class`).
 
 A kind of service life L in C classes gives each class a span L ÷ C; a class's **efficiency** is the hyperbolic
 (L − a) ÷ (L − β·a) at its mid-age a, its **value** e^(−δ·a) of the cost new, and units leave each class at C ÷ L a
@@ -1544,8 +1542,8 @@ by CAP.4 (`rules::maintain`) come with the plant's resale market (S2.03).
 ### 7.11 Goods, orders and trades
 
 - **Goods** (GDS.1, GDS.2): a good is an instrument per **(product, grade class, zone)**, of the real-asset family, with
-  no issuer, counted in its product's unit and priced in its zone's country's currency. The ledger's goods table
-  (`phx_ledger::goods::Goods`, saved with the ledger) keys them and issues each the first time something names it, so
+  no issuer, counted in its product's unit and priced in its zone's country's currency. The core's unit table
+  (`phx_core::goods::UnitIds`, saved with the core) keys them and issues each the first time something names it, so
   only goods somewhere made or held exist. A stock is its holder's holding of the good, its lots its cost (ACC.6): no
   system keeps a second count of it. Every good stands at a region's **market zone**, the region's largest zone
   (`GeoState::market_zones`), where its market meets and the freight network's segments end: an individual's at its
@@ -1589,15 +1587,13 @@ by CAP.4 (`rules::maintain`) come with the plant's resale market (S2.03).
   stands. Each day's stances are counted (`StanceDay`: surprises, reviews woken, methods held, firms per heuristic). The goods view
   holds the outlooks of the goods markets alone — between firms and commodities — whose subject is a good where it
   stands, as the marks are; a retail or carriage market's series is read by its own subject.
-- **Cost flows** (ACC.6): an individual chooses first in, first out or weighted average once
-  (`Ledger::choose_cost_flow`, saved); an agent holds at average cost (ACC.6). A holding at average cost keeps one lot,
+- **Cost flows** (ACC.6): every holder holds at average cost. A holding at average cost keeps one lot,
   whose day is its units' days averaged by quantity, so what ages with the lot, as spoilage does, ages as its units
   do.
-- **Transformations from handlers**: a handler asks for units of goods made or used up for its own row by a
-  **transformation intent** (`phx_ledger::intents::Transform`): its reason, carried as its name's code
-  (`name_code`, FNV-1a; two declared reasons of one code stop the run), and its legs. It is applied at the handler's next apply point through `Ledger::apply`; a leg
-  taken from a deposit stands at the deposit's zone, needs its right and a product the deposit gives, and depletes it
-  by GEO's own write (`phx_geo::deposits::extract`), the deposit's one writer. A handler moves no money.
+- **Making**: units made or used up are flows between the holder and nature (reasons `MADE` and `USED`), applied to
+  the core's goods with the making's cost (`Stocks::apply`, `Cost::At`); an extractor's output is first taken from
+  the deposits whose rights it holds (`Core::take_from_deposits`), each deposit's remaining units written there
+  alone. A reason's code is its name's (`name_code`, FNV-1a); two declared reasons of one code stop the run.
 - **Orders** (MKT.16, MKT.17): a handler asks to trade by an **order intent** (`phx_market::intents::OrderIntent`):
   its market kind's code, the product and grade class it is over, at its row's zone, its side and its steps. At
   5d the kernel admits it into the day's book (one asked later stops the run): its instance of the kind over the good
@@ -2193,7 +2189,7 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   (`SRV.price_weight`); the distance term joins when the meetings' places are on the core. The sheet's firm deposits
   are shared over the firms by their turnover at those prices; the turnover is 0.93–0.96 of the accounts' output
   value, the cheaper firms selling more of the units (seed 1, 150,000 persons).
-- **Jobs on the core** (`core_jobs`): each job the books hold on an employment line is read once a line (its wage,
+- **Jobs on the core** (`core_jobs`): each job the opening drew for a household's person is read once (its wage,
   schedule and next date, region and occupation) and dealt to a firm in its region: a region's jobs of an occupation
   are shared over its firms by largest remainder (`deal`) on the hours their output takes of the occupation (their
   way's hours a unit, fewer by their productivity, `sys_frm::rules::way::own_hours`, times their output), in an order
@@ -2433,7 +2429,7 @@ experience weighting is (L − k)^θ over the annual means of the years lived.
 
 | Ending | Handled by | How |
 | --- | --- | --- |
-| A person's death | `sys-dem` | The person leaves the household and its rows (§7.4); if the household ends, an estate row in `phx-core`'s estate table, behaviour in `sys-est` (at Stage 0, `phx_ledger::estate` and `phx-world`'s `estates`, below) |
+| A person's death | `sys-dem` | The person leaves the household and its rows (§7.4); if the household ends, an estate on the core, behaviour in `sys-est` (until then the core's estates, below) |
 | Leaving home, separation, formation | `sys-dem` | Not an ending: `divide` makes a new household from persons of one by the family law, `combine` one from persons of two; the origins continue, and a household ends only with its last person |
 | Household, firm, fund or political-party estate | `sys-est` | Sells what its debts need; pays by the country's law through the ledger's waterfall (L3), as instructions settled at stage 7; passes the rest in kind (POP.9) |
 | Personal insolvency | `sys-hh` | The procedure (HH.21): an estate row sells the non-exempt assets, distributes and ends; for the procedure's period the income levy's follow-on pays the creditors' claim line through the country's trustee; discharge ends the claims |
@@ -2445,43 +2441,27 @@ experience weighting is (L − k)^θ over the annual means of the years lived.
 | Public agency | `sys-soc` | Its duties and staff pass to a successor agency named by the budget |
 | Sovereign | `sys-trs` | Default and exchange offer |
 
-Estate rows are short-lived individuals, **one per ended party**, holding its count on every line and holding it
-succeeds to (§7.4). The ended party's identity names its
-estate as successor (PTY.10), so a trade or payment in flight that names it settles with the estate; and its units
-pass with what binds them — covers of offers not yet settled, as a weekend's sales are, and pledges — which stay under
-its name and count on the estate (`phx_ledger::succession`: `Ledger::bound`, and every cover and pledge placed through
-`Ledger::cover` and `Ledger::pledge`), a succession forgotten at the close once nothing is bound under the old name. How many are open follows Little's
-law, the rate of openings times their life: firms' about 800 a day × about 40 days, households' about 1 000 a day ×
-about 25 days, personal insolvencies' about 70 a day × about 45 days — about 60 thousand open, at 512 bytes each
+An estate is a short-lived party, **one per ended party**, of the core's estate kind. How many are open follows
+Little's law, the rate of openings times their life: firms' about 800 a day × about 40 days, households' about 1 000 a
+day × about 25 days, personal insolvencies' about 70 a day × about 45 days — about 60 thousand open, at 512 bytes each
 (§13.1). Their mean life and the number open are counted per kind.
 
-The waterfall (`phx_ledger::waterfall`) is pure and runs one currency at a time, never converting: each secured claim is
-paid first from its own collateral's proceeds, a surplus joining the general proceeds and a shortfall joining the
-claim's class; then the classes in the country's declared order, each paid in full while the proceeds last and the
-first they do not cover pro rata, the division's residue landing on the claim the law names for that class and
-currency; what is left is the owners'.
+As built there is no `sys-est`: the core runs estates (`Core::open_estate`, `Core::estates_pay`). A household no one
+is left in ends into one (`Core::end_household`), taking its money and the shares it owns; a firm ends into one
+(`Core::end_firm`) taking its money, goods at their cost where they lie, rights to deposits and projects, each contract
+it was party to closing into a claim on the estate (`close_contracts`: an employee's wages owed and severance for its
+years served at the employees' rank, what else it owes at the creditors'), its owners owning the estate in its place.
+From its country's next business day the estate pays its claims by rank, each rank in proportion to what it is owed as
+far as the money goes, and the rest to its owners, a share each, or where it has none to the party the law names where
+no heir is drawn, its country's treasury (`HEIRLESS_DESTINATION`), since no heir is drawn before the kinship lines
+exist (S2.04), to which what it owns passes too; it ends after the day's settlement once it holds nothing. The
+insolvency law's order of classes and the secured claims' collateral are S2.03's.
 
-As built there is no `sys-est`: estates are the ledger's `phx_ledger::estate` run by the
-world's `estates` (`phx-world/src/estates.rs`). An ended household's rows pass to one estate at 3e; from the next
-business day, in 7c's block once the day's dues are paid, the ledger settles it (`Books::settle_estate`): its rows that
-hold nothing but money leave with their counterparts first; its money pays its debts through the waterfall, its
-creditors as one class until the insolvency law's order of classes (S2.03); and while it still holds units it waits to sell them, counted, writing
-nothing off and distributing nothing. One that holds none writes off what it owes beyond, pays what is left to the
-party of the kind `HEIRLESS_DESTINATION` names (the treasury) in its country, since no heir is drawn before the kinship
-lines exist (S2.04), and its rows leave with their counterparts and it ends; one whose payment fails waits,
-counted. Dues it
-owes in arrears are not claims in its waterfall until S2.04. A catastrophe's struck tiles lose, at 3b, their share of every
-physical unit the individuals sited there hold, as a transformation naming the event (GEO.8).
-
-Firms end in **default of payment** (FRM.15): a kind is put under its country's insolvency law by an
-`InsolvencyDecl` naming the grace (`FRM.insolvency_grace_days`, each country's own). The contract process's fails that leave a party of
-such a kind in arrears queue the day its grace ends (`World::defaults`, rebuilt from the arrears when a save loads);
-at 2e a party whose contract is still in arrears at that day ends: a large firm into an estate that takes every row
-by line transfers and every holding (`pass_holdings`), a small firm's agent as a household's does (`end_agent`). Its
-equity account closes as it ends (`Accounts::close`): what it held is its estate's. The estate liquidates from the
-next business day as any other: its rows leave with their counterparts — its tenants' tenancies and its staff's jobs
-end (REP.23), drawn from the households' sides through their holder lists as §7.4 says. Restructuring, the law's
-other way, waits for the creditors' decisions (S3); balance-sheet insolvency for the valuation of firms' books.
+Firms end in **default of payment** (FRM.15): each country's insolvency law names the grace
+(`FRM.insolvency_grace_days`). A contract a failed flow put in arrears is remembered from the day its arrears began
+(`Core::note_arrears`) and forgotten once paid or closed; a firm whose arrears outlast its country's grace ends into an
+estate (`Core::end_defaulted`), its staff searching again. Restructuring, the law's other way, waits for the
+creditors' decisions (S3); balance-sheet insolvency for the valuation of firms' books.
 
 ### 9.2 A bank's failure
 
@@ -2838,76 +2818,20 @@ series of one, never a drawn past.
   the world's only history. Nothing in the world reads the length.
 - The epoch lies early enough that every opening contract's start date is a day (TIME.2).
 
-### 10.4a The books at the opening
+### 10.4a The books at the opening *(retired)*
 
-- **The world's books** (`phx_ledger::books::Books`) hold the ledger and one kind table per kind of individual; the
-  assembly opens them empty and hands them to each contribution as `&mut dyn Any` inside `phx_core::Opening`, so
-  `phx-core` never names the ledger. Contributions run by phase, then by their system's code, then by name.
-- **Drawn sizes** pass between contributions in the books' `drawn` map, keyed by stratum and country (a bank's
-  weight, a firm's debt, deposits and plant, a firm's lender); the derived side reads them and apportions (§10.2).
-- **Balancing** is the ledger's `OpeningWrite` legs, applied by the one apply routine at `ApplyAt::Opening`, where
-  rows may also be opened, and moved whole between holders with their balances, and nothing else moves. Each write is reported with its party, amount, the identity it
-  served and its counterparty; once every phase has run, each party's opening **equity** is computed once, as its
-  rows' balances signed by side plus its holdings at cost, into the report. At the assembly's end, once the player is
-  seated, the ledger forgets the opening's day book whole (`Ledger::opened`): the audit and the accounts read days, and
-  the opening is none, so the accounts open on what the opening wrote.
-- **Plant** is held by kind and condition class (§7.10), a real asset per (country, kind, class) counted in a cent of
-  the kind at world-average prices, held at cost: each country's stock of a kind, its GDP times the group's stock per
-  unit of GDP over the price level there of the product the kind is bought as (`GDS.price_level`), apportioned over every firm by its employees times its industry's plant of the kind per hour worked,
-  and spread over the classes as a steady stock growing at the country's rate would be.
-
-— each class ρ = (C ÷ L) ÷ (g + C ÷ L) times the one before, its units priced so the classes' values sum to the
-stock's value, a unit new costing that price level, each lot costing what it is worth. The large firms' structures pass to
-housing in the books' `drawn` map (`CAP.structures`), whose owners stand in for the landlords.
-- **Accounts** — reserves, the treasury's account, the central bank's claim on the treasury — have no dates and are
-  marked spent at the opening; every other opening line falls due on the first date of its schedule after the
-  snapshot.
-- **The sovereign's bills** close the banks' books, last of the balances (`sys-sov`'s `Bills`): once each bank's
-  deposits, loans and reserves are written, it holds the bills that bring its equity to its country's capital ratio of
-  its assets (`GEN.bank_capital_ratio`), none where its assets already carry more, spread over a bill's weeks as one
-  line maturing each week, so the weekly auctions roll a week's part over; the world's bill book learns them after the
-  opening (`bills_opened`). A bill's face is dollars at the country's units to the dollar. The public debt the banks'
-  bills and the central bank's claim do not hold waits for the holders of later stages, and the difference from the
-  derived debt is reported as an adjustment.
-- **Opening draws** use each system's stream `<SYS>.opening` with the subject `Opening(stratum, ordinal)`
-  (`phx_core::contribution`), so a party's draws exist before its identity; a country's strata are numbered by purpose.
-- **The institutions**: `sys-cb` opens one central bank and one treasury per country, sited on its land. Reserves are
-  the banks' liquid share of their assets, apportioned over the banks by their weights; the central bank's claim on the
-  treasury is its drawn assets, raised to the reserves where they are larger — the one change, reported as an
-  adjustment — and the treasury's account holds the rest. `sys-bnk` fits a Zipf law's count and exponent to the three-
-  and five-bank concentrations (`zipf.rs`) and apportions the firms, in a drawn order, over the banks by those shares,
-  largest remainder with ties by lot; each large firm keeps a current account at its bank and owes it a term loan whose
-  term is drawn between `BNK.loan_years_min` and `_max` and whose start falls uniformly over the days of its term before
-  the snapshot. `sys-frm`'s large firms are the top order statistics of the firm-size law down to the promotion rank,
-  drawn one after another in logs. Every kind's legal form is one of `PTY.legal_forms`, and assembly refuses a kind whose
-  form the law does not declare.
-
+Retired with the old kernel's books at S1.24: the core draws its own opening, as §7.17 says (`core_open`, the
+balance sheet in `opening::sheet`, plant in `core_plant`, the banks' bills in `core_bills`).
 
 ### 10.4b Dated flows before the payer pass *(retired)*
 
 Retired with the payer pass: stage 7 no longer pays each due as its own instruction from a pass
-over every holder's rows. Settlement is `Books::settle_day` — the stream over the holders' runs, the fixed point and
-one net per (line, party, side) applied one instruction per line — as §6.5 says, with the fails and the close there.
+over every holder's rows. Settlement is the core's (`phx_core::settle`, §7.17).
 
-### 10.4c The audit's view of the books
+### 10.4c The audit's view of the books *(retired)*
 
-`phx-core` declares the traits the kernel crates meet through: `BooksAudit`, the books as the audit reads them
-(instruments and lines by index, each checked by the ledger, and what a party holds on an account), which the ledger
-implements; `MarketsAudit`, `AccountsAudit` and `CellsAudit`, the tape, the accounts and the agent tables; and
-`LegRecords`, the audit's own record of the day's settled legs, which `phx-audit` implements. The ledger's five families
-(ownership, contracts, money, flows, units) read them through the family context. Each leg's digest carries what it
-counts toward its instruction's balance, a liability row's count against the asset side's, as the apply check counts it,
-so contracts leaving a line with their counterparts balance. A row recounted outside any instruction — a person leaving
-its rows at a death (§7.4) — is recorded by the ledger as an unpaired digest, its count and balance from what the row
-held to what it holds, and handed to the audit in its order among the instructions' legs, so a position's opening and
-its day's moves still make what it holds. Every row placed, removed or recounted marks its line side changed
-(`Lines::moved`), so what was read of a side, such as the contracts a draw is made over, is known stale. In the position
-read, a party that has ended holds nothing of its own: what it held passed on when it ended. The money family reads its
-day's span of money lines together, a side of many small holders that keeps no list summed in one pass over the tables
-of the kinds that may hold it; as built this sweeps every live agent's rows whenever the span holds a retail deposit
-line, undeclared and uncounted. The representation family bounds a row by the persons the agent holds in the
-roles its side declares (REP.31), as a household's jobs count its adults; a side declared
-`many`, whose holder counts a contract for each counterpart (an employer, a bank), is bounded by no count per person.
+Retired with the old kernel's books and audit at S1.24: the core's audit reads the core's stores (`core_audit`,
+§7.17).
 
 ### 10.5 Settled worlds for testing
 
@@ -3407,14 +3331,15 @@ on the build machine:
    and the agenda, each visit's gathers with its ledger's arithmetic for the mechanisms not yet built, the audit, the
    views and full saves. It is judged by the gate's criteria (§14.5); each later gate reruns it with the built stages'
    measured counts. Its numbers are costs, never the world's. As built (`phx-ffi`'s `load.rs` over
-   `perf/load/volumes.toml`), it runs after the world's turns in `Run all`, on the pool; its books are built by the
-   random-data generator `phx_ledger::synthetic`, and its households — random persons in the core's persons store — by
-   `phx-ffi`'s `agents.rs`. It settles each business day through `Books::settle_day` and closes the
-   ledger's day, draws households' next hits through `phx_pop::hazard` on the pool, and applies hits' outcomes by
-   reading their persons and writing the changed back; the audit is a sequential sweep of a slice of the
-   random words and of the agents' parties, not the real families; the agenda, redraws and each visit's gathers
-   are reads and writes of random words; there are no views, members leaving, estates or 9b posting. The
-   device report measures a household's next hit drawn and a hit's outcome applied on the fastest core.
+   `perf/load/volumes.toml`), it runs after the world's turns in `Run all`, on the pool: it builds the core's stores
+   at the design point's sizes from its own random data — every kind's parties with their records and money, every
+   family's contracts with their due days — and runs the day types' work through the core's kernels: hazards, the
+   agenda's handlers spending their declared arithmetic, the posted-price and between-firms meetings, the dues the
+   wheel hands each day read by shape, contracts opened and closed and parties begun and ended, settlement through
+   `phx_core::settle`, and full saves. Its audit holds the reserves and the money every account holds together to what
+   they were, and reads a thirtieth of the contracts in full; there are no views. Its households for the device
+   report — random persons in the core's persons store, `phx-ffi`'s `agents.rs` — measure a household's next hit
+   drawn and a hit's outcome applied on the fastest core.
 
 Stage 1's gate adds retail and labour: draws, sellers in reach, occasion evaluations and choices by decision,
 vacancies visible and labour rounds, surprise wakes, physical realisations, outlook methods in use, and agents per
@@ -3728,8 +3653,8 @@ hashes read their bytes as little-endian.
     - instrument outlooks and values are computed per **registered** (method, instrument) pair on days with a new
       print and shared by the cells using the method; claim values are closed-form, over a discount-factor table per
       curve and day; individuals catch up in O(1) (§8);
-    - the instrument's state has one writer, `phx-ledger`'s instrument events; an offer of held units is a
-      `Covered<Qty>` that places a commitment on them (§4.4, §4.5);
+    - the instrument's state has one writer, the core register's instrument events; an offer of held units binds
+      them, and only free units are bound (§4.4, §4.5);
     - each decision point's rule is registered by its owning system, except that a lender valuing a claim on its book
       does so through `sys-bnk`; the rating scale is `if-base`'s, `fund_position` is `if-state`'s, and `bank_choice`
       is `if-securities`' (§3.1, §3.4);
@@ -3939,11 +3864,11 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | A3 | NUM | `phx-num`, `phx-core` | 0 | 5 | building |
 | A4 | CHN | `phx-rand`, `phx-core`, `phx-pop` | 0 | 6 | building |
 | A5 | GEO | `phx-geo` | 0 | 5 | building |
-| A6 | REP | `phx-pop`, `phx-ledger` | 0 | 6 | building |
+| A6 | REP | `phx-pop`, `phx-store`, `phx-world` | 0 | 6 | building |
 | A7 | GEN | `phx-world` and every system's contribution | 0 | 7 | building |
-| B1 | MON | `phx-ledger` | 0 | 1 | building |
-| B2 | SET | `phx-ledger`, `phx-store`, `phx-world` | 0 | 0 | done |
-| B3 | REG | `phx-ledger` | 0 | 3 | building |
+| B1 | MON | `phx-core`, `phx-world` | 0 | 1 | building |
+| B2 | SET | `phx-core`, `phx-store`, `phx-world` | 0 | 1 | building |
+| B3 | REG | `phx-core`, `phx-ledger` | 0 | 3 | building |
 | B4 | ACC | `phx-acct` | 0 | 3 | building |
 | C1 | MKT | `phx-market`, `phx-acct` | 0 | 4 | building |
 | C2 | VAL | `phx-val` | 1 | 1 | building |
@@ -3986,7 +3911,7 @@ Generated by `phx-check coverage` from the clause map. Status: planned, building
 | K2 | XB | `sys-xb` | 5 | 5 | planned |
 | M1 | OBS | `phx-core`, `phx-obs`, `android/` | 0 | 8 | building |
 | M2 | STA | `sys-sta` | 1 | 5 | building |
-| L3 | estates | `phx-ledger` and `phx-world` at Stage 0; `sys-est` from Stage 2 | 0 | 2 | building |
+| L3 | estates | `phx-world` until `sys-est` at Stage 2 | 0 | 2 | building |
 | L1, L2, L4–L12 | transmission chains | read from the run by `phx chains` (N4) | 2 | 7 | planned |
 | N1 | audit | `phx-audit` and every system's families, run in every build run | 0 | 6 | building |
 | N2–N8 | measurement | `phx-cli`, `phx-world` metrics, `android/` bench | 0 | 7 | building |

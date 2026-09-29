@@ -596,26 +596,8 @@ name = "phx-acct"
 version = "0.1.0"
 dependencies = [
  "phx-core",
- "phx-id",
- "phx-ledger",
- "phx-macros",
- "phx-market",
- "phx-num",
- "phx-rand",
- "phx-store",
-]
-
-[[package]]
-name = "phx-audit"
-version = "0.1.0"
-dependencies = [
- "phx-core",
- "phx-exec",
- "phx-id",
  "phx-macros",
  "phx-num",
- "phx-rand",
- "phx-store",
 ]
 
 [[package]]
@@ -746,15 +728,12 @@ dependencies = [
 name = "phx-ledger"
 version = "0.1.0"
 dependencies = [
- "gungraun",
  "phx-core",
- "phx-exec",
  "phx-id",
  "phx-macros",
  "phx-num",
  "phx-rand",
  "phx-store",
- "trybuild",
 ]
 
 [[package]]
@@ -771,13 +750,11 @@ dependencies = [
 name = "phx-market"
 version = "0.1.0"
 dependencies = [
- "gungraun",
  "libm",
  "phx-core",
  "phx-exec",
  "phx-geo",
  "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
  "phx-rand",
@@ -813,9 +790,7 @@ version = "0.1.0"
 dependencies = [
  "libm",
  "phx-core",
- "phx-exec",
  "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
  "phx-rand",
@@ -854,7 +829,6 @@ dependencies = [
  "phx-core",
  "phx-id",
  "phx-macros",
- "phx-market",
  "phx-num",
  "phx-rand",
  "trybuild",
@@ -871,7 +845,6 @@ dependencies = [
  "if-pop",
  "if-state",
  "phx-acct",
- "phx-audit",
  "phx-core",
  "phx-exec",
  "phx-geo",
@@ -1318,14 +1291,9 @@ dependencies = [
 name = "sys-hsg"
 version = "0.1.0"
 dependencies = [
- "if-pop",
- "libm",
  "phx-core",
- "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
- "phx-rand",
 ]
 
 [[package]]

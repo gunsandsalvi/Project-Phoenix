@@ -8,15 +8,9 @@ publish.workspace = true
 
 [dependencies]
 phx-core = { path = "../phx-core" }
-phx-id = { path = "../../foundation/phx-id" }
-phx-ledger = { path = "../phx-ledger" }
 phx-macros = { path = "../../foundation/phx-macros" }
-phx-market = { path = "../phx-market" }
 phx-num = { path = "../../foundation/phx-num" }
-phx-rand = { path = "../../foundation/phx-rand" }
-phx-store = { path = "../phx-store" }
 
-[dev-dependencies]
 
 [lints]
 workspace = true

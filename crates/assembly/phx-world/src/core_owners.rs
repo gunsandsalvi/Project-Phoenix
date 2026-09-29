@@ -172,7 +172,7 @@ impl Core {
     }
 
     /// What a holder holds passed to another, share for share.
-    #[clause("PTY.9", "PTY.7")]
+    #[clause("PTY.9", "PTY.7", "GEO.15")]
     pub(crate) fn pass_holdings(&mut self, from: PartyKey, to: PartyKey) {
         let Some(owned) = self.owners.holds.remove(&from) else { return };
         for party in &owned {

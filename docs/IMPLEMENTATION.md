@@ -733,7 +733,9 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2; ACC.3, ACC.4, ACC.8, ACC.10–ACC.13, ACC.16 and FRM.17 *(moved from S0.19
 and S1.03: the accounts' read — accruals, equity accounts, valuations, statements and the revenue family — rebuilt on
-the core's contracts in h, the old kernel's books it read being deleted)*.
+the core's contracts in h, the old kernel's books it read being deleted); SET.10 *(moved from S0.17: gross and net
+settlement values and the closing ring, published from the core's settlement, the old books that published them
+being deleted)*.
 
 **Architecture**: §7.10–§7.15, §10.
 
@@ -1759,7 +1761,8 @@ Loans can be sold to other banks at a negotiated price.
 **Status**: planned
 
 **Clauses**:
-- STATE: TCR.1.
+- STATE: TCR.1; ACC.1 *(moved from S0.19: the accrual basis, whose receivables and payables are trade credit's first
+  contracts on the core, the old kernel's accrual books being deleted)*.
 - DECISION: TCR.2, TCR.3.
 - PROCESS: TCR.4.
 - INVARIANT: TCR.5.
@@ -1924,7 +1927,9 @@ of their own: they are in the cell's row list and its due-day run):
 **Status**: planned
 
 **Clauses**:
-- STATE: BNK.18 *(moved from S1.09: revolving facilities and credit lines, drawn and repaid by the funding decision)*.
+- STATE: BNK.18 *(moved from S1.09: revolving facilities and credit lines, drawn and repaid by the funding decision)*;
+  REG.10 *(moved from S0.14: undrawn lines and uncalled capital recorded on both sides as commitments, the old kernel's
+  commitment book being deleted)*.
 - DECISION: FRM.9 *(part: retained cash, trade credit, bank loans and credit lines; bonds, paper and shares are S3.04
   and S3.05)*; FRM.10 *(part: dividends; buybacks are S3.05)*; FRM.12 *(part: every act of distress but seeking a
   buyer, which is S4.06)*.
@@ -4408,7 +4413,8 @@ periods.
 
 **Clauses**:
 - STATE: CRD.1; BNK.3; BFL.2 *(completes it: certificates of deposit, paper and bonds banks issue, beside S2.06's
-  interbank loans and S3.01's repo)*.
+  interbank loans and S3.01's repo)*; REG.3, REG.4, REG.13, REG.17, REG.18 *(moved from S0.14: the register of issued
+  instruments, rebuilt on the core with its first issues, the old kernel's instrument register being deleted)*.
 - DECISION: CRD.2, CRD.3, CRD.4; FRM.9 *(part: bonds and commercial paper)*; BCP.4 *(part: contingent capital and
   subordinated debt)*.
 - PROCESS: CRD.6, CRD.8; CRD.5 *(part: book-built issues, taps and paper placed by bilateral quote; paper sold
@@ -10967,15 +10973,19 @@ and are not mapped.
 | MON | S1.12 | 4 |
 | MON | S1.24 | 10 |
 | SET | S0.15 | 1, 2, 3, 4, 5, 7, 8, 9, 11, 16 |
-| SET | S0.17 | 6, 10 |
+| SET | S0.17 | 6 |
+| SET | S1.24 | 10 |
 | SET | S0.20 | 12, 13, 15, 17 |
-| REG | S0.14 | 1, 2, 3, 4, 5, 8, 9, 10, 13, 14, 15, 16, 17, 18 |
+| REG | S0.14 | 1, 2, 5, 8, 9, 14, 15, 16 |
+| REG | S2.03 | 10 |
+| REG | S3.04 | 3, 4, 13, 17, 18 |
 | REG | S3.05 | 6, 11, 12 |
 | REG | S3.07 | 7 |
-| ACC | S0.19 | 1, 2, 9, 14, 15, 17 |
+| ACC | S0.19 | 2, 9, 14, 15, 17 |
 | ACC | S1.05 | 6 |
 | ACC | S1.24 | 3, 4, 8, 10, 11, 12, 13, 16 |
 | ACC | S2.01 | 7 |
+| ACC | S2.02 | 1 |
 | ACC | S3.05 | 5 |
 | MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 21 |
 | MKT | S3.06 | 5, 15, 19 |
