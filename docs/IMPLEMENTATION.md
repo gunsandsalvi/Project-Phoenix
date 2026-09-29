@@ -4613,8 +4613,9 @@ is a ratchet move the owner reviews (§2.11).
   books)*; EQY.9 *(completes it: shorts on borrowed shares, paying for the borrow)*; CRD.5 *(completes it: paper sold
   through dealers)*.
 - DECISION: CB.5 *(completes it: the central bank's purchases and sales trade through dealers)*.
-- MEASURE: DLR.10.
-- FORBID: DLR.11.
+- MEASURE: DLR.10; MKT.15 *(moved from S0.18, whose markets the core retired at S1.24: depth, bid–offer width,
+  turnover, failed meetings and the age of prints, per market, once dealers quote and calls clear)*.
+- FORBID: DLR.11; MKT.19 *(moved from S0.18 with the dealers' markets: a bid–offer is what dealers posted)*.
 - PRIMITIVE: DLR.12.
 - This step retires S1.11's placeholder naming DLR (the named banks as primary dealers), the Stage 1 rule that bills
   are bought only at auction and held to maturity (S1.11, S1.12), and what remained of S2.04's placeholder naming
@@ -10755,8 +10756,8 @@ and are not mapped.
 | ACC | S1.05 | 6 |
 | ACC | S2.01 | 7 |
 | ACC | S3.05 | 5 |
-| MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21 |
-| MKT | S3.06 | 5 |
+| MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 21 |
+| MKT | S3.06 | 5, 15, 19 |
 | MKT | S4.04 | 20 |
 | VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
 | VAL | S1.05 | 23 |

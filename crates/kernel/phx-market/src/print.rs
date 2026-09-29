@@ -136,15 +136,6 @@ pub struct Mark {
     pub source: MarkSource,
 }
 
-/// What a meeting traded, for its print: the unit and currency it is quoted in, the price, the matches.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Traded {
-    pub unit: UnitId,
-    pub ccy: Ccy,
-    pub price: PriceRaw,
-    pub matches: Vec<Match>,
-}
-
 fn next_index(len: usize) -> u32 {
     let Ok(i) = u32::try_from(len) else {
         capacity_exceeded!("entries of the tape", u32::MAX, len);
@@ -195,33 +186,6 @@ impl phx_store::Saved for Tape {
 }
 
 impl Tape {
-    /// A meeting's matches recorded, with the print they make; the print's quantity is what its matches traded.
-    #[clause("MKT.2", "MKT.13", "MKT.14")]
-    pub(crate) fn print(&mut self, market: MarketId, day: Day, form: Form, traded: Traded) -> PrintId {
-        if traded.matches.is_empty() {
-            violation!(clause = "MKT.14", "a print with no match", market = market.get());
-        }
-        let quantity: i128 = traded.matches.iter().map(|m| i128::from(m.qty)).sum();
-        let Ok(quantity) = i64::try_from(quantity) else {
-            capacity_exceeded!("a print's quantity", i64::MAX, 0);
-        };
-        let set = MatchSetId(next_index(self.sets.len()));
-        self.sets.push(MatchSet { market, day, matches: traded.matches });
-        let id = PrintId(next_index(self.prints.len()));
-        self.prints.push(Print {
-            market,
-            day,
-            unit: traded.unit,
-            ccy: traded.ccy,
-            quantity,
-            price: traded.price,
-            form,
-            matches: set,
-        });
-        self.last.insert(market, id);
-        id
-    }
-
     /// A meeting's matches recorded with no print of their own: the trades of a dealer or bilateral market, which a
     /// fixing may later rest on.
     pub fn record(&mut self, market: MarketId, day: Day, matches: Vec<Match>) -> MatchSetId {
@@ -245,11 +209,6 @@ impl Tape {
         if !known {
             violation!(clause = "MKT.12", "a mark from no print or fixing of its market", market = mark.market.get());
         }
-        self.marks.insert(mark.market, mark);
-    }
-
-    /// A mark put on the tape without the trace [`Tape::mark`] demands, for the audit's injection alone.
-    pub(crate) fn mark_untraced(&mut self, mark: Mark) {
         self.marks.insert(mark.market, mark);
     }
 
@@ -328,31 +287,5 @@ impl Tape {
     #[must_use]
     pub fn marks(&self) -> &BTreeMap<MarketId, Mark> {
         &self.marks
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use phx_id::{Day, MarketId, PartyId};
-    use phx_num::{Ccy, Missing, PriceRaw, UnitId};
-
-    use super::{Mark, MarkSource, Match, Tape, Traded};
-    use crate::market::Form;
-
-    #[test]
-    fn a_print_traces_to_its_matches() {
-        let mut tape = Tape::default();
-        let market = MarketId::new(3);
-        let price = PriceRaw::from_raw(100);
-        let m =
-            |b, s, q| Match { buyer: PartyId::new(b), seller: PartyId::new(s), qty: q, price, draws: Missing::Absent };
-        let traded = Traded { unit: UnitId::new(0), ccy: Ccy::new(0), price, matches: vec![m(1, 2, 5), m(3, 2, 7)] };
-        let id = tape.print(market, Day::new(4), Form::Call, traded);
-        let print = *tape.print_of(id).unwrap();
-        assert_eq!(print.quantity(), 12);
-        assert_eq!(tape.set_of(print.matches()).unwrap().matches.len(), 2);
-        assert_eq!(tape.last_print(market), Missing::Present(&print));
-        tape.mark(Mark { market, day: Day::new(4), price, source: MarkSource::Print(id) });
-        assert!(matches!(tape.mark_of(market), Missing::Present(m) if m.price == price));
     }
 }
