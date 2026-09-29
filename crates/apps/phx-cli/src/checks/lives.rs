@@ -18,6 +18,12 @@ const HALF_A_HIT: f64 = 0.5;
 const TAIL: f64 = 2.9e-7;
 /// Expectations below this many hits are judged by the exact Poisson tail, where the normal one misleads.
 const POISSON_BELOW: f64 = 30.0;
+/// The first age of the childbearing years the general fertility rate counts women over, and the first past them.
+const CHILDBEARING: (i64, i64) = (15, 50);
+/// Births are published per thousand women a year.
+const PER_THOUSAND: f64 = 1_000.0;
+/// Days in a year, on average over the calendar's cycle of leap years.
+const DAYS_A_YEAR: f64 = 365.25;
 /// The processes on lives whose rates are held by age class: death and the onset of disability.
 const LIFE_HAZARDS: [&str; 2] = ["DEM.death", "DEM.disability_onset"];
 
@@ -230,6 +236,77 @@ pub const LC_1_49: Check = live_check! {
             inflow is published",
     from_step: "S1.13",
     check: cohorts_leave,
+};
+
+/// The population by age class and sex at the close, the women in the childbearing years, the persons counted, and the
+/// births and days of the run.
+pub struct Structure {
+    pub classes: Vec<(i64, [u64; 2])>,
+    pub women: u64,
+    pub persons: u64,
+    pub births: u64,
+    pub days: u64,
+}
+
+impl Structure {
+    /// Births a year per thousand women in the childbearing years.
+    #[must_use]
+    pub fn general_fertility(&self) -> f64 {
+        let (births, women, days) = (self.births, self.women, self.days);
+        phx_rand::float::from_u64(births) / phx_rand::float::from_u64(women) * DAYS_A_YEAR
+            / phx_rand::float::from_u64(days)
+            * PER_THOUSAND
+    }
+}
+
+/// The population's structure at the close, read from the core's persons.
+#[must_use]
+pub fn structure(w: Inspector<'_>) -> Option<Structure> {
+    let core = w.core();
+    let place = core.names.iter().position(|n| *n == "household")?;
+    let decl = core.household_decl.as_ref()?;
+    let (store, persons) = (core.kinds.get(place)?, core.persons.get(place)?.as_ref()?);
+    let bounds = w.register().partition("DEM.age_classes").ok()?.bounds.to_vec();
+    let mut classes: Vec<(i64, [u64; 2])> = bounds.iter().map(|b| (*b, [0, 0])).collect();
+    let date = w.date(w.today());
+    let (mut women, mut counted) = (0_u64, 0_u64);
+    for slot in store.parties.live_slots() {
+        for p in persons.of(slot) {
+            let person = phx_pop::person::unpack(decl, p.word);
+            let (age, sex) = (person.age_on(date), person.attr(if_pop::SEX.name)?);
+            let class = bounds.partition_point(|b| *b <= age).checked_sub(1)?;
+            *classes.get_mut(class)?.1.get_mut(usize::try_from(sex).ok()?)? += 1;
+            counted += 1;
+            if sex == if_pop::FEMALE && (CHILDBEARING.0..CHILDBEARING.1).contains(&age) {
+                women += 1;
+            }
+        }
+    }
+    let births = core.pop_days.iter().map(|(_, d)| d.born).sum();
+    Some(Structure { classes, women, persons: counted, births, days: phx_rand::float::len_u64(core.pop_days.len()) })
+}
+
+/// The age structure sums to the persons counted, and the run's fertility is a number once any child is born.
+fn structure_reported(w: Inspector<'_>) -> Outcome {
+    let Some(s) = structure(w) else { return Outcome::Fail("no age structure could be read".to_owned()) };
+    let summed: u64 = s.classes.iter().map(|(_, [f, m])| f + m).sum();
+    if summed != s.persons {
+        return Outcome::Fail(format!("the age structure holds {summed} persons of {} counted", s.persons));
+    }
+    if s.births == 0 {
+        return Outcome::NotYet("fertility is read once households have children");
+    }
+    if !s.general_fertility().is_finite() {
+        return Outcome::Fail(format!("{} births over {} women gave no fertility", s.births, s.women));
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_36: Check = live_check! {
+    id: "LC-1-36",
+    title: "POP.13: age structure and fertility are reported",
+    from_step: "S1.13",
+    check: structure_reported,
 };
 
 pub const LC_0_39: Check = live_check! {

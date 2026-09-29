@@ -496,13 +496,6 @@ pub const LC_1_33: Check = live_check! {
     check: |_| Outcome::NotYet("awaits needs by quantity, with the households' finances (S2.05)"),
 };
 
-pub const LC_1_36: Check = live_check! {
-    id: "LC-1-36",
-    title: "POP.13: age structure and fertility are reported",
-    from_step: "S1.13",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the population's reads"),
-};
-
 pub const LC_1_38: Check = live_check! {
     id: "LC-1-38",
     title: "STA.4: no party read a statistic before its publication day",

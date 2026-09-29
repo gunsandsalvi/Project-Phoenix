@@ -262,6 +262,17 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 3] {
 }
 
 /// Each release the agencies published: its series, country, period, day and values.
+/// The age structure and fertility at the close, as the run report publishes them.
+fn population_report(w: Inspector<'_>) -> serde_json::Value {
+    let Some(s) = crate::checks::lives::structure(w) else { return serde_json::Value::Null };
+    json!({
+        "age_structure": s.classes.iter().map(|(a, [f, m])| json!({"from": a, "women": f, "men": m})).collect::<Vec<_>>(),
+        "persons": s.persons,
+        "births": s.births,
+        "general_fertility_per_thousand": s.general_fertility(),
+    })
+}
+
 fn statistics_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
         .stats
@@ -352,6 +363,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "persons": w.core().persons_held(),
         "core_days": days_report(w),
         "statistics": statistics_report(w),
+        "population": population_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "peak_resident_bytes": peak,
