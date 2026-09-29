@@ -408,14 +408,6 @@ pub const LC_1_39: Check = live_check! {
     retired: "market indices, whose returns it read, are built with S3.09",
 };
 
-pub const LC_1_45: Check = live_check! {
-    id: "LC-1-45",
-    title: "firms end every year in every industry, by closure and by default, each with an estate or a successor; \
-            no firm keeps failing payments past its grace without ending",
-    from_step: "S1.03",
-    check: |_| Outcome::NotYet("awaits S1.24 f, default and ending"),
-};
-
 pub const LC_1_46: Check = live_check! {
     id: "LC-1-46",
     title: "when a drought strikes one place, the price there rises before prices elsewhere (GDS.9)",

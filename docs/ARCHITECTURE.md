@@ -2002,6 +2002,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   firm with no width yet, or expecting no sales, reviews on its production schedule. A surprise wider than
   `VAL.attention_sensitivity` widths, its own or its stance's, is kept (`Outlooks::awaiting`) until the firm's next
   price change, which records the days it took by the surprise's size over what was expected (`responses`).
+- **Firms' endings** (`phx_world::core_default`, FRM.15, FRM.11, L3, PTY.9): `Insolvency` keeps each country's grace,
+  the day each contract in arrears began to be (from the day's failed flows, forgotten once paid or closed), each
+  estate's claims and the firms ended. A firm in arrears past its grace defaults at the start of the labour round; a
+  solvent one's owner winds it down on its production schedule (`winds_down`). `end_firm` opens an estate with its
+  money, passes its goods, closes every contract it is party to into claims (`claims_of`: employees' wages owed and
+  severance at the first rank, other creditors at the second), sends its staff to search, zeroes its vacancies and ends
+  the party. `estates_pay` pays each rank in proportion as far as the money goes (`shares`), the rest to the heirless
+  destination; an estate holding goods stays until they are sold.
 - **The world's stores** (`phx_core::store`): a kind (`KindStore`) keeps its `Parties`, each party's record of `stride`
   words in one column, and, if it holds money, its accounts (bank, balance, pending, held, facility) and cash lines,
   each a column indexed by slot, so a party begun in a released slot writes its own words over the ended one's; a

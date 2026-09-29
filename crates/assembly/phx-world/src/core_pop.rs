@@ -391,7 +391,7 @@ impl Core {
             Some((bank, balance + pending))
         });
         if let Some((bank, money)) = account.filter(|(_, m)| *m != 0) {
-            self.open_estate((bank, money), (country, day));
+            let _ = self.open_estate((bank, money), (country, day));
             if let Some(a) = self.kinds.get_mut(place).and_then(|k| k.accounts.as_mut()) {
                 a.balance.set(key.slot(), 0);
                 a.pending.set(key.slot(), 0);

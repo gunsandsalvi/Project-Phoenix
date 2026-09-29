@@ -146,10 +146,10 @@ pub const CORE_WHEEL_DAYS: u32 = 64;
 /// A core firm's record: its product, its region, the tile it is sited on, its productivity, the log of its factor
 /// over its way's, in billionths, its posted price of a lot, its output a year in units, its markup over its unit cost
 /// and the sales a day it expects in millionths, the units it sold since its last review and that review's day, its
-/// management's memory and switching types, the heuristic it relies on, the width of its sales' surprises and its sales as last seen; the purposes its opening draws and its
+/// management's memory and switching types, the heuristic it relies on, the width of its sales' surprises and its sales as last seen, the return its management requires; the purposes its opening draws and its
 /// jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
-    pub const RECORD: usize = 15;
+    pub const RECORD: usize = 16;
     pub const PRODUCT: usize = 0;
     pub const REGION: usize = 1;
     pub const SITE: usize = 2;
@@ -170,6 +170,8 @@ pub mod firm {
     /// and its units sold since its last review as it last looked at them.
     pub const SALES_WIDTH: usize = 13;
     pub const SEEN_SOLD: usize = 14;
+    /// The return its management requires a year, in millionths.
+    pub const REQUIRED: usize = 15;
     pub const PART_ONE: f64 = 1_000_000.0;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
     pub const PURPOSES: u32 = 5;

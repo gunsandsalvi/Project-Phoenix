@@ -4,6 +4,7 @@ pub mod core;
 pub mod core_audit;
 pub mod core_credit;
 pub mod core_day;
+pub mod core_default;
 pub mod core_firms;
 pub mod core_goods;
 pub mod core_jobs;

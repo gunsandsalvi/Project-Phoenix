@@ -161,6 +161,7 @@ impl Core {
             persons_opened: 0,
             treasuries: Vec::new(),
             estates: Vec::new(),
+            insolvency: crate::core_default::Insolvency::default(),
             next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),

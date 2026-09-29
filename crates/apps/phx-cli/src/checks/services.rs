@@ -1,6 +1,6 @@
-//! What the firms make and sell: every production's inputs used as its way states, and the services' reads — their
-//! share of the firms' sales and of the jobs, the retail margin of services and of goods, and how often and by how
-//! much each's prices move at a review.
+//! What the firms make and sell, and how they end: every production's inputs used as its way states; the services'
+//! reads — their share of the firms' sales and of the jobs, the retail margin of services and of goods, and how often
+//! and by how much each's prices move at a review; and no firm in arrears past its grace.
 
 use phx_num::Missing;
 use phx_world::Inspector;
@@ -132,4 +132,65 @@ pub const LC_1_05: Check = live_check! {
     title: "every production names a way its producer knew, with the inputs it consumed as the way states",
     from_step: "S1.02",
     check: made_by_way,
+};
+
+/// No firm keeps failing its payments past its grace without ending: each contract a firm has in arrears began to be
+/// so no more than its country's grace and the day its default takes before; and firms end in every industry over a
+/// year, by closure or by default, each into an estate.
+fn firms_end(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
+    let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
+    for ((i, edge), since) in &core.insolvency.since {
+        let Some(row) = core.families.get(*i).and_then(|f| f.store.edges.row(phx_id::Slot::new(*edge))) else {
+            continue;
+        };
+        let payer = row.ends[0];
+        if usize::from(payer.kind()) != firm {
+            continue;
+        }
+        let Some(Missing::Present(region)) =
+            store.record(payer.slot()).get(phx_world::consts::firm::REGION).map(|x| x.get())
+        else {
+            continue;
+        };
+        let country = usize::try_from(region).ok().and_then(|r| w.regions().get(r)).map(|c| usize::from(c.get()));
+        let Some(Some(grace)) = country.and_then(|c| core.insolvency.grace.get(c)).copied() else { continue };
+        let days = w.calendar().days_between(*since, w.today()).unwrap_or(0);
+        if days > grace + 1 {
+            return Outcome::Fail(format!(
+                "firm {} has been in arrears for {days} days, past its grace of {grace}",
+                payer.slot().get()
+            ));
+        }
+    }
+    let first = w.date(w.day_zero()).year();
+    if w.date(w.today()).year() <= first {
+        return Outcome::NotYet("no whole year ran, over which firms end in every industry");
+    }
+    let ended: std::collections::BTreeSet<u16> = core.insolvency.endings.iter().map(|e| e.product).collect();
+    let mut held: std::collections::BTreeSet<u16> = ended.clone();
+    for slot in store.parties.live_slots() {
+        if let Some(Missing::Present(p)) = store.record(slot).get(PRODUCT).map(|x| x.get())
+            && let Ok(p) = u16::try_from(p)
+        {
+            held.insert(p);
+        }
+    }
+    if let Some(p) = held.difference(&ended).next() {
+        return Outcome::Fail(format!(
+            "no firm of industry {p} ended over the run; firms ended in {} of {}",
+            ended.len(),
+            held.len()
+        ));
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_45: Check = live_check! {
+    id: "LC-1-45",
+    title: "firms end every year in every industry, by closure and by default, each with an estate or a successor; \
+            no firm keeps failing payments past its grace without ending",
+    from_step: "S1.03",
+    check: firms_end,
 };

@@ -958,6 +958,20 @@ world switches to the core.
   - d: each day's productions from stored inputs are counted with those whose inputs were not all there to use
     (`GoodsDay::productions`, `unfed`); LC-1-05 reads them and passes over 120 days (150,000 persons, seed 1): no firm
     made a unit without the inputs its way uses.
+  - f: firms end (FRM.15, FRM.11, L3, PTY.9, LAB.12; `core_default`), not yet run by the owner's order. Each contract's
+    arrears keep the day they began (`Insolvency::since`); at the start of each labour round a firm whose arrears have
+    outlasted its country's grace (`FRM.insolvency_grace_days`) defaults, and on its production schedule a solvent
+    firm's owner winds it down when continuing — its expected margin a year at the price it expects over its cost,
+    held at the return its management requires (`FRM.required_return`, drawn for each firm at the opening) — is worth
+    less than its money and goods less what it would owe on ending (`sys_frm::rules::endings::closes`). Either way it
+    ends into an estate: its money opens the estate at its bank, its goods pass to it, each contract it was party to
+    closes into a claim — its employees' wages owed and severance first, then its lenders' arrears and balances — and
+    its employees search again and claim their benefit. On its country's next business day the estate pays its claims
+    rank by rank in proportion (`core_default::shares`), and the rest to the heirless destination; the firm's owners
+    take the rest once ownership is a contract naming them (FRM.1, S3.05). An estate holding goods waits for S2.04's
+    liquidation to sell them. LC-1-45 reads that no firm is in arrears past its grace and a day, and after a year that
+    firms of every industry ended. Households in arrears past a grace (HH.21) wait for a personal insolvency law the
+    data in hand does not declare: that primitive is S2.11's.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

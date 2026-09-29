@@ -36,6 +36,8 @@ pub struct Core {
     /// Each country's treasury, and the estates waiting to settle: each with its country and the day it opened.
     pub treasuries: Vec<Option<PartyKey>>,
     pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
+    /// The insolvency law on the core: graces, contracts in arrears, estates' claims and firms ended.
+    pub insolvency: crate::core_default::Insolvency,
     /// The next identity the core hands a party or person it begins.
     pub next_id: u64,
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.

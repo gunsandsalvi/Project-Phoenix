@@ -62,6 +62,9 @@ pub struct LabourDay {
     /// The jobs open at the round's close, and the persons searching then.
     pub open: u64,
     pub searching: u64,
+    /// The firms ended in default at the round's start, and those their owners wound down on their schedule.
+    pub defaults: u64,
+    pub closures: u64,
     /// The contracts whose pay round came, those raised and cut, the employees who applied on from their job at it,
     /// the hires of employees, who quit their job for the offer, and those who quit at their round for search.
     pub reviewed: u64,
@@ -179,7 +182,7 @@ fn at_country<T>(v: &[T], c: u8) -> &T {
 }
 
 impl LabourCtx<'_> {
-    fn country_of(&self, region: u32) -> u8 {
+    pub(crate) fn country_of(&self, region: u32) -> u8 {
         match self.regions.get(usize::try_from(region).unwrap_or(usize::MAX)) {
             Some(c) => c.get(),
             None => violation!(clause = "GEO.3", "a region in no country", region = region),
@@ -335,6 +338,7 @@ impl Core {
         if self.labour.employers.is_none() {
             return record;
         }
+        record.defaults = self.end_defaulted(ctx, day);
         record.separated = self.separate(ctx, day);
         (record.acceptances, record.hires) = self.answer_offers(ctx, day);
         record.offers = self.select_applicants(ctx, day);
@@ -342,6 +346,8 @@ impl Core {
         self.answer_reviews(ctx, day);
         (record.posted, record.withdrawn, record.layoffs_wanted, record.employers) =
             (posted, withdrawn, layoffs, employers);
+        record.closures =
+            len_u64(self.insolvency.endings.iter().filter(|e| e.day == day.get() && !e.defaulted).count());
         (record.searchers, record.applications) = self.search_round(ctx, day);
         let r = std::mem::take(&mut self.labour.reviewing);
         (record.reviewed, record.raised, record.cut, record.searching_on) =
@@ -376,7 +382,15 @@ impl Core {
             if self.kinds.get(firm).is_none_or(|k| k.parties.id(slot).is_none()) {
                 continue;
             }
-            let own = mine.remove(&PartyKey::new(kind_number(firm), slot)).unwrap_or_default();
+            let key = PartyKey::new(kind_number(firm), slot);
+            if self.winds_down(ctx, (firm, slot), day) {
+                if let Some(f) = self.firm_record(firm, slot) {
+                    let country = CountryId::new(ctx.country_of(f.region));
+                    self.end_firm(ctx, (key, country), day, false);
+                }
+                continue;
+            }
+            let own = mine.remove(&key).unwrap_or_default();
             let (p, w, l) = self.post_one(ctx, day, (firm, family), (slot, &own));
             totals.0 += p;
             totals.1 += w;
@@ -386,6 +400,9 @@ impl Core {
                 w.schedule(s, next);
             }
         }
+        // A firm its owner wound down today reviews and buys nothing more.
+        let firms = self.kinds.get(firm);
+        self.labour.due_today.retain(|s| firms.is_some_and(|k| k.parties.id(Slot::new(*s)).is_some()));
         totals
     }
 
@@ -528,7 +545,7 @@ impl Core {
 
     /// The price a unit a firm expects its product to sell for: its stance's outlook of its product's mark in its
     /// region, or, before the mark has printed there, its own price.
-    fn price_expected(&self, firm: usize, slot: Slot, lot: f64) -> f64 {
+    pub(crate) fn price_expected(&self, firm: usize, slot: Slot, lot: f64) -> f64 {
         use crate::consts::firm::{MEMORY, STANCE};
         let Some(store) = self.kinds.get(firm) else { return 0.0 };
         let rec = store.record(slot);
@@ -1115,7 +1132,13 @@ impl Core {
     }
 
     /// A person whose job ended searching again, its last point its job's.
-    fn searches_again(&mut self, ctx: &LabourCtx<'_>, (household, person): (PartyKey, u64), amount: i64, law: &Law) {
+    pub(crate) fn searches_again(
+        &mut self,
+        ctx: &LabourCtx<'_>,
+        (household, person): (PartyKey, u64),
+        amount: i64,
+        law: &Law,
+    ) {
         let (Some(place), Some(decl)) =
             (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
         else {
@@ -1138,7 +1161,7 @@ impl Core {
     /// claiming takes: a contract from the treasury paying the benefit's share of the wage it lost monthly from the
     /// next month for the benefit's months.
     #[clause("SOC.3", "SOC.7")]
-    fn claim_benefit(
+    pub(crate) fn claim_benefit(
         &mut self,
         ctx: &LabourCtx<'_>,
         day: Day,

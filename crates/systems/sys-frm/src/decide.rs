@@ -108,6 +108,8 @@ pub struct Management {
     /// must pass to wake.
     pub types: phx_val::types::Types,
     pub sensitivity: f64,
+    /// The return a firm's management requires a year, by which each firm's is drawn.
+    pub required_return: phx_core::register::values::Distribution,
 }
 
 impl Management {
@@ -128,6 +130,7 @@ impl Management {
         }
         Ok(Management {
             types: phx_val::types::Types::compile(register)?,
+            required_return: register.distribution(crate::REQUIRED_RETURN.id)?.clone(),
             adjustment_days: phx_rand::float::from_u64(adjustment),
             sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
@@ -220,6 +223,11 @@ mod tests {
                 performance_memory: 0.3,
             },
             sensitivity: 2.0,
+            required_return: phx_core::register::values::Distribution {
+                family: phx_core::register::values::Family::Normal { mean: 15, sd: 5 },
+                discretisation: phx_core::register::values::Discretisation::EqualShares,
+                exp: 2,
+            },
         };
         assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);

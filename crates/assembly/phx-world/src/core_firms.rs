@@ -220,6 +220,7 @@ struct Draft {
     memory: u16,
     switching: u16,
     stance: u8,
+    required: f64,
 }
 
 /// What the firms' opening reads besides the core: the register, the countries with their sheets, the stream its
@@ -316,6 +317,7 @@ impl Core {
                     MaybeI64::present(i64::from(d.stance)),
                     MaybeI64::from_missing(phx_num::Missing::Absent),
                     MaybeI64::present(0),
+                    MaybeI64::present(parts(d.required)),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;
@@ -372,6 +374,7 @@ impl Core {
                 // With no heuristic scored yet nothing favours one, so its first stance is its taste's alone.
                 let menu = len_u64(phx_val::heuristic::MENU.len());
                 let stance = u8::try_from(below_u64(&mut m, menu)).unwrap_or(u8::MAX);
+                let required = o.management.required_return.draw(&mut m);
                 let wanted = lot * snap.price_at(product, log);
                 let Some(price) = sys_frm::rules::price::nearest_point(&o.management.points_near(wanted), wanted)
                 else {
@@ -388,6 +391,7 @@ impl Core {
                     memory,
                     switching,
                     stance,
+                    required,
                 });
                 ordinal += 1;
             }

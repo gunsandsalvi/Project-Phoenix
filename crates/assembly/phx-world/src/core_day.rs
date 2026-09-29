@@ -332,25 +332,30 @@ impl Core {
         buf.append(&mut taxes);
     }
 
-    /// An estate begun with a household's money at its bank, to settle on its country's next business day.
+    /// An estate begun with a party's money at its bank, to settle on its country's next business day.
     #[clause("PTY.9")]
-    pub(crate) fn open_estate(&mut self, (bank, money): (u32, i64), (country, day): (CountryId, Day)) {
+    pub(crate) fn open_estate(&mut self, (bank, money): (u32, i64), (country, day): (CountryId, Day)) -> PartyKey {
         let Some(place) = self.names.iter().position(|n| *n == phx_core::ESTATE_KIND.name) else {
             violation!(clause = "PTY.9", "an estate with no kind to hold it");
         };
         let id = phx_id::PartyId::new(self.next_id);
         self.next_id += 1;
-        let Some(store) = self.kinds.get_mut(place) else { return };
+        let Some(store) = self.kinds.get_mut(place) else {
+            violation!(clause = "PTY.9", "an estate kind with no store");
+        };
         let party = store.begin(id, &[], Some(phx_core::store::Opening { bank, balance: money }));
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), party.slot());
         let at = self.keys.partition_point(|(i, _)| *i < id);
         self.keys.insert(at, (id, key));
         self.estates.push((key, country, day));
+        key
     }
 
-    /// Each estate opened before today, on its country's business day, pays what it holds to the party the law names
-    /// where no heir is drawn — its country's treasury — and is ended after the day's settlement.
-    #[clause("PTY.9", "POP.15")]
+    /// Each estate opened before today, on its country's business day, pays its claims by rank, each rank in proportion
+    /// to what it is owed as far as the money goes, and the rest to the party the law names where no heir is drawn —
+    /// its country's treasury, a firm's owners not yet being parties to it on the core — and is ended after the day's
+    /// settlement once it holds nothing.
+    #[clause("PTY.9", "POP.15", "L3")]
     fn estates_pay(&mut self, day: Day, calendar: &Calendar, out: &mut Vec<Flow>) -> Vec<PartyKey> {
         let mut settling = Vec::new();
         let treasury = self.names.iter().position(|n| *n == crate::consts::HEIRLESS_DESTINATION);
@@ -376,7 +381,22 @@ impl Core {
                 .get(usize::from(estate.kind()))
                 .and_then(|k| k.accounts.as_ref())
                 .and_then(|a| Some(a.balance.get(estate.slot())? + a.pending.get(estate.slot())?));
-            if let Some(amount) = held.filter(|m| *m > 0) {
+            let mut left = held.unwrap_or(0);
+            let claims = self.insolvency.claims.get(estate).map_or(&[][..], Vec::as_slice);
+            for (payee, amount, reason) in crate::core_default::shares(claims, left) {
+                left -= amount;
+                out.push(Flow {
+                    payer: *estate,
+                    payee,
+                    amount,
+                    source: estate.slot().get(),
+                    denomination: Denom::money(country.get()),
+                    reason,
+                    order: 0,
+                });
+            }
+            if left > 0 {
+                let amount = left;
                 out.push(Flow {
                     payer: *estate,
                     payee: to,
@@ -461,10 +481,15 @@ impl Core {
     fn end_settled(&mut self, settling: Vec<PartyKey>) -> u64 {
         let mut ended = 0;
         for estate in settling {
+            // Its claims are settled as far as its money went; what it could not pay is the creditors' loss.
+            self.insolvency.claims.remove(&estate);
             let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
                 a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0
             });
-            if empty {
+            // Goods an estate holds wait for its liquidation, which sells them; until then it stays.
+            let goods = self.goods.stocks.holdings(estate).any(|h| h.units != 0);
+            if empty && !goods {
+                self.goods.stocks.end(estate);
                 self.estates.retain(|(e, _, _)| *e != estate);
                 if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
                     && let Some(r) = k.parties.at(estate.slot())
@@ -566,6 +591,7 @@ impl Core {
             }
         }
         record.arrears = self.hold_arrears(day, calendar, &failed);
+        self.note_arrears(day, &failed);
         record.wages = self.record_wages_settled(&failed);
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
