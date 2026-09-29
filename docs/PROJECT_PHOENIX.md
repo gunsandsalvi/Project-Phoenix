@@ -2548,7 +2548,7 @@ wages are outcomes.
 
 - **LAB.1 STATE** — An **employment contract** is a row: employer, employee (a person), occupation family, hours,
   wage, start date, notice and severance terms, and the pension it earns (PEN): its kind and contribution rates
-  are terms of the contract, and the scheme the employee belongs to is part of its attachment (REP.26). Each job is
+  are terms of the contract, and the employee's membership of its scheme is its own (REP.26). Each job is
   one contract between its employer and its employee (REP.3): who works for whom is recorded, and a firm closing ends
   exactly its own jobs. The wage bill, headcount, unemployment and flows between states are reads of these
   contracts.
@@ -4902,7 +4902,7 @@ names the family, the requirement, the owner, the size in its unit and the day; 
 | **Prices**        | every mark came from a print or a declared valuation (MKT.20); no print without a match                   |
 | **Names**         | every referenced party exists or has a successor                                                          |
 | **Cross-border**  | exports equal imports party to party; each country's accounts balance                                     |
-| **Representation** | people and firms reconcile by entry, death and migration, and the populations' parties are them; every contract names an existing party on each side; attachments reconcile with persons |
+| **Representation** | people and firms reconcile by entry, death and migration, and the populations' parties are them; every contract names an existing party on each side; every person is held in exactly one household |
 
 **Independence is measured**: for every family there is a single discrepancy that lights it and no other, injected
 into values handed to the audit alone — never into the world that runs, and discarded unrun after the audit reads
