@@ -906,9 +906,10 @@ The work of a day follows the number of parties something happens to, not the nu
   - the representation's size (REP.40);
   - each kind's attribute classes;
   - zones;
-  - the declared payment order and the draw scheme (REP.7).
+  - the draw scheme (REP.7).
 
-  PREFERENCE: taste distributions per type. TECHNOLOGY: what reviewing and changing each kind of decision
+  PREFERENCE: taste distributions per type, and each kind's payment order (MON.5), POLICY where a law sets it.
+  TECHNOLOGY: what reviewing and changing each kind of decision
   costs. POLICY of each trade: its price points.
 
 **Out of scope**
@@ -5036,7 +5037,8 @@ meet its purpose, so the budget is a requirement with the same standing as the a
 - **N8.5** — **The play resolution** is the setting of every RESOLUTION primitive but the map's grid, which the owner
   fixed (decision 29) — among them the representation's size (REP.40), the number of types (NUM.4), each kind's
   attribute classes, zones and age classes, history horizons and snapshot intervals (SET.13,
-  SET.17) — that is finest while meeting N8.2–N8.4 on the target device, in the representation the build holds
+  SET.17), the full audit's cycle (N8.6) — that is finest while meeting N8.2–N8.4 on the target device, in the
+  representation the build holds
   (decision 44). Where refining one setting costs another,
   the order in which they are refined is the owner's (decision 41). The resolution is a valve: it is set and reset by
   measurement of the budget. Whether the world at that resolution makes sense is judged by its macro results against
@@ -5044,7 +5046,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   results.
 - **N8.6** — **Cost follows events, not size**: nothing in this specification requires every party to be visited
   every day. Parties act on their own schedules or when woken (TIME.5), accruals are applied on the dates that
-  need them, and the daily audit checks what the day changed, with the full audit on a declared cycle.
+  need them, and the daily audit checks what the day changed, with the full audit on a declared cycle (RESOLUTION).
 - **N8.7** — **The budget never changes a mechanism.** When the budget is missed, the remedies are, in order: how
   the world is represented and traversed; then the play resolution (fewer persons, REP.40). The population is
   fitted to the phone by the size alone, and no law, mechanism or requirement is weakened to meet it.
@@ -5271,10 +5273,10 @@ source.
 | Kind           | What                                                                                                   |
 | -------------- | ------------------------------------------------------------------------------------------------------ |
 | **TECHNOLOGY** | ways of making every product; what reviewing and changing each kind of decision costs, and what drawing cash costs; power-plant technologies; capital kinds, lives and wear; construction and build lead times; vehicle speeds, capacities and running costs; storage and spoilage; life tables and health hazards; conception hazard; schooling, retraining and experience to skill, and its erosion in unemployment; what a job application costs; learning curves; discovery and imitation hazards and improvement distributions; catastrophe frequencies and exposures; search meeting rates |
-| **PREFERENCE** | distributions, carried as finite type sets (with shares, NUM.4), of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; banks' buffer appetites; decision schedules; party ideology preferences; the cost of voting |
+| **PREFERENCE** | distributions, carried as finite type sets (with shares, NUM.4), of patience, risk aversion, tastes and taste dispersion, leisure, dwelling and location preferences, preference for children, memory, heuristic-switching intensity; management risk appetite, hurdles and horizons; banks' buffer appetites; decision schedules; party ideology preferences; the cost of voting; each kind's payment order where no law sets it |
 | **POLICY**     | each trade's price points; macroprudential limits; personal insolvency law; credit-reporting and account-filing rules; budgets and appropriations; the treasury's payment priority; the central bank's implementation regime and any reserve requirement; tax bases and rates; benefit rules; minimum wage and labour law; capital, liquidity and exposure rules; deposit-insurance limits and premiums; insolvency and inheritance law; zoning; tariffs, capital-flow rules and admission rules; patent law; the net settlement system's rules; pension law; education and family law; the central bank's mandate, target and financing regime; the constitution's seats, term and allotment rule; accounting standards; market conventions (settlement cycles, day counts, auction formats) |
 | **ENDOWMENT**  | the map, terrain, deposits and opening infrastructure; calendars; the opening population with its households, skills and holdings; the opening firms, banks, funds, insurers and their balance sheets; opening contracts and instruments with their terms and remaining lives |
-| **RESOLUTION** | the representation and its size; each kind's attribute classes, zones, age classes, payment order, draw scheme; number of preference types; map grid; history horizons and snapshot intervals |
+| **RESOLUTION** | the representation and its size; each kind's attribute classes, zones, age classes, draw scheme; number of preference types; map grid; history horizons and snapshot intervals; the full audit's cycle |
 | **SHAPE**      | the heuristic menu and how many heuristics a party tracks per outlook (VAL.22); the **form of every decision rule** — how a household, firm, bank, fund, agency or party turns the inputs its DECISION clause lists into a choice — each listed with its reason (no mechanism in scope derives how people decide) and its source in the literature; terrain-generation parameters (GEO.18); the rule of what becomes a public event (OBS.3); every placeholder introduced during building, each naming what retires it |
 
 The opening world is made by GEN: one date's snapshot of the present, drawn from declared, data-shaped
