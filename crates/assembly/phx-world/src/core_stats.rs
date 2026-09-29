@@ -413,6 +413,8 @@ impl Core {
     fn money_stock(&self, regions: &[phx_id::CountryId]) -> Vec<Vec<i64>> {
         let mut out = vec![vec![0_i64; crate::consts::stats::MONEY_CLASSES]; self.stats.laws.len()];
         let at = |name: &str| self.names.iter().position(|n| *n == name);
+        let estates: BTreeMap<PartyKey, usize> =
+            self.estates.iter().map(|(e, c, _)| (*e, usize::from(c.get()))).rev().collect();
         for (k, store) in self.kinds.iter().enumerate() {
             let Some(a) = store.accounts.as_ref() else { continue };
             let class = if Some(k) == self.bank_kind.map(usize::from) {
@@ -425,8 +427,8 @@ impl Core {
                 crate::consts::stats::MONEY_CLASSES - 1
             };
             for slot in store.parties.live_slots() {
-                let Some(country) = self.country_of_party(PartyKey::new(crate::core::kind_number(k), slot), regions)
-                else {
+                let party = PartyKey::new(crate::core::kind_number(k), slot);
+                let Some(country) = self.country_of_party(party, (regions, &estates)) else {
                     continue;
                 };
                 let (Some(b), Some(p)) = (a.balance.get(slot), a.pending.get(slot)) else { continue };
@@ -440,7 +442,11 @@ impl Core {
 
     /// The country a party is of: a household or a firm by its region, a bank, a treasury or an estate by the country
     /// that holds it.
-    fn country_of_party(&self, party: PartyKey, regions: &[phx_id::CountryId]) -> Option<usize> {
+    fn country_of_party(
+        &self,
+        party: PartyKey,
+        (regions, estates): (&[phx_id::CountryId], &BTreeMap<PartyKey, usize>),
+    ) -> Option<usize> {
         let k = usize::from(party.kind());
         let name = *self.names.get(k)?;
         let region = |at: usize| match self.kinds.get(k)?.record(party.slot()).get(at)?.get() {
@@ -456,7 +462,7 @@ impl Core {
             "bank" => self.banks_of.iter().position(|b| b.iter().any(|(s, _)| *s == party.slot().get())),
             "treasury" => self.treasuries.iter().position(|t| *t == Some(party)),
             "agency" => self.agencies.iter().position(|t| *t == Some(party)),
-            _ => self.estates.iter().find(|(e, _, _)| *e == party).map(|(_, c, _)| usize::from(c.get())),
+            _ => estates.get(&party).copied(),
         }
     }
 }
