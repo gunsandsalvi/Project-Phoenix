@@ -211,6 +211,8 @@ pub fn meet(
                 ],
             );
         }
+        // A round whose buyers fit one job runs on the calling thread: a dispatch would outweigh it.
+        let pool = if out.choosing.len() > CHOICE_CHUNK { pool } else { None };
         let open = (out.left.as_slice(), out.log_prices.as_slice());
         remake(pool, (places, &orders), (open, weights), &out.choosing, (&mut tables, &mut stale));
         let jobs: Vec<&mut [Choosing]> = out.choosing.chunks_mut(CHOICE_CHUNK).collect();
