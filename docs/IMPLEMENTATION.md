@@ -914,7 +914,16 @@ world switches to the core.
     raises it. Tried and set aside (120 days, 150,000 persons, seed 1): waking every firm a surprise wider than the
     attention sensitivity bears on for a review the next day woke about 7,300 firms a day of 20,500, the consumer
     index rose 74% by March in the developed country (35% without), and the more surprised half changed its price no
-    sooner (3.4 days against 3.0).
+    sooner (3.4 days against 3.0). Built and measured, not yet kept: each firm's daily chance by `review_chance` from
+    the width of its own sales' surprises (a record word, absent until its first scheduled review sees one) and its
+    stance's width on its product's mark relative to the mark, drawn from `FRM.visits`, the production schedule
+    reviewing only a firm with no width yet. Over 120 days firms reviewed every 4.3 days on average, the developed
+    country's consumer index rose 65% by March, and LC-1-44 failed: the more surprised half, by its surprise in its
+    method's widths, changed its price after 6.0 days, the less after 4.8. The mark's width relative to its level is
+    small beside a firm's own sales' surprises, so a public surprise barely moves the chance, and the largest surprises
+    in widths (up to 1,740) fall on series whose width was near nothing. To settle: the public variance weighed by how
+    far what the firm's price should be moves with the mark (the markup's `seen_speed`), and the surprise's size read
+    on the stake it moves, not on a width that can be near nothing.
   - e: the pay rounds on the core (LAB.17, LAB.6, LAB.9). Each employer draws the day of its first round within the
     review period and reviews every contract not under notice once a period: it offers the lesser of the point its
     fills show the market pays and the most the job's month pays — its wage and what a unit leaves over its cost at
