@@ -3,7 +3,7 @@
 # (N8), a step's cost and a stage gate's run. Its numbers are costs, never the world's.
 #
 #   tools/bench.sh [-p persons] [-d days] [-s seed] [-w workers] [-c checks] [-g] [-o dir] [-k] [-B] [-t seconds]
-#                  [-- run arguments]
+#                  [-P] [-- run arguments]
 #
 #   -p  persons the world holds (default: the setup's, the committed resolution, where the budget is judged)
 #   -d  days run from day zero, settling cut short (default 20, the span the budget's ratchets are measured over)
@@ -15,6 +15,7 @@
 #   -k  keep the report as perf/bench/<commit>-<persons>-<days>.json, the committed measure a resolution change cites
 #   -B  run the last build, not building first
 #   -t  stop the world after this many seconds; the summary is still read from its log
+#   -P  profile the run by sampling it (perf): every function ranked by the time spent in it, into <dir>/profile.txt
 #
 # The run's trace is printed and written to <dir>/run.log as it happens: every span of the opening and of each day —
 # stages, sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time, and notes
@@ -25,8 +26,8 @@
 # heaviest meetings; settlement's and the day's notes; the parties opened; the findings and checks.
 set -euo pipefail
 
-persons="" days=20 gate=0 seed=1 workers="" checks="" out="target/bench" build=1 keep=0 limit=""
-while getopts "p:d:gs:w:c:o:kBt:" opt; do
+persons="" days=20 gate=0 seed=1 workers="" checks="" out="target/bench" build=1 keep=0 limit="" profile=0
+while getopts "p:d:gs:w:c:o:kBt:P" opt; do
     case $opt in
         p) persons=$OPTARG ;;
         d) days=$OPTARG ;;
@@ -38,6 +39,7 @@ while getopts "p:d:gs:w:c:o:kBt:" opt; do
         k) keep=1 ;;
         B) build=0 ;;
         t) limit=$OPTARG ;;
+        P) profile=1 ;;
         *) sed -n '2,/^set -euo/p' "$0" | sed '$d'; exit 2 ;;
     esac
 done
@@ -69,16 +71,30 @@ mkdir -p "$out"
 # A run that fails writes no report, so the last one is removed first and never read as this run's.
 rm -rf "$out/report.json" "$out/run"
 status=0
+# The sampler is the kernel tools' own perf: the one on the path is a wrapper that refuses a kernel it was not built
+# for.
+perf=""
+if [[ $profile == 1 ]]; then
+    perf=$(ls /usr/lib/linux-tools/*/perf 2>/dev/null | head -1)
+    if [[ -z $perf ]]; then echo "bench: no perf to profile with" >&2; exit 1; fi
+fi
 began=$(date +%s.%N)
-target/release/phx run "${args[@]}" "${extra[@]}" > "$out/run.log" 2>&1 &
+if [[ -n $perf ]]; then
+    "$perf" record -q -F 499 -o "$out/perf.data" -- target/release/phx run "${args[@]}" "${extra[@]}" \
+        > "$out/run.log" 2>&1 &
+else
+    target/release/phx run "${args[@]}" "${extra[@]}" > "$out/run.log" 2>&1 &
+fi
 pid=$!
+# The world is stopped, never the sampler, which then writes what it took.
+stop() { pkill -TERM -P "$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true; }
 # Ctrl-C or the time limit stops the world, never the bench: the summary is still read from what the log holds.
-trap 'kill "$pid" 2>/dev/null || true' INT TERM
+trap stop INT TERM
 tail -n +1 -f --pid="$pid" "$out/run.log" &
 tailer=$!
 watchdog=""
 if [[ -n $limit ]]; then
-    ( sleep "$limit"; echo "bench: stopped at the time limit of $limit s" >> "$out/run.log"; kill "$pid" 2>/dev/null ) &
+    ( sleep "$limit"; echo "bench: stopped at the time limit of $limit s" >> "$out/run.log"; stop ) &
     watchdog=$!
 fi
 wait "$pid" || status=$?
@@ -86,6 +102,10 @@ ran=$(echo "$(date +%s.%N) - $began" | bc)
 wait "$tailer" 2>/dev/null || true
 if [[ -n $watchdog ]]; then kill "$watchdog" 2>/dev/null || true; fi
 trap - INT TERM
+if [[ -n $perf && -f $out/perf.data ]]; then
+    "$perf" report -i "$out/perf.data" --stdio --no-children --sort symbol --percent-limit 0.2 2>/dev/null \
+        | grep -v '^#' | grep -v '^$' > "$out/profile.txt" || true
+fi
 
 commit="$(git rev-parse --short=12 HEAD)"
 if [[ $keep == 1 && -f "$out/report.json" ]]; then
@@ -204,6 +224,11 @@ if kinds:
 if r:
     print(f"findings: {r.get('findings')}; checks: " + ", ".join(
         f"{c.get('id', '?')} {c.get('verdict', c.get('status', '?'))}" for c in (r.get("checks") or [])[:40]))
+profile = os.path.join(out, "profile.txt")
+if os.path.exists(profile):
+    print("where the time went, by function (the sampler's share of the whole run):")
+    for text in open(profile).read().splitlines()[:40]:
+        print(f"  {text.strip()}")
 print("the log's last lines:")
 for text in log[-12:]:
     print(f"  {text}")

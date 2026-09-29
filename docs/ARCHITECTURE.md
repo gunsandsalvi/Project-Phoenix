@@ -3292,7 +3292,8 @@ one benchmarking tool, replacing the smoke, the build run, the full-load bench, 
 micro-benchmarks) builds `--release` (thin LTO, §17) and runs the world: `-p` the persons (the committed resolution by
 default, where the budget is judged), `-d` the days from day zero (twenty, the span the budget's ratchets are measured
 over), `-s` the seed, `-w` the workers, `-c` the live checks; `-g` a stage gate's run instead — settled, two years,
-the audit and every live check; `-k` keeps the report in `perf/bench/`; `-t` stops the world after so many seconds.
+the audit and every live check; `-k` keeps the report in `perf/bench/`; `-t` stops the world after so many seconds; `-P` samples the run (the kernel tools' `perf`) and ranks every function by
+the time spent in it.
 **The trace** (`phx_exec::trace`) tells the run as it happens: every span of the opening and of each day — its stages
 and sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time, and notes of
 what each did (parties, dues, flows, buyers, stalls, rounds, sales, failures); a loop notes how far it is at each power
