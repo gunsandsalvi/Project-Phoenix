@@ -2295,58 +2295,36 @@ pub phx_core::system::DecisionMeta::name: &'static str
 pub phx_core::system::DecisionMeta::system: &'static str
 pub phx_core::system::DecisionMeta::valid: core::result::Result<(), &'static str>
 pub struct phx_core::system::Declarations
-pub phx_core::system::Declarations::attachments: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::system::Declarations::claims: alloc::vec::Vec<(&'static str, &'static str)>
 pub phx_core::system::Declarations::compiled: alloc::vec::Vec<(&'static str, phx_core::system::Compile)>
-pub phx_core::system::Declarations::contributions: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)>
 pub phx_core::system::Declarations::decisions: alloc::vec::Vec<phx_core::system::DecisionMeta>
 pub phx_core::system::Declarations::events: alloc::vec::Vec<(&'static str, phx_core::events::EventKindDecl)>
-pub phx_core::system::Declarations::facets: alloc::vec::Vec<(&'static str, phx_core::kind_tables::FacetDecl)>
-pub phx_core::system::Declarations::families: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)>
 pub phx_core::system::Declarations::hazards: alloc::vec::Vec<(&'static str, phx_core::hazards::HazardDecl)>
-pub phx_core::system::Declarations::insolvency: alloc::vec::Vec<(&'static str, phx_core::insolvency::InsolvencyDecl)>
 pub phx_core::system::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kinds::KindDecl)>
-pub phx_core::system::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::system::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
-pub phx_core::system::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::system::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::system::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::system::Declarations::prims: phx_core::register::RegisterBuilder
-pub phx_core::system::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::system::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
-pub phx_core::system::Declarations::spoilage: alloc::vec::Vec<(&'static str, phx_core::spoilage::SpoilageDecl)>
 pub phx_core::system::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
-pub phx_core::system::Declarations::visits: alloc::vec::Vec<(&'static str, phx_core::visit::VisitDecl)>
-pub phx_core::system::Declarations::wear: alloc::vec::Vec<(&'static str, phx_core::wear::WearDecl)>
 impl phx_core::system::Declarations
-pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
 pub fn phx_core::system::Declarations::claims(&self) -> core::result::Result<alloc::vec::Vec<phx_core::facts::Claim>, alloc::string::String>
 pub fn phx_core::system::Declarations::compile(&mut self, phx_core::system::Compile)
-pub fn phx_core::system::Declarations::contribution(&mut self, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)
 pub fn phx_core::system::Declarations::decision<I, O>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>)
 pub fn phx_core::system::Declarations::event(&mut self, phx_core::events::EventKindDecl)
-pub fn phx_core::system::Declarations::facet(&mut self, phx_core::kind_tables::FacetDecl)
-pub fn phx_core::system::Declarations::family(&mut self, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)
 pub fn phx_core::system::Declarations::hazard(&mut self, phx_core::hazards::HazardDecl)
 pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut self, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
-pub fn phx_core::system::Declarations::insolvency(&mut self, phx_core::insolvency::InsolvencyDecl)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
-pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl)
 pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
-pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
 pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
-pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)
-pub fn phx_core::system::Declarations::spoilage(&mut self, phx_core::spoilage::SpoilageDecl)
 pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)
-pub fn phx_core::system::Declarations::visit(&mut self, phx_core::visit::VisitDecl)
-pub fn phx_core::system::Declarations::wear(&mut self, phx_core::wear::WearDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::system::SetupValue
@@ -3135,58 +3113,36 @@ pub phx_core::DecisionSchedule::convention: phx_core::calendar::bizday::Business
 pub phx_core::DecisionSchedule::period: phx_core::calendar::period::Period
 pub phx_core::DecisionSchedule::runs_on: phx_core::schedule::RunsOn
 pub struct phx_core::Declarations
-pub phx_core::Declarations::attachments: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
 pub phx_core::Declarations::claims: alloc::vec::Vec<(&'static str, &'static str)>
 pub phx_core::Declarations::compiled: alloc::vec::Vec<(&'static str, phx_core::system::Compile)>
-pub phx_core::Declarations::contributions: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)>
 pub phx_core::Declarations::decisions: alloc::vec::Vec<phx_core::system::DecisionMeta>
 pub phx_core::Declarations::events: alloc::vec::Vec<(&'static str, phx_core::events::EventKindDecl)>
-pub phx_core::Declarations::facets: alloc::vec::Vec<(&'static str, phx_core::kind_tables::FacetDecl)>
-pub phx_core::Declarations::families: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)>
 pub phx_core::Declarations::hazards: alloc::vec::Vec<(&'static str, phx_core::hazards::HazardDecl)>
-pub phx_core::Declarations::insolvency: alloc::vec::Vec<(&'static str, phx_core::insolvency::InsolvencyDecl)>
 pub phx_core::Declarations::kinds: alloc::vec::Vec<(&'static str, phx_core::kinds::KindDecl)>
-pub phx_core::Declarations::kinks: phx_core::kinks::KinkRegistry
 pub phx_core::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)>
-pub phx_core::Declarations::messages: alloc::vec::Vec<(&'static str, phx_core::messages::MessageKindDecl)>
 pub phx_core::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::Declarations::prims: phx_core::register::RegisterBuilder
-pub phx_core::Declarations::records: alloc::vec::Vec<(&'static str, phx_core::records::RecordKindDecl)>
 pub phx_core::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
-pub phx_core::Declarations::spoilage: alloc::vec::Vec<(&'static str, phx_core::spoilage::SpoilageDecl)>
 pub phx_core::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
-pub phx_core::Declarations::visits: alloc::vec::Vec<(&'static str, phx_core::visit::VisitDecl)>
-pub phx_core::Declarations::wear: alloc::vec::Vec<(&'static str, phx_core::wear::WearDecl)>
 impl phx_core::system::Declarations
-pub fn phx_core::system::Declarations::attachment(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::claim(&mut self, &'static str)
 pub fn phx_core::system::Declarations::claims(&self) -> core::result::Result<alloc::vec::Vec<phx_core::facts::Claim>, alloc::string::String>
 pub fn phx_core::system::Declarations::compile(&mut self, phx_core::system::Compile)
-pub fn phx_core::system::Declarations::contribution(&mut self, alloc::boxed::Box<dyn phx_core::contribution::Contribution>)
 pub fn phx_core::system::Declarations::decision<I, O>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>)
 pub fn phx_core::system::Declarations::event(&mut self, phx_core::events::EventKindDecl)
-pub fn phx_core::system::Declarations::facet(&mut self, phx_core::kind_tables::FacetDecl)
-pub fn phx_core::system::Declarations::family(&mut self, alloc::boxed::Box<dyn phx_core::family::AuditFamily>)
 pub fn phx_core::system::Declarations::hazard(&mut self, phx_core::hazards::HazardDecl)
 pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut self, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
-pub fn phx_core::system::Declarations::insolvency(&mut self, phx_core::insolvency::InsolvencyDecl)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
-pub fn phx_core::system::Declarations::kink(&mut self, phx_core::kinks::KinkDecl)
 pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
-pub fn phx_core::system::Declarations::message(&mut self, phx_core::messages::MessageKindDecl)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
 pub fn phx_core::system::Declarations::pop_kind(&mut self, &'static str) -> phx_core::pop::PopKindBuilder<'_>
 pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>
-pub fn phx_core::system::Declarations::record(&mut self, phx_core::records::RecordKindDecl)
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)
-pub fn phx_core::system::Declarations::spoilage(&mut self, phx_core::spoilage::SpoilageDecl)
 pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)
-pub fn phx_core::system::Declarations::visit(&mut self, phx_core::visit::VisitDecl)
-pub fn phx_core::system::Declarations::wear(&mut self, phx_core::wear::WearDecl)
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::DeclaredLimit<T>

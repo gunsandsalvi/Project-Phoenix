@@ -49,8 +49,8 @@ pub fn refusals(d: &Declarations, items: &[ItemDecl], registered: &[SystemCode])
 #[cfg(test)]
 mod tests {
     use phx_core::{
-        Audience, Declarations, FactDecl, FactType, ItemDecl, ItemKind, MessageKindDecl, Purpose, ReprClass, RuleSig,
-        StreamDecl, SystemEntry, Writer, declare_entry,
+        Audience, Declarations, FactDecl, FactType, ItemDecl, ItemKind, Purpose, ReprClass, RuleSig, StreamDecl,
+        SystemEntry, Writer, declare_entry,
     };
     use phx_id::SystemCode;
     use phx_num::Missing;
@@ -66,16 +66,6 @@ mod tests {
     fn declare(d: &mut Declarations) {
         d.stream(StreamDecl { name: "HH.taste", purpose: Purpose::Taste, keyed: false, clause: "CHN.3" });
         d.stream(StreamDecl { name: "HH.taste", purpose: Purpose::Taste, keyed: false, clause: "CHN.3" });
-        d.message(MessageKindDecl {
-            name: "HH.request",
-            lives_across_days: false,
-            reaches: &["bank"],
-            answering: &[],
-            acceptance: Missing::Absent,
-            opens_commitment: false,
-            pins: false,
-            clause: "HH.1",
-        });
         d.implement(TAX, fifth);
     }
 
@@ -102,7 +92,6 @@ mod tests {
         let errors = refusals(&d, &items, &[SystemCode::new("HH").unwrap()]);
         let has = |text: &str| errors.iter().any(|e| e.contains(text));
         assert!(has("declared twice"), "a stream twice: {errors:?}");
-        assert!(has("nothing answers"), "an unanswered addressee kind");
         assert!(has("claimed by []"), "a fact with no claim");
         assert!(has("TAX.income_tax"), "a rule implemented by a system not its own");
     }

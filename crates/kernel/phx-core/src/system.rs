@@ -1,18 +1,12 @@
 use phx_id::SystemCode;
 use phx_num::violation;
 
-use crate::contribution::Contribution;
 use crate::decisions::DecisionPointDecl;
 use crate::events::EventKindDecl;
 use crate::facts::Claim;
-use crate::family::{AuditFamily, FamilyDecl};
 use crate::hazards::HazardDecl;
-use crate::kind_tables::FacetDecl;
 use crate::kinds::KindDecl;
-use crate::kinks::{KinkDecl, KinkRegistry};
-use crate::messages::MessageKindDecl;
 use crate::pop::{PopEntry, PopKindBuilder};
-use crate::records::RecordKindDecl;
 use crate::register::values::PrimType;
 use crate::register::{Prim, PrimDecl, RegisterBuilder};
 use crate::rules::{RuleSig, RuleTable};
@@ -39,37 +33,19 @@ pub struct Declarations {
     pub prims: RegisterBuilder,
     pub kinds: Vec<(&'static str, KindDecl)>,
     pub claims: Vec<(&'static str, &'static str)>,
-    pub facets: Vec<(&'static str, FacetDecl)>,
     pub streams: Vec<(&'static str, StreamDecl)>,
     pub hazards: Vec<(&'static str, HazardDecl)>,
-    pub messages: Vec<(&'static str, MessageKindDecl)>,
     pub decisions: Vec<DecisionMeta>,
     pub rules: RuleTable,
-    pub records: Vec<(&'static str, RecordKindDecl)>,
     pub events: Vec<(&'static str, EventKindDecl)>,
-    pub kinks: KinkRegistry,
-    pub families: Vec<(&'static str, Box<dyn AuditFamily>)>,
-    pub contributions: Vec<(&'static str, Box<dyn Contribution>)>,
-    /// Each line-owning system's draw of the households' lines, which the household's formation calls; opaque here,
-    /// since the kernel crate that knows lines lies above this one.
-    pub attachments: Vec<(&'static str, Box<dyn core::any::Any + Send + Sync>)>,
     /// Each market kind a system declares, the template of its instances; opaque here, since the kernel crate that
     /// knows markets lies above this one.
     pub markets: Vec<(&'static str, Box<dyn core::any::Any + Send + Sync>)>,
     pub pop: Vec<PopEntry>,
     pub pop_processes: Vec<(&'static str, Box<dyn crate::pop_process::PopProcess>)>,
-    /// Each decision taken on the rows of a kind as they come due.
-    pub visits: Vec<(&'static str, crate::visit::VisitDecl)>,
-    /// Each kind's insolvency law: the grace after which a party in arrears defaults and ends into an estate.
-    pub insolvency: Vec<(&'static str, crate::insolvency::InsolvencyDecl)>,
-    /// The wear of each system's chains of classes, realised at a visit.
-    pub wear: Vec<(&'static str, crate::wear::WearDecl)>,
-    /// The spoilage of each system's goods in stock, realised at a visit.
-    pub spoilage: Vec<(&'static str, crate::spoilage::SpoilageDecl)>,
     pub setup_values: Vec<(&'static str, SetupValue)>,
     /// Each system's state compiled from the register at assembly, which its handlers and its family read.
     pub compiled: Vec<(&'static str, Compile)>,
-    kink_errors: Vec<String>,
 }
 
 /// A system's state compiled from the register and the number of countries: built once at assembly, and again
@@ -110,10 +86,6 @@ impl Declarations {
         self.claims.push((self.system, item));
     }
 
-    pub fn facet(&mut self, decl: FacetDecl) {
-        self.facets.push((self.system, decl));
-    }
-
     /// A country primitive the new game sets from a derived value.
     pub fn setup_value(&mut self, value: SetupValue) {
         self.setup_values.push((self.system, value));
@@ -127,10 +99,6 @@ impl Declarations {
         self.hazards.push((self.system, decl));
     }
 
-    pub fn message(&mut self, decl: MessageKindDecl) {
-        self.messages.push((self.system, decl));
-    }
-
     pub fn decision<I, O>(&mut self, decl: &DecisionPointDecl<I, O>) {
         let valid = decl.validate().map_err(|_| "no schedule and no wake");
         self.decisions.push(DecisionMeta { name: decl.name, system: decl.system, valid });
@@ -140,36 +108,13 @@ impl Declarations {
         self.rules.implement(self.system, sig, f);
     }
 
-    pub fn record(&mut self, decl: RecordKindDecl) {
-        self.records.push((self.system, decl));
-    }
-
     pub fn event(&mut self, decl: EventKindDecl) {
         self.events.push((self.system, decl));
-    }
-
-    pub fn kink(&mut self, decl: KinkDecl) {
-        if let Err(e) = self.kinks.register(decl) {
-            self.kink_errors.push(e);
-        }
-    }
-
-    pub fn family(&mut self, family: Box<dyn AuditFamily>) {
-        self.families.push((self.system, family));
-    }
-
-    pub fn contribution(&mut self, contribution: Box<dyn Contribution>) {
-        self.contributions.push((self.system, contribution));
     }
 
     /// The state the system compiles from the register at assembly.
     pub fn compile(&mut self, compile: Compile) {
         self.compiled.push((self.system, compile));
-    }
-
-    /// A draw of the households' lines of the system's kinds, made with each household as the opening forms it.
-    pub fn attachment(&mut self, draw: Box<dyn core::any::Any + Send + Sync>) {
-        self.attachments.push((self.system, draw));
     }
 
     /// A kind of market the system runs, whose instances its orders name.
@@ -180,26 +125,6 @@ impl Declarations {
     /// A process on a population kind's members, whose outcome the declaring system writes.
     pub fn pop_process(&mut self, process: Box<dyn crate::pop_process::PopProcess>) {
         self.pop_processes.push((self.system, process));
-    }
-
-    /// The insolvency law a kind's parties are under.
-    pub fn insolvency(&mut self, decl: crate::insolvency::InsolvencyDecl) {
-        self.insolvency.push((self.system, decl));
-    }
-
-    /// The wear of a system's chains of classes, realised on the rows of one of its visits.
-    pub fn wear(&mut self, decl: crate::wear::WearDecl) {
-        self.wear.push((self.system, decl));
-    }
-
-    /// The spoilage of goods in stock, realised on the rows of one of the system's visits.
-    pub fn spoilage(&mut self, decl: crate::spoilage::SpoilageDecl) {
-        self.spoilage.push((self.system, decl));
-    }
-
-    /// A decision taken on a kind's rows as they come due, by its schedule or its reviews.
-    pub fn visit(&mut self, decl: crate::visit::VisitDecl) {
-        self.visits.push((self.system, decl));
     }
 
     /// Adds items to a population kind: its roles, key attributes, positions, standing rates, profile groups,
@@ -229,11 +154,10 @@ impl Declarations {
     }
 
     /// The refusals the declarations alone decide: a stream twice, a hazard incomplete or drawing from an undeclared
-    /// stream, a message reaching an unanswered kind, a decision point with no schedule or wake, a family twice, a
-    /// kink twice.
+    /// stream, and a decision point with no schedule or wake.
     #[must_use]
     pub fn refusals(&self) -> Vec<String> {
-        let mut errors = self.kink_errors.clone();
+        let mut errors = Vec::new();
         let mut names: Vec<&str> = self.streams.iter().map(|(_, s)| s.name).collect();
         names.sort_unstable();
         for pair in names.windows(2) {
@@ -251,16 +175,9 @@ impl Declarations {
                 errors.push(format!("hazard `{}` draws from `{}`, which no system declares", h.name, h.stream));
             }
         }
-        errors.extend(self.messages.iter().filter_map(|(_, m)| m.validate().err()));
         for d in &self.decisions {
             if let Err(why) = d.valid {
                 errors.push(format!("decision point `{}`: {why}", d.name));
-            }
-        }
-        let family_names: Vec<FamilyDecl> = self.families.iter().map(|(_, f)| f.decl()).collect();
-        for (i, f) in family_names.iter().enumerate() {
-            if family_names.iter().skip(i + 1).any(|g| g.name == f.name) {
-                errors.push(format!("audit family `{}` declared twice", f.name));
             }
         }
         errors
