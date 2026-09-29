@@ -42,7 +42,9 @@ LEVELS = {
     "Low income": "developing",
 }
 
-# Each derived value: its register id, the scale it is drawn on, how it is read from the series, and the series.
+# Each derived value: its register id, the scale it is drawn on, how it is read from the series, and the series. A
+# value the group's accounts hold — its debts' and banks' stocks aside, which the draw moves (§10.0a) — is the
+# accounts', never drawn beside them.
 VALUES = [
     ("GEN.life_expectancy", "log", ["wdi/SP.DYN.LE00.IN"], "years", None),
     ("GEN.fertility", "log", ["wdi/SP.DYN.TFRT.IN"], "births per woman", None),
@@ -50,7 +52,6 @@ VALUES = [
     ("GEN.share_65_plus", "logit_percent", ["wdi/SP.POP.65UP.TO.ZS"], "% of population", None),
     ("GEN.gdp_per_head", "log", ["wdi/NY.GDP.PCAP.PP.KD"], "constant 2021 international $ (PPP)", None),
     ("GEN.income_gini", "logit_percent", ["wdi/SI.POV.GINI"], "Gini index, 0-100", None),
-    ("GEN.household_wealth_to_income", "log", ["wid/whweal_p0p100_999_i"], "ratio to national income", None),
     ("GEN.top10_wealth_share", "logit_share", ["wid/shweal_p90p100_992_j"], "share of net personal wealth", None),
     ("GEN.employment_rate", "logit_percent", ["wdi/SL.EMP.TOTL.SP.ZS"], "% of population 15+", None),
     ("GEN.unemployment_rate", "logit_percent", ["wdi/SL.UEM.TOTL.ZS"], "% of labour force", None),
@@ -61,20 +62,13 @@ VALUES = [
     ("GEN.firm_debt", "log", ["imf/NFC_LS"], "% of GDP", None),
     ("GEN.public_debt", "log", ["imf/GGXWDG_NGDP"], "% of GDP", None),
     ("GEN.bank_capital_ratio", "logit_percent", ["wdi/FB.BNK.CAPA.ZS"], "% of assets", None),
-    ("GEN.tax_revenue", "logit_percent", ["wdi/GC.TAX.TOTL.GD.ZS"], "% of GDP", None),
-    ("GEN.social_spending", "logit_percent", ["imf_sdmx/GF10_S13"], "% of GDP", None),
-    ("GEN.agriculture_to_services", "log", ["wdi/NV.AGR.TOTL.ZS", "wdi/NV.SRV.TOTL.ZS"], "ratio of value added", "ratio"),
-    ("GEN.industry_to_services", "log", ["wdi/NV.IND.TOTL.ZS", "wdi/NV.SRV.TOTL.ZS"], "ratio of value added", "ratio"),
     ("GEN.trade", "log", ["wdi/NE.TRD.GNFS.ZS"], "% of GDP", None),
     ("GEN.bank_concentration5", "logit_percent", ["wb/GFDD.OI.06"], "% of assets, five largest banks", None),
     ("GEN.bank_top3_of_top5", "logit_share", ["wb/GFDD.OI.01", "wb/GFDD.OI.06"], "three largest banks' share of the five's", "ratio"),
-    ("GEN.bank_assets", "log", ["wb/GFDD.DI.02"], "% of GDP", None),
     ("GEN.bank_deposits", "log", ["wb/GFDD.OI.02"], "% of GDP", None),
-    ("GEN.central_bank_assets", "log", ["wb/GFDD.DI.06"], "% of GDP", None),
     ("GEN.liquid_reserves", "logit_percent", ["wb/FD.RES.LIQU.AS.ZS"], "% of bank assets", None),
     ("GEN.lending_rate", "identity", ["wdi/FR.INR.LEND"], "% a year", None),
     ("GEN.deposit_rate", "identity", ["wdi/FR.INR.DPST"], "% a year", None),
-    ("GEN.investment", "logit_percent", ["wb/NE.GDI.FTOT.ZS"], "% of GDP", None),
     ("GEN.growth", "log_growth_percent", ["wb/NY.GDP.MKTP.KD.ZG"], "% a year", None),
     ("GEN.home_ownership", "logit_share", ["housing/home_ownership"], "share of households owning their home", None),
 ]

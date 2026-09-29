@@ -1057,7 +1057,9 @@ takes on day zero.
   deposits and liquid reserves, the central bank's assets, the lending and deposit rates, fixed investment to GDP, GDP
   growth, and enterprises per person employed. Every derived value comes from one year's published sources in one
   unit system, and the flows (production, incomes, uses) and the stocks (who holds what against whom) meet the
-  national accounts' identities exactly, so the opening is consistent before anything is drawn. The development
+  national accounts' identities exactly, so the opening is consistent before anything is drawn. A derived value
+  the group's accounts hold (tax revenue, social spending, the sector shares, fixed investment, the banks' and
+  the central bank's assets, household wealth) is read from them, never drawn beside them (Law 4). The development
   level draws one
   joint profile from a declared table of country groups' published profiles, perturbed within the group's declared
   dispersion from the seed, so values that go together stay together; each other choice sets its values within the
