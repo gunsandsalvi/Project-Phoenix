@@ -439,13 +439,6 @@ pub const LC_1_22: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 h, the labour reads"),
 };
 
-pub const LC_1_23: Check = live_check! {
-    id: "LC-1-23",
-    title: "LAB.15: the count of matches equals the sum of acceptances; no aggregate matching function",
-    from_step: "S1.08",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the labour reads"),
-};
-
 pub const LC_1_24: Check = live_check! {
     id: "LC-1-24",
     title: "BNK.11: each bank's loan book equals the sum of its loan lines, and its change reconciles",
@@ -529,14 +522,6 @@ pub const LC_1_41: Check = live_check! {
     title: "The GEN report lists every balancing change and apportionment difference, and names every party",
     from_step: "S1.15",
     check: |_| Outcome::NotYet("awaits S1.24 h, the opening report"),
-};
-
-pub const LC_1_49: Check = live_check! {
-    id: "LC-1-49",
-    title: "Every cohort reaching the school-leaving age enters the adult roles on its days, and the labour force's \
-            inflow is published",
-    from_step: "S1.13",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the population's reads"),
 };
 
 pub const LC_1_45: Check = live_check! {

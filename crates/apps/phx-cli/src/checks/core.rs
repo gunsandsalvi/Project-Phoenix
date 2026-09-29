@@ -669,3 +669,23 @@ pub const LC_1_17: Check = live_check! {
     from_step: "S1.06",
     check: services_not_stored,
 };
+
+/// Each day's matches are its acceptances: every contract a hire made came from an offer accepted that day, one by one,
+/// and no count of matches is drawn from an aggregate.
+fn matches_are_acceptances(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().labour.days;
+    if let Some(d) = days.iter().find(|d| d.hires > d.acceptances) {
+        return Outcome::Fail(format!("day {}: {} hires from {} acceptances", d.day, d.hires, d.acceptances));
+    }
+    if days.iter().all(|d| d.hires == 0) {
+        return Outcome::NotYet("no one was hired in the run");
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_23: Check = live_check! {
+    id: "LC-1-23",
+    title: "LAB.15: the count of matches equals the sum of acceptances; no aggregate matching function",
+    from_step: "S1.08",
+    check: matches_are_acceptances,
+};

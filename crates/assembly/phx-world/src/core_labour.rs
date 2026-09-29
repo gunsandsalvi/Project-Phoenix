@@ -53,6 +53,8 @@ pub struct LabourDay {
     pub searchers: u64,
     pub applications: u64,
     pub offers: u64,
+    /// The offers accepted, and the contracts they made: an acceptance whose person left first makes none.
+    pub acceptances: u64,
     pub hires: u64,
 }
 
@@ -283,7 +285,7 @@ impl Core {
             return record;
         }
         record.separated = self.separate(ctx, day);
-        record.hires = self.answer_offers(ctx, day);
+        (record.acceptances, record.hires) = self.answer_offers(ctx, day);
         record.offers = self.select_applicants(ctx, day);
         let (posted, withdrawn, layoffs, employers) = self.post(ctx, day);
         (record.posted, record.withdrawn, record.layoffs_wanted, record.employers) =
@@ -600,7 +602,7 @@ impl Core {
     /// taste for the match; each hire is a contract from the firm to the household naming the person, at the
     /// vacancy's wage on its country's monthly dates, and the person no longer searches.
     #[clause("LAB.5", "LAB.8", "LAB.1")]
-    fn answer_offers(&mut self, ctx: &LabourCtx<'_>, day: Day) -> u64 {
+    fn answer_offers(&mut self, ctx: &LabourCtx<'_>, day: Day) -> (u64, u64) {
         let offers = std::mem::take(&mut self.labour.offers);
         let laws = self.labour.laws.clone();
         let postings = self.labour.postings.clone();
@@ -617,13 +619,14 @@ impl Core {
             })
         };
         let hires = answer(&mut self.labour.vacancies, &offers, accepts);
+        let accepted = len_u64(hires.len());
         let mut n = 0;
         for h in hires {
             if self.hire(ctx, day, &h) {
                 n += 1;
             }
         }
-        n
+        (accepted, n)
     }
 
     /// A hire made a contract, and its person's state, occupation and last point written.

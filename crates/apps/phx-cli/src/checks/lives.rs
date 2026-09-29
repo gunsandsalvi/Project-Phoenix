@@ -173,6 +173,65 @@ fn life_table_traced(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
+/// No child is still in school past its country's school-leaving age at the run's end, and the leavers are published
+/// as the events of the process that takes them from school.
+fn cohorts_leave(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let (Some(place), Some(decl)) = (core.names.iter().position(|n| *n == "household"), core.household_decl.as_ref())
+    else {
+        return Outcome::NotYet("no households on the core");
+    };
+    let (Some(store), Some(Some(persons))) = (core.kinds.get(place), core.persons.get(place)) else {
+        return Outcome::NotYet("no households on the core");
+    };
+    let phx_num::Missing::Present(region_at) = decl.sited_by else {
+        return Outcome::Fail("households sited nowhere".to_owned());
+    };
+    let mut ages = Vec::new();
+    for c in w.regions() {
+        match w.register().count_in("DEM.school_leaving_age", *c).map(i64::try_from) {
+            Ok(Ok(a)) => ages.push(a),
+            Ok(Err(e)) => return Outcome::Fail(e.to_string()),
+            Err(e) => return Outcome::Fail(e),
+        }
+    }
+    let date = w.date(w.today());
+    for slot in store.parties.live_slots() {
+        let region = store.record(slot).get(region_at).and_then(|x| match x.get() {
+            phx_num::Missing::Present(v) => usize::try_from(v).ok(),
+            phx_num::Missing::Absent => None,
+        });
+        let Some(leaving) = region.and_then(|r| ages.get(r)) else {
+            return Outcome::Fail(format!("household slot {} in a region of no country", slot.get()));
+        };
+        for p in persons.of(slot) {
+            let person = phx_pop::person::unpack(decl, p.word);
+            if person.role == if_pop::CHILD.name && person.age_on(date) >= *leaving {
+                return Outcome::Fail(format!(
+                    "household slot {}: a child of {} still in school past {leaving}",
+                    slot.get(),
+                    person.age_on(date)
+                ));
+            }
+        }
+    }
+    let kinds: Vec<u16> = w.processes().iter().filter(|(h, _, _)| *h == "DEM.birthday").map(|(_, _, e)| *e).collect();
+    let left: u64 =
+        core.events.iter().flat_map(|(_, e)| e).filter(|e| kinds.contains(&e.kind)).map(|e| e.persons).sum();
+    if left == 0 {
+        return Outcome::NotYet("no child reached the school-leaving age in the run");
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_49: Check = live_check! {
+    id: "LC-1-49",
+    title: "Every cohort reaching the school-leaving age enters the adult roles on its days, and the labour force's \
+            inflow is published",
+    from_step: "S1.13",
+    check: cohorts_leave,
+};
+
 pub const LC_0_39: Check = live_check! {
     id: "LC-0-39",
     title: "Every hazard's realised hit rate is within its sampling error of its declared rate",
