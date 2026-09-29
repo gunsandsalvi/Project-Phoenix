@@ -326,13 +326,6 @@ pub const LC_1_03: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
 };
 
-pub const LC_1_04: Check = live_check! {
-    id: "LC-1-04",
-    title: "no variable is read by every party as one expectation, and things two parties with different histories value have more than one value",
-    from_step: "S1.01",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
-};
-
 pub const LC_1_43: Check = live_check! {
     id: "LC-1-43",
     title: "each method's lag behind each turning point of a published series, by memory type and heuristic mix",
@@ -529,7 +522,7 @@ pub const LC_1_33: Check = live_check! {
     id: "LC-1-33",
     title: "Households going without their needs are recorded as events and counted",
     from_step: "S1.12",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the households' needs"),
+    check: |_| Outcome::NotYet("awaits needs by quantity, with the households' finances (S2.05)"),
 };
 
 pub const LC_1_36: Check = live_check! {

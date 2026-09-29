@@ -473,6 +473,11 @@ fn jobs_held_by_persons(w: Inspector<'_>) -> Outcome {
 /// and banks lent.
 fn circular_flow_lives(w: Inspector<'_>) -> Outcome {
     let core = w.core();
+    let wage = usize::from(phx_world::consts::reason::WAGE);
+    let payday = core.days.iter().any(|d| d.wages > 0 || d.failed_by.get(wage).is_some_and(|n| *n > 0));
+    if !payday {
+        return Outcome::NotYet("no payday came in the run");
+    }
     let paid = core.days.iter().any(|d| d.wages > 0);
     let spent = core.goods.days.iter().any(|d| d.spent > 0);
     let made = core.goods.days.iter().any(|d| d.made > 0);
@@ -539,4 +544,46 @@ pub const LC_0_41: Check = live_check! {
     title: "Every hazard occurrence has its event recorded at the sub-step that drew it",
     from_step: "S0.22",
     check: hits_have_events,
+};
+
+/// Each firm's outlook of its sales is its own: among the makers of some product at some region, their expected sales
+/// a unit of their output take more than one value once they have reviewed on what each sold.
+fn outlooks_are_own(w: Inspector<'_>) -> Outcome {
+    use phx_world::consts::firm::{EXPECTED, OUTPUT, PRODUCT, REGION};
+    let core = w.core();
+    let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
+    let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
+    let word = |slot: phx_id::Slot, at: usize| match store.record(slot).get(at).map(|w| w.get()) {
+        Some(phx_num::Missing::Present(v)) => Some(v),
+        _ => None,
+    };
+    let mut ratios: std::collections::BTreeMap<(i64, i64), Vec<(i128, i128)>> = std::collections::BTreeMap::new();
+    for slot in store.parties.live_slots() {
+        let (Some(product), Some(region), Some(expected), Some(output)) =
+            (word(slot, PRODUCT), word(slot, REGION), word(slot, EXPECTED), word(slot, OUTPUT))
+        else {
+            continue;
+        };
+        if output > 0 {
+            ratios.entry((product, region)).or_default().push((i128::from(expected), i128::from(output)));
+        }
+    }
+    let cells = ratios.values().filter(|r| r.len() > 1).count();
+    if cells == 0 {
+        return Outcome::NotYet("no product has two makers at one region");
+    }
+    // Two ratios are one where their cross products are.
+    let differ = |r: &Vec<(i128, i128)>| r.first().is_some_and(|(e0, o0)| r.iter().any(|(e, o)| e * o0 != e0 * o));
+    if ratios.values().any(differ) {
+        Outcome::Pass
+    } else {
+        Outcome::Fail(format!("every maker of each of {cells} products at a region expects one ratio of its output"))
+    }
+}
+
+pub const LC_1_04: Check = live_check! {
+    id: "LC-1-04",
+    title: "no variable is read by every party as one expectation, and things two parties with different histories value have more than one value",
+    from_step: "S1.01",
+    check: outlooks_are_own,
 };
