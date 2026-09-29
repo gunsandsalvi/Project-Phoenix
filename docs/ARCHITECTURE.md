@@ -1445,6 +1445,20 @@ units' cost in the owner's accounts. Plant, dwellings and infrastructure join wh
 are held on the core. Each catastrophe is followed for the prices' reads: its regions and every mark on its day, and
 the first day after it each (product, region) mark rose above that (`Shock`), which LC-1-46 reads.
 
+**Deposits on the core** (`core_deposits`, GEO.6, GEO.9, GEO.12, GDS.3, GDS.4, GDS.12): each deposit's right is a
+holding over its tile, given at the opening to the firm of its region making the product that draws on its resource
+(`TEC.products`' `extracts`, `TEC.deposit_draw`) sited nearest it by plane distance, the lower slot on a tie; a deposit
+no such firm's region holds is held by no one. The core's `Deposits` keeps, by the deposit's place among the map's,
+its holder, what it has given and, if finite, what it holds and opened with. An extractor decides whether to work
+what it holds on its extraction schedule (`GDS.extraction_days`, each firm's day by its slot) and before its first
+making, through the decision core (`GDS.extract`, Hotelling's rule: its price net of its unit cost against its
+stance's outlook of its mark at its next decision, discounted at its required return). The production rule's capacity
+is at most what its deposits give at its way's draw a unit, none while it does not work them; each unit made takes
+the draw, rounded up, from its deposits in their order, a finite one never below nothing. Its rights pass to its
+estate as its goods do, and an estate holding rights waits for its liquidation. The deposits family holds each finite
+deposit's given and held to its opening at every close. A deposit's grade and the grade classes of what it gives are
+not yet kept: every extracted unit is of its product's one class, until the commodities' grades and their call.
+
 ### 7.9 The valve
 
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed

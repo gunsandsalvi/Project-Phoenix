@@ -155,14 +155,14 @@ impl std::fmt::Debug for GoodsCtx<'_> {
 
 /// A firm's record words the goods day reads.
 #[derive(Clone, Copy, Debug)]
-struct Firm {
-    key: PartyKey,
-    product: u16,
-    region: u32,
-    country: usize,
-    productivity: f64,
-    price: i64,
-    output: f64,
+pub(crate) struct Firm {
+    pub(crate) key: PartyKey,
+    pub(crate) product: u16,
+    pub(crate) region: u32,
+    pub(crate) country: usize,
+    pub(crate) productivity: f64,
+    pub(crate) price: i64,
+    pub(crate) output: f64,
 }
 
 /// A stall at a meeting with its seller's unit of the product, currency and region.
@@ -213,7 +213,7 @@ impl Core {
         }
     }
 
-    fn goods_firm(&self, regions: &[CountryId], firm: usize, slot: Slot) -> Option<Firm> {
+    pub(crate) fn goods_firm(&self, regions: &[CountryId], firm: usize, slot: Slot) -> Option<Firm> {
         let region = u32::try_from(self.record_word(firm, slot, REGION)?).ok()?;
         Some(Firm {
             key: PartyKey::new(kind_number(firm), slot),
@@ -236,7 +236,7 @@ impl Core {
     }
 
     /// A firm's stored inputs a unit of its output, each with its product.
-    fn lot(&self, product: u16) -> f64 {
+    pub(crate) fn lot(&self, product: u16) -> f64 {
         self.goods.lots.get(usize::from(product)).copied().unwrap_or_else(|| {
             violation!(clause = "GDS.1", "a product the technology does not declare", product = product)
         })
@@ -277,7 +277,7 @@ impl Core {
             .collect()
     }
 
-    fn firm_slots(&self, firm: usize) -> Vec<Slot> {
+    pub(crate) fn firm_slots(&self, firm: usize) -> Vec<Slot> {
         self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default()
     }
 
@@ -602,6 +602,7 @@ impl Core {
         let mut moved: Vec<Flow> = Vec::new();
         self.spoil(day, &mut moved);
         record.destroyed = self.destroy(day, &mut moved);
+        self.review_extraction(ctx.regions, day);
         record.made = self.make(ctx, day, &mut moved);
         record.inputs_wanted = self.buy_inputs(ctx, day);
         let (spenders, wants) = self.decide_spending(ctx, day);
@@ -683,7 +684,7 @@ impl Core {
     /// What it uses of its own product costs what making it costs, so the rest is grossed up by the share of a unit it
     /// uses of itself; its stock's cost, which mixes units it bought at others' prices, is not its cost of making.
     /// None known while its staff make nothing, or an input it uses is neither held nor sold in its region.
-    fn unit_cost(&self, f: &Firm) -> Option<f64> {
+    pub(crate) fn unit_cost(&self, f: &Firm) -> Option<f64> {
         self.cost_at(f, &|q| {
             self.average_cost(f.key, q, f.region).or_else(|| self.goods.cheapest.get(&(q, f.region)).copied())
         })
@@ -730,6 +731,8 @@ impl Core {
         let stored = self.is_stored(f.product);
         let stock = if stored { self.free_units(f.key, f.product, f.region) } else { 0 };
         let mut capacity = self.staff_capacity(&f).map_or(f64::INFINITY, from_i64);
+        let deposits = self.deposit_room(f.key, f.product);
+        capacity = if deposits < capacity { deposits } else { capacity };
         for (q, a) in self.recipe(&f) {
             let can = from_i64(self.free_units(f.key, *q, f.region)) / a;
             capacity = if can < capacity { can } else { capacity };
@@ -774,6 +777,7 @@ impl Core {
         };
         let mut made = 0;
         for (slot, (f, today)) in slots.into_iter().zip(plans).filter_map(|(s, p)| p.map(|p| (s, p))) {
+            self.take_from_deposits(f.key, f.product, today);
             let stored = self.is_stored(f.product);
             let inputs = self.stored_inputs(&f);
             if !stored {

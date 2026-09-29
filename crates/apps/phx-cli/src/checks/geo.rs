@@ -287,6 +287,51 @@ fn drought_prices_first(w: Inspector<'_>) -> Outcome {
     Outcome::Pass
 }
 
+/// Every finite deposit has given and holds, together, what it opened with.
+fn deposits_balance(w: Inspector<'_>) -> Outcome {
+    let d = &w.core().deposits;
+    for (i, ((open, left), given)) in d.opening.iter().zip(&d.remaining).zip(&d.extracted).enumerate() {
+        match (open, left) {
+            (Some(open), Some(left)) if given + left != *open => {
+                return Outcome::Fail(format!("deposit {i}: {given} extracted and {left} remaining of {open}"));
+            }
+            (Some(_), None) | (None, Some(_)) => {
+                return Outcome::Fail(format!("deposit {i} is finite on one side of its record only"));
+            }
+            _ => {}
+        }
+    }
+    if d.opening.is_empty() { Outcome::Fail("the map holds no deposit".to_owned()) } else { Outcome::Pass }
+}
+
+/// The deposits family found nothing at any close, and some deposit was worked.
+fn deposits_clean(w: Inspector<'_>) -> Outcome {
+    if let Some(f) = w.findings().iter().find(|f| f.family == "deposits") {
+        return Outcome::Fail(format!("day {}: {}", f.day.get(), f.detail));
+    }
+    match deposits_balance(w) {
+        Outcome::Pass if w.core().deposits.extracted.iter().all(|e| *e == 0) => {
+            Outcome::NotYet("no deposit was worked in the run")
+        }
+        other => other,
+    }
+}
+
+pub const LC_0_15: Check = live_check! {
+    id: "LC-0-15",
+    title: "For every finite deposit, extracted plus remaining equals its opening quantity",
+    from_step: "S0.13",
+    check: deposits_balance,
+};
+
+pub const LC_1_14: Check = live_check! {
+    id: "LC-1-14",
+    title: "for every finite deposit, extracted plus remaining equals its opening quantity: the family of deposits \
+            (GEO.12) is clean",
+    from_step: "S1.05",
+    check: deposits_clean,
+};
+
 pub const LC_0_13: Check = live_check! {
     id: "LC-0-13",
     title: "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence",

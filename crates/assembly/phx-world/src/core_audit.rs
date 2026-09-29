@@ -1,7 +1,8 @@
 //! The core's audit at each day's close, beside the money and goods families settlement and the goods' day read: each
-//! contract names parties that are live, every household holds a person, and the households hold the persons they
-//! opened with, plus those born, less those gone. It reads only and records what it finds; it never repairs. At a close
-//! with no day run the families hold the state to itself as it stood, which is how an injection into a save is read.
+//! contract names parties that are live, every household holds a person, the households hold the persons they opened
+//! with, plus those born, less those gone, and each finite deposit has given and holds what it opened with. It reads
+//! only and records what it finds; it never repairs. At a close with no day run the families hold the state to itself
+//! as it stood, which is how an injection into a save is read.
 
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_id::Day;
@@ -10,8 +11,8 @@ use phx_macros::clause;
 use crate::core::Core;
 
 /// The audit's families on the core.
-pub const FAMILIES: [&str; 9] =
-    ["money", "goods", "contracts", "persons", "taxes", "debt", "loans", "accounts", "revenue"];
+pub const FAMILIES: [&str; 10] =
+    ["money", "goods", "contracts", "persons", "taxes", "debt", "loans", "accounts", "revenue", "deposits"];
 
 /// What a close's money and goods families hold the state to: the money the parties hold, what each bank owes its
 /// customers, and the units of each good held.
@@ -120,5 +121,6 @@ impl Core {
             });
         }
         self.found.extend(found);
+        self.audit_deposits(day);
     }
 }

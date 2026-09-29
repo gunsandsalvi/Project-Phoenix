@@ -11,6 +11,7 @@ pub mod core_credit;
 pub mod core_day;
 pub mod core_decide;
 pub mod core_default;
+pub mod core_deposits;
 pub mod core_firms;
 pub mod core_goods;
 pub mod core_jobs;

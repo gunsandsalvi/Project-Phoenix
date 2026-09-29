@@ -753,8 +753,10 @@ impl Core {
             let empty = self.kinds.get(usize::from(estate.kind())).and_then(|k| k.accounts.as_ref()).is_some_and(|a| {
                 a.balance.get(estate.slot()).unwrap_or(0) == 0 && a.pending.get(estate.slot()).unwrap_or(0) == 0
             });
-            // Goods an estate holds wait for its liquidation, which sells them; until then it stays.
-            let goods = self.goods.stocks.holdings(estate).any(|h| h.units != 0);
+            // Goods and rights to deposits an estate holds wait for its liquidation, which sells them; until then it
+            // stays.
+            let goods =
+                self.goods.stocks.holdings(estate).any(|h| h.units != 0) || self.deposits.held.contains_key(&estate);
             if !empty || goods {
                 let why = if goods { crate::core::Waits::Liquidation } else { crate::core::Waits::PayingOut };
                 self.waiting.insert(estate, why);

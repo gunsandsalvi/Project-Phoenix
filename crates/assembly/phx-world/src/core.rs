@@ -77,6 +77,8 @@ pub struct Core {
     pub happened: phx_core::EventStore,
     /// The regions' weather and today's struck tiles.
     pub weather: crate::core_weather::Weather,
+    /// The deposits: their holders, what each has given and holds, and whether each extractor works them.
+    pub deposits: crate::core_deposits::Deposits,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,

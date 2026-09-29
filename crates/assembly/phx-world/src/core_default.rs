@@ -181,7 +181,7 @@ impl Core {
         }
     }
 
-    /// A firm ended into an estate: its money and goods pass to it, each contract it was party to closes into a claim
+    /// A firm ended into an estate: its money, goods and rights to deposits pass to it, each contract it was party to closes into a claim
     /// on it, its employees search again, and its vacancies close.
     #[clause("PTY.9", "LAB.12", "L3")]
     pub(crate) fn end_firm(
@@ -211,6 +211,7 @@ impl Core {
             a.pending.set(key.slot(), 0);
         }
         self.pass_goods(key, estate, day);
+        self.pass_rights(key, estate);
         let claims = self.close_contracts(ctx, (key, country.get()), day);
         self.insolvency.claims.insert(estate, claims);
         for v in self.labour.vacancies.iter_mut().filter(|v| v.employer == key) {

@@ -5,6 +5,7 @@
 mod consts;
 pub mod extract;
 pub mod markets;
+pub mod points;
 pub mod rules;
 
 use phx_core::register::values::{Table1, Table2};
@@ -203,6 +204,7 @@ impl System for Gds {
         d.market(Box::new(markets::COMMODITIES));
         d.market(Box::new(markets::BETWEEN_FIRMS));
         d.compile(Box::new(move |register, _| Ok(Box::new(extract::Own::compile(&prims, register)?))));
+        d.decision(&points::EXTRACT);
     }
 
     fn handlers(_: &mut HandlerTable) {}

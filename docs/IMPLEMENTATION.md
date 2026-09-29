@@ -1062,6 +1062,13 @@ world switches to the core.
     goods standing on a struck tile destroyed at their owners by its severity; each catastrophe's regions and the
     first rise after it of every product's mark followed. LC-0-13, LC-0-14 and LC-1-46 read them; LC-0-58 now has
     public events to read.
+  - d: extraction on the core (GEO.6, GEO.9, GEO.12, GDS.3, GDS.4, GDS.12; `core_deposits`, ARCHITECTURE §7.8), not
+    yet run: each deposit's right held by its region's nearest extracting firm; an extractor's decision to work by
+    Hotelling's rule through the decision core (`GDS.extract`, added to `MND.decisions`); its making held to what its
+    deposits give, each unit taking its way's draw; rights passing to an estate; the deposits family; LC-0-15 and
+    LC-1-14 read them. Next in d: the commodities' grades — a deposit's grade falling as it is worked (GDS.13's
+    `GDS.grade_fall`), each extracted unit a good of its grade's class (`GDS.grade_bounds`), a way taking any class
+    alike — and their call market (`sys_gds::markets::COMMODITIES`), each class a good of its own at the meetings.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

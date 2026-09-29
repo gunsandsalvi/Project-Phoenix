@@ -410,6 +410,23 @@ fn core_of(
     core.open_taxes(today);
     core.open_insolvency(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_loan_books();
+    open_core_goods(p, (&opening, &regions), (calendar, today), (own, frm), &mut core)?;
+    core.open_rights(geo, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
+    open_stats(p, &opening, &mut core)?;
+    core.open_accounts(today);
+    core.open_credit(&p.c.register, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
+
+    Ok(core)
+}
+
+/// The goods on the core opened: the households' spending rule, the firms' stocks and prices.
+fn open_core_goods(
+    p: &Prepared,
+    (opening, regions): (&[phx_core::OpeningCountry], &[phx_id::CountryId]),
+    (calendar, today): (&phx_core::calendar::Calendar, phx_id::Day),
+    (own, frm): (&[(&'static str, OwnState)], &sys_frm::Own),
+    core: &mut crate::core::Core,
+) -> Result<(), AssemblyErrors> {
     if let Some(rule) = own
         .iter()
         .find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE)
@@ -421,7 +438,7 @@ fn core_of(
             streams: &p.c.streams,
             rule,
             management: frm.management(),
-            regions: &regions,
+            regions,
             weights: retail_weights(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?,
             pool: None,
         };
@@ -433,13 +450,9 @@ fn core_of(
         let Some(cover) = cover else {
             return Err(AssemblyErrors(vec!["the firms' management not compiled for the goods' opening".to_owned()]));
         };
-        core.open_goods(&gctx, (&opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
+        core.open_goods(&gctx, (opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
-    open_stats(p, &opening, &mut core)?;
-    core.open_accounts(today);
-    core.open_credit(&p.c.register, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
-
-    Ok(core)
+    Ok(())
 }
 
 /// The retail logit's weights: of a seller's price's log and of its distance.

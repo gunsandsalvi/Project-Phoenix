@@ -53,13 +53,6 @@ pub const LC_0_08: Check = live_check! {
     retired: "it compared the world with a second run of it; a stream's key comes from its own name alone",
 };
 
-pub const LC_0_15: Check = live_check! {
-    id: "LC-0-15",
-    title: "For every finite deposit, extracted plus remaining equals its opening quantity",
-    from_step: "S0.13",
-    check: |_| Outcome::NotYet("awaits extraction from deposits on the core (S1.24 d)"),
-};
-
 pub const LC_0_17: Check = live_check! {
     id: "LC-0-17",
     title: "Every line's two sides hold equal counts, and each side it lists equals its holders' rows",
@@ -228,14 +221,6 @@ pub const LC_1_12: Check = live_check! {
             volatility and responses and the plant's age are reported (CAP.10)",
     from_step: "S1.04",
     check: |_| Outcome::NotYet("awaits S1.24 d, plant"),
-};
-
-pub const LC_1_14: Check = live_check! {
-    id: "LC-1-14",
-    title: "for every finite deposit, extracted plus remaining equals its opening quantity: the family of deposits \
-            (GEO.12) is clean",
-    from_step: "S1.05",
-    check: |_| Outcome::NotYet("awaits S1.24 d, extraction"),
 };
 
 pub const LC_1_15: Check = live_check! {

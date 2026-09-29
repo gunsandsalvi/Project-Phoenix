@@ -47,8 +47,8 @@ impl Core {
 
     /// A family's discrepancy: a unit of money in a treasury's account no flow paid, a unit of a good a firm holds
     /// that nothing made, a contract naming a household that never was, a person the households are counted to hold
-    /// that none does, a unit of tax arisen, of bills issued, on a creditor's loan book, in an equity account, and of
-    /// revenue recognised, each moved by nothing.
+    /// that none does, a unit of tax arisen, of bills issued, on a creditor's loan book, in an equity account, of
+    /// revenue recognised, and in a finite deposit, each moved by nothing.
     fn inject(&mut self, family: &str, day: Day) -> Result<(), String> {
         let refused = || format!("the save holds nothing to inject `{family}` into");
         match family {
@@ -99,6 +99,7 @@ impl Core {
             "loans" => self.loan_books.values_mut().next().ok_or_else(refused)?.book += 1,
             "accounts" => *self.accounts.opening.values_mut().next().ok_or_else(refused)? += 1,
             "revenue" => self.accounts.revenue += 1,
+            "deposits" => *self.deposits.remaining.iter_mut().flatten().next().ok_or_else(refused)? += 1,
             _ => return Err(format!("the audit runs no family `{family}`")),
         }
         Ok(())
