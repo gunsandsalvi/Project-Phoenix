@@ -278,7 +278,9 @@ fn labour_kind(d: &Declarations) -> Result<Option<if_labour::kind::LabourKind>, 
 
 /// The state's kinds bound with each country's law.
 fn state_of(p: &Prepared, geo: &phx_geo::GeoState) -> Result<crate::state::State, AssemblyErrors> {
-    let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
+    let (opening, _) = phx_exec::trace::span("open.state_countries", || {
+        opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation)
+    });
     crate::state::bind(&p.d, &p.c.register, &opening).map_err(AssemblyErrors)
 }
 
@@ -340,6 +342,28 @@ fn open_decisions(p: &Prepared, core: &mut crate::core::Core) {
     core.open_decisions(p.kernel.decisions.shared(&p.c.register), &by_kind);
 }
 
+/// Each country's opening sheet, with the plant its accounts hold drawn by the plant's kinds.
+fn opening_sheets(
+    p: &Prepared,
+    own: &[(&'static str, OwnState)],
+    opening: &[phx_core::OpeningCountry],
+) -> Result<Vec<crate::opening::sheet::Sheet>, AssemblyErrors> {
+    let cap = own
+        .iter()
+        .find(|(c, _)| *c == <sys_cap::Cap as phx_core::System>::CODE)
+        .and_then(|(_, s)| s.downcast_ref::<sys_cap::CapOwn>())
+        .ok_or_else(|| AssemblyErrors(vec!["the plant's kinds not compiled for the opening's sheets".to_owned()]))?;
+    opening
+        .iter()
+        .enumerate()
+        .map(|(i, c)| {
+            let plant = crate::core_plant::opening_plant(cap, &p.c.register, (c, i))?;
+            crate::opening::sheet::country_sheet(&p.c.register, c, plant)
+        })
+        .collect::<Result<Vec<_>, String>>()
+        .map_err(|e| AssemblyErrors(vec![e]))
+}
+
 /// The world on the core, drawn by its own opening: its parties and their accounts, then its firms, jobs, loans,
 /// labour, state and goods.
 fn core_of(
@@ -348,23 +372,11 @@ fn core_of(
     (state, calendar, today): (&crate::state::State, &phx_core::calendar::Calendar, phx_id::Day),
     (own, labour): (&[(&'static str, OwnState)], Option<&if_labour::kind::LabourKind>),
 ) -> Result<crate::core::Core, AssemblyErrors> {
-    let (opening, _) = opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation);
-    let cap = own
-        .iter()
-        .find(|(c, _)| *c == <sys_cap::Cap as phx_core::System>::CODE)
-        .and_then(|(_, s)| s.downcast_ref::<sys_cap::CapOwn>())
-        .ok_or_else(|| AssemblyErrors(vec!["the plant's kinds not compiled for the opening's sheets".to_owned()]))?;
-    let sheets = opening
-        .iter()
-        .enumerate()
-        .map(|(i, c)| {
-            let plant = crate::core_plant::opening_plant(cap, &p.c.register, (c, i))?;
-            crate::opening::sheet::country_sheet(&p.c.register, c, plant)
-        })
-        .collect::<Result<Vec<_>, String>>()
-        .map_err(|e| AssemblyErrors(vec![e]))?;
-    let mut core = open_core(p, (&opening, &sheets), calendar, today)?;
-    open_decisions(p, &mut core);
+    let (opening, _) =
+        phx_exec::trace::span("open.countries", || opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation));
+    let sheets = phx_exec::trace::span("open.sheets", || opening_sheets(p, own, &opening))?;
+    let mut core = phx_exec::trace::span("open.core", || open_core(p, (&opening, &sheets), calendar, today))?;
+    phx_exec::trace::span("open.decisions", || open_decisions(p, &mut core));
     let regions: Vec<phx_id::CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
     let ctx = crate::core_pop::Ctx {
         register: &p.c.register,
@@ -373,7 +385,7 @@ fn core_of(
         processes: &p.processes,
         regions: &regions,
     };
-    core.open_hazards(&ctx, &p.pop, today.succ());
+    phx_exec::trace::span("open.hazards", || core.open_hazards(&ctx, &p.pop, today.succ()));
     let Some(frm) = own
         .iter()
         .find(|(c, _)| *c == <sys_frm::Frm as phx_core::System>::CODE)
@@ -381,14 +393,16 @@ fn core_of(
     else {
         return Err(AssemblyErrors(vec!["the firms' management not compiled for their opening".to_owned()]));
     };
-    core.open_firms(&crate::core_firms::FirmsOpening {
-        register: &p.c.register,
-        countries: &opening,
-        sheets: &sheets,
-        streams: &p.c.streams,
-        stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
-        management: frm.management(),
-        today,
+    phx_exec::trace::span("open.firms", || {
+        core.open_firms(&crate::core_firms::FirmsOpening {
+            register: &p.c.register,
+            countries: &opening,
+            sheets: &sheets,
+            streams: &p.c.streams,
+            stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+            management: frm.management(),
+            today,
+        })
     })
     .map_err(|e| AssemblyErrors(vec![e]))?;
     let jobs = crate::core_jobs::JobsOpening {
@@ -400,18 +414,20 @@ fn core_of(
         stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
     };
     let types = &frm.management().types;
-    core.open_owners(&jobs, types).map_err(|e| AssemblyErrors(vec![e]))?;
-    let _ = core.open_jobs(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.price_owners(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.refresh_windows(types, calendar.date(today));
-    core.open_loans(&crate::core_credit::CreditOpening {
-        register: &p.c.register,
-        countries: &opening,
-        sheets: &sheets,
-        calendar,
-        today,
-        streams: &p.c.streams,
-        stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+    phx_exec::trace::span("open.owners", || core.open_owners(&jobs, types)).map_err(|e| AssemblyErrors(vec![e]))?;
+    let _ = phx_exec::trace::span("open.jobs", || core.open_jobs(&jobs)).map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.owners_priced", || core.price_owners(&jobs)).map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.windows", || core.refresh_windows(types, calendar.date(today)));
+    phx_exec::trace::span("open.loans", || {
+        core.open_loans(&crate::core_credit::CreditOpening {
+            register: &p.c.register,
+            countries: &opening,
+            sheets: &sheets,
+            calendar,
+            today,
+            streams: &p.c.streams,
+            stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+        })
     })
     .map_err(|e| AssemblyErrors(vec![e]))?;
     if let Some(kind) = labour {
@@ -423,21 +439,32 @@ fn core_of(
             regions: &regions,
             clock: None,
         };
-        core.open_labour(&lctx, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
+        phx_exec::trace::span("open.labour", || core.open_labour(&lctx, &opening, today))
+            .map_err(|e| AssemblyErrors(vec![e]))?;
     }
-    core.open_agencies();
-    core.open_central(&p.c.register, (&opening, &sheets), (calendar, today)).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.open_bills(state, (&opening, &sheets), (calendar, today)).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.open_state(state, (&p.c.register, &opening), today).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.open_taxes(today);
-    core.open_insolvency(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.open_loan_books();
-    open_core_goods(p, (&opening, &regions), (calendar, today), (own, frm), &mut core)?;
-    core.open_freight((geo, &p.c.register, &p.c.streams), &regions, today).map_err(|e| AssemblyErrors(vec![e]))?;
-    core.open_rights(geo, &p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
-    open_stats(p, &opening, &mut core)?;
-    core.open_accounts(today);
-    core.open_credit(&p.c.register, &opening, today).map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.agencies", || core.open_agencies());
+    phx_exec::trace::span("open.central", || core.open_central(&p.c.register, (&opening, &sheets), (calendar, today)))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.bills", || core.open_bills(state, (&opening, &sheets), (calendar, today)))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.state", || core.open_state(state, (&p.c.register, &opening), today))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.taxes", || core.open_taxes(today));
+    phx_exec::trace::span("open.insolvency", || core.open_insolvency(&p.c.register))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.loan_books", || core.open_loan_books());
+    phx_exec::trace::span("open.goods", || {
+        open_core_goods(p, (&opening, &regions), (calendar, today), (own, frm), &mut core)
+    })?;
+    phx_exec::trace::span("open.freight", || core.open_freight((geo, &p.c.register, &p.c.streams), &regions, today))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.rights", || core.open_rights(geo, &p.c.register))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    phx_exec::trace::span("open.stats", || open_stats(p, &opening, &mut core))?;
+    phx_exec::trace::span("open.accounts", || core.open_accounts(today));
+    phx_exec::trace::span("open.credit", || core.open_credit(&p.c.register, &opening, today))
+        .map_err(|e| AssemblyErrors(vec![e]))?;
+    core.note_parties();
 
     Ok(core)
 }
@@ -571,11 +598,12 @@ pub fn assemble(
     interfaces: &[&[ItemDecl]],
     config: &WorldConfig,
 ) -> Result<World, AssemblyErrors> {
-    let parts = parts(systems, interfaces, config)?;
+    let parts = phx_exec::trace::span("open.parts", || parts(systems, interfaces, config))?;
     let today = parts.p.c.day_zero;
     let calendar = parts.p.c.calendar.clone();
-    let mut core =
-        core_of(&parts.p, &parts.geo, (&parts.state, &calendar, today), (&parts.own, parts.labour.as_ref()))?;
+    let mut core = phx_exec::trace::span("open", || {
+        core_of(&parts.p, &parts.geo, (&parts.state, &calendar, today), (&parts.own, parts.labour.as_ref()))
+    })?;
     let player = parts.p.game.setup.player;
     let regions: Vec<CountryId> = parts.geo.map.regions.iter().map(|r| r.country).collect();
     let country = player

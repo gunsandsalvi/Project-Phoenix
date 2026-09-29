@@ -64,6 +64,29 @@ pub struct GoodsDay {
     pub unnamed: u64,
 }
 
+impl GoodsDay {
+    /// The goods' day in counts, for the bench's trace.
+    pub(crate) fn note(&self) {
+        let n = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+        phx_exec::trace::note(
+            "goods",
+            &[
+                ("made", self.made),
+                ("productions", n(self.productions)),
+                ("unfed", n(self.unfed)),
+                ("spenders", n(self.spenders)),
+                ("wants", n(self.wants)),
+                ("inputs_wanted", n(self.inputs_wanted)),
+                ("sales", n(self.sales)),
+                ("spent", self.spent),
+                ("reviews", n(self.reviews)),
+                ("repriced", n(self.repriced)),
+                ("breaks", n(self.breaks)),
+            ],
+        );
+    }
+}
+
 /// A trade's price reviews over the run: the reviews, the prices moved, and the sum of the moves' sizes, each the
 /// new price's difference from the old over the old.
 #[derive(Clone, Copy, Debug, Default, PartialEq, phx_macros::Saved)]
@@ -1661,15 +1684,22 @@ impl Core {
             return (0, 0);
         };
         let key = ctx.streams.key(&taste);
-        let by_product = self.stalls(ctx, firm, wants);
+        let by_product = phx_exec::trace::span("goods.stalls", || self.stalls(ctx, firm, wants));
+        phx_exec::trace::note(
+            "goods.meeting",
+            &[("wants", phx_exec::trace::count(wants.len())), ("products", phx_exec::trace::count(by_product.len()))],
+        );
         let rates = self.state.consumption.clone();
         let (mut sales, mut spent) = (0, 0);
         let mut money = Vec::new();
         for (product, stalls) in by_product {
-            let buyers: Vec<Buyer> = wants.iter().filter(|(p, _)| *p == product).map(|(_, b)| *b).collect();
+            let buyers: Vec<Buyer> = phx_exec::trace::span("goods.buyers", || {
+                wants.iter().filter(|(p, _)| *p == product).map(|(_, b)| *b).collect()
+            });
             if buyers.is_empty() {
                 continue;
             }
+            phx_exec::trace::note("goods.product", &[("product", i64::from(product))]);
             // Each region's stalls, found in one pass over them.
             let mut places: Vec<Place> = (0..ctx.regions.len()).map(|_| Place { near: Vec::new() }).collect();
             for (i, x) in (0_u32..).zip(&stalls) {
@@ -1698,7 +1728,9 @@ impl Core {
                 )
             };
             let mut meeting = std::mem::take(&mut self.goods.meeting);
-            meet(&mut meeting, ctx.pool, (&plain, &places, &buyers), (lot, ctx.weights), tastes, &lots);
+            phx_exec::trace::span("goods.meet", || {
+                meet(&mut meeting, ctx.pool, (&plain, &places, &buyers), (lot, ctx.weights), tastes, &lots);
+            });
             let made: Vec<Sale> = meeting.sales().copied().collect();
             self.goods.meeting = meeting;
             let by_seller: BTreeMap<PartyKey, usize> =
@@ -1706,43 +1738,63 @@ impl Core {
             let mut out = Vec::new();
             // The meeting's sales by currency and the buyer's kind, recorded for the statistics at once.
             let mut recorded: BTreeMap<(u8, u8), (i64, i64)> = BTreeMap::new();
-            for sale in made {
-                let Some((_, unit, ccy, region)) = by_seller.get(&sale.seller).and_then(|i| stalls.get(*i)).copied()
-                else {
-                    continue;
-                };
-                out.clear();
-                sale.flows((Denom::money(ccy), SOLD, 0), Some(leg(product, unit)), sale.seller.slot().get(), &mut out);
-                let tax = rate_of(ccy).map_or(0, |rate| self.arise_tax(&sale, ccy, rate));
-                for f in out.drain(..) {
-                    if f.denomination.is_money() {
-                        if f.payer == sale.buyer && f.payee == sale.seller {
-                            self.goods.named.0 += i128::from(f.amount);
-                            self.goods.named.1 += i128::from(f.amount);
-                        } else {
-                            self.goods.named.2 += 1;
-                        }
-                        money.push(f);
-                    } else {
-                        self.cover_sale(f, (sale.buyer, sale.paid));
-                    }
+            phx_exec::trace::span("goods.sales", || {
+                for sale in made {
+                    let Some(at) = by_seller.get(&sale.seller).and_then(|i| stalls.get(*i)).copied() else {
+                        continue;
+                    };
+                    let (_, unit, ccy, _) = at;
+                    self.book_sale(
+                        (&sale, firm, product),
+                        at,
+                        (rate_of(ccy), leg(product, unit)),
+                        (&mut money, &mut out),
+                    );
+                    sales += 1;
+                    spent += sale.paid;
+                    let r = recorded.entry((ccy, sale.buyer.kind())).or_insert((0, 0));
+                    (r.0, r.1) = (r.0 + sale.paid, r.1 + sale.units);
                 }
-                if let Some(sold) = self.record_word(firm, sale.seller.slot(), SOLD_UNITS) {
-                    self.set_record_word(firm, sale.seller.slot(), SOLD_UNITS, sold + sale.units);
+                for ((ccy, kind), (paid, units)) in recorded {
+                    self.record_sale(ccy, (kind, purpose), (product, paid, units));
                 }
-                let t = self.goods.traded.entry((product, region)).or_insert((0, 0));
-                (t.0, t.1) = (t.0 + i128::from(sale.paid - tax), t.1 + i128::from(sale.units));
-                sales += 1;
-                spent += sale.paid;
-                let r = recorded.entry((ccy, sale.buyer.kind())).or_insert((0, 0));
-                (r.0, r.1) = (r.0 + sale.paid, r.1 + sale.units);
-            }
-            for ((ccy, kind), (paid, units)) in recorded {
-                self.record_sale(ccy, (kind, purpose), (product, paid, units));
-            }
+            });
         }
         self.pending.append(&mut money);
         (sales, spent)
+    }
+
+    /// One sale of a meeting booked: its money a flow of the day's, its goods covered by its seller's units until the
+    /// money settles, the tax its price includes arising, its seller's sales counted and its product's trade in its
+    /// region added to.
+    fn book_sale(
+        &mut self,
+        (sale, firm, product): (&Sale, usize, u16),
+        (_, _, ccy, region): StallAt,
+        (rate, leg): (Option<f64>, GoodsLeg),
+        (money, out): (&mut Vec<Flow>, &mut Vec<Flow>),
+    ) {
+        out.clear();
+        sale.flows((Denom::money(ccy), SOLD, 0), Some(leg), sale.seller.slot().get(), out);
+        let tax = rate.map_or(0, |rate| self.arise_tax(sale, ccy, rate));
+        for f in out.drain(..) {
+            if f.denomination.is_money() {
+                if f.payer == sale.buyer && f.payee == sale.seller {
+                    self.goods.named.0 += i128::from(f.amount);
+                    self.goods.named.1 += i128::from(f.amount);
+                } else {
+                    self.goods.named.2 += 1;
+                }
+                money.push(f);
+            } else {
+                self.cover_sale(f, (sale.buyer, sale.paid));
+            }
+        }
+        if let Some(sold) = self.record_word(firm, sale.seller.slot(), SOLD_UNITS) {
+            self.set_record_word(firm, sale.seller.slot(), SOLD_UNITS, sold + sale.units);
+        }
+        let t = self.goods.traded.entry((product, region)).or_insert((0, 0));
+        (t.0, t.1) = (t.0 + i128::from(sale.paid - tax), t.1 + i128::from(sale.units));
     }
 
     /// The tax on products a final sale's price paid includes, at its final use's rate, arising for its seller to

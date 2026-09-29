@@ -153,21 +153,30 @@ impl Core {
         self.stats.index = rate.and(index);
     }
 
-    /// A stage of the day run and timed by the run's clock where there is one, its time kept for today's timings; no
-    /// outcome reads it.
+    /// A stage of the day run and timed by the run's clock where there is one, its time kept for today's timings, and
+    /// told to the trace as it begins and ends; no outcome reads either.
     pub(crate) fn timed<T>(
         &mut self,
         clock: Option<&dyn phx_exec::Clock>,
         name: &'static str,
         stage: impl FnOnce(&mut Core) -> T,
     ) -> T {
-        let Some(clock) = clock else { return stage(self) };
-        let start = clock.now_ns();
-        let out = stage(self);
-        if let Some(ns) = clock.now_ns().checked_sub(start) {
-            self.stage_ns.push((name, ns));
+        phx_exec::trace::span(name, || {
+            let Some(clock) = clock else { return stage(self) };
+            let start = clock.now_ns();
+            let out = stage(self);
+            if let Some(ns) = clock.now_ns().checked_sub(start) {
+                self.stage_ns.push((name, ns));
+            }
+            out
+        })
+    }
+
+    /// Each kind's parties, for the bench's trace.
+    pub(crate) fn note_parties(&self) {
+        for (kind, store) in self.names.iter().zip(&self.kinds) {
+            phx_exec::trace::note(kind, &[("parties", phx_exec::trace::count(store.parties.live_slots().count()))]);
         }
-        out
     }
 
     /// An amount shared over weights exactly, and recorded in the opening report.

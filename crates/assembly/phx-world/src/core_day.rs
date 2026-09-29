@@ -640,11 +640,15 @@ impl Core {
     ) -> (i128, [i128; 3]) {
         let mut moved = (0_i128, [0_i128; 3]);
         if let Some(buf) = work.flows.chunks_mut().first() {
-            self.account_flows(buf, failed);
-            self.accrue_taxes((at.0, at.1), buf, failed);
-            moved = self.money_moves(buf, failed);
+            phx_exec::trace::span("settle.account_flows", || self.account_flows(buf, failed));
+            phx_exec::trace::span("settle.accrue_taxes", || self.accrue_taxes((at.0, at.1), buf, failed));
+            moved = phx_exec::trace::span("settle.money_moves", || self.money_moves(buf, failed));
         }
-        let (fund, fund_failed) = self.fund_stage(work, at, ranges);
+        let (fund, fund_failed) = phx_exec::trace::span("settle.fund_stage", || self.fund_stage(work, at, ranges));
+        phx_exec::trace::note(
+            "settle.funding",
+            &[("flows", phx_exec::trace::count(fund.len())), ("failed", phx_exec::trace::count(fund_failed.len()))],
+        );
         let fund_moved = self.money_moves(&fund, &fund_failed);
         moved.0 += fund_moved.0;
         for (m, f) in moved.1.iter_mut().zip(fund_moved.1) {
@@ -662,11 +666,25 @@ impl Core {
         buf: &mut Vec<Flow>,
         record: &mut CoreDay,
     ) -> Vec<PartyKey> {
-        let settling = self.estates_pay(day, calendar, buf);
+        let dues = buf.len();
+        let settling = phx_exec::trace::span("settle.estates_pay", || self.estates_pay(day, calendar, buf));
+        let (estates, pending) = (buf.len() - dues, self.pending.len());
         buf.append(&mut self.pending);
-        self.lend_shortfalls((day, calendar, streams), buf);
-        self.fund_agencies(buf);
-        self.order_payments(buf);
+        phx_exec::trace::span("settle.lend_shortfalls", || self.lend_shortfalls((day, calendar, streams), buf));
+        let lent = buf.len() - dues - estates - pending;
+        phx_exec::trace::span("settle.fund_agencies", || self.fund_agencies(buf));
+        phx_exec::trace::span("settle.order_payments", || self.order_payments(buf));
+        let count = phx_exec::trace::count;
+        phx_exec::trace::note(
+            "settle.gathered",
+            &[
+                ("dues", count(dues)),
+                ("estates", count(estates)),
+                ("pending", count(pending)),
+                ("loans", count(lent)),
+                ("all", count(buf.len())),
+            ],
+        );
         for f in buf.iter().filter(|f| f.reason == crate::consts::reason::LENT) {
             record.lent += 1;
             if self.bank_of(f.payee) != Some(f.payer) {
@@ -777,10 +795,10 @@ impl Core {
     /// After the day's settlement: the sales delivered or released, each failed due held in its contract's arrears
     /// and remembered from the day they began. Returns the contracts in arrears.
     fn after_settlement(&mut self, day: Day, calendar: &Calendar, failed: &[Flow]) -> u64 {
-        self.deliver_sales(day, failed);
-        self.depart_shipments(day, failed);
-        let n = self.hold_arrears(day, calendar, failed);
-        self.note_arrears(day, failed);
+        phx_exec::trace::span("settle.deliver_sales", || self.deliver_sales(day, failed));
+        phx_exec::trace::span("settle.depart_shipments", || self.depart_shipments(day, failed));
+        let n = phx_exec::trace::span("settle.hold_arrears", || self.hold_arrears(day, calendar, failed));
+        phx_exec::trace::span("settle.note_arrears", || self.note_arrears(day, failed));
         n
     }
 
@@ -830,10 +848,58 @@ impl Core {
         ended
     }
 
+    /// Each currency's flows grouped and settled on its country's business day, or committed on its closed day; the
+    /// flows that failed.
+    fn pay_currencies(
+        &mut self,
+        work: &mut Work,
+        (ranges, deposits, closed): (&Ranges, &mut [i64], &[bool]),
+        (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
+        record: &mut CoreDay,
+    ) -> Vec<Flow> {
+        let mut failed: Vec<Flow> = Vec::new();
+        for (country, issuer) in self.issuers.iter().enumerate() {
+            let Ok(ccy) = u8::try_from(country) else { continue };
+            phx_exec::trace::span("settle.group", || work.flows.group(None, ranges, Denom::money(ccy)));
+            let grouped = Grouped::new(&[&work.flows], ranges);
+            let mut b = books(&mut self.kinds, self.bank_kind.unwrap_or(u8::MAX), (&mut *deposits, closed), *issuer);
+            let business = calendar.is_business(CountryId::new(ccy), day);
+            let count = phx_exec::trace::count;
+            phx_exec::trace::note(
+                "settle.currency",
+                &[("currency", i64::from(ccy)), ("flows", count(grouped.end())), ("business", i64::from(business))],
+            );
+            if business {
+                let lot = |p: PartyKey| {
+                    streams.open(
+                        order,
+                        Subject::new(SubjectTag::Party, u64::from(p.word())),
+                        day,
+                        SubStep::S7b.ordinal(),
+                    )
+                };
+                let out = phx_exec::trace::span("settle.fixed_point", || {
+                    work.settle.settle(None, &grouped, ranges, &mut b, &lot)
+                });
+                note_outcome(ccy, &out);
+                record.settled_with(&out);
+                failed.extend(out.failed.iter().map(|(f, _)| *f));
+            } else {
+                work.settle.commit(None, &grouped, ranges, &mut b);
+                record.committed += phx_rand::float::len_u64(grouped.end());
+            }
+        }
+        failed
+    }
+
     /// Runs the core's day: every family's dues made flows, then each currency's flows settled on its country's
     /// business day or committed on its closed day.
     #[clause("SET.4", "SET.6", "MON.5")]
-    pub fn run_day(&mut self, day: Day, calendar: &Calendar, streams: &Streams, order: &StreamDecl) -> CoreDay {
+    pub fn run_day(
+        &mut self,
+        (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
+        clock: Option<&dyn phx_exec::Clock>,
+    ) -> CoreDay {
         let mut work = std::mem::take(&mut self.work);
         work.flows.reset(1);
         let mut record = CoreDay {
@@ -861,22 +927,26 @@ impl Core {
         if self.central.recorded.is_none() {
             self.central.recorded = Some(self.issuer_held());
         }
-        for family in &mut self.families {
-            if let Some(buf) = work.flows.chunks_mut().first_mut() {
-                record.flows += family.dues(day, calendar, &mut work.due, buf);
+        self.timed(clock, "settle.dues", |c| {
+            for family in &mut c.families {
+                if let Some(buf) = work.flows.chunks_mut().first_mut() {
+                    let n = family.dues(day, calendar, &mut work.due, buf);
+                    phx_exec::trace::note(family.name, &[("dues", i64::try_from(n).unwrap_or(i64::MAX))]);
+                    record.flows += n;
+                }
             }
-        }
-        if let Some(buf) = work.flows.chunks_mut().first_mut() {
-            let mut taken = std::mem::take(buf);
-            self.withhold(&mut taken);
             if let Some(buf) = work.flows.chunks_mut().first_mut() {
-                *buf = taken;
+                let mut taken = std::mem::take(buf);
+                c.withhold(&mut taken);
+                if let Some(buf) = work.flows.chunks_mut().first_mut() {
+                    *buf = taken;
+                }
             }
-        }
-        let mut settling = Vec::new();
-        if let Some(buf) = work.flows.chunks_mut().first_mut() {
-            settling = self.gather((day, calendar, streams), buf, &mut record);
-        }
+        });
+        let settling = self.timed(clock, "settle.gather", |c| match work.flows.chunks_mut().first_mut() {
+            Some(buf) => c.gather((day, calendar, streams), buf, &mut record),
+            None => Vec::new(),
+        });
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
         let ranges = Ranges::new(self.range_bits, &high);
         let banks = self.bank_kind.map_or(0, |b| {
@@ -884,41 +954,31 @@ impl Core {
         });
         let mut deposits = deposits_of(self.kinds.iter(), banks);
         let closed = vec![false; banks];
-        let mut failed: Vec<Flow> = Vec::new();
-        for (country, issuer) in self.issuers.iter().enumerate() {
-            let Ok(ccy) = u8::try_from(country) else { continue };
-            work.flows.group(None, &ranges, Denom::money(ccy));
-            let grouped = Grouped::new(&[&work.flows], &ranges);
-            let mut b = books(&mut self.kinds, self.bank_kind.unwrap_or(u8::MAX), (&mut deposits, &closed), *issuer);
-            if calendar.is_business(CountryId::new(ccy), day) {
-                let lot = |p: PartyKey| {
-                    streams.open(
-                        order,
-                        Subject::new(SubjectTag::Party, u64::from(p.word())),
-                        day,
-                        SubStep::S7b.ordinal(),
-                    )
-                };
-                let out = work.settle.settle(None, &grouped, &ranges, &mut b, &lot);
-                record.settled_with(&out);
-                failed.extend(out.failed.iter().map(|(f, _)| *f));
-            } else {
-                work.settle.commit(None, &grouped, &ranges, &mut b);
-                record.committed += phx_rand::float::len_u64(grouped.end());
-            }
-        }
-        let moved = self.after_settle(&mut work, &failed, (day, calendar, streams, order), &ranges);
+        let failed = self.timed(clock, "settle.money", |c| {
+            c.pay_currencies(
+                &mut work,
+                (&ranges, deposits.as_mut_slice(), &closed),
+                (day, calendar, streams, order),
+                &mut record,
+            )
+        });
+        let moved = self.timed(clock, "settle.after", |c| {
+            c.after_settle(&mut work, &failed, (day, calendar, streams, order), &ranges)
+        });
         self.work = work;
         for f in &failed {
             if let Some(n) = record.failed_by.get_mut(usize::from(f.reason)) {
                 *n += 1;
             }
         }
-        record.arrears = self.after_settlement(day, calendar, &failed);
-        record.wages = self.record_wages_settled(&failed);
-        record.breaks += self.money_breaks((day, before), moved, &mut deposits);
-        record.estates += self.end_settled(settling);
-        self.keep_books(day, calendar);
+        self.timed(clock, "settle.close", |c| {
+            record.arrears = c.after_settlement(day, calendar, &failed);
+            record.wages = phx_exec::trace::span("settle.wages", || c.record_wages_settled(&failed));
+            record.breaks +=
+                phx_exec::trace::span("settle.money_breaks", || c.money_breaks((day, before), moved, &mut deposits));
+            record.estates += phx_exec::trace::span("settle.end_settled", || c.end_settled(settling));
+            phx_exec::trace::span("settle.keep_books", || c.keep_books(day, calendar));
+        });
         for k in &mut self.kinds {
             k.parties.close_day();
         }
@@ -927,6 +987,42 @@ impl Core {
         }
         self.days.push(record);
         record
+    }
+}
+
+/// What a currency's settlement came to, for the bench's trace.
+fn note_outcome(ccy: u8, out: &Outcome) {
+    let n = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+    let count = phx_exec::trace::count;
+    phx_exec::trace::note(
+        "settle.outcome",
+        &[
+            ("currency", i64::from(ccy)),
+            ("settled", n(out.settled)),
+            ("failed", count(out.failed.len())),
+            ("held", count(out.held.len())),
+            ("rounds", n(out.rounds)),
+            ("visits", n(out.visits)),
+        ],
+    );
+}
+
+impl CoreDay {
+    /// The day's settlement in counts, for the bench's trace.
+    pub(crate) fn note(&self) {
+        let n = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+        phx_exec::trace::note(
+            "settle",
+            &[
+                ("flows", n(self.flows)),
+                ("settled", n(self.settled)),
+                ("failed", n(self.failed)),
+                ("committed", n(self.committed)),
+                ("arrears", n(self.arrears)),
+                ("estates", n(self.estates)),
+                ("breaks", n(self.breaks)),
+            ],
+        );
     }
 }
 

@@ -194,6 +194,17 @@ pub fn meet(
     while !out.choosing.is_empty() {
         round += 1;
         out.rounds += 1;
+        if phx_exec::trace::doubling(out.rounds) {
+            phx_exec::trace::note(
+                "meet.round",
+                &[
+                    ("round", i64::from(round)),
+                    ("choosing", phx_exec::trace::count(out.choosing.len())),
+                    ("places", phx_exec::trace::count(places.len())),
+                    ("stalls", phx_exec::trace::count(stalls.len())),
+                ],
+            );
+        }
         let (left, log_prices) = (&out.left, &out.log_prices);
         let tables: Vec<Option<Table>> = phx_exec::pool::map(pool, places.len(), |p| {
             places.get(p).and_then(|place| table(place, stalls, (left, log_prices), weights))
@@ -239,6 +250,19 @@ pub fn meet(
         for again in &out.again {
             out.choosing.extend_from_slice(again);
         }
+    }
+    if phx_exec::trace::on() {
+        phx_exec::trace::note(
+            "meet",
+            &[
+                ("buyers", phx_exec::trace::count(buyers.len())),
+                ("stalls", phx_exec::trace::count(stalls.len())),
+                ("places", phx_exec::trace::count(places.len())),
+                ("rounds", i64::from(round)),
+                ("sales", phx_exec::trace::count(out.sales.iter().map(Vec::len).sum())),
+                ("unserved", phx_exec::trace::count(out.unserved.len())),
+            ],
+        );
     }
 }
 

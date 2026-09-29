@@ -150,6 +150,19 @@ pub fn phx_exec::tally::Tally::get(&self) -> u64
 impl phx_store::save::Saved for phx_exec::tally::Tally
 pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>
 pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)
+pub mod phx_exec::trace
+pub enum phx_exec::trace::Mark<'a>
+pub phx_exec::trace::Mark::Begun(&'static str)
+pub phx_exec::trace::Mark::Ended(&'static str, core::option::Option<u64>)
+pub phx_exec::trace::Mark::Note(&'static str, &'a [(&'static str, i64)])
+pub trait phx_exec::trace::Tracer: phx_exec::clock::Clock
+pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)
+pub fn phx_exec::trace::count(usize) -> i64
+pub fn phx_exec::trace::doubling(u64) -> bool
+pub fn phx_exec::trace::note(&'static str, &[(&'static str, i64)])
+pub fn phx_exec::trace::on() -> bool
+pub fn phx_exec::trace::set(&'static dyn phx_exec::trace::Tracer)
+pub fn phx_exec::trace::span<T>(&'static str, impl core::ops::function::FnOnce() -> T) -> T
 pub mod phx_exec::traverse
 pub fn phx_exec::traverse::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
 pub fn phx_exec::traverse::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>

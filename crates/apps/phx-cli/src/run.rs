@@ -675,6 +675,7 @@ fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
     crate::panic_hook::install(format!("seed{}-pid{}", args.seed, std::process::id()), PathBuf::from("violations"));
+    crate::trace::start();
     let config = config(args)?;
     let clock = WallClock::new();
     let assembling = clock.now_ns();

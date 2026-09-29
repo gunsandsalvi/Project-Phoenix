@@ -3292,10 +3292,17 @@ one benchmarking tool, replacing the smoke, the build run, the full-load bench, 
 micro-benchmarks) builds `--release` (thin LTO, §17) and runs the world: `-p` the persons (the committed resolution by
 default, where the budget is judged), `-d` the days from day zero (twenty, the span the budget's ratchets are measured
 over), `-s` the seed, `-w` the workers, `-c` the live checks; `-g` a stage gate's run instead — settled, two years,
-the audit and every live check; `-k` keeps the report in `perf/bench/`. It writes the run's whole report (each day's
+the audit and every live check; `-k` keeps the report in `perf/bench/`; `-t` stops the world after so many seconds.
+**The trace** (`phx_exec::trace`) tells the run as it happens: every span of the opening and of each day — its stages
+and sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time, and notes of
+what each did (parties, dues, flows, buyers, stalls, rounds, sales, failures); a loop notes how far it is at each power
+of two of its rounds, so one that runs away shows. The host sets where its marks go (`phx run` prints each with the
+time since the start and the memory held); with none set it tells nothing, and no outcome reads it. Ctrl-C or `-t`
+stop the world, never the bench, whose summary is then read from the log. It writes the run's whole report (each day's
 stages in microseconds under `core_days[].stages_us`), the run's log and a summary: the run, the budget's block against
 `perf/budget.toml`'s ratchets — which may only fall (the cores only rise), a step that must raise one saying so and
-why — every stage's median, worst and share of the day, memory, cores, page faults, the day's flows and the findings.
+why — the spans still open where the run did not finish, every span's count, total, mean and worst, the heaviest
+meetings, settlement's and the day's notes, the parties opened, memory, cores, page faults, the flows and the findings.
 Its numbers are the code's, never the world's. A gate's run is **clean** when the audit reports nothing, every failing
 live check is recorded where it is settled, and no ratchet moves the wrong way. Since S1.09 a step is done on its fast
 checks, the budget read by the bench, and the world's long run is at the gates; a stage gate's settled two-year run is
@@ -3431,7 +3438,7 @@ it takes the world, a table or a handler's context.
     | PC-02 | a direct external dependency outside the allow-list (`rules/dependencies.rs`, by crate or layer; `proptest` and `trybuild` as development dependencies anywhere) |
     | PC-03 | `allow(unsafe_code)` outside `phx-store` and `phx-exec` |
     | PC-04 | `rayon` anywhere, `rayon-core` outside `phx-exec`, `libc` outside `phx-exec` and `phx-store` |
-    | PC-05 | a `static` item in a world crate, but `phx-exec/src/site.rs`'s thread-local |
+    | PC-05 | a `static` item in a world crate, but `phx-exec/src/site.rs`'s thread-local and `phx-exec/src/trace.rs`'s one static, where the bench's marks go |
     | PC-06 | a numeric literal other than 0, 1, −1 and 2 in a world crate outside `consts.rs`, type positions, tests and benches, with the arguments of the assert, format, write, `vec!` and `violation!` macros parsed as expressions; a constant in `consts.rs` without a doc comment |
     | PC-07 | a comment matching a clause id, `Law n`, `Nn`, `§`, `spec`, a document's name, a plan step, `TODO` or `FIXME` |
     | PC-08 | a function in an interface crate other than a constructor or a field accessor |
@@ -3449,7 +3456,7 @@ it takes the world, a table or a handler's context.
     | PC-94 | a name — an identifier, or a declared name in a string — in a world crate ending `_small` or `_large`: a mechanism split by size, where a firm is one kind whatever its size (S1.24) |
 
     The clippy exemptions are declared per crate in `phx-check` and realised by that crate's `clippy.toml`: `phx-exec`
-    the atomics, `std::thread::spawn` and `thread_local!`; `phx-rand`, `phx-store` and `phx-exec` the wrapping
+    the atomics, `std::thread::spawn`, `thread_local!` and the `OnceLock` holding where the trace goes; `phx-rand`, `phx-store` and `phx-exec` the wrapping
     integer methods, through named helpers; `phx-cli` `Instant::now`, `env::var` and the printing macros;
     `phx-check` the printing macros. Its subcommands: `layering` (PC-01 to PC-04), `rules`
     (the table), `docs` (PC-09 and §19 against the table `coverage` would write), `clauses` (the clause map and
@@ -3784,7 +3791,8 @@ hashes read their bytes as little-endian.
     rules over the retired machinery.
 37. **One bench** (2026-09-29, the owner: one benchmarking file for the new world, every other deleted): the world
     itself, run by `tools/bench.sh` on this machine, is the one measure. Each day the core times its stages by the
-    run's clock (`Core::timed`), never a world state, and the report carries them; the bench's flags set the persons,
+    run's clock (`Core::timed`), never a world state, and the report carries them; the trace tells every span and note
+    as it happens, so one run shows where any time goes and where a stuck run stands; the bench's flags set the persons,
     days, seed, workers and checks, `-g` a gate's run and `-k` a kept report in `perf/bench/`. Deleted with it: the
     smoke and the build run (`tools/smoke.sh`, `tools/build-run.sh`), the build runs', device and measurement reports
     and the device report's schema, the full-load bench and its volumes, the phone's bench app and its library

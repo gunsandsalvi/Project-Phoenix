@@ -14,6 +14,7 @@ pub mod radix;
 pub mod site;
 pub mod spec;
 pub mod tally;
+pub mod trace;
 pub mod traverse;
 pub mod tree;
 

@@ -41,6 +41,25 @@ pub struct PopDay {
     pub claimed: u64,
 }
 
+impl PopDay {
+    /// The day's chance on persons in counts, for the bench's trace.
+    pub(crate) fn note(&self) {
+        let n = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
+        phx_exec::trace::note(
+            "hazards",
+            &[
+                ("followed", n(self.followed)),
+                ("hits", n(self.hits)),
+                ("born", n(self.born)),
+                ("gone", n(self.gone)),
+                ("ended", n(self.ended)),
+                ("retired", n(self.retired)),
+                ("claimed", n(self.claimed)),
+            ],
+        );
+    }
+}
+
 /// Where what a person held and owed went at its death: to its household, which goes on; to the estate its household
 /// ended into; or nowhere, its household ending holding nothing, its debts written off their creditors' books.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]

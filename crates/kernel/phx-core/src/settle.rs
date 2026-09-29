@@ -199,6 +199,21 @@ impl Books<'_> {
     }
 }
 
+/// How far the fixed point is, told at each doubling of its rounds.
+fn note_round(out: &Outcome, short: usize) {
+    if phx_exec::trace::doubling(out.rounds) {
+        phx_exec::trace::note(
+            "settle.round",
+            &[
+                ("round", i64::try_from(out.rounds).unwrap_or(i64::MAX)),
+                ("short", phx_exec::trace::count(short)),
+                ("failed", phx_exec::trace::count(out.failed.len())),
+                ("visits", i64::try_from(out.visits).unwrap_or(i64::MAX)),
+            ],
+        );
+    }
+}
+
 fn slot(p: PartyKey) -> usize {
     to_usize(p.slot().get())
 }
@@ -243,7 +258,7 @@ impl Settle {
         lot: &(impl Fn(PartyKey) -> Draws + Sync),
     ) -> Outcome {
         let mut out = Outcome::default();
-        let shorts = self.net_all(pool, grouped, ranges, books, true);
+        let shorts = phx_exec::trace::span("settle.net", || self.net_all(pool, grouped, ranges, books, true));
         let end = grouped.end();
         self.removed.clear();
         self.removed.resize(end.div_ceil(BIT_WORD), 0);
@@ -272,6 +287,7 @@ impl Settle {
             let mut still_short: Vec<u32> = Vec::new();
             while !current.is_empty() {
                 out.rounds += 1;
+                note_round(&out, current.len());
                 self.index(pool, grouped, ranges, &current);
                 // Every short party of the round decides from the round's state, range by range on the pool; its
                 // failures are then made in order. A failure only takes from others, so deciding on the round's state
@@ -320,6 +336,7 @@ impl Settle {
             if banks.is_empty() {
                 break;
             }
+            phx_exec::trace::note("settle.banks_short", &[("banks", phx_exec::trace::count(banks.len()))]);
             removed_banks.extend(&banks);
             let through = |p: PartyKey| books.bank_of(p).is_some_and(|b| banks.contains(&b));
             for idx in matching(pool, grouped, ranges, |f| through(f.payer) || through(f.payee)) {
@@ -333,8 +350,8 @@ impl Settle {
             current.sort_unstable();
             current.dedup();
         }
-        out.values = self.values(pool, grouped, ranges, books);
-        self.apply(pool, ranges, books);
+        out.values = phx_exec::trace::span("settle.values", || self.values(pool, grouped, ranges, books));
+        phx_exec::trace::span("settle.apply", || self.apply(pool, ranges, books));
         unsettled(books, &out);
         let removed: u64 = self.removed.iter().map(|w| u64::from(w.count_ones())).sum();
         out.settled = u64::try_from(end).unwrap_or(u64::MAX) - removed;

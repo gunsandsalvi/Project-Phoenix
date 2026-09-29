@@ -9,6 +9,9 @@ const RULE: &str = "PC-05";
 /// The pool records the running site in one thread-local, read only by the panic hook.
 const SITE: (&str, &str) = ("phx-exec", "src/site.rs");
 
+/// The bench's trace keeps where its marks go in one static, which no outcome reads.
+const TRACE: (&str, &str) = ("phx-exec", "src/trace.rs");
+
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
     for c in ws.world_crates() {
@@ -23,8 +26,11 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             };
             let mut finder = Finder { statics: Vec::new(), thread_locals: Vec::new() };
             finder.visit_file(file);
-            for line in finder.statics {
-                breaches.push(Breach::new(RULE, &source.path, line, "a `static` item in a world crate"));
+            let at_trace = c.name == TRACE.0 && source.path == format!("{}/{}", c.dir, TRACE.1);
+            for (i, line) in finder.statics.into_iter().enumerate() {
+                if !at_trace || i > 0 {
+                    breaches.push(Breach::new(RULE, &source.path, line, "a `static` item in a world crate"));
+                }
             }
             let at_site = c.name == SITE.0 && source.path == format!("{}/{}", c.dir, SITE.1);
             for line in finder.thread_locals {
@@ -70,12 +76,13 @@ mod tests {
     use crate::workspace::{Layer, Workspace};
 
     #[test]
-    fn statics_refused_but_the_site_thread_local() {
+    fn statics_refused_but_the_site_thread_local_and_the_trace() {
         let tl = "std::thread_local! { static SITE: u8 = 0; }";
         let exec = with_source(krate("phx-exec", Layer::Kernel), "src/site.rs", tl);
         let exec = with_source(exec, "src/pool.rs", tl);
+        let exec = with_source(exec, "src/trace.rs", "static A: u8 = 0; static B: u8 = 0;");
         let core = with_source(krate("phx-core", Layer::Kernel), "src/lib.rs", "static X: u8 = 0;");
         let cli = with_source(krate("phx-cli", Layer::Apps), "src/main.rs", "static X: u8 = 0;");
-        assert_eq!(run(&Workspace::new(vec![exec, core, cli])).len(), 2);
+        assert_eq!(run(&Workspace::new(vec![exec, core, cli])).len(), 3);
     }
 }

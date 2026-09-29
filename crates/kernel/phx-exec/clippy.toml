@@ -106,7 +106,6 @@ disallowed-types = [
     "std::hash::RandomState",
     "std::sync::Mutex",
     "std::sync::RwLock",
-    "std::sync::OnceLock",
     "std::sync::LazyLock",
     "std::cell::RefCell",
     "std::rc::Rc",

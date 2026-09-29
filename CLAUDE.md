@@ -53,8 +53,9 @@ about how to build.
   population representation (REP, Appendix E 14) is judged the same way. The resolution is a valve, set and reset
   by measuring the budget.
 - **The bench** (`tools/bench.sh`, owner 2026-09-29), the one tool that runs the world on this machine; its flags set
-  the persons, days, seed, workers and checks, and it writes the run's whole report, each day's stages timed, and a
-  summary. At every step it reads the budget at the committed resolution against `perf/budget.toml`, whose ratchets
+  the persons, days, seed, workers, checks and a time limit; the run's trace streams every span of the opening and the
+  day with its time and notes of what it did, and it writes the run's whole report and a summary, so one run tells
+  everything. At every step it reads the budget at the committed resolution against `perf/budget.toml`, whose ratchets
   only tighten; a step does not end with one broken, unless the step says why. A stage gate's run is `-g`: settled,
   two years, the audit and every live check (the owner's decision, plan §12); from S1.09 a step is `done` on its fast
   checks, and the world's long run is at each gate. `-k` keeps a report in `perf/bench/`, the measure a resolution

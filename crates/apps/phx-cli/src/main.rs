@@ -4,6 +4,7 @@ mod clock;
 mod inject;
 mod panic_hook;
 mod run;
+mod trace;
 
 use std::path::PathBuf;
 use std::process::ExitCode;

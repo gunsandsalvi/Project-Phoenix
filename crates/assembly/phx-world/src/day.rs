@@ -78,10 +78,12 @@ impl World {
             }
         }
         let t = Some(clock);
+        phx_exec::trace::note("day", &[("day", i64::from(day.get()))]);
         let geo = crate::world::geo_arc(&self.own);
         self.core.timed(t, "weather", |c| c.weather_day(geo, (&self.streams, &self.calendar), day));
         self.core.timed(t, "rates", |c| c.measure_rates(&ctx, day));
         let pop_day = self.core.timed(t, "hazards", |c| c.run_hazards(&ctx, day));
+        pop_day.note();
         self.core.pop_days.push((day, pop_day));
         let events = std::mem::take(&mut self.core.events_today);
         self.core.events.push((day, events));
@@ -111,12 +113,15 @@ impl World {
                 pool: self.pool.as_ref(),
                 clock: t,
             };
-            let _ = self.core.timed(t, "goods", |c| c.goods_day(&gctx, day));
+            let g = self.core.timed(t, "goods", |c| c.goods_day(&gctx, day));
+            g.note();
             self.core.timed(t, "freight", |c| c.ship(&gctx, geo, day));
         }
         let (calendar, streams) = (&self.calendar, &self.streams);
-        let _ =
-            self.core.timed(t, "settle", |c| c.run_day(day, calendar, streams, &crate::opening::prims::SETTLE_ORDER));
+        let settled = self
+            .core
+            .timed(t, "settle", |c| c.run_day((day, calendar, streams, &crate::opening::prims::SETTLE_ORDER), t));
+        settled.note();
         self.core.timed(t, "audit", |c| c.audit(day));
         self.core.timed(t, "statistics", |c| c.stats_day(day, (calendar, &regions), hh.map(|h| &h.types)));
         let _ = self.core.happened.publish(day, &self.news);
