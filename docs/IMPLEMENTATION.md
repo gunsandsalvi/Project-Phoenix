@@ -1066,16 +1066,15 @@ world switches to the core.
     yet run: each deposit's right held by its region's nearest extracting firm; an extractor's decision to work by
     Hotelling's rule through the decision core (`GDS.extract`, added to `MND.decisions`); its making held to what its
     deposits give, each unit taking its way's draw; rights passing to an estate; the deposits family; LC-0-15 and
-    LC-1-14 read them. Next in d: the commodities' grades — a deposit's grade falling as it is worked (GDS.13's
-    `GDS.grade_fall`), each extracted unit a good of its grade's class (`GDS.grade_bounds`), a way taking any class
-    alike — and their call market (`sys_gds::markets::COMMODITIES`), each class a good of its own at the meetings.
+    LC-1-14 read them. Every extracted unit is of its product's one class, and commodities meet at the between-firms
+    meetings: their grades and their call market are S2.09's, whose fuels are the commodities they price.
   - d: plant on the core (CAP.1, CAP.2, CAP.5, CAP.6, CAP.8, CAP.9; `core_plant`, ARCHITECTURE §7.10), not yet run:
     each firm's plant opened from its output and its way on the steady path; production held to its plant's
     capacity; wear on the review schedule with depreciation; investment in a kind's product a project of its buyer,
     named with its producer, entering service after the kind's lead; LC-1-10, LC-1-11 and LC-1-12 read them, the run
     report's `plant` its days and its units by condition. The investment decision by CAP.3 (ARCHITECTURE §7.10)
-    retired the placeholder of each country's fixed investment shared by the firms' opening turnover. Next of plant:
-    maintenance, repair, sale and scrapping by CAP.4.
+    retired the placeholder of each country's fixed investment shared by the firms' opening turnover. CAP.4's
+    maintenance, repair, sale and scrapping are S2.03's, with the plant's resale market.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
@@ -3172,6 +3171,11 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
   (S0.13) × capacity; plant failures are CAP's hazards on held units (S1.04).
 - **Fuels** (ENE.3) are GDS commodities (S1.05): extracted, stored, shipped and traded at their places; plants buy
   them as inputs by GDS.5.
+- **Commodities' grades and their call** (GDS.3, GDS.13, MKT.3; from S1.24, where every extracted unit is of its
+  product's one class and commodities meet at the between-firms meetings): a deposit's grade falls as it is worked
+  (`GDS.grade_fall`, `sys_gds::rules::grade::now`), each extracted unit is a good of its grade's class
+  (`GDS.grade_bounds`), a way takes any class alike, lowest first, and the standardised products meet in a call per
+  class and place (`sys_gds::markets::COMMODITIES`).
 - **The grid** (ENE.2, GEO.4): the power-line segments of each country's network with capacities and losses; a named
   system operator per country, the grid's owner of record where GEN gives no other.
 - **Energy as an input and a good** (ENE.4): ways use it in physical units (TEC.2); households buy it as a consumption

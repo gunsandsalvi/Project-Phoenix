@@ -1457,7 +1457,8 @@ is at most what its deposits give at its way's draw a unit, none while it does n
 the draw, rounded up, from its deposits in their order, a finite one never below nothing. Its rights pass to its
 estate as its goods do, and an estate holding rights waits for its liquidation. The deposits family holds each finite
 deposit's given and held to its opening at every close. A deposit's grade and the grade classes of what it gives are
-not yet kept: every extracted unit is of its product's one class, until the commodities' grades and their call.
+not yet kept: every extracted unit is of its product's one class, until the commodities' grades and their call
+(S2.09).
 
 ### 7.9 The valve
 
@@ -1539,7 +1540,7 @@ scarcest kind; the margin that output earns a year as an annuity over the kind's
 hurdle rate), against the plant's cost at its product's mark in its region, beaten by the waiting multiple its sales'
 change between its last two periods gives (`rules::invest`), and funded from its money; investing, it asks that
 cost of the kind's product at its region's between-firms meeting. The owner's maintenance, repair, sale and scrapping
-by CAP.4 (`rules::maintain`) are the next of plant.
+by CAP.4 (`rules::maintain`) come with the plant's resale market (S2.03).
 
 ### 7.11 Goods, orders and trades
 
