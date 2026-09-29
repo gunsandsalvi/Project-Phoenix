@@ -8,6 +8,8 @@ use phx_core::{OpeningCountry, Register};
 pub struct TaxLaw {
     pub bands: Vec<(f64, f64)>,
     pub consumption_rate: f64,
+    /// The day of the month after a tax is collected by which its collector remits it.
+    pub remit_day: u32,
 }
 
 /// The tax system: the line kind income tax is withheld from, each country's taxes, and the consumption tax a price

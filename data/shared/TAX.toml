@@ -1,0 +1,10 @@
+# The collection rules the three countries share (spec TAX.2, TAX.8): when a tax collected is remitted.
+
+[[primitive]]
+id = "TAX.remit_day"
+kind = "POLICY"
+owner = "TAX"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "Taxes withheld and charged are remitted monthly, by a day of the month after they were collected, as the common collection rules have it: income tax withheld under PAYE by the 22nd of the next month (United Kingdom), employment taxes of monthly depositors by the 15th (United States), and value-added tax on monthly returns by the 20th or thereabouts in most European countries; the 20th, their middle."
+value = 20

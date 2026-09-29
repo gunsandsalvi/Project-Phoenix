@@ -72,6 +72,7 @@ pub if_state::kinds::TaxKind::withheld_from: &'static str
 pub struct if_state::kinds::TaxLaw
 pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>
 pub if_state::kinds::TaxLaw::consumption_rate: f64
+pub if_state::kinds::TaxLaw::remit_day: u32
 pub struct if_state::kinds::TreasuryKind
 pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>
 pub mod if_state::stats

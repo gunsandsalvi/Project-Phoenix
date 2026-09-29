@@ -185,7 +185,6 @@ impl Core {
             }
             match f.reason {
                 WAGE | SEVERANCE => self.recognise(f.payer, Line::Wages, f.amount),
-                TAXED => self.recognise(f.payer, Line::Taxes, f.amount),
                 REPAID => {
                     self.recognise(f.payer, Line::InterestPaid, f.amount);
                     self.recognise(f.payee, Line::InterestReceived, f.amount);
@@ -201,7 +200,8 @@ impl Core {
     #[clause("ACC.13", "BNK.12")]
     pub(crate) fn account_moves(&mut self) {
         let mut events: Vec<(PartyKey, Line, i64)> = Vec::new();
-        for family in &self.families {
+        // A collector's debt for taxes was its tax when it arose; paying or owing it later moves no income.
+        for family in self.families.iter().filter(|f| f.reason != TAXED) {
             for &(payer, payee, a) in &family.moves.repaid {
                 events.push((payer, Line::InterestPaid, -a));
                 events.push((payee, Line::InterestReceived, -a));

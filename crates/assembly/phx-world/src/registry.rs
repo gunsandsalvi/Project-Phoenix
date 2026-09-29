@@ -404,6 +404,7 @@ fn core_of(
     }
     core.open_central(&p.c.register, (&opening, &sheets), (calendar, today)).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_state(state, today);
+    core.open_taxes(today);
     core.open_insolvency(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_loan_books();
     if let Some(rule) = own

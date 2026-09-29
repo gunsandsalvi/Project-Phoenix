@@ -93,6 +93,7 @@ impl Core {
             ends_after: Vec::new(),
             finishing: Vec::new(),
             moves: crate::core_day::LoanMoves::default(),
+            lost: 0,
         }
     }
 

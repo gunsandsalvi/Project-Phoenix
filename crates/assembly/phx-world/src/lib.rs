@@ -19,6 +19,7 @@ pub mod core_outlooks;
 pub mod core_pop;
 pub mod core_rates;
 pub mod core_stats;
+pub mod core_taxes;
 pub mod day;
 pub mod graph;
 pub mod inspector;

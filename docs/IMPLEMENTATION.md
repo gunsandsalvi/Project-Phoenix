@@ -1021,6 +1021,11 @@ world switches to the core.
   - f: every death is recorded with the process that took the person and where what it held and owed went — its
     household, its household's estate, or nothing held — and each estate standing after it paid names why (its goods
     wait for their liquidation, S2.04). LC-0-53 reads them. Not yet run.
+  - g: taxes' collectors on the core (TAX.2, TAX.3, TAX.5; `core_taxes`, ARCHITECTURE §7.16), not yet run: each tax
+    arises on its base's settled payment and is its collector's debt to its treasury, remitted on `TAX.remit_day` of
+    the month after and asked again while unpaid, a claim in its estate; the taxes family holds what arose to what was
+    remitted, owed and lost. A borrower's interest cover reads only its loans. LC-1-28 and LC-0-29 (the levies'
+    sample) read them.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

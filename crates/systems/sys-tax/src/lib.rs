@@ -28,6 +28,11 @@ declare_prim! {
     }
 }
 
+declare_prim! {
+    /// The day of the month after a tax is collected by which its collector remits it to the treasury.
+    pub REMIT_DAY = "TAX.remit_day" { kind: Policy, decided_by: "parliament", value: Count, clause: "TAX.8", scope: Shared }
+}
+
 /// A table of one axis's values in its declared decimals.
 fn table(register: &Register, id: &str, country: phx_id::CountryId) -> Result<Vec<f64>, String> {
     let t = register.table1_in(id, country)?;
@@ -52,6 +57,7 @@ pub fn law(register: &Register, c: &OpeningCountry) -> Result<TaxLaw, String> {
     Ok(TaxLaw {
         bands: edges.into_iter().zip(rates).collect(),
         consumption_rate: register.fixed_in(CONSUMPTION_RATE.id, c.id)?,
+        remit_day: u32::try_from(register.count(REMIT_DAY.id)?).map_err(|e| e.to_string())?,
     })
 }
 
@@ -89,6 +95,7 @@ impl System for Tax {
             let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(p);
         }
         let _: phx_core::Prim<Fixed<3>> = d.prim(&CONSUMPTION_RATE);
+        let _: phx_core::Prim<phx_num::Count> = d.prim(&REMIT_DAY);
         d.market(Box::new(TAXES));
     }
 

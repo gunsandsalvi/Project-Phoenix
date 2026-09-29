@@ -123,13 +123,6 @@ pub const LC_0_28: Check = live_check! {
     retired: "the settled set was the old ledger's fixed point; the core's settlement is tested at logic level in phx-core",
 };
 
-pub const LC_0_29: Check = live_check! {
-    id: "LC-0-29",
-    title: "Sampled levy amounts equal per member times count under their conventions",
-    from_step: "S0.17",
-    check: |_| Outcome::NotYet("awaits the levies sampled on the core (S1.24 g)"),
-};
-
 pub const LC_0_30: Check = live_check! {
     id: "LC-0-30",
     title: "The Prices family is clean every close",
@@ -329,13 +322,6 @@ pub const LC_1_20: Check = live_check! {
     title: "FRT.10: freight rates and price gaps between places are reported, and gaps track freight",
     from_step: "S1.07",
     check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
-};
-
-pub const LC_1_28: Check = live_check! {
-    id: "LC-1-28",
-    title: "TAX.5: tax received equals tax remitted by named collectors; every tax payment has a named payer and base",
-    from_step: "S1.11",
-    check: |_| Outcome::NotYet("awaits S1.24 g, the taxes' collectors"),
 };
 
 pub const LC_1_29: Check = live_check! {

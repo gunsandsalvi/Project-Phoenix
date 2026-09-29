@@ -169,6 +169,7 @@ impl Core {
             credit: crate::core_lending::Credit::default(),
             decisions: crate::core_decide::Decisions::default(),
             central: crate::core_central::Central::default(),
+            taxes: crate::core_taxes::Taxes::default(),
             next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),
@@ -462,6 +463,7 @@ impl Core {
             ends_after: Vec::new(),
             finishing: Vec::new(),
             moves: crate::core_day::LoanMoves::default(),
+            lost: 0,
         }
     }
 }

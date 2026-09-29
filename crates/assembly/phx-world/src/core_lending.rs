@@ -272,7 +272,9 @@ impl Core {
         } else {
             seen * year / days
         };
-        let owed: i64 = self.debts_of(key).iter().map(|c| c.amount).sum();
+        // Only its loans charge interest; what it owes in taxes collected does not.
+        let owed: i64 =
+            self.debts_of(key).iter().filter(|c| c.reason == crate::consts::reason::REPAID).map(|c| c.amount).sum();
         let interest = phx_rand::float::from_i64(owed + principal) * rate;
         if interest <= 0.0 {
             return Missing::Absent;

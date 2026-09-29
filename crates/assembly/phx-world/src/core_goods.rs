@@ -1622,23 +1622,21 @@ impl Core {
                 };
                 out.clear();
                 sale.flows((Denom::money(ccy), SOLD, 0), Some(leg(product, unit)), sale.seller.slot().get(), &mut out);
-                if let (true, Some(Some(rate)), Some(included), Some(Some(treasury))) = (
+                if let (true, Some(Some(rate)), Some(included)) = (
                     purpose == crate::core_stats::Purchase::Final,
                     self.state.consumption.get(usize::from(ccy)).copied(),
                     self.state.included,
-                    self.treasuries.get(usize::from(ccy)).copied(),
                 ) {
-                    // The consumption tax a price paid includes, which the seller owes its treasury.
+                    // The consumption tax a price paid includes, which the seller collects for its treasury once paid.
                     let tax = phx_ledger::opening::whole(included(from_i64(sale.paid), rate));
                     if tax > 0 {
-                        money.push(Flow {
-                            payer: sale.seller,
-                            payee: treasury,
-                            amount: tax,
-                            source: sale.seller.slot().get(),
-                            denomination: Denom::money(ccy),
-                            reason: crate::consts::reason::TAXED,
-                            order: 0,
+                        self.taxes.arising.push(crate::core_taxes::Arising {
+                            collector: sale.seller,
+                            payer: sale.buyer,
+                            base: crate::core_taxes::CONSUMPTION,
+                            tax,
+                            ccy,
+                            on: (sale.buyer, sale.seller, sale.paid, SOLD, sale.seller.slot().get()),
                         });
                     }
                 }

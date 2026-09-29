@@ -69,6 +69,7 @@ impl Core {
                     periods: MONTHS,
                 }
             }));
+            s.remit_day.push(tax.as_ref().map(|t| t.remit_day));
             s.consumption.push(tax.map(|t| t.consumption_rate));
             s.benefit.push(match c.benefit {
                 Missing::Present(b) => Some(b),
@@ -97,6 +98,7 @@ impl Core {
             ends_after: Vec::new(),
             finishing: Vec::new(),
             moves: crate::core_day::LoanMoves::default(),
+            lost: 0,
         };
         self.families.push(family);
     }
@@ -118,6 +120,7 @@ impl Core {
             ends_after: Vec::new(),
             finishing: Vec::new(),
             moves: crate::core_day::LoanMoves::default(),
+            lost: 0,
         }
     }
 

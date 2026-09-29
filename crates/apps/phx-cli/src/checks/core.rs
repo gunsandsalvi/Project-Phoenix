@@ -1055,3 +1055,72 @@ pub const LC_0_53: Check = live_check! {
     from_step: "S0.25",
     check: deaths_destined,
 };
+
+/// What the treasuries received in taxes is what their named collectors remitted, the taxes family clean; taxes arose
+/// on both bases, each on a named payer's payment.
+fn collectors_remit(w: Inspector<'_>) -> Outcome {
+    let t = &w.core().taxes;
+    if t.remitted == 0 || t.arisings.contains(&0) {
+        return Outcome::NotYet("no tax arose on every base, or none was remitted, in the run");
+    }
+    match w.findings().iter().find(|f| f.family == "taxes") {
+        Some(f) => Outcome::Fail(format!("day {}: {} {}", f.day.get(), f.clause, f.detail)),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_28: Check = live_check! {
+    id: "LC-1-28",
+    title: "TAX.5: tax received equals tax remitted by named collectors; every tax payment has a named payer and base",
+    from_step: "S1.11",
+    check: collectors_remit,
+};
+
+/// A quotient rounded half to even.
+fn half_even(n: i128, d: i128) -> i128 {
+    let (q, r) = (n.div_euclid(d), n.rem_euclid(d));
+    match (2 * r).cmp(&d) {
+        std::cmp::Ordering::Less => q,
+        std::cmp::Ordering::Greater => q + 1,
+        std::cmp::Ordering::Equal => q + (q & 1),
+    }
+}
+
+/// Each sampled wage's income tax is its year's share of the bands' tax on its yearly amount, band by band, rounded
+/// half to even on the year's tax and again on its share.
+fn levies_sampled(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    if core.taxes.sample.is_empty() {
+        return Outcome::NotYet("no sampled wage had tax withheld in the run");
+    }
+    for (gross, tax, ccy) in &core.taxes.sample {
+        let Some(Some(law)) = core.state.withholding.get(usize::from(*ccy)) else {
+            return Outcome::Fail(format!("a tax withheld in currency {ccy}, which has no income tax"));
+        };
+        let yearly = i128::from(*gross) * i128::from(law.periods);
+        let mut exact = 0_i128;
+        for (i, band) in law.bands.iter().enumerate() {
+            let upper = match law.bands.get(i + 1).map(|b| i128::from(b.from)) {
+                Some(next) if next < yearly => next,
+                _ => yearly,
+            };
+            let over = upper - i128::from(band.from);
+            if over > 0 {
+                exact += over * i128::from(band.share);
+            }
+        }
+        let year = half_even(exact, phx_num::consts::RATE_SCALE);
+        let expected = half_even(year, i128::from(law.periods));
+        if expected != i128::from(*tax) {
+            return Outcome::Fail(format!("a wage of {gross} had {tax} withheld where its bands take {expected}"));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_29: Check = live_check! {
+    id: "LC-0-29",
+    title: "Sampled levy amounts equal per member times count under their conventions",
+    from_step: "S0.17",
+    check: levies_sampled,
+};

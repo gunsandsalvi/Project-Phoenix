@@ -1834,6 +1834,15 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
   bids from the highest price down, the last price's sharing what is left pro rata in whole contracts. Each auction is
   a bill line of its own whose face is paid at maturity by the dues, rows opened at face and the price paid to the
   treasury (the difference to equity, `SOV sold`).
+- **Taxes' collectors on the core** (`core_taxes`, TAX.2, TAX.5): a tax arises on its base's payment once it settles —
+  income tax withheld by the employer from the wage it pays (the wage flow carries the net), consumption tax in a
+  final sale's price charged by the seller — and is then its collector's debt to its treasury, a contract of the
+  `TAX.collected` family reckoned from terms (its balance paid in full on `TAX.remit_day` of the month after, asked
+  again each month while unpaid, a claim in its collector's estate); the collector's tax is entered when it arises.
+  The treasury paying its own staff collects to itself. At each close what arose is held to what was remitted, what
+  collectors owe and what their debts owed when they closed (each family's `lost`), a difference a finding of the
+  taxes family (LC-1-28). The income tax withheld from sampled households' wages is kept with its gross wage, and
+  LC-0-29 recomputes it band by band under its rounding.
 - **The payment order** (`sys-trs`, TRS.10): the ranks of debt service, pensions and benefits, read from
   `TRS.payment_order`, are carried on each such line's terms (`Terms::payment_order`), so a treasury short of cash
   fails as a prefix of that order (§6.5).

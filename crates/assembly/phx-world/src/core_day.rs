@@ -66,6 +66,8 @@ pub struct DatedFamily {
     pub ends_after: Vec<Option<u32>>,
     /// What its contracts reckoned from their terms moved on their creditors' books since the books last read them.
     pub moves: LoanMoves,
+    /// What its contracts owed, balances reckoned from terms and arrears, when they closed.
+    pub lost: i128,
 }
 
 /// A family's moves on its parties' books: each amount lent and balance written off, with the creditor whose book it
@@ -100,6 +102,8 @@ pub struct CoreState {
     pub benefit: Vec<Option<if_state::kinds::BenefitLaw>>,
     pub claim: Option<&'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>>,
     pub included: Option<fn(f64, f64) -> f64>,
+    /// Each country's day of the month after a tax is collected by which it is remitted.
+    pub remit_day: Vec<Option<u32>>,
 }
 
 /// What the core's day did: the flows made, settled, failed and committed.
@@ -283,7 +287,9 @@ impl DatedFamily {
             let terms = self.terms.get(at).is_some_and(Option::is_some);
             if terms && row.amount > 0 {
                 self.moves.written_off.push((row.ends[1], row.amount, edge.get()));
+                self.lost += i128::from(row.amount);
             }
+            self.lost += i128::from(row.arrears);
             if row.arrears != 0 {
                 let [debtor, creditor] = row.ends;
                 self.moves.arrears.push(Arrears {
@@ -381,27 +387,31 @@ impl Core {
     /// Income tax withheld from each wage the day's dues pay: the band's levy on its year taken from what the
     /// household is paid and paid by the employer to its country's treasury.
     #[clause("TAX.2", "TAX.7")]
-    fn withhold(&self, buf: &mut Vec<Flow>) {
-        let mut taxes = Vec::new();
+    fn withhold(&mut self, buf: &mut [Flow]) {
+        let mut arising = Vec::new();
         for f in buf.iter_mut().filter(|f| f.reason == WAGE && f.denomination.is_money()) {
             let ccy = f.denomination.ccy();
             let Some(Some(w)) = self.state.withholding.get(usize::from(ccy)) else { continue };
-            let Some(Some(treasury)) = self.treasuries.get(usize::from(ccy)).copied() else { continue };
-            let tax = w.on_payment(f.amount);
-            if tax <= 0 || tax > f.amount {
+            let gross = f.amount;
+            let tax = w.on_payment(gross);
+            if tax <= 0 || tax > gross {
                 continue;
             }
             f.amount -= tax;
-            taxes.push(Flow {
-                payer: f.payer,
-                payee: treasury,
-                amount: tax,
-                source: f.source,
-                reason: crate::consts::reason::TAXED,
-                ..*f
+            arising.push(crate::core_taxes::Arising {
+                collector: f.payer,
+                payer: f.payee,
+                base: crate::core_taxes::INCOME,
+                tax,
+                ccy,
+                on: (f.payer, f.payee, f.amount, f.reason, f.source),
             });
+            let id = self.kinds.get(usize::from(f.payee.kind())).and_then(|k| k.parties.id(f.payee.slot()));
+            if id.is_some_and(crate::core_rates::sampled) {
+                self.taxes.sample.push((gross, tax, ccy));
+            }
         }
-        buf.append(&mut taxes);
+        self.taxes.arising.append(&mut arising);
     }
 
     /// An estate begun with a party's money at its bank, to settle on its country's next business day.
@@ -566,6 +576,7 @@ impl Core {
         let mut moved = (0_i128, [0_i128; 3]);
         if let Some(buf) = work.flows.chunks_mut().first() {
             self.account_flows(buf, failed);
+            self.accrue_taxes((at.0, at.1), buf, failed);
             moved = self.money_moves(buf, failed);
         }
         let (fund, fund_failed) = self.fund_stage(work, at, ranges);
@@ -688,7 +699,11 @@ impl Core {
             }
         }
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
-            self.withhold(buf);
+            let mut taken = std::mem::take(buf);
+            self.withhold(&mut taken);
+            if let Some(buf) = work.flows.chunks_mut().first_mut() {
+                *buf = taken;
+            }
         }
         let mut settling = Vec::new();
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
@@ -747,6 +762,7 @@ impl Core {
         record.wages = self.record_wages_settled(&failed);
         record.breaks += self.money_breaks((day, before), moved, &mut deposits);
         record.estates += self.end_settled(settling);
+        self.audit_taxes(day);
         self.keep_books(day, calendar);
         for k in &mut self.kinds {
             k.parties.close_day();
