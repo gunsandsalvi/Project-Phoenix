@@ -6,16 +6,19 @@
 # budget itself is 1 000 and 2 000 ms and 4.5 GB; these hold the ground gained on the way to it. The world on the core
 # (S1.24, 2026-09-28): the smoke measured a median turn of 2 502 ms, a worst of 7 522 ms, 2 403 bytes a person and
 # 20 089 faults a day; the times stand a quarter above, the bytes and faults a tenth. Its day runs on one thread, so
-# its cores busy (0.99) stand below the ratchet until the core's day is sharded on the pool (S1.24).
+# its cores busy (0.99) stand below the ratchet until the core's day is sharded on the pool (S1.24). Its meetings on
+# the pool (S1.24, 2026-09-29): a median turn of 1 637 ms, a worst of 5 147 ms and 1.52 cores busy; the times stand a
+# quarter above them, as the noise asks — the same day's tightenings to the bare measures (1 674 and 5 158 ms) left
+# no room for it and are raised back to the margin — and the cores busy at 1.40, below the measure.
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_median"
-value = 1674
+value = 2046
 direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_worst"
-value = 5158
+value = 6434
 direction = "down"
 
 [[ratchet]]
@@ -30,5 +33,5 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.busy_core_hundredths"
-value = 100
+value = 140
 direction = "up"

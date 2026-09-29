@@ -394,6 +394,7 @@ fn core_of(
             management: frm.management(),
             regions: &regions,
             weights: retail_weights(&p.c.register).map_err(|e| AssemblyErrors(vec![e]))?,
+            pool: None,
         };
         let cover = own
             .iter()
@@ -416,6 +417,11 @@ pub(crate) fn retail_weights(register: &phx_core::Register) -> Result<phx_market
         price: register.fixed(sys_srv::PRICE_WEIGHT.id)?,
         distance: register.fixed(sys_srv::DISTANCE_WEIGHT.id)?,
     })
+}
+
+/// The device's pool, where it has more than one worker to give.
+fn pool_of(spec: &phx_exec::PoolSpec) -> Option<phx_exec::Pool> {
+    if spec.workers() > 1 { phx_exec::Pool::new(spec).ok() } else { None }
 }
 
 /// Assembles the world: every system's declarations, then compilation against the data, every refusal reported at
@@ -458,5 +464,6 @@ pub fn assemble(
         findings: Findings::default(),
         register_hash: p.register_hash,
         seed: config.seed,
+        pool: pool_of(&phx_exec::PoolSpec::detect()),
     })
 }

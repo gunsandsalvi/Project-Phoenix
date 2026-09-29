@@ -93,6 +93,7 @@ impl World {
                 management: frm.management(),
                 regions: &regions,
                 weights,
+                pool: self.pool.as_ref(),
             };
             let _ = self.core.goods_day(&gctx, day);
         }

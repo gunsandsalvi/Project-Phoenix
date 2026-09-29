@@ -116,6 +116,8 @@ pub struct GoodsCtx<'a> {
     pub management: &'a sys_frm::decide::Management,
     pub regions: &'a [CountryId],
     pub weights: Weights,
+    /// The workers a meeting's choices and sales run on, whose outcome is the same on any.
+    pub pool: Option<&'a phx_exec::Pool>,
 }
 
 impl std::fmt::Debug for GoodsCtx<'_> {
@@ -1233,7 +1235,7 @@ impl Core {
                 )
             };
             let mut meeting = std::mem::take(&mut self.goods.meeting);
-            meet(&mut meeting, None, (&plain, &places, &buyers), (lot, ctx.weights), tastes, &lots);
+            meet(&mut meeting, ctx.pool, (&plain, &places, &buyers), (lot, ctx.weights), tastes, &lots);
             let made: Vec<Sale> = meeting.sales().copied().collect();
             self.goods.meeting = meeting;
             let by_seller: BTreeMap<PartyKey, usize> =

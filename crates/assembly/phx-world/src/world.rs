@@ -38,6 +38,8 @@ pub struct World {
     /// The data's hash, which a save names.
     pub(crate) register_hash: u128,
     pub(crate) seed: u64,
+    /// The device's workers, one a fast core, which the day's meetings run on; none where it has one core.
+    pub(crate) pool: Option<phx_exec::Pool>,
 }
 
 /// The map as GEO keeps it, shared.
