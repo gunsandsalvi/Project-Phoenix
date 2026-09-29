@@ -1,6 +1,6 @@
 //! The core's audit at each day's close, beside the money and goods families settlement and the goods' day read: each
-//! contract names parties that are live, and the households hold the persons they opened with, plus those born, less
-//! those gone. It reads only and records what it finds; it never repairs.
+//! contract names parties that are live, every household holds a person, and the households hold the persons they
+//! opened with, plus those born, less those gone. It reads only and records what it finds; it never repairs.
 
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_id::Day;
@@ -10,7 +10,7 @@ use crate::core::Core;
 
 impl Core {
     /// The day's audit of the contracts and the persons, its findings kept for the run.
-    #[clause("REP.3", "REP.26", "II.5")]
+    #[clause("REP.3", "REP.26", "PTY.11", "II.5")]
     pub(crate) fn audit(&mut self, day: Day) {
         let mut found = Vec::new();
         for family in &self.families {
@@ -32,6 +32,25 @@ impl Core {
                         });
                     }
                 }
+            }
+        }
+        // A household is its persons: one with none left must have ended.
+        if let (Some(place), Some(persons)) = (
+            self.names.iter().position(|n| *n == "household"),
+            self.names.iter().position(|n| *n == "household").and_then(|p| self.persons.get(p)?.as_ref()),
+        ) && let Some(store) = self.kinds.get(place)
+        {
+            let empty = store.parties.live_slots().filter(|s| persons.count(*s) == 0).count();
+            if empty > 0 {
+                found.push(Finding {
+                    family: "persons",
+                    clause: "PTY.11",
+                    owner: FindingOwner::Run,
+                    size: i128::try_from(empty).unwrap_or(i128::MAX),
+                    unit: Unit::Count,
+                    day,
+                    detail: format!("{empty} households hold no person"),
+                });
             }
         }
         let (born, gone): (u64, u64) = self.pop_days.iter().fold((0, 0), |(b, g), (_, d)| (b + d.born, g + d.gone));

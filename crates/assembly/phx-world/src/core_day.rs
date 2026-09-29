@@ -416,7 +416,7 @@ impl Core {
     /// The money family on the core after the day's settlement, reading only: each bank owes what its customers hold;
     /// the money the parties hold moved only by what they and the banks paid each other, the issuer making no flow on
     /// the core yet; and the banks' reserves with the accounts at the issuer did not move.
-    #[clause("MON.5", "N1")]
+    #[clause("MON.5", "N1", "REP.14")]
     fn money_breaks(&mut self, (day, before): (Day, (i128, i128)), bank_net: i128, deposits: &mut [i64]) -> u64 {
         let owed = deposits_of(self.kinds.iter(), deposits.len());
         let mut found = Vec::new();

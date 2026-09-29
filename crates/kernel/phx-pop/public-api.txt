@@ -1,21 +1,4 @@
 pub mod phx_pop
-pub mod phx_pop::audit
-pub struct phx_pop::audit::Agents
-impl phx_core::family::AuditFamily for phx_pop::audit::Agents
-pub fn phx_pop::audit::Agents::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
-pub fn phx_pop::audit::Agents::decl(&self) -> phx_core::family::FamilyDecl
-pub fn phx_pop::audit::Agents::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
-pub struct phx_pop::audit::AgentsView<'a, B: phx_store::backing::Backing>
-impl<'a, B: phx_store::backing::Backing + 'static> phx_pop::audit::AgentsView<'a, B>
-pub fn phx_pop::audit::AgentsView<'a, B>::new(&'a [alloc::boxed::Box<dyn phx_ledger::holder::CellHolders>], &'a phx_pop::population::Population) -> Self
-impl<B: phx_store::backing::Backing> core::fmt::Debug for phx_pop::audit::AgentsView<'_, B>
-pub fn phx_pop::audit::AgentsView<'_, B>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl<B: phx_store::backing::Backing> phx_core::family::AgentsAudit for phx_pop::audit::AgentsView<'_, B>
-pub fn phx_pop::audit::AgentsView<'_, B>::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_pop::audit::AgentsView<'_, B>::agents(&self) -> usize
-pub fn phx_pop::audit::AgentsView<'_, B>::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub const phx_pop::audit::AGENTS: phx_core::family::FamilyDecl
-pub fn phx_pop::audit::agent<B: phx_store::backing::Backing>(&phx_pop::table::AgentTable<B>, phx_id::ids::Slot) -> alloc::vec::Vec<phx_core::family::Gap>
 pub mod phx_pop::consts
 pub const phx_pop::consts::AGENDA_BLOCKS: u32
 pub const phx_pop::consts::AGENT_AGENDA_ROWS: u32
