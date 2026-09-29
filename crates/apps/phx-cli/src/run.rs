@@ -262,6 +262,29 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 3] {
 }
 
 /// Each release the agencies published: its series, country, period, day and values.
+/// Each trade's price changes over the run — their frequency a review and mean size — and its firms' markups at the
+/// close, their median, as the run report publishes them.
+fn prices_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    let core = w.core();
+    let markups = crate::checks::core::markups_by_trade(w);
+    core.goods
+        .prices
+        .iter()
+        .map(|(p, t)| {
+            let per =
+                |n: u64, d: u64| if d > 0 { phx_rand::float::from_u64(n) / phx_rand::float::from_u64(d) } else { 0.0 };
+            let size = if t.changes > 0 { t.size / phx_rand::float::from_u64(t.changes) } else { 0.0 };
+            json!({
+                "product": p,
+                "reviews": t.reviews,
+                "changes_a_review": per(t.changes, t.reviews),
+                "mean_change": size,
+                "median_markup": markups.get(p).copied(),
+            })
+        })
+        .collect()
+}
+
 /// The age structure and fertility at the close, as the run report publishes them.
 fn population_report(w: Inspector<'_>) -> serde_json::Value {
     let Some(s) = crate::checks::lives::structure(w) else { return serde_json::Value::Null };
@@ -364,6 +387,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "core_days": days_report(w),
         "statistics": statistics_report(w),
         "population": population_report(w),
+        "prices": prices_report(w),
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "peak_resident_bytes": peak,

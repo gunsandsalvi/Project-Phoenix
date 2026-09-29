@@ -873,6 +873,12 @@ world switches to the core.
     mortgage (HH.8, HH.10, HSG, S2.05) and its portfolio (HH.7, S2.05 and S3.05); until they hold it, the opening's
     deposits are spent. To settle there, with the self-employed of c3 (the own-account workers the staff count leaves
     out).
+  - h: the prices' reads (LC-1-08) keep each trade's reviews, the prices moved and the moves' sizes, and read the
+    markups at the close. Measured (120 days, 150,000 persons, seed 1): goods move their price at 59% of reviews, by
+    128% of the old price on average, services at 8% by 19%; the goods' median markup 0.65, the services' 0.20. The
+    goods' moves follow their stock's pressure, which at an empty stock is 43 (their cover's days and one) and moves
+    the wanted price 6.5 times at its curvature, and back as the stock returns. To settle in e, the reviews read
+    against the management types' spread and FRM.19's measure against the retail data (Levy et al., 2011).
   - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

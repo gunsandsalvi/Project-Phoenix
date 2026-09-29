@@ -144,7 +144,7 @@ pub const CHECKS: &[Check] = &[
     awaiting::LC_1_05,
     awaiting::LC_1_06,
     core::LC_1_07,
-    awaiting::LC_1_08,
+    core::LC_1_08,
     awaiting::LC_1_10,
     awaiting::LC_1_11,
     awaiting::LC_1_12,

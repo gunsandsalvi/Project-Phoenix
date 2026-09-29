@@ -48,6 +48,15 @@ pub struct GoodsDay {
     pub breaks: u64,
 }
 
+/// A trade's price reviews over the run: the reviews, the prices moved, and the sum of the moves' sizes, each the
+/// new price's difference from the old over the old.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct PriceTally {
+    pub reviews: u64,
+    pub changes: u64,
+    pub size: f64,
+}
+
 /// Goods' state on the core, kept from day to day.
 #[derive(Debug, Default)]
 pub struct CoreGoods {
@@ -84,6 +93,8 @@ pub struct CoreGoods {
     /// last day of sales there paid on average.
     pub traded: BTreeMap<(u16, u32), (i128, i128)>,
     pub marks: BTreeMap<(u16, u32), f64>,
+    /// Each trade's price reviews over the run.
+    pub prices: BTreeMap<u16, PriceTally>,
 }
 
 /// What the goods day reads of the world besides the core.
@@ -1045,6 +1056,7 @@ impl Core {
                 continue;
             }
             reviews += 1;
+            self.goods.prices.entry(f.product).or_default().reviews += 1;
             self.set_record_word(firm, slot, REVIEWED, i64::from(day.get()));
             let (markup, expected) = (from_i64(markup) / PART_ONE, from_i64(expected) / PART_ONE);
             let demand = from_i64(sold) / from_i64(days);
@@ -1093,6 +1105,8 @@ impl Core {
             {
                 self.set_record_word(firm, slot, PRICE, p);
                 repriced += 1;
+                let t = self.goods.prices.entry(f.product).or_default();
+                (t.changes, t.size) = (t.changes + 1, t.size + (from_i64(p) / from_i64(f.price) - 1.0).abs());
             }
         }
         (reviews, repriced)

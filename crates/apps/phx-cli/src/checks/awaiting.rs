@@ -354,13 +354,6 @@ pub const LC_1_06: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 h, the revenue family"),
 };
 
-pub const LC_1_08: Check = live_check! {
-    id: "LC-1-08",
-    title: "the frequency and size of price changes, and the markups, are reported per trade (SRV.7, FRM.19)",
-    from_step: "S1.03",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the prices' reads"),
-};
-
 pub const LC_1_10: Check = live_check! {
     id: "LC-1-10",
     title: "per owner and kind, plant next day is plant today plus completions less retirements plus transfers: \

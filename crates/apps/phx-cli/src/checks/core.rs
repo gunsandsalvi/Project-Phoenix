@@ -689,3 +689,55 @@ pub const LC_1_23: Check = live_check! {
     from_step: "S1.08",
     check: matches_are_acceptances,
 };
+
+/// Each trade's firms' markups at the close, their median, by product.
+#[must_use]
+pub fn markups_by_trade(w: Inspector<'_>) -> std::collections::BTreeMap<u16, f64> {
+    use phx_world::consts::firm::{MARKUP, PART_ONE, PRODUCT};
+    let core = w.core();
+    let mut by: std::collections::BTreeMap<u16, Vec<i64>> = std::collections::BTreeMap::new();
+    let Some(store) = core.names.iter().position(|n| *n == "firm").and_then(|f| core.kinds.get(f)) else {
+        return std::collections::BTreeMap::new();
+    };
+    for slot in store.parties.live_slots() {
+        let word = |at: usize| match store.record(slot).get(at).map(|x| x.get()) {
+            Some(phx_num::Missing::Present(v)) => Some(v),
+            _ => None,
+        };
+        if let (Some(p), Some(m)) = (word(PRODUCT).and_then(|p| u16::try_from(p).ok()), word(MARKUP)) {
+            by.entry(p).or_default().push(m);
+        }
+    }
+    by.into_iter()
+        .filter_map(|(p, mut m)| {
+            m.sort_unstable();
+            m.get(m.len() / 2).map(|x| (p, phx_rand::float::from_i64(*x) / PART_ONE))
+        })
+        .collect()
+}
+
+/// The frequency and size of price changes are kept per trade, and every trade's markups are read at the close.
+fn prices_reported(w: Inspector<'_>) -> Outcome {
+    let prices = &w.core().goods.prices;
+    if prices.values().all(|t| t.reviews == 0) {
+        return Outcome::NotYet("no firm reviewed its price in the run");
+    }
+    if let Some((p, t)) = prices.iter().find(|(_, t)| t.changes > t.reviews || !t.size.is_finite()) {
+        return Outcome::Fail(format!(
+            "trade {p}: {} changes of {} reviews, sizes summing to {}",
+            t.changes, t.reviews, t.size
+        ));
+    }
+    let markups = markups_by_trade(w);
+    match prices.keys().find(|p| !markups.contains_key(p)) {
+        Some(p) => Outcome::Fail(format!("trade {p} reviewed with no markup read at the close")),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_08: Check = live_check! {
+    id: "LC-1-08",
+    title: "the frequency and size of price changes, and the markups, are reported per trade (SRV.7, FRM.19)",
+    from_step: "S1.03",
+    check: prices_reported,
+};
