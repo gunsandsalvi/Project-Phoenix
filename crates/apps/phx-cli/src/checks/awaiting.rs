@@ -291,27 +291,6 @@ pub const LC_0_61: Check = live_check! {
     retired: "the ledger's run of rows due was the old kernel's; the core's dues come off its wheels, read by LC-0-62",
 };
 
-pub const LC_1_01: Check = live_check! {
-    id: "LC-1-01",
-    title: "outlooks disagree: their dispersion per variable is reported, positive where methods or histories differ, and wider after a large surprise",
-    from_step: "S1.01",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
-};
-
-pub const LC_1_02: Check = live_check! {
-    id: "LC-1-02",
-    title: "no outlook is formed after the stage that uses it",
-    from_step: "S1.01",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
-};
-
-pub const LC_1_03: Check = live_check! {
-    id: "LC-1-03",
-    title: "heuristic shares per series are reported and move over the run, their lead over price swings published",
-    from_step: "S1.01",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
-};
-
 pub const LC_1_43: Check = live_check! {
     id: "LC-1-43",
     title: "each method's lag behind each turning point of a published series, by memory type and heuristic mix",

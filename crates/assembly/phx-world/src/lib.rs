@@ -9,6 +9,7 @@ pub mod core_goods;
 pub mod core_jobs;
 pub mod core_labour;
 pub mod core_open;
+pub mod core_outlooks;
 pub mod core_pop;
 pub mod core_rates;
 pub mod core_stats;

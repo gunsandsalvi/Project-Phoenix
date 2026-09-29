@@ -883,20 +883,34 @@ world switches to the core.
     mortgage (HH.8, HH.10, HSG, S2.05) and its portfolio (HH.7, S2.05 and S3.05); until they hold it, the opening's
     deposits are spent. To settle there, with the self-employed of c3 (the own-account workers the staff count leaves
     out).
+  - e: the firms' outlooks of public series (VAL.3–VAL.7, VAL.23). What a product last sold for in a region, its
+    mark, is a public series printed each day it trades; every method — a heuristic of the menu at a memory type —
+    forms its outlook of the next print once for all the firms using it, and scores each heuristic by its squared
+    error in the method's width (its surprises' mean absolute size at the memory type's gain). Each firm draws its
+    switching type at the opening beside its memory type, and its first stance by its taste alone, no heuristic
+    being scored yet; at each price review it reconsiders its stance by the heuristics' shares at its switching
+    intensity and its own taste, and its markup's competitors' term reads its stance's outlook of its product's mark
+    where it read the last mark. LC-1-01, LC-1-02 and LC-1-03 read them and pass; the run report publishes the
+    firms by heuristic each day. Measured (120 days, 150,000 persons, seed 1): of about 20,500 firms, the anchor's
+    share fell from 25% to 13% as prices rose away from their long means, the adaptive and the last value's rose to
+    29% each; 73% of reconsiderations change the stance, the heuristics' errors in widths lying close together at
+    the declared intensities. The households' outlooks of the published statistics (read by their wage reviews'
+    answers, LAB.17), each outlook's lag behind the turning points (LC-1-43) and the days to a changed decision after
+    a surprise (LC-1-44) remain in e.
   - h: the prices' reads (LC-1-08) keep each trade's reviews, the prices moved and the moves' sizes, and read the
     markups at the close. Measured (120 days, 150,000 persons, seed 1): goods move their price at 59% of reviews, by
     128% of the old price on average, services at 8% by 19%; the goods' median markup 0.65, the services' 0.20. The
     goods' moves follow their stock's pressure, which at an empty stock is 43 (their cover's days and one) and moves
     the wanted price 6.5 times at its curvature, and back as the stock returns. To settle in e, the reviews read
     against the management types' spread and FRM.19's measure against the retail data (Levy et al., 2011).
-  - The live checks on the core (120 days, 150,000 persons, seed 1): 40 pass — the turns (LC-0-02), the map (LC-0-11,
+  - The live checks on the core (120 days, 150,000 persons, seed 1): 43 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
     drift (LC-0-59, LC-0-60), persons, their events and rates (LC-0-39, LC-0-41, LC-0-54, LC-0-63, LC-1-36,
-    LC-1-49, LC-1-51), prices and outlooks (LC-1-04, LC-1-07, LC-1-08), goods and sales (LC-1-17, LC-1-18,
+    LC-1-49, LC-1-51), prices and outlooks (LC-1-01 to LC-1-04, LC-1-07, LC-1-08), goods and sales (LC-1-17, LC-1-18,
     LC-1-32), jobs and the labour rounds (LC-1-21, LC-1-22, LC-1-23), loans and benefits (LC-1-26, LC-1-30), the
     accounts (LC-1-37); 28 are retired, each with the old kernel's concept it read and the core's check that holds
-    instead; 44 report "not yet", each naming the part of this step or the later step that brings what it reads.
+    instead; 41 report "not yet", each naming the part of this step or the later step that brings what it reads.
     None fails.
   - Order from here (owner, 2026-09-28): nothing more is built that reads the books. The native opening and the switch
     are done; next the old kernel's crates are deleted, then h on the core alone.

@@ -109,8 +109,14 @@ pub struct Management {
     pub gains: Vec<f64>,
     pub memory: phx_core::register::values::TypeSet,
     pub sensitivity: f64,
-    /// Each switching type's intensity, by its place.
+    /// Each switching type's intensity, by its place, and the types with their shares, by which a firm's is drawn.
     pub intensities: Vec<f64>,
+    pub switching: phx_core::register::values::TypeSet,
+    /// How far the trend rule extrapolates, how far the anchor rule pulls, and the weight of the last error in a
+    /// heuristic's performance.
+    pub trend: f64,
+    pub anchor: f64,
+    pub performance_memory: f64,
 }
 
 impl Management {
@@ -133,11 +139,8 @@ impl Management {
         let switching = u16::try_from(register.count("VAL.switching_types")?).map_err(|e| e.to_string())?;
         let intensity = register.distribution("VAL.switching_intensity")?;
         let per = libm::pow(crate::consts::DECADE, f64::from(intensity.exp));
-        let intensities = phx_core::register::values::TypeSet::build(intensity, switching)?
-            .types()
-            .iter()
-            .map(|t| from_i64(t.value) / per)
-            .collect();
+        let switching = phx_core::register::values::TypeSet::build(intensity, switching)?;
+        let intensities = switching.types().iter().map(|t| from_i64(t.value) / per).collect();
         let adjustment = p.adjustment_days.shared(register).get();
         if adjustment == 0 {
             return Err("a stock's gap closed over no days".to_owned());
@@ -147,6 +150,10 @@ impl Management {
             memory,
             adjustment_days: phx_rand::float::from_u64(adjustment),
             intensities,
+            switching,
+            trend: register.fixed("VAL.trend_gamma")?,
+            anchor: register.fixed("VAL.anchor_kappa")?,
+            performance_memory: register.fixed("VAL.performance_memory")?,
             sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
             cover_days: phx_rand::float::from_u64(p.cover_days.shared(register).get()),
@@ -228,6 +235,15 @@ mod tests {
             .unwrap_or_else(|e| panic!("{e}")),
             sensitivity: 2.0,
             intensities: vec![1.0],
+            switching: phx_core::register::values::TypeSet::new(vec![phx_core::register::values::TypeShare {
+                id: phx_core::register::values::TypeId::new(0),
+                share_ppm: 1_000_000,
+                value: 1,
+            }])
+            .unwrap_or_else(|e| panic!("{e}")),
+            trend: 0.4,
+            anchor: 0.5,
+            performance_memory: 0.3,
         };
         assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);

@@ -14,7 +14,7 @@ use phx_rand::{below_u64, normal};
 use phx_store::SystemBacking;
 
 use crate::consts::firm::{
-    COMPENSATION, MEMORY_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PURPOSES, RECORD, SITE_PURPOSE,
+    COMPENSATION, MANAGEMENT_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PURPOSES, RECORD, SITE_PURPOSE,
 };
 use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, WEEKS_A_YEAR};
 use crate::core::Core;
@@ -218,6 +218,8 @@ struct Draft {
     price: i64,
     output: f64,
     memory: u16,
+    switching: u16,
+    stance: u8,
 }
 
 /// What the firms' opening reads besides the core: the register, the countries with their sheets, the stream its
@@ -310,6 +312,8 @@ impl Core {
                     MaybeI64::present(0),
                     MaybeI64::present(i64::from(o.today.get())),
                     MaybeI64::present(i64::from(d.memory)),
+                    MaybeI64::present(i64::from(d.switching)),
+                    MaybeI64::present(i64::from(d.stance)),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;
@@ -360,8 +364,12 @@ impl Core {
                     None => violation!(clause = "PTY.5", "a firm's region with no land", region = cell.region),
                 };
                 let bank = pick(&banks, below_u64(&mut at, bank_weight));
-                let mut m = o.streams.open(o.stream, subject(MEMORY_PURPOSE), phx_id::Day::new(0), 0);
+                let mut m = o.streams.open(o.stream, subject(MANAGEMENT_PURPOSE), phx_id::Day::new(0), 0);
                 let memory = phx_core::register::values::draw_type(&o.management.memory, &mut m).get();
+                let switching = phx_core::register::values::draw_type(&o.management.switching, &mut m).get();
+                // With no heuristic scored yet nothing favours one, so its first stance is its taste's alone.
+                let menu = len_u64(phx_val::heuristic::MENU.len());
+                let stance = u8::try_from(below_u64(&mut m, menu)).unwrap_or(u8::MAX);
                 let wanted = lot * snap.price_at(product, log);
                 let Some(price) = sys_frm::rules::price::nearest_point(&o.management.points_near(wanted), wanted)
                 else {
@@ -376,6 +384,8 @@ impl Core {
                     price,
                     output: 0.0,
                     memory,
+                    switching,
+                    stance,
                 });
                 ordinal += 1;
             }

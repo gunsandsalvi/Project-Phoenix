@@ -25,7 +25,7 @@ use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::firm::{
     EXPECTED, MARKUP, MEMORY, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
-    SOLD as SOLD_UNITS,
+    SOLD as SOLD_UNITS, STANCE, SWITCHING,
 };
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
 use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
@@ -101,6 +101,8 @@ pub struct CoreGoods {
     /// last day of sales there paid on average.
     pub traded: BTreeMap<(u16, u32), (i128, i128)>,
     pub marks: BTreeMap<(u16, u32), f64>,
+    /// The marks as public series, each method's outlooks of them, and the firms' stances by day.
+    pub outlooks: crate::core_outlooks::Outlooks,
     /// Each trade's price reviews over the run.
     pub prices: BTreeMap<u16, PriceTally>,
     /// Today's sales' debits to named buyers, credits to named sellers, and sales naming neither.
@@ -586,16 +588,23 @@ impl Core {
         self.close_services(ctx, day, &mut moved);
         (record.sales, record.spent) = (sales, spent);
         (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
+        let m = ctx.management;
+        let params = crate::core_outlooks::MethodParams {
+            gains: &m.gains,
+            trend: m.trend,
+            anchor: m.anchor,
+            performance_memory: m.performance_memory,
+        };
         for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
             if units > 0 {
                 let lot = self.lot(product);
-                self.goods.marks.insert(
-                    (product, region),
-                    phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot,
-                );
+                let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
+                self.goods.marks.insert((product, region), mark);
+                self.goods.outlooks.print((product, region), mark, day, &params);
             }
         }
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
+        self.count_stances(day);
         let close = self.goods.stocks.totals();
         let broken = breaks(&open, &nature_net(&moved), &close);
         record.breaks = len_u64(broken.len());
@@ -1091,31 +1100,41 @@ impl Core {
         whole_units(a * expected * (lead + ctx.management.cover_days))
     }
 
-    /// The firms whose production schedule came today review their price: their markup moved by their sales since
-    /// their last review against those they expected and by what their product last sold for in their region, its
-    /// mark; the sales a day they expect corrected toward those sales at their memory type's gain; the pressure of that demand and their
+    /// The firms whose production schedule came today review their price: their stance reconsidered; their markup
+    /// moved by their sales since their last review against those they expected and by what their stance expects
+    /// their product's mark in their region to be; the sales a day they expect corrected toward those sales at their memory type's gain; the pressure of that demand and their
     /// stock against its target; the price they would like, their markup over their cost of making a unit raised by
     /// that pressure; and the move made only where it gains more than changing the price costs their staff's hours.
-    #[clause("FRM.5", "FRM.14", "REP.34", "VAL.6")]
+    #[clause("FRM.5", "FRM.14", "REP.34", "VAL.6", "VAL.7")]
     fn review_prices(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
         let m = ctx.management;
         let due = std::mem::take(&mut self.labour.due_today);
         let (mut reviews, mut repriced) = (0, 0);
+        let Some(stance_stream) = ctx.streams.named(sys_frm::StanceStream::DECL.name) else {
+            violation!(clause = "VAL.7", "the firms' stance stream is not declared");
+        };
+        let mut stances = (0_u64, 0_u64);
         for s in due {
             let slot = Slot::new(s);
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let (Some(markup), Some(expected), Some(sold), Some(last), Some(memory)) = (
+            let (Some(markup), Some(expected), Some(sold), Some(last), Some(memory), Some(switching), Some(stance)) = (
                 self.record_word(firm, slot, MARKUP),
                 self.record_word(firm, slot, EXPECTED),
                 self.record_word(firm, slot, SOLD_UNITS),
                 self.record_word(firm, slot, REVIEWED),
                 self.record_word(firm, slot, MEMORY),
+                self.record_word(firm, slot, SWITCHING),
+                self.record_word(firm, slot, STANCE),
             ) else {
                 continue;
             };
-            let Some(gain) = usize::try_from(memory).ok().and_then(|t| m.gains.get(t)).copied() else {
+            let memory = usize::try_from(memory).unwrap_or(usize::MAX);
+            let Some(gain) = m.gains.get(memory).copied() else {
                 violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = s);
+            };
+            let Some(beta) = usize::try_from(switching).ok().and_then(|t| m.intensities.get(t)).copied() else {
+                violation!(clause = "VAL.7", "a firm's switching type beyond the types", slot = s);
             };
             let days = i64::from(day.get()) - last;
             if days <= 0 {
@@ -1127,8 +1146,18 @@ impl Core {
             let (markup, expected) = (from_i64(markup) / PART_ONE, from_i64(expected) / PART_ONE);
             let demand = from_i64(sold) / from_i64(days);
             let price = from_i64(f.price);
-            // What its product last sold for in its region, where it has sold there.
-            let seen = self.goods.marks.get(&(f.product, f.region)).copied().map_or(Missing::Absent, Missing::Present);
+            // Its stance reconsidered, then what it expects its product's next mark in its region to be by it, where
+            // the mark has printed there.
+            let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
+            let series = (f.product, f.region);
+            let chosen =
+                self.goods.outlooks.reconsider((series, memory, beta), (ctx.streams, &stance_stream), (id, day));
+            stances.0 += 1;
+            if i64::try_from(chosen).ok() != Some(stance) {
+                stances.1 += 1;
+                self.set_record_word(firm, slot, STANCE, i64::try_from(chosen).unwrap_or(i64::MAX));
+            }
+            let seen = self.goods.outlooks.outlook(series, memory, chosen);
             let markup = match sys_frm::rules::markup::update(
                 markup,
                 (m.sales_speed, m.seen_speed),
@@ -1175,7 +1204,30 @@ impl Core {
                 (t.changes, t.size) = (t.changes + 1, t.size + (from_i64(p) / from_i64(f.price) - 1.0).abs());
             }
         }
+        self.goods.outlooks.days.push(crate::core_outlooks::StanceDay {
+            day: day.get(),
+            reconsidered: stances.0,
+            changed: stances.1,
+            ..crate::core_outlooks::StanceDay::default()
+        });
         (reviews, repriced)
+    }
+
+    /// The day's stances counted over every firm, after its reviews.
+    fn count_stances(&mut self, day: Day) {
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(store) = self.kinds.get(firm) else { return };
+        let mut by = [0_u64; crate::core_outlooks::HEURISTICS];
+        for slot in store.parties.live_slots() {
+            if let Some(Missing::Present(h)) = store.record(slot).get(STANCE).map(|w| w.get())
+                && let Some(n) = usize::try_from(h).ok().and_then(|h| by.get_mut(h))
+            {
+                *n += 1;
+            }
+        }
+        if let Some(d) = self.goods.outlooks.days.last_mut().filter(|d| d.day == day.get()) {
+            d.by_heuristic = by;
+        }
     }
 
     /// Each wanted product's stalls: every maker holding it free beyond its own use, with a price, with its unit,

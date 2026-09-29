@@ -261,7 +261,6 @@ fn counters(w: Inspector<'_>) -> [(&'static str, u64); 3] {
     ]
 }
 
-/// Each release the agencies published: its series, country, period, day and values.
 /// Each trade's price changes over the run — their frequency a review and mean size — and its firms' markups at the
 /// close, their median, as the run report publishes them.
 fn prices_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
@@ -316,6 +315,7 @@ fn population_report(w: Inspector<'_>) -> serde_json::Value {
     })
 }
 
+/// Each release the agencies published: its series, country, period, day and values.
 fn statistics_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
         .stats
@@ -409,6 +409,12 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "population": population_report(w),
         "prices": prices_report(w),
         "labour": labour_report(w),
+        "stances": w.core().goods.outlooks.days.iter().map(|d| json!({
+            "day": d.day,
+            "by_heuristic": d.by_heuristic,
+            "reconsidered": d.reconsidered,
+            "changed": d.changed,
+        })).collect::<Vec<_>>(),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
             "stratum": a.stratum,

@@ -145,11 +145,11 @@ pub const CORE_RANGE_BITS: u32 = 12;
 pub const CORE_WHEEL_DAYS: u32 = 64;
 /// A core firm's record: its product, its region, the tile it is sited on, its productivity, the log of its factor
 /// over its way's, in billionths, its posted price of a lot, its output a year in units, its markup over its unit cost
-/// and the sales a day it expects in millionths, the units it sold since its last review and that review's day; the
-/// purposes its opening
-/// draws and its jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
+/// and the sales a day it expects in millionths, the units it sold since its last review and that review's day, its
+/// management's memory and switching types and the heuristic it relies on; the purposes its opening draws and its
+/// jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
-    pub const RECORD: usize = 11;
+    pub const RECORD: usize = 13;
     pub const PRODUCT: usize = 0;
     pub const REGION: usize = 1;
     pub const SITE: usize = 2;
@@ -162,6 +162,10 @@ pub mod firm {
     pub const REVIEWED: usize = 9;
     /// The memory type a firm's outlooks correct at.
     pub const MEMORY: usize = 10;
+    /// How strongly its stance moves toward the heuristic that has forecast best.
+    pub const SWITCHING: usize = 11;
+    /// The heuristic of the menu its outlooks of public series rely on.
+    pub const STANCE: usize = 12;
     pub const PART_ONE: f64 = 1_000_000.0;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
     pub const PURPOSES: u32 = 5;
@@ -169,7 +173,7 @@ pub mod firm {
     pub const SITE_PURPOSE: u32 = 1;
     pub const JOBS_PURPOSE: u32 = 2;
     pub const LOANS_PURPOSE: u32 = 3;
-    pub const MEMORY_PURPOSE: u32 = 4;
+    pub const MANAGEMENT_PURPOSE: u32 = 4;
     pub const COMPENSATION: usize = 0;
 }
 /// The reasons the core's flows are made for, by their code.
