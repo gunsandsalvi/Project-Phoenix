@@ -10,9 +10,6 @@ use phx_num::{Rate, RatePeriod, violation};
 use crate::consts::{PERCENT, PURPOSES, RATE_ONE, SHARE_PARTS, SITES};
 use crate::{OpeningStream, zipf};
 
-/// The kind of a firm's term loan, which credit's kind names.
-pub(crate) const LOAN_KIND: &str = "firm term loan";
-
 fn subject(country: CountryId, purpose: u32, ordinal: u32) -> phx_rand::Subject {
     opening_subject(u32::from(country.get()) * PURPOSES + purpose, ordinal)
 }

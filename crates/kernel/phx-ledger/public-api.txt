@@ -218,20 +218,6 @@ pub fn phx_ledger::algebra::terms_of(&phx_ledger::algebra::Terms, &[phx_num::mon
 pub mod phx_ledger::consts
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::MONTHS_A_YEAR: u8
-pub mod phx_ledger::instruction
-pub enum phx_ledger::instruction::Effect
-pub phx_ledger::instruction::Effect::Asset
-pub phx_ledger::instruction::Effect::Equity
-pub phx_ledger::instruction::Effect::Expense
-pub phx_ledger::instruction::Effect::Liability
-pub phx_ledger::instruction::Effect::Revenue
-pub struct phx_ledger::instruction::ReasonDecl
-pub phx_ledger::instruction::ReasonDecl::held: phx_num::missing::Missing<(phx_ledger::instruction::Effect, phx_ledger::instruction::Effect)>
-pub phx_ledger::instruction::ReasonDecl::name: &'static str
-pub phx_ledger::instruction::ReasonDecl::order: u8
-pub phx_ledger::instruction::ReasonDecl::paid: phx_ledger::instruction::Effect
-pub phx_ledger::instruction::ReasonDecl::received: phx_ledger::instruction::Effect
-pub fn phx_ledger::instruction::name_code(&str) -> u64
 pub mod phx_ledger::levy
 pub struct phx_ledger::levy::Band
 pub phx_ledger::levy::Band::from: i64
@@ -250,22 +236,6 @@ pub fn phx_ledger::levy::Withholding::on_payment(&self, i64) -> i64
 impl phx_store::save::Saved for phx_ledger::levy::Withholding where u16: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::levy::Band>: phx_store::save::Saved, i64: phx_store::save::Saved
 pub fn phx_ledger::levy::Withholding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_ledger::levy::Withholding::save(&self, &mut phx_store::save::Writer<'_>)
-pub mod phx_ledger::line
-pub struct phx_ledger::line::LineKindDecl
-pub phx_ledger::line::LineKindDecl::asset: phx_ledger::line::SideDecl
-pub phx_ledger::line::LineKindDecl::dated: bool
-pub phx_ledger::line::LineKindDecl::liability: phx_ledger::line::SideDecl
-pub phx_ledger::line::LineKindDecl::name: &'static str
-pub phx_ledger::line::LineKindDecl::transfer_requesters: &'static [&'static str]
-impl phx_ledger::line::LineKindDecl
-pub fn phx_ledger::line::LineKindDecl::side(&self, phx_ledger::algebra::Side) -> &phx_ledger::line::SideDecl
-pub struct phx_ledger::line::SideDecl
-pub phx_ledger::line::SideDecl::exclusive: bool
-pub phx_ledger::line::SideDecl::holder_kinds: &'static [&'static str]
-pub phx_ledger::line::SideDecl::holder_list: bool
-pub phx_ledger::line::SideDecl::holder_roles: &'static [&'static str]
-pub phx_ledger::line::SideDecl::many: bool
-pub phx_ledger::line::SideDecl::words: u8
 pub mod phx_ledger::online
 pub struct phx_ledger::online::Online
 impl phx_ledger::online::Online
@@ -279,5 +249,3 @@ pub fn phx_ledger::opening::mean_wage(&phx_core::contribution::OpeningCountry) -
 pub fn phx_ledger::opening::monthly(phx_id::day::Date, phx_id::ids::CountryId) -> phx_core::calendar::period::ScheduleDates
 pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms
 pub fn phx_ledger::opening::whole(f64) -> i64
-pub mod phx_ledger::rows
-pub const phx_ledger::rows::BALANCE: u8

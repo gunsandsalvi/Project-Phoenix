@@ -12,11 +12,9 @@ pub struct TaxLaw {
     pub remit_day: u32,
 }
 
-/// The tax system: the line kind income tax is withheld from, each country's taxes, and the consumption tax a price
-/// paid includes.
+/// The tax system: each country's taxes, and the consumption tax a price paid includes.
 #[derive(Clone, Copy, Debug)]
 pub struct TaxKind {
-    pub withheld_from: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<TaxLaw, String>,
     pub included: fn(f64, f64) -> f64,
 }
@@ -47,22 +45,17 @@ pub struct PensionLaw {
     pub coverage: [f64; 2],
 }
 
-/// Social protection's state pension: its line kind, the reason a claimant joins under, the keyed stream a person's
-/// coverage is drawn from, and each country's pension.
+/// Social protection's state pension: the keyed stream a person's coverage is drawn from, and each country's
+/// pension.
 #[derive(Clone, Copy, Debug)]
 pub struct PensionKind {
-    pub line: &'static str,
-    pub claimed: &'static str,
     pub covered: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<PensionLaw, String>,
 }
 
-/// Social protection's benefit: its line kind and the reason its members join under, each country's benefit, and a
-/// person's claim.
+/// Social protection's benefit: each country's benefit, and a person's claim.
 #[derive(Clone, Copy, Debug)]
 pub struct BenefitKind {
-    pub line: &'static str,
-    pub claimed: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<BenefitLaw, String>,
     pub claim: &'static phx_core::decisions::DecisionPointDecl<ClaimIn, bool>,
 }
@@ -128,12 +121,9 @@ pub struct Allotment {
     pub won: Vec<(u32, i64)>,
 }
 
-/// The sovereign's bills: their line kind and the reason their sales move under, each country's bills and payment
-/// order, the treasury's sizing, a bank's bids and the auction's clearing.
+/// The sovereign's bills: each country's bills, the treasury's sizing, a bank's bids and the auction's clearing.
 #[derive(Clone, Copy, Debug)]
 pub struct BillKind {
-    pub line: &'static str,
-    pub sold: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<BillLaw, String>,
     pub size: &'static phx_core::decisions::DecisionPointDecl<SizeIn, f64>,
     pub bid: &'static phx_core::decisions::DecisionPointDecl<BidIn, Vec<(f64, f64)>>,

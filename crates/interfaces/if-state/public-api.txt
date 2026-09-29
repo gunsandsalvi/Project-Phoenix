@@ -18,9 +18,7 @@ pub if_state::kinds::Allotment::price: f64
 pub if_state::kinds::Allotment::won: alloc::vec::Vec<(u32, i64)>
 pub struct if_state::kinds::BenefitKind
 pub if_state::kinds::BenefitKind::claim: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>
-pub if_state::kinds::BenefitKind::claimed: &'static str
 pub if_state::kinds::BenefitKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BenefitLaw, alloc::string::String>
-pub if_state::kinds::BenefitKind::line: &'static str
 pub struct if_state::kinds::BenefitLaw
 pub if_state::kinds::BenefitLaw::claim_hours: f64
 pub if_state::kinds::BenefitLaw::months: u32
@@ -39,9 +37,7 @@ pub struct if_state::kinds::BillKind
 pub if_state::kinds::BillKind::bid: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::BidIn, alloc::vec::Vec<(f64, f64)>>
 pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>
 pub if_state::kinds::BillKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BillLaw, alloc::string::String>
-pub if_state::kinds::BillKind::line: &'static str
 pub if_state::kinds::BillKind::size: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::SizeIn, f64>
-pub if_state::kinds::BillKind::sold: &'static str
 pub struct if_state::kinds::BillLaw
 pub if_state::kinds::BillLaw::buffer_weeks: f64
 pub if_state::kinds::BillLaw::face: i64
@@ -64,10 +60,8 @@ impl phx_store::save::Saved for if_state::kinds::PaymentOrder where u8: phx_stor
 pub fn if_state::kinds::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn if_state::kinds::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::kinds::PensionKind
-pub if_state::kinds::PensionKind::claimed: &'static str
 pub if_state::kinds::PensionKind::covered: &'static str
 pub if_state::kinds::PensionKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PensionLaw, alloc::string::String>
-pub if_state::kinds::PensionKind::line: &'static str
 pub struct if_state::kinds::PensionLaw
 pub if_state::kinds::PensionLaw::coverage: [f64; 2]
 pub if_state::kinds::PensionLaw::replacement: [f64; 2]
@@ -79,7 +73,6 @@ pub if_state::kinds::SizeIn::outflow: f64
 pub struct if_state::kinds::TaxKind
 pub if_state::kinds::TaxKind::included: fn(f64, f64) -> f64
 pub if_state::kinds::TaxKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::TaxLaw, alloc::string::String>
-pub if_state::kinds::TaxKind::withheld_from: &'static str
 pub struct if_state::kinds::TaxLaw
 pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>
 pub if_state::kinds::TaxLaw::consumption_rate: f64

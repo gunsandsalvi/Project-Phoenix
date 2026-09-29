@@ -10,10 +10,8 @@ publish.workspace = true
 if-credit = { path = "../../interfaces/if-credit" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-id = { path = "../../foundation/phx-id" }
-phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
-phx-rand = { path = "../../foundation/phx-rand" }
 
 [lints]
 workspace = true

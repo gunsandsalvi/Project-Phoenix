@@ -11,7 +11,6 @@ if-state = { path = "../../interfaces/if-state" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-macros = { path = "../../foundation/phx-macros" }
 phx-num = { path = "../../foundation/phx-num" }
-phx-rand = { path = "../../foundation/phx-rand" }
 
 [lints]
 workspace = true

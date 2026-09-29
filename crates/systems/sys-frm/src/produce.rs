@@ -3,19 +3,16 @@
 //! inputs it will need, goods at the goods markets and services at retail, where a service is made as it is sold.
 
 use phx_core::Register;
-use phx_ledger::instruction::name_code;
 use phx_num::Missing;
 use phx_rand::float::{from_i64, from_u64};
 
 use crate::consts::{PER_UNIT_SCALE, PPM};
 
-/// A product as production and its trade read it: whether it can be held, the units its price is posted for, and
-/// the market it is traded in between firms.
+/// A product as production and its trade read it: whether it can be held, and the units its price is posted for.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Traded {
     pub storable: bool,
     pub lot: i64,
-    pub market: u64,
 }
 
 /// A way as its user reads it: the product it makes, each input's units per unit started, its yield in millionths,
@@ -42,17 +39,15 @@ impl Plant {
     /// A product in an undeclared unit, or ways' tables unread.
     pub fn compile(register: &Register, countries: usize, adjustment: u64) -> Result<Plant, String> {
         let entries = register.products("TEC.products")?;
-        let standardised = register.table1("GDS.standardised")?;
         let mut products = Vec::with_capacity(entries.len());
-        for (i, e) in (0_i64..).zip(entries) {
+        for e in entries {
             let Missing::Present(unit) = register.units().named(&e.unit) else {
                 return Err(format!("product `{}` in an undeclared unit", e.name));
             };
             let exp = register.units().decl(unit).map_or(0, |d| d.price_exp);
             let lot = (0..exp).try_fold(1_i64, |l, _| l.checked_mul(i64::from(crate::consts::TEN)));
             let Some(lot) = lot else { return Err(format!("`{}`'s price places beyond a quantity", e.unit)) };
-            let kind = if standardised.at(i).is_ok_and(|v| v == 1) { "GDS.commodities" } else { "GDS.between_firms" };
-            products.push(Traded { storable: e.storable, lot, market: name_code(kind) });
+            products.push(Traded { storable: e.storable, lot });
         }
         let (lead, yields) = (register.table1("TEC.lead_time")?, register.table1("TEC.yield")?);
         let mut ways = Vec::new();

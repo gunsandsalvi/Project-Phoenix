@@ -119,16 +119,6 @@ impl Own {
     }
 }
 
-/// Units a firm makes by its way: the cost of what the way uses up an expense as it is used, so what it makes carries
-/// no cost of its own and its sale's revenue is the margin over the inputs expensed.
-pub const MADE: phx_ledger::instruction::ReasonDecl = phx_ledger::instruction::ReasonDecl {
-    name: "FRM made",
-    order: 2,
-    paid: phx_ledger::instruction::Effect::Expense,
-    received: phx_ledger::instruction::Effect::Asset,
-    held: phx_num::Missing::Present((phx_ledger::instruction::Effect::Expense, phx_ledger::instruction::Effect::Asset)),
-};
-
 declare_prim! {
     /// Days a firm may leave a payment due unpaid before it is in default of payment and liquidated: the insolvency
     /// law's grace.

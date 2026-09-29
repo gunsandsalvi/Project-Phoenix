@@ -4,7 +4,7 @@
 use phx_core::decisions::DecisionPointDecl;
 use phx_core::{OpeningCountry, Register};
 
-use crate::decisions::{AcceptIn, AnswerIn, PostIn, PostOut, RetireIn, ReviewIn, SearchIn, SelectIn};
+use crate::decisions::{AcceptIn, AnswerIn, PostIn, PostOut, ReviewIn, SearchIn, SelectIn};
 use crate::law::Law;
 
 /// The offer an employer's fill history sets: from its last fill's point and days, its newest staff's point, the mean
@@ -17,11 +17,6 @@ pub type Adapt = fn(phx_num::Missing<(i64, u32)>, phx_num::Missing<i64>, i64, u3
 /// schedule's; the hazard persons retire by; each country's law; its decisions; its wage points' arithmetic, the offer its fill history sets and the severance a separation owes.
 #[derive(Clone, Copy, Debug)]
 pub struct LabourKind {
-    pub line: &'static str,
-    pub hired: &'static str,
-    pub separated: &'static str,
-    pub severance: &'static str,
-    pub renegotiated: &'static str,
     pub state: &'static str,
     pub occupation: &'static str,
     pub last_point: &'static str,
@@ -31,12 +26,9 @@ pub struct LabourKind {
     pub lot_stream: &'static str,
     pub layoff_stream: &'static str,
     pub review_stream: &'static str,
-    pub employer_visits: &'static [&'static str],
-    pub retirement: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<Law, String>,
     pub search: &'static DecisionPointDecl<SearchIn, Vec<u32>>,
     pub accept: &'static DecisionPointDecl<AcceptIn, bool>,
-    pub retire: &'static DecisionPointDecl<RetireIn, bool>,
     pub answer: &'static DecisionPointDecl<AnswerIn, i64>,
     pub offer: &'static DecisionPointDecl<ReviewIn, i64>,
     pub conclude: fn(i64, i64, i64) -> phx_num::Missing<i64>,

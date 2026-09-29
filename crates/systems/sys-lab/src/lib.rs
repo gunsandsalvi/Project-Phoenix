@@ -14,10 +14,9 @@ use if_labour::kind::LabourKind;
 use phx_core::{
     Declarations, EventKindDecl, PersonAttrDecl, StreamDef, System, declare_hazard, declare_prim, declare_stream,
 };
-use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed, Missing};
 
-pub use jobs::{Drawn, DrawnJob, EMPLOYMENT, Jobs, JobsStream, Rule};
+pub use jobs::{Drawn, DrawnJob, Jobs, JobsStream, Rule};
 
 declare_stream! { pub TasteStream = "LAB.match_taste" { purpose: Meeting, keyed: false, clause: "REP.22" } }
 declare_stream! { pub MeetingStream = "LAB.meeting" { purpose: Meeting, keyed: false, clause: "LAB.8" } }
@@ -195,44 +194,8 @@ declare_prim! {
     pub REVIEW_MONTHS = "LAB.review_months" { kind: Preference, value: Count, clause: "LAB.17", scope: Shared }
 }
 
-/// A hire joining its employment line.
-pub const HIRED: ReasonDecl =
-    ReasonDecl { name: "LAB hired", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
-/// A separation leaving its employment line.
-pub const SEPARATED: ReasonDecl = ReasonDecl {
-    name: "LAB separated",
-    order: 2,
-    paid: Effect::Equity,
-    received: Effect::Equity,
-    held: Missing::Absent,
-};
-/// A review's members moving to the line of the wage it concluded.
-pub const RENEGOTIATED: ReasonDecl = ReasonDecl {
-    name: "LAB renegotiated",
-    order: 2,
-    paid: Effect::Equity,
-    received: Effect::Equity,
-    held: Missing::Absent,
-};
-/// Severance paid on a layoff: the employer's expense, the employee's income.
-pub const SEVERANCE: ReasonDecl = ReasonDecl {
-    name: "LAB severance",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Revenue,
-    held: Missing::Absent,
-};
-
-/// The firms' visits on their production schedule, on which they decide their vacancies and layoffs.
-const EMPLOYER_VISITS: &[&str] = &["FRM.attend_small", "FRM.attend_large"];
-
 /// The labour kind, whose rounds the kernel runs.
 pub const LABOUR: LabourKind = LabourKind {
-    line: EMPLOYMENT.name,
-    hired: HIRED.name,
-    separated: SEPARATED.name,
-    severance: SEVERANCE.name,
-    renegotiated: RENEGOTIATED.name,
     state: STATE.name,
     occupation: OCCUPATION_ATTR.name,
     last_point: LAST_POINT.name,
@@ -242,12 +205,9 @@ pub const LABOUR: LabourKind = LabourKind {
     lot_stream: LotStream::DECL.name,
     layoff_stream: LayoffStream::DECL.name,
     review_stream: ReviewStream::DECL.name,
-    employer_visits: EMPLOYER_VISITS,
-    retirement: RETIREMENT.name,
     law: law::law,
     search: &points::SEARCH,
     accept: &points::ACCEPT,
-    retire: &points::RETIRE,
     answer: &points::ANSWER,
     offer: &points::OFFER,
     conclude: rules::renegotiate::conclude,

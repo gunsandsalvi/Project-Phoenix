@@ -1262,7 +1262,9 @@ decisions)*: every Stage 1 system's opening contribution.
   sales, payrolls and accounts, and the discrepancy published)*.
 - MEASURE: VAL.12, VAL.13, VAL.14, VAL.15 *(complete them, moved from S1.12: LC-1-01, LC-1-03, LC-1-43 and LC-1-44
   read the outlooks once firms sell to the households that ask)*.
-- STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state)*.
+- STATE: FRM.1, FRM.2 *(complete them, from S1.03: every firm holds its latest filed accounts' state)*; SRV.2
+  *(moved from S1.06: distributors holding goods bought at wholesale and selling them at retail, with GDS.6's
+  merchants on the core)*.
 - DECISION: FRM.5, REP.38 *(complete them, from S1.03: firms review and post prices, at the attention they set, from
   the state drawn here)*.
 - PROCESS: REP.21 *(completes it, from S1.03: the reviews run at the attention rate and their hours are counted)*.
@@ -3163,6 +3165,9 @@ capitalise, and set macroprudential limits from their own outlook.
 
 **Clauses**:
 - STATE: ENE.1, ENE.2, ENE.3, ENE.4.
+- PRIMITIVE: MKT.21 *(moved from S0.18: each market's form, meeting days, settlement and participants declared as
+  its operator's data, beginning with the commodity call, the old kernel's market declarations, which nothing on the
+  core read, being deleted)*.
 - DECISION: ENE.7; ENE.5 *(part: offers from running costs and the fuel outlook; a generator's contracts come with
   S4.02, where it completes)*; ENE.6 *(part: retail suppliers and large consumers buying wholesale; buying under a
   contract comes with S4.02, where it completes)*.
@@ -4610,6 +4615,8 @@ syndicates of named banks.
 
 **Clauses**:
 - STATE: EQY.1, EQY.2; PTY.7; FRM.3; ACC.5; REG.6 *(completes it: classes, votes and preferred dividends)*.
+- PROCESS: MKT.4 *(moved from S0.18: the continuous book and its closing call, rebuilt on the core for listed
+  shares, the old kernel's book being deleted)*.
 - DECISION: EQY.4; EQY.3 *(part: investors' own values and orders; index trackers complete it at S3.09)*; EQY.5
   *(part: votes at meetings; takeover votes complete it at S4.06)*; FRM.9 *(completes it: shares)*; FRM.10
   *(completes it: buybacks)*; BCP.4 *(completes it: shares)*; HH.7 *(part: shares and bonds held directly; funds are
@@ -10994,7 +11001,9 @@ and are not mapped.
 | ACC | S2.01 | 7 |
 | ACC | S2.02 | 1 |
 | ACC | S3.05 | 5 |
-| MKT | S0.18 | 1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18, 21 |
+| MKT | S0.18 | 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 18 |
+| MKT | S2.09 | 21 |
+| MKT | S3.05 | 4 |
 | MKT | S3.06 | 5, 15, 19 |
 | MKT | S4.04 | 20 |
 | VAL | S1.01 | 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 16, 17, 18, 19, 20, 21, 22 |
@@ -11046,9 +11055,9 @@ and are not mapped.
 | GDS | S1.07 | 10 |
 | GDS | S1.15 | 5, 6, 9, 11 |
 | GDS | S2.05 | 3 |
-| SRV | S1.06 | 2, 4, 5, 6, 8, 9 |
+| SRV | S1.06 | 4, 5, 6, 8, 9 |
 | SRV | S1.12 | 7 |
-| SRV | S1.15 | 1 |
+| SRV | S1.15 | 1, 2 |
 | SRV | S2.05 | 3 |
 | FRT | S1.07 | 1, 2, 3, 6, 7, 9, 11, 12 |
 | FRT | S1.15 | 4, 5, 10 |

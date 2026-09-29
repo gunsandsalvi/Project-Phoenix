@@ -1,7 +1,7 @@
 //! BNK, bank lending: each country's banks, sized by a Zipf law fitted to the published concentration of their
 //! assets; each bank's current accounts, where the firms it lends to keep their deposits; the firms' term loans; and
 //! the banks' quotes, declines and standards and the borrowers' shopping, whose rules are here and whose rounds the
-//! kernel runs.
+//! core runs.
 
 mod consts;
 pub mod credit;
@@ -11,9 +11,7 @@ pub mod points;
 pub use opening::{bank_site, bank_weights, rate};
 pub mod zipf;
 
-use if_credit::kind::CreditKind;
 use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
-use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_num::{Count, Fixed};
 
 declare_kind! { pub BANK = "bank" { legal_form: "bank", table: Individuals, clause: "BNK.1" } }
@@ -133,32 +131,6 @@ declare_prim! {
     pub LEAD_DAYS = "BNK.refinance_lead_days" { kind: Preference, value: Count, clause: "BNK.19", scope: Shared }
 }
 
-/// A loan disbursed: the bank's claim and the deposit it creates for the borrower.
-pub const LENT: ReasonDecl = ReasonDecl {
-    name: "BNK lent",
-    order: 2,
-    paid: Effect::Equity,
-    received: Effect::Equity,
-    held: phx_num::Missing::Absent,
-};
-
-/// The credit kind, whose rounds the kernel runs.
-pub const CREDIT: CreditKind = CreditKind {
-    loan: opening::LOAN_KIND,
-    lender: BANK.name,
-    lent: LENT.name,
-    asked_stream: AskedStream::DECL.name,
-    taste_stream: TasteStream::DECL.name,
-    law: credit::law,
-    class_of: credit::class_of,
-    quote: credit::quote,
-    decline: credit::decline,
-    choose: credit::choose,
-    standard: credit::standard,
-    learned: credit::learned,
-    request: credit::request,
-};
-
 /// Bank lending.
 #[derive(Debug)]
 pub struct Bnk;
@@ -189,7 +161,6 @@ impl System for Bnk {
         let _: phx_core::Prim<Fixed<3>> = d.prim(&REQUIRED_RETURN);
         let _: phx_core::Prim<Fixed<4>> = d.prim(&LOAN_COST);
         let _: phx_core::Prim<Fixed<5>> = d.prim(&RATE_STEP);
-        d.market(Box::new(CREDIT));
         d.decision(&points::DECLINE);
         d.decision(&points::QUOTE);
         d.decision(&points::STANDARD);

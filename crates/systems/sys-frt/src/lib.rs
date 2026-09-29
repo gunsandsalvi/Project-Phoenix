@@ -1,17 +1,13 @@
-//! FRT, freight: the carriage market at each origin and mode, carriers' room from their vehicles, the technology of
-//! vehicles by mode and of goods' weight, the reasons freight is paid and goods leave and arrive under, and the
-//! shipper's rule and visit, and each carrier's mode at the opening.
+//! FRT, freight: the technology of vehicles by mode and of goods' weight, carriage's product, each carrier's mode at
+//! the opening, and the shipper's rule on its schedule.
 
 mod consts;
 pub mod points;
 pub use phx_core::register::values::Table1;
 use phx_core::{Declarations, FactDef, Register, StreamDef, System, declare_prim, declare_stream};
-use phx_id::MarketId;
-use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_macros::clause;
-use phx_market::carriage::{FreightKind, FreightTech};
-use phx_market::market::{Form, MarketDecl, MarketKey, Ration};
-use phx_num::{Count, Missing};
+use phx_market::carriage::FreightTech;
+use phx_num::Count;
 
 declare_stream! { pub LotStream = "FRT.capacity_lot" { purpose: Meeting, keyed: false, clause: "FRT.7" } }
 declare_stream! { pub OpeningStream = "FRT.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
@@ -75,40 +71,6 @@ declare_prim! {
     }
 }
 
-/// Freight paid for a trip: the shipper's outlay an expense, the carrier's receipt revenue.
-pub const CARRIED: ReasonDecl = ReasonDecl {
-    name: "FRT carried",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Revenue,
-    held: Missing::Absent,
-};
-
-/// Goods leaving where they were for where they go, their cost going with them.
-pub const SHIPPED: ReasonDecl = ReasonDecl {
-    name: "FRT shipped",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Revenue,
-    held: Missing::Present((Effect::Asset, Effect::Asset)),
-};
-
-/// Goods arriving where they go, at the cost they carried.
-pub const ARRIVED: ReasonDecl = ReasonDecl {
-    name: "FRT arrived",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Revenue,
-    held: Missing::Present((Effect::Asset, Effect::Asset)),
-};
-
-/// The kind of large firms, which keep the carrier's mode as a fact.
-const FIRM: &str = "firm";
-/// The kind of small firms, whose agents keep it as a position.
-const SMALL_FIRM: &str = "small_firm";
-/// The kinds that carry.
-pub const CARRIERS: &[&str] = &[FIRM, SMALL_FIRM];
-
 /// A table of one axis over places in order, in the decimals its declaration gives.
 fn places(register: &Register, decl: &phx_core::PrimDecl) -> Result<Vec<f64>, String> {
     let (id, phx_core::ValueType::Table1 { exp, .. }) = (decl.id, decl.value) else {
@@ -147,34 +109,6 @@ pub fn tech(register: &Register) -> Result<FreightTech, String> {
     })
 }
 
-/// The carriage market, one instance an origin zone and mode, meeting on business days.
-pub const CARRIAGE: FreightKind = FreightKind {
-    market: MarketDecl {
-        id: MarketId::new(0),
-        name: "carriage",
-        key: MarketKey { kind: "FRT.carriage", subject: 0 },
-        form: Form::Posted,
-        operator: "the carriers",
-        meeting_days: "business days",
-        settle_days: 0,
-        participants: "firms",
-        tick: 1,
-        ties: &[],
-        ration: Ration::ProRata,
-        stream: LotStream::DECL.name,
-        quantity_response: Missing::Absent,
-        admission: Missing::Absent,
-    },
-    carriers: CARRIERS,
-    mode: <if_firm::freight::Mode as FactDef>::ITEM.name,
-    sells: <if_firm::known::Product as FactDef>::ITEM.name,
-    price: <if_firm::facts::Price as FactDef>::ITEM.name,
-    tech,
-    paid: CARRIED.name,
-    shipped: SHIPPED.name,
-    arrived: ARRIVED.name,
-};
-
 /// Whether a shipper books room: when what the goods fetch where they go, less what they fetch where they are,
 /// exceeds what carrying them costs.
 #[clause("FRT.5", "FRT.11")]
@@ -203,7 +137,6 @@ impl System for Frt {
         let _ = d.prim::<Count>(&SHIPPING_DAYS);
         d.stream(OpeningStream::DECL);
         d.stream(VisitStream::DECL);
-        d.market(Box::new(CARRIAGE));
         d.decision(&points::SHIP);
     }
 }

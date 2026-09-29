@@ -3,33 +3,6 @@
 use phx_macros::clause;
 use phx_num::capacity_exceeded;
 
-use crate::market::MarketDecl;
-
-/// A retail market kind as its system declares it: its market, an instance per product; the kinds that sell in it;
-/// the facts naming what a seller sells and the price it posts; the primitives weighing price and distance and
-/// bounding how far a buyer reaches; the stream buyers' tastes are drawn from; and the reason a purchase settles
-/// under.
-#[clause("SRV.1", "SRV.2", "SRV.9", "MKT.6")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RetailKind {
-    pub market: MarketDecl,
-    pub sellers: &'static [&'static str],
-    pub sells: &'static str,
-    pub price: &'static str,
-    /// A seller's units made a day, what it can serve of a product delivered as it is made: its fact, read at its
-    /// fixed point.
-    pub capacity: phx_core::ItemDecl,
-    /// The way a seller makes its product by.
-    pub way: &'static str,
-    /// A seller's units a day its plant allows, where its plant limits it.
-    pub plant: &'static str,
-    pub price_weight: &'static str,
-    pub distance_weight: &'static str,
-    pub reach: &'static str,
-    pub tastes: &'static str,
-    pub reason: &'static str,
-}
-
 /// What a buyer wants: units it needs, money it spends, or units it needs at no more than a price for a lot.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum Want {

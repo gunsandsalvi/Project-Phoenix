@@ -1,10 +1,7 @@
-//! GDS, goods and commodities: the markets goods meet in, the grades a commodity is classed by, extraction from the
-//! deposits whose rights a firm holds, weighing today's price against its outlook, and the spoilage of what is held,
-//! which the kernel realises at the firms' stock visits.
+//! GDS, goods and commodities: the grades a commodity is classed by, extraction from the deposits whose rights a firm
+//! holds, weighing today's price against its outlook, the spoilage of what is held, and the merchants' primitives.
 
 mod consts;
-pub mod extract;
-pub mod markets;
 pub mod points;
 pub mod rules;
 
@@ -92,9 +89,6 @@ declare_prim! {
     pub SPOILAGE_DAYS = "GDS.spoilage_days" { kind: Resolution, value: Count, clause: "GDS.8", scope: Shared }
 }
 
-/// The kinds of firm that hold goods, extract and trade.
-pub const HOLDERS: [&str; 2] = ["firm", "small_firm"];
-
 /// A table primitive's values in its decimals.
 fn decimals(values: &[i64], exp: u8) -> Vec<f64> {
     let scale = libm::pow(consts::TEN, f64::from(exp));
@@ -130,28 +124,19 @@ impl System for Gds {
     const CODE: &'static str = "GDS";
 
     fn declare(d: &mut Declarations) {
-        let prims = extract::Prims {
-            bounds: d.prim(&GRADE_BOUNDS),
-            fall: d.prim(&GRADE_FALL),
-            days: d.prim(&EXTRACTION_DAYS),
-            standardised: d.prim(&STANDARDISED),
-            spoilage: d.prim(&SPOILAGE_RATE),
-            merchant: d.prim(&MERCHANT_PRODUCT),
-            merchant_days: d.prim(&MERCHANT_DAYS),
-        };
-        let _ = d.prim::<Table1>(&STORAGE);
+        let _ = d.prim::<Table2>(&GRADE_BOUNDS);
+        for table in [&GRADE_FALL, &STANDARDISED, &SPOILAGE_RATE, &STORAGE] {
+            let _ = d.prim::<Table1>(table);
+        }
+        for count in [&EXTRACTION_DAYS, &MERCHANT_PRODUCT, &MERCHANT_DAYS] {
+            let _ = d.prim::<Count>(count);
+        }
         let _ = d.prim::<Count>(&SPOILAGE_DAYS);
         d.stream(LotsStream::DECL);
         d.stream(VisitStream::DECL);
         d.stream(OpeningStream::DECL);
         let _ = d.prim::<Table1>(&OPENING_PRICE);
         let _ = d.prim::<Table1>(&PRICE_LEVEL);
-        d.market(Box::new(markets::COMMODITIES));
-        d.market(Box::new(markets::BETWEEN_FIRMS));
-        d.compile(Box::new(move |register, _| Ok(Box::new(extract::Own::compile(&prims, register)?))));
         d.decision(&points::EXTRACT);
     }
 }
-
-/// The handles the table of two axes is read by, which is not one of a kind's own.
-pub type BoundsPrim = phx_core::Prim<Table2>;

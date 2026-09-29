@@ -4,9 +4,7 @@
 
 use phx_core::register::values::Table1;
 use phx_core::{OpeningCountry, Prim, Register, StreamDef, declare_stream};
-use phx_ledger::line::{LineKindDecl, SideDecl};
 use phx_ledger::opening::whole;
-use phx_ledger::rows::BALANCE;
 use phx_macros::clause;
 use phx_num::violation;
 use phx_rand::open_unit;
@@ -38,35 +36,8 @@ pub fn law(register: &Register, c: &OpeningCountry) -> Result<if_state::kinds::P
 }
 
 /// The state pension, which the kernel binds.
-pub const PENSIONS: if_state::kinds::PensionKind = if_state::kinds::PensionKind {
-    line: STATE_PENSION.name,
-    claimed: crate::benefit::CLAIMED.name,
-    covered: CoveredStream::DECL.name,
-    law,
-};
-
-/// The state pension: the treasury owes it to each pensioner, one member a pensioner.
-pub const STATE_PENSION: LineKindDecl = LineKindDecl {
-    name: "state pension",
-    asset: SideDecl {
-        holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
-        words: BALANCE,
-        holder_list: false,
-        holder_roles: &[if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name],
-        exclusive: true,
-        many: false,
-    },
-    liability: SideDecl {
-        holder_kinds: &["treasury"],
-        words: BALANCE,
-        holder_list: true,
-        holder_roles: &[],
-        exclusive: false,
-        many: true,
-    },
-    dated: true,
-    transfer_requesters: &["SOC"],
-};
+pub const PENSIONS: if_state::kinds::PensionKind =
+    if_state::kinds::PensionKind { covered: CoveredStream::DECL.name, law };
 
 /// Social protection's draw of the state pensions in payment.
 #[derive(Debug)]

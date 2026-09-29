@@ -28,16 +28,6 @@ pub phx_market::carriage::Consignment::load: i64
 pub phx_market::carriage::Consignment::need: i64
 pub phx_market::carriage::Consignment::segments: alloc::vec::Vec<usize>
 pub phx_market::carriage::Consignment::shipper: phx_id::ids::PartyId
-pub struct phx_market::carriage::FreightKind
-pub phx_market::carriage::FreightKind::arrived: &'static str
-pub phx_market::carriage::FreightKind::carriers: &'static [&'static str]
-pub phx_market::carriage::FreightKind::market: phx_market::market::MarketDecl
-pub phx_market::carriage::FreightKind::mode: &'static str
-pub phx_market::carriage::FreightKind::paid: &'static str
-pub phx_market::carriage::FreightKind::price: &'static str
-pub phx_market::carriage::FreightKind::sells: &'static str
-pub phx_market::carriage::FreightKind::shipped: &'static str
-pub phx_market::carriage::FreightKind::tech: fn(&phx_core::register::Register) -> core::result::Result<phx_market::carriage::FreightTech, alloc::string::String>
 pub struct phx_market::carriage::FreightTech
 pub phx_market::carriage::FreightTech::carriage_a_tonne_km: alloc::vec::Vec<f64>
 pub phx_market::carriage::FreightTech::carriage_product: u16
@@ -108,46 +98,6 @@ pub fn phx_market::hiring::answer(&mut [phx_market::hiring::Vacancy], &[phx_mark
 pub fn phx_market::hiring::pick(&[(u32, f64)], &[f64]) -> alloc::vec::Vec<u32>
 pub fn phx_market::hiring::search(core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::hiring::Vacancy], &phx_market::hiring::Standing), &[phx_market::hiring::Seeker], (f64, f64), (&impl core::ops::function::Fn(u64) -> phx_rand::draws::Draws + core::marker::Sync, &impl core::ops::function::Fn(&phx_market::hiring::Seeker, alloc::vec::Vec<(u32, f64)>, alloc::vec::Vec<f64>) -> alloc::vec::Vec<u32> + core::marker::Sync)) -> alloc::vec::Vec<phx_market::hiring::Application>
 pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application) -> bool, (impl core::ops::function::Fn(u32) -> phx_rand::draws::Draws, impl core::ops::function::Fn(&phx_market::hiring::Vacancy, &[phx_market::hiring::Applicant], u32) -> alloc::vec::Vec<u32>)) -> alloc::vec::Vec<phx_market::hiring::Application>
-pub mod phx_market::market
-pub enum phx_market::market::Form
-pub phx_market::market::Form::Administered
-pub phx_market::market::Form::Bilateral
-pub phx_market::market::Form::Book
-pub phx_market::market::Form::Call
-pub phx_market::market::Form::CoupledCall
-pub phx_market::market::Form::Dealer
-pub phx_market::market::Form::LinkedCall
-pub phx_market::market::Form::Posted
-impl phx_store::save::Saved for phx_market::market::Form
-pub fn phx_market::market::Form::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::market::Form::save(&self, &mut phx_store::save::Writer<'_>)
-pub enum phx_market::market::Ration
-pub phx_market::market::Ration::Priority
-pub phx_market::market::Ration::ProRata
-pub enum phx_market::market::TieRule
-pub phx_market::market::TieRule::LowerPrice
-pub phx_market::market::TieRule::MaxVolume
-pub phx_market::market::TieRule::MinImbalance
-pub phx_market::market::TieRule::NearestLastPrint
-pub struct phx_market::market::MarketDecl
-pub phx_market::market::MarketDecl::admission: phx_num::missing::Missing<&'static str>
-pub phx_market::market::MarketDecl::form: phx_market::market::Form
-pub phx_market::market::MarketDecl::id: phx_id::ids::MarketId
-pub phx_market::market::MarketDecl::key: phx_market::market::MarketKey
-pub phx_market::market::MarketDecl::meeting_days: &'static str
-pub phx_market::market::MarketDecl::name: &'static str
-pub phx_market::market::MarketDecl::operator: &'static str
-pub phx_market::market::MarketDecl::participants: &'static str
-pub phx_market::market::MarketDecl::quantity_response: phx_num::missing::Missing<&'static str>
-pub phx_market::market::MarketDecl::ration: phx_market::market::Ration
-pub phx_market::market::MarketDecl::settle_days: u16
-pub phx_market::market::MarketDecl::stream: &'static str
-pub phx_market::market::MarketDecl::tick: i64
-pub phx_market::market::MarketDecl::ties: &'static [phx_market::market::TieRule]
-pub struct phx_market::market::MarketKey
-pub phx_market::market::MarketKey::kind: &'static str
-pub phx_market::market::MarketKey::subject: u64
-pub fn phx_market::market::refusals(&phx_market::market::MarketDecl) -> alloc::vec::Vec<alloc::string::String>
 pub mod phx_market::meet
 pub struct phx_market::meet::Buyer
 pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey
@@ -209,19 +159,6 @@ pub phx_market::retail::Want::UpTo(i64, i64)
 impl phx_store::save::Saved for phx_market::retail::Want where i64: phx_store::save::Saved
 pub fn phx_market::retail::Want::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_market::retail::Want::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::retail::RetailKind
-pub phx_market::retail::RetailKind::capacity: phx_core::facts::ItemDecl
-pub phx_market::retail::RetailKind::distance_weight: &'static str
-pub phx_market::retail::RetailKind::market: phx_market::market::MarketDecl
-pub phx_market::retail::RetailKind::plant: &'static str
-pub phx_market::retail::RetailKind::price: &'static str
-pub phx_market::retail::RetailKind::price_weight: &'static str
-pub phx_market::retail::RetailKind::reach: &'static str
-pub phx_market::retail::RetailKind::reason: &'static str
-pub phx_market::retail::RetailKind::sellers: &'static [&'static str]
-pub phx_market::retail::RetailKind::sells: &'static str
-pub phx_market::retail::RetailKind::tastes: &'static str
-pub phx_market::retail::RetailKind::way: &'static str
 pub struct phx_market::retail::Weights
 pub phx_market::retail::Weights::distance: f64
 pub phx_market::retail::Weights::price: f64

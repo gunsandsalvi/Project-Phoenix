@@ -1,16 +1,14 @@
-//! CB, the central bank: each country's central bank and its treasury, the reserves banks hold at it, the treasury's
-//! account and the claim on the treasury that backs them; its corridor of standing facilities, which the kernel runs
-//! at the fund stage, and its net income remitted to the treasury. Its committee and operations arrive with their own
-//! step; the treasury is brought forward for its account, and its system's step takes it over.
+//! CB, the central bank: each country's central bank and its treasury, sited together; the currency the households
+//! that bank nowhere hold; and its corridor of standing facilities, which the core runs at the fund stage. Its
+//! committee and operations arrive with their own step; the treasury is brought forward for its account, and its
+//! system's step takes it over.
 
 pub mod central;
 mod consts;
 mod opening;
 
-use if_credit::central::CentralKind;
 use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
-use phx_ledger::instruction::{Effect, ReasonDecl};
-use phx_num::{Fixed, Missing};
+use phx_num::Fixed;
 
 pub use opening::site;
 
@@ -45,41 +43,6 @@ declare_prim! {
     }
 }
 
-/// A bank's position at a facility moved: reserves against the facility's balance.
-pub const MOVED: ReasonDecl =
-    ReasonDecl { name: "CB facility", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
-/// Interest a facility pays or charges: the payer's expense, the payee's income.
-pub const INTEREST: ReasonDecl = ReasonDecl {
-    name: "CB interest",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Revenue,
-    held: Missing::Absent,
-};
-/// The central bank's net income paid to the treasury.
-pub const REMITTED: ReasonDecl = ReasonDecl {
-    name: "CB remitted",
-    order: 2,
-    paid: Effect::Equity,
-    received: Effect::Revenue,
-    held: Missing::Absent,
-};
-
-/// The central bank's facilities, whose fund stage the kernel runs.
-pub const CENTRAL: CentralKind = CentralKind {
-    central_bank: CENTRAL_BANK.name,
-    treasury: TREASURY.name,
-    bank: "bank",
-    reserves: "reserves",
-    account: "treasury account",
-    deposit_facility: "deposit facility",
-    lending_facility: "lending facility",
-    moved: MOVED.name,
-    interest: INTEREST.name,
-    remitted: REMITTED.name,
-    corridor: central::corridor,
-};
-
 /// The central bank.
 #[derive(Debug)]
 pub struct Cb;
@@ -96,6 +59,5 @@ impl System for Cb {
         }
         let _: phx_core::Prim<Fixed<2>> = d.prim(&LOAN_HAIRCUT);
         let _: phx_core::Prim<Fixed<2>> = d.prim(&CURRENCY);
-        d.market(Box::new(CENTRAL));
     }
 }

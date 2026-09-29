@@ -8,8 +8,6 @@ use phx_num::{PriceRaw, capacity_exceeded};
 use phx_rand::Draws;
 use phx_rand::uniform::below_u64;
 
-use crate::market::MarketDecl;
-
 /// Freight's technology as its system compiles it from the register: the chain its vehicles are held in; by mode,
 /// the tonne-km a unit of vehicles carries a day, the metres it runs a day, the days loading takes at each end and the
 /// units of carriage a tonne-km takes; by product, the units of a good in a tonne; and the product carriage is sold as.
@@ -40,23 +38,6 @@ pub fn freight(
     let tonne_km =
         phx_rand::float::from_i64(lot) / units_a_tonne * phx_rand::float::from_u64(metres) / crate::consts::METRES_A_KM;
     Some(tonne_km * per_tonne_km / carriage_lot * phx_rand::float::from_i64(price))
-}
-
-/// A carriage market kind as its system declares it: its market, an instance per origin zone and mode; the kinds that
-/// carry; the facts naming a carrier's mode, the product it sells and its posted price for a lot of it; its
-/// technology; and the reasons freight is paid, goods leave and goods arrive under.
-#[clause("FRT.1", "FRT.4", "FRT.6", "FRT.12")]
-#[derive(Clone, Copy, Debug)]
-pub struct FreightKind {
-    pub market: MarketDecl,
-    pub carriers: &'static [&'static str],
-    pub mode: &'static str,
-    pub sells: &'static str,
-    pub price: &'static str,
-    pub tech: fn(&phx_core::Register) -> Result<FreightTech, String>,
-    pub paid: &'static str,
-    pub shipped: &'static str,
-    pub arrived: &'static str,
 }
 
 /// A carrier's offer at the origin: its posted price and the room its vehicles have left today.

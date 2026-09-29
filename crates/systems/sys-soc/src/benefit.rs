@@ -3,38 +3,7 @@
 
 use if_state::kinds::{BenefitKind, BenefitLaw, ClaimIn};
 use phx_core::{OpeningCountry, Register};
-use phx_ledger::instruction::{Effect, ReasonDecl};
-use phx_ledger::line::{LineKindDecl, SideDecl};
-use phx_ledger::rows::BALANCE;
 use phx_macros::clause;
-use phx_num::Missing;
-
-/// The benefit: the treasury owes it to each claimant, one member a claimant.
-pub const BENEFIT: LineKindDecl = LineKindDecl {
-    name: "unemployment benefit",
-    asset: SideDecl {
-        holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
-        words: BALANCE,
-        holder_list: false,
-        holder_roles: &[if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name],
-        exclusive: true,
-        many: false,
-    },
-    liability: SideDecl {
-        holder_kinds: &["treasury"],
-        words: BALANCE,
-        holder_list: true,
-        holder_roles: &[],
-        exclusive: false,
-        many: true,
-    },
-    dated: true,
-    transfer_requesters: &["SOC"],
-};
-
-/// A claim joining its benefit's line.
-pub const CLAIMED: ReasonDecl =
-    ReasonDecl { name: "SOC claimed", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
 
 /// A country's benefit.
 ///
@@ -57,8 +26,7 @@ pub fn claim(i: &ClaimIn) -> bool {
 }
 
 /// The benefit, which the kernel binds.
-pub const BENEFITS: BenefitKind =
-    BenefitKind { line: BENEFIT.name, claimed: CLAIMED.name, law, claim: &crate::points::CLAIM };
+pub const BENEFITS: BenefitKind = BenefitKind { law, claim: &crate::points::CLAIM };
 
 #[cfg(test)]
 mod tests {

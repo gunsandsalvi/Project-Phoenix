@@ -1,13 +1,9 @@
-//! SRV, services and distribution: the retail market every product meets its buyers in, sellers' posted prices
-//! against buyers' choices among the sellers in their reach, and the reason a purchase at the till settles under.
+//! SRV, services and distribution: how buyers weigh sellers' posted prices and distances in choosing among the
+//! sellers in their reach, and a sale's retail margin.
 
-use phx_core::{Declarations, FactDef, StreamDef, System, declare_prim, declare_stream};
-use phx_id::MarketId;
-use phx_ledger::instruction::{Effect, ReasonDecl};
+use phx_core::{Declarations, StreamDef, System, declare_prim, declare_stream};
 use phx_macros::clause;
-use phx_market::market::{Form, MarketDecl, MarketKey, Ration};
-use phx_market::retail::RetailKind;
-use phx_num::{Count, Fixed, Missing};
+use phx_num::{Count, Fixed};
 
 declare_stream! { pub TasteStream = "SRV.taste" { purpose: Meeting, keyed: false, clause: "REP.22" } }
 declare_stream! { pub LotStream = "SRV.capacity_lot" { purpose: Meeting, keyed: false, clause: "REP.22" } }
@@ -30,50 +26,6 @@ declare_prim! {
     pub REACH = "SRV.reach" { kind: Technology, value: Count, clause: "SRV.9", scope: Shared }
 }
 
-/// A purchase at the till: the buyer's outlay an expense, the seller's receipt revenue, and the cost the seller's
-/// units used up carry the cost of what it sold.
-pub const SOLD: ReasonDecl = ReasonDecl {
-    name: "SRV sold",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Revenue,
-    held: Missing::Present((Effect::Expense, Effect::Asset)),
-};
-
-/// The kinds that sell at retail.
-pub const SELLERS: &[&str] = &["firm", "small_firm"];
-
-/// The retail market, one instance a product, meeting every day its sellers open.
-pub const RETAIL: RetailKind = RetailKind {
-    market: MarketDecl {
-        id: MarketId::new(0),
-        name: "retail",
-        key: MarketKey { kind: "SRV.retail", subject: 0 },
-        form: Form::Posted,
-        operator: "the sellers",
-        meeting_days: "every day",
-        settle_days: 0,
-        participants: "households and firms",
-        tick: 1,
-        ties: &[],
-        ration: Ration::ProRata,
-        stream: LotStream::DECL.name,
-        quantity_response: Missing::Absent,
-        admission: Missing::Absent,
-    },
-    sellers: SELLERS,
-    sells: <if_firm::known::Product as FactDef>::ITEM.name,
-    price: <if_firm::facts::Price as FactDef>::ITEM.name,
-    capacity: <if_firm::facts::OutputRate as FactDef>::ITEM,
-    way: <if_firm::known::WayUsed as FactDef>::ITEM.name,
-    plant: <if_firm::facts::Capacity as FactDef>::ITEM.name,
-    price_weight: PRICE_WEIGHT.id,
-    distance_weight: DISTANCE_WEIGHT.id,
-    reach: REACH.id,
-    tastes: TasteStream::DECL.name,
-    reason: SOLD.name,
-};
-
 /// Services and distribution.
 #[derive(Debug)]
 pub struct Srv;
@@ -87,7 +39,6 @@ impl System for Srv {
         let _ = d.prim::<Count>(&REACH);
         d.stream(TasteStream::DECL);
         d.stream(LotStream::DECL);
-        d.market(Box::new(RETAIL));
     }
 }
 

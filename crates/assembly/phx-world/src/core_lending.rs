@@ -284,7 +284,7 @@ impl Core {
 
     /// A firm's application for a loan of `principal` over `years`: its own bank and the others it asks each decline
     /// or quote, and it takes the best quote by its taste; the lender and the rate, none where every bank declined.
-    #[clause("BNK.4", "BNK.5", "BNK.6", "BNK.20", "REP.22")]
+    #[clause("BNK.4", "BNK.5", "BNK.6", "BNK.20", "REP.22", "MKT.7")]
     pub(crate) fn apply_for_loan(
         &mut self,
         (key, country): (PartyKey, u8),

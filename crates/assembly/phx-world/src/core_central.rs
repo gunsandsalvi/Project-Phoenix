@@ -226,7 +226,7 @@ impl Core {
     /// and each bank's request at the facilities — its chief executive's, from its reserves after the returns, its
     /// target and its collateral — all settled together between the banks and their issuer. Returns the flows made and
     /// those that failed.
-    #[clause("CB.7", "CB.10", "MON.3", "MON.6", "TIME.6", "BFL.10")]
+    #[clause("CB.7", "CB.10", "MON.3", "MON.6", "TIME.6", "BFL.10", "MKT.8")]
     pub(crate) fn fund_stage(
         &mut self,
         work: &mut crate::core_day::Work,

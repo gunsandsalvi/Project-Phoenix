@@ -70,7 +70,7 @@ pub fn included(price: f64, rate: f64) -> f64 {
 }
 
 /// The tax system, which the kernel binds.
-pub const TAXES: TaxKind = TaxKind { withheld_from: "employment", law, included };
+pub const TAXES: TaxKind = TaxKind { law, included };
 
 #[cfg(test)]
 mod tests {

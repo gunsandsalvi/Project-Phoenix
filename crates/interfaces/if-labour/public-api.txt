@@ -89,13 +89,10 @@ pub if_labour::kind::LabourKind::adapt: if_labour::kind::Adapt
 pub if_labour::kind::LabourKind::answer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AnswerIn, i64>
 pub if_labour::kind::LabourKind::conclude: fn(i64, i64, i64) -> phx_num::missing::Missing<i64>
 pub if_labour::kind::LabourKind::education: &'static str
-pub if_labour::kind::LabourKind::employer_visits: &'static [&'static str]
-pub if_labour::kind::LabourKind::hired: &'static str
 pub if_labour::kind::LabourKind::last_point: &'static str
 pub if_labour::kind::LabourKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_labour::law::Law, alloc::string::String>
 pub if_labour::kind::LabourKind::layoff_stream: &'static str
 pub if_labour::kind::LabourKind::least_point: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
-pub if_labour::kind::LabourKind::line: &'static str
 pub if_labour::kind::LabourKind::lot_stream: &'static str
 pub if_labour::kind::LabourKind::meeting_stream: &'static str
 pub if_labour::kind::LabourKind::occupation: &'static str
@@ -103,14 +100,9 @@ pub if_labour::kind::LabourKind::offer: &'static phx_core::decisions::DecisionPo
 pub if_labour::kind::LabourKind::owed: fn(&if_labour::law::Law, f64, u32, i64, u32) -> f64
 pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
 pub if_labour::kind::LabourKind::post: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::PostIn, if_labour::decisions::PostOut>
-pub if_labour::kind::LabourKind::renegotiated: &'static str
-pub if_labour::kind::LabourKind::retire: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::RetireIn, bool>
-pub if_labour::kind::LabourKind::retirement: &'static str
 pub if_labour::kind::LabourKind::review_stream: &'static str
 pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>
 pub if_labour::kind::LabourKind::select: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SelectIn, alloc::vec::Vec<u32>>
-pub if_labour::kind::LabourKind::separated: &'static str
-pub if_labour::kind::LabourKind::severance: &'static str
 pub if_labour::kind::LabourKind::state: &'static str
 pub if_labour::kind::LabourKind::taste_stream: &'static str
 pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64

@@ -13,9 +13,7 @@ use if_labour::class::{NO_OCCUPATION, NOT_SEARCHING, PLACES, RETIRED, SEARCHING}
 use if_labour::law::Law;
 use phx_core::register::values::{Table1, Table2};
 use phx_core::{OpeningCountry, Prim, Register, declare_stream};
-use phx_ledger::line::{LineKindDecl, SideDecl};
 use phx_ledger::opening::whole;
-use phx_ledger::rows::BALANCE;
 use phx_macros::clause;
 use phx_num::{Count, violation};
 use phx_rand::{Draws, open_unit};
@@ -23,30 +21,6 @@ use phx_rand::{Draws, open_unit};
 use crate::consts::{EMPLOYEES, SHARE_PARTS};
 
 declare_stream! { pub JobsStream = "LAB.opening_jobs" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-
-/// Employment: the employer owes the wage to the employee, each job a member; many employers and many employees on
-/// a line, so it records no pairing.
-pub const EMPLOYMENT: LineKindDecl = LineKindDecl {
-    name: if_labour::consts::EMPLOYMENT_LINE,
-    asset: SideDecl {
-        holder_kinds: &[if_pop::HOUSEHOLD, phx_core::ESTATE_KIND.name],
-        words: BALANCE,
-        holder_list: true,
-        holder_roles: &[if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name],
-        exclusive: true,
-        many: false,
-    },
-    liability: SideDecl {
-        holder_kinds: &["firm", "small_firm", phx_core::ESTATE_KIND.name],
-        words: BALANCE,
-        holder_list: true,
-        holder_roles: &[],
-        exclusive: false,
-        many: true,
-    },
-    dated: true,
-    transfer_requesters: &["LAB"],
-};
 
 /// Labour's draw of the households' jobs.
 #[derive(Debug)]

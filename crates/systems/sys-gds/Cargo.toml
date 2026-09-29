@@ -7,13 +7,8 @@ license.workspace = true
 publish.workspace = true
 
 [dependencies]
-if-firm = { path = "../../interfaces/if-firm" }
 phx-core = { path = "../../kernel/phx-core" }
-phx-geo = { path = "../../kernel/phx-geo" }
-phx-id = { path = "../../foundation/phx-id" }
-phx-ledger = { path = "../../kernel/phx-ledger" }
 phx-macros = { path = "../../foundation/phx-macros" }
-phx-market = { path = "../../kernel/phx-market" }
 phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 libm.workspace = true

@@ -8,11 +8,8 @@ mod rules;
 
 use if_state::kinds::{BillKind, BillLaw};
 use phx_core::{Declarations, OpeningCountry, Register, System, declare_prim};
-use phx_ledger::instruction::{Effect, ReasonDecl};
-use phx_ledger::line::{LineKindDecl, SideDecl};
-use phx_ledger::rows::BALANCE;
 use phx_macros::clause;
-use phx_num::{Count, Fixed, Missing};
+use phx_num::{Count, Fixed};
 
 pub use rules::{bid, clear, size};
 
@@ -44,32 +41,6 @@ declare_prim! {
 /// The opening's units of a currency to the dollar.
 const UNITS_PER_DOLLAR: &str = "GEN.units_per_dollar";
 
-pub(crate) const BILL: LineKindDecl = LineKindDecl {
-    name: "treasury bill",
-    asset: SideDecl {
-        holder_kinds: &["bank"],
-        words: BALANCE,
-        holder_list: true,
-        holder_roles: &[],
-        exclusive: false,
-        many: true,
-    },
-    liability: SideDecl {
-        holder_kinds: &["treasury"],
-        words: BALANCE,
-        holder_list: true,
-        holder_roles: &[],
-        exclusive: false,
-        many: false,
-    },
-    dated: true,
-    transfer_requesters: &["SOV"],
-};
-
-/// Bills sold: the buyers' contracts written and their price paid to the treasury.
-pub const SOLD: ReasonDecl =
-    ReasonDecl { name: "SOV sold", order: 2, paid: Effect::Equity, received: Effect::Equity, held: Missing::Absent };
-
 /// A country's bills.
 ///
 /// # Errors
@@ -98,8 +69,7 @@ pub fn face(register: &Register, country: phx_id::CountryId) -> Result<i64, Stri
 }
 
 /// The sovereign's bills, which the kernel runs.
-pub const BILLS: BillKind =
-    BillKind { line: BILL.name, sold: SOLD.name, law, size: &points::SIZE, bid: &points::BID, clear: rules::clear };
+pub const BILLS: BillKind = BillKind { law, size: &points::SIZE, bid: &points::BID, clear: rules::clear };
 
 /// The sovereign's debt.
 #[derive(Debug)]

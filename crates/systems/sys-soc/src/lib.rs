@@ -10,7 +10,7 @@ mod state_pension;
 use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim};
 use phx_num::{Count, Fixed};
 
-pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, STATE_PENSION, StatePension};
+pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, StatePension};
 
 declare_kind! { pub AGENCY = "agency" { legal_form: "public agency", table: Individuals, clause: "SOC.2" } }
 
