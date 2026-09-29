@@ -314,6 +314,8 @@ impl Core {
                     MaybeI64::present(i64::from(d.memory)),
                     MaybeI64::present(i64::from(d.switching)),
                     MaybeI64::present(i64::from(d.stance)),
+                    MaybeI64::from_missing(phx_num::Missing::Absent),
+                    MaybeI64::present(0),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;

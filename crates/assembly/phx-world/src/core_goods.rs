@@ -25,7 +25,7 @@ use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::firm::{
     EXPECTED, MARKUP, MEMORY, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
-    SOLD as SOLD_UNITS, STANCE, SWITCHING,
+    SALES_WIDTH, SEEN_SOLD, SOLD as SOLD_UNITS, STANCE, SWITCHING,
 };
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
 use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
@@ -109,6 +109,8 @@ pub struct CoreGoods {
     /// Today's productions by a way that uses stored inputs — a good's making, a service's sales — and those whose
     /// inputs were not all there to use.
     pub production: (u64, u64),
+    /// The firms whose attention brings their price review today.
+    pub attending: Vec<u32>,
     /// Each trade's price reviews over the run.
     pub prices: BTreeMap<u16, PriceTally>,
     /// Today's sales' debits to named buyers, credits to named sellers, and sales naming neither.
@@ -601,11 +603,13 @@ impl Core {
                 let lot = self.lot(product);
                 let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
                 self.goods.marks.insert((product, region), mark);
-                self.goods.outlooks.print((product, region), mark, day, types);
+                self.goods.outlooks.print((product, region), mark, (day, Some(ctx.management.sensitivity)), types);
             }
         }
+        self.attend(ctx, day);
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
         self.count_stances(day);
+        self.mark_surprised(day);
         let close = self.goods.stocks.totals();
         let broken = breaks(&open, &nature_net(&moved), &close);
         record.breaks = len_u64(broken.len());
@@ -1138,7 +1142,7 @@ impl Core {
     fn review_prices(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
         let m = ctx.management;
-        let due = std::mem::take(&mut self.labour.due_today);
+        let due = self.reviewing_today();
         let (mut reviews, mut repriced) = (0, 0);
         let Some(stance_stream) = ctx.streams.named(sys_frm::StanceStream::DECL.name) else {
             violation!(clause = "VAL.7", "the firms' stance stream is not declared");
@@ -1201,6 +1205,7 @@ impl Core {
             let expected = phx_val::heuristics::adaptive(expected, demand, gain);
             self.set_record_word(firm, slot, EXPECTED, whole_units(expected * PART_ONE));
             self.set_record_word(firm, slot, SOLD_UNITS, 0);
+            self.set_record_word(firm, slot, SEEN_SOLD, 0);
             // A service is never held, so its provider's pressure is its demand's alone.
             let (stock, cover) = if self.is_stored(f.product) {
                 (from_i64(self.free_units(f.key, f.product, f.region)), m.cover_days)
@@ -1229,8 +1234,7 @@ impl Core {
             {
                 self.set_record_word(firm, slot, PRICE, p);
                 repriced += 1;
-                let t = self.goods.prices.entry(f.product).or_default();
-                (t.changes, t.size) = (t.changes + 1, t.size + (from_i64(p) / from_i64(f.price) - 1.0).abs());
+                self.note_repriced((s, f.product), (f.price, p), day);
             }
         }
         self.goods.outlooks.days.push(crate::core_outlooks::StanceDay {
@@ -1240,6 +1244,177 @@ impl Core {
             ..crate::core_outlooks::StanceDay::default()
         });
         (reviews, repriced)
+    }
+
+    /// A firm's look at its day's sales against those it expects: the surprise taken into the width its attention
+    /// weighs, and one wider than its attention's sensitivity kept until its next price change, by its size over what
+    /// it expected.
+    #[clause("VAL.4", "VAL.5", "REP.35")]
+    fn look_at_sales(&mut self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), day: Day) {
+        let m = ctx.management;
+        let (Some(sold), Some(seen), Some(expected), Some(memory)) = (
+            self.record_word(firm, slot, SOLD_UNITS),
+            self.record_word(firm, slot, SEEN_SOLD),
+            self.record_word(firm, slot, EXPECTED),
+            self.record_word(firm, slot, MEMORY),
+        ) else {
+            return;
+        };
+        let expected = from_i64(expected) / PART_ONE;
+        // A firm that expects to sell nothing has nothing to be surprised against.
+        if expected <= 0.0 {
+            return;
+        }
+        let Some(gain) = usize::try_from(memory).ok().and_then(|t| m.types.gains.get(t)).copied() else {
+            violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = slot.get());
+        };
+        let e = phx_val::surprise::surprise(from_i64(sold - seen), expected);
+        let before = self
+            .record_word(firm, slot, SALES_WIDTH)
+            .map_or(Missing::Absent, |w| Missing::Present(from_i64(w) / PART_ONE));
+        if let Missing::Present(w) = before
+            && phx_val::surprise::wakes(e, w, m.sensitivity)
+        {
+            self.goods.outlooks.awaiting.entry(slot.get()).or_insert((day, e.abs() / expected));
+        }
+        let width = phx_val::surprise::width(before, e, gain);
+        self.set_record_word(firm, slot, SALES_WIDTH, whole_units(width * PART_ONE));
+        self.set_record_word(firm, slot, SEEN_SOLD, sold);
+    }
+
+    /// The firms reviewing their price today: those whose attention drew a review, and, where a firm has no surprise
+    /// at its sales to weigh its attention by or expects to sell nothing, its production schedule.
+    fn reviewing_today(&mut self) -> Vec<u32> {
+        let firm = self.names.iter().position(|n| *n == "firm");
+        let scheduled = std::mem::take(&mut self.labour.due_today);
+        let unweighed = |s: &u32| {
+            firm.is_some_and(|k| {
+                let slot = Slot::new(*s);
+                self.record_word(k, slot, SALES_WIDTH).is_none()
+                    || self.record_word(k, slot, EXPECTED).is_none_or(|e| e <= 0)
+            })
+        };
+        let mut due: Vec<u32> = scheduled.into_iter().filter(unweighed).collect();
+        due.extend(std::mem::take(&mut self.goods.attending));
+        due.sort_unstable();
+        due.dedup();
+        due
+    }
+
+    /// A firm's chance of reviewing its price today: the loss a price left standing costs it, by its revenue
+    /// and its markup's curvature, growing with the variances of what its price should be — its own sales' surprises
+    /// and those of its stance on its product's mark — against what a review costs its staff's hours; none known before
+    /// its first surprise.
+    fn review_chance(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot)) -> Option<f64> {
+        let m = ctx.management;
+        let f = self.goods_firm(ctx.regions, firm, slot)?;
+        let width = from_i64(self.record_word(firm, slot, SALES_WIDTH)?) / PART_ONE;
+        let expected = from_i64(self.record_word(firm, slot, EXPECTED)?) / PART_ONE;
+        let markup = from_i64(self.record_word(firm, slot, MARKUP)?) / PART_ONE;
+        // A firm that expects to sell nothing loses nothing by a price left standing.
+        if expected <= 0.0 {
+            return Some(0.0);
+        }
+        let relative = width / expected;
+        let own = relative * relative;
+        let memory = usize::try_from(self.record_word(firm, slot, MEMORY)?).ok()?;
+        let public: Vec<f64> = self
+            .goods
+            .outlooks
+            .series
+            .get(&(f.product, f.region))
+            .and_then(|s| Some((s.methods.get(memory)?.width, s.last)))
+            .and_then(|(w, level)| match w {
+                Missing::Present(w) if level > 0.0 => Some(w / level * (w / level)),
+                _ => None,
+            })
+            .into_iter()
+            .collect();
+        let law = self.labour.laws.get(f.country)?;
+        let cost = m.review_hours * law.mean_monthly / (law.weeks_a_month * f64::from(law.full_time_hours));
+        // A review costs its staff's hours; a firm whose hour costs nothing holds no staff to review with.
+        if cost <= 0.0 {
+            return None;
+        }
+        let revenue_per_day = expected * from_i64(f.price) / self.lot(f.product);
+        Some(sys_frm::rules::attention::review_chance(revenue_per_day, markup, (own, &public), cost))
+    }
+
+    /// Each firm looks at its day's sales, and one that has weighed its attention draws, at its chance, whether it
+    /// reviews its price today.
+    #[clause("REP.38", "REP.21", "REP.35")]
+    fn attend(&mut self, ctx: &GoodsCtx<'_>, day: Day) {
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(stream) = ctx.streams.named(sys_frm::VisitStream::DECL.name) else {
+            violation!(clause = "REP.21", "the firms' visit stream is not declared");
+        };
+        let slots: Vec<Slot> = self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+        let mut attending = Vec::new();
+        for slot in slots {
+            self.look_at_sales(ctx, (firm, slot), day);
+            let Some(chance) = self.review_chance(ctx, (firm, slot)) else { continue };
+            let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
+            let mut d = ctx.streams.open(&stream, Subject::new(SubjectTag::Party, id.get()), day, 0);
+            if phx_rand::open_unit(&mut d) < chance {
+                attending.push(slot.get());
+            }
+        }
+        self.goods.attending = attending;
+    }
+
+    /// A price change recorded in its trade's tally, and as the answer to the surprise its firm awaits, if one.
+    fn note_repriced(&mut self, (s, product): (u32, u16), (old, new): (i64, i64), day: Day) {
+        let t = self.goods.prices.entry(product).or_default();
+        (t.changes, t.size) = (t.changes + 1, t.size + (from_i64(new) / from_i64(old) - 1.0).abs());
+        if let Some((at, size)) = self.goods.outlooks.awaiting.remove(&s) {
+            self.goods.outlooks.responses.push((size, day.get() - at.get()));
+        }
+    }
+
+    /// The firms today's surprises bear on — those whose stance reads the surprised series by the surprised method —
+    /// each awaiting its first price change after its surprise.
+    #[clause("VAL.14")]
+    fn mark_surprised(&mut self, day: Day) {
+        let surprised = std::mem::take(&mut self.goods.outlooks.surprised);
+        if surprised.is_empty() {
+            return;
+        }
+        let mut by: BTreeMap<((u16, u32), usize, usize), f64> = BTreeMap::new();
+        for (key, memory, h, size) in surprised {
+            let e = by.entry((key, memory, h)).or_insert(size);
+            if size > *e {
+                *e = size;
+            }
+        }
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(store) = self.kinds.get(firm) else { return };
+        let mut surprised = Vec::new();
+        for slot in store.parties.live_slots() {
+            let rec = store.record(slot);
+            let read = |i: usize| match rec.get(i).map(|w| w.get()) {
+                Some(Missing::Present(v)) => Some(v),
+                _ => None,
+            };
+            let (Some(product), Some(region), Some(memory), Some(stance)) =
+                (read(PRODUCT), read(REGION), read(MEMORY), read(STANCE))
+            else {
+                continue;
+            };
+            let key = (
+                (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX)),
+                usize::try_from(memory).unwrap_or(usize::MAX),
+                usize::try_from(stance).unwrap_or(usize::MAX),
+            );
+            if let Some(size) = by.get(&key) {
+                surprised.push((slot.get(), *size));
+            }
+        }
+        if let Some(d) = self.goods.outlooks.days.last_mut().filter(|d| d.day == day.get()) {
+            d.surprised = len_u64(surprised.len());
+        }
+        for (s, size) in surprised {
+            self.goods.outlooks.awaiting.entry(s).or_insert((day, size));
+        }
     }
 
     /// The day's stances counted over every firm, after its reviews.

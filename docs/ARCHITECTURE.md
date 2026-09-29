@@ -1994,6 +1994,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   `HH.stance`), drawn at the opening, the first stance by taste alone; a firm reconsiders its stance at each price
   review, a household on each spending occasion (`Outlooks::reconsider`, stream `FRM.stance` or `HH.stance`). Each
   method's lag behind a series' turns is counted in prints (`Outlooks::lags`).
+- **Attention** (`phx_world::core_goods`, REP.38, REP.35, VAL.14): after the day's meetings every firm looks at its
+  sales since its review (`SOLD` less `SEEN_SOLD`) against those it expects, the surprise entering its sales' width at
+  its memory type's gain (`SALES_WIDTH`), and draws from `FRM.visits` whether it reviews its price today at
+  `rules::attention::review_chance` — its daily revenue, its markup, the variances of its own sales and of its
+  stance's outlook of its product's mark, each relative to its level, and a review's cost in its staff's hours. A
+  firm with no width yet, or expecting no sales, reviews on its production schedule. A surprise wider than
+  `VAL.attention_sensitivity` widths, its own or its stance's, is kept (`Outlooks::awaiting`) until the firm's next
+  price change, which records the days it took by the surprise's size over what was expected (`responses`).
 - **The world's stores** (`phx_core::store`): a kind (`KindStore`) keeps its `Parties`, each party's record of `stride`
   words in one column, and, if it holds money, its accounts (bank, balance, pending, held, facility) and cash lines,
   each a column indexed by slot, so a party begun in a released slot writes its own words over the ended one's; a

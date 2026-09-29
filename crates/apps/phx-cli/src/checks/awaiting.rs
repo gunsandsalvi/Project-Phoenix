@@ -291,13 +291,6 @@ pub const LC_0_61: Check = live_check! {
     retired: "the ledger's run of rows due was the old kernel's; the core's dues come off its wheels, read by LC-0-62",
 };
 
-pub const LC_1_44: Check = live_check! {
-    id: "LC-1-44",
-    title: "after each large surprise, the days until each stance's first changed decision, ranked by its surprise",
-    from_step: "S1.01",
-    check: |_| Outcome::NotYet("awaits S1.24 e, the outlooks"),
-};
-
 pub const LC_1_06: Check = live_check! {
     id: "LC-1-06",
     title: "the family of the firms' revenue (FRM.17) is clean; the claims' (FRM.18) joins with the invoices (S2.02)",

@@ -7,6 +7,8 @@
 //! markup reads its stance's outlook of its product's mark; a household's employed persons answer their pay rounds
 //! from its stance's outlook of prices. Each method's lag behind a series' turning points is counted in prints, by
 //! memory type and heuristic.
+//! After a surprise wider than the attention sensitivity's widths, the days to the first price change of each firm
+//! whose stance it bears on are kept by the surprise's size.
 
 use std::collections::BTreeMap;
 
@@ -59,13 +61,15 @@ pub struct Series {
 }
 
 /// A day's stances: the firms relying on each heuristic after the day's reviews, the stances reconsidered and those
-/// that changed.
+/// that changed, and the firms a large surprise bore on.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct StanceDay {
     pub day: u32,
     pub by_heuristic: [u64; HEURISTICS],
     pub reconsidered: u64,
     pub changed: u64,
+    /// The firms a large surprise bore on today.
+    pub surprised: u64,
 }
 
 /// The public series by product and region, and the days' stances.
@@ -76,6 +80,13 @@ pub struct Outlooks {
     /// By memory type and heuristic: the prints its outlooks took to turn after the series turned, summed, and the
     /// turns they followed.
     pub lags: BTreeMap<(usize, usize), (u64, u64)>,
+    /// Today's surprises wider than the attention sensitivity's widths: the series, the memory type and heuristic, and
+    /// the surprise over the print.
+    pub surprised: Vec<((u16, u32), usize, usize, f64)>,
+    /// Each surprised firm's surprise, its day and size, until its first price change after it; and each such
+    /// change's surprise and the days it came after.
+    pub awaiting: BTreeMap<u32, (Day, f64)>,
+    pub responses: Vec<(f64, u32)>,
 }
 
 /// The way a change goes: up, down, or nowhere.
@@ -110,7 +121,7 @@ impl Outlooks {
     /// had an outlook of it, and each forming its outlook of the next; the first print, with no outlook before it,
     /// stands for the outlook it did not have.
     #[clause("VAL.3", "VAL.4", "VAL.5", "VAL.6", "VAL.23")]
-    pub fn print(&mut self, key: (u16, u32), value: f64, day: Day, p: &Types) {
+    pub fn print(&mut self, key: (u16, u32), value: f64, (day, sensitivity): (Day, Option<f64>), p: &Types) {
         let types = p.gains.len();
         let s = self.series.entry(key).or_insert_with(|| Series {
             day,
@@ -141,6 +152,17 @@ impl Outlooks {
             let params = params(p, memory);
             let errors: Vec<Option<f64>> = view.outlook.iter().map(|o| present(*o).map(|o| value - o)).collect();
             let scored: Vec<f64> = errors.iter().flatten().map(|e| e.abs()).collect();
+            if let (Missing::Present(width), Some(s)) = (view.width, sensitivity)
+                && width > 0.0
+            {
+                for (h, e) in errors.iter().enumerate() {
+                    if let Some(e) = e
+                        && phx_val::surprise::wakes(*e, width, s)
+                    {
+                        self.surprised.push((key, memory, h, e.abs() / value.abs()));
+                    }
+                }
+            }
             if !scored.is_empty() {
                 let mean =
                     scored.iter().sum::<f64>() / phx_rand::float::from_u64(phx_rand::float::len_u64(scored.len()));

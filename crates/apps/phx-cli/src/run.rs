@@ -14,6 +14,9 @@ use crate::RunArgs;
 use crate::checks::{CHECKS, Observed, Outcome, Run};
 use crate::clock::WallClock;
 
+/// The classes of equal count the woken firms' answers to their surprises are reported in, by the surprise's size.
+const SIZE_CLASSES: usize = 4;
+
 /// Resident memory the world may take at its peak: the budget's.
 const WORLD_BYTES: u64 = 4608 << 20;
 const MONTHS_PER_YEAR: u16 = 12;
@@ -336,6 +339,31 @@ fn services_report(w: Inspector<'_>) -> Option<serde_json::Value> {
     })
 }
 
+/// The outlooks' reads: each method's lag behind the turns, the surprised firms' first price changes by the
+/// surprise's size, and each day's stances.
+fn outlooks_report(w: Inspector<'_>) -> serde_json::Value {
+    json!({
+        "lags": crate::checks::outlooks::lags(w).iter().map(|((memory, heuristic), (sum, n))| json!({
+            "memory": memory,
+            "heuristic": heuristic,
+            "turns": n,
+            "prints_behind": sum,
+        })).collect::<Vec<_>>(),
+        "surprise_responses": crate::checks::outlooks::responses_by_size(w, SIZE_CLASSES).iter().map(|(size, days, n)| json!({
+            "surprise": size,
+            "days_to_change": days,
+            "firms": n,
+        })).collect::<Vec<_>>(),
+        "stances": w.core().goods.outlooks.days.iter().map(|d| json!({
+            "day": d.day,
+            "by_heuristic": d.by_heuristic,
+            "reconsidered": d.reconsidered,
+            "changed": d.changed,
+            "surprised": d.surprised,
+        })).collect::<Vec<_>>(),
+    })
+}
+
 /// Each release the agencies published: its series, country, period, day and values.
 fn statistics_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
@@ -431,18 +459,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "prices": prices_report(w),
         "labour": labour_report(w),
         "services": services_report(w),
-        "lags": crate::checks::outlooks::lags(w).iter().map(|((memory, heuristic), (sum, n))| json!({
-            "memory": memory,
-            "heuristic": heuristic,
-            "turns": n,
-            "prints_behind": sum,
-        })).collect::<Vec<_>>(),
-        "stances": w.core().goods.outlooks.days.iter().map(|d| json!({
-            "day": d.day,
-            "by_heuristic": d.by_heuristic,
-            "reconsidered": d.reconsidered,
-            "changed": d.changed,
-        })).collect::<Vec<_>>(),
+        "outlooks": outlooks_report(w),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
             "stratum": a.stratum,

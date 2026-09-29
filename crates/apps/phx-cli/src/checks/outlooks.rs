@@ -155,3 +155,45 @@ pub const LC_1_43: Check = live_check! {
     from_step: "S1.01",
     check: lags_differ,
 };
+
+/// The surprised firms' first price changes after their surprises, in the surprises' order of size, cut into classes of
+/// equal count: each class's mean surprise over what was expected, its mean days to the change, and its count.
+#[must_use]
+pub fn responses_by_size(w: Inspector<'_>, classes: usize) -> Vec<(f64, f64, usize)> {
+    let mut r = w.core().goods.outlooks.responses.clone();
+    r.sort_by(|a, b| a.0.total_cmp(&b.0));
+    if r.is_empty() || classes == 0 {
+        return Vec::new();
+    }
+    let per = r.len().div_ceil(classes);
+    r.chunks(per)
+        .map(|c| {
+            let n = phx_rand::float::from_u64(phx_rand::float::len_u64(c.len()));
+            let size = c.iter().map(|x| x.0).sum::<f64>() / n;
+            let days = c.iter().map(|x| f64::from(x.1)).sum::<f64>() / n;
+            (size, days, c.len())
+        })
+        .collect()
+}
+
+/// The most surprised change their decisions first: the more surprised half of the surprised firms changed its price no
+/// later, on average, than the less surprised half.
+fn most_surprised_first(w: Inspector<'_>) -> Outcome {
+    let halves = responses_by_size(w, 2);
+    match halves.as_slice() {
+        [] => Outcome::NotYet("no firm a surprise bore on changed its price in the run"),
+        [_] => Outcome::NotYet("too few firms a surprise bore on changed their price to rank them"),
+        [less, more, ..] if more.1 <= less.1 => Outcome::Pass,
+        [less, more, ..] => Outcome::Fail(format!(
+            "the more surprised half ({:.2} of what was expected) took {:.2} days to change its price, the less ({:.2}) {:.2}",
+            more.0, more.1, less.0, less.1
+        )),
+    }
+}
+
+pub const LC_1_44: Check = live_check! {
+    id: "LC-1-44",
+    title: "after each large surprise, the days until each stance's first changed decision, ranked by its surprise",
+    from_step: "S1.01",
+    check: most_surprised_first,
+};
