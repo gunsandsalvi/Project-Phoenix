@@ -1981,7 +1981,8 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   the employers' rounds are done, then are answered together: one `search` per country over the reviewed employees,
   each as a seeker whose reservation is its own wage, gives the vacancies each sees; each answers by
   `rules::renegotiate::answer` from its reservation, the best it saw and its household's price outlook compounded to
-  the next round. A counter the work cannot pay leaves the employee at the offer, its seen vacancies sent as
+  the next round. Where the work cannot pay its counter, an offer below its reservation (`LAB.reservation_share` of
+  its wage) sends it to search, its contract closed; any other leaves it at the offer, its seen vacancies sent as
   applications with the day's (`on_the_job`); a hire of a person who holds a job closes that job (a job-to-job move).
 - **Outlooks** (`phx_world::core_outlooks`, VAL.3–VAL.7, VAL.13, VAL.23): a public series is keyed by a code and a
   place — each product's mark in a region for the firms (`CoreGoods::outlooks`), each country's consumer index for
