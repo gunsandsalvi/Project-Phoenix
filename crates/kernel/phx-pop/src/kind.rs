@@ -157,6 +157,22 @@ impl PopKindDecl {
     }
 }
 
+/// The kinds compiled from every system's items, in the order given.
+///
+/// # Errors
+/// Every refusal of every kind at once.
+pub fn compile_kinds(names: &[&'static str], entries: &[phx_core::PopEntry]) -> Result<Vec<PopKindDecl>, Vec<String>> {
+    let mut errors = Vec::new();
+    let mut out = Vec::with_capacity(names.len());
+    for kind in names {
+        match PopKindDecl::compile(kind, entries) {
+            Ok(d) => out.push(d),
+            Err(e) => errors.extend(e),
+        }
+    }
+    if errors.is_empty() { Ok(out) } else { Err(errors) }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_core::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, RoleDecl};

@@ -2,12 +2,11 @@
 
 use phx_core::Person;
 use phx_core::calendar::{civil_date, civil_serial};
-use phx_id::{Date, LineId};
-use phx_ledger::algebra::Side;
+use phx_id::Date;
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 
-use crate::consts::{BIRTH_BITS, HOLDER_SHIFT, HOUSEHOLD_MARK, LINE_BITS, MOST_PERSONS, ROLE_BITS, SIDE_BIT};
+use crate::consts::{BIRTH_BITS, ROLE_BITS};
 use crate::kind::PopKindDecl;
 
 fn mask(bits: u32) -> u64 {
@@ -53,15 +52,6 @@ pub fn unpack(kind: &PopKindDecl, word: u64) -> Person {
     Person { role, born, attrs, gone: false }
 }
 
-/// A person read back from its word into one already held, present, reusing its attributes' buffer.
-#[clause("REP.26")]
-pub fn unpack_into(kind: &PopKindDecl, word: u64, p: &mut Person) {
-    let (role, born) = read(kind, word, &mut p.attrs);
-    p.role = role;
-    p.born = born;
-    p.gone = false;
-}
-
 /// A word's role and birth date, its attributes written to `attrs`.
 fn read(kind: &PopKindDecl, word: u64, attrs: &mut Vec<(&'static str, u32)>) -> (&'static str, Date) {
     let Ok(low) = u32::try_from(word & mask(BIRTH_BITS)) else {
@@ -79,53 +69,12 @@ fn read(kind: &PopKindDecl, word: u64, attrs: &mut Vec<(&'static str, u32)>) -> 
     (kind.role_name(phx_rand::float::index(role)), civil_date(i64::from(low.cast_signed())))
 }
 
-/// Who in a household holds a contract: the household itself, or one of its persons by place.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum Holder {
-    Household,
-    Person(usize),
-}
-
-/// A contract a household or one of its persons holds on a line side.
-#[clause("REP.3", "REP.31")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Attachment {
-    pub holder: Holder,
-    pub line: LineId,
-    pub side: Side,
-}
-
-impl Attachment {
-    #[must_use]
-    pub fn pack(self) -> u64 {
-        let place = match self.holder {
-            Holder::Household => HOUSEHOLD_MARK,
-            Holder::Person(i) if i < MOST_PERSONS => phx_rand::float::len_u64(i),
-            Holder::Person(i) => capacity_exceeded!("persons of a household", MOST_PERSONS, i),
-        };
-        u64::from(self.line.get()) | (u64::from(self.side == Side::Liability) << SIDE_BIT) | (place << HOLDER_SHIFT)
-    }
-
-    #[must_use]
-    pub fn unpack(word: u64) -> Attachment {
-        let Ok(line) = u32::try_from(word & mask(LINE_BITS)) else {
-            violation!(clause = "REP.3", "an attachment's line wider than its bits");
-        };
-        let side = if (word >> SIDE_BIT) & 1 == 1 { Side::Liability } else { Side::Asset };
-        let place = (word >> HOLDER_SHIFT) & mask(u64::BITS - HOLDER_SHIFT);
-        let holder =
-            if place == HOUSEHOLD_MARK { Holder::Household } else { Holder::Person(phx_rand::float::index(place)) };
-        Attachment { holder, line: LineId::new(line), side }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use phx_core::{Person, PersonAttrDecl, PopEntry, PopItem, RoleDecl};
-    use phx_id::{Date, LineId};
-    use phx_ledger::algebra::Side;
+    use phx_id::Date;
 
-    use super::{Attachment, Holder, pack, unpack, unpack_into};
+    use super::{pack, unpack};
     use crate::kind::PopKindDecl;
 
     fn kind() -> PopKindDecl {
@@ -172,27 +121,6 @@ mod tests {
     }
 
     #[test]
-    fn a_person_read_into_one_held_is_the_person_read_fresh() {
-        let k = kind();
-        let old = Person {
-            role: "child",
-            born: Date::new(2020, 6, 1).unwrap(),
-            attrs: vec![("sex", 0), ("health", 0), ("education", 0)],
-            gone: true,
-        };
-        let new = Person {
-            role: "head",
-            born: Date::new(1970, 3, 9).unwrap(),
-            attrs: vec![("sex", 1), ("health", 1), ("education", 5)],
-            gone: false,
-        };
-        let mut held = old;
-        unpack_into(&k, pack(&k, &new), &mut held);
-        assert_eq!(held, new);
-        assert_eq!(held, unpack(&k, pack(&k, &new)));
-    }
-
-    #[test]
     fn an_attribute_beyond_its_values_is_refused() {
         let k = kind();
         let p = Person {
@@ -202,15 +130,5 @@ mod tests {
             gone: false,
         };
         assert!(std::panic::catch_unwind(|| pack(&k, &p)).is_err());
-    }
-
-    #[test]
-    fn attachments_read_back() {
-        for a in [
-            Attachment { holder: Holder::Household, line: LineId::new(7), side: Side::Asset },
-            Attachment { holder: Holder::Person(3), line: LineId::new(u32::MAX), side: Side::Liability },
-        ] {
-            assert_eq!(Attachment::unpack(a.pack()), a);
-        }
     }
 }

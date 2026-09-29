@@ -1,13 +1,9 @@
-//! The population's agents: the tables households and small firms live in, their persons and attachments, the
-//! representation in force, their hazards drawn ahead, and the audit's agents family.
+//! The population's households on the core: their kinds, each person as its word packs it and the store that holds
+//! them, the representation in force, and their hazards drawn ahead.
 
 pub mod consts;
-pub mod explicit;
 pub mod hazard;
-pub mod holder;
 pub mod kind;
 pub mod person;
 pub mod persons;
-pub mod population;
 pub mod prims;
-pub mod table;

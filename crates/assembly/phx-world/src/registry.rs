@@ -150,7 +150,7 @@ fn population_kinds(
 ) -> Result<crate::pop_rules::Kinds, Vec<String>> {
     let kinds: Vec<&'static str> =
         d.kinds.iter().filter(|(_, k)| k.table == phx_core::KindTableRef::Agents).map(|(_, k)| k.name).collect();
-    let decls = phx_pop::population::Population::compile(&kinds, &d.pop)?;
+    let decls = phx_pop::kind::compile_kinds(&kinds, &d.pop)?;
     crate::pop_rules::bind(d, register, decls)
 }
 

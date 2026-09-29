@@ -1,20 +1,18 @@
-//! Household agents at the finished world's volumes for the benches: random persons and attachments in a real agent
-//! table, their next hits drawn and their households made explicit and written back through the population's own
-//! kernels. Its numbers are costs, never the world's.
+//! Households at the finished world's volumes for the benches: random persons in the core's persons store, their
+//! next hits drawn and their persons read and written back as the core's population does. Its numbers are costs,
+//! never the world's.
 
 use phx_core::{AttrDecl, Household, Person, PersonAttrDecl, PopEntry, PopItem, RoleDecl};
-use phx_id::{Date, Day, LineId, PartyId, Slot, TableId};
-use phx_ledger::algebra::Side;
+use phx_id::{Date, Day, Slot};
 use phx_num::Missing;
-use phx_pop::explicit::{household, household_into, write_back};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
 use phx_pop::kind::PopKindDecl;
-use phx_pop::person::{Attachment, Holder, pack};
-use phx_pop::table::{AgentTable, NewAgent};
+use phx_pop::person::{pack, unpack};
+use phx_pop::persons::{Held, Persons};
 use phx_rand::{Draws, StreamKey, Subject, SubjectTag, below_u64};
 use phx_store::{AddressSpace, SystemBacking};
 
-/// Rows of the bench's agent table per chunk, as the world's.
+/// Households of the bench's persons store per chunk, as the world's.
 const ROWS_PER_CHUNK: u32 = 1 << 12;
 /// The oldest and the span of the birth years drawn.
 const BORN_FROM: i32 = 1925;
@@ -29,8 +27,6 @@ const SEXES: u32 = 2;
 const HEALTH: u32 = 2;
 const EDUCATION: u32 = 9;
 const REGIONS: u32 = 64;
-/// Lines the attachments name.
-const LINES: u64 = 1 << 20;
 
 const ROLES: [&str; 4] = ["head", "partner", "adult", "child"];
 
@@ -58,60 +54,45 @@ fn draw(d: &mut Draws, n: u64) -> u32 {
     u32::try_from(below_u64(d, n)).unwrap_or(0)
 }
 
-/// The bench's agents: the kind, its table and the slots it holds.
+/// The bench's households: the kind, their persons and the slots they hold.
 pub(crate) struct Agents {
     pub decl: PopKindDecl,
-    pub table: AgentTable<SystemBacking>,
+    pub persons: Persons<SystemBacking>,
     pub slots: Vec<Slot>,
-    _space: AddressSpace,
+    space: AddressSpace,
 }
 
-/// `n` household agents of `persons` persons and `attachments` attachments each, each drawn from its own address of
-/// `stream`, as the world draws each party apart, so no count of agents exhausts one address.
-pub(crate) fn agents(n: u32, persons: u32, attachments: u32, stream: StreamKey) -> Agents {
+/// `n` households of `persons` persons each, each drawn from its own address of `stream`, as the world draws each
+/// party apart, so no count of households exhausts one address.
+pub(crate) fn agents(n: u32, persons: u32, stream: StreamKey) -> Agents {
     let decl = kind();
     let mut space = AddressSpace::empty();
-    let mut table = AgentTable::<SystemBacking>::new(&mut space, &decl, TableId::new(0), n, ROWS_PER_CHUNK);
+    let mut store = Persons::<SystemBacking>::new(&mut space, n, ROWS_PER_CHUNK);
     let mut slots = Vec::with_capacity(usize::try_from(n).unwrap_or(0));
+    let mut next_id = 1_u64;
     for i in 0..n {
-        let party = PartyId::new(u64::from(i) + 1);
-        let d = &mut Draws::new(stream, Subject::new(SubjectTag::Party, party.get()), 0, 0);
-        let attrs = [draw(d, u64::from(REGIONS))];
-        let slot = table.add(&mut space, NewAgent { party, created: Day::new(0), attrs: &attrs });
-        let words: Vec<u64> = (0..persons)
-            .map(|p| {
-                let year = BORN_FROM + i32::try_from(below_u64(d, BORN_SPAN)).unwrap_or(0);
-                let month = u8::try_from(1 + below_u64(d, 12)).unwrap_or(1);
-                let day = u8::try_from(1 + below_u64(d, BIRTH_DAYS)).unwrap_or(1);
-                let born =
-                    Date::new(year, month, day).unwrap_or_else(|| phx_num::violation!(clause = "TIME.2", "no date"));
-                // The first three persons are the head, a partner and an adult; the rest are children.
-                let role = ROLES.get(usize::try_from(p).unwrap_or(0)).or(ROLES.last()).copied().unwrap_or("head");
-                let attrs = vec![
-                    ("DEM.sex", draw(d, u64::from(SEXES))),
-                    ("DEM.health", draw(d, u64::from(HEALTH))),
-                    ("DEM.education", draw(d, u64::from(EDUCATION))),
-                ];
-                pack(&decl, &Person { role, born, attrs, gone: false })
-            })
-            .collect();
-        table.set_persons(slot, &words);
-        let held: Vec<u64> = (0..attachments)
-            .map(|_| {
-                let holder = match below_u64(d, u64::from(persons) + 1) {
-                    0 => Holder::Household,
-                    p => Holder::Person(usize::try_from(p - 1).unwrap_or(0)),
-                };
-                let line = LineId::new(u32::try_from(below_u64(d, LINES)).unwrap_or(0));
-                let side = if below_u64(d, 2) == 0 { Side::Asset } else { Side::Liability };
-                Attachment { holder, line, side }.pack()
-            })
-            .collect();
-        table.set_attachments(slot, &held);
+        let d = &mut Draws::new(stream, Subject::new(SubjectTag::Party, u64::from(i) + 1), 0, 0);
+        let slot = Slot::new(i);
+        let mut held = Vec::with_capacity(usize::try_from(persons).unwrap_or(0));
+        for p in 0..persons {
+            let year = BORN_FROM + i32::try_from(below_u64(d, BORN_SPAN)).unwrap_or(0);
+            let month = u8::try_from(1 + below_u64(d, 12)).unwrap_or(1);
+            let day = u8::try_from(1 + below_u64(d, BIRTH_DAYS)).unwrap_or(1);
+            let born = Date::new(year, month, day).unwrap_or_else(|| phx_num::violation!(clause = "TIME.2", "no date"));
+            // The first three persons are the head, a partner and an adult; the rest are children.
+            let role = ROLES.get(usize::try_from(p).unwrap_or(0)).or(ROLES.last()).copied().unwrap_or("head");
+            let attrs = vec![
+                ("DEM.sex", draw(d, u64::from(SEXES))),
+                ("DEM.health", draw(d, u64::from(HEALTH))),
+                ("DEM.education", draw(d, u64::from(EDUCATION))),
+            ];
+            held.push(Held { word: pack(&decl, &Person { role, born, attrs, gone: false }), id: next_id });
+            next_id += 1;
+        }
+        store.set(&mut space, slot, &held);
         slots.push(slot);
     }
-    let _ = table.take_changed();
-    Agents { decl, table, slots, _space: space }
+    Agents { decl, persons: store, slots, space }
 }
 
 /// A person's daily chance on a date by its age band.
@@ -120,8 +101,8 @@ fn rate(p: &Person, date: Date) -> f64 {
     RATES.get(band).or(RATES.last()).copied().unwrap_or(0.0)
 }
 
-/// What drawing many agents' next hits reuses, as the world's pass does: the household each is read into and its
-/// persons' chances.
+/// What drawing many households' next hits reuses, as the world's pass does: the household each is read into and
+/// its persons' chances.
 #[derive(Debug)]
 pub(crate) struct HazardScratch {
     household: Household,
@@ -130,14 +111,21 @@ pub(crate) struct HazardScratch {
 
 impl HazardScratch {
     pub(crate) fn new() -> HazardScratch {
-        HazardScratch {
-            household: Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() },
-            qs: Vec::new(),
-        }
+        HazardScratch { household: empty(), qs: Vec::new() }
     }
 }
 
-/// An agent's next hit drawn ahead from a day, as the world's booking draws it: its persons read on that day, their
+fn empty() -> Household {
+    Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() }
+}
+
+/// A household's persons read from the store into `h`, as the core reads a household.
+fn read(a: &Agents, slot: Slot, h: &mut Household) {
+    h.persons.clear();
+    h.persons.extend(a.persons.of(slot).map(|x| unpack(&a.decl, x.word)));
+}
+
+/// A household's next hit drawn ahead from a day, as the world's booking draws it: its persons read on that day, their
 /// chances, and the wait to the first hit before the next birthday, which falls after it.
 pub(crate) fn hazard(
     a: &Agents,
@@ -146,7 +134,7 @@ pub(crate) fn hazard(
     d: &mut Draws,
     scratch: &mut HazardScratch,
 ) -> Booking {
-    household_into(&a.decl, &a.table, slot, &mut scratch.household);
+    read(a, slot, &mut scratch.household);
     let h = &scratch.household;
     scratch.qs.clear();
     scratch.qs.extend(h.present().map(|(_, p)| rate(p, date)));
@@ -161,24 +149,19 @@ pub(crate) fn hazard(
     next_booking(d, any_hit(&scratch.qs), day, change.map_or(Missing::Absent, Missing::Present))
 }
 
-/// A hit's outcome on an agent's household made explicit, as the world's 3e applies one: its persons reached drawn,
-/// one of them changed in place.
-pub(crate) fn outcome_on(h: &mut Household, date: Date, d: &mut Draws) {
+/// One hit's outcome on a household, as the world applies one: its persons read, those reached drawn and each changed
+/// in place, and the changed written back.
+pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
+    let mut h = empty();
+    read(a, slot, &mut h);
     let qs: Vec<f64> = h.present().map(|(_, p)| rate(p, date)).collect();
     let mut hit = Vec::new();
     reached(d, &qs, &mut hit);
-    for i in hit {
-        if let Some(p) = h.persons.get_mut(i) {
+    for at in hit {
+        if let Some(p) = h.persons.get_mut(at) {
             p.set_attr("DEM.health", 1);
+            let word = pack(&a.decl, p);
+            a.persons.set_word(&mut a.space, slot, at, word);
         }
     }
-}
-
-/// One hit's outcome on an agent, as the world's 3e applies one: its household made explicit, changed and written
-/// back.
-pub(crate) fn outcome(a: &mut Agents, slot: Slot, date: Date, d: &mut Draws) {
-    let mut h: Household = household(&a.decl, &a.table, slot);
-    outcome_on(&mut h, date, d);
-    let _ = write_back(&a.decl, &mut a.table, slot, &h);
-    let _ = a.table.take_changed();
 }

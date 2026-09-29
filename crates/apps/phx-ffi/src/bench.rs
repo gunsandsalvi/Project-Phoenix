@@ -294,19 +294,18 @@ fn kernels(run: &mut Run<'_>, pool: &Pool) {
     run.target("gather of 512 MB of intents", "GB/s", bytes / secs / 1e9, &Target::AtLeast(4.0));
 }
 
-/// Agents the per-agent costs are measured over, of three persons and forty attachments each: the design point's.
+/// Households the per-household costs are measured over, of three persons each: the design point's.
 const COST_AGENTS: u32 = 50_000;
 const COST_PERSONS: u32 = 3;
-const COST_ATTACHMENTS: u32 = 40;
 /// Next hits drawn and outcomes applied in the measure.
 const COST_DRAWS: u32 = 200_000;
 const COST_OUTCOMES: u32 = 50_000;
 
-/// Nanoseconds an agent's next hit takes to draw, and a hit's outcome to apply, measured on one core.
+/// Nanoseconds a household's next hit takes to draw, and a hit's outcome to apply, measured on one core.
 fn agent_costs(clock: &Mono) -> (u64, u64) {
     let mut d = Draws::new(stream_key(Seed::new(1), "REP.bench"), Subject::new(SubjectTag::World, 0), 0, 0);
     let stream = stream_key(Seed::new(1), "REP.bench_agents");
-    let mut population = crate::agents::agents(COST_AGENTS, COST_PERSONS, COST_ATTACHMENTS, stream);
+    let mut population = crate::agents::agents(COST_AGENTS, COST_PERSONS, stream);
     let Some(date) = phx_id::Date::new(2026, 3, 2) else { return (0, 0) };
     let slots = population.slots.clone();
     let n = u64::try_from(slots.len()).unwrap_or(0);
@@ -329,14 +328,14 @@ fn agent_costs(clock: &Mono) -> (u64, u64) {
     ((t1 - t0) / u64::from(COST_DRAWS), (t2 - t1) / u64::from(COST_OUTCOMES))
 }
 
-/// An agent's costs against the budget's units: a next hit drawn ahead (180 ns) and a hit's outcome applied in place,
-/// measured on the fastest core like the samplers.
+/// A household's costs against the budget's units: a next hit drawn ahead (180 ns) and a hit's outcome applied in
+/// place, measured on the fastest core like the samplers.
 fn agent_units(run: &mut Run<'_>, pool: &Pool) {
     let clock = &run.clock;
     let Some((draw, apply)) = pool.on_every_worker(|| agent_costs(clock)).into_iter().next() else { return };
-    run.target("an agent's next hit drawn ahead", "ns", to_f64(draw), &Target::AtMost(180.0));
+    run.target("a household's next hit drawn ahead", "ns", to_f64(draw), &Target::AtMost(180.0));
     run.target(
-        "a hit's outcome on its agent, made explicit and written back",
+        "a hit's outcome on its household's persons, written back",
         "ns",
         to_f64(apply),
         &Target::AtMost(2500.0),
