@@ -5301,7 +5301,7 @@ revisited in Appendix E.
 | Exotic derivatives beyond options, swaps, forwards, futures and credit default swaps | the listed classes carry the transmission channels that matter               |
 | Wars and political violence                                  | no mechanism consistent with Law 16 at this level                                          |
 | Trade finance and letters of credit                          | the currency, freight and trade-credit channels already carry the transmission              |
-| Local government                                             | regional offices of the national state collect local taxes; a second layer of government adds parties without a new mechanism |
+| Regional government                                          | regions are the national state's; municipalities (POL.13) are the one layer below it, and another layer adds parties without a new mechanism |
 
 ---
 
