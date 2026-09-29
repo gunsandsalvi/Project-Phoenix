@@ -5067,7 +5067,7 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   until then on the build machine against a declared model of the device.
 - **N8.10** — **Saving is budgeted apart from turns.** A snapshot is written at the moments SET.12 declares, within
   the memory and storage budgets, and its duration is measured where N8.8 measures and budgeted separately from the
-  turn's.
+  turn's; restoring a snapshot is budgeted likewise.
 - **N8.9** — **Heavy days are spread as far as real calendars spread them**: companies' report dates differ
   across the reporting window (RAT.2), tax returns across the filing window (TAX.2), voting intentions across the
   campaign (POL.4), statistics are released on different days (STA.1), the full audit runs as a rolling
