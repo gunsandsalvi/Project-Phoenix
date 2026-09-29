@@ -11,8 +11,8 @@ products. The group's economies are the ones its ways are the median over.
 
     python3 tools/data/derive_hh.py
 
-Reads data/sources/raw/icio/households_2019.csv (fetched by tools/data/fetch_tec.py). Writes
-data/profiles/<level>/HH.toml.
+Reads data/sources/raw/icio/households_2019.csv (fetched by tools/data/fetch_tec.py). derive_economy.py reads the
+shares into households' column of the final uses' composition; this prints them.
 """
 import json
 
@@ -21,7 +21,6 @@ import pandas as pd
 
 from derive import RAW
 from derive_tec import LEFT_OUT, MIN_COUNTRIES, PRODUCTS, YEAR, groups, io_tables, price_levels, taken_share
-import profile_files
 
 RAW_FILE = RAW / "icio" / f"households_{YEAR}.csv"
 PLACES = 6
@@ -69,41 +68,29 @@ def apportion(values: np.ndarray) -> list:
     return [f"{u / scale:.{PLACES}f}" for u in units]
 
 
-def write_level(level: str, economies: list, spent: dict, note: dict) -> tuple:
-    prods = products()
-    stack, left = zip(*(shares(spent[c], prods) for c in economies))
-    median = np.median(np.stack(stack), axis=0)
-    values = apportion(median)
-    left_median = float(np.median(left))
-    source = "measured" if len(economies) >= MIN_COUNTRIES else "estimated"
-    axis = ", ".join(str(i) for i in range(len(prods)))
-    ref = (f"The share of households' final consumption expenditure (the inter-country tables' HFCE column, at "
-           f"basic prices, each purchase summed over where it came from) spent on each product ("
-           + ", ".join(p[0] for p in prods) + "; of a mining industry's output the resource other users than the "
-           f"industry transforming one take, as the ways split it): the median over the {len(economies)} economies of the World Bank's "
-           f"{level} income groups whose tables the group's ways are derived from ({', '.join(sorted(economies))}), "
-           f"renormalised to sum to one after leaving out finance, real estate, public administration and households "
-           f"as employers ({', '.join(LEFT_OUT)}; a median {left_median:.1%} of the spending), paid for by fees, "
-           f"rents and taxes ({note['title']}, {YEAR}, fetched {note['fetched']}).")
-    lines = [f"# The {level} group's households: their budget shares over the products (spec HH.5, HH.20), derived by",
-             "# tools/data/derive_hh.py; never edited by hand.",
-             "", "[[primitive]]", 'id = "HH.budget_shares"', 'kind = "PREFERENCE"', 'owner = "HH"',
-             f'source = "{source}"', f"source_ref = {json.dumps(ref)}",
-             f"value = {{ axis = [{axis}], values = [{', '.join(values)}], "
-             'outside = "refuse" }']
-    profile_files.put_text(level, "\n".join(lines) + "\n")
-    return values, left_median
-
-
-def main() -> None:
+def budget_shares(level: str) -> tuple:
+    """The group's budget shares over the products, each at its places and summing to one, with the median share of
+    households' spending the products leave out and what they rest on."""
     note = json.loads((RAW / "manifest.json").read_text())["sources"]["icio"]
     d = pd.read_csv(RAW_FILE)
     spent = {c: g.set_index("row").value for c, g in d.groupby("iso3")}
-    groups_ = members()
+    economies = [c for c in members().get(level, []) if c in spent]
+    prods = products()
+    stack, left = zip(*(shares(spent[c], prods) for c in economies))
+    values = np.array([float(v) for v in apportion(np.median(np.stack(stack), axis=0))])
+    ref = (f"households' budget shares over the products: the share of their final consumption expenditure (the "
+           f"inter-country tables' HFCE column, at basic prices) spent on each, the median over the {len(economies)} "
+           f"economies whose tables the group's ways are derived from ({', '.join(sorted(economies))}), renormalised "
+           f"after leaving out finance, real estate, public administration and households as employers "
+           f"({', '.join(LEFT_OUT)}; a median {float(np.median(left)):.1%} of the spending) ({note['title']}, {YEAR}, "
+           f"fetched {note['fetched']})")
+    return values, ref
+
+
+def main() -> None:
     for level in ["developed", "emerging", "developing"]:
-        economies = [c for c in groups_.get(level, []) if c in spent]
-        values, left = write_level(level, economies, spent, note)
-        print(level, len(economies), " ".join(values), f"left out {left:.3f}")
+        values, _ = budget_shares(level)
+        print(level, " ".join(f"{v:.6f}" for v in values))
 
 
 if __name__ == "__main__":

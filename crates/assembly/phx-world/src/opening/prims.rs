@@ -58,11 +58,6 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// Each activity's output over GDP: the nineteen products, finance, real estate and public administration.
-    pub OUTPUT = "GEN.output" { kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry }
-}
-
-declare_prim! {
     /// What each activity uses of finance, real estate and public administration per unit of its output, and what those
     /// three use of every product, in value.
     pub SERVICE_INPUTS = "GEN.service_inputs" {
@@ -78,15 +73,24 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// Each activity's value added over GDP by part: compensation, operating surplus, other taxes on production.
-    pub VALUE_ADDED = "GEN.value_added" {
+    /// The shares of each activity's value added that are compensation and other taxes on production, the operating
+    /// surplus and mixed income the rest.
+    pub VALUE_ADDED_PARTS = "GEN.value_added_parts" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
     }
 }
 
 declare_prim! {
-    /// What each final use takes of each activity over GDP, at basic prices.
-    pub FINAL_USES = "GEN.final_uses" {
+    /// Each final use's weight in GDP at purchasers' prices: households, collective consumption, fixed investment,
+    /// changes in inventories.
+    pub FINAL_WEIGHTS = "GEN.final_weights" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// What each final use spends on each activity, each use's parts summing to one.
+    pub FINAL_COMPOSITION = "GEN.final_composition" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 9 }, clause: "GEN.15", scope: PerCountry
     }
 }
@@ -148,11 +152,11 @@ pub struct GenPrims {
     pub settling_years: Prim<Count>,
     pub profile: Prim<JointProfile>,
     pub units_per_dollar: Prim<Count>,
-    pub output: Prim<Table1>,
     pub service_inputs: Prim<Table2>,
     pub product_taxes: Prim<Table1>,
-    pub value_added: Prim<Table2>,
-    pub final_uses: Prim<Table2>,
+    pub value_added_parts: Prim<Table2>,
+    pub final_weights: Prim<Table1>,
+    pub final_composition: Prim<Table2>,
     pub balance_sheet: Prim<Table2>,
     pub real_assets: Prim<Table2>,
     pub productivity_spread: Prim<Fixed<2>>,
@@ -176,11 +180,11 @@ impl GenPrims {
             settling_years: d.prim(&SETTLING_YEARS),
             profile: d.prim(&PROFILE),
             units_per_dollar: d.prim(&UNITS_PER_DOLLAR),
-            output: d.prim(&OUTPUT),
             service_inputs: d.prim(&SERVICE_INPUTS),
             product_taxes: d.prim(&PRODUCT_TAXES),
-            value_added: d.prim(&VALUE_ADDED),
-            final_uses: d.prim(&FINAL_USES),
+            value_added_parts: d.prim(&VALUE_ADDED_PARTS),
+            final_weights: d.prim(&FINAL_WEIGHTS),
+            final_composition: d.prim(&FINAL_COMPOSITION),
             balance_sheet: d.prim(&BALANCE_SHEET),
             real_assets: d.prim(&REAL_ASSETS),
             productivity_spread: d.prim(&PRODUCTIVITY_SPREAD),

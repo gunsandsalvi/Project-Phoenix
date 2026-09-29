@@ -18,7 +18,6 @@ use crate::consts::WEEKS_A_YEAR;
 use crate::consts::firm::{COMPENSATION, OWNERS_PURPOSE, PURPOSES, SURPLUS};
 use crate::core::{Core, kind_number};
 use crate::core_jobs::{JobsOpening, deal, month_point};
-use crate::opening::economy::table;
 
 /// A self-employed person the opening drew: its household, identity, occupation, country and region.
 #[derive(Clone, Copy, Debug, phx_macros::Saved)]
@@ -170,7 +169,7 @@ impl Core {
         let working: Vec<(PartyKey, Vec<Worker>)> = self.owners.working.iter().map(|(k, w)| (*k, w.clone())).collect();
         for c in o.countries {
             let id = c.id.get();
-            let added = table(o.register, "GEN.value_added", c.id)?.0;
+            let added = crate::opening::economy::accounts(o.register, c.id)?.0.added;
             let part = |col: usize| -> Vec<f64> {
                 added.iter().map(|r| r.get(col).copied().unwrap_or(f64::NAN) * c.gdp).collect()
             };

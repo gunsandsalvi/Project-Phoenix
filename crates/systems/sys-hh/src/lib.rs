@@ -79,12 +79,9 @@ declare_prim! {
     pub SPENDING_DAYS = "HH.spending_days" { kind: Preference, value: Count, clause: "HH.4", scope: Shared }
 }
 
-declare_prim! {
-    /// A household's shares of its spending over the products, in their order.
-    pub BUDGET_SHARES = "HH.budget_shares" {
-        kind: Preference, value: Table1 { axis_exp: 0, exp: 6 }, clause: "HH.5", scope: PerCountry
-    }
-}
+/// The accounts' composition of the final uses, and households' column of it.
+const COMPOSITION: &str = "GEN.final_composition";
+const HOUSEHOLDS: i64 = 0;
 
 /// What the households' decisions read, compiled at assembly: the buffer-stock rule solved for the type, the outlook's
 /// gain, the share of a year between two decisions, and each country's budget shares.
@@ -119,7 +116,6 @@ impl System for Hh {
         let _: phx_core::Prim<Fixed<4>> = d.prim(&NO_INCOME);
         let _: phx_core::Prim<Fixed<2>> = d.prim(&INCOME_GAIN);
         let _: phx_core::Prim<Count> = d.prim(&SPENDING_DAYS);
-        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&BUDGET_SHARES);
         for fact in [
             <Income as phx_core::FactDef>::ITEM.name,
             <After as phx_core::FactDef>::ITEM.name,
@@ -147,16 +143,18 @@ impl System for Hh {
             let shares = (0..countries)
                 .map(|i| {
                     let id = phx_id::CountryId::new(u8::try_from(i).map_err(|e| e.to_string())?);
-                    let t = register.table1_in(BUDGET_SHARES.id, id)?;
+                    // Households' budget shares are their part of the final uses' composition spent on the products.
+                    let t = register.table2_in(COMPOSITION, id)?;
                     let products = register.products("TEC.products")?.len();
-                    if t.values().len() != products {
-                        return Err(format!(
-                            "`{}` holds {} shares for {products} products; a share is a product's",
-                            BUDGET_SHARES.id,
-                            t.values().len()
-                        ));
+                    let parts = (0_i64..)
+                        .take(products)
+                        .map(|p| t.at(p, HOUSEHOLDS).map(phx_rand::float::from_i64).map_err(|e| format!("{e:?}")))
+                        .collect::<Result<Vec<f64>, String>>()?;
+                    let whole: f64 = parts.iter().sum();
+                    if whole <= 0.0 {
+                        return Err(format!("`{COMPOSITION}` gives households no spending on the products"));
                     }
-                    Ok(t.values().iter().map(|v| phx_rand::float::from_i64(*v) / crate::consts::SHARE_PARTS).collect())
+                    Ok(parts.iter().map(|v| v / whole).collect())
                 })
                 .collect::<Result<Vec<Vec<f64>>, String>>()?;
             let days = register.count(SPENDING_DAYS.id)?;

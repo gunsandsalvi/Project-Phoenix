@@ -67,14 +67,15 @@ impl Snapshot {
 /// costing nothing.
 #[clause("GEN.2", "GEN.5", "TEC.1")]
 pub fn snapshot(register: &Register, c: &OpeningCountry) -> Result<Snapshot, String> {
-    let output = row(register, "GEN.output", c)?;
+    let (accounts, _) = crate::opening::economy::accounts(register, c.id)?;
+    let output = accounts.output;
     let price: Vec<f64> = row(register, "GDS.opening_price", c)?
         .iter()
         .zip(row(register, "GDS.price_level", c)?)
         .map(|(a, b)| a * b)
         .collect();
     let (inputs, _) = table(register, "TEC.inputs", c.id)?;
-    let (added, _) = table(register, "GEN.value_added", c.id)?;
+    let added = accounts.added;
     let (mut materials, mut labour, mut units) = (Vec::new(), Vec::new(), Vec::new());
     for (p, unit_price) in price.iter().enumerate() {
         let share = output.get(p).copied().unwrap_or(f64::NAN);

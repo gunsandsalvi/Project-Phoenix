@@ -279,7 +279,7 @@ def group_flows(level: str, members: dict, levels: pd.Series) -> dict:
     comp = med("composition")
     comp /= comp.sum(axis=0, keepdims=True)
     # Households' products are their budget shares, beside what they spend on finance, rents and public services.
-    shares = np.array([float(x) for x in profile_files.get(level, "HH.budget_shares")["values"]])
+    shares, shares_note = derive_hh.budget_shares(level)
     services = comp[NP:, 0].sum()
     comp[:NP, 0] = shares * (1.0 - services)
     spent = weight / (1.0 + final_tax)
@@ -294,7 +294,8 @@ def group_flows(level: str, members: dict, levels: pd.Series) -> dict:
     va = added * output
     split = np.column_stack([parts[:, 0] * va, (1.0 - parts[:, 0] - parts[:, 1]) * va, parts[:, 1] * va])
     return {"coef": coef, "tax_rate": tax_rate, "added": added, "final": final, "final_tax": final_tax,
-            "output": output, "split": split, "parts_note": parts_note, "weight": weight}
+            "output": output, "split": split, "parts_note": parts_note, "weight": weight, "parts": parts,
+            "composition": comp, "shares_note": shares_note}
 
 
 def check_flows(level: str, f: dict) -> None:
@@ -541,40 +542,39 @@ def write(level: str, members: dict, f: dict, s: dict, m: dict) -> None:
     lines = [f"# The {level} group's flows of {YEAR} in shares of its GDP (spec GEN.15), derived by",
              "# tools/data/derive_economy.py; never edited by hand."]
     lines += primitive(
-        "GEN.output", "GEN", "ENDOWMENT", "measured",
-        f"Each activity's output over GDP (axis: {acts}): what its uses need, (I - A)^-1 times the final uses, A the "
-        f"inputs per unit of output in value, the products' among themselves their ways' (TEC.inputs) at the group's "
-        f"opening prices (GDS.opening_price times GDS.price_level), the rest the medians of {base}.",
-        axis(f["output"]))
-    lines += primitive(
         "GEN.service_inputs", "GEN", "ENDOWMENT", "measured",
-        f"What each activity (columns, as GEN.output's axis) uses of finance, real estate and public administration "
+        f"What each activity (columns: {acts}) uses of finance, real estate and public administration "
         f"(rows 0 to 2) per unit of its output, in value; and, for those three activities' columns, what they use of "
         f"every product too (rows 3 to 21, the products in TEC's order): the medians of {base}.",
         matrix(3 + NP, N, np.vstack([f["coef"][NP:, :], f["coef"][:NP, :] * (np.arange(N) >= NP)[None, :]])))
     lines += primitive(
         "GEN.product_taxes", "GEN", "ENDOWMENT", "measured",
-        f"Taxes less subsidies on products per unit of output of each activity (axis 0 to 21, as GEN.output's) and per "
+        f"Taxes less subsidies on products per unit of output of each activity (axis 0 to 21, the activities' order) and per "
         f"unit spent at basic prices by each final use (22 households, 23 collective consumption, 24 fixed investment, "
         f"25 inventories): the medians of {base}.",
         axis(np.concatenate([f["tax_rate"], f["final_tax"]])))
     lines += primitive(
-        "GEN.value_added", "GEN", "ENDOWMENT", "measured",
-        f"Each activity's value added over GDP (rows, as GEN.output's axis) by part (columns: 0 compensation of "
-        f"employees, 1 gross operating surplus and mixed income, 2 other taxes less subsidies on production): its "
-        f"output less its inputs and its taxes on products, the matrix's one residue, split by the parts' shares "
-        f"of value added in the OECD's national accounts (Table 6, {YEAR}), {f['parts_note']}; an activity no "
-        f"economy reports takes the median over the activities.",
-        matrix(N, len(PARTS), f["split"]))
+        "GEN.value_added_parts", "GEN", "ENDOWMENT", "measured",
+        f"The shares of each activity's value added (rows, as the activities' axis: {acts}) that are compensation of "
+        f"employees (column 0) and other taxes less subsidies on production (column 1), gross operating surplus and "
+        f"mixed income the rest: the parts' shares of value added in the OECD's national accounts (Table 6, {YEAR}), "
+        f"{f['parts_note']}; an activity no economy reports takes the median over the activities. An activity's value "
+        f"added is its output less its inputs and taxes on products, its output what its uses need, (I - A)^-1 times "
+        f"the final uses, both computed where they are read.",
+        matrix(N, 2, f["parts"]))
     lines += primitive(
-        "GEN.final_uses", "GEN", "ENDOWMENT", "measured",
-        f"What each final use (columns: 0 households, 1 collective consumption by the government and the non-profit "
-        f"institutions serving households, 2 fixed investment, 3 changes in inventories) takes of each activity (rows, "
-        f"as GEN.output's axis) over GDP, at basic prices: each use's weight in GDP at purchasers' prices the median "
-        f"of {base}, renormalised, less its taxes on products; its composition the median, households' products "
-        f"their budget shares (HH.budget_shares) beside the median parts they spend on finance, rents and public "
-        f"services.",
-        matrix(N, len(FINALS), f["final"]))
+        "GEN.final_weights", "GEN", "ENDOWMENT", "measured",
+        f"Each final use's weight in GDP at purchasers' prices (axis: 0 households, 1 collective consumption by the "
+        f"government and the non-profit institutions serving households, 2 fixed investment, 3 changes in "
+        f"inventories): the medians of {base}, renormalised to one; what it spends at basic prices is its weight less "
+        f"its taxes on products.",
+        axis(f["weight"]))
+    lines += primitive(
+        "GEN.final_composition", "GEN", "ENDOWMENT", "measured",
+        f"What each final use (columns, as GEN.final_weights' axis) spends on each activity (rows, as the activities' "
+        f"axis), each column summing to one: the medians of {base}, each renormalised; households' products "
+        f"{f['shares_note']}, beside the median parts they spend on finance, rents and public services.",
+        matrix(N, len(FINALS), f["composition"]))
     profile_files.put_text(level, "\n".join(lines) + "\n")
     notes = s["notes"]
     oecd = m["sources"].get("oecd_sectors", {})
@@ -654,6 +654,7 @@ def main() -> None:
         plant = np.array(profile_files.get(level, "CAP.stock_per_gdp")["values"], dtype=float)
         s = group_stocks(level, [c for c, lv in levels.items() if lv == level], developed, plant)
         check_stocks(level, s)
+        profile_files.retire(level, ["GEN.output", "GEN.value_added", "GEN.final_uses", "HH.budget_shares"])
         write(level, members, f, s, m)
         check_shapes(level, spread[level], pay[level])
         write_shapes(level, spread[level], pay[level], economies_paid[level], m)

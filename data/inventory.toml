@@ -427,10 +427,10 @@ status = "sourced: energy carriers at world prices, the ICP publishing no headin
 
 [[row]]
 id = "GEN.flows"
-what = "the social accounting matrix: each activity's output, inputs, taxes on products, value added by part and final uses"
+what = "the social accounting matrix's primitives: inputs, taxes on products, value added parts, final uses' weights and composition; output, value added and final uses computed at assembly"
 owner = "GEN"
 first_read = "S1.23"
-source = "OECD ICIO 2019 (origins summed), OECD Table 6 value added parts, TEC.inputs at GDS prices, HH.budget_shares"
+source = "OECD ICIO 2019 (origins summed; households' budget shares from its HFCE column), OECD Table 6 value added parts, TEC.inputs at GDS prices"
 status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml; checked at assembly"
 
 [[row]]

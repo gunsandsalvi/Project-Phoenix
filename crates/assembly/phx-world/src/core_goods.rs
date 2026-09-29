@@ -311,7 +311,7 @@ impl Core {
         for c in countries {
             goods.inputs.push(table(ctx.register, "TEC.inputs", c.id)?.0);
             prices.push(crate::core_firms::snapshot(ctx.register, c)?.price);
-            let uses = table(ctx.register, "GEN.final_uses", c.id)?.0;
+            let uses = crate::opening::economy::accounts(ctx.register, c.id)?.0.finals;
             let at = |row: &Vec<f64>, k: usize| row.get(k).copied().unwrap_or(0.0);
             goods.final_uses.push(uses.iter().take(products.len()).map(|r| [at(r, 1), at(r, 2)]).collect());
             goods.gdp.push(c.gdp);

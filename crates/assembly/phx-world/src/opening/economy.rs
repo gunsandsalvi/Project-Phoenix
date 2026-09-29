@@ -58,7 +58,7 @@ pub fn flows_breaks(f: &Flows, unit: f64) -> Vec<String> {
         let taken: f64 = (0..finals).map(|k| cell(&f.finals, i, k)).sum();
         let residue = x - used - taken;
         if residue.is_nan() || residue.abs() > slack(n + finals + 1, x, unit) {
-            out.push(format!("GEN.output: activity {i}'s supply misses its uses by {residue}"));
+            out.push(format!("GEN.final_composition: activity {i}'s supply misses its uses by {residue}"));
         }
     }
     for j in 0..n {
@@ -67,7 +67,9 @@ pub fn flows_breaks(f: &Flows, unit: f64) -> Vec<String> {
         let added: f64 = f.added.get(j).map_or(f64::NAN, |r| r.iter().sum());
         let residue = x * (1.0 - inputs - at(&f.taxes, j)) - added;
         if residue.is_nan() || residue.abs() > slack(n + finals + 1, x, unit) {
-            out.push(format!("GEN.value_added: activity {j}'s output misses its inputs and value added by {residue}"));
+            out.push(format!(
+                "GEN.value_added_parts: activity {j}'s output misses its inputs and value added by {residue}"
+            ));
         }
     }
     let spent: Vec<f64> = (0..finals).map(|k| (0..n).map(|i| cell(&f.finals, i, k)).sum()).collect();
@@ -80,7 +82,7 @@ pub fn flows_breaks(f: &Flows, unit: f64) -> Vec<String> {
     for (name, gdp) in [("production", production), ("expenditure", expenditure)] {
         let residue = gdp - 1.0;
         if residue.is_nan() || residue.abs() > slack(terms, 1.0, unit) {
-            out.push(format!("GEN.final_uses: GDP by {name} misses one by {residue}"));
+            out.push(format!("GEN.final_weights: GDP by {name} misses one by {residue}"));
         }
     }
     out
@@ -137,22 +139,61 @@ fn row(register: &Register, id: &str, country: CountryId) -> Result<Vec<f64>, St
     Ok(table(register, id, country)?.0.into_iter().next().unwrap_or_default())
 }
 
-/// A country's flows as the register holds them: the products' inputs of products their ways' at the country's
-/// opening prices, the rest the dataset's own.
-fn flows_of(register: &Register, country: CountryId) -> Result<(Flows, f64), String> {
+/// The solution of `m · x = b` by elimination, `m` square and its pivots nonzero as `I − A` for inputs worth less than
+/// what they make; none where a pivot is nought.
+#[must_use]
+pub fn solve(matrix: &[Vec<f64>], rhs: &[f64]) -> Option<Vec<f64>> {
+    let size = rhs.len();
+    let mut rows: Vec<Vec<f64>> =
+        matrix.iter().zip(rhs).map(|(row, v)| row.iter().copied().chain([*v]).collect()).collect();
+    for k in 0..size {
+        let pivot = rows.get(k)?.get(k).copied()?;
+        if pivot == 0.0 {
+            return None;
+        }
+        let top = rows.get(k)?.clone();
+        for row in rows.iter_mut().skip(k + 1) {
+            let factor = row.get(k).copied()? / pivot;
+            for (v, t) in row.iter_mut().zip(&top).skip(k) {
+                *v -= factor * t;
+            }
+        }
+    }
+    let mut solution = vec![0.0; size];
+    for k in (0..size).rev() {
+        let row = rows.get(k)?;
+        let known: f64 = (k + 1..size).map(|j| row.get(j).copied().unwrap_or(f64::NAN) * at(&solution, j)).sum();
+        let v = (row.get(size).copied()? - known) / row.get(k).copied()?;
+        *solution.get_mut(k)? = v;
+    }
+    Some(solution)
+}
+
+/// A country's accounts from the register's primitives: the products' inputs of products their ways' at the
+/// country's opening prices, the rest the dataset's own; each final use's spending at basic prices its weight less its
+/// taxes on products, shared over the activities by its composition; each activity's output what its uses need,
+/// (I − A)⁻¹ f; its value added its output less its inputs and taxes on products, by its parts' shares. The unit is
+/// the finest the primitives are stored to.
+///
+/// # Errors
+/// A primitive the accounts read that the register does not hold, or inputs that leave no output to solve for.
+#[clause("GEN.15", "GEN.4")]
+pub fn accounts(register: &Register, country: CountryId) -> Result<(Flows, f64), String> {
     let (ways, _) = table(register, "TEC.inputs", country)?;
     let price: Vec<f64> = row(register, "GDS.opening_price", country)?
         .iter()
         .zip(row(register, "GDS.price_level", country)?)
         .map(|(a, b)| a * b)
         .collect();
-    let (output, unit) = table(register, "GEN.output", country)?;
-    let output = output.into_iter().next().unwrap_or_default();
     let (services, _) = table(register, "GEN.service_inputs", country)?;
-    let n = output.len();
+    let (composition, unit) = table(register, "GEN.final_composition", country)?;
+    let weights = row(register, "GEN.final_weights", country)?;
+    let taxes = row(register, "GEN.product_taxes", country)?;
+    let (parts, _) = table(register, "GEN.value_added_parts", country)?;
+    let n = composition.len();
     let products = ways.len();
     let kept = n - products;
-    let inputs = (0..n)
+    let inputs: Vec<Vec<f64>> = (0..n)
         .map(|i| {
             (0..n)
                 .map(|j| match (i < products, j < products) {
@@ -163,18 +204,28 @@ fn flows_of(register: &Register, country: CountryId) -> Result<(Flows, f64), Str
                 .collect()
         })
         .collect();
-    let flows = Flows {
-        output,
-        inputs,
-        taxes: row(register, "GEN.product_taxes", country)?,
-        added: table(register, "GEN.value_added", country)?.0,
-        finals: table(register, "GEN.final_uses", country)?.0,
+    let spent: Vec<f64> = weights.iter().enumerate().map(|(k, w)| w / (1.0 + at(&taxes, n + k))).collect();
+    let finals: Vec<Vec<f64>> =
+        composition.iter().map(|r| r.iter().zip(&spent).map(|(c, s)| c * s).collect()).collect();
+    let leontief: Vec<Vec<f64>> =
+        (0..n).map(|i| (0..n).map(|j| if i == j { 1.0 } else { 0.0 } - cell(&inputs, i, j)).collect()).collect();
+    let demand: Vec<f64> = finals.iter().map(|r| r.iter().sum()).collect();
+    let Some(output) = solve(&leontief, &demand) else {
+        return Err(format!("country {}: inputs that leave no output to solve for", country.get()));
     };
-    Ok((flows, unit))
+    let added: Vec<Vec<f64>> = (0..n)
+        .map(|j| {
+            let used: f64 = (0..n).map(|i| cell(&inputs, i, j)).sum();
+            let va = at(&output, j) * (1.0 - used - at(&taxes, j));
+            let (comp, other) = (cell(&parts, j, 0), cell(&parts, j, 1));
+            vec![comp * va, (1.0 - comp - other) * va, other * va]
+        })
+        .collect();
+    Ok((Flows { output, inputs, taxes, added, finals }, unit))
 }
 
-/// The dataset's cross-primitive identities: firms' plant is CAP's stock, and households' spending on products is
-/// their budget shares.
+/// The dataset's cross-primitive identities: firms' plant is CAP's stock, and no activity's output or value added is
+/// below nothing.
 fn cross_breaks(register: &Register, country: CountryId, s: &Stocks, f: &Flows) -> Result<Vec<String>, String> {
     let mut out = Vec::new();
     let (plant, unit) = table(register, "CAP.stock_per_gdp", country)?;
@@ -184,13 +235,10 @@ fn cross_breaks(register: &Register, country: CountryId, s: &Stocks, f: &Flows) 
             out.push(format!("GEN.real_assets: firms' plant of kind {k}, {firms}, is not CAP.stock_per_gdp's {v}"));
         }
     }
-    let (shares, unit) = table(register, "HH.budget_shares", country)?;
-    let shares = shares.into_iter().next().unwrap_or_default();
-    let spent: f64 = (0..shares.len()).map(|i| cell(&f.finals, i, 0)).sum();
-    for (i, share) in shares.iter().enumerate() {
-        let got = cell(&f.finals, i, 0) / spent;
-        if (got - share).is_nan() || (got - share).abs() > slack(shares.len(), 1.0, unit) {
-            out.push(format!("GEN.final_uses: households' part {got} of product {i} is not HH.budget_shares' {share}"));
+    for (j, x) in f.output.iter().enumerate() {
+        let va: f64 = f.added.get(j).map_or(f64::NAN, |r| r.iter().sum());
+        if x.is_nan() || *x < 0.0 || va.is_nan() || va < 0.0 {
+            out.push(format!("GEN.final_composition: activity {j}'s output {x} or value added {va} is below nothing"));
         }
     }
     Ok(out)
@@ -207,7 +255,7 @@ pub fn check(register: &Register, countries: usize) -> Result<(), Vec<String>> {
         let Ok(id) = u8::try_from(c) else { return Err(vec![format!("{countries} countries")]) };
         let country = CountryId::new(id);
         let read = || -> Result<Vec<String>, String> {
-            let (flows, unit) = flows_of(register, country)?;
+            let (flows, unit) = accounts(register, country)?;
             let (financial, _) = table(register, "GEN.balance_sheet", country)?;
             let (real, _) = table(register, "GEN.real_assets", country)?;
             let stocks = Stocks { financial, real };

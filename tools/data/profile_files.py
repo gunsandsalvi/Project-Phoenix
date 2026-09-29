@@ -26,10 +26,10 @@ HEADERS = {
 }
 
 ECONOMY = {
-    "TEC.inputs", "TEC.labour", "TEC.capital", "TEC.land", "GDS.price_level", "GEN.output", "GEN.service_inputs",
-    "GEN.product_taxes", "GEN.value_added", "GEN.final_uses", "GEN.balance_sheet", "GEN.real_assets",
-    "GEN.productivity_spread", "GEN.occupation_pay", "HH.budget_shares", "CAP.stock_per_gdp",
-    "FRM.firms_per_employed", "FRM.industry_by_size", "FRM.product_share", "SOC.public_staff_share",
+    "TEC.inputs", "TEC.labour", "TEC.capital", "TEC.land", "GDS.price_level", "GEN.service_inputs",
+    "GEN.product_taxes", "GEN.value_added_parts", "GEN.final_weights", "GEN.final_composition", "GEN.balance_sheet",
+    "GEN.real_assets", "GEN.productivity_spread", "GEN.occupation_pay", "CAP.stock_per_gdp",
+    "FRM.firms_per_employed", "SOC.public_staff_share",
 }
 LAW = {
     "CB.currency", "GEN.units_per_dollar", "DEM.age_of_majority", "DEM.school_leaving_age",
@@ -121,3 +121,14 @@ def put_text(level: str, text: str) -> None:
     """Each entry of a file's text, its header aside, written into its file by `put`."""
     _, blocks = _blocks(text)
     put(level, blocks)
+
+
+def retire(level: str, ids: list) -> None:
+    """Each primitive of `ids` taken out of its file, where it is there."""
+    for rel in {file_of(pid) for pid in ids}:
+        path = PROFILES / level / rel
+        if not path.exists():
+            continue
+        head, blocks = _blocks(path.read_text())
+        kept = [b for b in blocks if _id(b) not in ids]
+        path.write_text(head.rstrip("\n") + "\n\n" + "\n\n".join(kept) + "\n")

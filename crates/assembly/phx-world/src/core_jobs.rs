@@ -362,8 +362,9 @@ impl Core {
                 let Some(j) = jobs.get(*job).filter(|j| j.country == id) else { continue };
                 *hours.entry((*activity, j.occupation)).or_insert(0.0) += year_hours(j);
             }
-            let compensation: Vec<f64> = table(o.register, "GEN.value_added", c.id)?
+            let compensation: Vec<f64> = crate::opening::economy::accounts(o.register, c.id)?
                 .0
+                .added
                 .iter()
                 .map(|r| r.get(COMPENSATION).copied().unwrap_or(f64::NAN) * c.gdp)
                 .collect();
