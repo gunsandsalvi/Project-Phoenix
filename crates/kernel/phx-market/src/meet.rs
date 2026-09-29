@@ -86,13 +86,54 @@ impl Meeting {
     }
 }
 
-/// A place's open sellers in a round: for a buyer of units, an alias table over their weights; for a buyer with
-/// money, the same sellers by price with their weights' running sums, since what it can pay is a prefix of them.
+/// A place's open sellers in a round: in the place's order with their weights, over the best's, and an alias table
+/// over them for a buyer of units, made when one stands there; for a buyer with money, the same sellers by price with
+/// their weights' running sums, since what it can pay is a prefix of them.
 struct Table {
     stalls: Vec<u32>,
-    alias: AliasTable,
+    values: Vec<f64>,
+    weights: Vec<f64>,
+    best: f64,
+    alias: Option<AliasTable>,
     by_price: Vec<(i64, u32)>,
+    priced: Vec<f64>,
     sums: Vec<f64>,
+}
+
+impl Table {
+    /// The table after some of its sellers sold out: those left keep their weights while the best of them is the
+    /// best it was, and the running sums are added again from the first seller gone, as a table made afresh adds
+    /// them; with the best gone, none is left to keep, and the caller makes it afresh.
+    fn without_sold_out(mut self, left: &[i64]) -> Option<Table> {
+        let open = |s: &u32| left.get(to_usize(*s)).is_some_and(|l| *l > 0);
+        let best = self
+            .stalls
+            .iter()
+            .zip(&self.values)
+            .filter(|(s, _)| open(s))
+            .map(|(_, v)| *v)
+            .reduce(|a, b| if b > a { b } else { a })?;
+        if best.to_bits() != self.best.to_bits() {
+            return None;
+        }
+        let mut keep = self.stalls.iter().map(open);
+        self.values.retain(|_| keep.next().unwrap_or(false));
+        let mut keep = self.stalls.iter().map(open);
+        self.weights.retain(|_| keep.next().unwrap_or(false));
+        self.stalls.retain(open);
+        self.alias = None;
+        let first = self.by_price.iter().position(|(_, s)| !open(s))?;
+        let mut keep = self.by_price.iter().map(|(_, s)| open(s));
+        self.priced.retain(|_| keep.next().unwrap_or(false));
+        self.by_price.retain(|(_, s)| open(s));
+        self.sums.truncate(first);
+        let mut sum = first.checked_sub(1).and_then(|k| self.sums.get(k)).copied().unwrap_or(0.0);
+        for w in self.priced.get(first..).unwrap_or(&[]) {
+            sum += w;
+            self.sums.push(sum);
+        }
+        Some(self)
+    }
 }
 
 /// A buyer still choosing, with what its choice and its service read, so neither looks it up: what it still wants,
@@ -330,18 +371,33 @@ fn remake(
             *x = true;
         }
     }
-    let todo: Vec<usize> =
-        wanted.iter().zip(stale.iter()).enumerate().filter(|(_, (w, s))| **w && **s).map(|(p, _)| p).collect();
-    let made = phx_exec::pool::map(pool, todo.len(), |i| {
-        let p = *todo.get(i)?;
-        table((places.get(p)?, orders.get(p)?), open, w)
-    });
-    for (p, t) in todo.into_iter().zip(made) {
-        if let (Some(slot), Some(x)) = (tables.get_mut(p), stale.get_mut(p)) {
-            *slot = t;
-            *x = false;
-        }
+    // A place is made again where a buyer stands and a seller in it sold out since.
+    let mut todo = vec![false; places.len()];
+    for ((t, w), s) in todo.iter_mut().zip(&wanted).zip(stale.iter_mut()) {
+        *t = *w && *s;
+        *s &= !*w;
     }
+    let units: Vec<bool> = {
+        let mut u = vec![false; places.len()];
+        for c in choosing.iter().filter(|c| matches!(c.want, Want::Units(_))) {
+            if let Some(x) = u.get_mut(to_usize(c.place)) {
+                *x = true;
+            }
+        }
+        u
+    };
+    let made: Vec<(usize, &mut Option<Table>)> =
+        tables.iter_mut().enumerate().filter(|(p, _)| todo.get(*p).is_some_and(|t| *t)).collect();
+    phx_exec::pool::each(pool, made, |(p, slot)| {
+        let kept = slot.take().and_then(|t| t.without_sold_out(open.0));
+        *slot = kept.or_else(|| table((places.get(p)?, orders.get(p)?), open, w));
+        if units.get(p).is_some_and(|u| *u)
+            && let Some(t) = slot.as_mut()
+            && t.alias.is_none()
+        {
+            t.alias = Some(AliasTable::new(&t.weights));
+        }
+    });
 }
 
 /// A place's table of its open sellers this round, or none if none is open: their weights in the place's order, and
@@ -367,14 +423,26 @@ fn table(
     let best = values.iter().map(|(_, v)| *v).reduce(|a, b| if b > a { b } else { a })?;
     // Over the best's, so the best weighs one and none overflows.
     let weights: Vec<f64> = values.iter().map(|(_, v)| libm::exp(v - best)).collect();
-    let (mut by_price, mut sums, mut sum) = (Vec::with_capacity(values.len()), Vec::with_capacity(values.len()), 0.0);
+    let n = values.len();
+    let (mut by_price, mut priced, mut sums, mut sum) =
+        (Vec::with_capacity(n), Vec::with_capacity(n), Vec::with_capacity(n), 0.0);
     for (p, s, i) in order {
         let Some(weight) = at.get(*i).copied().flatten().and_then(|j| weights.get(j)) else { continue };
         sum += weight;
         sums.push(sum);
+        priced.push(*weight);
         by_price.push((*p, *s));
     }
-    Some(Table { stalls: values.iter().map(|(s, _)| *s).collect(), alias: AliasTable::new(&weights), by_price, sums })
+    Some(Table {
+        stalls: values.iter().map(|(s, _)| *s).collect(),
+        values: values.iter().map(|(_, v)| *v).collect(),
+        weights,
+        best,
+        alias: None,
+        by_price,
+        priced,
+        sums,
+    })
 }
 
 /// A chunk's choices, four buyers' draws made together, each from its own stream's block for the round.
@@ -399,7 +467,7 @@ fn choose(chunk: &mut [Choosing], tables: &[Option<Table>], (t, lot, round): (Ta
 fn pick(c: &Choosing, tables: &[Option<Table>], lot: i64, d: &mut Draws) -> Option<u32> {
     let t = tables.get(to_usize(c.place))?.as_ref()?;
     match c.want {
-        Want::Units(_) => t.stalls.get(t.alias.draw(d)).copied(),
+        Want::Units(_) => t.stalls.get(t.alias.as_ref()?.draw(d)).copied(),
         Want::Money(_) | Want::UpTo(..) => {
             let can = t.by_price.partition_point(|(price, _)| units_wanted(c.want, lot, *price) > 0);
             let total = *t.sums.get(can.checked_sub(1)?)?;
