@@ -796,7 +796,7 @@ The work of a day follows the number of parties something happens to, not the nu
   rights and contribution records, inventory, cumulative output, and its outlooks of its own variables (VAL.23).
 - **REP.3 STATE** — A **contract** is one record between its named parties, with its terms.
   - Each side is one named party: an employer and its employee (a person of a household), a landlord and its tenant,
-    a bank and its depositor, a seller and its buyer on an invoice, a parent's household and a child's.
+    a bank and its depositor, a seller and its buyer on an invoice, a parent and a child in another household.
   - Contracts with identical terms share them, which is storage, never a pooling of their parties.
   - **Terms belong to the contract**, and nothing but the parties' own decisions and the contract's own events changes
     them. An amount that differs by contract, such as a deposit's balance or an accrued pension, is the contract's
@@ -1881,7 +1881,7 @@ population are outcomes.
   inheritance law names as heirs (POP.9). A person is held in its household (REP.26): its birth date
   (REP.25), role and the person attributes its kind declares, zone as its household's attribute, its own accounts,
   holdings and debts (PTY.3), the offices it holds (PTY.16), its jobs as contracts naming it (REP.3), its labour state a read of its contracts and participation, its employment history in
-  its jobs' start dates, the start of its search and its contribution records, kin as contracts between households
+  its jobs' start dates, the start of its search and its contribution records, kin as contracts between the persons
   (REP.3), and the clocks rules read as its household's attributes (REP.41).
 - **POP.2 STATE** — A **household** has members, a dwelling (owned, rented, or a room let by another household
   under a tenancy), a budget over its members' money, and holdings and debts that are its members' summed, and its own preferences drawn at its formation (NUM.4).
