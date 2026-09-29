@@ -1214,9 +1214,11 @@ world switches to the core.
       deals them, average the way's (before, developed education's firms cost 2.2 times their price's labour).
       Measured (150,000 persons, seed 1): capacity over units 0.7 to 1.6, most within 0.85 to 1.15; wages over
       compensation 0.92 to 1.11; one GEN.4 finding, the developing country's product 12, its owners' income 1.2% past
-      its surplus, then none; each firm's labour cost within 0.8 to 1.0 of its price's labour part. Still open: a
-      firm's materials cost at the opening's prices is below the accounts' materials a unit (developed product 12,
-      about a quarter), so firms' own markups sit above the accounts'; settled next. The voluntary close is
+      its surplus, then none; each firm's labour cost within 0.8 to 1.0 of its price's labour part. Found and settled after: firms bought no services from each other,
+      so a firm's cost left out the services its way uses (developed product 12's materials a quarter of the
+      accounts') and providers sold only to final users; firms now buy them on their production schedule for what
+      they made or sold, and firms' median markups sit near the accounts' (developed product 12: 0.64 against 0.48;
+      education still −0.14 against 0.18). The voluntary close is
       blocked until S8.03 (owner, 2026-09-29): with it off, twelve days run clean, no firm ending.
     - j5. **The state**: the tax rates and benefits against the flows' taxes and collective consumption, measured at
       the opening's first year and made one.

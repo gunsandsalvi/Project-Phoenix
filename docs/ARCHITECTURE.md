@@ -2249,7 +2249,12 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   Households decide on their spending schedule by the buffer-stock rule, their income outlook, what they received
   and the month counted in their record's positions, and ask each product's budget share. Each product's retail
   meeting (`phx_market::meet`) has a place per region with its firms at no distance; each sale is a flow in the
-  day's pending flows and its units leave the seller's stock.
+  day's pending flows and its units leave the seller's stock. The services a firm's way uses (`TEC.inputs` of the
+  products not stored) are owed for what it makes, or, a provider, for what it sells (`CoreGoods::services_owed`),
+  and bought on its production schedule from its region's providers at no more than a unit's worth to it, used as
+  delivered (`buy_services`), as a provider bills by the period; their least price there counts in its unit cost,
+  and the opening's expected sales count every product's use by the ways. Buying them daily cost the day seven
+  times its time at 150,000 persons; by the schedule, a third more.
 - **Hot modules** (PC-92): no map or trait object in the core's parties, edges, stores, partition, flows, wheel, settlement,
   facts, goods, capital, posted-price meetings or labour matching.
 - **Measure**: the phone's time is the CPU time of every thread, spinning workers' included (`process_cpu_ns`), over

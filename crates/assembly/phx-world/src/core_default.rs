@@ -138,6 +138,8 @@ impl Core {
         day: Day,
         defaulted: bool,
     ) {
+        // Services it has not yet bought for what it made are owed by no one once it ends.
+        self.goods.services_owed.remove(&key);
         let place = usize::from(key.kind());
         let (Some(product), Some(region)) =
             (self.record_of(place, key.slot(), PRODUCT), self.record_of(place, key.slot(), REGION))

@@ -6,7 +6,8 @@
 //! household due decides by the buffer-stock rule what it spends and asks each product's share of it at retail. Each
 //! sale is a flow of money from buyer to seller and one of goods from the seller, held by a firm, used up by a
 //! household. A service is never held: its provider offers the day's capacity, makes what sells as it is sold, using
-//! its inputs then, and the capacity no sale took is lost at the day's end. The goods' identity is read each day.
+//! its inputs then, and the capacity no sale took is lost at the day's end. The services a firm's way uses are bought
+//! the next day for what it made or sold, used as they are delivered. The goods' identity is read each day.
 
 use std::collections::BTreeMap;
 
@@ -122,6 +123,8 @@ pub struct CoreGoods {
     pub named: (i128, i128, u64),
     /// Today's sales' goods legs, each covered by its seller's units until its payment settles.
     pub deliveries: Vec<Delivery>,
+    /// Each firm's units made or sold since it last bought the services its way uses for them.
+    pub services_owed: BTreeMap<PartyKey, i64>,
 }
 
 /// A sale's goods leg awaiting its payment: the units' flow, from the seller's cover, and the money it waits for —
@@ -256,6 +259,17 @@ impl Core {
         self.goods.recipes.get(f.country).and_then(|c| c.get(usize::from(f.product))).map_or(&[], Vec::as_slice)
     }
 
+    /// The services a unit of a firm's output uses, its own among them, as its country's way gives them: made as they
+    /// are sold, they are bought as they are used, never held.
+    fn services(&self, f: &Firm) -> Vec<(u16, f64)> {
+        let Some(ways) = self.goods.inputs.get(f.country) else { return Vec::new() };
+        (0_u16..)
+            .zip(ways)
+            .filter(|(q, _)| !self.is_stored(*q))
+            .filter_map(|(q, row)| row.get(usize::from(f.product)).copied().filter(|a| *a > 0.0).map(|a| (q, a)))
+            .collect()
+    }
+
     /// Each country's stored inputs a unit of each product.
     fn recipes(&self) -> Vec<Vec<Vec<(u16, f64)>>> {
         self.goods
@@ -385,7 +399,7 @@ impl Core {
 
     /// Each firm's expected sales at the opening: the demand the world's buyers bring at the opening's prices — the
     /// households' spending by their budget shares, the state's collective consumption and the firms' fixed
-    /// investment, and what the firms' ways use of each stored product to make all of it — shared over each country's
+    /// investment, and what the firms' ways use of each product to make all of it — shared over each country's
     /// makers of a product by their output, so no firm expects a buyer the world does not hold.
     #[clause("GEN.2", "GEN.5", "FRM.14", "HH.5")]
     fn open_expected(&mut self, ctx: &GoodsCtx<'_>, firm: usize, today: Day) {
@@ -416,16 +430,12 @@ impl Core {
                 })
                 .collect();
             let finals = last.clone();
-            // What the ways use of each stored product to make it all, to the fixed point x = A·x + f.
+            // What the ways use of each product to make it all, to the fixed point x = A·x + f.
             for _ in 0..n * n {
                 let next: Vec<f64> = (0..n)
                     .map(|q| {
-                        let stored = u16::try_from(q).is_ok_and(|q| self.is_stored(q));
-                        let used: f64 = if stored {
-                            inputs.get(q).map_or(0.0, |row| row.iter().zip(&last).map(|(a, x)| a * x).sum())
-                        } else {
-                            0.0
-                        };
+                        let used: f64 =
+                            inputs.get(q).map_or(0.0, |row| row.iter().zip(&last).map(|(a, x)| a * x).sum());
                         finals.get(q).copied().unwrap_or(0.0) + used
                     })
                     .collect();
@@ -570,7 +580,7 @@ impl Core {
         self.arrive_shipments(day, &mut moved);
         self.review_extraction(ctx.regions, day);
         record.made = self.make(ctx, day, &mut moved);
-        record.inputs_wanted = self.buy_inputs(ctx, day);
+        record.inputs_wanted = self.buy_inputs(ctx, day) + self.buy_services(ctx, day);
         let (spenders, wants) = self.decide_spending(ctx, day);
         (record.spenders, record.wants) = (spenders, wants);
         let mut wants = std::mem::take(&mut self.goods.wants);
@@ -665,6 +675,14 @@ impl Core {
             } else {
                 inputs += a * input_cost(q)?;
             }
+        }
+        for (q, a) in self.services(f) {
+            if q == f.product {
+                own = a;
+            } else if let Some(c) = input_cost(q) {
+                inputs += a * c;
+            }
+            // A service no one sells in its region it goes without, and so pays nothing for.
         }
         let wage_bill: f64 =
             self.families.iter().find(|x| x.name == crate::consts::families::EMPLOYMENT).map_or(0.0, |fam| {
@@ -798,6 +816,7 @@ impl Core {
                 order: 0,
             };
             let _ = self.move_goods(flow, Cost::At(cost), day, moved);
+            *self.goods.services_owed.entry(f.key).or_insert(0) += today;
             made += today;
         }
         made
@@ -856,6 +875,9 @@ impl Core {
             let made = made_by.get(&f.key.word()).copied().unwrap_or(0);
             let left = self.free_units(f.key, f.product, f.region);
             let sold = made - left;
+            if sold > 0 {
+                *self.goods.services_owed.entry(f.key).or_insert(0) += sold;
+            }
             let inputs = self.stored_inputs(&f);
             let mut fed = true;
             for (q, a) in &inputs {
@@ -1015,6 +1037,43 @@ impl Core {
         let wants: Vec<(u16, Buyer)> = orders.into_iter().flatten().collect();
         let n = len_u64(wants.len());
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
+        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg);
+        n
+    }
+
+    /// Each firm's services bought on its production schedule for what it made or sold since it last bought them, as
+    /// a provider bills its clients by the period: of each service its way uses a unit, other than its own, what those
+    /// units used, from its region's providers at no more than a unit's worth to it — the least price there and the
+    /// margin a unit made earns over what the unit takes of it — used as it is delivered. What no provider sells it at
+    /// that worth it goes without.
+    #[clause("FRM.7", "SRV.5", "MKT.6")]
+    fn buy_services(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> u64 {
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let kind = kind_number(firm);
+        let due: Vec<PartyKey> = self.labour.due_today.iter().map(|s| PartyKey::new(kind, Slot::new(*s))).collect();
+        let mut wants: Vec<(u16, Buyer)> = Vec::new();
+        for key in due {
+            let Some(units) = self.goods.services_owed.remove(&key) else { continue };
+            let Some(f) = self.goods_firm(ctx.regions, firm, key.slot()).filter(|f| f.key == key) else { continue };
+            let Some(cost) = self.unit_cost(&f) else { continue };
+            let margin = from_i64(f.price) / self.lot(f.product) - cost;
+            for (q, a) in self.services(&f).into_iter().filter(|(q, _)| *q != f.product) {
+                let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
+                let Some(limit) = floor_to_i64((per_unit + margin / a) * self.lot(q)) else { continue };
+                let used = whole_units(from_i64(units) * a);
+                if used > 0 && limit > 0 {
+                    let buyer = Buyer {
+                        party: f.key,
+                        subject: u64::from(f.key.word()),
+                        want: Want::UpTo(used, limit),
+                        place: f.region,
+                    };
+                    wants.push((q, buyer));
+                }
+            }
+        }
+        let n = len_u64(wants.len());
+        let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: true };
         let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg);
         n
     }
