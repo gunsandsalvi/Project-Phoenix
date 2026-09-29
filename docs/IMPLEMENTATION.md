@@ -1183,11 +1183,19 @@ world switches to the core.
       its `later/` tables. `SOC.public_staff_share` retires into public administration's ways; `FRM.industry_by_size`
       and `FRM.firms_per_employed` into firms per person employed by activity (OECD SDBS enterprises over persons
       employed, B to S; agriculture's from its self-employed, ILO status by activity).
-    - j2. **The files** reorganised to the four and `later/`, the derivations and the assembly with them; no value
-      changes, checked by reading every primitive before and after.
-    - j3. **Derived facts computed, dead tables retired**: output, value added and the final uses' levels computed
-      at assembly from their primitives; `CAP.stock_per_gdp`, `FRM.product_share`, `FRM.industry_by_size` retired;
-      `PEN.*` and `HSG.*` to `later/`; the profile's unread values dropped from its draw.
+    - j2, j3 (built: 015950ca, 0e385c91, 6b59f4e7, 99eb272a, 46631755). A level's profile was 29 files and 75
+      primitives; it is four files and `later/`, 71 primitives (economy 16, people 25, law 26, the profile's draw 1,
+      later 3), each a source's fact. Moved without a value changed (checked primitive by primitive); PC-91 keys a
+      primitive by its scope and id, so a move is no change. Retired, read by nothing: `FRM.industry_by_size`,
+      `FRM.product_share`, `FRM.size_exponent`, `FRM.deposit_share`, the `sys-hsg` stub (its table in `later/`); kept
+      though unread because a later step reads them: `GDS.grade_bounds`, `SOC.disability_benefit_coverage`,
+      `SRV.reach`, the profile's inflation and home ownership. The profile draws 25 values, the eight the accounts
+      hold dropped. The flows store the final uses' weights and composition and the value added's parts; output,
+      value added and the final uses' levels are computed (`opening::economy::accounts`), `HH.budget_shares` read
+      from the composition. The stocks store the currency and who holds what, and the real assets apart from plant;
+      each country's sheet closes from its drawn levels and its firms' plant, computed as the opening values it
+      (`CAP.stock_per_gdp` retired: the sheet's plant was 1.54, 1.38 and 1.15 of GDP where the firms held 0.93,
+      1.00 and 1.01).
     - j4. **Labour and firms from one source**: `TEC.labour` for all 22 activities, the public agency staffed by
       public administration's hours; the self-employed dealt by activity from ILO status by activity; firms by
       activity from firms per person employed; persons' occupations drawn from the ways' mix at the country's
