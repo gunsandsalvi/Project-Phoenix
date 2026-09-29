@@ -5454,10 +5454,11 @@ Decisions taken in writing this version, and decisions still open.
     level on values handed to it. Only the budget blocks a stage (N8.8).
 40. **The resolution is measured only at the play resolution.** The representation's counts and costs are read in the
     one run at the resolution in force; when the valve moves, its effect is measured in the running world.
-41. **The order of refinement** (N8.5): when the budget allows a finer resolution, the representation's size is
-    raised first, then the number of preference types, then attribute classes and zones; when the budget calls for a coarser one, the same order runs backwards. If representation and traversal and this
-    valve cannot meet the worst turn (N8.2), the answer is decided on the measured numbers at the first gates
-    (N8.7, N8.8), under the standing rule that the specification is coarsened before the budget is relaxed.
+41. **The order of refinement** (N8.5; owner, 2026-09-29): when the budget allows a finer resolution, the
+    representation's size (REP.40) is raised first, then the number of preference types (NUM.4), then each kind's
+    attribute classes and zones, then history horizons and snapshot intervals (SET.13, SET.17); when the budget calls
+    for a coarser one, the same order runs backwards. A miss is met by N8.7's remedies in their order — how the world
+    is represented and traversed, then this valve — and no law, mechanism or requirement is weakened to meet it.
 42. **Public ways** (TEC.4): every firm knows its industry's ways that no patent covers and no firm keeps to itself,
     so a new firm can produce from its first day; only discovered improvements, patented or private, are assets to be
     licensed or imitated (TEC.6).
