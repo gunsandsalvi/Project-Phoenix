@@ -6,7 +6,7 @@ use phx_core::register::values::{Distribution, TypeSet};
 use phx_rand::float::from_i64;
 
 /// The types and parameters every party's outlooks read.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Types {
     pub memory: TypeSet,
     pub gains: Vec<f64>,

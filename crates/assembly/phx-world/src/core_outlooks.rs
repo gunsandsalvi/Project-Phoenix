@@ -13,6 +13,7 @@ use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::{Subject, SubjectTag};
 use phx_val::heuristic::{HeuristicId, MENU, Params, Seen};
+use phx_val::types::Types;
 
 /// The heuristics on the menu.
 pub const HEURISTICS: usize = MENU.len();
@@ -85,16 +86,6 @@ fn way(change: f64) -> i8 {
     }
 }
 
-/// What the methods read: each memory type's speed, the trend's and the anchor's parameters, the weight of the last
-/// error in a performance.
-#[derive(Clone, Copy, Debug)]
-pub struct MethodParams<'a> {
-    pub gains: &'a [f64],
-    pub trend: f64,
-    pub anchor: f64,
-    pub performance_memory: f64,
-}
-
 /// A value that is there, or none.
 fn present(m: Missing<f64>) -> Option<f64> {
     match m {
@@ -103,13 +94,12 @@ fn present(m: Missing<f64>) -> Option<f64> {
     }
 }
 
-impl MethodParams<'_> {
-    fn params(&self, memory: usize) -> Params {
-        let Some(lambda) = self.gains.get(memory).copied() else {
-            violation!(clause = "VAL.22", "a memory type beyond the types", memory = memory);
-        };
-        Params { lambda, gamma: self.trend, kappa: self.anchor }
-    }
+/// A memory type's parameters for every heuristic.
+fn params(types: &Types, memory: usize) -> Params {
+    let Some(lambda) = types.gains.get(memory).copied() else {
+        violation!(clause = "VAL.22", "a memory type beyond the types", memory = memory);
+    };
+    Params { lambda, gamma: types.trend, kappa: types.anchor }
 }
 
 impl Outlooks {
@@ -117,7 +107,7 @@ impl Outlooks {
     /// had an outlook of it, and each forming its outlook of the next; the first print, with no outlook before it,
     /// stands for the outlook it did not have.
     #[clause("VAL.3", "VAL.4", "VAL.5", "VAL.6", "VAL.23")]
-    pub fn print(&mut self, key: (u16, u32), value: f64, day: Day, p: &MethodParams<'_>) {
+    pub fn print(&mut self, key: (u16, u32), value: f64, day: Day, p: &Types) {
         let types = p.gains.len();
         let s = self.series.entry(key).or_insert_with(|| Series {
             day,
@@ -145,7 +135,7 @@ impl Outlooks {
             if turn {
                 view.behind = [true; HEURISTICS];
             }
-            let params = p.params(memory);
+            let params = params(p, memory);
             let errors: Vec<Option<f64>> = view.outlook.iter().map(|o| present(*o).map(|o| value - o)).collect();
             let scored: Vec<f64> = errors.iter().flatten().map(|e| e.abs()).collect();
             if !scored.is_empty() {
@@ -243,7 +233,7 @@ impl crate::core::Core {
     #[clause("VAL.7")]
     pub(crate) fn reconsider_household(
         &mut self,
-        (streams, types): (&phx_core::Streams, &phx_val::types::Types),
+        (streams, types): (&phx_core::Streams, &Types),
         (place, slot, id): (usize, phx_id::Slot, PartyId),
         (country, day): (u8, Day),
     ) {

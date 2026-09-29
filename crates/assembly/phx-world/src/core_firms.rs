@@ -365,8 +365,8 @@ impl Core {
                 };
                 let bank = pick(&banks, below_u64(&mut at, bank_weight));
                 let mut m = o.streams.open(o.stream, subject(MANAGEMENT_PURPOSE), phx_id::Day::new(0), 0);
-                let memory = phx_core::register::values::draw_type(&o.management.memory, &mut m).get();
-                let switching = phx_core::register::values::draw_type(&o.management.switching, &mut m).get();
+                let memory = phx_core::register::values::draw_type(&o.management.types.memory, &mut m).get();
+                let switching = phx_core::register::values::draw_type(&o.management.types.switching, &mut m).get();
                 // With no heuristic scored yet nothing favours one, so its first stance is its taste's alone.
                 let menu = len_u64(phx_val::heuristic::MENU.len());
                 let stance = u8::try_from(below_u64(&mut m, menu)).unwrap_or(u8::MAX);

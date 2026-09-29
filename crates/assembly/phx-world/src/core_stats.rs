@@ -197,7 +197,7 @@ impl Core {
         &mut self,
         day: Day,
         (calendar, regions): (&Calendar, &[phx_id::CountryId]),
-        params: Option<&crate::core_outlooks::MethodParams<'_>>,
+        types: Option<&phx_val::types::Types>,
     ) {
         let period = period_of(calendar, day);
         match self.stats.period {
@@ -217,7 +217,7 @@ impl Core {
             if usize::from(r.series) != CPI {
                 continue;
             }
-            if let (Some(before), Some(p)) = (self.stats.last_cpi.insert(r.country, level), params)
+            if let (Some(before), Some(p)) = (self.stats.last_cpi.insert(r.country, level), types)
                 && before > 0
             {
                 let change = phx_rand::float::from_i64(level) / phx_rand::float::from_i64(before) - 1.0;

@@ -588,19 +588,13 @@ impl Core {
         self.close_services(ctx, day, &mut moved);
         (record.sales, record.spent) = (sales, spent);
         (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
-        let m = ctx.management;
-        let params = crate::core_outlooks::MethodParams {
-            gains: &m.gains,
-            trend: m.trend,
-            anchor: m.anchor,
-            performance_memory: m.performance_memory,
-        };
+        let types = &ctx.management.types;
         for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
             if units > 0 {
                 let lot = self.lot(product);
                 let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
                 self.goods.marks.insert((product, region), mark);
-                self.goods.outlooks.print((product, region), mark, day, &params);
+                self.goods.outlooks.print((product, region), mark, day, types);
             }
         }
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
@@ -1141,10 +1135,10 @@ impl Core {
                 continue;
             };
             let memory = usize::try_from(memory).unwrap_or(usize::MAX);
-            let Some(gain) = m.gains.get(memory).copied() else {
+            let Some(gain) = m.types.gains.get(memory).copied() else {
                 violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = s);
             };
-            let Some(beta) = usize::try_from(switching).ok().and_then(|t| m.intensities.get(t)).copied() else {
+            let Some(beta) = usize::try_from(switching).ok().and_then(|t| m.types.intensities.get(t)).copied() else {
                 violation!(clause = "VAL.7", "a firm's switching type beyond the types", slot = s);
             };
             let days = i64::from(day.get()) - last;

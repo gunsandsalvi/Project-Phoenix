@@ -104,19 +104,10 @@ pub struct Management {
     pub menu_hours: f64,
     /// The points within a decade, each over the decade's top.
     pub points: Vec<i64>,
-    /// Each memory type's speed of correction, by its place, and how many widths a surprise must pass to wake; the
-    /// memory types with their shares, by which a firm's is drawn.
-    pub gains: Vec<f64>,
-    pub memory: phx_core::register::values::TypeSet,
+    /// The outlook types a firm's are drawn by, with the heuristics' parameters, and how many widths a surprise
+    /// must pass to wake.
+    pub types: phx_val::types::Types,
     pub sensitivity: f64,
-    /// Each switching type's intensity, by its place, and the types with their shares, by which a firm's is drawn.
-    pub intensities: Vec<f64>,
-    pub switching: phx_core::register::values::TypeSet,
-    /// How far the trend rule extrapolates, how far the anchor rule pulls, and the weight of the last error in a
-    /// heuristic's performance.
-    pub trend: f64,
-    pub anchor: f64,
-    pub performance_memory: f64,
 }
 
 impl Management {
@@ -131,29 +122,13 @@ impl Management {
         if points.is_empty() {
             return Err("a trade with no price points".to_owned());
         }
-        let types = u16::try_from(register.count("VAL.memory_types")?).map_err(|e| e.to_string())?;
-        let gain = register.distribution("VAL.adaptive_gain")?;
-        let scale = libm::pow(crate::consts::DECADE, f64::from(gain.exp));
-        let memory = phx_core::register::values::TypeSet::build(gain, types)?;
-        let gains = memory.types().iter().map(|t| from_i64(t.value) / scale).collect();
-        let switching = u16::try_from(register.count("VAL.switching_types")?).map_err(|e| e.to_string())?;
-        let intensity = register.distribution("VAL.switching_intensity")?;
-        let per = libm::pow(crate::consts::DECADE, f64::from(intensity.exp));
-        let switching = phx_core::register::values::TypeSet::build(intensity, switching)?;
-        let intensities = switching.types().iter().map(|t| from_i64(t.value) / per).collect();
         let adjustment = p.adjustment_days.shared(register).get();
         if adjustment == 0 {
             return Err("a stock's gap closed over no days".to_owned());
         }
         Ok(Management {
-            gains,
-            memory,
+            types: phx_val::types::Types::compile(register)?,
             adjustment_days: phx_rand::float::from_u64(adjustment),
-            intensities,
-            switching,
-            trend: register.fixed("VAL.trend_gamma")?,
-            anchor: register.fixed("VAL.anchor_kappa")?,
-            performance_memory: register.fixed("VAL.performance_memory")?,
             sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
             cover_days: phx_rand::float::from_u64(p.cover_days.shared(register).get()),
@@ -214,6 +189,15 @@ impl Management {
 mod tests {
     use super::Management;
 
+    fn one(value: i64) -> phx_core::register::values::TypeSet {
+        phx_core::register::values::TypeSet::new(vec![phx_core::register::values::TypeShare {
+            id: phx_core::register::values::TypeId::new(0),
+            share_ppm: 1_000_000,
+            value,
+        }])
+        .unwrap_or_else(|e| panic!("{e}"))
+    }
+
     #[test]
     fn points_near_span_the_decades_around_a_price() {
         let m = Management {
@@ -226,24 +210,16 @@ mod tests {
             review_hours: 8.0,
             menu_hours: 2.0,
             points: vec![100, 199, 499, 999],
-            gains: vec![0.5],
-            memory: phx_core::register::values::TypeSet::new(vec![phx_core::register::values::TypeShare {
-                id: phx_core::register::values::TypeId::new(0),
-                share_ppm: 1_000_000,
-                value: 5,
-            }])
-            .unwrap_or_else(|e| panic!("{e}")),
+            types: phx_val::types::Types {
+                memory: one(5),
+                gains: vec![0.5],
+                switching: one(1),
+                intensities: vec![1.0],
+                trend: 0.4,
+                anchor: 0.5,
+                performance_memory: 0.3,
+            },
             sensitivity: 2.0,
-            intensities: vec![1.0],
-            switching: phx_core::register::values::TypeSet::new(vec![phx_core::register::values::TypeShare {
-                id: phx_core::register::values::TypeId::new(0),
-                share_ppm: 1_000_000,
-                value: 1,
-            }])
-            .unwrap_or_else(|e| panic!("{e}")),
-            trend: 0.4,
-            anchor: 0.5,
-            performance_memory: 0.3,
         };
         assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);
