@@ -37,19 +37,18 @@ pub struct ClaimIn {
     pub claiming_cost: f64,
 }
 
-/// A country's state pension as a person who retires claims it: by sex, female first, the replacement rate of the
-/// mean wage it pays monthly and the share of pensioners it covers.
+/// A country's state pension as a person who retires claims it: by sex, female first, the age it is paid from, the
+/// replacement rate of the mean wage it pays monthly and the share of pensioners it covers.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PensionLaw {
+    pub age: [f64; 2],
     pub replacement: [f64; 2],
     pub coverage: [f64; 2],
 }
 
-/// Social protection's state pension: the keyed stream a person's coverage is drawn from, and each country's
-/// pension.
+/// Social protection's state pension: each country's pension.
 #[derive(Clone, Copy, Debug)]
 pub struct PensionKind {
-    pub covered: &'static str,
     pub law: fn(&Register, &OpeningCountry) -> Result<PensionLaw, String>,
 }
 

@@ -79,6 +79,10 @@ impl Core {
                 Missing::Present(b) => Some(b),
                 Missing::Absent => None,
             });
+            s.pension.push(match c.pension {
+                Missing::Present(p) => Some(p),
+                Missing::Absent => None,
+            });
         }
         self.state = s;
         let (Some(treasury), Some(household)) =

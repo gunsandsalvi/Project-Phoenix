@@ -1037,6 +1037,31 @@ fn decisions_taken(w: Inspector<'_>) -> Outcome {
     }
 }
 
+/// Retirees claim the state pension: some of those who retired claimed it where any country's pension covers anyone,
+/// and none claimed twice or without retiring.
+fn pensions_claimed(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let (retired, claimed) = core.pop_days.iter().fold((0, 0), |(r, c), (_, d)| (r + d.retired, c + d.claimed));
+    if retired == 0 {
+        return Outcome::NotYet("no one retired");
+    }
+    if claimed > retired {
+        return Outcome::Fail(format!("{claimed} pensions claimed by {retired} retirees"));
+    }
+    let covers = core.state.pension.iter().flatten().any(|p| p.coverage.iter().any(|c| *c > 0.0));
+    if covers && claimed == 0 {
+        return Outcome::Fail(format!("none of {retired} retirees claimed a pension that covers some"));
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_53: Check = live_check! {
+    id: "LC-1-53",
+    title: "Retirees claim the state pension their country's coverage gives them",
+    from_step: "S1.24",
+    check: pensions_claimed,
+};
+
 pub const LC_1_52: Check = live_check! {
     id: "LC-1-52",
     title: "Every decision the world declares is taken through the decision core, by a named decider",

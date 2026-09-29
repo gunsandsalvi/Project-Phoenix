@@ -94,7 +94,7 @@ pub struct Arrears {
 }
 
 /// The state's laws on the core, by country: the income tax withheld from wages, the consumption tax's rate, the
-/// benefit for a job lost, and each country's treasury the taxes are paid to.
+/// benefit for a job lost, each country's treasury the taxes are paid to, and the state pension.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct CoreState {
     pub withholding: Vec<Option<phx_ledger::levy::Withholding>>,
@@ -108,6 +108,16 @@ pub struct CoreState {
     pub remit_day: Vec<Option<u32>>,
     /// Each country's treasury's payment order.
     pub order: Vec<Option<if_state::kinds::PaymentOrder>>,
+    pub pension: Vec<Option<Pension>>,
+}
+
+/// A country's state pension as a retiree claims it, by sex, female first: the age it is paid from, the share of
+/// retirees it covers, and the flat amount it pays monthly.
+#[derive(Clone, Copy, Debug, PartialEq, phx_macros::Saved)]
+pub struct Pension {
+    pub age: [f64; 2],
+    pub coverage: [f64; 2],
+    pub amount: [i64; 2],
 }
 
 /// What the core's day did: the flows made, settled, failed and committed.

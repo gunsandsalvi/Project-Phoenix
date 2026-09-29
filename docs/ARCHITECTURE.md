@@ -1885,8 +1885,15 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
 - **The benefit** (`sys-soc`, SOC.3): a person laid off or released by a failed firm claims when the benefit's monthly
   amount (its replacement share of the wage lost) times its months is worth more than the claiming hours at its last
   wage; it joins its country's benefit line of that amount — opened the first time a claim needs it, paid monthly for
-  the benefit's months — with as many of the treasury's members. A hire ends it. A person who retires claims the state
-  pension (§10.3).
+  the benefit's months — with as many of the treasury's members. A hire ends it. On the core (`Core::claim_benefit`)
+  the claim is a contract from the treasury on a monthly schedule from the claim's date, ending after the benefit's
+  months; claims begun on one date share one schedule (`DatedFamily::monthly_from`).
+- **The state pension** (`sys-soc`, SOC.3, LAB.6; on the core `Core::claim_pension`, a placeholder naming SOC until
+  S5.02): a person who retires at or past its sex's pension age claims its country's pension where a draw fixed for
+  the person by the keyed stream `SOC.pension_covered` falls within its sex's coverage: a contract from the treasury
+  paying its sex's flat amount — the replacement rate of the country's mean wage at the opening, as the pensions in
+  payment at the opening are — monthly from the pension family's next date, naming the person, for life. Each day's
+  retirees and claims are counted (`PopDay::retired`, `claimed`; LC-1-53).
 - **Bills** (`sys-sov`, SOV; on the core `core_bills`): each country's auction runs in its fund stage on its declared
   weekday, before the facilities' requests. The minister sizes it (`SOV.size`, through the decision core; the
   placeholder plan naming TRS): the face that keeps the treasury's cash at `SOV.buffer_weeks` of its last week's
@@ -2748,10 +2755,7 @@ line of its rent point, whose landlords are derived over the firms by their plan
 Both are lines of many holders on both sides, so they are cleared (§6.5). Social protection's draw gives each adult who
 has reached its sex's pension age the state pension at its sex's coverage: a person's row on its sex's state pension
 line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is named. A person
-who retires in the run claims it as it retires (`claim_pension`, beside the benefit's claim): a draw fixed for the
-person by a keyed stream (`SOC.pension_covered`) decides once whether its country's coverage takes it in, and if so it
-joins its country's pension line of its sex's replacement rate of the mean wage then, opened the first time a claim
-needs it, with as many of the treasury's members. The defined-benefit schemes are S4.04's, with their sources. The firms are counted by
+who retires in the run claims it as it retires (§7.16). The defined-benefit schemes are S4.04's, with their sources. The firms are counted by
 their density over the employed (`FRM.firms_per_employed`) and sized by a Pareto law of the sourced exponent
 (`FRM.size_exponent`) whose scale is solved, by halving, so that the firms' whole sizes — each rounded up, as a firm
 employs whole persons — sum to the employed in expectation (`sys-frm`'s `law`). The largest, down to the individuals'

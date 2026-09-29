@@ -3,7 +3,7 @@
 //! worker — paid monthly by the treasury, a person's row on the country's state pension line.
 
 use phx_core::register::values::Table1;
-use phx_core::{OpeningCountry, Prim, Register, StreamDef, declare_stream};
+use phx_core::{OpeningCountry, Prim, Register, declare_stream};
 use phx_ledger::opening::whole;
 use phx_macros::clause;
 use phx_num::violation;
@@ -24,20 +24,23 @@ declare_stream! {
 /// A primitive missing or of another shape.
 #[clause("SOC.3", "GEN.2")]
 pub fn law(register: &Register, c: &OpeningCountry) -> Result<if_state::kinds::PensionLaw, String> {
-    let at = |id: &str| -> Result<[f64; 2], String> {
+    let at = |id: &str, parts: f64| -> Result<[f64; 2], String> {
         let table = register.table1_in(id, c.id)?;
         let mut out = [0.0; 2];
         for (slot, sex) in out.iter_mut().zip([if_pop::FEMALE, if_pop::MALE]) {
-            *slot = phx_rand::float::from_i64(table.at(i64::from(sex)).map_err(|e| format!("{e:?}"))?) / SHARE_PARTS;
+            *slot = phx_rand::float::from_i64(table.at(i64::from(sex)).map_err(|e| format!("{e:?}"))?) / parts;
         }
         Ok(out)
     };
-    Ok(if_state::kinds::PensionLaw { replacement: at(crate::REPLACEMENT.id)?, coverage: at(crate::COVERAGE.id)? })
+    Ok(if_state::kinds::PensionLaw {
+        age: at(crate::PENSION_AGE.id, AGE_PARTS)?,
+        replacement: at(crate::REPLACEMENT.id, SHARE_PARTS)?,
+        coverage: at(crate::COVERAGE.id, SHARE_PARTS)?,
+    })
 }
 
-/// The state pension, which the kernel binds.
-pub const PENSIONS: if_state::kinds::PensionKind =
-    if_state::kinds::PensionKind { covered: CoveredStream::DECL.name, law };
+/// The state pension, which the core binds.
+pub const PENSIONS: if_state::kinds::PensionKind = if_state::kinds::PensionKind { law };
 
 /// Social protection's draw of the state pensions in payment.
 #[derive(Debug)]

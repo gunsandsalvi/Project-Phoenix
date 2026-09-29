@@ -28,7 +28,8 @@ pub struct Hazard {
     pub next: Vec<Option<(Day, bool)>>,
 }
 
-/// What the core's persons went through on a day: households followed, persons hit, born and gone, households ended.
+/// What the core's persons went through on a day: households followed, persons hit, born and gone, households ended,
+/// and persons retired, with those of them who claimed the state pension.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct PopDay {
     pub followed: u64,
@@ -36,6 +37,8 @@ pub struct PopDay {
     pub born: u64,
     pub gone: u64,
     pub ended: u64,
+    pub retired: u64,
+    pub claimed: u64,
 }
 
 /// Where what a person held and owed went at its death: to its household, which goes on; to the estate its household
@@ -312,7 +315,7 @@ impl Core {
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
         self.record_vitals((decl, &h), &held, (ctx, day));
-        self.write_changed((place, decl), key, &h.persons, &held);
+        self.write_changed((place, decl), key, (&h.persons, &held), (ctx, day), record);
         // The household's own attributes an outcome changed, as its decision to try for a child, are its record's.
         if h.attrs != attrs
             && let Some(store) = self.kinds.get_mut(place)
@@ -398,14 +401,16 @@ impl Core {
         }
     }
 
-    /// The persons an outcome changed and kept, written back; one who retired leaves its jobs and the searchers.
+    /// The persons an outcome changed and kept, written back; one who retired leaves its jobs and the searchers, and
+    /// claims its state pension.
     #[clause("REP.26", "LAB.6")]
     fn write_changed(
         &mut self,
         (place, decl): (usize, &PopKindDecl),
         key: PartyKey,
-        persons: &[Person],
-        held: &[phx_pop::persons::Held],
+        (persons, held): (&[Person], &[phx_pop::persons::Held]),
+        (ctx, day): (&Ctx<'_>, Day),
+        record: &mut PopDay,
     ) {
         let state = sys_lab::STATE.name;
         for (at, (p, h)) in persons.iter().zip(held).enumerate() {
@@ -422,8 +427,22 @@ impl Core {
             let was = unpack(decl, h.word).attr(state);
             if p.attr(state) == Some(if_labour::class::RETIRED) && was != Some(if_labour::class::RETIRED) {
                 self.leave_jobs(key, h.id);
+                record.retired += 1;
+                if let Some(country) = self.country_of_household(ctx, (place, decl), key)
+                    && self.claim_pension((ctx.calendar, ctx.streams, day), (key, p), (h.id, country))
+                {
+                    record.claimed += 1;
+                }
             }
         }
+    }
+
+    /// The country a household is sited in, by the region its record holds.
+    fn country_of_household(&self, ctx: &Ctx<'_>, (place, decl): (usize, &PopKindDecl), key: PartyKey) -> Option<u8> {
+        let phx_num::Missing::Present(at) = decl.sited_by else { return None };
+        let word = self.kinds.get(place)?.record(key.slot()).get(at)?.get();
+        let phx_num::Missing::Present(region) = word else { return None };
+        ctx.regions.get(usize::try_from(region).ok()?).map(|c| c.get())
     }
 
     /// A person gone from its household: every contract naming it closes, and it no longer works in a firm it owns.

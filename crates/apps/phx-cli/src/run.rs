@@ -477,16 +477,18 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
             (flows + d.flows, settled + d.settled, failed + d.failed, committed + d.committed, breaks + d.breaks);
         arrears += d.arrears;
     }
-    let (mut born, mut gone, mut ended) = (0, 0, 0);
+    let (mut born, mut gone, mut ended, mut retired, mut claimed) = (0, 0, 0, 0, 0);
     for (_, p) in core.pop_days.iter().filter(|(d, _)| in_turn(*d)) {
         (born, gone, ended) = (born + p.born, gone + p.gone, ended + p.ended);
+        (retired, claimed) = (retired + p.retired, claimed + p.claimed);
     }
     let date = |d| crate::measure::calendar::date_text(w.date(d));
     let phase = if turn.last < settle_end { "settling" } else { "running" };
     let wall = turn.wall_ns.map_or_else(|| "untimed".to_owned(), |ns| format!("{} ms", ns / 1_000_000));
     format!(
         "{phase} {} to {}: {} days in {wall}; flows {flows}, settled {settled}, failed {failed} ({arrears} into \
-         arrears), committed {committed}, money breaks {breaks}; born {born}, gone {gone}, households ended {ended}; persons {}",
+         arrears), committed {committed}, money breaks {breaks}; born {born}, gone {gone}, households ended {ended}, \
+         retired {retired} ({claimed} claiming a pension); persons {}",
         date(turn.first),
         date(turn.last),
         turn.days,

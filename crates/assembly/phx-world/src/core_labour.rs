@@ -17,7 +17,7 @@ use if_labour::law::Law;
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::Period;
 use phx_core::wheel::DueWheel;
-use phx_core::{OpeningCountry, Register, Streams, SubStep};
+use phx_core::{OpeningCountry, Register, StreamDef, Streams, SubStep};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_market::hiring::{Application, Seeker, Standing, Vacancy, answer, search, select};
@@ -1218,12 +1218,8 @@ impl Core {
         }
         let date = ctx.calendar.date(day);
         let Some(f) = self.families.get_mut(family) else { return };
-        let dates = phx_ledger::opening::monthly(date, CountryId::new(country));
-        f.schedules.push((dates, country, 0));
-        f.classes.push([0, 0, 0]);
-        f.terms.push(None);
-        f.ends_after.push(Some(benefit.months));
-        let schedule = u32::try_from(f.schedules.len() - 1).unwrap_or(u32::MAX);
+        let schedule = f.monthly_from(date, CountryId::new(country), Some(benefit.months));
+        let Some(dates) = f.schedules.get(usize::try_from(schedule).unwrap_or(usize::MAX)).map(|s| s.0) else { return };
         let due = Due {
             ends: [treasury, household],
             amount: phx_ledger::opening::whole(monthly),
@@ -1233,6 +1229,54 @@ impl Core {
             arrears: 0,
         };
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, 1)));
+    }
+
+    /// A person who retired claims its country's state pension from its pension's age where the pension covers it —
+    /// drawn once for the person, at its sex's share — paid by its treasury at its sex's flat amount monthly from the
+    /// family's next date, naming the person. True when it claimed.
+    #[clause("SOC.3", "LAB.6")]
+    pub(crate) fn claim_pension(
+        &mut self,
+        (calendar, streams, day): (&Calendar, &Streams, Day),
+        (household, person): (PartyKey, &phx_core::Person),
+        (id, country): (u64, u8),
+    ) -> bool {
+        let Some(Some(pension)) = self.state.pension.get(usize::from(country)).copied() else { return false };
+        let Some(Some(treasury)) = self.treasuries.get(usize::from(country)).copied() else { return false };
+        let at = match person.attr(if_pop::SEX.name) {
+            Some(if_pop::FEMALE) => 0,
+            Some(if_pop::MALE) => 1,
+            _ => violation!(clause = "REP.26", "a retiree with no sex of the two"),
+        };
+        let (Some(age), Some(share), Some(amount)) =
+            (pension.age.get(at), pension.coverage.get(at), pension.amount.get(at))
+        else {
+            return false;
+        };
+        let mut d = streams.open_keyed(&sys_soc::CoveredStream::DECL, Subject::new(SubjectTag::Party, id));
+        if from_i64(person.age_on(calendar.date(day))) < *age || phx_rand::open_unit(&mut d) >= *share {
+            return false;
+        }
+        let Some(f) = self.families.iter_mut().find(|f| f.name == crate::consts::families::PENSION) else {
+            return false;
+        };
+        let schedule = f
+            .schedules
+            .iter()
+            .zip(&f.ends_after)
+            .position(|(s, end)| s.1 == country && end.is_none())
+            .and_then(|i| u32::try_from(i).ok());
+        let schedule = match schedule {
+            Some(s) => s,
+            None => f.monthly_from(calendar.date(day), CountryId::new(country), None),
+        };
+        let Some(dates) = f.schedules.get(usize::try_from(schedule).unwrap_or(usize::MAX)).map(|s| s.0) else {
+            return false;
+        };
+        let nth = crate::core_open::next_after(&dates, calendar, day);
+        let due = Due { ends: [treasury, household], amount: *amount, nth, schedule, person: id, arrears: 0 };
+        let _ = f.store.open(due, Some(dates.nth(calendar, nth)));
+        true
     }
 
     /// A person hired leaves the benefit.

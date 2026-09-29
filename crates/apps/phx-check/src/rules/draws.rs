@@ -21,16 +21,13 @@ const ALLOWED: &[Allowed] = &[
     },
     Allowed {
         name: "Streams",
-        places: &[
-            ("phx-core", &["/src/streams.rs", "/src/handler.rs", "/src/contribution.rs", "/src/lib.rs"]),
-            ("phx-world", &[]),
-        ],
-        why: "streams are opened only by the handler context, the opening's context and the observer's draws",
+        places: &[("phx-core", &["/src/streams.rs", "/src/contribution.rs", "/src/lib.rs"]), ("phx-world", &[])],
+        why: "streams are opened only by the core, the opening's context and the observer's draws",
     },
     Allowed {
         name: "open_keyed",
-        places: &[("phx-core", &["/src/streams.rs", "/src/handler.rs"]), ("phx-world", &["/src/state.rs"])],
-        why: "keyed streams are opened only by the handler context and by the state's claims, each drawn once for a person",
+        places: &[("phx-core", &["/src/streams.rs"]), ("phx-world", &["/src/core_labour.rs"])],
+        why: "keyed streams are opened only by the state's claims, each drawn once for a person",
     },
     Allowed {
         name: "ObserverDraws",
@@ -135,7 +132,7 @@ mod tests {
         };
         assert_eq!(lines("sys-dem", Layer::Systems, "src/lib.rs"), vec![1, 2, 3]);
         assert_eq!(lines("phx-core", Layer::Kernel, "src/streams.rs"), Vec::<usize>::new());
-        assert_eq!(lines("phx-core", Layer::Kernel, "src/handler.rs"), vec![1, 3]);
+        assert_eq!(lines("phx-core", Layer::Kernel, "src/contribution.rs"), vec![1, 3]);
         assert_eq!(lines("phx-obs", Layer::Assembly, "src/view.rs"), vec![1, 2]);
         assert_eq!(lines("phx-world", Layer::Assembly, "src/day.rs"), vec![1, 3]);
     }

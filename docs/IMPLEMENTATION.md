@@ -819,6 +819,12 @@ world switches to the core.
     FRM.15), is next in f. Births come at the opening's transient: no
     household is trying at day zero and each decides at its head's birthday (38 births in 35 days), which the
     settling years absorb.
+  - The state pension claimed at retirement (SOC.3, LAB.6; `Core::claim_pension`, ARCHITECTURE §7.16), S0.25's
+    placeholder naming SOC, which the old world ran and the core had not: a person who retires at or past its sex's
+    pension age and whom a draw fixed for it by `SOC.pension_covered` finds within its sex's coverage is paid its sex's
+    flat amount monthly by its treasury, for life. LC-1-53 reads each day's retirees and claims, not yet run. Found
+    with it: every benefit claim added a schedule of its own to the benefit family, which grew by one a claim; claims
+    begun on one date now share one.
   - h: the settlement values (SET.10, LC-0-22): each business day's settlement measures the value it settled, what
     the payers' nets drew, and the closing ring — the parties whose settled payments exceed what they could pay alone,
     and the part of their payments their receipts paid — published on the core's day with the failures by cause, the

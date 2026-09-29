@@ -186,6 +186,7 @@ pub const CHECKS: &[Check] = &[
     lives::LC_1_49,
     lives::LC_1_51,
     core::LC_1_52,
+    core::LC_1_53,
     services::LC_1_45,
     geo::LC_1_46,
     freight::LC_1_47,

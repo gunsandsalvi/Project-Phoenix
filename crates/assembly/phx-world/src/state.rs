@@ -1,15 +1,18 @@
-//! The state's laws as the core reads them: each country's taxes and benefit, compiled from the kinds the systems
-//! declare.
+//! The state's laws as the core reads them: each country's taxes, benefit and state pension, compiled from the kinds
+//! the systems declare.
 
-use if_state::kinds::{BenefitKind, BenefitLaw, BillKind, BillLaw, PaymentOrder, TaxKind, TaxLaw, TreasuryKind};
+use if_state::kinds::{
+    BenefitKind, BenefitLaw, BillKind, BillLaw, PaymentOrder, PensionKind, TaxKind, TaxLaw, TreasuryKind,
+};
 use phx_core::{Declarations, OpeningCountry, Register};
 use phx_num::Missing;
 
-/// Each country's state: its taxes and its benefit.
+/// Each country's state: its taxes, its benefit and its state pension.
 #[derive(Clone, Debug)]
 pub(crate) struct Country {
     pub tax: Missing<TaxLaw>,
     pub benefit: Missing<BenefitLaw>,
+    pub pension: Missing<crate::core_day::Pension>,
     pub bills: Missing<BillLaw>,
     pub order: Missing<PaymentOrder>,
 }
@@ -53,6 +56,18 @@ fn compiled<T>(what: &str, c: &OpeningCountry, r: Option<Result<T, String>>, err
     }
 }
 
+/// A country's state pension as a retiree claims it: its law, and the flat amount each sex is paid monthly, the
+/// replacement rate of the country's mean wage at the opening, as the pensions in payment at the opening are.
+fn pension_of(k: PensionKind, register: &Register, c: &OpeningCountry) -> Result<crate::core_day::Pension, String> {
+    let law = (k.law)(register, c)?;
+    let wage = phx_ledger::opening::mean_wage(c);
+    Ok(crate::core_day::Pension {
+        age: law.age,
+        coverage: law.coverage,
+        amount: law.replacement.map(|r| phx_ledger::opening::whole(r * wage)),
+    })
+}
+
 /// The state's kinds the systems declare, with each country's law.
 pub(crate) fn bind(d: &Declarations, register: &Register, countries: &[OpeningCountry]) -> Result<State, Vec<String>> {
     let mut errors = Vec::new();
@@ -60,11 +75,13 @@ pub(crate) fn bind(d: &Declarations, register: &Register, countries: &[OpeningCo
     let benefit = take(one::<BenefitKind>(d), &mut errors);
     let bills = take(one::<BillKind>(d), &mut errors);
     let treasury = take(one::<TreasuryKind>(d), &mut errors);
+    let pension = take(one::<PensionKind>(d), &mut errors);
     let compiled_countries: Vec<Country> = countries
         .iter()
         .map(|c| Country {
             tax: compiled("the taxes", c, tax.map(|k| (k.law)(register, c)), &mut errors),
             benefit: compiled("the benefit", c, benefit.map(|k| (k.law)(register, c)), &mut errors),
+            pension: compiled("the state pension", c, pension.map(|k| pension_of(k, register, c)), &mut errors),
             bills: compiled("the bills", c, bills.map(|k| (k.law)(register, c)), &mut errors),
             order: compiled("the payment order", c, treasury.map(|k| (k.order)(register, c)), &mut errors),
         })

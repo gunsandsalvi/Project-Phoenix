@@ -585,6 +585,45 @@ impl DatedFamily {
     pub(crate) fn first(&self, calendar: &Calendar, schedule: u32) -> Option<Day> {
         self.schedules.get(usize::try_from(schedule).ok()?).map(|s| s.0.nth(calendar, 1))
     }
+
+    /// A country's monthly schedule from `anchor`, ending after `last` dates where it ends, found where the family
+    /// holds it and added where not, so contracts begun alike share one.
+    pub(crate) fn monthly_from(&mut self, anchor: phx_id::Date, country: phx_id::CountryId, last: Option<u32>) -> u32 {
+        let dates = phx_ledger::opening::monthly(anchor, country);
+        let found = (0..self.schedules.len()).find(|i| {
+            self.schedules.get(*i).is_some_and(|s| s.0 == dates && s.1 == country.get())
+                && self.classes.get(*i) == Some(&[0, 0, 0])
+                && self.terms.get(*i).is_some_and(Option::is_none)
+                && self.ends_after.get(*i) == Some(&last)
+        });
+        if let Some(at) = found {
+            return u32::try_from(at).unwrap_or(u32::MAX);
+        }
+        self.schedules.push((dates, country.get(), 0));
+        self.classes.push([0, 0, 0]);
+        self.terms.push(None);
+        self.ends_after.push(last);
+        u32::try_from(self.schedules.len() - 1).unwrap_or(u32::MAX)
+    }
+}
+
+/// The place of a schedule's first date after `day`.
+pub(crate) fn next_after(dates: &phx_core::calendar::period::ScheduleDates, calendar: &Calendar, day: Day) -> u32 {
+    let (from, to) = (dates.anchor, calendar.date(day));
+    let months = (i64::from(to.year()) - i64::from(from.year())) * crate::consts::MONTHS + i64::from(to.month())
+        - i64::from(from.month());
+    // The dates run a month apart from the anchor, so the months since it place the search within a date or two.
+    let mut n = match u32::try_from(months) {
+        Ok(m) if m > 0 => m,
+        _ => 1,
+    };
+    while n > 1 && dates.nth(calendar, n - 1) > day {
+        n -= 1;
+    }
+    while dates.nth(calendar, n) <= day {
+        n += 1;
+    }
+    n
 }
 
 /// The months of a monthly schedule's dates in the year after `today`.

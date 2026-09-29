@@ -60,9 +60,9 @@ impl phx_store::save::Saved for if_state::kinds::PaymentOrder where u8: phx_stor
 pub fn if_state::kinds::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn if_state::kinds::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::kinds::PensionKind
-pub if_state::kinds::PensionKind::covered: &'static str
 pub if_state::kinds::PensionKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PensionLaw, alloc::string::String>
 pub struct if_state::kinds::PensionLaw
+pub if_state::kinds::PensionLaw::age: [f64; 2]
 pub if_state::kinds::PensionLaw::coverage: [f64; 2]
 pub if_state::kinds::PensionLaw::replacement: [f64; 2]
 pub struct if_state::kinds::SizeIn
