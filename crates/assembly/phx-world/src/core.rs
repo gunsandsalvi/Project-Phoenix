@@ -40,6 +40,8 @@ pub struct Core {
     pub insolvency: crate::core_default::Insolvency,
     /// Each creditor's loan book, kept by what moves it.
     pub loan_books: std::collections::BTreeMap<PartyKey, crate::core_books::LoanBook>,
+    /// Each firm's and bank's equity account and income.
+    pub accounts: crate::core_accounts::Accounts,
     /// The next identity the core hands a party or person it begins.
     pub next_id: u64,
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.

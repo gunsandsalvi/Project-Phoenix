@@ -151,18 +151,11 @@ pub const LC_0_32: Check = live_check! {
     retired: "the markets' measures were the old market instances', deleted with them (S1.24)",
 };
 
-pub const LC_0_33: Check = live_check! {
-    id: "LC-0-33",
-    title: "Accounts is clean for every party with an equity account",
-    from_step: "S0.19",
-    check: |_| Outcome::NotYet("awaits the accounts on the core (S1.24 h)"),
-};
-
 pub const LC_0_34: Check = live_check! {
     id: "LC-0-34",
     title: "Receivables equal payables across the world",
     from_step: "S0.19",
-    check: |_| Outcome::NotYet("awaits the accounts on the core (S1.24 h)"),
+    retired: "a receivable and its payable were two sides' rows of one line in the old ledger; on the core a contract is one row both its parties read, so the two cannot differ",
 };
 
 pub const LC_0_35: Check = live_check! {
@@ -289,13 +282,6 @@ pub const LC_0_61: Check = live_check! {
     title: "On sampled holders, every row due was read in the holder's run, and no head was later than its segment's earliest due day",
     from_step: "S0.17",
     retired: "the ledger's run of rows due was the old kernel's; the core's dues come off its wheels, read by LC-0-62",
-};
-
-pub const LC_1_06: Check = live_check! {
-    id: "LC-1-06",
-    title: "the family of the firms' revenue (FRM.17) is clean; the claims' (FRM.18) joins with the invoices (S2.02)",
-    from_step: "S1.03",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the revenue family"),
 };
 
 pub const LC_1_10: Check = live_check! {

@@ -910,3 +910,41 @@ pub const LC_1_24: Check = live_check! {
     from_step: "S1.09",
     check: loan_books_reconcile,
 };
+
+/// The accounts family found nothing: every firm's and bank's equity account equals what its books show at every
+/// close.
+fn accounts_clean(w: Inspector<'_>) -> Outcome {
+    if w.core().accounts.opening.is_empty() {
+        return Outcome::NotYet("no party keeps an equity account in the run");
+    }
+    match w.findings().iter().find(|f| f.family == "accounts") {
+        Some(f) => Outcome::Fail(format!("day {}: {}", f.day.get(), f.detail)),
+        None => Outcome::Pass,
+    }
+}
+
+/// The revenue family found nothing: the firms' revenue recognised at their sales' delivery equals what the buyers
+/// paid them for sales, every revenue somebody's outlay.
+fn revenue_clean(w: Inspector<'_>) -> Outcome {
+    if w.core().accounts.revenue == 0 {
+        return Outcome::NotYet("no firm recognised revenue in the run");
+    }
+    match w.findings().iter().find(|f| f.family == "revenue") {
+        Some(f) => Outcome::Fail(format!("day {}: {}", f.day.get(), f.detail)),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_0_33: Check = live_check! {
+    id: "LC-0-33",
+    title: "Accounts is clean for every party with an equity account",
+    from_step: "S0.19",
+    check: accounts_clean,
+};
+
+pub const LC_1_06: Check = live_check! {
+    id: "LC-1-06",
+    title: "the family of the firms' revenue (FRM.17) is clean; the claims' (FRM.18) joins with the invoices (S2.02)",
+    from_step: "S1.03",
+    check: revenue_clean,
+};

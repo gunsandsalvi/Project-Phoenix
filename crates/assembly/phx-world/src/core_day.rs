@@ -68,13 +68,26 @@ pub struct DatedFamily {
     pub moves: LoanMoves,
 }
 
-/// A family's moves on its creditors' loan books: each amount lent, principal repaid and balance written off, with
-/// the creditor whose book it moves.
+/// A family's moves on its parties' books: each amount lent and balance written off, with the creditor whose book it
+/// moves; each principal repaid, with its payer and creditor; and each change in a contract's arrears — what its payer
+/// owes and its creditor is owed beyond its dates — with the two, the family's reason and whether its contract is
+/// reckoned from terms.
 #[derive(Debug, Default)]
 pub struct LoanMoves {
     pub lent: Vec<(PartyKey, i64)>,
-    pub repaid: Vec<(PartyKey, i64)>,
+    pub repaid: Vec<(PartyKey, PartyKey, i64)>,
     pub written_off: Vec<(PartyKey, i64)>,
+    pub arrears: Vec<Arrears>,
+}
+
+/// A change in a contract's arrears.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Arrears {
+    pub payer: PartyKey,
+    pub payee: PartyKey,
+    pub change: i64,
+    pub reason: u8,
+    pub terms: bool,
 }
 
 /// The state's laws on the core, by country: the income tax withheld from wages, the consumption tax's rate, the
@@ -198,6 +211,15 @@ impl Core {
                 continue;
             }
             row.arrears += f.amount;
+            let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
+            let terms = family.terms.get(at).is_some_and(Option::is_some);
+            family.moves.arrears.push(Arrears {
+                payer: f.payer,
+                payee: f.payee,
+                change: f.amount,
+                reason: family.reason,
+                terms,
+            });
             n += 1;
             if let Some(i) = family.finishing.iter().position(|e| *e == f.source) {
                 family.finishing.swap_remove(i);
@@ -257,8 +279,19 @@ impl DatedFamily {
     pub(crate) fn close_contract(&mut self, edge: Slot) {
         if let Some(row) = self.store.edges.row(edge).filter(|_| self.store.edges.is_open(edge)) {
             let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
-            if self.terms.get(at).is_some_and(Option::is_some) && row.amount > 0 {
+            let terms = self.terms.get(at).is_some_and(Option::is_some);
+            if terms && row.amount > 0 {
                 self.moves.written_off.push((row.ends[1], row.amount));
+            }
+            if row.arrears != 0 {
+                let [debtor, creditor] = row.ends;
+                self.moves.arrears.push(Arrears {
+                    payer: debtor,
+                    payee: creditor,
+                    change: -row.arrears,
+                    reason: self.reason,
+                    terms,
+                });
             }
         }
         self.store.close(edge);
@@ -286,13 +319,24 @@ impl DatedFamily {
                     let (paid, repaid) = reckoned(terms, (row.amount, *ccy), row.nth, (day, calendar));
                     row.amount -= repaid;
                     if repaid > 0 {
-                        self.moves.repaid.push((row.ends[1], repaid));
+                        self.moves.repaid.push((row.ends[0], row.ends[1], repaid));
                     }
                     paid
                 }
                 None => row.amount,
             } + row.arrears;
             // What it owed is asked again now; a failure puts it back.
+            if row.arrears != 0 {
+                let terms = self.terms.get(at).is_some_and(Option::is_some);
+                let [debtor, creditor] = row.ends;
+                self.moves.arrears.push(Arrears {
+                    payer: debtor,
+                    payee: creditor,
+                    change: -row.arrears,
+                    reason: self.reason,
+                    terms,
+                });
+            }
             row.arrears = 0;
             if amount > 0 {
                 out.push(Flow {
@@ -504,6 +548,23 @@ impl Core {
         }
     }
 
+    /// After the day's settlement: the sales delivered or released, each failed due held in its contract's arrears
+    /// and remembered from the day they began. Returns the contracts in arrears.
+    fn after_settlement(&mut self, day: Day, calendar: &Calendar, failed: &[Flow]) -> u64 {
+        self.deliver_sales(day, failed);
+        let n = self.hold_arrears(day, calendar, failed);
+        self.note_arrears(day, failed);
+        n
+    }
+
+    /// The day's books kept: the contracts' moves entered as income and on the loan books, and every account and
+    /// loan book held to what the positions show.
+    fn keep_books(&mut self, day: Day) {
+        self.account_moves();
+        self.book_loans(day);
+        self.audit_accounts(day);
+    }
+
     /// Each estate that paid all it held today ended; returns them.
     fn end_settled(&mut self, settling: Vec<PartyKey>) -> u64 {
         let mut ended = 0;
@@ -611,20 +672,21 @@ impl Core {
                 record.committed += phx_rand::float::len_u64(grouped.end());
             }
         }
+        if let Some(buf) = work.flows.chunks_mut().first() {
+            self.account_flows(buf, &failed);
+        }
         self.work = work;
         for f in &failed {
             if let Some(n) = record.failed_by.get_mut(usize::from(f.reason)) {
                 *n += 1;
             }
         }
-        self.deliver_sales(day, &failed);
-        record.arrears = self.hold_arrears(day, calendar, &failed);
-        self.note_arrears(day, &failed);
+        record.arrears = self.after_settlement(day, calendar, &failed);
         record.wages = self.record_wages_settled(&failed);
         bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
         record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
         record.estates += self.end_settled(settling);
-        self.book_loans(day);
+        self.keep_books(day);
         for k in &mut self.kinds {
             k.parties.close_day();
         }

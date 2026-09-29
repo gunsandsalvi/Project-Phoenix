@@ -2015,6 +2015,14 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   committed) and waits (`CoreGoods::deliveries`); after the day's settlement `deliver_sales` delivers each paid sale
   from the cover at what its buyer paid — to the buyer, or to nature for a service or a purchase used as delivered —
   releases each whose money failed (a service's released capacity perishing), and reads the goods' identity over them.
+- **Accounts** (`phx_world::core_accounts`, ACC.4, ACC.10, FRM.13): `Accounts` keeps each firm's and bank's equity
+  account at the opening (`open_accounts`, from `net_assets`) and its `Income` by line since. `recognise` enters an
+  event on its line: deliveries (revenue, cost of sales, services used), spoilage and perished capacity (goods lost),
+  a service's inputs used (cost of sales), the day's settled flows by reason (`account_flows`: wages, severance and
+  taxes paid; a loan payment as interest), and the families' moves (`account_moves`: principal repaid taken back out
+  of interest, arrears' changes accrued, balances written off). `audit_accounts` holds each equity account to
+  `net_assets` — money, goods at cost and what it is owed, less what it owes and a bank's deposits — and the revenue
+  recognised to the money received for sales.
 - **Loan books** (`phx_world::core_books`, BNK.11): each dated family records its moves on its creditors' books
   (`LoanMoves`: lent, principal repaid in `dues`, balances written off by `close_contract`); `book_loans` enters them
   at the day's close and holds each creditor's `LoanBook` to the balances its loan contracts owe it.

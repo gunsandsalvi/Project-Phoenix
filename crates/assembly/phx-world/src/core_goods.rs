@@ -30,6 +30,7 @@ use crate::consts::firm::{
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
 use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
 use crate::core::{Core, kind_number};
+use crate::core_accounts::Line;
 use crate::opening::economy::table;
 
 /// What a day's goods did.
@@ -838,7 +839,9 @@ impl Core {
             );
         }
         for f in lost {
-            let _ = self.move_goods(f, Cost::Carried, day, moved);
+            let holder = f.payer;
+            let cost = self.move_goods(f, Cost::Carried, day, moved);
+            self.recognise(holder, Line::GoodsLost, cost.unwrap_or(0));
         }
     }
 
@@ -876,7 +879,10 @@ impl Core {
                     reason: USED,
                     order: 0,
                 };
-                fed &= self.move_goods(flow, Cost::Carried, day, moved).is_some();
+                let cost = self.move_goods(flow, Cost::Carried, day, moved);
+                fed &= cost.is_some();
+                // A service made as it is sold carries no cost of its own; the inputs its sales use are theirs.
+                self.recognise(f.key, Line::CostOfSales, cost.unwrap_or(0));
             }
             if sold > 0 && !inputs.is_empty() {
                 self.goods.production.0 += 1;
@@ -895,7 +901,8 @@ impl Core {
                     reason: PERISHED,
                     order: 0,
                 };
-                let _ = self.move_goods(flow, Cost::Carried, day, moved);
+                let cost = self.move_goods(flow, Cost::Carried, day, moved);
+                self.recognise(f.key, Line::GoodsLost, cost.unwrap_or(0));
             }
         }
     }
@@ -1611,11 +1618,21 @@ impl Core {
                 }
                 if d.goods.payee == NATURE {
                     let lost = Flow { payee: NATURE, reason: PERISHED, ..d.goods };
-                    let _ = self.move_goods_from(lost, (Bound::Free, Cost::Carried), day, &mut moved);
+                    let cost = self.move_goods_from(lost, (Bound::Free, Cost::Carried), day, &mut moved);
+                    self.recognise(seller, Line::GoodsLost, cost.unwrap_or(0));
                 }
                 continue;
             }
-            let _ = self.move_goods_from(d.goods, (Bound::Committed, Cost::At(d.paid)), day, &mut moved);
+            let carried = self.move_goods_from(d.goods, (Bound::Committed, Cost::At(d.paid)), day, &mut moved);
+            // A sale is income on the day it is delivered: its price, less what its units cost.
+            self.recognise(seller, Line::Revenue, d.paid);
+            self.recognise(seller, Line::CostOfSales, carried.unwrap_or(0));
+            if self.accounts.opening.contains_key(&seller) {
+                self.accounts.revenue += i128::from(d.paid);
+            }
+            if d.goods.payee == NATURE {
+                self.recognise(d.buyer, Line::ServicesUsed, d.paid);
+            }
         }
         let close = self.goods.stocks.totals();
         for (good, expected, held) in breaks(&open, &nature_net(&moved), &close) {

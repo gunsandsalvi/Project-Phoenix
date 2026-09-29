@@ -982,6 +982,17 @@ world switches to the core.
     day's settlement, then each paid sale is delivered from its cover at what its buyer paid, each unpaid one released
     to its seller, a service's capacity released then perishing as unsold capacity does; the goods' identity is read
     over the deliveries (`core_goods::deliver_sales`). Not yet run.
+  - h: the accounts on the core (ACC.4, ACC.10, ACC.11, ACC.13, ACC.16, FRM.13, FRM.17; `core_accounts`), not yet run.
+    Each firm and bank keeps an equity account, opened at what its balance sheet shows at the opening and moved only by
+    its income as recognised: a sale's price and the cost its units carried on the day it is delivered, goods lost
+    and services used up, the inputs a service's sales use, wages, severance and taxes as paid, wages and interest
+    accrued in arrears, interest as a loan's payment less the principal its due repays, balances written off. At each
+    close each account is held to its balance sheet — money, goods at cost and what it is owed, less what it owes and,
+    for a bank, its customers' deposits — and the firms' revenue to the money paid them for sales; LC-0-33 and LC-1-06
+    read the two families. LC-0-34 is retired: on the core a contract is one row both its parties read. The unrealised
+    difference (ACC.3) waits for positions carried at a price other than cost (S3.05); a withheld tax or a severance
+    whose payment fails is lost to its payee, the accounts reading it as never owed — to settle with the collectors
+    (g).
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

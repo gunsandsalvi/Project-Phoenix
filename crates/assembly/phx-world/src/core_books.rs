@@ -53,7 +53,7 @@ impl Core {
                 let b = self.loan_books.entry(k).or_default();
                 (b.book, b.lent) = (b.book + i128::from(a), b.lent + i128::from(a));
             }
-            for (k, a) in moves.repaid {
+            for (_, k, a) in moves.repaid {
                 let b = self.loan_books.entry(k).or_default();
                 (b.book, b.repaid) = (b.book - i128::from(a), b.repaid + i128::from(a));
             }

@@ -409,6 +409,7 @@ fn core_of(
         core.open_goods(&gctx, (&opening, cover), today).map_err(|e| AssemblyErrors(vec![e]))?;
     }
     open_stats(p, &opening, &mut core)?;
+    core.open_accounts(today);
 
     Ok(core)
 }
