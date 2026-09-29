@@ -49,6 +49,11 @@ fn whole(v: f64) -> i64 {
     }
 }
 
+/// Each struck tile, with none yet found sited on it.
+fn struck_tiles(struck: &[(u32, i64)]) -> BTreeMap<u32, Vec<PartyKey>> {
+    struck.iter().map(|(t, _)| (*t, Vec::new())).collect()
+}
+
 impl Core {
     /// The day's weather in every region and catastrophes in every country, recorded as events.
     #[clause("CHN.3", "GEO.8")]
@@ -130,20 +135,21 @@ impl Core {
             return 0;
         }
         let per_mille = i64::try_from(phx_geo::consts::PER_MILLE).unwrap_or(i64::MAX);
+        // The firms sited on each struck tile, found in one pass over the firms.
+        let mut sited: BTreeMap<u32, Vec<PartyKey>> = struck_tiles(&struck);
+        if let Some(store) = self.kinds.get(firm) {
+            for s in store.parties.live_slots() {
+                let site = store.record(s).get(crate::consts::firm::SITE).map(|w| w.get());
+                if let Some(Missing::Present(t)) = site
+                    && let Some(on) = u32::try_from(t).ok().and_then(|t| sited.get_mut(&t))
+                {
+                    on.push(PartyKey::new(kind_number(firm), s));
+                }
+            }
+        }
         let mut destroyed = 0;
         for (tile, share) in struck {
-            let sited: Vec<PartyKey> = self.kinds.get(firm).map_or_else(Vec::new, |store| {
-                store
-                    .parties
-                    .live_slots()
-                    .filter(|s| {
-                        store.record(*s).get(crate::consts::firm::SITE).map(|w| w.get())
-                            == Some(Missing::Present(i64::from(tile)))
-                    })
-                    .map(|s| PartyKey::new(kind_number(firm), s))
-                    .collect()
-            });
-            for owner in sited {
+            for owner in sited.get(&tile).cloned().unwrap_or_default() {
                 let held: Vec<(u16, i64)> = self.goods.stocks.holdings(owner).map(|h| (h.unit, h.free())).collect();
                 for (unit, free) in held {
                     let lost = free * share / per_mille;
