@@ -528,6 +528,8 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            alike: BTreeMap::new(),
+            alike_upto: 0,
             moves: crate::core_day::LoanMoves::default(),
             lost: 0,
         }
@@ -584,19 +586,32 @@ impl DatedFamily {
     /// A schedule in the family for terms of their own dates in a currency, with a class, added where the family holds
     /// none alike.
     pub(crate) fn schedule_in(&mut self, ccy: u8, class: [u32; 3], terms: phx_ledger::algebra::Terms) -> u32 {
-        let found = self
-            .schedules
-            .iter()
-            .zip(&self.classes)
-            .zip(&self.terms)
-            .position(|(((_, cc, _), k), t)| *cc == ccy && *k == class && t.as_ref() == Some(&terms));
+        let found = self.alike_to((ccy, class, terms.schedule.dates.anchor)).into_iter().find(|i| {
+            let i = usize::try_from(*i).unwrap_or(usize::MAX);
+            self.schedules.get(i).is_some_and(|(_, cc, _)| *cc == ccy)
+                && self.classes.get(i) == Some(&class)
+                && self.terms.get(i).is_some_and(|t| t.as_ref() == Some(&terms))
+        });
         if let Some(at) = found {
-            return u32::try_from(at).unwrap_or(u32::MAX);
+            return at;
         }
         self.schedules.push((terms.schedule.dates, ccy, terms.payment_order.0));
         self.classes.push(class);
         self.terms.push(Some(terms));
         u32::try_from(self.schedules.len() - 1).unwrap_or(u32::MAX)
+    }
+
+    /// The schedules of a currency and class whose dates start from a date, in the order they were added; those added
+    /// since the index was last read indexed first.
+    fn alike_to(&mut self, key: (u8, [u32; 3], phx_id::Date)) -> Vec<u32> {
+        while let (Some((dates, ccy, _)), Some(class)) =
+            (self.schedules.get(self.alike_upto), self.classes.get(self.alike_upto))
+        {
+            let at = u32::try_from(self.alike_upto).unwrap_or(u32::MAX);
+            self.alike.entry((*ccy, *class, dates.anchor)).or_default().push(at);
+            self.alike_upto += 1;
+        }
+        self.alike.get(&key).cloned().unwrap_or_default()
     }
 
     /// A schedule's first date after the opening.
@@ -608,14 +623,15 @@ impl DatedFamily {
     /// holds it and added where not, so contracts begun alike share one.
     pub(crate) fn monthly_from(&mut self, anchor: phx_id::Date, country: phx_id::CountryId, last: Option<u32>) -> u32 {
         let dates = phx_ledger::opening::monthly(anchor, country);
-        let found = (0..self.schedules.len()).find(|i| {
-            self.schedules.get(*i).is_some_and(|s| s.0 == dates && s.1 == country.get())
-                && self.classes.get(*i) == Some(&[0, 0, 0])
-                && self.terms.get(*i).is_some_and(Option::is_none)
-                && self.ends_after.get(*i) == Some(&last)
+        let found = self.alike_to((country.get(), [0, 0, 0], dates.anchor)).into_iter().find(|i| {
+            let i = usize::try_from(*i).unwrap_or(usize::MAX);
+            self.schedules.get(i).is_some_and(|s| s.0 == dates && s.1 == country.get())
+                && self.classes.get(i) == Some(&[0, 0, 0])
+                && self.terms.get(i).is_some_and(Option::is_none)
+                && self.ends_after.get(i) == Some(&last)
         });
         if let Some(at) = found {
-            return u32::try_from(at).unwrap_or(u32::MAX);
+            return at;
         }
         self.schedules.push((dates, country.get(), 0));
         self.classes.push([0, 0, 0]);

@@ -128,6 +128,8 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            alike: std::collections::BTreeMap::new(),
+            alike_upto: 0,
             moves: crate::core_day::LoanMoves::default(),
             lost: 0,
         };
@@ -151,6 +153,8 @@ impl Core {
             terms: Vec::new(),
             ends_after: Vec::new(),
             finishing: Vec::new(),
+            alike: std::collections::BTreeMap::new(),
+            alike_upto: 0,
             moves: crate::core_day::LoanMoves::default(),
             lost: 0,
         }

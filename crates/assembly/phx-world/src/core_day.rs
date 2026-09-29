@@ -68,6 +68,12 @@ pub struct DatedFamily {
     pub moves: LoanMoves,
     /// What its contracts owed, balances reckoned from terms and arrears, when they closed.
     pub lost: i128,
+    /// Each schedule's place by its currency, class and first date, so one alike is found among few; indexed up to
+    /// `alike_upto`, and so rebuilt after a load.
+    #[saved(skip)]
+    pub alike: BTreeMap<(u8, [u32; 3], phx_id::Date), Vec<u32>>,
+    #[saved(skip)]
+    pub alike_upto: usize,
 }
 
 /// A family's moves on its parties' books: each amount lent and balance written off, with the creditor whose book it
@@ -250,11 +256,24 @@ impl Core {
     #[clause("HH.13", "BNK.17", "SET.16")]
     fn hold_arrears(&mut self, day: Day, calendar: &Calendar, failed: &[Flow]) -> u64 {
         let mut n = 0;
+        // Where each contract finishing today stands in its family's list, kept as the list is taken from.
+        let mut places: Vec<BTreeMap<u32, usize>> = self
+            .families
+            .iter()
+            .map(|x| {
+                let mut at = BTreeMap::new();
+                for (i, e) in x.finishing.iter().enumerate() {
+                    at.entry(*e).or_insert(i);
+                }
+                at
+            })
+            .collect();
         for f in failed {
-            let Some(family) = self
+            let Some((family, at_finishing)) = self
                 .families
                 .iter_mut()
-                .find(|x| x.reason == f.reason && x.store.kinds.first() == Some(&f.payer.kind()))
+                .zip(places.iter_mut())
+                .find(|(x, _)| x.reason == f.reason && x.store.kinds.first() == Some(&f.payer.kind()))
             else {
                 continue;
             };
@@ -280,8 +299,11 @@ impl Core {
                 terms,
             });
             n += 1;
-            if let Some(i) = family.finishing.iter().position(|e| *e == f.source) {
+            if let Some(i) = at_finishing.remove(&f.source) {
                 family.finishing.swap_remove(i);
+                if let Some(moved) = family.finishing.get(i) {
+                    at_finishing.insert(*moved, i);
+                }
                 let at = usize::try_from(row.schedule).unwrap_or(usize::MAX);
                 if let Some((dates, _, _)) = family.schedules.get(at) {
                     let next = dates.nth(calendar, row.nth);
