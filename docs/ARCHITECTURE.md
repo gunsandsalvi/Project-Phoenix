@@ -1972,6 +1972,27 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   - `answer`: each person answers its offers together; the best-paid it accepts is its hire, ties to the vacancy
     listed first, and every other offer's job returns.
   - The hires go on to become employment contracts where the world applies them.
+- **Pay rounds** (`phx_world::core_labour`, LAB.17, LAB.6, LAB.9): an employer's first round falls on a day drawn in
+  the review period after its first production schedule (stream `LAB.review`), then once a period (`CoreLabour::
+  reviews`). On its schedule's day each contract not under notice is offered `rules::renegotiate::review` over the
+  market's point (`offer_point`) and the most the job's month pays — its wage and the unit's margin at the price the
+  firm expects (its stance's outlook of its mark, or its own price before the mark prints) over its cost of making a
+  unit (`unit_cost_of`), for each unit a month of the job's hours makes. The offers wait (`CoreLabour::offered`) until
+  the employers' rounds are done, then are answered together: one `search` per country over the reviewed employees,
+  each as a seeker whose reservation is its own wage, gives the vacancies each sees; each answers by
+  `rules::renegotiate::answer` from its reservation, the best it saw and its household's price outlook compounded to
+  the next round. A counter the work cannot pay leaves the employee at the offer, its seen vacancies sent as
+  applications with the day's (`on_the_job`); a hire of a person who holds a job closes that job (a job-to-job move).
+- **Outlooks** (`phx_world::core_outlooks`, VAL.3–VAL.7, VAL.13, VAL.23): a public series is keyed by a code and a
+  place — each product's mark in a region for the firms (`CoreGoods::outlooks`), each country's consumer index for
+  the households (`CoreStats::outlooks`, its monthly change printed on its release day). A print scores and forms, for
+  every memory type, every heuristic of the menu (`phx_val::types::Types`, compiled once for firms and households):
+  its error in the method's width enters the heuristic's performance, and each forms its outlook of the next print;
+  the anchor's level is the mean of the prints since the opening. A party's memory type, switching type and stance are
+  words of its record (the firm's `MEMORY`, `SWITCHING`, `STANCE`; the household's `HH.memory`, `HH.switching`,
+  `HH.stance`), drawn at the opening, the first stance by taste alone; a firm reconsiders its stance at each price
+  review, a household on each spending occasion (`Outlooks::reconsider`, stream `FRM.stance` or `HH.stance`). Each
+  method's lag behind a series' turns is counted in prints (`Outlooks::lags`).
 - **The world's stores** (`phx_core::store`): a kind (`KindStore`) keeps its `Parties`, each party's record of `stride`
   words in one column, and, if it holds money, its accounts (bank, balance, pending, held, facility) and cash lines,
   each a column indexed by slot, so a party begun in a released slot writes its own words over the ended one's; a
