@@ -124,6 +124,7 @@ impl Sale {
     /// The sale's flows: the money from buyer to seller with its reason and payment order, from `source`; and, where
     /// the good is held, its units from the seller, to the buyer who holds them, or to nature as the purchase uses them
     /// up, the buyer then being what accounts for it.
+    #[clause("MKT.11")]
     pub fn flows(&self, money: (Denom, u8, u8), goods: Option<GoodsLeg>, source: u32, out: &mut Vec<Flow>) {
         let (denomination, reason, order) = money;
         out.push(Flow {
@@ -155,9 +156,10 @@ impl Sale {
 /// its place's with that weight's share, the logit's chance under a standard Gumbel taste, from its own stream's block
 /// for the round; a buyer with money draws among those it can buy a unit from. A seller serves its buyers in an order
 /// drawn by `lots` for it and the round, each as many whole units as it wants and the seller's units allow; a buyer
-/// served short chooses again. A buyer with no seller left goes without; one with money that has bought keeps its
-/// change. Who buys what is the same for any workers and whatever order the buyers are listed in.
-#[clause("MKT.6", "SRV.4", "SRV.5", "REP.22")]
+/// served short chooses again. A buyer with no seller left goes without, recorded as unserved, and nothing is added to
+/// make the meeting clear; one with money that has bought keeps its change. Who buys what is the same for any workers
+/// and whatever order the buyers are listed in.
+#[clause("MKT.6", "MKT.10", "MKT.16", "MKT.17", "SRV.4", "SRV.5", "REP.22")]
 pub fn meet(
     out: &mut Meeting,
     pool: Option<&Pool>,

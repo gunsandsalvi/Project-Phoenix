@@ -3193,7 +3193,8 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
   product's one class and commodities meet at the between-firms meetings): a deposit's grade falls as it is worked
   (`GDS.grade_fall`, `sys_gds::rules::grade::now`), each extracted unit is a good of its grade's class
   (`GDS.grade_bounds`), a way takes any class alike, lowest first, and the standardised products meet in a call per
-  class and place (`sys_gds::markets::COMMODITIES`).
+  class and place (`sys_gds::markets::COMMODITIES`), the call (MKT.3) built here on the core's flows: the old
+  kernel's plain and coupled calls, over its book-backed orders, were deleted at S1.24.
 - **The grid** (ENE.2, GEO.4): the power-line segments of each country's network with capacities and losses; a named
   system operator per country, the grid's owner of record where GEN gives no other.
 - **Energy as an input and a good** (ENE.4): ways use it in physical units (TEC.2); households buy it as a consumption
@@ -3214,7 +3215,7 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
   charges, less its costs); a large consumer bids its production's need up to the energy's value in use (GDS.5's
   form).
 - **The wholesale market** (ENE.8), at 6a every day, for delivery the next day, per country's grid and block: one
-  coupled call (declared by S0.18), maximising the traded surplus over the offer and bid steps subject to the lines'
+  coupled call, built here on the core, maximising the traded surplus over the offer and bid steps subject to the lines'
   capacities, solved exactly as a min-cost flow; each region's price is its node's potential, so regions with no
   binding line between them share a price and a congested line separates them. Ties go by `ENE.clear_lot`. Line
   losses are not in the auction: the system operator buys them at delivery (below). Trades are recorded at 6d and, on
@@ -3244,7 +3245,9 @@ and cooling demand; retail tariffs; imbalances settled with the system operator;
 - **Carried from built steps**, this step's to build:
   - standing flows, plain and indexed, read by the 7a stream, with the pooled-flow rule's kinks where a flow's members cross one.
 
-**Unit tests** (the coupled call's own are S0.18's)
+**Unit tests** (the coupled call's among them, the old kernel's having been deleted at S1.24)
+- `coupled_call_one_price_per_unconstrained_region`: regions with no binding line between them share a price.
+- `coupled_call_matches_brute_force`: on small networks, the surplus equals an exhaustive maximisation.
 - `negative_price_when_inflexible_exceeds_demand`.
 - `offer_at_avoidable_cost`.
 - `storage_buys_low_sells_high_net_of_losses`.
@@ -3807,7 +3810,8 @@ appetite, confidence, the share of a market's turnover it expects to sell per da
   in a segment are one lender's. An interbank loan is lender + borrower + terms (Law 9), so a doubted name's market
   prices apart from a sound one's. Tenors (overnight, one week, one and three months), baskets, lots and ticks are
   the operator's POLICY (MMK.11); a basket only defines segments. A market meets on the days its borrower posts.
-- **The linked call** (S0.18's `linked_call.rs`): the markets of one country, and the central bank's tenders
+- **The linked call**, built here on the core (the old kernel's, S0.18's `linked_call.rs`, was deleted at S1.24 with the
+  book-backed orders it cleared): the markets of one country, and the central bank's tenders
   (S3.02), meet together at 8b, because a lender's cash can go to any of them.
   - The network: source → lender `l` (capacity: its lendable cash, a `DeclaredLimit` from its balance; the central
     bank's, the tender's size) → offer node `(l, t)`, costed by its offer schedule for tenor `t` → edge

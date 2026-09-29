@@ -50,8 +50,9 @@ fn common_lot(a: i64, b: i64) -> i64 {
 }
 
 /// The meeting over a day's offers and bids between firms, every price for a lot of `price_lot` units; `lot` draws the
-/// buyers' order and each level's order for each step.
-#[clause("MKT.6", "MKT.9", "GDS.7")]
+/// buyers' order and each level's order for each step. Each bid takes no offer above the limit its buyer chose, what
+/// no offer serves goes unserved, and nothing is added to make the meeting clear.
+#[clause("MKT.6", "MKT.9", "MKT.10", "MKT.16", "MKT.17", "GDS.7")]
 pub fn between(offers: &[Offer], bids: &[Bid], price_lot: i64, lot: &mut Draws) -> Between {
     if offers.iter().any(|o| o.lot <= 0 || o.units < 0) || bids.iter().any(|b| b.lot <= 0 || b.units < 0) {
         violation!(clause = "MKT.9", "an order with no lot or fewer than no units");

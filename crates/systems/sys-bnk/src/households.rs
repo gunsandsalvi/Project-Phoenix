@@ -6,7 +6,7 @@
 
 use phx_core::register::values::Table1;
 use phx_core::{AttrDecl, OpeningCountry, Prim, Register, declare_stream};
-use phx_ledger::attachments::Online;
+use phx_ledger::online::Online;
 use phx_ledger::opening::whole;
 use phx_macros::clause;
 use phx_num::{Count, violation};

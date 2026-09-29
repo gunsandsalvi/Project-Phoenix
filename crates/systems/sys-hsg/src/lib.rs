@@ -1,13 +1,9 @@
-//! HSG, housing: here its opening alone — each household that does not own its home rents it, paying a rent that is
-//! the country's median rent burden of its income, on the nearest rent point, to landlords apportioned once every
-//! household is drawn. Its decisions, the dwelling stock and its owners arrive with its own step.
+//! HSG, housing: here its primitives alone, which the data declares; its tenancies, decisions, the dwelling stock and
+//! its owners arrive with its own step.
 
-mod consts;
-mod tenancies;
-
-use phx_core::{Declarations, StreamDef, System, declare_prim};
-
-pub use tenancies::{Declared, TENANCY, Tenancies, TenancyStream};
+use phx_core::register::values::Table1;
+use phx_core::{Declarations, System, declare_prim};
+use phx_num::Fixed;
 
 declare_prim! {
     /// Owners with a mortgage among owners, subsidised tenants among tenants, and the median mortgage and rent
@@ -32,7 +28,7 @@ impl System for Hsg {
     const CODE: &'static str = "HSG";
 
     fn declare(d: &mut Declarations) {
-        d.stream(TenancyStream::DECL);
-        let _ = Tenancies { tenure: d.prim(&TENURE), ratio: d.prim(&RENT_POINT_RATIO) };
+        let _: phx_core::Prim<Table1> = d.prim(&TENURE);
+        let _: phx_core::Prim<Fixed<6>> = d.prim(&RENT_POINT_RATIO);
     }
 }

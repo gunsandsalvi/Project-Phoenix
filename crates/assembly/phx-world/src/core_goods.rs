@@ -538,6 +538,25 @@ impl Core {
         }
     }
 
+    /// Each place's day of sales printed as its product's mark there: what its sales paid a lot, a place that sold
+    /// nothing printing none and keeping its last; each print entering the public series the outlooks read.
+    #[clause("MKT.2", "MKT.12", "MKT.14", "MKT.18", "VAL.5")]
+    fn mark(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> Vec<((u16, u32), f64)> {
+        let types = &ctx.management.types;
+        let mut printed = Vec::new();
+        for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
+            if units > 0 {
+                let lot = self.lot(product);
+                let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
+                self.goods.marks.insert((product, region), mark);
+                let at = (day, ctx.calendar.date(day).year(), Some(ctx.management.sensitivity));
+                self.goods.outlooks.print((product, region), mark, at, types);
+                printed.push(((product, region), mark));
+            }
+        }
+        printed
+    }
+
     /// The day's goods: firms make, firms top up their inputs, households due decide, and each product's meeting
     /// sells at retail; the goods' identity read over the day.
     #[clause("GDS.4", "GDS.10", "HH.4", "SRV.4", "MKT.6")]
@@ -579,18 +598,7 @@ impl Core {
         (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         (record.sales, record.spent) = (sales, spent);
         (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
-        let types = &ctx.management.types;
-        let mut printed = Vec::new();
-        for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
-            if units > 0 {
-                let lot = self.lot(product);
-                let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
-                self.goods.marks.insert((product, region), mark);
-                let at = (day, ctx.calendar.date(day).year(), Some(ctx.management.sensitivity));
-                self.goods.outlooks.print((product, region), mark, at, types);
-                printed.push(((product, region), mark));
-            }
-        }
+        let printed = self.mark(ctx, day);
         self.note_rises(day, &printed);
         self.attend(ctx, day);
         (record.reviews, record.repriced) = self.review_prices(ctx, day);

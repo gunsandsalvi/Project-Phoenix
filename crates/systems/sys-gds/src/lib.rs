@@ -9,13 +9,8 @@ pub mod points;
 pub mod rules;
 
 use phx_core::register::values::{Table1, Table2};
-use phx_core::{
-    Contribution, DECLARATIONS, Declarations, Opening, OpeningPhase, Register, StreamDef, System, declare_prim,
-    declare_stream,
-};
-use phx_ledger::instruction::{Effect, ReasonDecl};
-use phx_macros::clause;
-use phx_num::{Count, Missing};
+use phx_core::{Declarations, Register, StreamDef, System, declare_prim, declare_stream};
+use phx_num::Count;
 
 declare_stream! { pub LotsStream = "GDS.lots" { purpose: Meeting, keyed: false, clause: "MKT.3" } }
 declare_stream! { pub VisitStream = "GDS.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
@@ -36,15 +31,6 @@ declare_prim! {
         kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.5", scope: PerCountry
     }
 }
-
-/// A right held from the opening: capital on both sides, since it opens the books.
-pub const RIGHTS_OPENED: ReasonDecl = ReasonDecl {
-    name: "GDS rights opened",
-    order: 0,
-    paid: Effect::Equity,
-    received: Effect::Equity,
-    held: Missing::Absent,
-};
 
 declare_prim! {
     /// The upper bounds of each extracted product's grade classes (rows, the products' places; columns, the classes),
@@ -106,49 +92,8 @@ declare_prim! {
     pub SPOILAGE_DAYS = "GDS.spoilage_days" { kind: Resolution, value: Count, clause: "GDS.8", scope: Shared }
 }
 
-/// Units taken from a deposit, which no one gives: the right's holder receives them.
-pub const EXTRACTED: ReasonDecl = ReasonDecl {
-    name: "GDS extracted",
-    order: 2,
-    paid: Effect::Expense,
-    received: Effect::Asset,
-    held: Missing::Absent,
-};
-
 /// The kinds of firm that hold goods, extract and trade.
 pub const HOLDERS: [&str; 2] = ["firm", "small_firm"];
-
-/// The goods' declarations in the books: the reason units taken from a deposit are made under.
-#[clause("GDS.4")]
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "goods declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let reasons = &mut phx_ledger::books::of(opening).ledger.reasons;
-        let _ = reasons.declare(EXTRACTED);
-        let _ = reasons.declare(RIGHTS_OPENED);
-    }
-}
 
 /// A table primitive's values in its decimals.
 fn decimals(values: &[i64], exp: u8) -> Vec<f64> {

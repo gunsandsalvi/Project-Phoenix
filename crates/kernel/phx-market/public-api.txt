@@ -14,23 +14,6 @@ pub phx_market::between::Offer::price: i64
 pub phx_market::between::Offer::seller: phx_id::ids::PartyKey
 pub phx_market::between::Offer::units: i64
 pub fn phx_market::between::between(&[phx_market::between::Offer], &[phx_market::between::Bid], i64, &mut phx_rand::draws::Draws) -> phx_market::between::Between
-pub mod phx_market::call
-pub enum phx_market::call::Outcome
-pub phx_market::call::Outcome::Cleared(phx_market::call::Cleared)
-pub phx_market::call::Outcome::Failed(phx_market::failure::FailureKind)
-pub struct phx_market::call::CallRules<'a>
-pub phx_market::call::CallRules::last: phx_num::missing::Missing<phx_num::price::PriceRaw>
-pub phx_market::call::CallRules::ration: phx_market::market::Ration
-pub phx_market::call::CallRules::ties: &'a [phx_market::market::TieRule]
-pub struct phx_market::call::Cleared
-pub phx_market::call::Cleared::fills: alloc::vec::Vec<phx_market::call::Fill>
-pub phx_market::call::Cleared::matches: alloc::vec::Vec<phx_market::print::Match>
-pub phx_market::call::Cleared::price: phx_num::price::PriceRaw
-pub phx_market::call::Cleared::volume: i64
-pub struct phx_market::call::Fill
-pub phx_market::call::Fill::order: usize
-pub phx_market::call::Fill::qty: i64
-pub fn phx_market::call::call(&[phx_market::order::Order], phx_market::call::CallRules<'_>, &mut phx_rand::draws::Draws) -> phx_market::call::Outcome
 pub mod phx_market::carriage
 pub struct phx_market::carriage::CarriageDay
 pub phx_market::carriage::CarriageDay::booked: alloc::vec::Vec<(usize, usize)>
@@ -84,55 +67,6 @@ pub const phx_market::consts::TAG_NODE: u128
 pub const phx_market::consts::TAG_OFFER: u128
 pub const phx_market::consts::TAG_RETURN: u128
 pub const phx_market::consts::TAG_SHIFT: u32
-pub mod phx_market::coupled_call
-pub struct phx_market::coupled_call::Edge
-pub phx_market::coupled_call::Edge::cap: phx_num::missing::Missing<i64>
-pub phx_market::coupled_call::Edge::cost: i64
-pub phx_market::coupled_call::Edge::from: usize
-pub phx_market::coupled_call::Edge::key: u64
-pub phx_market::coupled_call::Edge::owner: phx_num::missing::Missing<phx_id::ids::PartyId>
-pub phx_market::coupled_call::Edge::to: usize
-pub struct phx_market::coupled_call::NetworkCall<'a>
-pub phx_market::coupled_call::NetworkCall::edges: &'a [phx_market::coupled_call::Edge]
-pub phx_market::coupled_call::NetworkCall::nodes: &'a [phx_market::coupled_call::Node]
-pub phx_market::coupled_call::NetworkCall::orders: &'a [phx_market::coupled_call::Placed<'a>]
-pub phx_market::coupled_call::NetworkCall::ration: phx_market::market::Ration
-pub phx_market::coupled_call::NetworkCall::ties: &'a [phx_market::market::TieRule]
-pub struct phx_market::coupled_call::NetworkCleared
-pub phx_market::coupled_call::NetworkCleared::basis: phx_market::simplex::Basis
-pub phx_market::coupled_call::NetworkCleared::fills: alloc::vec::Vec<i64>
-pub phx_market::coupled_call::NetworkCleared::flows: alloc::vec::Vec<i64>
-pub phx_market::coupled_call::NetworkCleared::pivots: u64
-pub phx_market::coupled_call::NetworkCleared::prices: alloc::vec::Vec<phx_num::missing::Missing<phx_num::price::PriceRaw>>
-pub phx_market::coupled_call::NetworkCleared::warm: bool
-pub struct phx_market::coupled_call::Node
-pub phx_market::coupled_call::Node::cap: phx_num::missing::Missing<i64>
-pub phx_market::coupled_call::Node::key: u64
-pub phx_market::coupled_call::Node::last: phx_num::missing::Missing<phx_num::price::PriceRaw>
-pub phx_market::coupled_call::Node::market: phx_num::missing::Missing<phx_id::ids::MarketId>
-pub struct phx_market::coupled_call::Placed<'a>
-pub phx_market::coupled_call::Placed::node: usize
-pub phx_market::coupled_call::Placed::order: &'a phx_market::order::Order
-pub fn phx_market::coupled_call::network_call(&phx_market::coupled_call::NetworkCall<'_>, phx_num::missing::Missing<&phx_market::simplex::Basis>, &mut phx_rand::draws::Draws) -> phx_market::coupled_call::NetworkCleared
-pub fn phx_market::coupled_call::zone_matches(&phx_market::coupled_call::NetworkCall<'_>, &phx_market::coupled_call::NetworkCleared) -> alloc::vec::Vec<alloc::vec::Vec<phx_market::print::Match>>
-pub mod phx_market::failure
-pub enum phx_market::failure::FailureKind
-pub phx_market::failure::FailureKind::DealersStepped
-pub phx_market::failure::FailureKind::Declined
-pub phx_market::failure::FailureKind::NoBid
-pub phx_market::failure::FailureKind::NoOverlap
-pub phx_market::failure::FailureKind::NoSeller
-pub phx_market::failure::FailureKind::OwnOrders
-impl phx_store::save::Saved for phx_market::failure::FailureKind
-pub fn phx_market::failure::FailureKind::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::failure::FailureKind::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::failure::MarketFailure
-pub phx_market::failure::MarketFailure::day: phx_id::day::Day
-pub phx_market::failure::MarketFailure::kind: phx_market::failure::FailureKind
-pub phx_market::failure::MarketFailure::market: phx_id::ids::MarketId
-impl phx_store::save::Saved for phx_market::failure::MarketFailure where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_market::failure::FailureKind: phx_store::save::Saved
-pub fn phx_market::failure::MarketFailure::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::failure::MarketFailure::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::hiring
 pub struct phx_market::hiring::Applicant
 pub phx_market::hiring::Applicant::experience: u32
@@ -174,17 +108,6 @@ pub fn phx_market::hiring::answer(&mut [phx_market::hiring::Vacancy], &[phx_mark
 pub fn phx_market::hiring::pick(&[(u32, f64)], &[f64]) -> alloc::vec::Vec<u32>
 pub fn phx_market::hiring::search(core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::hiring::Vacancy], &phx_market::hiring::Standing), &[phx_market::hiring::Seeker], (f64, f64), (&impl core::ops::function::Fn(u64) -> phx_rand::draws::Draws + core::marker::Sync, &impl core::ops::function::Fn(&phx_market::hiring::Seeker, alloc::vec::Vec<(u32, f64)>, alloc::vec::Vec<f64>) -> alloc::vec::Vec<u32> + core::marker::Sync)) -> alloc::vec::Vec<phx_market::hiring::Application>
 pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application) -> bool, (impl core::ops::function::Fn(u32) -> phx_rand::draws::Draws, impl core::ops::function::Fn(&phx_market::hiring::Vacancy, &[phx_market::hiring::Applicant], u32) -> alloc::vec::Vec<u32>)) -> alloc::vec::Vec<phx_market::hiring::Application>
-pub mod phx_market::linked_call
-pub struct phx_market::linked_call::LinkedCall
-pub phx_market::linked_call::LinkedCall::basis: phx_num::missing::Missing<phx_market::simplex::Basis>
-impl phx_market::linked_call::LinkedCall
-pub fn phx_market::linked_call::LinkedCall::meet(&mut self, &phx_market::coupled_call::NetworkCall<'_>, &mut phx_rand::draws::Draws) -> phx_market::coupled_call::NetworkCleared
-pub fn phx_market::linked_call::LinkedCall::new() -> phx_market::linked_call::LinkedCall
-impl core::default::Default for phx_market::linked_call::LinkedCall
-pub fn phx_market::linked_call::LinkedCall::default() -> phx_market::linked_call::LinkedCall
-impl phx_store::save::Saved for phx_market::linked_call::LinkedCall where phx_num::missing::Missing<phx_market::simplex::Basis>: phx_store::save::Saved
-pub fn phx_market::linked_call::LinkedCall::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::linked_call::LinkedCall::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::market
 pub enum phx_market::market::Form
 pub phx_market::market::Form::Administered
@@ -265,137 +188,6 @@ pub phx_market::meet::Tastes::day: u32
 pub phx_market::meet::Tastes::key: phx_rand::key::StreamKey
 pub phx_market::meet::Tastes::substep: u8
 pub fn phx_market::meet::meet(&mut phx_market::meet::Meeting, core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::meet::Stall], &[phx_market::meet::Place], &[phx_market::meet::Buyer]), (i64, phx_market::retail::Weights), phx_market::meet::Tastes, &impl core::ops::function::Fn(phx_id::ids::PartyKey, u32) -> phx_rand::draws::Draws + core::marker::Sync)
-pub mod phx_market::order
-pub enum phx_market::order::Refusal
-pub phx_market::order::Refusal::AnyPrice
-pub phx_market::order::Refusal::NoLimit
-pub phx_market::order::Refusal::NoQuantity
-pub phx_market::order::Refusal::OffLot
-pub phx_market::order::Refusal::OffTick
-pub phx_market::order::Refusal::Uncovered
-pub enum phx_market::order::Side
-pub phx_market::order::Side::Buy
-pub phx_market::order::Side::Sell
-pub enum phx_market::order::Timing
-pub phx_market::order::Timing::AtTheClose
-pub phx_market::order::Timing::Continuous
-pub struct phx_market::order::Asked
-pub phx_market::order::Asked::limit: phx_num::missing::Missing<phx_num::price::PriceRaw>
-pub phx_market::order::Asked::qty: i64
-pub struct phx_market::order::Order
-pub phx_market::order::Order::cover: phx_num::missing::Missing<phx_ledger::covered::Covered>
-pub phx_market::order::Order::day: phx_id::day::Day
-pub phx_market::order::Order::lot: i64
-pub phx_market::order::Order::market: phx_id::ids::MarketId
-pub phx_market::order::Order::party: phx_id::ids::PartyId
-pub phx_market::order::Order::priority: phx_num::missing::Missing<u32>
-pub phx_market::order::Order::reason: &'static str
-pub phx_market::order::Order::side: phx_market::order::Side
-pub phx_market::order::Order::steps: alloc::vec::Vec<phx_market::order::Step>
-pub phx_market::order::Order::timing: phx_market::order::Timing
-impl phx_market::order::Order
-pub fn phx_market::order::Order::new(phx_market::order::Poster, &[phx_market::order::Asked], i64) -> core::result::Result<phx_market::order::Order, phx_market::order::Refusal>
-pub fn phx_market::order::Order::offer_held(phx_market::order::Poster, &[phx_market::order::Asked], i64, phx_ledger::covered::Covered) -> core::result::Result<phx_market::order::Order, (phx_market::order::Refusal, phx_ledger::covered::Covered)>
-pub fn phx_market::order::Order::qty(&self) -> i128
-pub struct phx_market::order::Poster
-pub phx_market::order::Poster::day: phx_id::day::Day
-pub phx_market::order::Poster::lot: i64
-pub phx_market::order::Poster::market: phx_id::ids::MarketId
-pub phx_market::order::Poster::party: phx_id::ids::PartyId
-pub phx_market::order::Poster::priority: phx_num::missing::Missing<u32>
-pub phx_market::order::Poster::reason: &'static str
-pub phx_market::order::Poster::side: phx_market::order::Side
-pub phx_market::order::Poster::timing: phx_market::order::Timing
-pub struct phx_market::order::Step
-pub phx_market::order::Step::limit: phx_num::price::PriceRaw
-pub phx_market::order::Step::qty: i64
-pub mod phx_market::print
-pub enum phx_market::print::MarkSource
-pub phx_market::print::MarkSource::Fixing(usize)
-pub phx_market::print::MarkSource::Print(phx_market::print::PrintId)
-pub phx_market::print::MarkSource::Snapshot
-impl phx_store::save::Saved for phx_market::print::MarkSource where phx_market::print::PrintId: phx_store::save::Saved, usize: phx_store::save::Saved
-pub fn phx_market::print::MarkSource::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::MarkSource::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::Fixing
-pub phx_market::print::Fixing::day: phx_id::day::Day
-pub phx_market::print::Fixing::market: phx_id::ids::MarketId
-pub phx_market::print::Fixing::method: &'static str
-pub phx_market::print::Fixing::price: phx_num::price::PriceRaw
-pub phx_market::print::Fixing::publisher: &'static str
-pub phx_market::print::Fixing::rests_on: alloc::vec::Vec<phx_market::print::MatchSetId>
-impl phx_store::save::Saved for phx_market::print::Fixing where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<phx_market::print::MatchSetId>: phx_store::save::Saved
-pub fn phx_market::print::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::Fixing::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::Mark
-pub phx_market::print::Mark::day: phx_id::day::Day
-pub phx_market::print::Mark::market: phx_id::ids::MarketId
-pub phx_market::print::Mark::price: phx_num::price::PriceRaw
-pub phx_market::print::Mark::source: phx_market::print::MarkSource
-impl phx_store::save::Saved for phx_market::print::Mark where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_market::print::MarkSource: phx_store::save::Saved
-pub fn phx_market::print::Mark::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::Mark::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::Match
-pub phx_market::print::Match::buyer: phx_id::ids::PartyId
-pub phx_market::print::Match::draws: phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>
-pub phx_market::print::Match::price: phx_num::price::PriceRaw
-pub phx_market::print::Match::qty: i64
-pub phx_market::print::Match::seller: phx_id::ids::PartyId
-impl phx_store::save::Saved for phx_market::print::Match where phx_id::ids::PartyId: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::commitment::CommitmentId>: phx_store::save::Saved
-pub fn phx_market::print::Match::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::Match::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::MatchSet
-pub phx_market::print::MatchSet::day: phx_id::day::Day
-pub phx_market::print::MatchSet::market: phx_id::ids::MarketId
-pub phx_market::print::MatchSet::matches: alloc::vec::Vec<phx_market::print::Match>
-impl phx_store::save::Saved for phx_market::print::MatchSet where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<phx_market::print::Match>: phx_store::save::Saved
-pub fn phx_market::print::MatchSet::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::MatchSet::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::MatchSetId(_)
-impl phx_market::print::MatchSetId
-pub const fn phx_market::print::MatchSetId::get(self) -> u32
-impl phx_store::save::Saved for phx_market::print::MatchSetId where u32: phx_store::save::Saved
-pub fn phx_market::print::MatchSetId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::MatchSetId::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::Print
-impl phx_market::print::Print
-pub fn phx_market::print::Print::ccy(&self) -> phx_num::money::Ccy
-pub fn phx_market::print::Print::day(&self) -> phx_id::day::Day
-pub fn phx_market::print::Print::form(&self) -> phx_market::market::Form
-pub fn phx_market::print::Print::market(&self) -> phx_id::ids::MarketId
-pub fn phx_market::print::Print::matches(&self) -> phx_market::print::MatchSetId
-pub fn phx_market::print::Print::price(&self) -> phx_num::price::PriceRaw
-pub fn phx_market::print::Print::quantity(&self) -> i64
-pub fn phx_market::print::Print::unit(&self) -> phx_num::qty::UnitId
-impl phx_store::save::Saved for phx_market::print::Print where phx_id::ids::MarketId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, phx_num::qty::UnitId: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved, i64: phx_store::save::Saved, phx_num::price::PriceRaw: phx_store::save::Saved, phx_market::market::Form: phx_store::save::Saved, phx_market::print::MatchSetId: phx_store::save::Saved
-pub fn phx_market::print::Print::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::Print::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::PrintId(_)
-impl phx_market::print::PrintId
-pub const fn phx_market::print::PrintId::get(self) -> u32
-impl phx_store::save::Saved for phx_market::print::PrintId where u32: phx_store::save::Saved
-pub fn phx_market::print::PrintId::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::print::PrintId::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::print::Tape
-impl phx_market::print::Tape
-pub fn phx_market::print::Tape::fail(&mut self, phx_market::failure::MarketFailure)
-pub fn phx_market::print::Tape::failures(&self) -> &[phx_market::failure::MarketFailure]
-pub fn phx_market::print::Tape::fix(&mut self, phx_market::print::Fixing) -> usize
-pub fn phx_market::print::Tape::fixings(&self) -> &[phx_market::print::Fixing]
-pub fn phx_market::print::Tape::last_print(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<&phx_market::print::Print>
-pub fn phx_market::print::Tape::last_prints(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::MarketId, &phx_market::print::Print)> + '_
-pub fn phx_market::print::Tape::mark(&mut self, phx_market::print::Mark)
-pub fn phx_market::print::Tape::mark_of(&self, phx_id::ids::MarketId) -> phx_num::missing::Missing<phx_market::print::Mark>
-pub fn phx_market::print::Tape::marks(&self) -> &alloc::collections::btree::map::BTreeMap<phx_id::ids::MarketId, phx_market::print::Mark>
-pub fn phx_market::print::Tape::print_of(&self, phx_market::print::PrintId) -> core::option::Option<&phx_market::print::Print>
-pub fn phx_market::print::Tape::prints(&self) -> &[phx_market::print::Print]
-pub fn phx_market::print::Tape::record(&mut self, phx_id::ids::MarketId, phx_id::day::Day, alloc::vec::Vec<phx_market::print::Match>) -> phx_market::print::MatchSetId
-pub fn phx_market::print::Tape::set_of(&self, phx_market::print::MatchSetId) -> core::option::Option<&phx_market::print::MatchSet>
-pub fn phx_market::print::Tape::sets(&self) -> &[phx_market::print::MatchSet]
-pub fn phx_market::print::Tape::unsold(&self, phx_id::ids::MarketId) -> bool
-impl phx_store::save::Saved for phx_market::print::Tape
-pub fn phx_market::print::Tape::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_market::print::Tape, phx_store::save::LoadError>
-pub fn phx_market::print::Tape::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_market::reach
 pub struct phx_market::reach::MarketPrims
 pub phx_market::reach::MarketPrims::closed_borders: phx_core::register::Prim<phx_num::qty::Count>
@@ -435,28 +227,3 @@ pub phx_market::retail::Weights::distance: f64
 pub phx_market::retail::Weights::price: f64
 pub fn phx_market::retail::paid(i64, i64, i64) -> i64
 pub fn phx_market::retail::price_chances(&[i64], f64) -> alloc::vec::Vec<f64>
-pub mod phx_market::simplex
-pub struct phx_market::simplex::Arc
-pub phx_market::simplex::Arc::cap: phx_num::missing::Missing<i64>
-pub phx_market::simplex::Arc::cost: i128
-pub phx_market::simplex::Arc::from: usize
-pub phx_market::simplex::Arc::key: u128
-pub phx_market::simplex::Arc::to: usize
-pub struct phx_market::simplex::Basis
-pub phx_market::simplex::Basis::hung: alloc::vec::Vec<u128>
-pub phx_market::simplex::Basis::tree: alloc::vec::Vec<u128>
-pub phx_market::simplex::Basis::upper: alloc::vec::Vec<u128>
-impl phx_store::save::Saved for phx_market::simplex::Basis where alloc::vec::Vec<u128>: phx_store::save::Saved
-pub fn phx_market::simplex::Basis::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::simplex::Basis::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::simplex::Network
-pub phx_market::simplex::Network::arcs: alloc::vec::Vec<phx_market::simplex::Arc>
-pub phx_market::simplex::Network::nodes: alloc::vec::Vec<u128>
-pub struct phx_market::simplex::Solution
-pub phx_market::simplex::Solution::basis: phx_market::simplex::Basis
-pub phx_market::simplex::Solution::flow: alloc::vec::Vec<i64>
-pub phx_market::simplex::Solution::pivots: u64
-pub phx_market::simplex::Solution::potential: alloc::vec::Vec<i128>
-pub phx_market::simplex::Solution::warm: bool
-pub fn phx_market::simplex::cost_of(&[phx_market::simplex::Arc], &[i64]) -> i128
-pub fn phx_market::simplex::solve(&phx_market::simplex::Network, phx_num::missing::Missing<&phx_market::simplex::Basis>) -> phx_market::simplex::Solution

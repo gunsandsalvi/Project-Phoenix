@@ -15,7 +15,6 @@ phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 
 [dev-dependencies]
-phx-market = { path = "../phx-market" }
 trybuild.workspace = true
 
 [lints]

@@ -5,10 +5,7 @@
 mod consts;
 pub mod points;
 pub use phx_core::register::values::Table1;
-use phx_core::{
-    Contribution, DECLARATIONS, Declarations, FactDef, Opening, OpeningPhase, Register, StreamDef, System,
-    declare_prim, declare_stream,
-};
+use phx_core::{Declarations, FactDef, Register, StreamDef, System, declare_prim, declare_stream};
 use phx_id::MarketId;
 use phx_ledger::instruction::{Effect, ReasonDecl};
 use phx_macros::clause;
@@ -184,39 +181,6 @@ pub const CARRIAGE: FreightKind = FreightKind {
 #[must_use]
 pub fn books(there: i64, here: i64, freight: i64) -> bool {
     there - here > freight
-}
-
-/// Freight's declarations in the books: the reasons freight is paid and goods leave and arrive under.
-#[clause("FRT.6")]
-#[derive(Debug)]
-pub struct Declared;
-
-impl Contribution for Declared {
-    fn name(&self) -> &'static str {
-        "freight declarations"
-    }
-    fn phase(&self) -> OpeningPhase {
-        DECLARATIONS
-    }
-    fn reads(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn writes(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn drawn(&self) -> &'static [&'static str] {
-        &[]
-    }
-    fn derived(&self) -> &'static [&'static str] {
-        &[]
-    }
-
-    fn contribute(&self, opening: &mut Opening<'_>) {
-        let reasons = &mut phx_ledger::books::of(opening).ledger.reasons;
-        for r in [CARRIED, SHIPPED, ARRIVED] {
-            let _ = reasons.declare(r);
-        }
-    }
 }
 
 /// Freight and logistics.

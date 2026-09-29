@@ -1,7 +1,6 @@
 pub mod algebra;
 pub mod apply;
 pub mod apply_batch;
-pub mod attachments;
 pub mod audit;
 pub mod books;
 pub mod chains;
@@ -27,6 +26,7 @@ pub mod levy;
 pub mod lien;
 pub mod line;
 pub mod money;
+pub mod online;
 pub mod opening;
 pub mod pending;
 pub mod positions;
