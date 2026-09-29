@@ -33,6 +33,7 @@ pub mod inspector;
 pub mod metrics;
 pub mod observe;
 pub mod opening;
+pub mod party_map;
 pub mod pop_rules;
 pub mod refusals;
 pub mod registry;

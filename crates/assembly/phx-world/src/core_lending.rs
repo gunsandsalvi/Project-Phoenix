@@ -262,7 +262,7 @@ impl Core {
         let Some(opened) = self.accounts.opened else { return Missing::Absent };
         let days = phx_rand::float::from_i64(i64::from(today.get()) - i64::from(opened.get()));
         let year = crate::consts::DAYS_A_YEAR;
-        let seen = self.accounts.income.get(&key).map_or(0.0, |i| {
+        let seen = self.accounts.income.get(key).map_or(0.0, |i| {
             let ebit = i.net() + i.interest_paid;
             i64::try_from(ebit).map_or(0.0, phx_rand::float::from_i64)
         });

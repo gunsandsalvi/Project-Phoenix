@@ -7,6 +7,8 @@
 
 use std::collections::BTreeMap;
 
+use crate::party_map::PartyMap;
+
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::Flow;
 use phx_id::{Day, PartyKey};
@@ -66,8 +68,8 @@ pub enum Line {
 #[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Accounts {
     pub opened: Option<Day>,
-    pub opening: BTreeMap<PartyKey, i128>,
-    pub income: BTreeMap<PartyKey, Income>,
+    pub opening: PartyMap<i128>,
+    pub income: PartyMap<Income>,
     pub sales_received: i128,
     pub revenue: i128,
 }
@@ -76,8 +78,8 @@ impl Accounts {
     /// A party's equity account.
     #[must_use]
     pub fn equity(&self, party: PartyKey) -> Option<i128> {
-        let opening = self.opening.get(&party)?;
-        Some(opening + self.income.get(&party).map_or(0, Income::net))
+        let opening = self.opening.get(party)?;
+        Some(opening + self.income.get(party).map_or(0, Income::net))
     }
 }
 
@@ -90,10 +92,10 @@ impl Core {
 
     /// An event of a party's income entered on its line, where the party keeps an equity account.
     pub(crate) fn recognise(&mut self, party: PartyKey, line: Line, amount: i64) {
-        if amount == 0 || !self.accounts.opening.contains_key(&party) {
+        if amount == 0 || !self.accounts.opening.contains_key(party) {
             return;
         }
-        let i = self.accounts.income.entry(party).or_default();
+        let Some(i) = self.accounts.income.entry_or_default(party) else { return };
         let a = i128::from(amount);
         match line {
             Line::Revenue => i.revenue += a,
@@ -165,7 +167,7 @@ impl Core {
     #[clause("ACC.4")]
     pub fn open_accounts(&mut self, today: Day) {
         let (deposits, projects) = (self.deposits(), self.project_costs());
-        let mut opening = BTreeMap::new();
+        let mut opening = PartyMap::default();
         for (k, store) in self.kinds.iter().enumerate() {
             let Ok(kind) = u8::try_from(k) else { continue };
             for slot in store.parties.live_slots() {
@@ -244,7 +246,7 @@ impl Core {
     /// received for sales; a difference is a finding.
     #[clause("ACC.10", "ACC.11", "ACC.16", "FRM.17", "II.5")]
     pub(crate) fn audit_accounts(&mut self, day: Day) {
-        let parties: Vec<PartyKey> = self.accounts.opening.keys().copied().collect();
+        let parties: Vec<PartyKey> = self.accounts.opening.keys().collect();
         let (deposits, projects) = (self.deposits(), self.project_costs());
         let mut found = Vec::new();
         let mut ended = Vec::new();
@@ -289,8 +291,8 @@ impl Core {
             });
         }
         for party in ended {
-            self.accounts.opening.remove(&party);
-            self.accounts.income.remove(&party);
+            self.accounts.opening.remove(party);
+            self.accounts.income.remove(party);
         }
         self.found.extend(found);
     }
