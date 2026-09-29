@@ -28,6 +28,7 @@ use crate::consts::{
 };
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, PENSION};
+use crate::opening::asked::Asked;
 use crate::opening::sheet::Sheet;
 
 use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, KINDS, TREASURY};
@@ -283,9 +284,12 @@ impl Core {
                 let record = [MaybeI64::present(i64::from(site.get()))];
                 banks.push(core.begin_party(BANK, &record, Some(Opening { bank: AT_ISSUER, balance })));
             }
+            let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c, decl);
+            let mut labour = rules.jobs.rule(o.register, date, c, Asked::of(o.register, c)?.by_occupation());
+            labour.couple(formed.iter().flat_map(|(_, f)| f.iter().map(|f| &f.h)));
             let mut draw = CountryDraw {
                 c,
-                labour: rules.jobs.rule(o.register, date, c),
+                labour,
                 banking: rules.banks.banking(o.register, c, weights),
                 paid: rules.pensions.pensions(o.register, date, c),
                 least: rules.banks.years(o.register).0,
@@ -298,7 +302,7 @@ impl Core {
                 types: &rules.types,
                 date,
             };
-            for (region, formed) in sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c, decl) {
+            for (region, formed) in formed {
                 for f in formed {
                     core.open_household((&ctx, o.calendar, decl), &mut draw, &mut pensions, (region, f));
                 }

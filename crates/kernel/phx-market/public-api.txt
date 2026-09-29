@@ -162,5 +162,6 @@ pub fn phx_market::retail::Want::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_market::retail::Weights
 pub phx_market::retail::Weights::distance: f64
 pub phx_market::retail::Weights::price: f64
+pub fn phx_market::retail::chances_at(&[f64], f64) -> alloc::vec::Vec<f64>
 pub fn phx_market::retail::paid(i64, i64, i64) -> i64
 pub fn phx_market::retail::price_chances(&[i64], f64) -> alloc::vec::Vec<f64>

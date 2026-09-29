@@ -291,9 +291,15 @@ sources report, a group reporting too few taking the developed group's, marked a
   net fixed assets (Table 9A) per unit of value added (Table 6), agricultural land (World Bank) for crops and
   livestock, a kilogram of deposit per kilogram extracted; a growing season's lead time for crops and livestock, a day for
   other goods, none for services; every unit started finished; a batch of one.
-- **FRM** (`economy.toml`, `FRM.firms_per_employed`): enterprises per person employed in the business economy (OECD
-  SDBS), the firms' density over the employed. Finance, real estate and public administration make no product of the
-  ways.
+- **FRM** (`economy.toml`, `FRM.firms_per_employed`): enterprises per person employed by product (OECD SDBS for the
+  developed group, crops and livestock from ILOSTAT's employers and own-account workers; ILOSTAT's for the emerging and
+  developing groups), the firms' density over each product's employed. Finance, real estate and public administration
+  make no product of the ways; `TEC.labour` carries their hours a unit (a currency unit of their output) after the
+  products' columns, public administration's staffing the agency.
+- **LAB** (`people.toml`): `LAB.self_employed_shares`, each product's employers and own-account workers over its
+  employed (ILOSTAT, status by activity; the source counts no other status apart, so contributing family workers are
+  employees here); `LAB.women_by_occupation`, women's share of each occupation's employed. The occupations' mix and the
+  share of employees are not primitives: the opening draws them from what the output asks (§10.3).
 - **CAP** (`data/shared/CAP_kinds.toml`, `economy.toml`): each kind's geometric rate (the BEA's
   current-cost depreciation over its net stock), mean service life (the BEA's declining-balance rate over the
   geometric), efficiency shape (the BLS's and ABS's hyperbolic β), lead time (the Census's construction months for
@@ -1715,7 +1721,7 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
   standardised good their place marks, weigh the price their method expects over the visit's days, less what spoils
   and discounted at their required return, against today's: they bid, at no more than that, with the money they hold
   beyond what their own planned sales cost, and when carrying no longer pays offer what they hold at no less.
-- **Closure** (FRM.15): at its production schedule an owner weighs the margin it expects a year, held for ever at its
+- **Closure** (FRM.15; not taken on the core until S8.03): at its production schedule an owner weighs the margin it expects a year, held for ever at its
   required return, against what winding it down returns beyond the money it keeps either way (`Ctx::net_assets`: its
   goods at cost less its debts at their balances; plant returns nothing until a market buys it); when
   winding down is worth more it emits
@@ -1913,9 +1919,9 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
   holds the bills outstanding to what was issued less what was redeemed and written off (TRS.6, LC-1-29).
 - **Public agencies** (`sys-soc`'s kind `agency`, legal form `public agency`; on the core `core_agencies`, SOC.2,
   SOC.8): each country has one, producing its public administration, which is no product and is paid by taxes. At the
-  opening it takes each occupation's public administration share of its jobs in every region
-  (`SOC.public_staff_share`, derived from the ILO's employment by activity), and every job no firm's way takes (the
-  armed forces'); the rest are dealt to firms. Its head buys the state's final uses at retail (`SOC.consume`, what the
+  opening it takes each occupation's public administration share of its jobs in every region — public administration's
+  hours of the occupation over all the employees' hours the output asks of it (`opening::asked`) — and every job no
+  firm's way takes (the armed forces'); the rest are dealt to firms. Its head buys the state's final uses at retail (`SOC.consume`, what the
   treasury bought before) and keeps its staff: each business day it posts what it lacks of its opening staff by region
   and occupation, as far as its appropriation for wages pays (`SOC.staff`; the appropriation is its opening staff's
   wages a month, a placeholder naming POL until the budget votes it); its vacancies are met, selected by the head of
@@ -2131,8 +2137,10 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   price change, which records the days it took by the surprise's size over what was expected (`responses`).
 - **Firms' endings** (`phx_world::core_default`, FRM.15, FRM.11, L3, PTY.9): `Insolvency` keeps each country's grace,
   the day each contract in arrears began to be (from the day's failed flows, forgotten once paid or closed), each
-  estate's claims and the firms ended. A firm in arrears past its grace defaults at the start of the labour round; a
-  solvent one's owner winds it down on its production schedule (`winds_down`). `end_firm` opens an estate with its
+  estate's claims and the firms ended. A firm in arrears past its grace defaults at the start of the labour round; no
+  solvent firm is wound down by choice until its office holder's mind weighs the line (S8.03, owner 2026-09-29): the
+  rule valued a firm's margin at the region's mark, so a firm cutting its margin for share read as failing; `CLOSE`
+  stays declared. `end_firm` opens an estate with its
   money, passes its goods, closes every contract it is party to into claims (`claims_of`: employees' wages owed and
   severance at the first rank, other creditors at the second), sends its staff to search, zeroes its vacancies and ends
   the party. `estates_pay` pays each rank in proportion as far as the money goes (`shares`), the rest to the heirless
@@ -2306,7 +2314,7 @@ without a decision moving.
   not on the list or an office no legal form declares is refused.
 - **The decisions taken** (25 at S1.26): in a firm's line head's office its first price, what it makes, the inputs it
   orders, its attention, its price review and move, its stance, its posting (with its lay-offs), its selection among
-  applicants and its offers at pay rounds; in its chief executive's, winding down, its choice among loan quotes and its
+  applicants and its offers at pay rounds; in its chief executive's, winding down (not taken until S8.03), its choice among loan quotes and its
   investment; in a bank's loan officer's, declining and quoting, and in its chief executive's, its standard; in a
   treasury's minister's, its consumption; a household's spending, stance and trying for a child; a person's search,
   answer to an offer, answer at a pay round, retirement and benefit claim. Inside a decision some parts are drawn
@@ -2765,20 +2773,33 @@ line of its rent point, whose landlords are derived over the firms by their plan
 Both are lines of many holders on both sides, so they are cleared (§6.5). Social protection's draw gives each adult who
 has reached its sex's pension age the state pension at its sex's coverage: a person's row on its sex's state pension
 line, a flat monthly amount — the replacement rate of the mean wage — whose payer, the treasury, is named. A person
-who retires in the run claims it as it retires (§7.16). The defined-benefit schemes are S4.04's, with their sources. The firms are counted by
-their density over the employed (`FRM.firms_per_employed`), dealt over products and regions by the hours their
-output takes (`core_firms`), each firm's size the demand its day-zero price wins (GEN.2), its deposits and debt the
-sheet's by its turnover (§7.17).
+who retires in the run claims it as it retires (§7.16). The defined-benefit schemes are S4.04's, with their sources. The firms are counted
+product by product: the country's employed shared over the staffed activities by the hours each one's output asks,
+times the product's density over its employed (`FRM.firms_per_employed`), and over the regions by their persons
+(`core_firms`); each firm's size the demand its day-zero price wins (GEN.2), its deposits and debt the sheet's by its
+turnover (§7.17).
 
-Labour's draw (`sys-lab`'s `jobs`) employs each adult at the country's employment rate times its sex's and ten-year age band's ratio to it (`LAB.employment_by_age`, ILOSTAT's employment-to-population ratios, derived by `tools/data/derive_pop.py`) and as an employee at its sex's share; a job's occupation is drawn by sex among those its education's skill reaches, its hours part-time at its sex's share, its notice and severance the law's, its region its household's and its start band from the tenure shares. No wage is drawn (`core_jobs`): the self-employed are dealt to the region's firms first, each firm taking its first owner in an order drawn by lot; then each region and occupation's jobs, public administration's share to the agency and the rest over the firms by the hours their output takes of the occupation net of their owners' (`TEC.labour`), in an order drawn by lot. A job's wage an hour is its activity's compensation in the accounts over the hours the activity's jobs work, each hour weighed by its occupation's pay (`GEN.occupation_pay`), a month's on the nearest wage point; a working owner's hours earn the self-employed's labour income — the labour share (ILO SDG 10.4.1) less the compensation — shared as they would be paid employed in their activity, held as its last point; searchers take their occupation's wage over every activity. Households' incomes, and their loans apportioned by income times years left, follow. Of the adults not employed, the unemployed search at the rate that makes their share of the labour force the country's, and one past its pension's age is retired.
+What the output asks (`opening::asked`): each occupation's hours a year, by the activities the world staffs — each
+product's units in the accounts and public administration's output (a currency unit a unit) times the way's hours a
+unit (`TEC.labour`) — split into employees' and the self-employed's by each product's share
+(`LAB.self_employed_shares`), public administration's all the agency's employees. The persons' occupations, the firms
+by product, the owners' dealing and the agency's share of each occupation's jobs all read it, so the people drawn are
+the people the output needs, up to one level a country: the hours the employed work over the hours the group's ways ask
+at the country's output, which the running world's capacity reads per occupation (`labour.level`).
+
+Labour's draw (`sys-lab`'s `jobs`) employs each adult at the country's employment rate times its sex's and ten-year age band's ratio to it (`LAB.employment_by_age`, ILOSTAT's employment-to-population ratios, derived by `tools/data/derive_pop.py`). What it does is matched to what the output asks, before any household is opened (`Rule::couple`, `by_rank`): the hours asked of each occupation, as employees' and as the self-employed's, are shared over the sexes by each sex's share of the occupation (`LAB.women_by_occupation`); each sex's adults, each counted at its chance of being employed, are ordered by the skill their education gives (`LAB.education_skill`) and fill the occupations ordered by the skill each asks (`LAB.occupation_skill`), quantile to quantile, a skill's persons spread over the work they fill by what each part asks. The most schooled fill the most skilled work; where schooling is short of what the work asks, as in the developing group, the work is learnt by doing it, and a searcher's skill is its education's or its occupation's, the greater (`core_labour`). A person's occupation, and whether it is an employee or runs its own business, is drawn by its sex's and skill's chances; a job's hours are part-time at its sex's share, its notice and severance the law's, its region its household's and its start band from the tenure shares. No wage is drawn (`core_jobs`): the self-employed are dealt to the region's firms first, in an order drawn by lot, each occupation's over the firms by the hours their output takes of it times their product's self-employed share, so a firm may have no working owner and be run by its founding preferences; then each region and occupation's jobs, public administration's share to the agency and the rest over the firms by the hours their output takes of the occupation net of their owners' (`TEC.labour`), in an order drawn by lot. A job's wage an hour is its activity's compensation in the accounts over the hours the activity's jobs work, each hour weighed by its occupation's pay (`GEN.occupation_pay`), a month's on the nearest wage point; a working owner's hours earn the self-employed's labour income — the labour share (ILO SDG 10.4.1) less the compensation — shared as they would be paid employed in their activity, held as its last point; searchers take their occupation's wage over every activity. Households' incomes, and their loans apportioned by income times years left, follow. Of the adults not employed, the unemployed search at the rate that makes their share of the labour force the country's, and one past its pension's age is retired.
 
 Every firm makes one product, drawn per product and region with the firm count; `sys-tec` gives it its product's
 way in its country as `TEC.known` (`sys-tec`'s `known`).
 
-A firm's day-zero price is its product's in the accounts at its productivity, the point nearest it; its markup is
-that price over its own unit cost — its staff's wages and its owners' labour income over what they make, and its
-inputs at the opening's prices (`core_goods`). An adult is employed at the country's employment rate, and is an
-employee at its sex's share of the employed (`LAB.status_shares`). Each wage is placed on the nearest point of labour's
+A firm's productivity is drawn from its group's spread (`GEN.productivity_spread`), and each product's firms' log
+productivities are shifted together (`core_firms::centring`) so that their hours a unit, weighed by the output the
+logit deals them at their prices, average the way's: the ways' hours are the average firm's, as the accounts measure
+them, so the accounts' compensation is what the firms' staff cost at their own productivities. The shift is solved by
+widening a bracket by doubling and halving it until its halves meet, no tolerance declared. A firm's day-zero price is
+its product's in the accounts at its productivity, the point nearest it; its markup is that price over its own unit
+cost — its staff's wages and its owners' labour income over what they make, and its inputs at the opening's prices
+(`core_goods`). Each wage is placed on the nearest point of labour's
 grid, the points a declared ratio apart (`LAB.wage_point_ratio`: a quarter), until firms post their own.
 
 Nothing is balanced after drawing: finer attributes are drawn from their own counter keys, so a coarser setting is a

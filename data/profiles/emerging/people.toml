@@ -177,25 +177,25 @@ source_ref = "The group's shape of wealth: a lognormal body with a Pareto top ab
 value = { family = "lognormal_pareto_tail", discretisation = "equal_shares", mu = "0", sigma = "1.880244", threshold = "11.129836", alpha = "1.549560" }
 
 [[primitive]]
-id = "LAB.occupation_shares"
-kind = "ENDOWMENT"
-owner = "LAB"
-source = "measured"
-source_ref = "Share of the employed by ISCO-08 major group (rows: 0 armed forces, 1 managers, 2 professionals, 3 technicians and associate professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and fishery, 7 craft and related trades, 8 plant and machine operators and assemblers, 9 elementary occupations), by sex (columns: female, male): the median over the group's 51 economies of each share of the employed its classes cover at their latest survey or census 2010-2025 (a class an economy does not report left out of that class's median, not read as none), the medians rescaled to sum to one, from ILOSTAT SDMX API (fetched 2026-09-24). The group's standard at every drawn value."
-value = { rows = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], columns = [0, 1], values = [[0.001506, 0.009686], [0.037333, 0.051021], [0.179326, 0.092769], [0.086999, 0.069186], [0.084734, 0.044019], [0.280458, 0.161892], [0.092418, 0.130899], [0.058107, 0.180247], [0.018563, 0.114295], [0.160555, 0.145986]], outside = "refuse" }
-
-[[primitive]]
-id = "LAB.status_shares"
-kind = "ENDOWMENT"
-owner = "LAB"
-source = "measured"
-source_ref = "Share of the employed by status in employment, ICSE-93 (rows: 1 employees, 2 employers, 3 own-account workers, 4 members of producers' cooperatives, 5 contributing family workers), by sex (columns: female, male): the median over the group's 53 economies of each share of the employed its classes cover at their latest survey or census 2010-2025 (a class an economy does not report left out of that class's median, not read as none), the medians rescaled to sum to one, from ILOSTAT SDMX API (fetched 2026-09-24). The group's standard at every drawn value."
-value = { rows = [1, 2, 3, 4, 5], columns = [0, 1], values = [[0.696377, 0.671230], [0.018099, 0.045224], [0.233082, 0.256975], [0.000474, 0.000642], [0.051968, 0.025929]], outside = "refuse" }
-
-[[primitive]]
 id = "LAB.employment_by_age"
 kind = "ENDOWMENT"
 owner = "LAB"
 source = "measured"
 source_ref = "The employment rate of each sex and ten-year age band from 15 (rows: each band's first year, the last 65 and over; columns: female, male) over the employment rate of both sexes from 15: the median over the group's 51 economies of each ratio at their latest survey or census 2015-2025, the ILO's modelled estimates left out, from ILOSTAT SDMX API (fetched 2026-09-27). A country's person is employed at its employment rate times its band's ratio."
 value = { rows = [15, 25, 35, 45, 55, 65], columns = [0, 1], values = [[0.454228, 0.639002], [1.031094, 1.462518], [1.145364, 1.545655], [1.108431, 1.515395], [0.775856, 1.289853], [0.238408, 0.536819]], outside = "refuse" }
+
+[[primitive]]
+id = "LAB.self_employed_shares"
+kind = "ENDOWMENT"
+owner = "LAB"
+source = "measured"
+source_ref = "Derived by tools/data/derive.py: the share of each product's employed (axis: the products' places) who are employers or own-account workers, in its ISIC sections, the median over the 40 economies of the World Bank's emerging income groups reporting them, each at its latest labour force survey 2015-2025 (ICSE-93), from ILOSTAT SDMX API (fetched 2026-09-26)."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], values = [0.493265, 0.097863, 0.097863, 0.097863, 0.097863, 0.286273, 0.286273, 0.286273, 0.263821, 0.286273, 0.286072, 0.211854, 0.385320, 0.405212, 0.268013, 0.230674, 0.036625, 0.079418, 0.510775], outside = "refuse" }
+
+[[primitive]]
+id = "LAB.women_by_occupation"
+kind = "ENDOWMENT"
+owner = "LAB"
+source = "measured"
+source_ref = "Women's share of each ISCO-08 major group's employed (axis: 0 armed forces, 1 managers, 2 professionals, 3 technicians and associate professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and fishery, 7 craft and related trades, 8 plant and machine operators and assemblers, 9 elementary occupations): the median over the group's 51 economies of each share at their latest survey or census 2010-2025 (an occupation an economy does not report left out of its median), from ILOSTAT SDMX API (fetched 2026-09-24). An employed person's occupation is drawn from the hours the activities' output asks of each, weighed by its sex's share of it."
+value = { axis = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], values = [0.107767, 0.373411, 0.587740, 0.441917, 0.575006, 0.567400, 0.227894, 0.183298, 0.105588, 0.452690], outside = "refuse" }

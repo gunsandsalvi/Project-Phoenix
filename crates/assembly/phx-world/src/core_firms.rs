@@ -14,9 +14,10 @@ use phx_rand::{below_u64, normal};
 use phx_store::SystemBacking;
 
 use crate::consts::firm::{
-    COMPENSATION, MANAGEMENT_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PURPOSES, RECORD, SITE_PURPOSE,
+    COMPENSATION, MANAGEMENT_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PUBLIC_ADMINISTRATION, PURPOSES, RECORD,
+    SITE_PURPOSE,
 };
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, WEEKS_A_YEAR};
+use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK};
 use crate::core::Core;
 use crate::opening::economy::table;
 
@@ -93,26 +94,6 @@ pub fn snapshot(register: &Register, c: &OpeningCountry) -> Result<Snapshot, Str
     Ok(Snapshot { price, materials, labour, units })
 }
 
-/// The persons employed making each product a year: its units in the accounts times the hours its way asks of every
-/// occupation a unit, over a full-time year.
-///
-/// # Errors
-/// A primitive the count reads that the register does not hold.
-#[clause("GEN.2", "TEC.1")]
-pub fn employed_by_product(register: &Register, c: &OpeningCountry, snap: &Snapshot) -> Result<Vec<f64>, String> {
-    let (labour, _) = table(register, "TEC.labour", c.id)?;
-    let full_time = register.count_in("LAB.full_time_hours", c.id).map(|h| from_u64(h) * WEEKS_A_YEAR)?;
-    Ok(snap
-        .units
-        .iter()
-        .enumerate()
-        .map(|(p, units)| {
-            let hours: f64 = labour.iter().map(|occ| occ.get(p).copied().unwrap_or(f64::NAN)).sum::<f64>() * units;
-            hours / full_time
-        })
-        .collect())
-}
-
 /// `total` split over `weights` exactly, each part in proportion to its weight.
 fn apportion(total: u64, weights: &[u64]) -> Vec<u64> {
     let mut whole: u64 = weights.iter().sum();
@@ -148,35 +129,28 @@ pub(crate) fn apportion_amount(total: i64, weights: &[u64]) -> Vec<i64> {
         .collect()
 }
 
-/// The country's firms by product and region: the persons it employs — its people from 15 at its employment rate —
-/// times the firms a person employed makes, shared over the products by the persons each product's output employs by
-/// its way, and each product's firms over the regions by their persons.
+/// The country's firms by product and region: the persons each product employs — the country's employed shared by
+/// the hours its output asks — times the firms a person employed making it makes, and each product's firms over the
+/// regions by their persons.
 ///
 /// # Errors
 /// A primitive the count reads that the register does not hold.
 #[clause("GEN.2", "REP.40", "FRM.23")]
-pub fn cells(
-    register: &Register,
-    c: &OpeningCountry,
-    snap: &Snapshot,
-    persons_by_region: &[(u32, u64)],
-) -> Result<Vec<Cell>, String> {
-    let by_way = employed_by_product(register, c, snap)?;
-    let density = register.fixed_in("FRM.firms_per_employed", c.id)?;
-    let firms = phx_ledger::opening::employed(c) * density;
-    let Some(total) = floor_to_i64(firms.round()).and_then(|f| u64::try_from(f).ok()) else {
-        return Err(format!("country {}: firms beyond counting", c.id.get()));
-    };
-    let mut weights = Vec::with_capacity(by_way.len());
-    for (p, e) in by_way.iter().enumerate() {
-        let Some(w) = floor_to_i64(e.round()).and_then(|v| u64::try_from(v).ok()) else {
-            return Err(format!("country {}: product {p} employs no count of persons", c.id.get()));
-        };
-        weights.push(w);
-    }
+pub fn cells(register: &Register, c: &OpeningCountry, persons_by_region: &[(u32, u64)]) -> Result<Vec<Cell>, String> {
+    let asked = crate::opening::asked::Asked::of(register, c)?;
+    let density = row(register, "FRM.firms_per_employed", c)?;
     let regions: Vec<u64> = persons_by_region.iter().map(|(_, n)| *n).collect();
     let mut out = Vec::new();
-    for (product, n) in apportion(total, &weights).into_iter().enumerate() {
+    // Public administration's persons are the agency's, which is no firm.
+    for (product, employed) in
+        asked.persons(phx_ledger::opening::employed(c)).into_iter().filter(|(a, _)| *a != PUBLIC_ADMINISTRATION)
+    {
+        let Some(per) = density.get(product) else {
+            return Err(format!("country {}: product {product} with no firms per person employed", c.id.get()));
+        };
+        let Some(n) = floor_to_i64((employed * per).round()).and_then(|f| u64::try_from(f).ok()) else {
+            return Err(format!("country {}: product {product}'s firms beyond counting", c.id.get()));
+        };
         let Ok(product) = u32::try_from(product) else {
             return Err(format!("country {}: products beyond counting", c.id.get()));
         };
@@ -226,6 +200,47 @@ pub struct FirmsOpening<'a> {
     pub stream: &'a StreamDecl,
     pub management: &'a sys_frm::decide::Management,
     pub today: phx_id::Day,
+}
+
+/// The firms' mean hours a unit, as a factor of their way's, at a shift of their log productivities: each firm's
+/// factor weighed by the chance the logit gives its price in its cell, each cell by its share of the product's units.
+fn mean_hours(cells: &[(f64, Vec<f64>)], price_at: &dyn Fn(f64) -> f64, weight: f64, shift: f64) -> f64 {
+    let mut total = 0.0;
+    for (share, logs) in cells {
+        let prices: Vec<f64> = logs.iter().map(|l| price_at(l + shift)).collect();
+        let chances = phx_market::retail::chances_at(&prices, weight);
+        let hours: f64 =
+            chances.iter().zip(logs).map(|(c, l)| c * sys_frm::rules::way::own_hours(1.0, l + shift)).sum();
+        total += share * hours;
+    }
+    total
+}
+
+/// The shift of a product's firms' log productivities at which their mean hours a unit, weighed by the output their
+/// prices win, are their way's — the way's hours being the average firm's, as the accounts measure them: a bracket
+/// widened by doubling, then halved until its halves are the same number.
+#[clause("GEN.4", "FRM.2", "TEC.1")]
+#[must_use]
+pub fn centring(cells: &[(f64, Vec<f64>)], price_at: &dyn Fn(f64) -> f64, weight: f64) -> f64 {
+    let at = |shift: f64| mean_hours(cells, price_at, weight, shift);
+    let (mut lo, mut hi) = (-1.0, 1.0);
+    while at(lo) < 1.0 {
+        lo *= 2.0;
+    }
+    while at(hi) > 1.0 {
+        hi *= 2.0;
+    }
+    loop {
+        let mid = f64::midpoint(lo, hi);
+        if !(mid > lo && mid < hi) {
+            return mid;
+        }
+        if at(mid) > 1.0 {
+            lo = mid;
+        } else {
+            hi = mid;
+        }
+    }
 }
 
 /// Each cell's output a year shared over its firms by the logit's chance its price wins: the product's units in the
@@ -333,26 +348,21 @@ impl Core {
         snap: &Snapshot,
         persons: &[(u32, u64)],
     ) -> Result<Vec<Draft>, String> {
-        let cells = cells(o.register, c, snap, persons)?;
+        let cells = cells(o.register, c, persons)?;
         let spread = o.register.fixed_in("GEN.productivity_spread", c.id)?;
         let banks = self.banks_of.get(usize::from(c.id.get())).cloned().unwrap_or_default();
         let bank_weight: u64 = banks.iter().map(|(_, w)| *w).sum();
         if bank_weight == 0 {
             violation!(clause = "BNK.1", "a country's firms with no bank to hold their deposits", country = c.id.get());
         }
-        let mut out = Vec::new();
+        let (mut out, mut logs) = (Vec::new(), Vec::new());
         let mut ordinal = 0_u32;
-        let pricing = self.bind(&sys_frm::points::DAY_ZERO_PRICE);
         for cell in &cells {
             let Some((_, tiles)) = c.regions.iter().find(|(r, _)| *r == cell.region) else { continue };
-            let product = phx_rand::float::index(u64::from(cell.product));
-            let lot = sys_frm::FilingPrims::lot(o.register, u16::try_from(cell.product).unwrap_or(u16::MAX));
             for _ in 0..cell.firms {
                 let subject = |purpose: u32| opening_subject(u32::from(c.id.get()) * PURPOSES + purpose, ordinal);
                 let mut d = o.streams.open(o.stream, subject(PRODUCTIVITY_PURPOSE), phx_id::Day::new(0), 0);
-                let log = normal(&mut d) * spread;
-                let productivity = floor_to_i64((log * PRODUCTIVITY_ONE).round())
-                    .unwrap_or_else(|| violation!(clause = "FRM.2", "a productivity beyond a word"));
+                logs.push(normal(&mut d) * spread);
                 let mut at = o.streams.open(o.stream, subject(SITE_PURPOSE), phx_id::Day::new(0), 0);
                 let site: TileId = match tiles.get(phx_rand::float::index(below_u64(&mut at, len_u64(tiles.len())))) {
                     Some(t) => *t,
@@ -374,28 +384,72 @@ impl Core {
                     management: phx_num::Missing::Present(0),
                     window: phx_num::Missing::Absent,
                 };
-                let wanted = lot * snap.price_at(product, log);
-                let price = self.decide_founding(pricing, &prefs, |_| sys_frm::rules::review::DayZeroIn {
-                    points: o.management.points_near(wanted),
-                    wanted,
-                });
-                let Some(price) = price else {
-                    return Err(format!("country {}: product {product} priced at no point", c.id.get()));
-                };
                 out.push(Draft {
                     product: cell.product,
                     region: cell.region,
                     site,
-                    productivity,
+                    productivity: 0,
                     bank,
-                    price,
+                    price: 0,
                     output: 0.0,
                     prefs,
                 });
                 ordinal += 1;
             }
         }
+        self.price_drafts(o, (c, snap, persons), &mut out, &logs)?;
         Ok(out)
+    }
+
+    /// Each product's drafts centred and priced: their log productivities shifted so that their mean hours a unit,
+    /// weighed by the output their prices win, are the way's, and each one's day-zero price posted at the point
+    /// nearest its own cost's.
+    #[clause("FRM.2", "FRM.5", "GEN.13", "GEN.4", "REP.34")]
+    fn price_drafts(
+        &self,
+        o: &FirmsOpening<'_>,
+        (c, snap, persons): (&OpeningCountry, &Snapshot, &[(u32, u64)]),
+        drafts: &mut [Draft],
+        logs: &[f64],
+    ) -> Result<(), String> {
+        let weight = o.register.fixed("SRV.price_weight")?;
+        let pricing = self.bind(&sys_frm::points::DAY_ZERO_PRICE);
+        let persons_of = |r: u32| persons.iter().find(|(x, _)| *x == r).map_or(0.0, |(_, n)| from_u64(*n));
+        let mut start = 0;
+        while start < drafts.len() {
+            let product = drafts.get(start).map_or(u32::MAX, |d| d.product);
+            let end = start + drafts.iter().skip(start).take_while(|d| d.product == product).count();
+            let (Some(of_product), Some(of_logs)) = (drafts.get_mut(start..end), logs.get(start..end)) else { break };
+            let p = phx_rand::float::index(u64::from(product));
+            let mut regions: Vec<u32> = of_product.iter().map(|d| d.region).collect();
+            regions.dedup();
+            let persons_in: f64 = regions.iter().map(|r| persons_of(*r)).sum();
+            let cells: Vec<(f64, Vec<f64>)> = regions
+                .iter()
+                .map(|r| {
+                    let in_cell = of_product.iter().zip(of_logs).filter(|(d, _)| d.region == *r).map(|(_, l)| *l);
+                    (persons_of(*r) / persons_in, in_cell.collect())
+                })
+                .collect();
+            let shift = centring(&cells, &|log| snap.price_at(p, log), weight);
+            let lot = sys_frm::FilingPrims::lot(o.register, u16::try_from(product).unwrap_or(u16::MAX));
+            for (d, log) in of_product.iter_mut().zip(of_logs) {
+                let log = log + shift;
+                d.productivity = floor_to_i64((log * PRODUCTIVITY_ONE).round())
+                    .unwrap_or_else(|| violation!(clause = "FRM.2", "a productivity beyond a word"));
+                let wanted = lot * snap.price_at(p, log);
+                let price = self.decide_founding(pricing, &d.prefs, |_| sys_frm::rules::review::DayZeroIn {
+                    points: o.management.points_near(wanted),
+                    wanted,
+                });
+                let Some(price) = price else {
+                    return Err(format!("country {}: product {product} priced at no point", c.id.get()));
+                };
+                d.price = price;
+            }
+            start = end;
+        }
+        Ok(())
     }
 
     /// The persons the core's households of a country hold, by region, in the country's regions' order.
@@ -422,3 +476,6 @@ impl Core {
         out
     }
 }
+
+#[path = "core_firms_tests.rs"]
+mod tests;

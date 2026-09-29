@@ -387,13 +387,8 @@ impl Core {
                 continue;
             }
             let key = PartyKey::new(kind_number(firm), slot);
-            if self.winds_down(ctx, (firm, slot), day) {
-                if let Some(f) = self.firm_record(firm, slot) {
-                    let country = CountryId::new(ctx.country_of(f.region));
-                    self.end_firm(ctx, (key, country), day, false);
-                }
-                continue;
-            }
+            // No owner winds a firm down by choice until its mind (MND) weighs a line's worth: today's margin at the
+            // market's mark reads a firm trading margin for share as failing.
             let own = mine.remove(&key).unwrap_or_default();
             let (p, w, l) = self.post_one(ctx, day, (firm, family), (slot, &own));
             totals.0 += p;
@@ -865,12 +860,18 @@ impl Core {
             let Ok(region) = u32::try_from(region) else { continue };
             let c = ctx.country_of(region);
             let law = at_country(&self.labour.laws, c);
-            let skill =
+            let schooled =
                 p.attr(ctx.kind.education).and_then(|e| law.education_skill.get(usize::try_from(e).ok()?)).copied();
-            let (Some(skill), Some(occupation), Some(last)) =
-                (skill, p.attr(ctx.kind.occupation), p.attr(ctx.kind.last_point))
+            let (Some(schooled), Some(occupation), Some(last)) =
+                (schooled, p.attr(ctx.kind.occupation), p.attr(ctx.kind.last_point))
             else {
                 continue;
+            };
+            // Its skill is its schooling's, or the one its occupation asks where it has learnt more by working in it.
+            let worked = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied();
+            let skill = match worked {
+                Some(w) if w > schooled => w,
+                _ => schooled,
             };
             out.push((
                 c,

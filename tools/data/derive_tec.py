@@ -76,6 +76,9 @@ GDP_HEADING = "1000000"
 # Products the ways leave out, paid for otherwise: finance by fees and interest (BNK), real estate by rents (HSG),
 # public administration by taxes (TRS), households' own employment and extraterritorial bodies.
 LEFT_OUT = ["K", "L", "O", "T"]
+# The activities the ways make no product of whose hours the opening still staffs, each its section's whole: their
+# unit what a US cent bought at GDP's price level, as the accounts value their output.
+SERVICES = [("finance", "K"), ("real estate", "L"), ("public administration", "O")]
 # The value-added row.
 VALUE_ADDED = "VA"
 # Each mining industry's resources: the one a using industry's input is taken from, where it transforms one, and the
@@ -199,7 +202,9 @@ def economy_ways(t: pd.DataFrame, pl: pd.Series, deflator: float, unit_dollars: 
                 taken = float(t.loc[[c for c in q[2] if c in t.index], codes].values.sum())
             used[i, j] = taken * MILLION * weight * units_per_dollar[i]
     inputs = np.divide(used, made, out=np.zeros_like(used), where=made > 0)
-    return inputs, made
+    gdp_units = deflator * CENTS / product_level(pl, [GDP_HEADING])
+    served = np.array([float(output[code]) * MILLION * gdp_units if code in cols else 0.0 for _, code in SERVICES])
+    return inputs, np.concatenate([made, served])
 
 
 def nearest_year(years) -> int:
@@ -281,7 +286,7 @@ def economy_factors(t, made, pl, deflator, hours, ratios):
     added = {c: float(t.loc[VALUE_ADDED, c]) for c in cols}
     section_added = {s: sum(v for c, v in added.items() if section(c) == s) for s in SECTIONS}
     n = len(PRODUCTS)
-    labour = np.full((len(OCCUPATIONS), n), np.nan)
+    labour = np.full((len(OCCUPATIONS), n + len(SERVICES)), np.nan)
     capital = np.full((len(ASSETS), n), np.nan)
     asset_level = np.array([pl[a[2]] / 100.0 for a in ASSETS])
     for j, p in enumerate(PRODUCTS):
@@ -294,6 +299,9 @@ def economy_factors(t, made, pl, deflator, hours, ratios):
         if ratios is not None and all(section(c) in ratios for c in codes):
             stock_dollars = sum(ratios[section(c)] * added[c] for c in codes) * MILLION * weight
             capital[:, j] = stock_dollars * deflator * CENTS / asset_level / made[j]
+    for k, (_, code) in enumerate(SERVICES):
+        if hours is not None and code in hours and made[n + k] > 0:
+            labour[:, n + k] = hours[code] / made[n + k]
     return labour, capital
 
 
@@ -388,7 +396,7 @@ def median(stack: list) -> np.ndarray:
 
 
 def table2(rows, values: np.ndarray) -> str:
-    cols = range(len(PRODUCTS))
+    cols = range(values.shape[1])
     return (f"{{ rows = [{', '.join(str(r) for r in rows)}], columns = [{', '.join(str(c) for c in cols)}], "
             f"values = {grid(values)}, outside = \"refuse\" }}")
 
@@ -431,7 +439,10 @@ def write_level(level: str, members: dict, m: dict) -> None:
         f"median over the {len(lab)} economies of the group that both ILOSTAT's surveys and the tables report "
         f"({names(lab)}), each section's employment times its average weekly hours times {WEEKS} in the survey nearest "
         f"{YEAR} ({ilo['title']}, fetched {ilo['fetched']}), shared among the section's industries by their value "
-        f"added in the tables.",
+        f"added in the tables. Columns 0 to {len(PRODUCTS) - 1} the products, then "
+        + ", ".join(f"{len(PRODUCTS) + k} {name} (section {code})" for k, (name, code) in enumerate(SERVICES))
+        + ", which make no product: their hours a unit of their output, a unit what one US cent bought at GDP's "
+        "price level, as the accounts value it.",
         table2(range(len(OCCUPATIONS)), labour))
     lines += primitive(
         "TEC.capital", "measured" if len(own_capital) >= MIN_COUNTRIES else "estimated",

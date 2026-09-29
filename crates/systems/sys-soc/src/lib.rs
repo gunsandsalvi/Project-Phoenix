@@ -15,26 +15,6 @@ pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, StateP
 declare_kind! { pub AGENCY = "agency" { legal_form: "public agency", clause: "SOC.2" } }
 
 declare_prim! {
-    /// Each occupation's share of its employed working in public administration, whose staff the public agencies are.
-    pub PUBLIC_STAFF_SHARE = "SOC.public_staff_share" {
-        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "SOC.2", scope: PerCountry
-    }
-}
-
-/// Each occupation's share of its employed that are public administration's, by occupation, in a country.
-///
-/// # Errors
-/// The primitive missing or of another shape.
-pub fn public_staff_shares(register: &phx_core::Register, country: phx_id::CountryId) -> Result<Vec<f64>, String> {
-    let t = register.table1_in(PUBLIC_STAFF_SHARE.id, country)?;
-    let phx_core::ValueType::Table1 { exp, .. } = register.decl_by_id(PUBLIC_STAFF_SHARE.id)?.value else {
-        return Err("the public staff share is no table of one axis".to_owned());
-    };
-    let scale = (0..exp).fold(1.0, |s, _| s * phx_core::consts::DECIMAL_BASE);
-    Ok(t.values().iter().map(|v| phx_rand::float::from_i64(*v) / scale).collect())
-}
-
-declare_prim! {
     /// The normal pension age by sex, in years.
     pub PENSION_AGE = "SOC.pension_age" {
         kind: Policy, decided_by: "parliament", value: Table1 { axis_exp: 0, exp: 2 }, clause: "GEN.2", scope: PerCountry
@@ -98,7 +78,6 @@ impl System for Soc {
         let _: phx_core::Prim<Count> = d.prim(&BENEFIT_MONTHS);
         let _: phx_core::Prim<Fixed<1>> = d.prim(&CLAIM_HOURS);
         d.kind(AGENCY);
-        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&PUBLIC_STAFF_SHARE);
         d.market(Box::new(benefit::BENEFITS));
         d.decision(&points::CLAIM);
         d.decision(&points::CONSUME);

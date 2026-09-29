@@ -2,8 +2,8 @@
 //! its region: a region's jobs of an occupation are shared over its firms by the hours their output takes of that
 //! occupation, and dealt to them in an order drawn by lot. Each job is a contract from its firm to the household,
 //! naming the person by its identity and paying the job's wage on its dates. Public administration's share of each
-//! occupation's jobs, and every job whose occupation no firm's way in its region takes, is its country's public
-//! agency's. The employed are the persons drawn employed, so the staff is exactly the employed the population gives.
+//! occupation's jobs — its hours of the occupation's employees' hours the country's output asks — and every job whose
+//! occupation no firm's way in its region takes, is its country's public agency's. The employed are the persons drawn employed, so the staff is exactly the employed the population gives.
 //! A wage is not drawn: an activity's compensation in the country's accounts is shared over the hours its jobs work,
 //! each occupation's hour paid in proportion to its pay, so the wages are the accounts' and a firm's cost of a unit
 //! is its way's at its productivity.
@@ -24,6 +24,7 @@ use crate::consts::firm::{
 use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_WHEEL_DAYS, MONTHS_A_YEAR, WEEKS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, WAGE};
+use crate::opening::asked::Asked;
 use crate::opening::economy::table;
 
 /// A job as drawn: its household, its person, where its schedule is, its region, occupation, weekly hours and
@@ -272,6 +273,10 @@ impl Core {
         for (i, j) in jobs.iter().enumerate() {
             groups.entry((j.region, j.occupation)).or_default().push(i);
         }
+        let mut public_share: BTreeMap<u8, Vec<Option<f64>>> = BTreeMap::new();
+        for c in o.countries {
+            public_share.insert(c.id.get(), Asked::of(o.register, c)?.employees_share(PUBLIC_ADMINISTRATION));
+        }
         let mut public_jobs = 0_u64;
         let mut placed: Vec<Placed> = Vec::new();
         for ((region, occupation), mut members) in groups {
@@ -284,9 +289,12 @@ impl Core {
             let Some(Some(state)) = self.agencies.get(usize::from(country.id.get())).copied() else {
                 return Err(format!("country {}: no agency to employ the state's staff", country.id.get()));
             };
-            let shares = sys_soc::public_staff_shares(o.register, country.id)?;
-            let Some(share) = shares.get(usize::try_from(occupation).unwrap_or(usize::MAX)).copied() else {
-                return Err(format!("country {}: no public staff share for occupation {occupation}", country.id.get()));
+            let Some(Some(share)) = public_share.get(&country.id.get()).and_then(|s| s.get(o_at)).copied() else {
+                violation!(
+                    clause = "GEN.2",
+                    "jobs of an occupation no activity asks employees of",
+                    occupation = occupation
+                );
             };
             let mut lot = o.streams.open(
                 o.stream,

@@ -41,8 +41,13 @@ impl Technology {
             let labour = p.labour.get(register, country);
             let capital = p.capital.get(register, country);
             let land = per_product(p.land.get(register, country), &tech.products, "TEC.land")?;
-            for t in [inputs, labour, capital] {
+            for t in [inputs, capital] {
                 columns_are_products(t, &tech.products)?;
+            }
+            // Labour's columns past the products are the activities that make none, whose staff the opening reads.
+            let first = labour.columns().get(..tech.products.decls.len()).unwrap_or_default();
+            if !points_are_products(first, &tech.products) {
+                return Err("the labour table's first columns are not the products in order".to_owned());
             }
             let mut by_industry: Vec<Vec<WayId>> = vec![Vec::new(); tech.products.industries.len()];
             for decl in &tech.products.decls {

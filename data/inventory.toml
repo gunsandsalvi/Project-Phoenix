@@ -343,10 +343,10 @@ status = "profiled"
 
 [[row]]
 id = "FRM.firms_per_employed"
-what = "enterprises per person employed in the business economy"
+what = "enterprises per person employed, by product"
 owner = "FRM"
 first_read = "S0.16"
-source = "OECD Structural and Demographic Business Statistics (ISIC Rev. 4), enterprises over persons employed, for the developed group; ILOSTAT's employers and own-account workers over everyone employed (ICSE-93) for the emerging and developing groups"
+source = "OECD Structural and Demographic Business Statistics (ISIC Rev. 4), enterprises over persons employed in each product's sections, for the developed group (crops and livestock from ILOSTAT); ILOSTAT's employers and own-account workers over everyone employed in each product's sections (ICSE-93) for the emerging and developing groups"
 status = "profiled"
 
 # The present values of the snapshot date (spec GEN.2, GEN.5), one each, by declared mappings from the derived values.

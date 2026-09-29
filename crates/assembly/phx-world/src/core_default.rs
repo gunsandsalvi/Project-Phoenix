@@ -120,44 +120,6 @@ impl Core {
         phx_rand::float::len_u64(due.len())
     }
 
-    /// Whether a solvent firm's owner winds it down on its production schedule: continuing — the margin a year it
-    /// expects on the sales it expects, at the price it expects over its cost of making a unit, held at the return
-    /// its management requires — against what ending adds: what its stock and plant would fetch, none while no
-    /// market buys them, less its staff's severance, which only ending owes. Its money and debts are its owners'
-    /// either way. A decision it cannot weigh — no return required, no cost known, no price expected — is not taken.
-    #[clause("FRM.11")]
-    pub(crate) fn winds_down(&self, ctx: &LabourCtx<'_>, (firm, slot): (usize, Slot), day: Day) -> bool {
-        let key = PartyKey::new(crate::core::kind_number(firm), slot);
-        let closing = self.bind(&sys_frm::points::CLOSE);
-        let (_, prefs) = self.decider(closing, key);
-        let (Some(product), Some(region), Some(expected), phx_num::Missing::Present(rate)) = (
-            self.record_of(firm, slot, PRODUCT),
-            self.record_of(firm, slot, REGION),
-            self.record_of(firm, slot, crate::consts::firm::EXPECTED),
-            prefs.required_return,
-        ) else {
-            return false;
-        };
-        if rate <= 0.0 {
-            return false;
-        }
-        let Ok(product) = u16::try_from(product) else { return false };
-        let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) else { return false };
-        let lot = sys_frm::FilingPrims::lot(ctx.register, product);
-        let phx_num::Missing::Present(price) = self.price_expected(firm, slot, lot, &prefs) else { return false };
-        let expected = phx_rand::float::from_i64(expected) / crate::consts::firm::PART_ONE;
-        let continuing = (price - cost) * expected * crate::consts::DAYS_A_YEAR / rate;
-        let country = ctx.country_of(u32::try_from(region).unwrap_or(u32::MAX));
-        let (claims, _) = self.claims_of(ctx, (key, country), day);
-        let severance: i64 =
-            claims.iter().filter(|c| c.reason == crate::consts::reason::SEVERANCE).map(|c| c.amount).sum();
-        self.decide(closing, key, |_| sys_frm::rules::review::CloseIn {
-            continuing,
-            proceeds: 0.0,
-            ending_costs: phx_rand::float::from_i64(severance),
-        })
-    }
-
     fn record_of(&self, kind: usize, slot: Slot, at: usize) -> Option<i64> {
         match self.kinds.get(kind)?.record(slot).get(at).map(|w| w.get()) {
             Some(phx_num::Missing::Present(v)) => Some(v),

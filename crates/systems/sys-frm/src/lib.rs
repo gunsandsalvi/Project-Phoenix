@@ -61,8 +61,10 @@ pub const REGION: AttrDecl = AttrDecl { name: "FRM.region", values: if_pop::cons
 pub const BANK_ATTR: &str = "BNK.bank";
 
 declare_prim! {
-    /// Enterprises per person employed in the business economy, which sets the scale of the firm-size law.
-    pub FIRMS_PER_EMPLOYED = "FRM.firms_per_employed" { kind: Endowment, value: Fixed { exp: 6 }, clause: "GEN.2", scope: PerCountry }
+    /// Enterprises per person employed, by product: how many firms the persons employed making it make.
+    pub FIRMS_PER_EMPLOYED = "FRM.firms_per_employed" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
 }
 
 /// What the firms' handlers read of the register, compiled at assembly.
@@ -102,7 +104,7 @@ impl System for Frm {
     fn declare(d: &mut Declarations) {
         d.kind(FIRM);
         d.stream(OpeningStream::DECL);
-        let _: FixedPrim = d.prim(&FIRMS_PER_EMPLOYED);
+        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&FIRMS_PER_EMPLOYED);
         declare_decisions(d);
         d.decision(&points::DAY_ZERO_PRICE);
         d.decision(&points::PRODUCE);

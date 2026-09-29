@@ -1,6 +1,7 @@
 //! Firms' owners on the core. The self-employed the opening draws — employed, but no one's employees — own and work in
-//! the firms of their region: each firm its first owner in an order drawn by lot, the rest dealt over the firms by the
-//! hours their output takes of each one's occupation. A firm's first working owner manages it, holding every office
+//! the firms of their region, in an order drawn by lot: each occupation's dealt over the firms by the hours their
+//! output takes of it that its product's self-employed work, so a product's owners are its share of its hours and a
+//! firm with none is run by its founders' preferences alone. A firm's first working owner manages it, holding every office
 //! its form declares with the preferences it was founded with; each working owner works its country's full-time week
 //! in its occupation, counted with the firm's staff. What an owner holds is its household's: it passes to the
 //! household's estate, and from an estate where its money goes; a firm's estate pays what its claims leave to its
@@ -15,9 +16,10 @@ use phx_num::Missing;
 use phx_rand::float::len_u64;
 
 use crate::consts::WEEKS_A_YEAR;
-use crate::consts::firm::{COMPENSATION, OWNERS_PURPOSE, PURPOSES, SURPLUS};
+use crate::consts::firm::{COMPENSATION, OWNERS_PURPOSE, PRODUCT, PURPOSES, SURPLUS};
 use crate::core::{Core, kind_number};
 use crate::core_jobs::{JobsOpening, deal, month_point};
+use crate::opening::economy::table;
 
 /// A self-employed person the opening drew: its household, identity, occupation, country and region.
 #[derive(Clone, Copy, Debug, phx_macros::Saved)]
@@ -84,9 +86,9 @@ impl Core {
         Some(pay)
     }
 
-    /// The self-employed dealt to the firms of their regions: in each region, in an order drawn by lot, one to each
-    /// firm, and the rest of each occupation over its firms by the hours their output takes of it, evenly where none
-    /// takes it.
+    /// The self-employed dealt to the firms of their regions: in each region, in an order drawn by lot, each
+    /// occupation's over its firms by the hours their output takes of it times their product's self-employed's share,
+    /// evenly where none takes it.
     ///
     /// # Errors
     /// A primitive the dealing reads that the register does not hold.
@@ -94,6 +96,13 @@ impl Core {
     pub fn open_owners(&mut self, o: &JobsOpening<'_>, types: &phx_val::types::Types) -> Result<(), String> {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
         let firms = self.firm_hours(o, firm)?;
+        let mut owned: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
+        for c in o.countries {
+            owned.insert(
+                c.id.get(),
+                table(o.register, "LAB.self_employed_shares", c.id)?.0.into_iter().next().unwrap_or_default(),
+            );
+        }
         let mut by_region: BTreeMap<u32, Vec<OpenOwner>> = BTreeMap::new();
         for d in std::mem::take(&mut self.drawn.owners) {
             self.owners.drawn += 1;
@@ -114,27 +123,22 @@ impl Core {
                 members.swap(i, j);
             }
             let here = firms.get(&region).map_or(&[][..], Vec::as_slice);
-            // The firms each take their first owner in an order drawn by lot, so no product's place in the books
-            // decides which firms go unowned.
-            let mut order: Vec<usize> = (0..here.len()).collect();
-            for i in (1..order.len()).rev() {
-                let j = phx_rand::float::index(phx_rand::below_u64(&mut lot, len_u64(i + 1)));
-                order.swap(i, j);
+            let mut share = Vec::with_capacity(here.len());
+            for (slot, _) in here {
+                let product = self.record_word(firm, *slot, PRODUCT).and_then(|p| usize::try_from(p).ok());
+                let Some(s) = product.and_then(|p| owned.get(&country)?.get(p).copied()) else {
+                    return Err(format!("country {country}: a firm's product with no self-employed share"));
+                };
+                share.push(s);
             }
-            let mut next = members.into_iter();
-            for (slot, _) in order.iter().filter_map(|i| here.get(*i)) {
-                match next.next() {
-                    Some(m) => self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, date), types),
-                    None => self.owners.unowned += 1,
-                }
+            let mut of: BTreeMap<u32, Vec<OpenOwner>> = BTreeMap::new();
+            for m in members {
+                of.entry(m.occupation).or_default().push(m);
             }
-            let mut rest: BTreeMap<u32, Vec<OpenOwner>> = BTreeMap::new();
-            for m in next {
-                rest.entry(m.occupation).or_default().push(m);
-            }
-            for (occupation, ms) in rest {
+            for (occupation, ms) in of {
                 let at = usize::try_from(occupation).unwrap_or(usize::MAX);
-                let mut weights: Vec<f64> = here.iter().map(|(_, h)| h.get(at).copied().unwrap_or(0.0)).collect();
+                let mut weights: Vec<f64> =
+                    here.iter().zip(&share).map(|((_, h), s)| h.get(at).copied().unwrap_or(0.0) * s).collect();
                 if !weights.iter().any(|w| *w > 0.0) {
                     weights = vec![1.0; here.len()];
                 }
@@ -146,6 +150,12 @@ impl Core {
                 }
             }
         }
+        let working = &self.owners.working;
+        let unowned = firms
+            .values()
+            .flatten()
+            .filter(|(slot, _)| !working.contains_key(&PartyKey::new(kind_number(firm), *slot)));
+        self.owners.unowned = len_u64(unowned.count());
         Ok(())
     }
 

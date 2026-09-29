@@ -16,7 +16,7 @@ use phx_core::{
 };
 use phx_num::{Count, Fixed, Missing};
 
-pub use jobs::{Drawn, Jobs, JobsStream, Rule};
+pub use jobs::{AS_EMPLOYEE, AS_OWNER, Drawn, Jobs, JobsStream, Rule};
 
 declare_stream! { pub TasteStream = "LAB.match_taste" { purpose: Meeting, keyed: false, clause: "REP.22" } }
 declare_stream! { pub MeetingStream = "LAB.meeting" { purpose: Meeting, keyed: false, clause: "LAB.8" } }
@@ -57,13 +57,6 @@ declare_hazard! {
 }
 
 declare_prim! {
-    /// The employed by status in employment, by sex: the employees' row read, the others running their own work.
-    pub STATUS = "LAB.status_shares" {
-        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
-    }
-}
-
-declare_prim! {
     /// Each sex's and ten-year age band's employment rate over the rate of both sexes from 15.
     pub EMPLOYMENT_BY_AGE = "LAB.employment_by_age" {
         kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
@@ -71,9 +64,17 @@ declare_prim! {
 }
 
 declare_prim! {
-    /// The employed by occupation family (ISCO-08 major group), by sex.
-    pub OCCUPATION = "LAB.occupation_shares" {
-        kind: Endowment, value: Table2 { row_exp: 0, column_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    /// Women's share of each occupation family's employed (ISCO-08 major group).
+    pub WOMEN = "LAB.women_by_occupation" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
+    }
+}
+
+declare_prim! {
+    /// The employed making each product who are self-employed, running their own business: employers and
+    /// own-account workers.
+    pub SELF_EMPLOYED = "LAB.self_employed_shares" {
+        kind: Endowment, value: Table1 { axis_exp: 0, exp: 6 }, clause: "GEN.2", scope: PerCountry
     }
 }
 
@@ -240,8 +241,7 @@ impl System for Lab {
             d.stream(s);
         }
         let _ = Jobs {
-            status: d.prim(&STATUS),
-            occupation: d.prim(&OCCUPATION),
+            women: d.prim(&WOMEN),
             by_age: d.prim(&EMPLOYMENT_BY_AGE),
             unemployment: d.prim(&UNEMPLOYMENT),
             part_time: d.prim(&PART_TIME),
@@ -252,6 +252,7 @@ impl System for Lab {
             let _: phx_core::Prim<Count> = d.prim(p);
         }
         let _: phx_core::Prim<Fixed<6>> = d.prim(&WAGE_POINT_RATIO);
+        let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&SELF_EMPLOYED);
         let _: phx_core::Prim<Fixed<4>> = d.prim(&MINIMUM_SHARE);
         let _: phx_core::Prim<Fixed<2>> = d.prim(&APPLICATIONS);
         let _: phx_core::Prim<Fixed<4>> = d.prim(&SEEN_CHANCE);

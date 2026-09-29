@@ -67,8 +67,15 @@ pub(crate) fn less(want: Want, lot: i64, units: i64, price: i64) -> Want {
 #[clause("SRV.4")]
 #[must_use]
 pub fn price_chances(prices: &[i64], weight: f64) -> Vec<f64> {
-    let v: Vec<Option<f64>> =
-        prices.iter().map(|p| (*p > 0).then(|| -weight * libm::log(phx_rand::float::from_i64(*p)))).collect();
+    let prices: Vec<f64> = prices.iter().map(|p| if *p > 0 { phx_rand::float::from_i64(*p) } else { 0.0 }).collect();
+    chances_at(&prices, weight)
+}
+
+/// The logit's chances at prices not yet posted, a price of nothing or less weighing nothing.
+#[clause("SRV.4")]
+#[must_use]
+pub fn chances_at(prices: &[f64], weight: f64) -> Vec<f64> {
+    let v: Vec<Option<f64>> = prices.iter().map(|p| (*p > 0.0).then(|| -weight * libm::log(*p))).collect();
     let Some(best) = v.iter().flatten().copied().reduce(|a, b| if b > a { b } else { a }) else {
         return vec![0.0; prices.len()];
     };

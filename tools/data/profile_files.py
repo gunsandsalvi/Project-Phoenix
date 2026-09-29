@@ -29,7 +29,7 @@ ECONOMY = {
     "TEC.inputs", "TEC.labour", "TEC.capital", "TEC.land", "GDS.price_level", "GEN.service_inputs",
     "GEN.product_taxes", "GEN.value_added_parts", "GEN.final_weights", "GEN.final_composition", "GEN.holdings",
     "GEN.real_assets", "GEN.productivity_spread", "GEN.occupation_pay",
-    "FRM.firms_per_employed", "SOC.public_staff_share",
+    "FRM.firms_per_employed",
 }
 LAW = {
     "CB.currency", "GEN.units_per_dollar", "DEM.age_of_majority", "DEM.school_leaving_age",

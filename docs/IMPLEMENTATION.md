@@ -1196,12 +1196,28 @@ world switches to the core.
       each country's sheet closes from its drawn levels and its firms' plant, computed as the opening values it
       (`CAP.stock_per_gdp` retired: the sheet's plant was 1.54, 1.38 and 1.15 of GDP where the firms held 0.93,
       1.00 and 1.01).
-    - j4. **Labour and firms from one source**: `TEC.labour` for all 22 activities, the public agency staffed by
-      public administration's hours; the self-employed dealt by activity from ILO status by activity; firms by
-      activity from firms per person employed; persons' occupations drawn from the ways' mix at the country's
-      output, each occupation's sexes by its share; the ways' hours scaled by one factor to the hours the employed
-      work. Predicted: capacity over units near one in every country and product, no activity's owners beyond its
-      surplus, markups within a product apart only by productivity and occupation mix.
+    - j4. **Labour and firms from one source** (built). `TEC.labour` has 22 columns, finance's, real estate's and
+      public administration's after the products (their unit a currency unit of output); `opening::asked` is each
+      occupation's hours the output asks, by the staffed activities (the products and the agency), split into
+      employees' and the self-employed's by `LAB.self_employed_shares` (ILOSTAT status by activity: employers and
+      own-account workers, the only statuses it counts apart). Everything reads it: firms by product (its employed
+      times `FRM.firms_per_employed`, now by product), the owners dealt by hours times their product's share (no
+      firm-first pass), the agency's share of each occupation's jobs, and the persons' occupations and status —
+      matched by rank, each sex's employed ordered by their education's skill against the occupations ordered by the
+      skill they ask, each sex's share of an occupation from `LAB.women_by_occupation`; a searcher's skill is its
+      education's or its occupation's, the greater. Retired: `LAB.occupation_shares`, `LAB.status_shares`,
+      `SOC.public_staff_share`. The country's one level (the employed's hours over the ways' at its output: 0.77,
+      1.3 and 3.4 at seed 1) is the running world's `labour.level`, which already scales capacity per occupation.
+      Found and settled on the way: a hard education gate drew developed professionals at 0.22 of the hours asked and
+      developing elementary work at 21 times; the ways' hours are the output-weighted average firm's, so each
+      product's log productivities are shifted together until their hours a unit, weighed by the output the logit
+      deals them, average the way's (before, developed education's firms cost 2.2 times their price's labour).
+      Measured (150,000 persons, seed 1): capacity over units 0.7 to 1.6, most within 0.85 to 1.15; wages over
+      compensation 0.92 to 1.11; one GEN.4 finding, the developing country's product 12, its owners' income 1.2% past
+      its surplus, then none; each firm's labour cost within 0.8 to 1.0 of its price's labour part. Still open: a
+      firm's materials cost at the opening's prices is below the accounts' materials a unit (developed product 12,
+      about a quarter), so firms' own markups sit above the accounts'; settled next. The voluntary close is
+      blocked until S8.03 (owner, 2026-09-29): with it off, twelve days run clean, no firm ending.
     - j5. **The state**: the tax rates and benefits against the flows' taxes and collective consumption, measured at
       the opening's first year and made one.
     - j6. **The check**: the derivation's and the assembly's checks cover every identity above.
@@ -5905,6 +5921,14 @@ differently, and a new chief executive changes the firm.
   institution offers against others bidding for them.
 - An office no one holds yet reads the institution's founding preferences (MND.16), as the decision core has since
   S1.26; here its holder's mind is attached to it, and no decision moves.
+- **The voluntary close (FRM.11) is rebuilt here** (owner, 2026-09-29: blocked until the mind works). S1.24's close
+  rule wound a solvent firm down when its expected margin a year — the region's mark over its own unit cost, times
+  its expected sales, over its required return — fell below its staff's severance; measured at the opening (150,000
+  persons, seed 1, S1.24 j4): 4,673 of 22,488 firms wound down in five days, every one with the mark below its cost
+  and 2,072 of them with their own price above it. The mark is the average of prices set by firms of other costs, and
+  a firm that cuts its margin to win share reads as failing on it. `core_labour` takes no voluntary close meanwhile
+  (a placeholder naming MND); `sys-frm`'s `CLOSE` point and rule stay declared. Here the owner's or chief executive's
+  mind weighs the line: its own price and sales path, its strategy, and what winding down adds.
 
 **Unit tests**: `pay_in_shares_weighs_the_share_price`; `removal_threat_enters_security`.
 

@@ -995,14 +995,18 @@ takes on day zero.
   derived values (GEN.15), their shapes from published work and their parameters from those values, each registered
   (NUM.3) with its sources:
   - population by age, household composition and region, from life tables and censuses, with education and
-    skills by age, region and occupation family;
+    skills by age, region and occupation family: the employed's occupations, and whether each is an employee or runs
+    its own business, are what the country's output asks of each by its ways and each activity's self-employed share,
+    each sex taking its share of an occupation and the most schooled filling the most skilled work, work its schooling
+    falls short of learnt by doing it;
   - incomes as the contracts and holdings that pay them (Law 4), none drawn apart from them: an employee's wage is
     its activity's compensation in the accounts over the hours the activity's jobs work, each hour weighed by its
     occupation's pay; a working owner's hours earn the self-employed's labour income — the labour share less the
     employees' compensation — shared as their hours would be paid employed in their activity; and wealth, by
     preference type. The income distribution that results is an outcome, read against its stylised fact (N3);
   - firms by industry, productivity and sites, their debts and owners, the ways they know and the patents they
-    hold. A firm's size is not drawn: its output is its share of its industry's output, by the demand its day-zero
+    hold: an industry's firms its employed times its firms per person employed, their productivities spread so that
+    their hours a unit, weighed by the output their prices win, are its way's. A firm's size is not drawn: its output is its share of its industry's output, by the demand its day-zero
     prices win in its reach (GEN.13), and its staff, plant and stocks follow from that output and its way, so the
     size distribution is an outcome, read against its stylised fact (N3);
   - the housing stock, its tenure and its mortgages;

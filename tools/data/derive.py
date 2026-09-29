@@ -243,50 +243,108 @@ def write_profile(level: str, group: pd.DataFrame, manifest: dict) -> dict:
             "stats": {s[0]: (s[1], s[2]) for s in stats}}
 
 
-def owners_per_employed(levels: pd.Series) -> pd.DataFrame:
-    """Employers and own-account workers over everyone employed, all activities, at each economy's latest labour force
-    survey (ILOSTAT, ICSE-93), its survey the one listed last where two report that year."""
+def product_sections() -> list:
+    """Each product's ISIC sections, from the input-output tables' industries it aggregates; mining support services,
+    which the ways count in business services, left in mining's section."""
+    from derive_tec import PRODUCTS
+    return [sorted({c[0] for c in p[2] if c != "B09"}) for p in PRODUCTS]
+
+
+def by_product(per_section: dict, sections: list) -> list:
+    """A ratio's numerator and denominator summed over each product's sections, where every one of them is reported."""
+    out = []
+    for secs in sections:
+        if all(s in per_section for s in secs):
+            num_, den = (sum(per_section[s][k] for s in secs) for k in (0, 1))
+            out.append(num_ / den if den > 0 else np.nan)
+        else:
+            out.append(np.nan)
+    return out
+
+
+def self_employed_by_section() -> dict:
+    """Each economy's self-employed — employers and own-account workers, each running a business — and everyone
+    employed, by ISIC section, at its latest labour force survey (ILOSTAT, ICSE-93), its survey the one listed last
+    where two report that year. The source counts no other status apart, so members of producers' cooperatives and
+    contributing family workers are counted with the employees."""
     d = pd.read_csv(RAW / "ilo" / "status_by_activity.csv", dtype={"status": str})
-    d = d[d.activity == "TOTAL"]
-    rows = []
+    out = {}
     for (iso3, year, source), g in d.groupby(["iso3", "year", "source"]):
-        by = g.groupby("status").value.sum()
-        if {"2", "3", "TOTAL"} <= set(by.index) and by["TOTAL"] > 0:
-            rows.append((iso3, year, source, (by["2"] + by["3"]) / by["TOTAL"]))
-    ratios = pd.DataFrame(rows, columns=["iso3", "year", "source", "ratio"])
-    ratios = ratios.sort_values(["iso3", "year", "source"]).groupby("iso3").last()
-    return ratios.join(levels.rename("level"), how="left")
+        table = {}
+        for sec, h in g.groupby("activity"):
+            by = h.groupby("status").value.sum()
+            if {"2", "3", "TOTAL"} <= set(by.index) and by["TOTAL"] > 0:
+                table[sec] = (float(by["2"] + by["3"]), float(by["TOTAL"]))
+        out.setdefault(iso3, {})[(year, source)] = table
+    return {iso3: v[max(v)] for iso3, v in out.items()}
+
+
+def enterprises_by_section() -> dict:
+    """Each economy's enterprises and persons employed by ISIC section in its latest year (OECD SDBS), personal
+    services the sum of the two divisions reported."""
+    d = pd.read_csv(RAW / "sdbs" / "by_activity_size.csv", dtype={"activity": str})
+    d = d[d["size"] == "_T"]
+    out = {}
+    for iso3, g in d.groupby("iso3"):
+        g = g[g.year == g.year.max()]
+        m = g.pivot_table(index="activity", columns="measure", values="value", aggfunc="sum")
+        table = {}
+        for sec in m.index:
+            if len(sec) == 1 and {"ENTR", "EMPN"} <= set(m.columns) and m.loc[sec, "EMPN"] > 0:
+                table[sec] = (float(m.loc[sec, "ENTR"]), float(m.loc[sec, "EMPN"]))
+        s = [a for a in m.index if a.startswith("S") and len(a) > 1]
+        if s and {"ENTR", "EMPN"} <= set(m.columns):
+            table["S"] = (float(m.loc[s, "ENTR"].sum()), float(m.loc[s, "EMPN"].sum()))
+        out[iso3] = table
+    return out
 
 
 def write_firms(manifest: dict, levels: pd.Series) -> dict:
-    """Firms per person employed, per country's latest year: the developed group's the median of enterprises over
-    persons employed in the business economy (OECD SDBS), the owner's decision (plan section 12); the emerging and
-    developing groups', which SDBS barely covers, the median of employers and own-account workers over everyone
-    employed (ILOSTAT), the source that decision waited for. The two count different things: registers count firms
-    of no one employed and side businesses, surveys a person's main job."""
-    ent, emp = latest("sdbs/ENTR_T"), latest("sdbs/EMPN_T")
-    d = ent.merge(emp, on="iso3").merge(levels.rename("level"), left_on="iso3", right_index=True, how="left")
-    d["ratio"] = d["sdbs/ENTR_T"] / d["sdbs/EMPN_T"]
-    owners = owners_per_employed(levels)
-    out = {}
+    """Firms per person employed and the self-employed's share of the employed, by product. Firms per person employed:
+    the developed group's the median of enterprises over persons employed in the product's sections (OECD SDBS), the
+    owner's decision (plan section 12), agriculture's, which SDBS does not count, its employers and own-account workers
+    over its employed; the emerging and developing groups', which SDBS barely covers, their employers and own-account
+    workers over everyone employed in the product's sections (ILOSTAT), the source that decision waited for. The
+    self-employed's share, by product, each group's ILOSTAT median."""
+    sections = product_sections()
+    own = self_employed_by_section()
+    ent = enterprises_by_section()
     sdbs, ilo = manifest["sources"]["sdbs"], manifest["sources"]["ilo_status"]
+    out = {}
     for level in ["developed", "emerging", "developing"]:
+        members = [c for c, lv in levels.items() if lv == level]
+        shares = np.array([by_product(own[c], sections) for c in members if c in own], dtype=float)
+        share = np.nanmedian(shares, axis=0)
+        n_share = int(np.sum(~np.all(np.isnan(shares), axis=1)))
         if level == "developed":
-            group = d[d.level == level].ratio.dropna()
-            ref = (f"Derived by tools/data/derive.py: the median over {len(group)} economies of the World Bank's {level} "
-                   f"income groups of enterprises over persons employed in the business economy except finance, "
-                   f"latest year 2015-2025, from {sdbs['title']} (fetched {sdbs.get('fetched', manifest['fetched'])}).")
+            dens = np.array([by_product(ent[c], sections) for c in members if c in ent], dtype=float)
+            density = np.where(np.isnan(np.nanmedian(dens, axis=0)), share, np.nanmedian(dens, axis=0))
+            n_dens = int(np.sum(~np.all(np.isnan(dens), axis=1)))
+            ref = (f"Derived by tools/data/derive.py: each product's enterprises over persons employed in its ISIC "
+                   f"sections (axis: the products' places), the median over the {n_dens} economies of the World Bank's "
+                   f"{level} income groups that report them, latest year 2015-2025, from {sdbs['title']} (fetched "
+                   f"{sdbs.get('fetched', manifest['fetched'])}); a product whose sections the OECD does not count "
+                   f"(crops and livestock) its employers and own-account workers over its employed, the median over "
+                   f"{n_share} economies, from {ilo['title']} (fetched {ilo.get('fetched', manifest['fetched'])}).")
         else:
-            group = owners[owners.level == level].ratio.dropna()
-            ref = (f"Derived by tools/data/derive.py: the median over {len(group)} economies of the World Bank's {level} "
-                   f"income groups of employers and own-account workers over everyone employed, all activities, each at "
-                   f"its latest labour force survey 2015-2025 (DF_EMP_TEMP_SEX_STE_ECO_NB, ICSE-93), from {ilo['title']} "
-                   f"(fetched {ilo.get('fetched', manifest['fetched'])}); the OECD's business statistics, the developed "
-                   f"group's source, report too few of the group's economies.")
-        value = float(group.median())
-        out[level] = value
+            density = share
+            ref = (f"Derived by tools/data/derive.py: each product's employers and own-account workers over everyone "
+                   f"employed in its ISIC sections (axis: the products' places), the median over the {n_share} "
+                   f"economies of the World Bank's {level} income groups reporting them, each at its latest labour "
+                   f"force survey 2015-2025 (ICSE-93), from {ilo['title']} (fetched "
+                   f"{ilo.get('fetched', manifest['fetched'])}); the OECD's business statistics, the developed group's "
+                   f"source, report too few of the group's economies.")
+        if np.any(np.isnan(density)) or np.any(np.isnan(share)):
+            raise SystemExit(f"{level}: a product with no firm density or self-employed share")
+        out[level] = density
+        axis = ", ".join(str(i) for i in range(len(sections)))
+        share_ref = (f"Derived by tools/data/derive.py: the share of each product's employed (axis: the products' "
+                     f"places) who are employers or own-account workers, in its ISIC sections, the median over the "
+                     f"{n_share} economies of the World Bank's {level} income groups reporting them, each at its "
+                     f"latest labour force survey 2015-2025 (ICSE-93), from {ilo['title']} (fetched "
+                     f"{ilo.get('fetched', manifest['fetched'])}).")
         lines = [
-            f"# The {level} group's firm density (spec GEN.2, FRM), derived by tools/data/derive.py; never edited by hand.",
+            f"# The {level} group's firm density and owners (spec GEN.2, FRM), derived by tools/data/derive.py.",
             "",
             "[[primitive]]",
             'id = "FRM.firms_per_employed"',
@@ -294,7 +352,15 @@ def write_firms(manifest: dict, levels: pd.Series) -> dict:
             'owner = "FRM"',
             'source = "measured"',
             f"source_ref = {json.dumps(ref)}",
-            f'value = "{num(value)}"',
+            f'value = {{ axis = [{axis}], values = [{", ".join(num(v) for v in density)}], outside = "refuse" }}',
+            "",
+            "[[primitive]]",
+            'id = "LAB.self_employed_shares"',
+            'kind = "ENDOWMENT"',
+            'owner = "LAB"',
+            'source = "measured"',
+            f"source_ref = {json.dumps(share_ref)}",
+            f'value = {{ axis = [{axis}], values = [{", ".join(num(v) for v in share)}], outside = "refuse" }}',
         ]
         profile_files.put_text(level, "\n".join(lines) + "\n")
     return out
@@ -357,7 +423,7 @@ def main() -> None:
               f"nearest-matrix change {f['moved']:.3f}")
     write_real_names(t, fitted, manifest)
     firms = write_firms(manifest, t.set_index("iso3").level)
-    print(f"firms per person employed: {firms}")
+    print("firms per person employed: " + "; ".join(f"{k} " + " ".join(f"{v:.3f}" for v in x) for k, x in firms.items()))
 
 
 if __name__ == "__main__":

@@ -540,32 +540,30 @@ def latest_survey(d: pd.DataFrame) -> pd.DataFrame:
 
 
 def employment(level: str, members: set, m: dict) -> list:
+    """Each occupation's women's share of its employed, and the employment rate of each sex and age band over the
+    country's. The occupations' mix is not a primitive: the opening draws it from the hours the activities' output asks
+    of each."""
     out = []
-    for name, pid, classes, what in [
-        ("occupation", "LAB.occupation_shares", [str(c) for c in range(10)],
-         "ISCO-08 major group (rows: 0 armed forces, 1 managers, 2 professionals, 3 technicians and associate "
-         "professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, forestry and fishery, 7 "
-         "craft and related trades, 8 plant and machine operators and assemblers, 9 elementary occupations)"),
-        ("status", "LAB.status_shares", ["1", "2", "3", "4", "5"],
-         "status in employment, ICSE-93 (rows: 1 employees, 2 employers, 3 own-account workers, 4 members of "
-         "producers' cooperatives, 5 contributing family workers)"),
-    ]:
-        d = pd.read_csv(RAW / "ilo" / f"{name}.csv", dtype={"class": str})
-        d = latest_survey(d[d.iso3.isin(members) & d["class"].isin(classes)])
-        cols = []
-        for sex in ("F", "M"):
-            x = d[d.sex == sex].pivot_table(index="iso3", columns="class", values="employed").reindex(columns=classes)
-            x = x.div(x.sum(axis=1), axis=0)
-            med = x.median()
-            cols.append((med / med.sum()).to_numpy())
-        n = d.iso3.nunique()
-        ref = (f"Share of the employed by {what}, by sex (columns: female, male): the median over the group's {n} "
-               f"economies of each share of the employed its classes cover at their latest survey or census "
-               f"2010-2025 (a class an economy does not report left out of that class's median, not read as none), the "
-               f"medians rescaled to sum to one, from {fetched(m, 'ilo_employment')}. The "
-               f"group's standard at every drawn value.")
-        out.append(entry(pid, "ENDOWMENT", "LAB", "measured", ref,
-                         table2([int(c) for c in classes], [0, 1], np.column_stack(cols), "refuse")))
+    classes = [str(c) for c in range(10)]
+    d = pd.read_csv(RAW / "ilo" / "occupation.csv", dtype={"class": str})
+    d = latest_survey(d[d.iso3.isin(members) & d["class"].isin(classes)])
+    x = d.pivot_table(index=["iso3", "class"], columns="sex", values="employed", aggfunc="sum")
+    x = x[(x["F"] + x["M"]) > 0]
+    women = (x["F"] / (x["F"] + x["M"])).unstack("class").reindex(columns=classes)
+    med = women.median()
+    if med.isna().any():
+        raise SystemExit(f"{level}: an occupation no economy reports by sex")
+    n = women.index.nunique()
+    ref = (f"Women's share of each ISCO-08 major group's employed (axis: 0 armed forces, 1 managers, 2 professionals, 3 "
+           f"technicians and associate professionals, 4 clerical support, 5 service and sales, 6 skilled agricultural, "
+           f"forestry and fishery, 7 craft and related trades, 8 plant and machine operators and assemblers, 9 "
+           f"elementary occupations): the median over the group's {n} economies of each share at their latest survey "
+           f"or census 2010-2025 (an occupation an economy does not report left out of its median), from "
+           f"{fetched(m, 'ilo_employment')}. An employed person's occupation is drawn from the hours the activities' "
+           f"output asks of each, weighed by its sex's share of it.")
+    out.append(entry("LAB.women_by_occupation", "ENDOWMENT", "LAB", "measured", ref,
+                     f'{{ axis = [{", ".join(classes)}], values = [{", ".join(num(v) for v in med)}], '
+                     f'outside = "refuse" }}'))
     bands = ["15-24", "25-34", "35-44", "45-54", "55-64", "GE65"]
     d = pd.read_csv(RAW / "ilo" / "employment_rate.csv")
     d = latest_survey(d[d.iso3.isin(members) & (d.year >= FIRST_YEAR) & d.age.isin(bands + ["GE15"])])
@@ -584,30 +582,6 @@ def employment(level: str, members: set, m: dict) -> list:
     out.append(entry("LAB.employment_by_age", "ENDOWMENT", "LAB", "measured", ref,
                      table2([15, 25, 35, 45, 55, 65], [0, 1], np.column_stack(cols), "refuse")))
     return out
-
-
-def public_staff(level: str, members: set, m: dict) -> list:
-    """Each occupation's share of its employed working in public administration and defence (ISIC section O), the
-    median over the group's economies at their latest survey 2010-2025."""
-    classes = [str(c) for c in range(10)]
-    d = pd.read_csv(RAW / "ilo" / "employment_by_activity.csv", dtype={"occupation": str})
-    d = d[d.iso3.isin(members) & (d.year >= 2010) & d.occupation.isin(classes) & d.activity.isin(["O", "TOTAL"])]
-    d = latest_survey(d.rename(columns={"value": "employed"}))
-    x = d.pivot_table(index=["iso3", "occupation"], columns="activity", values="employed", aggfunc="sum")
-    x = x[(x["TOTAL"] > 0) & x["O"].notna()]
-    share = (x["O"] / x["TOTAL"]).unstack("occupation").reindex(columns=classes)
-    med = share.median().fillna(0.0).to_numpy()
-    n = share.index.nunique()
-    ref = (f"Each ISCO-08 major group's share of its employed working in public administration and defence, ISIC "
-           f"section O (rows: 0 armed forces to 9 elementary occupations): the median over the group's {n} economies "
-           f"of section O's employed over all the group's employed at their latest survey or census 2010-2025 (a "
-           f"group an economy does not report left out of its median; none where no economy reports it), from "
-           f"{fetched(m, 'ilo_activity')}. Public administration is the state's own output, paid by taxes; its staff "
-           f"are its public agencies'.")
-    rows = ", ".join(classes)
-    values = ", ".join(num(v) for v in med)
-    return [entry("SOC.public_staff_share", "ENDOWMENT", "SOC", "measured", ref,
-                  f'{{ axis = [{rows}], values = [{values}], outside = "refuse" }}')]
 
 
 # ---- Tenure, housing costs, accounts and borrowing ---------------------------------------------------------------
@@ -807,7 +781,7 @@ def main() -> None:
                             "POP.3, POP.4, GEN.2), derived by tools/data/derive_pop.py; never edited by hand. DEM "
                             "declares wealth until HH does.", dem)
         lab = employment(level, members, m)
-        write(level, "LAB", f"# The {level} group's employment by occupation and status (spec GEN.2, LAB), derived "
+        write(level, "LAB", f"# The {level} group's employment by occupation's sexes and by age (spec GEN.2, LAB), derived "
                             "by tools/data/derive_pop.py; never edited by hand.", lab)
         hsg = housing(level, members, m)
         write(level, "HSG", f"# The {level} group's tenure and housing costs (spec GEN.2, HSG), derived by "
@@ -815,9 +789,7 @@ def main() -> None:
         bnk = banking(level, members, m)
         write(level, "BNK", f"# The {level} group's accounts and borrowing (spec GEN.2, BNK), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", bnk)
-        write(level, "SOC_agencies", f"# The {level} group's public administration's staff (spec SOC.2, GEN.2), "
-                                     "derived by tools/data/derive_pop.py; never edited by hand.",
-              public_staff(level, members, m))
+        profile_files.retire(level, ["LAB.occupation_shares", "LAB.status_shares", "SOC.public_staff_share"])
         soc, occ = pen[level]
         write(level, "SOC", f"# The {level} group's state pension and benefit coverage (spec GEN.2, SOC), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", soc)
