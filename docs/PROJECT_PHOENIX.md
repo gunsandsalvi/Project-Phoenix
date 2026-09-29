@@ -390,7 +390,7 @@ fixed causal order inside each day so that nothing reads what has not happened y
      positions that settlement left, reading them because they exist when this stage runs, and their trades settle
      in this stage.
   9. **Value and judge** — positions are valued; accounts and ratios are read; covenants, margins and
-     capital rules are tested; reports and ratings due today are published; calls and demands are issued.
+     capital rules due today are tested; reports and ratings due today are published; calls and demands are issued.
   10. **Close** — public events are produced (OBS.3); the audit runs over what the day
      left behind.
 - **TIME.7 PROCESS** — **Nothing is demanded and paid in the same stage.** A margin call, a covenant
