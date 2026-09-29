@@ -613,3 +613,36 @@ pub const LC_1_26: Check = live_check! {
     from_step: "S1.09",
     check: loans_make_deposits,
 };
+
+/// Every benefit is a contract from a treasury to a household naming the person who claimed it, its first payment on
+/// a date after the claim.
+fn benefits_named(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    let Some(f) = core.families.iter().find(|f| f.name == "SOC.benefit") else {
+        return Outcome::NotYet("no benefit family on the core");
+    };
+    let household = core.names.iter().position(|n| *n == "household").and_then(|k| u8::try_from(k).ok());
+    let mut n = 0_u64;
+    for e in f.store.edges.open_slots() {
+        let Some(row) = f.store.edges.row(e) else { continue };
+        n += 1;
+        let [treasury, claimant] = row.ends;
+        if core.treasuries.iter().flatten().all(|t| *t != treasury) {
+            return Outcome::Fail(format!("benefit contract {} paid by a party that is no treasury", e.get()));
+        }
+        if Some(claimant.kind()) != household || row.person == 0 {
+            return Outcome::Fail(format!("benefit contract {} names no claimant in a household", e.get()));
+        }
+    }
+    if n == 0 {
+        return Outcome::NotYet("no benefit was claimed in the run");
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_30: Check = live_check! {
+    id: "LC-1-30",
+    title: "SOC.7: every benefit is paid to a named household under its rule, after its claim",
+    from_step: "S1.11",
+    check: benefits_named,
+};

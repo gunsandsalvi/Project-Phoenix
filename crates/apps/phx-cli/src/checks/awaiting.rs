@@ -488,13 +488,6 @@ pub const LC_1_29: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 g, the bills"),
 };
 
-pub const LC_1_30: Check = live_check! {
-    id: "LC-1-30",
-    title: "SOC.7: every benefit is paid to a named household under its rule, after its claim",
-    from_step: "S1.11",
-    check: |_| Outcome::NotYet("awaits S1.24 g, the benefits' records"),
-};
-
 pub const LC_1_31: Check = live_check! {
     id: "LC-1-31",
     title: "Auction results (cover, tail, failures) are published",
