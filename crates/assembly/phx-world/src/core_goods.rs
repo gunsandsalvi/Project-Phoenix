@@ -1692,13 +1692,16 @@ impl Core {
         let rates = self.state.consumption.clone();
         let (mut sales, mut spent) = (0, 0);
         let mut money = Vec::new();
-        for (product, stalls) in by_product {
-            let buyers: Vec<Buyer> = phx_exec::trace::span("goods.buyers", || {
-                wants.iter().filter(|(p, _)| *p == product).map(|(_, b)| *b).collect()
-            });
-            if buyers.is_empty() {
-                continue;
+        // Each product's buyers in the order they came, gathered in one pass.
+        let mut by_want: BTreeMap<u16, Vec<Buyer>> = phx_exec::trace::span("goods.buyers", || {
+            let mut m: BTreeMap<u16, Vec<Buyer>> = BTreeMap::new();
+            for (p, b) in wants {
+                m.entry(*p).or_default().push(*b);
             }
+            m
+        });
+        for (product, stalls) in by_product {
+            let Some(buyers) = by_want.remove(&product) else { continue };
             phx_exec::trace::note("goods.product", &[("product", i64::from(product))]);
             // Each region's stalls, found in one pass over them.
             let mut places: Vec<Place> = (0..ctx.regions.len()).map(|_| Place { near: Vec::new() }).collect();
