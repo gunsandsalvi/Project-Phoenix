@@ -3528,6 +3528,7 @@ it takes the world, a table or a handler's context.
     | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day |
     | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `TermsToken::new` outside `phx-ledger`, `PhysicalToken::new` outside `phx-ledger` and `phx-geo`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`, `phx-ffi`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `Streams`, `open_keyed` and `ObserverDraws` named outside their listed files (§5.3) |
+    | PC-94 | a name — an identifier, or a declared name in a string — in a world crate ending `_small` or `_large`: a mechanism split by size, where a firm is one kind whatever its size (S1.24) |
 
     The clippy exemptions are declared per crate in `phx-check` and realised by that crate's `clippy.toml`: `phx-exec`
     the atomics, `std::thread::spawn` and `thread_local!`; `phx-rand`, `phx-store` and `phx-exec` the wrapping
@@ -3860,6 +3861,12 @@ hashes read their bytes as little-endian.
     - with twins went the reason only large firms held a deposit's right, so small firms draw rights and extract
       (`GDS.extract_small`);
     - the benches keep the design point's agents; the load report's version is 3.
+36. **The old kernel deleted** (2026-09-29, S1.24): the core is the world's one kernel; the old kernel's books,
+    handlers, agent tables, audit, markets' instances and declarations nothing on the core read are deleted crate by
+    crate, their clauses carried by the core or moved to the steps that build them. PC-19 names the files that open
+    keyed streams on the core (the state's claims); PC-21 guards the sub-steps the code names, the macros' copy of the
+    table gone with the macros; PC-94 is added, refusing a mechanism split by size. S1.25 restates or retires the
+    rules over the retired machinery.
 ---
 
 ## 19. Coverage

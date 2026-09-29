@@ -1197,14 +1197,14 @@ world switches to the core.
   return: failing the dues costs it the firm.
 - Old kernel crates and modules no longer used are deleted, and the architecture's crate lists follow.
 
-**Unit tests**: the ported systems' tests; `size_is_derived`: a firm's persons employed equal its jobs' edges.
+**Unit tests**: the ported systems' tests; `size_is_derived` (built): a firm's staff hours are its open job contracts', read from their edges.
 
 **Live checks**: every Stage 0 and Stage 1 live check on the core world.
 
 **Budget**: the smoke at the committed resolution meets the build machine's budget line, and the bench at the design
 point meets its targets.
 
-**Guards**: `phx-check` refuses a handler name ending `_small` or `_large`.
+**Guards**: `phx-check` refuses a name ending `_small` or `_large` in a world crate (PC-94, built): the handlers it first named are deleted, so it reads every identifier and declared name.
 
 **Not allowed**: a size, rank or class read as an input to a firm's decision where the spec names a state; a kind
 branch on size.

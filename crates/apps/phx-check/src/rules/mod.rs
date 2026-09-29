@@ -34,6 +34,7 @@ mod prints;
 mod random_crates;
 mod rayon_libc;
 mod register_reads;
+mod size_split;
 mod statics;
 mod substeps;
 mod unsafe_code;
@@ -175,6 +176,7 @@ pub const RULES: &[Rule] = &[
         since: "S1.19",
         run: hot_paths::run,
     },
+    Rule { id: "PC-94", title: "no mechanism split by size", since: "S1.24", run: size_split::run },
 ];
 
 /// Rules retired with what they guarded, their numbers kept and never reused.

@@ -919,14 +919,7 @@ impl Core {
             return None;
         }
         let fam = self.families.get(family)?;
-        let staff: f64 = fam
-            .store
-            .of(0, f.key.slot())
-            .filter_map(|e| {
-                let row = fam.store.edges.row(e)?;
-                fam.classes.get(usize::try_from(row.schedule).ok()?).map(|k| f64::from(k[1]) / DAYS_A_WEEK)
-            })
-            .sum();
+        let staff = staff_hours(&fam.store, &fam.classes, f.key.slot());
         let owners: f64 = self.owners.hours_of(f.key).map(|(_, h)| f64::from(h) / DAYS_A_WEEK).sum();
         let hours = staff + owners;
         floor_to_i64((hours / a_unit).floor())
@@ -1744,3 +1737,22 @@ impl Core {
         }
     }
 }
+
+/// The hours a day a firm's staff work: each job its employer's contract, the job's weekly hours over the week's days.
+/// A firm's size is its jobs, read from its contracts, never a count kept beside them.
+#[clause("FRM.23", "REP.3")]
+pub(crate) fn staff_hours<B: phx_store::Backing>(
+    jobs: &phx_core::store::Family<crate::core_day::Due, B>,
+    classes: &[[u32; 3]],
+    firm: Slot,
+) -> f64 {
+    jobs.of(0, firm)
+        .filter_map(|e| {
+            let row = jobs.edges.row(e)?;
+            classes.get(usize::try_from(row.schedule).ok()?).map(|k| f64::from(k[1]) / DAYS_A_WEEK)
+        })
+        .sum()
+}
+
+#[path = "core_goods_tests.rs"]
+mod tests;
