@@ -445,9 +445,7 @@ dependencies = [
 name = "if-credit"
 version = "0.1.0"
 dependencies = [
- "phx-core",
  "phx-macros",
- "phx-num",
  "phx-store",
 ]
 
@@ -483,7 +481,6 @@ dependencies = [
  "phx-core",
  "phx-id",
  "phx-macros",
- "phx-num",
  "phx-store",
 ]
 
@@ -620,16 +617,12 @@ name = "phx-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
- "if-firm",
  "if-pop",
  "if-state",
- "phx-acct",
  "phx-core",
  "phx-exec",
  "phx-geo",
  "phx-id",
- "phx-ledger",
- "phx-market",
  "phx-num",
  "phx-obs",
  "phx-pop",
@@ -638,13 +631,7 @@ dependencies = [
  "phx-world",
  "serde",
  "serde_json",
- "sys-cap",
- "sys-frm",
- "sys-frt",
- "sys-gds",
- "sys-srv",
  "sys-sta",
- "sys-tec",
  "toml 0.9.12+spec-1.1.0",
 ]
 
@@ -774,7 +761,6 @@ dependencies = [
 name = "phx-obs"
 version = "0.1.0"
 dependencies = [
- "phx-core",
  "phx-id",
  "phx-macros",
  "phx-num",
@@ -1178,14 +1164,9 @@ dependencies = [
  "libm",
  "phx-core",
  "phx-id",
- "phx-ledger",
  "phx-macros",
- "phx-market",
  "phx-num",
- "phx-pop",
  "phx-rand",
- "phx-store",
- "phx-val",
 ]
 
 [[package]]
@@ -1195,10 +1176,8 @@ dependencies = [
  "if-credit",
  "phx-core",
  "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
- "phx-rand",
 ]
 
 [[package]]
@@ -1209,12 +1188,10 @@ dependencies = [
  "libm",
  "phx-core",
  "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
  "phx-pop",
  "phx-rand",
- "phx-store",
 ]
 
 [[package]]
@@ -1222,20 +1199,13 @@ name = "sys-frm"
 version = "0.1.0"
 dependencies = [
  "if-firm",
- "if-labour",
  "if-pop",
  "libm",
- "phx-acct",
  "phx-core",
- "phx-geo",
  "phx-id",
- "phx-ledger",
  "phx-macros",
- "phx-market",
  "phx-num",
- "phx-pop",
  "phx-rand",
- "phx-store",
  "phx-val",
 ]
 
@@ -1245,28 +1215,19 @@ version = "0.1.0"
 dependencies = [
  "if-firm",
  "phx-core",
- "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-market",
  "phx-num",
- "phx-pop",
  "phx-rand",
- "phx-store",
 ]
 
 [[package]]
 name = "sys-gds"
 version = "0.1.0"
 dependencies = [
- "if-firm",
  "libm",
  "phx-core",
- "phx-geo",
- "phx-id",
- "phx-ledger",
  "phx-macros",
- "phx-market",
  "phx-num",
  "phx-rand",
 ]
@@ -1279,9 +1240,7 @@ dependencies = [
  "libm",
  "phx-core",
  "phx-id",
- "phx-ledger",
  "phx-macros",
- "phx-market",
  "phx-num",
  "phx-rand",
  "phx-val",
@@ -1292,7 +1251,6 @@ name = "sys-hsg"
 version = "0.1.0"
 dependencies = [
  "phx-core",
- "phx-macros",
  "phx-num",
 ]
 
@@ -1304,7 +1262,6 @@ dependencies = [
  "phx-core",
  "phx-macros",
  "phx-num",
- "phx-rand",
 ]
 
 [[package]]
@@ -1346,22 +1303,16 @@ dependencies = [
  "libm",
  "phx-core",
  "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
- "phx-rand",
 ]
 
 [[package]]
 name = "sys-srv"
 version = "0.1.0"
 dependencies = [
- "if-firm",
  "phx-core",
- "phx-id",
- "phx-ledger",
  "phx-macros",
- "phx-market",
  "phx-num",
 ]
 
@@ -1397,12 +1348,8 @@ dependencies = [
  "if-firm",
  "phx-core",
  "phx-id",
- "phx-ledger",
  "phx-macros",
  "phx-num",
- "phx-pop",
- "phx-rand",
- "phx-store",
  "trybuild",
 ]
 
@@ -1413,8 +1360,6 @@ dependencies = [
  "if-state",
  "phx-core",
  "phx-macros",
- "phx-num",
- "phx-rand",
 ]
 
 [[package]]
