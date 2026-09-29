@@ -57,7 +57,9 @@ impl World {
         record
     }
 
-    /// The core's day: chance on its persons, labour's round, goods, then its dues and settlement.
+    /// The core's day: chance on its persons, labour's round, goods, then its dues and settlement, in this one order,
+    /// so each stage reads only what the stages before it wrote.
+    #[clause("TIME.10")]
     fn core_day(&mut self, day: Day, clock: &dyn Clock) {
         let start = clock.now_ns();
         let regions = self.regions.clone();

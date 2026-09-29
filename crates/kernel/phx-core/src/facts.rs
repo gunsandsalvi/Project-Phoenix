@@ -70,18 +70,6 @@ impl FactType {
     }
 }
 
-/// What a fact's stored whole numbers are divided by to read its value: ten to its fixed point's places.
-#[must_use]
-pub fn fact_scale(item: crate::ItemDecl) -> f64 {
-    match item.kind {
-        crate::ItemKind::Fact(f) => match f.value {
-            FactType::Fixed { exp } => libm::pow(crate::consts::DECIMAL_BASE, f64::from(exp)),
-            _ => phx_num::violation!(clause = "NUM.3", "a scaled read of a fact that holds no fixed point"),
-        },
-        _ => phx_num::violation!(clause = "NUM.3", "a scaled read of an item that is no fact"),
-    }
-}
-
 /// A fact: a named, typed attribute of parties of declared kinds, with one writer and an audience.
 #[clause("PTY.8")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -97,10 +85,6 @@ pub struct FactDecl {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ItemKind {
     Fact(FactDecl),
-    Message,
-    RuleSignature,
-    LineKind,
-    DecisionPoint,
 }
 
 /// One item an interface crate exports: its name, what it is, and who writes or answers it.
@@ -192,13 +176,11 @@ mod tests {
 
     crate::declare_kind! { BANK = "bank" { legal_form: "bank", table: Individuals, clause: "BNK.1" } }
 
-    crate::declare_facet! { CAPITAL = "BNK.capital" on "bank" }
-
     #[test]
     fn declarations_expand_to_their_items() {
         assert_eq!(<Status as super::FactDef>::ITEM.writer, Writer::System("LAB"));
         assert!(matches!(<Status as super::FactDef>::ITEM.kind, ItemKind::Fact(FactDecl { repr: ReprClass::Key, .. })));
-        assert_eq!((BANK.name, CAPITAL.kind), ("bank", "bank"));
+        assert_eq!(BANK.name, "bank");
     }
 
     #[test]

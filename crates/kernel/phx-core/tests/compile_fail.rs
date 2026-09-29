@@ -4,26 +4,6 @@ fn bound_taken_only_through_ctx() {
 }
 
 #[test]
-fn kernel_map_has_no_iteration() {
-    trybuild::TestCases::new().compile_fail("tests/ui/kernel_map_iterated.rs");
-}
-
-#[test]
-fn ctx_refuses_undeclared_column() {
-    trybuild::TestCases::new().compile_fail("tests/ui/ctx_undeclared.rs");
-}
-
-#[test]
 fn purposes_closed() {
     trybuild::TestCases::new().compile_fail("tests/ui/purpose_outcome.rs");
-}
-
-#[test]
-fn family_ctx_has_no_writes() {
-    trybuild::TestCases::new().compile_fail("tests/ui/family_ctx_has_no_writes.rs");
-}
-
-#[test]
-fn ctx_refuses_undeclared_payment() {
-    trybuild::TestCases::new().compile_fail("tests/ui/ctx_pays_undeclared.rs");
 }

@@ -13,9 +13,9 @@ use phx_store::{Column, EdgeTable, Parties};
 use crate::settle::{Book, Books, Lines};
 use crate::wheel::DueWheel;
 
-/// A kind's accounts in its currency: the bank each is held at, its balance, the card payments pending, what it paid
-/// through a closed bank and is held, and the facility its terms grant.
-#[clause("MON.2")]
+/// A kind's accounts, each party's in its home currency, its country's: the bank each is held at, its balance, the
+/// card payments pending, what it paid through a closed bank and is held, and the facility its terms grant.
+#[clause("MON.2", "PTY.6")]
 #[derive(Debug, phx_macros::Saved)]
 pub struct Accounts<B: Backing> {
     pub bank: Column<u32, B>,

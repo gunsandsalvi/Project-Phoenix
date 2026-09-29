@@ -9,7 +9,6 @@
 use std::hint::black_box;
 use std::time::Instant;
 
-use phx_core::column_facts::{Layout, RecordFacts};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
 use phx_core::settle::{AT_ISSUER, Books, Settle};
 use phx_core::store::{Family as StoreFamily, KindStore, deposits_of};
@@ -527,6 +526,43 @@ struct HandlerRun {
     salt: u64,
 }
 
+/// A chunk's party records as a handler reads them, row-major: each party one record of `stride` words, a declared
+/// fact at its offset, so a visit to a sparse row reads one or two cache lines.
+struct Chunk<'a> {
+    first: u32,
+    stride: usize,
+    records: &'a mut [MaybeI64],
+    offsets: &'a [usize],
+    writable: &'a [bool],
+}
+
+impl Chunk<'_> {
+    fn cell(&self, place: usize, slot: Slot) -> usize {
+        let (Some(row), Some(off)) = (slot.get().checked_sub(self.first), self.offsets.get(place)) else {
+            phx_num::violation!(clause = "TIME.6", "a handler read a row or fact outside its chunk", slot = slot.get());
+        };
+        to_usize(u64::from(row)) * self.stride + off
+    }
+
+    fn read_at(&self, place: usize, slot: Slot) -> phx_num::Missing<i64> {
+        match self.records.get(self.cell(place, slot)) {
+            Some(v) => v.get(),
+            None => phx_num::violation!(clause = "TIME.6", "a handler read a row past its chunk", slot = slot.get()),
+        }
+    }
+
+    fn write_at(&mut self, place: usize, slot: Slot, value: i64) {
+        if !self.writable.get(place).copied().unwrap_or(false) {
+            phx_num::violation!(clause = "TIME.6", "a handler wrote a fact it only reads", slot = slot.get());
+        }
+        let at = self.cell(place, slot);
+        let Some(cell) = self.records.get_mut(at) else {
+            phx_num::violation!(clause = "TIME.6", "a handler wrote a row past its chunk", slot = slot.get());
+        };
+        *cell = MaybeI64::present(value);
+    }
+}
+
 /// A handler over the day's agenda of a kind: each row's declared facts read from its chunk's records, its rule's
 /// arithmetic spent, its writes made, and its flows emitted, chunk by chunk on the pool, only the chunks the agenda
 /// names dispatched.
@@ -569,8 +605,7 @@ fn handler(
         .map_items(items, |(j, ((c, records), buf))| {
             let Some((_, lo, hi)) = spans.get(j) else { return 0 };
             let first = to_u32(index_u64(c)) * rpc;
-            let mut store =
-                RecordFacts::new(Slot::new(first), stride, records, Layout { names: &[], offsets, writable });
+            let mut store = Chunk { first, stride, records, offsets, writable };
             let due = rows.get(*lo..*hi).unwrap_or(&[]);
             for (i, s) in due.iter().enumerate() {
                 let slot = Slot::new(*s);

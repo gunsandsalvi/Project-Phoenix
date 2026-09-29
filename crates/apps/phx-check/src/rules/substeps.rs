@@ -7,8 +7,6 @@ use crate::workspace::{Crate, Source, Workspace};
 const RULE: &str = "PC-21";
 const CORE: &str = "phx-core";
 const TABLE_FILE: &str = "/src/substep.rs";
-const MACROS: &str = "phx-macros";
-const MACROS_FILE: &str = "/src/decl.rs";
 const TABLE: &str = "SUB_STEPS";
 
 /// The sub-steps the table holds, in order, read from the kernel's table.
@@ -40,24 +38,11 @@ fn array_names(expr: &Expr) -> Vec<String> {
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let Some(core) = ws.crates.iter().find(|c| c.name == CORE) else { return Vec::new() };
-    let Some((table_file, known)) = table(core) else {
+    let Some((_, known)) = table(core) else {
         let at = format!("{}{TABLE_FILE}", core.dir);
         return vec![Breach::new(RULE, &at, 1, "the kernel has no sub-step table")];
     };
     let mut breaches = Vec::new();
-    if let Some(macros) = ws.crates.iter().find(|c| c.name == MACROS)
-        && let Some(source) = macros.sources.iter().find(|s| s.path.ends_with(MACROS_FILE))
-        && let Ok(file) = &source.file
-    {
-        let copy = file.items.iter().find_map(|item| match item {
-            Item::Const(c) if c.ident == TABLE => Some(array_names(&c.expr)),
-            _ => None,
-        });
-        if copy.as_ref() != Some(&known) {
-            let message = format!("the declaration macros' sub-steps differ from the table in {table_file}");
-            breaches.push(Breach::new(RULE, &source.path, 1, message));
-        }
-    }
     for c in ws.world_crates() {
         for source in c.sources.iter().filter(|s| !s.is_test_or_bench()) {
             breaches.extend(check(source, &known));
@@ -105,12 +90,6 @@ impl<'ast> Visit<'ast> for Finder<'_> {
         visit::visit_path(self, path);
     }
 
-    fn visit_macro(&mut self, mac: &'ast syn::Macro) {
-        let tokens: Vec<proc_macro2::TokenTree> = mac.tokens.clone().into_iter().collect();
-        collect(&tokens, self);
-        visit::visit_macro(self, mac);
-    }
-
     fn visit_item_mod(&mut self, item: &'ast ItemMod) {
         if !attrs::is_test(&item.attrs) {
             visit::visit_item_mod(self, item);
@@ -130,25 +109,6 @@ impl<'ast> Visit<'ast> for Finder<'_> {
     }
 }
 
-/// A declaration macro's `substep: X`, at any depth of its groups.
-fn collect(tokens: &[proc_macro2::TokenTree], finder: &mut Finder<'_>) {
-    use proc_macro2::TokenTree as T;
-    for w in tokens.windows(3) {
-        if let [T::Ident(key), T::Punct(p), T::Ident(value)] = w
-            && key == "substep"
-            && p.as_char() == ':'
-        {
-            finder.named(&value.to_string(), attrs::line(value.span()));
-        }
-    }
-    for t in tokens {
-        if let T::Group(g) = t {
-            let inner: Vec<T> = g.stream().into_iter().collect();
-            collect(&inner, finder);
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::run;
@@ -157,23 +117,17 @@ mod tests {
 
     const TABLE: &str = "pub const SUB_STEPS: [SubStepInfo; 2] = [info(S::S1a, \"1a\", false, Index), info(S::S1b, \"1b\", false, Index)];";
 
-    fn lines(macros: &str, system: &str) -> Vec<(usize, String)> {
+    fn lines(system: &str) -> Vec<(usize, String)> {
         let core = with_source(krate("phx-core", Layer::Kernel), "src/substep.rs", TABLE);
-        let mac = with_source(krate("phx-macros", Layer::Foundation), "src/decl.rs", macros);
         let sys = with_source(krate("sys-dem", Layer::Systems), "src/lib.rs", system);
-        run(&Workspace::new(vec![core, mac, sys])).into_iter().map(|b| (b.line, b.message)).collect()
+        run(&Workspace::new(vec![core, sys])).into_iter().map(|b| (b.line, b.message)).collect()
     }
 
     #[test]
-    fn handlers_name_only_the_table_s_sub_steps() {
-        let same = "const SUB_STEPS: [&str; 2] = [\"S1a\", \"S1b\"];";
-        let system = "declare_handler! { pub A = \"DEM.a\" { substep: S1b, table: \"h\" } }\n\
-                      declare_handler! { pub B = \"DEM.b\" { substep: S9z, table: \"h\" } }\n\
-                      fn f() -> SubStep { SubStep::S7q }\n\
+    fn code_names_only_the_table_s_sub_steps() {
+        let system = "fn f() -> SubStep { SubStep::S1b }\n\
+                      fn g() -> SubStep { SubStep::S7q }\n\
                       #[cfg(test)]\nmod tests { fn t() -> SubStep { SubStep::S0x } }";
-        let not_in = |s: &str| format!("sub-step `{s}` is not in the table");
-        assert_eq!(lines(same, system), vec![(2, not_in("S9z")), (3, not_in("S7q"))]);
-        let differs = "const SUB_STEPS: [&str; 1] = [\"S1a\"];";
-        assert_eq!(lines(differs, "").len(), 1);
+        assert_eq!(lines(system), vec![(2, "sub-step `S7q` is not in the table".to_owned())]);
     }
 }

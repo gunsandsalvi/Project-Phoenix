@@ -48,7 +48,7 @@ struct Links<B: Backing> {
 }
 
 /// A family's contracts: slots, each contract's row, and the list links of each side that keeps lists.
-#[clause("REP.3", "REG.8")]
+#[clause("REP.3", "REG.8", "REG.14")]
 #[derive(Debug)]
 pub struct EdgeTable<R: Row = Pair, B: Backing = SystemBacking> {
     slots: SlotAlloc<B>,

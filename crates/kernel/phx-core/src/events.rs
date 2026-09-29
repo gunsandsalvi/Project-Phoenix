@@ -66,43 +66,6 @@ pub struct EventIntent {
     pub details: Vec<(Subject, i64)>,
 }
 
-impl crate::handler::IntentDef for EventIntent {
-    const NAME: &'static str = "CHN.event";
-
-    fn encode(&self, out: &mut Vec<u64>) {
-        out.push(u64::from(self.kind));
-        let Ok(count) = u64::try_from(self.subjects.len()) else {
-            capacity_exceeded!("event subjects", u64::MAX, self.subjects.len());
-        };
-        out.push(count);
-        out.extend(self.subjects.iter().map(|s| s.raw()));
-        out.extend(self.details.iter().flat_map(|(s, size)| [s.raw(), size.cast_unsigned()]));
-    }
-}
-
-impl EventIntent {
-    /// The intent its words encode, or none when they are not an event's.
-    #[must_use]
-    pub fn decode(words: &[u64]) -> Option<EventIntent> {
-        let [kind, count, rest @ ..] = words else { return None };
-        let count = usize::try_from(*count).ok()?;
-        let (subjects, details) = (rest.get(..count)?, rest.get(count..)?);
-        if details.len() % 2 != 0 {
-            return None;
-        }
-        Some(EventIntent {
-            kind: u16::try_from(*kind).ok()?,
-            subjects: subjects.iter().map(|w| Subject::from_raw(*w)).collect::<Option<_>>()?,
-            details: details
-                .as_chunks::<2>()
-                .0
-                .iter()
-                .map(|[s, size]| Subject::from_raw(*s).map(|s| (s, size.cast_signed())))
-                .collect::<Option<_>>()?,
-        })
-    }
-}
-
 /// Every occurrence, recorded before any party reacts to it, with identities in the order written.
 #[clause("CHN.4", "OBS.3")]
 #[derive(Debug, phx_macros::Saved)]
@@ -219,20 +182,8 @@ mod tests {
     use phx_rand::{Subject, SubjectTag};
     use phx_store::{AddressSpace, HeapBacking};
 
-    use super::{EventIntent, EventStore, NewEvent};
-    use crate::handler::IntentDef;
+    use super::{EventStore, NewEvent};
     use crate::substep::SubStep;
-
-    #[test]
-    fn event_intents_decode_what_they_encode() {
-        let tile = |i| Subject::new(SubjectTag::Tile, i);
-        let intent = EventIntent { kind: 3, subjects: vec![tile(8), tile(9)], details: vec![(tile(9), -40)] };
-        let mut words = Vec::new();
-        intent.encode(&mut words);
-        assert_eq!(EventIntent::decode(&words), Some(intent));
-        assert_eq!(EventIntent::decode(words.get(..words.len() - 1).unwrap()), None, "a detail cut short");
-        assert_eq!(EventIntent::decode(&[3, 2, 7]), None, "a subject count beyond the words");
-    }
 
     #[test]
     fn events_keep_subjects_and_sizes() {

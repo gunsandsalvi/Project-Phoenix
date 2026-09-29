@@ -236,7 +236,7 @@ impl Core {
     /// Each failed flow a dated contract made held on it in arrears, asked again with its next due: a contract past
     /// its last date is kept, due again on its schedule's next date, until it is paid; one whose last due settled
     /// ends. Returns the contracts in arrears.
-    #[clause("HH.13", "BNK.17")]
+    #[clause("HH.13", "BNK.17", "SET.16")]
     fn hold_arrears(&mut self, day: Day, calendar: &Calendar, failed: &[Flow]) -> u64 {
         let mut n = 0;
         for f in failed {

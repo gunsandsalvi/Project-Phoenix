@@ -1222,7 +1222,9 @@ branch on size.
 **Depends on**: S1.24.
 
 **Goal**: `docs/ARCHITECTURE.md` describes the core as built, with the measured unit costs and bytes; nothing
-describes what was retired.
+describes what was retired; and `phx-check`'s rules that guard the retired machinery (the ledger's writes, the apply
+routine, the opening's writes, stage 7's batches, the audit's reads, the inspector's) are restated on the core or
+retired, each by its identity.
 
 **Files**
 
@@ -1230,6 +1232,7 @@ describes what was retired.
 | --- | --- |
 | `docs/ARCHITECTURE.md` | restated |
 | `docs/IMPLEMENTATION.md` | the restructure's steps removed once done; §13 regenerated |
+| `crates/apps/phx-check/src/rules/` | the rules over retired machinery restated or retired |
 
 **Design**: none beyond the documents.
 

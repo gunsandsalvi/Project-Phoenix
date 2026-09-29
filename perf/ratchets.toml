@@ -3,15 +3,14 @@ counter = "phx_check.allow_count"
 value = 0
 direction = "down"
 
-# Fourteen: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
-# files of phx-num, phx-rand, phx-store, phx-exec, phx-core, phx-ledger, phx-market and phx-pop, whose gungraun
-# harness prints, exits and passes setups by value; phx-store's three modules that hold its `unsafe` (the backing's
-# system calls, the region's typed views, the storable marker) and phx-exec's two (affinity, thread ids and the
-# prefetch hint; the partition's pieces writing their disjoint places of one output, S1.19), each lowering the lint
-# for itself alone.
+# Eleven: phx-num's `stop`, the sanctioned panic that carries a contract violation out of the run; the benchmark
+# files of phx-num, phx-rand, phx-store, phx-exec and phx-core, whose gungraun harness prints, exits and passes setups
+# by value; phx-store's three modules that hold its `unsafe` (the backing's system calls, the region's typed views,
+# the storable marker) and phx-exec's two (affinity, thread ids and the prefetch hint; the partition's pieces writing
+# their disjoint places of one output, S1.19), each lowering the lint for itself alone.
 [[ratchet]]
 counter = "phx_check.expect_count"
-value = 14
+value = 11
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
@@ -281,64 +280,6 @@ direction = "down"
 counter = "phx_core.ir_next_due"
 value = 3764
 direction = "down"
-
-[[ratchet]]
-counter = "phx_core.ir_agenda_gather"
-value = 149145
-direction = "down"
-
-# phx-ledger: a ten-year annual bond's dues on its fifth coupon date (a fixed coupon and its principal, one due), and
-# on the day after, when only the search for a schedule date is paid; the search is most of the count. The
-# settlement never pays that search, since 1b hands its dues the date's index; `due_on` is now that entry with no
-# index, two instructions more; four more again at S0.26f (8ae4fcd0), the ledger's code laid out anew around it, the
-# function itself unchanged.
-[[ratchet]]
-counter = "phx_ledger.ir_due_on_coupon"
-value = 2606
-direction = "down"
-
-[[ratchet]]
-counter = "phx_ledger.ir_due_on_between"
-value = 2295
-direction = "down"
-
-# phx-ledger's stage 7: sixty-four run heads read for whether they are due; and 1b with the whole of stage 7 over sixteen loans due on one day, far over its budget.
-[[ratchet]]
-counter = "phx_ledger.ir_run_heads_64"
-value = 878
-direction = "down"
-
-# A whole stage 7 over sixteen holders: from S0.19 it records each due that falls, with what became of it, for the
-# accounts. CI's runner holds the ratchet at its own measure, which is above the build machine's. Raised at S0.28 to
-# CI's 412 020 (e0030d0c): the day's look-ups in the fixed-seed sharded maps and the kept payments, which made
-# the payday four times faster at scale while a sixteen-holder day pays the maps' setup, contracts leaving like with
-# like, and the day buffers counted by their room; for the owner's review. Raised at S0.26f to 772 400 on the build
-# machine: stage 7's sums folded on the pool a key shard to a worker (the day's records in 64 shards, the nets and
-# the parties' income in the kernel map's 256), so a day of sixteen payments pays the shards' setup, about 0.1 ms,
-# which cut the full load's settlement from 5.5 s to 2.4 s a business day; waves past the last payment are
-# skipped. For the owner's review.
-[[ratchet]]
-counter = "phx_ledger.ir_settle_day_16"
-value = 772400
-direction = "down"
-
-# phx-market's linked call on a money market of the declared size (a thousand lenders with budgets, five thousand
-# borrowers, twenty thousand reaches): met cold, and met the next day from the first day's basis when every bid has
-# moved; most of the warm count is the prices' ranges, not the pivots. A new bench's ratchet takes CI's
-# measure, since the runner, not the build machine, holds it.
-[[ratchet]]
-counter = "phx_market.ir_linked_call_cold"
-value = 1915726951
-direction = "down"
-
-[[ratchet]]
-counter = "phx_market.ir_linked_call_warm"
-value = 1123989366
-direction = "down"
-# Labour's matching, the most on any day: agents with a searching person, the vacancies they could see, the
-# applications sent, and the mean rounds a match took. No firm posts before it holds a price and a planned output
-# (S1.15), so only searchers are counted until then; the budget (architecture §13.2) holds 0.1 M searching groups,
-# which the failed firms' released staff pass while no firm posts.
 
 # The core's flows a day (S1.24): the greatest a day of the smoke came to, at the committed resolution. Raised
 # (2026-09-29) to 1 376 923 by the mechanisms S1.24 d and e added to the day — the services' capacity lost and their

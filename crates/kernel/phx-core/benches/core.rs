@@ -10,13 +10,11 @@ use std::hint::black_box;
 
 use gungraun::{library_benchmark, library_benchmark_group, main};
 use phx_core::{
-    Agenda, AgendaTableSpec, BusinessDayConvention, Calendar, CountryRules, DecisionSchedule, HolidayRule, Period,
-    Phase, RunsOn, WeekendRule, next_due,
+    BusinessDayConvention, Calendar, CountryRules, DecisionSchedule, HolidayRule, Period, Phase, RunsOn, WeekendRule,
+    next_due,
 };
-use phx_id::{CountryId, Date, Day, Slot, TableId, Weekday};
-use phx_store::{AddressSpace, HeapBacking};
+use phx_id::{CountryId, Date, Day, Weekday};
 
-const ROWS: u32 = 4096;
 const C: CountryId = CountryId::new(0);
 
 fn calendar() -> Calendar {
@@ -30,18 +28,6 @@ fn calendar() -> Calendar {
         ],
     };
     Calendar::new(Date::new(1950, 1, 1).unwrap(), vec![(C, rules)], 2020).unwrap()
-}
-
-/// 4 096 rows with two reasons each, due over the next eight days, gathered on the first.
-fn booked_agenda() -> Agenda<HeapBacking> {
-    let spec = AgendaTableSpec { table: TableId::new(0), max_rows: ROWS, reasons: 2 };
-    let mut a = Agenda::new(&mut AddressSpace::empty(), Day::new(0), &[spec], 1 << 16).unwrap();
-    a.grow(spec.table, ROWS);
-    for row in 0..ROWS {
-        a.set_next(spec.table, Slot::new(row), 0, Day::new(1 + row % 8));
-        a.set_next(spec.table, Slot::new(row), 1, Day::new(9 + row % 64));
-    }
-    a
 }
 
 #[library_benchmark]
@@ -63,12 +49,6 @@ fn ir_next_due(cal: Calendar) -> Day {
     black_box(next_due(&cal, C, monthly, Phase::within(monthly.period, 14).unwrap(), after))
 }
 
-#[library_benchmark]
-#[bench::fresh(booked_agenda())]
-fn ir_agenda_gather(mut agenda: Agenda<HeapBacking>) -> usize {
-    black_box(agenda.gather(Day::new(1)).per_table.iter().map(|t| t.slots.len()).sum())
-}
-
-library_benchmark_group!(name = core, benchmarks = [ir_is_business, ir_next_due, ir_agenda_gather]);
+library_benchmark_group!(name = core, benchmarks = [ir_is_business, ir_next_due]);
 
 main!(library_benchmark_groups = core);

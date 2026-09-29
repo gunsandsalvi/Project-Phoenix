@@ -23,7 +23,7 @@ pub struct Held {
 const WORDS: usize = 2;
 
 /// The persons of a kind's parties: each party's list reference by slot, and its chunk's arena.
-#[clause("REP.26")]
+#[clause("REP.26", "REP.16")]
 #[derive(Debug, phx_macros::Saved)]
 pub struct Persons<B: Backing = SystemBacking> {
     lists: Column<CellListRef, B>,

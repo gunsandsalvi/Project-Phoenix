@@ -1,15 +1,8 @@
 pub mod phx_core
-pub use phx_core::declare_decision
-pub use phx_core::declare_facet
 pub use phx_core::declare_fact
-pub use phx_core::declare_family
-pub use phx_core::declare_handler
 pub use phx_core::declare_hazard
 pub use phx_core::declare_kind
-pub use phx_core::declare_message
 pub use phx_core::declare_prim
-pub use phx_core::declare_record
-pub use phx_core::declare_rule
 pub use phx_core::declare_stream
 pub mod phx_core::accounting
 pub enum phx_core::accounting::CarryingBasis
@@ -26,40 +19,6 @@ pub struct phx_core::accounting::Permitted
 pub phx_core::accounting::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>
 pub phx_core::accounting::Permitted::form: alloc::string::String
 pub phx_core::accounting::Permitted::held_for: phx_core::accounting::HeldFor
-pub mod phx_core::agenda
-pub struct phx_core::agenda::Agenda<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
-pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
-pub fn phx_core::agenda::Agenda<B>::bytes_committed(&self) -> usize
-pub fn phx_core::agenda::Agenda<B>::clear(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize)
-pub fn phx_core::agenda::Agenda<B>::counters(&self) -> phx_core::agenda::AgendaCounters
-pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_core::agenda::TodayAgenda
-pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
-pub fn phx_core::agenda::Agenda<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::agenda::Agenda<B>::load_from(&mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<phx_core::agenda::Agenda<B>, phx_store::save::LoadError>
-pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
-pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
-pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
-pub fn phx_core::agenda::Agenda<B>::set_next_with(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day, u32)
-pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
-pub fn phx_core::agenda::Agenda<B>::with(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> u32
-pub struct phx_core::agenda::AgendaCounters
-pub phx_core::agenda::AgendaCounters::entries: u64
-pub phx_core::agenda::AgendaCounters::moved: u64
-pub phx_core::agenda::AgendaCounters::stale: u64
-pub struct phx_core::agenda::AgendaTableSpec
-pub phx_core::agenda::AgendaTableSpec::max_rows: u32
-pub phx_core::agenda::AgendaTableSpec::reasons: usize
-pub phx_core::agenda::AgendaTableSpec::table: phx_id::ids::TableId
-pub struct phx_core::agenda::TableToday
-pub phx_core::agenda::TableToday::reasons: alloc::vec::Vec<u16>
-pub phx_core::agenda::TableToday::slots: alloc::vec::Vec<phx_id::ids::Slot>
-pub phx_core::agenda::TableToday::table: phx_id::ids::TableId
-pub struct phx_core::agenda::TodayAgenda
-pub phx_core::agenda::TodayAgenda::day: phx_id::day::Day
-pub phx_core::agenda::TodayAgenda::per_table: alloc::vec::Vec<phx_core::agenda::TableToday>
 pub mod phx_core::calendar
 pub mod phx_core::calendar::bizday
 pub enum phx_core::calendar::bizday::BusinessDayConvention
@@ -176,58 +135,6 @@ pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId
 pub fn phx_core::calendar::civil_date(i64) -> phx_id::day::Date
 pub fn phx_core::calendar::civil_serial(phx_id::day::Date) -> i64
 pub fn phx_core::calendar::days_after(phx_id::day::Date, i64) -> phx_id::day::Date
-pub mod phx_core::column_facts
-pub enum phx_core::column_facts::FactSlice<'a>
-pub phx_core::column_facts::FactSlice::Read(&'a [phx_num::missing::MaybeI64])
-pub phx_core::column_facts::FactSlice::Write(&'a mut [phx_num::missing::MaybeI64])
-pub struct phx_core::column_facts::ColumnFacts<'a>
-impl<'a> phx_core::column_facts::ColumnFacts<'a>
-pub fn phx_core::column_facts::ColumnFacts<'a>::new(phx_id::ids::Slot, alloc::vec::Vec<(&'static str, phx_core::column_facts::FactSlice<'a>)>) -> phx_core::column_facts::ColumnFacts<'a>
-pub fn phx_core::column_facts::ColumnFacts<'a>::read_at(&self, usize, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::ColumnFacts<'a>::write_at(&mut self, usize, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
-pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-pub struct phx_core::column_facts::Layout<'a>
-pub phx_core::column_facts::Layout::names: &'a [&'static str]
-pub phx_core::column_facts::Layout::offsets: &'a [usize]
-pub phx_core::column_facts::Layout::writable: &'a [bool]
-pub struct phx_core::column_facts::RecordFacts<'a>
-impl<'a> phx_core::column_facts::RecordFacts<'a>
-pub fn phx_core::column_facts::RecordFacts<'a>::new(phx_id::ids::Slot, usize, &'a mut [phx_num::missing::MaybeI64], phx_core::column_facts::Layout<'a>) -> phx_core::column_facts::RecordFacts<'a>
-pub fn phx_core::column_facts::RecordFacts<'a>::read_at(&self, usize, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::RecordFacts<'a>::write_at(&mut self, usize, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::column_facts::RecordFacts<'_>
-pub fn phx_core::column_facts::RecordFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::RecordFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-pub mod phx_core::columns
-pub struct phx_core::columns::ColumnTrace
-pub phx_core::columns::ColumnTrace::handler: u16
-pub phx_core::columns::ColumnTrace::reads: &'static [&'static str]
-pub phx_core::columns::ColumnTrace::substep: u8
-pub phx_core::columns::ColumnTrace::writes: &'static [&'static str]
-pub struct phx_core::columns::FactColumns
-impl phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::facts(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
-pub fn phx_core::columns::FactColumns::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::rows(&self) -> u32
-pub fn phx_core::columns::FactColumns::take_trace(&mut self) -> phx_core::family::ReadTrace
-pub fn phx_core::columns::FactColumns::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
-pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-impl phx_core::handler::FactStore for phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_store::save::Saved for phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::columns::FactColumns, phx_store::save::LoadError>
-pub fn phx_core::columns::FactColumns::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::columns::KernelTable
-pub phx_core::columns::KernelTable::columns: phx_core::columns::FactColumns
-pub phx_core::columns::KernelTable::name: &'static str
-impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
-pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_core::columns::count_moved(&mut alloc::vec::Vec<(&'static str, u64)>, &'static str)
 pub mod phx_core::consts
 pub const phx_core::consts::BIT_WORD: usize
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
@@ -479,35 +386,6 @@ pub fn i64::decode(&[i64]) -> core::option::Option<i64>
 impl phx_core::decisions::QueuedPayload for usize
 pub fn usize::decode(&[i64]) -> core::option::Option<usize>
 pub fn phx_core::decisions::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
-pub mod phx_core::directory
-pub enum phx_core::directory::PartyState
-pub phx_core::directory::PartyState::Ended
-pub phx_core::directory::PartyState::Ended::day: phx_id::day::Day
-pub phx_core::directory::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyId>
-pub phx_core::directory::PartyState::Live(phx_id::ids::RowRef)
-pub phx_core::directory::PartyState::Unknown
-pub enum phx_core::directory::Resolved
-pub phx_core::directory::Resolved::Ended(phx_id::ids::PartyId)
-pub phx_core::directory::Resolved::Live(phx_id::ids::PartyId, phx_id::ids::RowRef)
-pub phx_core::directory::Resolved::Unknown
-pub struct phx_core::directory::Directory
-impl phx_core::directory::Directory
-pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
-pub fn phx_core::directory::Directory::close_day(&mut self)
-pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
-pub fn phx_core::directory::Directory::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::directory::Directory::live_count(&self) -> usize
-pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> phx_core::directory::PartyState
-pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
-pub fn phx_core::directory::Directory::next(&self) -> u64
-pub fn phx_core::directory::Directory::release(&mut self, phx_id::ids::PartyId)
-pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> phx_core::directory::Resolved
-pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
-impl core::default::Default for phx_core::directory::Directory
-pub fn phx_core::directory::Directory::default() -> Self
-impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::pages::PagedMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
-pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_core::events
 pub struct phx_core::events::Event
 pub phx_core::events::Event::day: phx_id::day::Day
@@ -522,11 +400,6 @@ pub struct phx_core::events::EventIntent
 pub phx_core::events::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>
 pub phx_core::events::EventIntent::kind: u16
 pub phx_core::events::EventIntent::subjects: alloc::vec::Vec<phx_rand::key::Subject>
-impl phx_core::events::EventIntent
-pub fn phx_core::events::EventIntent::decode(&[u64]) -> core::option::Option<phx_core::events::EventIntent>
-impl phx_core::handler::IntentDef for phx_core::events::EventIntent
-pub const phx_core::events::EventIntent::NAME: &'static str
-pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub struct phx_core::events::EventKindDecl
 pub phx_core::events::EventKindDecl::clause: &'static str
 pub phx_core::events::EventKindDecl::name: &'static str
@@ -589,11 +462,7 @@ pub phx_core::facts::FactType::Type
 impl phx_core::facts::FactType
 pub fn phx_core::facts::FactType::width(self) -> usize
 pub enum phx_core::facts::ItemKind
-pub phx_core::facts::ItemKind::DecisionPoint
 pub phx_core::facts::ItemKind::Fact(phx_core::facts::FactDecl)
-pub phx_core::facts::ItemKind::LineKind
-pub phx_core::facts::ItemKind::Message
-pub phx_core::facts::ItemKind::RuleSignature
 pub enum phx_core::facts::Lag
 pub phx_core::facts::Lag::Days(u16)
 pub phx_core::facts::Lag::Months(u16)
@@ -623,180 +492,6 @@ pub phx_core::facts::ItemDecl::writer: phx_core::facts::Writer
 pub trait phx_core::facts::FactDef
 pub const phx_core::facts::FactDef::ITEM: phx_core::facts::ItemDecl
 pub fn phx_core::facts::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::Claim], &[phx_id::ids::SystemCode]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
-pub fn phx_core::facts::fact_scale(phx_core::facts::ItemDecl) -> f64
-pub mod phx_core::family
-pub enum phx_core::family::FamilyMode
-pub phx_core::family::FamilyMode::Incremental
-pub phx_core::family::FamilyMode::Rolling
-pub phx_core::family::FamilyMode::Rolling::cycle_days: u16
-pub phx_core::family::FamilyMode::Streaming
-pub enum phx_core::family::Transformed
-pub phx_core::family::Transformed::Built
-pub phx_core::family::Transformed::Carried
-pub phx_core::family::Transformed::Deposit
-pub phx_core::family::Transformed::Hazard
-pub phx_core::family::Transformed::Purchase
-pub phx_core::family::Transformed::Spoilage
-pub phx_core::family::Transformed::Way
-pub phx_core::family::Transformed::Wear
-pub struct phx_core::family::AuditInputs<'a>
-pub phx_core::family::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
-pub phx_core::family::AuditInputs::agents: &'a dyn phx_core::family::AgentsAudit
-pub phx_core::family::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
-pub phx_core::family::AuditInputs::calendar: &'a phx_core::calendar::Calendar
-pub phx_core::family::AuditInputs::day: phx_id::day::Day
-pub phx_core::family::AuditInputs::directory: &'a phx_core::directory::Directory
-pub phx_core::family::AuditInputs::events: &'a phx_core::events::EventStore
-pub phx_core::family::AuditInputs::legs: &'a dyn phx_core::family::LegRecords
-pub phx_core::family::AuditInputs::markets: &'a dyn phx_core::family::MarketsAudit
-pub phx_core::family::AuditInputs::messages: &'a phx_core::messages::DayMessages
-pub phx_core::family::AuditInputs::new_events: phx_core::family::Span
-pub phx_core::family::AuditInputs::new_records: phx_core::family::Span
-pub phx_core::family::AuditInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
-pub phx_core::family::AuditInputs::records: &'a phx_core::records::RecordStore
-pub phx_core::family::AuditInputs::register: &'a phx_core::register::Register
-pub phx_core::family::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
-pub phx_core::family::AuditInputs::touched: &'a phx_core::touched::TouchedRows
-pub phx_core::family::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
-pub struct phx_core::family::FamilyCtx<'a>
-impl<'a> phx_core::family::FamilyCtx<'a>
-pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
-pub fn phx_core::family::FamilyCtx<'a>::agents(&self) -> &dyn phx_core::family::AgentsAudit
-pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
-pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
-pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
-pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
-pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
-pub fn phx_core::family::FamilyCtx<'a>::legs(&self) -> &dyn phx_core::family::LegRecords
-pub fn phx_core::family::FamilyCtx<'a>::markets(&self) -> &dyn phx_core::family::MarketsAudit
-pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
-pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
-pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
-pub fn phx_core::family::FamilyCtx<'a>::new_records(&self) -> phx_core::family::Span
-pub fn phx_core::family::FamilyCtx<'a>::own<T: 'static>(&self, &str) -> core::option::Option<&T>
-pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::RecordStore
-pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
-pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
-pub fn phx_core::family::FamilyCtx<'a>::substep(&self) -> phx_core::substep::SubStep
-pub fn phx_core::family::FamilyCtx<'a>::table(&self, &str) -> &phx_core::columns::FactColumns
-pub fn phx_core::family::FamilyCtx<'a>::touched(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_core::family::FamilyCtx<'a>::trace(&self) -> core::option::Option<phx_core::family::ReadTrace>
-pub struct phx_core::family::FamilyDecl
-pub phx_core::family::FamilyDecl::clause: &'static str
-pub phx_core::family::FamilyDecl::mode: phx_core::family::FamilyMode
-pub phx_core::family::FamilyDecl::name: &'static str
-pub phx_core::family::FamilyDecl::owner: &'static str
-pub struct phx_core::family::Gap
-pub phx_core::family::Gap::detail: alloc::string::String
-pub phx_core::family::Gap::owner: phx_core::findings::FindingOwner
-pub phx_core::family::Gap::size: i128
-pub phx_core::family::Gap::unit: phx_core::findings::Unit
-pub struct phx_core::family::GoodStock
-pub phx_core::family::GoodStock::grade: u8
-pub phx_core::family::GoodStock::instrument: phx_id::ids::InstrumentId
-pub phx_core::family::GoodStock::issued: i64
-pub phx_core::family::GoodStock::product: u16
-pub phx_core::family::GoodStock::zone: u32
-pub struct phx_core::family::LegDigest
-pub phx_core::family::LegDigest::account: u64
-pub phx_core::family::LegDigest::before: i64
-pub phx_core::family::LegDigest::denom: u32
-pub phx_core::family::LegDigest::flow: i64
-pub phx_core::family::LegDigest::issued: phx_num::missing::Missing<i64>
-pub phx_core::family::LegDigest::made: phx_num::missing::Missing<u32>
-pub phx_core::family::LegDigest::money: bool
-pub phx_core::family::LegDigest::paired: bool
-pub phx_core::family::LegDigest::party: phx_id::ids::PartyId
-pub phx_core::family::LegDigest::qty: i64
-pub phx_core::family::LegDigest::source: phx_num::missing::Missing<phx_core::family::Transformed>
-pub phx_core::family::LegDigest::worn: phx_num::missing::Missing<(u32, u32)>
-pub struct phx_core::family::Made
-pub phx_core::family::Made::instruction: u64
-pub phx_core::family::Made::legs: alloc::vec::Vec<phx_core::family::MadeLeg>
-pub phx_core::family::Made::way: u32
-pub struct phx_core::family::MadeLeg
-pub phx_core::family::MadeLeg::denom: u32
-pub phx_core::family::MadeLeg::party: phx_id::ids::PartyId
-pub phx_core::family::MadeLeg::qty: i64
-pub struct phx_core::family::ReadTrace
-pub phx_core::family::ReadTrace::duplicate_opens: usize
-pub phx_core::family::ReadTrace::later_writes: usize
-pub phx_core::family::ReadTrace::undeclared_reads: usize
-impl phx_store::save::Saved for phx_core::family::ReadTrace where usize: phx_store::save::Saved
-pub fn phx_core::family::ReadTrace::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::family::ReadTrace::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::family::Span
-pub phx_core::family::Span::end: usize
-pub phx_core::family::Span::start: usize
-impl phx_core::family::Span
-pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
-pub struct phx_core::family::StockDay
-pub phx_core::family::StockDay::account: u64
-pub phx_core::family::StockDay::opening: i64
-pub phx_core::family::StockDay::traded: i128
-pub phx_core::family::StockDay::transformed: alloc::vec::Vec<(phx_core::family::Transformed, i128, i128)>
-pub phx_core::family::StockDay::unaccounted: i128
-pub struct phx_core::family::Worn
-pub phx_core::family::Worn::instruction: u64
-pub phx_core::family::Worn::legs: alloc::vec::Vec<phx_core::family::WornLeg>
-pub struct phx_core::family::WornLeg
-pub phx_core::family::WornLeg::chain: u32
-pub phx_core::family::WornLeg::class: u32
-pub phx_core::family::WornLeg::party: phx_id::ids::PartyId
-pub phx_core::family::WornLeg::qty: i64
-pub const phx_core::family::AUDIT_SUBSTEP: phx_core::substep::SubStep
-pub trait phx_core::family::AccountsAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::family::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub fn phx_core::family::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::AccountsAudit::income(&self) -> i128
-pub fn phx_core::family::AccountsAudit::parties(&self) -> usize
-pub fn phx_core::family::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub trait phx_core::family::AgentsAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::family::AgentsAudit::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::AgentsAudit::agents(&self) -> usize
-pub fn phx_core::family::AgentsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub trait phx_core::family::AuditFamily: core::marker::Send + core::marker::Sync
-pub fn phx_core::family::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
-pub fn phx_core::family::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
-pub fn phx_core::family::AuditFamily::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
-pub trait phx_core::family::AuditStream
-pub fn phx_core::family::AuditStream::applied(&mut self, u64)
-pub fn phx_core::family::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
-pub fn phx_core::family::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub trait phx_core::family::BooksAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::family::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::BooksAudit::good(&self, u64) -> phx_num::missing::Missing<phx_core::family::GoodStock>
-pub fn phx_core::family::BooksAudit::instruments(&self) -> usize
-pub fn phx_core::family::BooksAudit::lines(&self) -> usize
-pub fn phx_core::family::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
-pub trait phx_core::family::InjectTarget
-pub fn phx_core::family::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::family::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
-pub fn phx_core::family::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
-pub fn phx_core::family::InjectTarget::agents(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::family::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::family::InjectTarget::day(&self) -> phx_id::day::Day
-pub fn phx_core::family::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::family::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
-pub fn phx_core::family::InjectTarget::markets(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::family::InjectTarget::own(&mut self, &str) -> core::option::Option<&mut dyn core::any::Any>
-pub fn phx_core::family::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
-pub fn phx_core::family::InjectTarget::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
-pub fn phx_core::family::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
-pub trait phx_core::family::LegRecords: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::family::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::LegRecords::instructions(&self) -> u64
-pub fn phx_core::family::LegRecords::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
-pub fn phx_core::family::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::LegRecords::positions(&self) -> u64
-pub fn phx_core::family::LegRecords::stocks(&self) -> alloc::vec::Vec<phx_core::family::StockDay>
-pub fn phx_core::family::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::family::LegRecords::worn(&self) -> alloc::vec::Vec<phx_core::family::Worn>
-pub trait phx_core::family::MarketsAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::family::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub fn phx_core::family::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
 pub mod phx_core::findings
 pub enum phx_core::findings::FindingOwner
 pub phx_core::findings::FindingOwner::Country(phx_id::ids::CountryId)
@@ -986,199 +681,6 @@ pub const phx_core::goods::NATURE: phx_id::ids::PartyKey
 pub fn phx_core::goods::breaks(&[i128], &[i128], &[i128]) -> alloc::vec::Vec<(u16, i128, i128)>
 pub fn phx_core::goods::nature_net<'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::flows::Flow>) -> alloc::vec::Vec<i128>
 pub fn phx_core::goods::spoil(&phx_core::goods::Stocks, phx_id::ids::PartyKey, impl core::ops::function::Fn(u16) -> core::option::Option<f64>, (i64, phx_id::day::Day, i64), u8, &mut alloc::vec::Vec<phx_core::flows::Flow>)
-pub mod phx_core::handler
-pub struct phx_core::handler::Away
-pub phx_core::handler::Away::inbound: phx_num::missing::Missing<i64>
-pub phx_core::handler::Away::metres: u64
-pub phx_core::handler::Away::mode: u16
-pub phx_core::handler::Away::outbound: phx_num::missing::Missing<i64>
-pub phx_core::handler::Away::there: i64
-pub phx_core::handler::Away::zone: u32
-pub struct phx_core::handler::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
-impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
-pub fn phx_core::handler::Ctx<'a, H, S>::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
-pub fn phx_core::handler::Ctx<'a, H, S>::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
-pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
-pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
-pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
-pub fn phx_core::handler::Ctx<'a, H, S>::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
-pub fn phx_core::handler::Ctx<'a, H, S>::flow<R: phx_core::handler::ReasonDef>(&mut self, [phx_id::ids::PartyKey; 2], i64, phx_core::flows::Denom, u32) where H: phx_core::handler::Pays<R>
-pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::Ctx<'a, H, S>::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
-pub fn phx_core::handler::Ctx<'a, H, S>::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::Ctx<'a, H, S>::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
-pub fn phx_core::handler::Ctx<'a, H, S>::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
-pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
-pub fn phx_core::handler::Ctx<'a, H, S>::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
-pub fn phx_core::handler::Ctx<'a, H, S>::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
-pub fn phx_core::handler::Ctx<'a, H, S>::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-pub struct phx_core::handler::CtxParts<'a, S: phx_core::handler::FactStore + ?core::marker::Sized>
-pub phx_core::handler::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
-pub phx_core::handler::CtxParts::date: phx_id::day::Date
-pub phx_core::handler::CtxParts::day: phx_id::day::Day
-pub phx_core::handler::CtxParts::facts: &'a mut S
-pub phx_core::handler::CtxParts::flows: core::option::Option<&'a mut alloc::vec::Vec<phx_core::flows::Flow>>
-pub phx_core::handler::CtxParts::goods: &'a dyn phx_core::handler::GoodsView
-pub phx_core::handler::CtxParts::intents: &'a mut phx_core::handler::Intents
-pub phx_core::handler::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
-pub phx_core::handler::CtxParts::own: &'a (dyn core::any::Any + core::marker::Send + core::marker::Sync)
-pub phx_core::handler::CtxParts::queue: &'a mut phx_core::decisions::PlayerQueue
-pub phx_core::handler::CtxParts::register: &'a phx_core::register::Register
-pub phx_core::handler::CtxParts::rules: &'a phx_core::rules::RuleTable
-pub phx_core::handler::CtxParts::streams: &'a phx_core::streams::Streams
-pub struct phx_core::handler::FactOverlay
-impl phx_core::handler::FactOverlay
-pub fn phx_core::handler::FactOverlay::into_writes(self) -> alloc::vec::Vec<(phx_id::ids::Slot, &'static str, i64)>
-pub fn phx_core::handler::FactOverlay::read_from(&dyn phx_core::handler::FactRead, alloc::vec::Vec<&'static str>, &[phx_id::ids::Slot]) -> phx_core::handler::FactOverlay
-impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
-pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-pub struct phx_core::handler::HeldAway
-pub phx_core::handler::HeldAway::free: i64
-pub phx_core::handler::HeldAway::grade: u8
-pub phx_core::handler::HeldAway::product: u16
-pub phx_core::handler::HeldAway::units: i64
-pub phx_core::handler::HeldAway::zone: u32
-pub struct phx_core::handler::HeldRight
-pub phx_core::handler::HeldRight::deposit: u32
-pub phx_core::handler::HeldRight::grade: i64
-pub phx_core::handler::HeldRight::opening: phx_num::missing::Missing<i64>
-pub phx_core::handler::HeldRight::product: u16
-pub phx_core::handler::HeldRight::remaining: phx_num::missing::Missing<i64>
-pub phx_core::handler::HeldRight::zone: u32
-pub struct phx_core::handler::Intents
-impl phx_core::handler::Intents
-pub fn phx_core::handler::Intents::append(&mut self, phx_core::handler::Intents)
-pub fn phx_core::handler::Intents::is_empty(&self) -> bool
-pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (&'static str, &[u64])> + '_
-pub fn phx_core::handler::Intents::len(&self) -> usize
-pub struct phx_core::handler::NoGoods
-impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-pub trait phx_core::handler::DrawsFrom<S: phx_core::streams::StreamDef>
-pub trait phx_core::handler::Emits<I: phx_core::handler::IntentDef>
-pub trait phx_core::handler::FactRead: core::marker::Sync
-pub fn phx_core::handler::FactRead::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
-pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub trait phx_core::handler::FactStore
-pub fn phx_core::handler::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
-pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::column_facts::RecordFacts<'_>
-pub fn phx_core::column_facts::RecordFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::RecordFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
-pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-pub trait phx_core::handler::GoodsView: core::fmt::Debug
-pub fn phx_core::handler::GoodsView::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::GoodsView::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::GoodsView::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::GoodsView::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::GoodsView::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::GoodsView::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::GoodsView::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-pub trait phx_core::handler::HandlerDecl: 'static
-pub const phx_core::handler::HandlerDecl::CLAUSE: &'static str
-pub const phx_core::handler::HandlerDecl::INTENTS: &'static [&'static str]
-pub const phx_core::handler::HandlerDecl::NAME: &'static str
-pub const phx_core::handler::HandlerDecl::READS: &'static [&'static str]
-pub const phx_core::handler::HandlerDecl::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
-pub const phx_core::handler::HandlerDecl::STREAMS: &'static [&'static str]
-pub const phx_core::handler::HandlerDecl::SUBSTEP: phx_core::substep::SubStep
-pub const phx_core::handler::HandlerDecl::TABLE: &'static str
-pub const phx_core::handler::HandlerDecl::WRITES: &'static [&'static str]
-pub trait phx_core::handler::IntentDef
-pub const phx_core::handler::IntentDef::NAME: &'static str
-pub fn phx_core::handler::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
-impl phx_core::handler::IntentDef for phx_core::events::EventIntent
-pub const phx_core::events::EventIntent::NAME: &'static str
-pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
-pub trait phx_core::handler::Pays<R: phx_core::handler::ReasonDef>
-pub trait phx_core::handler::Reads<F: phx_core::facts::FactDef>
-pub trait phx_core::handler::ReasonDef: 'static
-pub const phx_core::handler::ReasonDef::CODE: u8
-pub const phx_core::handler::ReasonDef::ORDER: u8
-pub trait phx_core::handler::Writes<F: phx_core::facts::FactDef>
-pub type phx_core::handler::HeldGood = (u16, u8, i64)
-pub type phx_core::handler::HeldPlant = (u8, u8, i64)
-pub type phx_core::handler::Opened = (&'static str, u64)
-pub type phx_core::handler::RunChunk = fn(phx_core::handler::CtxParts<'_, dyn phx_core::handler::FactStore>, core::ops::range::Range<u32>)
 pub mod phx_core::hazards
 pub enum phx_core::hazards::ActsOn
 pub phx_core::hazards::ActsOn::Country
@@ -1218,80 +720,6 @@ pub phx_core::hazards::RateFn::axes: &'static [&'static str]
 pub phx_core::hazards::RateFn::changes: &'static [phx_core::hazards::RateChange]
 pub phx_core::hazards::RateFn::table: &'static str
 pub fn phx_core::hazards::annual_to_daily(f64, u32) -> f64
-pub mod phx_core::insolvency
-pub struct phx_core::insolvency::InsolvencyDecl
-pub phx_core::insolvency::InsolvencyDecl::clause: &'static str
-pub phx_core::insolvency::InsolvencyDecl::grace_days: &'static str
-pub phx_core::insolvency::InsolvencyDecl::kind: &'static str
-pub mod phx_core::kind_tables
-pub enum phx_core::kind_tables::ListKind
-pub phx_core::kind_tables::ListKind::Holdings
-pub phx_core::kind_tables::ListKind::Lots
-pub phx_core::kind_tables::ListKind::NamedUnits
-pub phx_core::kind_tables::ListKind::RelationshipRows
-impl phx_core::kind_tables::ListKind
-pub const phx_core::kind_tables::ListKind::ALL: [phx_core::kind_tables::ListKind; 4]
-pub struct phx_core::kind_tables::FacetDecl
-pub phx_core::kind_tables::FacetDecl::fact: &'static str
-pub phx_core::kind_tables::FacetDecl::kind: &'static str
-pub struct phx_core::kind_tables::KindTable<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
-pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
-pub fn phx_core::kind_tables::KindTable<B>::compact_due(&mut self) -> u64
-pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
-pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
-pub fn phx_core::kind_tables::KindTable<B>::facet_named(&self, &str) -> core::option::Option<phx_core::schema::FactColumn>
-pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
-pub fn phx_core::kind_tables::KindTable<B>::is_live(&self, phx_id::ids::Slot) -> bool
-pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
-pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
-pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
-pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &[(phx_id::ids::Slot, usize, u64)])
-pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
-pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
-pub fn phx_core::kind_tables::KindTable<B>::row_hint(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>
-pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::KindTable<B>::set_row_hint(&mut self, phx_id::ids::Slot, u64, usize)
-pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
-pub fn phx_core::kind_tables::KindTable<B>::shift_row_hints(&mut self, phx_id::ids::Slot, usize, (usize, bool))
-pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
-pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
-pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
-impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::take_moved(&mut self) -> alloc::vec::Vec<(&'static str, u64)>
-pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
-pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
-impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
-pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default, alloc::vec::Vec<(&'static str, u64)>: core::default::Default, alloc::collections::btree::map::BTreeMap<(u32, u64), usize>: core::default::Default
-pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::kind_tables::NewIndividual<'a>
-pub phx_core::kind_tables::NewIndividual::created: phx_id::day::Day
-pub phx_core::kind_tables::NewIndividual::party: phx_id::ids::PartyId
-pub phx_core::kind_tables::NewIndividual::site: phx_id::ids::TileId
-pub phx_core::kind_tables::NewIndividual::types: &'a [phx_core::register::values::TypeId]
-#[repr(C)] pub struct phx_core::kind_tables::RunHead
-pub phx_core::kind_tables::RunHead::len: u32
-pub phx_core::kind_tables::RunHead::next_due: u32
-pub phx_core::kind_tables::RunHead::offset: u32
-impl phx_core::kind_tables::RunHead
-pub const phx_core::kind_tables::RunHead::EMPTY: phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
-impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::RunHead::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::deal_writes(&[(phx_id::ids::Slot, usize, u64)], u32, usize) -> alloc::vec::Vec<alloc::vec::Vec<(phx_id::ids::Slot, usize, u64)>>
-pub fn phx_core::kind_tables::written_once(&mut [(phx_id::ids::Slot, usize, u64)])
 pub mod phx_core::kinds
 pub enum phx_core::kinds::Feature
 pub phx_core::kinds::Feature::IssuesCurrency
@@ -1323,152 +751,6 @@ pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<u
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub const phx_core::kinds::ESTATE_KIND: phx_core::kinds::KindDecl
 pub const phx_core::kinds::LEGAL_FORMS: phx_core::register::PrimDecl
-pub mod phx_core::kinks
-pub enum phx_core::kinks::KinkOn
-pub phx_core::kinks::KinkOn::PerMember(&'static str)
-pub phx_core::kinks::KinkOn::Position(&'static str)
-pub enum phx_core::kinks::KinkSource
-pub phx_core::kinks::KinkSource::Constraint(&'static str)
-pub phx_core::kinks::KinkSource::Rule(&'static str)
-pub phx_core::kinks::KinkSource::Term(&'static str)
-pub struct phx_core::kinks::KinkDecl
-pub phx_core::kinks::KinkDecl::clause: &'static str
-pub phx_core::kinks::KinkDecl::name: &'static str
-pub phx_core::kinks::KinkDecl::on: phx_core::kinks::KinkOn
-pub phx_core::kinks::KinkDecl::owner: &'static str
-pub phx_core::kinks::KinkDecl::points: u16
-pub phx_core::kinks::KinkDecl::source: phx_core::kinks::KinkSource
-pub struct phx_core::kinks::KinkRegistry
-impl phx_core::kinks::KinkRegistry
-pub fn phx_core::kinks::KinkRegistry::get(&self, usize) -> core::option::Option<&phx_core::kinks::KinkDecl>
-pub fn phx_core::kinks::KinkRegistry::on(&self, phx_core::kinks::KinkOn) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::kinks::KinkDecl> + '_
-pub fn phx_core::kinks::KinkRegistry::register(&mut self, phx_core::kinks::KinkDecl) -> core::result::Result<(), alloc::string::String>
-pub mod phx_core::map
-pub struct phx_core::map::KernelMap<K, V>
-impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::buckets<I>() -> alloc::vec::Vec<alloc::vec::Vec<(K, I)>>
-pub fn phx_core::map::KernelMap<K, V>::capacity(&self) -> usize
-pub fn phx_core::map::KernelMap<K, V>::clear(&mut self)
-pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
-pub fn phx_core::map::KernelMap<K, V>::each(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
-pub fn phx_core::map::KernelMap<K, V>::fold<I: core::marker::Sync>(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<alloc::vec::Vec<(K, I)>>], impl core::ops::function::Fn() -> V + core::marker::Sync, impl core::ops::function::Fn(&mut V, &I) + core::marker::Sync) where K: core::marker::Send + core::marker::Sync, V: core::marker::Send
-pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
-pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
-pub fn phx_core::map::KernelMap<K, V>::get_or_insert_with(&mut self, K, impl core::ops::function::FnOnce() -> V) -> &mut V
-pub fn phx_core::map::KernelMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
-pub fn phx_core::map::KernelMap<K, V>::is_empty(&self) -> bool
-pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
-pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
-pub fn phx_core::map::KernelMap<K, V>::shard_of(K) -> usize
-pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
-pub fn phx_core::map::KernelMap<K, V>::with_room_of(&self) -> phx_core::map::KernelMap<K, V>
-impl<K: phx_core::map::MapKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::map::KernelMap<K, V>, phx_store::save::LoadError>
-pub fn phx_core::map::KernelMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
-impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::default() -> Self
-pub trait phx_core::map::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
-pub fn phx_core::map::MapKey::key64(self) -> u64
-impl phx_core::map::MapKey for (phx_id::ids::PartyId, u64)
-pub fn (phx_id::ids::PartyId, u64)::key64(self) -> u64
-impl phx_core::map::MapKey for phx_id::ids::InstrumentId
-pub fn phx_id::ids::InstrumentId::key64(self) -> u64
-impl phx_core::map::MapKey for phx_id::ids::LineId
-pub fn phx_id::ids::LineId::key64(self) -> u64
-impl phx_core::map::MapKey for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::key64(self) -> u64
-impl phx_core::map::MapKey for u64
-pub fn u64::key64(self) -> u64
-pub mod phx_core::messages
-pub enum phx_core::messages::Concerns
-pub phx_core::messages::Concerns::Instrument(phx_id::ids::InstrumentId)
-pub phx_core::messages::Concerns::Line(phx_id::ids::LineId)
-pub phx_core::messages::Concerns::Nothing
-pub enum phx_core::messages::MessageState
-pub phx_core::messages::MessageState::Answered
-pub phx_core::messages::MessageState::Failed
-pub phx_core::messages::MessageState::Lapsed
-pub phx_core::messages::MessageState::Open
-#[repr(C)] pub struct phx_core::messages::Address
-impl phx_core::messages::Address
-pub fn phx_core::messages::Address::cell(phx_id::ids::PartyId, u32) -> phx_core::messages::Address
-pub fn phx_core::messages::Address::count(self) -> u32
-pub fn phx_core::messages::Address::line(self) -> core::option::Option<phx_id::ids::LineId>
-pub fn phx_core::messages::Address::line_side(phx_id::ids::LineId, u8, u32) -> phx_core::messages::Address
-pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<phx_id::ids::PartyId>
-pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
-impl phx_store::pod::Pod for phx_core::messages::Address
-pub fn phx_core::messages::Address::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
-pub struct phx_core::messages::Answering
-pub phx_core::messages::Answering::addressee: &'static str
-pub phx_core::messages::Answering::substep: phx_core::substep::SubStep
-pub phx_core::messages::Answering::system: &'static str
-pub struct phx_core::messages::DayMessages
-impl phx_core::messages::DayMessages
-pub fn phx_core::messages::DayMessages::all(&self) -> &[phx_core::messages::Message]
-pub fn phx_core::messages::DayMessages::lapse(&mut self)
-pub fn phx_core::messages::DayMessages::push(&mut self, phx_core::messages::Message)
-#[repr(C)] pub struct phx_core::messages::Message
-impl phx_core::messages::Message
-pub fn phx_core::messages::Message::addressee(&self) -> phx_core::messages::Address
-pub fn phx_core::messages::Message::concerns(&self) -> phx_core::messages::Concerns
-pub fn phx_core::messages::Message::due(&self) -> phx_id::day::Day
-pub fn phx_core::messages::Message::id(&self) -> phx_id::ids::MsgId
-pub fn phx_core::messages::Message::issued(&self) -> phx_id::day::Day
-pub fn phx_core::messages::Message::kind(&self) -> u16
-pub fn phx_core::messages::Message::new(u16, phx_core::messages::Address, phx_core::messages::Address, phx_id::day::Day, phx_id::day::Day, phx_core::messages::Concerns) -> phx_core::messages::Message
-pub fn phx_core::messages::Message::sender(&self) -> phx_core::messages::Address
-pub fn phx_core::messages::Message::state(&self) -> phx_core::messages::MessageState
-impl phx_store::pod::Pod for phx_core::messages::Message
-pub fn phx_core::messages::Message::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_core::messages::Message
-pub struct phx_core::messages::MessageKindDecl
-pub phx_core::messages::MessageKindDecl::acceptance: phx_num::missing::Missing<(&'static str, &'static str)>
-pub phx_core::messages::MessageKindDecl::answering: &'static [phx_core::messages::Answering]
-pub phx_core::messages::MessageKindDecl::clause: &'static str
-pub phx_core::messages::MessageKindDecl::lives_across_days: bool
-pub phx_core::messages::MessageKindDecl::name: &'static str
-pub phx_core::messages::MessageKindDecl::opens_commitment: bool
-pub phx_core::messages::MessageKindDecl::pins: bool
-pub phx_core::messages::MessageKindDecl::reaches: &'static [&'static str]
-impl phx_core::messages::MessageKindDecl
-pub fn phx_core::messages::MessageKindDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::messages::MessageStore<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::messages::MessageStore<B>
-pub fn phx_core::messages::MessageStore<B>::get(&self, phx_id::ids::Slot) -> phx_core::messages::Message
-pub fn phx_core::messages::MessageStore<B>::issue(&mut self, phx_core::messages::Message) -> (phx_id::ids::MsgId, phx_id::ids::Slot)
-pub fn phx_core::messages::MessageStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::messages::MessageStore<B>
-pub fn phx_core::messages::MessageStore<B>::release(&mut self, phx_id::ids::Slot)
-pub fn phx_core::messages::MessageStore<B>::set_state(&mut self, phx_id::ids::Slot, phx_core::messages::MessageState)
-pub trait phx_core::messages::MessageDef
-pub const phx_core::messages::MessageDef::DECL: phx_core::messages::MessageKindDecl
-pub mod phx_core::pages
-pub struct phx_core::pages::PagedMap<K, V>
-impl<K: phx_core::pages::PageKey, V> phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::bytes(&self) -> usize
-pub fn phx_core::pages::PagedMap<K, V>::get(&self, K) -> core::option::Option<&V>
-pub fn phx_core::pages::PagedMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
-pub fn phx_core::pages::PagedMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
-pub fn phx_core::pages::PagedMap<K, V>::is_empty(&self) -> bool
-pub fn phx_core::pages::PagedMap<K, V>::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
-pub fn phx_core::pages::PagedMap<K, V>::len(&self) -> usize
-pub fn phx_core::pages::PagedMap<K, V>::new() -> phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
-impl<K, V> core::fmt::Debug for phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl<K: phx_core::pages::PageKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::pages::PagedMap<K, V>, phx_store::save::LoadError>
-pub fn phx_core::pages::PagedMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
-impl<K: phx_core::pages::PageKey, V> core::default::Default for phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::default() -> Self
-pub trait phx_core::pages::PageKey: core::marker::Copy + core::cmp::Ord
-pub fn phx_core::pages::PageKey::from_index(u64) -> Self
-pub fn phx_core::pages::PageKey::index(self) -> u64
-impl phx_core::pages::PageKey for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::from_index(u64) -> phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::index(self) -> u64
 pub mod phx_core::policy
 pub enum phx_core::policy::AnnounceRefused
 pub phx_core::policy::AnnounceRefused::NotOwner
@@ -1571,40 +853,6 @@ pub phx_core::products::ProductEntry::storable: bool
 pub phx_core::products::ProductEntry::unit: alloc::string::String
 impl phx_core::products::ProductEntry
 pub fn phx_core::products::ProductEntry::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub mod phx_core::records
-pub struct phx_core::records::Reader
-pub phx_core::records::Reader::day: phx_id::day::Day
-pub phx_core::records::Reader::kind: &'static str
-pub phx_core::records::Reader::party: phx_id::ids::PartyId
-pub phx_core::records::Reader::substep: phx_core::substep::SubStep
-pub struct phx_core::records::RecordEntry
-pub phx_core::records::RecordEntry::day: phx_id::day::Day
-pub phx_core::records::RecordEntry::payload: alloc::vec::Vec<u64>
-pub phx_core::records::RecordEntry::subject: phx_id::ids::PartyId
-pub phx_core::records::RecordEntry::substep: u8
-pub struct phx_core::records::RecordKindDecl
-pub phx_core::records::RecordKindDecl::audience: phx_core::facts::Audience
-pub phx_core::records::RecordKindDecl::clause: &'static str
-pub phx_core::records::RecordKindDecl::horizon: phx_core::facts::Lag
-pub phx_core::records::RecordKindDecl::name: &'static str
-pub phx_core::records::RecordKindDecl::writer: &'static str
-pub struct phx_core::records::RecordStamp
-pub phx_core::records::RecordStamp::day: phx_id::day::Day
-pub phx_core::records::RecordStamp::subject: phx_id::ids::PartyId
-pub phx_core::records::RecordStamp::substep: u8
-pub struct phx_core::records::RecordStore<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
-pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
-pub fn phx_core::records::RecordStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
-pub fn phx_core::records::RecordStore<B>::kinds(&self) -> &[phx_core::records::RecordKindDecl]
-pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
-pub fn phx_core::records::RecordStore<B>::load_from(&mut phx_store::save::Reader<'_>, alloc::vec::Vec<phx_core::records::RecordKindDecl>) -> core::result::Result<phx_core::records::RecordStore<B>, phx_store::save::LoadError>
-pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
-pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
-pub fn phx_core::records::RecordStore<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::Option<phx_core::records::RecordStamp>
-pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub mod phx_core::register
 pub use phx_core::register::Missing
 pub mod phx_core::register::forms
@@ -2037,20 +1285,6 @@ pub fn phx_core::register::RegisterBuilder::declare<T: phx_core::register::value
 pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::RegisterBuilder
 pub struct phx_core::register::RoleId(pub &'static str)
 pub fn phx_core::register::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
-pub mod phx_core::rules
-pub struct phx_core::rules::RuleSig<I, O>
-pub phx_core::rules::RuleSig::implementer: &'static str
-pub phx_core::rules::RuleSig::name: &'static str
-impl<I, O> phx_core::rules::RuleSig<I, O>
-pub const fn phx_core::rules::RuleSig<I, O>::new(&'static str, &'static str) -> phx_core::rules::RuleSig<I, O>
-impl<I, O> core::clone::Clone for phx_core::rules::RuleSig<I, O>
-pub fn phx_core::rules::RuleSig<I, O>::clone(&self) -> Self
-impl<I, O> core::marker::Copy for phx_core::rules::RuleSig<I, O>
-pub struct phx_core::rules::RuleTable
-impl phx_core::rules::RuleTable
-pub fn phx_core::rules::RuleTable::call<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
-pub fn phx_core::rules::RuleTable::check(&self, &[(&'static str, &'static str)]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
-pub fn phx_core::rules::RuleTable::implement<I: 'static, O: 'static>(&mut self, &'static str, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
 pub mod phx_core::schedule
 pub enum phx_core::schedule::RunsOn
 pub phx_core::schedule::RunsOn::Any
@@ -2070,15 +1304,6 @@ impl phx_core::schedule::Phase
 pub fn phx_core::schedule::Phase::offset_days(self) -> u16
 pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16) -> core::option::Option<phx_core::schedule::Phase>
 pub fn phx_core::schedule::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
-pub mod phx_core::schema
-pub struct phx_core::schema::FactColumn(_)
-impl phx_core::schema::FactColumn
-pub fn phx_core::schema::FactColumn::index(self) -> u32
-pub const fn phx_core::schema::FactColumn::new(u32) -> phx_core::schema::FactColumn
-pub trait phx_core::schema::TableSchema
-pub fn phx_core::schema::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
 pub mod phx_core::settle
 pub enum phx_core::settle::Cause
 pub phx_core::settle::Cause::Bank
@@ -2313,7 +1538,6 @@ pub phx_core::system::Declarations::markets: alloc::vec::Vec<(&'static str, allo
 pub phx_core::system::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::system::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::system::Declarations::prims: phx_core::register::RegisterBuilder
-pub phx_core::system::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::system::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::system::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
 impl phx_core::system::Declarations
@@ -2323,7 +1547,6 @@ pub fn phx_core::system::Declarations::compile(&mut self, phx_core::system::Comp
 pub fn phx_core::system::Declarations::decision<I, O>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>)
 pub fn phx_core::system::Declarations::event(&mut self, phx_core::events::EventKindDecl)
 pub fn phx_core::system::Declarations::hazard(&mut self, phx_core::hazards::HazardDecl)
-pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut self, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
 pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
@@ -2349,14 +1572,6 @@ pub fn phx_core::system::System::declare(&mut phx_core::system::Declarations)
 pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations)
 pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations)
 pub type phx_core::system::Compile = alloc::boxed::Box<(dyn core::ops::function::FnOnce(&phx_core::register::Register, usize) -> core::result::Result<alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>, alloc::string::String> + core::marker::Send)>
-pub mod phx_core::touched
-pub struct phx_core::touched::TouchedRows
-impl phx_core::touched::TouchedRows
-pub fn phx_core::touched::TouchedRows::clear(&mut self)
-pub fn phx_core::touched::TouchedRows::count(&self) -> u64
-pub fn phx_core::touched::TouchedRows::mark(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub fn phx_core::touched::TouchedRows::rows(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_core::touched::TouchedRows::tables(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TableId> + '_
 pub mod phx_core::units
 pub struct phx_core::units::Chain
 pub phx_core::units::Chain::efficiency: alloc::vec::Vec<f64>
@@ -2376,20 +1591,6 @@ pub fn phx_core::units::Class::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_core::units::capacity(&phx_core::goods::Stocks, &phx_core::goods::UnitIds, phx_id::ids::PartyKey, (u16, core::option::Option<u32>), &phx_core::units::Chain) -> f64
 pub fn phx_core::units::issue_chain(&mut phx_core::goods::UnitIds, phx_core::units::Class, u8) -> alloc::vec::Vec<u16>
 pub fn phx_core::units::wear<'a>((&mut phx_core::goods::Stocks, &phx_core::goods::UnitIds), phx_id::ids::PartyKey, impl core::ops::function::Fn(u16) -> core::option::Option<&'a phx_core::units::Chain>, (i64, i64), u8, &mut alloc::vec::Vec<phx_core::flows::Flow>)
-pub mod phx_core::visit
-pub enum phx_core::visit::Cadence
-pub phx_core::visit::Cadence::Attention
-pub phx_core::visit::Cadence::Attention::position: &'static str
-pub phx_core::visit::Cadence::Schedule
-pub phx_core::visit::Cadence::Schedule::days: &'static str
-pub phx_core::visit::Cadence::Schedule::runs_on: phx_core::schedule::RunsOn
-pub struct phx_core::visit::VisitDecl
-pub phx_core::visit::VisitDecl::cadence: phx_core::visit::Cadence
-pub phx_core::visit::VisitDecl::clause: &'static str
-pub phx_core::visit::VisitDecl::handler: &'static str
-pub phx_core::visit::VisitDecl::kind: &'static str
-pub phx_core::visit::VisitDecl::stream: &'static str
-pub phx_core::visit::VisitDecl::wakes: &'static [phx_core::schedule::WakeKind]
 pub mod phx_core::wear
 pub struct phx_core::wear::WearDecl
 pub phx_core::wear::WearDecl::clause: &'static str
@@ -2443,21 +1644,11 @@ pub phx_core::BusinessDayConvention::Unadjusted
 impl phx_store::save::Saved for phx_core::calendar::bizday::BusinessDayConvention
 pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)
-pub enum phx_core::Cadence
-pub phx_core::Cadence::Attention
-pub phx_core::Cadence::Attention::position: &'static str
-pub phx_core::Cadence::Schedule
-pub phx_core::Cadence::Schedule::days: &'static str
-pub phx_core::Cadence::Schedule::runs_on: phx_core::schedule::RunsOn
 pub enum phx_core::CarryingBasis
 pub phx_core::CarryingBasis::AmortisedCost
 pub phx_core::CarryingBasis::CostLessDepreciation
 pub phx_core::CarryingBasis::FairValue
 pub phx_core::CarryingBasis::LowerOfCostAndRealisable
-pub enum phx_core::Concerns
-pub phx_core::Concerns::Instrument(phx_id::ids::InstrumentId)
-pub phx_core::Concerns::Line(phx_id::ids::LineId)
-pub phx_core::Concerns::Nothing
 pub enum phx_core::DayCount
 pub phx_core::DayCount::Act360
 pub phx_core::DayCount::Act365F
@@ -2525,11 +1716,6 @@ pub phx_core::Family::Pareto::x_min: i64
 pub phx_core::Family::Weibull
 pub phx_core::Family::Weibull::k: i64
 pub phx_core::Family::Weibull::lambda: i64
-pub enum phx_core::FamilyMode
-pub phx_core::FamilyMode::Incremental
-pub phx_core::FamilyMode::Rolling
-pub phx_core::FamilyMode::Rolling::cycle_days: u16
-pub phx_core::FamilyMode::Streaming
 pub enum phx_core::Feature
 pub phx_core::Feature::IssuesCurrency
 pub phx_core::Feature::LimitedLiability
@@ -2573,21 +1759,10 @@ pub phx_core::HolidayRule::Substitute::when_on: alloc::vec::Vec<phx_id::day::Wee
 impl phx_core::calendar::rules::HolidayRule
 pub fn phx_core::calendar::rules::HolidayRule::name(&self) -> &str
 pub enum phx_core::ItemKind
-pub phx_core::ItemKind::DecisionPoint
 pub phx_core::ItemKind::Fact(phx_core::facts::FactDecl)
-pub phx_core::ItemKind::LineKind
-pub phx_core::ItemKind::Message
-pub phx_core::ItemKind::RuleSignature
 pub enum phx_core::KindTableRef
 pub phx_core::KindTableRef::Agents
 pub phx_core::KindTableRef::Individuals
-pub enum phx_core::KinkOn
-pub phx_core::KinkOn::PerMember(&'static str)
-pub phx_core::KinkOn::Position(&'static str)
-pub enum phx_core::KinkSource
-pub phx_core::KinkSource::Constraint(&'static str)
-pub phx_core::KinkSource::Rule(&'static str)
-pub phx_core::KinkSource::Term(&'static str)
 pub enum phx_core::Lag
 pub phx_core::Lag::Days(u16)
 pub phx_core::Lag::Months(u16)
@@ -2597,18 +1772,6 @@ pub phx_core::Level::Developing
 pub phx_core::Level::Emerging
 impl phx_core::register::Level
 pub fn phx_core::register::Level::dir(self) -> &'static str
-pub enum phx_core::ListKind
-pub phx_core::ListKind::Holdings
-pub phx_core::ListKind::Lots
-pub phx_core::ListKind::NamedUnits
-pub phx_core::ListKind::RelationshipRows
-impl phx_core::kind_tables::ListKind
-pub const phx_core::kind_tables::ListKind::ALL: [phx_core::kind_tables::ListKind; 4]
-pub enum phx_core::MessageState
-pub phx_core::MessageState::Answered
-pub phx_core::MessageState::Failed
-pub phx_core::MessageState::Lapsed
-pub phx_core::MessageState::Open
 pub enum phx_core::Mode
 pub phx_core::Mode::Best
 pub phx_core::Mode::Satisfice
@@ -2619,12 +1782,6 @@ pub phx_core::Notice::Never
 pub enum phx_core::Outside
 pub phx_core::Outside::Edge
 pub phx_core::Outside::Refuse
-pub enum phx_core::PartyState
-pub phx_core::PartyState::Ended
-pub phx_core::PartyState::Ended::day: phx_id::day::Day
-pub phx_core::PartyState::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyId>
-pub phx_core::PartyState::Live(phx_id::ids::RowRef)
-pub phx_core::PartyState::Unknown
 pub enum phx_core::PopItem
 pub phx_core::PopItem::Attr(phx_core::pop::AttrDecl)
 pub phx_core::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)
@@ -2706,10 +1863,6 @@ pub phx_core::ReprClass::Individual
 pub phx_core::ReprClass::Key
 pub phx_core::ReprClass::Position
 pub phx_core::ReprClass::Profile
-pub enum phx_core::Resolved
-pub phx_core::Resolved::Ended(phx_id::ids::PartyId)
-pub phx_core::Resolved::Live(phx_id::ids::PartyId, phx_id::ids::RowRef)
-pub phx_core::Resolved::Unknown
 pub enum phx_core::RunsOn
 pub phx_core::RunsOn::Any
 pub phx_core::RunsOn::Business
@@ -2811,15 +1964,6 @@ pub phx_core::Transform::Log
 pub phx_core::Transform::LogGrowthPercent
 pub phx_core::Transform::LogitPercent
 pub phx_core::Transform::LogitShare
-pub enum phx_core::Transformed
-pub phx_core::Transformed::Built
-pub phx_core::Transformed::Carried
-pub phx_core::Transformed::Deposit
-pub phx_core::Transformed::Hazard
-pub phx_core::Transformed::Purchase
-pub phx_core::Transformed::Spoilage
-pub phx_core::Transformed::Way
-pub phx_core::Transformed::Wear
 pub enum phx_core::Unit
 pub phx_core::Unit::Count
 pub phx_core::Unit::Days
@@ -2869,17 +2013,6 @@ pub enum phx_core::Writer
 pub phx_core::Writer::Placeholder
 pub phx_core::Writer::Placeholder::retired_by: &'static str
 pub phx_core::Writer::System(&'static str)
-#[repr(C)] pub struct phx_core::Address
-impl phx_core::messages::Address
-pub fn phx_core::messages::Address::cell(phx_id::ids::PartyId, u32) -> phx_core::messages::Address
-pub fn phx_core::messages::Address::count(self) -> u32
-pub fn phx_core::messages::Address::line(self) -> core::option::Option<phx_id::ids::LineId>
-pub fn phx_core::messages::Address::line_side(phx_id::ids::LineId, u8, u32) -> phx_core::messages::Address
-pub fn phx_core::messages::Address::named_party(self) -> core::option::Option<phx_id::ids::PartyId>
-pub fn phx_core::messages::Address::party(phx_id::ids::PartyId) -> phx_core::messages::Address
-impl phx_store::pod::Pod for phx_core::messages::Address
-pub fn phx_core::messages::Address::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_core::messages::Address
 pub struct phx_core::Adjustment
 pub phx_core::Adjustment::drawn: i128
 pub phx_core::Adjustment::set: i128
@@ -2887,32 +2020,6 @@ pub phx_core::Adjustment::what: alloc::string::String
 impl phx_store::save::Saved for phx_core::contribution::Adjustment where alloc::string::String: phx_store::save::Saved, i128: phx_store::save::Saved
 pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::Agenda<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::agenda::Agenda<B>
-pub fn phx_core::agenda::Agenda<B>::booked(&self, phx_id::ids::TableId, phx_id::ids::Slot) -> core::option::Option<phx_id::day::Day>
-pub fn phx_core::agenda::Agenda<B>::bytes_committed(&self) -> usize
-pub fn phx_core::agenda::Agenda<B>::clear(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize)
-pub fn phx_core::agenda::Agenda<B>::counters(&self) -> phx_core::agenda::AgendaCounters
-pub fn phx_core::agenda::Agenda<B>::gather(&mut self, phx_id::day::Day) -> phx_core::agenda::TodayAgenda
-pub fn phx_core::agenda::Agenda<B>::grow(&mut self, phx_id::ids::TableId, u32)
-pub fn phx_core::agenda::Agenda<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::agenda::Agenda<B>::load_from(&mut phx_store::save::Reader<'_>, &mut phx_store::backing::AddressSpace, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<phx_core::agenda::Agenda<B>, phx_store::save::LoadError>
-pub fn phx_core::agenda::Agenda<B>::new(&mut phx_store::backing::AddressSpace, phx_id::day::Day, &[phx_core::agenda::AgendaTableSpec], u32) -> core::result::Result<Self, alloc::string::String>
-pub fn phx_core::agenda::Agenda<B>::next(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> core::option::Option<phx_id::day::Day>
-pub fn phx_core::agenda::Agenda<B>::release(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub fn phx_core::agenda::Agenda<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_core::agenda::Agenda<B>::set_next(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day)
-pub fn phx_core::agenda::Agenda<B>::set_next_with(&mut self, phx_id::ids::TableId, phx_id::ids::Slot, usize, phx_id::day::Day, u32)
-pub fn phx_core::agenda::Agenda<B>::today(&self) -> phx_id::day::Day
-pub fn phx_core::agenda::Agenda<B>::with(&self, phx_id::ids::TableId, phx_id::ids::Slot, usize) -> u32
-pub struct phx_core::AgendaCounters
-pub phx_core::AgendaCounters::entries: u64
-pub phx_core::AgendaCounters::moved: u64
-pub phx_core::AgendaCounters::stale: u64
-pub struct phx_core::AgendaTableSpec
-pub phx_core::AgendaTableSpec::max_rows: u32
-pub phx_core::AgendaTableSpec::reasons: usize
-pub phx_core::AgendaTableSpec::table: phx_id::ids::TableId
 pub struct phx_core::AgentView<'a>
 pub phx_core::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
 pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
@@ -2928,10 +2035,6 @@ pub struct phx_core::Announcement<T>
 pub phx_core::Announcement::announced: phx_id::day::Day
 pub phx_core::Announcement::effective: phx_id::day::Day
 pub phx_core::Announcement::value: T
-pub struct phx_core::Answering
-pub phx_core::Answering::addressee: &'static str
-pub phx_core::Answering::substep: phx_core::substep::SubStep
-pub phx_core::Answering::system: &'static str
 pub struct phx_core::Apportioned
 pub phx_core::Apportioned::drawn: u64
 pub phx_core::Apportioned::party: phx_id::ids::PartyId
@@ -2944,32 +2047,6 @@ pub struct phx_core::AttrDecl
 pub phx_core::AttrDecl::clause: &'static str
 pub phx_core::AttrDecl::name: &'static str
 pub phx_core::AttrDecl::values: u32
-pub struct phx_core::AuditInputs<'a>
-pub phx_core::AuditInputs::accounts: &'a dyn phx_core::family::AccountsAudit
-pub phx_core::AuditInputs::agents: &'a dyn phx_core::family::AgentsAudit
-pub phx_core::AuditInputs::books: &'a dyn phx_core::family::BooksAudit
-pub phx_core::AuditInputs::calendar: &'a phx_core::calendar::Calendar
-pub phx_core::AuditInputs::day: phx_id::day::Day
-pub phx_core::AuditInputs::directory: &'a phx_core::directory::Directory
-pub phx_core::AuditInputs::events: &'a phx_core::events::EventStore
-pub phx_core::AuditInputs::legs: &'a dyn phx_core::family::LegRecords
-pub phx_core::AuditInputs::markets: &'a dyn phx_core::family::MarketsAudit
-pub phx_core::AuditInputs::messages: &'a phx_core::messages::DayMessages
-pub phx_core::AuditInputs::new_events: phx_core::family::Span
-pub phx_core::AuditInputs::new_records: phx_core::family::Span
-pub phx_core::AuditInputs::own: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
-pub phx_core::AuditInputs::records: &'a phx_core::records::RecordStore
-pub phx_core::AuditInputs::register: &'a phx_core::register::Register
-pub phx_core::AuditInputs::tables: &'a [phx_core::columns::KernelTable]
-pub phx_core::AuditInputs::touched: &'a phx_core::touched::TouchedRows
-pub phx_core::AuditInputs::trace: core::option::Option<phx_core::family::ReadTrace>
-pub struct phx_core::Away
-pub phx_core::Away::inbound: phx_num::missing::Missing<i64>
-pub phx_core::Away::metres: u64
-pub phx_core::Away::mode: u16
-pub phx_core::Away::outbound: phx_num::missing::Missing<i64>
-pub phx_core::Away::there: i64
-pub phx_core::Away::zone: u32
 pub struct phx_core::Binding
 pub phx_core::Binding::day: phx_id::day::Day
 pub phx_core::Binding::excess: i128
@@ -3010,11 +2087,6 @@ pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::cal
 pub struct phx_core::Claim
 pub phx_core::Claim::item: &'static str
 pub phx_core::Claim::system: phx_id::ids::SystemCode
-pub struct phx_core::ColumnTrace
-pub phx_core::ColumnTrace::handler: u16
-pub phx_core::ColumnTrace::reads: &'static [&'static str]
-pub phx_core::ColumnTrace::substep: u8
-pub phx_core::ColumnTrace::writes: &'static [&'static str]
 pub struct phx_core::CountryCalendar
 pub phx_core::CountryCalendar::country: phx_id::ids::CountryId
 pub struct phx_core::CountryEntry
@@ -3030,63 +2102,10 @@ impl phx_core::register::values::PrimType for phx_core::calendar::rules::Country
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool
-pub struct phx_core::Ctx<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized>
-impl<'a, H: phx_core::handler::HandlerDecl, S: phx_core::handler::FactStore + ?core::marker::Sized> phx_core::handler::Ctx<'a, H, S>
-pub fn phx_core::handler::Ctx<'a, H, S>::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::Ctx<'a, H, S>::bound<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_core::register::limit::Bound<T>) -> T
-pub fn phx_core::handler::Ctx<'a, H, S>::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::Ctx<'a, H, S>::date(&self) -> phx_id::day::Date
-pub fn phx_core::handler::Ctx<'a, H, S>::day(&self) -> phx_id::day::Day
-pub fn phx_core::handler::Ctx<'a, H, S>::decide<I, O: phx_core::decisions::QueuedPayload>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>, phx_id::ids::PartyId, phx_core::decisions::Decider, &I) -> core::option::Option<O>
-pub fn phx_core::handler::Ctx<'a, H, S>::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::Ctx<'a, H, S>::draws<T: phx_core::streams::StreamDef>(&mut self, phx_rand::key::Subject) -> phx_rand::draws::Draws where H: phx_core::handler::DrawsFrom<T>
-pub fn phx_core::handler::Ctx<'a, H, S>::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::Ctx<'a, H, S>::emit<I: phx_core::handler::IntentDef>(&mut self, &I) where H: phx_core::handler::Emits<I>
-pub fn phx_core::handler::Ctx<'a, H, S>::flow<R: phx_core::handler::ReasonDef>(&mut self, [phx_id::ids::PartyKey; 2], i64, phx_core::flows::Denom, u32) where H: phx_core::handler::Pays<R>
-pub fn phx_core::handler::Ctx<'a, H, S>::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::Ctx<'a, H, S>::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::Ctx<'a, H, S>::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::Ctx<'a, H, S>::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::own<T: core::any::Any>(&self) -> &'a T
-pub fn phx_core::handler::Ctx<'a, H, S>::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::Ctx<'a, H, S>::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::Ctx<'a, H, S>::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::read<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64> where H: phx_core::handler::Reads<F>
-pub fn phx_core::handler::Ctx<'a, H, S>::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::register(&self) -> &'a phx_core::register::Register
-pub fn phx_core::handler::Ctx<'a, H, S>::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::Ctx<'a, H, S>::rule<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
-pub fn phx_core::handler::Ctx<'a, H, S>::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::Ctx<'a, H, S>::substep(&self) -> phx_core::substep::SubStep
-pub fn phx_core::handler::Ctx<'a, H, S>::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::Ctx<'a, H, S>::write<F: phx_core::facts::FactDef>(&mut self, phx_id::ids::Slot, i64) where H: phx_core::handler::Writes<F>
-pub fn phx_core::handler::Ctx<'a, H, S>::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-pub struct phx_core::CtxParts<'a, S: phx_core::handler::FactStore + ?core::marker::Sized>
-pub phx_core::CtxParts::bindings: &'a mut phx_core::register::limit::Bindings
-pub phx_core::CtxParts::date: phx_id::day::Date
-pub phx_core::CtxParts::day: phx_id::day::Day
-pub phx_core::CtxParts::facts: &'a mut S
-pub phx_core::CtxParts::flows: core::option::Option<&'a mut alloc::vec::Vec<phx_core::flows::Flow>>
-pub phx_core::CtxParts::goods: &'a dyn phx_core::handler::GoodsView
-pub phx_core::CtxParts::intents: &'a mut phx_core::handler::Intents
-pub phx_core::CtxParts::opens: core::option::Option<&'a mut alloc::vec::Vec<phx_core::handler::Opened>>
-pub phx_core::CtxParts::own: &'a (dyn core::any::Any + core::marker::Send + core::marker::Sync)
-pub phx_core::CtxParts::queue: &'a mut phx_core::decisions::PlayerQueue
-pub phx_core::CtxParts::register: &'a phx_core::register::Register
-pub phx_core::CtxParts::rules: &'a phx_core::rules::RuleTable
-pub phx_core::CtxParts::streams: &'a phx_core::streams::Streams
 pub struct phx_core::DataFile
 pub phx_core::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>
 pub phx_core::DataFile::path: alloc::string::String
 pub phx_core::DataFile::text: alloc::string::String
-pub struct phx_core::DayMessages
-impl phx_core::messages::DayMessages
-pub fn phx_core::messages::DayMessages::all(&self) -> &[phx_core::messages::Message]
-pub fn phx_core::messages::DayMessages::lapse(&mut self)
-pub fn phx_core::messages::DayMessages::push(&mut self, phx_core::messages::Message)
 pub struct phx_core::DecisionKind
 pub phx_core::DecisionKind::concerns: alloc::vec::Vec<u8>
 pub phx_core::DecisionKind::mode: phx_core::decisions::Mode
@@ -3131,7 +2150,6 @@ pub phx_core::Declarations::markets: alloc::vec::Vec<(&'static str, alloc::boxed
 pub phx_core::Declarations::pop: alloc::vec::Vec<phx_core::pop::PopEntry>
 pub phx_core::Declarations::pop_processes: alloc::vec::Vec<(&'static str, alloc::boxed::Box<dyn phx_core::pop_process::PopProcess>)>
 pub phx_core::Declarations::prims: phx_core::register::RegisterBuilder
-pub phx_core::Declarations::rules: phx_core::rules::RuleTable
 pub phx_core::Declarations::setup_values: alloc::vec::Vec<(&'static str, phx_core::system::SetupValue)>
 pub phx_core::Declarations::streams: alloc::vec::Vec<(&'static str, phx_core::streams::StreamDecl)>
 impl phx_core::system::Declarations
@@ -3141,7 +2159,6 @@ pub fn phx_core::system::Declarations::compile(&mut self, phx_core::system::Comp
 pub fn phx_core::system::Declarations::decision<I, O>(&mut self, &phx_core::decisions::DecisionPointDecl<I, O>)
 pub fn phx_core::system::Declarations::event(&mut self, phx_core::events::EventKindDecl)
 pub fn phx_core::system::Declarations::hazard(&mut self, phx_core::hazards::HazardDecl)
-pub fn phx_core::system::Declarations::implement<I: 'static, O: 'static>(&mut self, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
 pub fn phx_core::system::Declarations::kind(&mut self, phx_core::kinds::KindDecl)
 pub fn phx_core::system::Declarations::market(&mut self, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)
 pub fn phx_core::system::Declarations::new() -> phx_core::system::Declarations
@@ -3160,24 +2177,6 @@ pub fn phx_core::register::limit::DeclaredLimit<T>::from_physical(phx_core::regi
 pub fn phx_core::register::limit::DeclaredLimit<T>::from_prim<P: phx_core::register::values::PrimType>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::register::limit::DeclaredLimit<T> where for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
 pub fn phx_core::register::limit::DeclaredLimit<T>::from_shared_prim<P: phx_core::register::values::PrimType>(phx_core::register::Prim<P>, &phx_core::register::Register) -> phx_core::register::limit::DeclaredLimit<T> where for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
 pub fn phx_core::register::limit::DeclaredLimit<T>::from_terms(phx_core::register::limit::TermsToken, T) -> phx_core::register::limit::DeclaredLimit<T>
-pub struct phx_core::Directory
-impl phx_core::directory::Directory
-pub fn phx_core::directory::Directory::begin(&mut self, phx_id::ids::RowRef) -> phx_id::ids::PartyId
-pub fn phx_core::directory::Directory::close_day(&mut self)
-pub fn phx_core::directory::Directory::end(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyId>)
-pub fn phx_core::directory::Directory::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::directory::Directory::live_count(&self) -> usize
-pub fn phx_core::directory::Directory::lookup(&self, phx_id::ids::PartyId) -> phx_core::directory::PartyState
-pub fn phx_core::directory::Directory::new() -> phx_core::directory::Directory
-pub fn phx_core::directory::Directory::next(&self) -> u64
-pub fn phx_core::directory::Directory::release(&mut self, phx_id::ids::PartyId)
-pub fn phx_core::directory::Directory::resolve(&self, phx_id::ids::PartyId) -> phx_core::directory::Resolved
-pub fn phx_core::directory::Directory::retain(&mut self, phx_id::ids::PartyId)
-impl core::default::Default for phx_core::directory::Directory
-pub fn phx_core::directory::Directory::default() -> Self
-impl phx_store::save::Saved for phx_core::directory::Directory where u64: phx_store::save::Saved, phx_core::pages::PagedMap<phx_id::ids::PartyId, Live>: phx_store::save::Saved, phx_core::map::KernelMap<phx_id::ids::PartyId, Ended>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: core::default::Default
-pub fn phx_core::directory::Directory::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::directory::Directory::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::Distribution
 pub phx_core::Distribution::discretisation: phx_core::register::values::Discretisation
 pub phx_core::Distribution::exp: u8
@@ -3202,11 +2201,6 @@ pub struct phx_core::EventIntent
 pub phx_core::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>
 pub phx_core::EventIntent::kind: u16
 pub phx_core::EventIntent::subjects: alloc::vec::Vec<phx_rand::key::Subject>
-impl phx_core::events::EventIntent
-pub fn phx_core::events::EventIntent::decode(&[u64]) -> core::option::Option<phx_core::events::EventIntent>
-impl phx_core::handler::IntentDef for phx_core::events::EventIntent
-pub const phx_core::events::EventIntent::NAME: &'static str
-pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
 pub struct phx_core::EventKindDecl
 pub phx_core::EventKindDecl::clause: &'static str
 pub phx_core::EventKindDecl::name: &'static str
@@ -3228,69 +2222,12 @@ impl phx_core::events_rule::EventsRule
 pub fn phx_core::events_rule::EventsRule::new(&[phx_core::events_rule::NewsEntry], &[phx_core::events::EventKindDecl]) -> core::result::Result<phx_core::events_rule::EventsRule, alloc::string::String>
 impl phx_core::extensions::PublicEventRule for phx_core::events_rule::EventsRule
 pub fn phx_core::events_rule::EventsRule::is_public(&self, &phx_core::events::Event) -> bool
-pub struct phx_core::FacetDecl
-pub phx_core::FacetDecl::fact: &'static str
-pub phx_core::FacetDecl::kind: &'static str
-pub struct phx_core::FactColumn(_)
-impl phx_core::schema::FactColumn
-pub fn phx_core::schema::FactColumn::index(self) -> u32
-pub const fn phx_core::schema::FactColumn::new(u32) -> phx_core::schema::FactColumn
-pub struct phx_core::FactColumns
-impl phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::facts(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_
-pub fn phx_core::columns::FactColumns::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::columns::FactColumns::new(u32, &[&'static str]) -> phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::rows(&self) -> u32
-pub fn phx_core::columns::FactColumns::take_trace(&mut self) -> phx_core::family::ReadTrace
-pub fn phx_core::columns::FactColumns::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
-pub fn phx_core::columns::FactColumns::value(&self, &str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-impl phx_core::handler::FactStore for phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_store::save::Saved for phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::columns::FactColumns, phx_store::save::LoadError>
-pub fn phx_core::columns::FactColumns::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::FactDecl
 pub phx_core::FactDecl::audience: phx_core::facts::Audience
 pub phx_core::FactDecl::kinds: &'static [&'static str]
 pub phx_core::FactDecl::repr: phx_core::facts::ReprClass
 pub phx_core::FactDecl::unit: phx_num::missing::Missing<&'static str>
 pub phx_core::FactDecl::value: phx_core::facts::FactType
-pub struct phx_core::FactOverlay
-impl phx_core::handler::FactOverlay
-pub fn phx_core::handler::FactOverlay::into_writes(self) -> alloc::vec::Vec<(phx_id::ids::Slot, &'static str, i64)>
-pub fn phx_core::handler::FactOverlay::read_from(&dyn phx_core::handler::FactRead, alloc::vec::Vec<&'static str>, &[phx_id::ids::Slot]) -> phx_core::handler::FactOverlay
-impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
-pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-pub struct phx_core::FamilyCtx<'a>
-impl<'a> phx_core::family::FamilyCtx<'a>
-pub fn phx_core::family::FamilyCtx<'a>::accounts(&self) -> &dyn phx_core::family::AccountsAudit
-pub fn phx_core::family::FamilyCtx<'a>::agents(&self) -> &dyn phx_core::family::AgentsAudit
-pub fn phx_core::family::FamilyCtx<'a>::books(&self) -> &dyn phx_core::family::BooksAudit
-pub fn phx_core::family::FamilyCtx<'a>::calendar(&self) -> &phx_core::calendar::Calendar
-pub fn phx_core::family::FamilyCtx<'a>::day(&self) -> phx_id::day::Day
-pub fn phx_core::family::FamilyCtx<'a>::directory(&self) -> &phx_core::directory::Directory
-pub fn phx_core::family::FamilyCtx<'a>::events(&self) -> &phx_core::events::EventStore
-pub fn phx_core::family::FamilyCtx<'a>::legs(&self) -> &dyn phx_core::family::LegRecords
-pub fn phx_core::family::FamilyCtx<'a>::markets(&self) -> &dyn phx_core::family::MarketsAudit
-pub fn phx_core::family::FamilyCtx<'a>::messages(&self) -> &phx_core::messages::DayMessages
-pub fn phx_core::family::FamilyCtx<'a>::new(phx_core::family::AuditInputs<'a>, phx_core::family::FamilyMode) -> phx_core::family::FamilyCtx<'a>
-pub fn phx_core::family::FamilyCtx<'a>::new_events(&self) -> phx_core::family::Span
-pub fn phx_core::family::FamilyCtx<'a>::new_records(&self) -> phx_core::family::Span
-pub fn phx_core::family::FamilyCtx<'a>::own<T: 'static>(&self, &str) -> core::option::Option<&T>
-pub fn phx_core::family::FamilyCtx<'a>::records(&self) -> &phx_core::records::RecordStore
-pub fn phx_core::family::FamilyCtx<'a>::register(&self) -> &phx_core::register::Register
-pub fn phx_core::family::FamilyCtx<'a>::rolling(&self, usize) -> phx_core::family::Span
-pub fn phx_core::family::FamilyCtx<'a>::substep(&self) -> phx_core::substep::SubStep
-pub fn phx_core::family::FamilyCtx<'a>::table(&self, &str) -> &phx_core::columns::FactColumns
-pub fn phx_core::family::FamilyCtx<'a>::touched(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_core::family::FamilyCtx<'a>::trace(&self) -> core::option::Option<phx_core::family::ReadTrace>
-pub struct phx_core::FamilyDecl
-pub phx_core::FamilyDecl::clause: &'static str
-pub phx_core::FamilyDecl::mode: phx_core::family::FamilyMode
-pub phx_core::FamilyDecl::name: &'static str
-pub phx_core::FamilyDecl::owner: &'static str
 pub struct phx_core::Finding
 pub phx_core::Finding::clause: &'static str
 pub phx_core::Finding::day: phx_id::day::Day
@@ -3313,11 +2250,6 @@ pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Findi
 impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::Vec<phx_core::findings::Finding>: phx_store::save::Saved
 pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::Gap
-pub phx_core::Gap::detail: alloc::string::String
-pub phx_core::Gap::owner: phx_core::findings::FindingOwner
-pub phx_core::Gap::size: i128
-pub phx_core::Gap::unit: phx_core::findings::Unit
 pub struct phx_core::GenReport
 pub phx_core::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
 pub phx_core::GenReport::agent_issuers: u64
@@ -3336,12 +2268,6 @@ pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contributio
 impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::GoodStock
-pub phx_core::GoodStock::grade: u8
-pub phx_core::GoodStock::instrument: phx_id::ids::InstrumentId
-pub phx_core::GoodStock::issued: i64
-pub phx_core::GoodStock::product: u16
-pub phx_core::GoodStock::zone: u32
 pub struct phx_core::HazardDecl
 pub phx_core::HazardDecl::acts_on: phx_core::hazards::ActsOn
 pub phx_core::HazardDecl::clause: &'static str
@@ -3353,19 +2279,6 @@ pub phx_core::HazardDecl::source: &'static str
 pub phx_core::HazardDecl::stream: &'static str
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::HeldAway
-pub phx_core::HeldAway::free: i64
-pub phx_core::HeldAway::grade: u8
-pub phx_core::HeldAway::product: u16
-pub phx_core::HeldAway::units: i64
-pub phx_core::HeldAway::zone: u32
-pub struct phx_core::HeldRight
-pub phx_core::HeldRight::deposit: u32
-pub phx_core::HeldRight::grade: i64
-pub phx_core::HeldRight::opening: phx_num::missing::Missing<i64>
-pub phx_core::HeldRight::product: u16
-pub phx_core::HeldRight::remaining: phx_num::missing::Missing<i64>
-pub phx_core::HeldRight::zone: u32
 pub struct phx_core::Household
 pub phx_core::Household::attrs: alloc::vec::Vec<(&'static str, u32)>
 pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>
@@ -3375,16 +2288,6 @@ pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32
 pub fn phx_core::pop_process::Household::position(&self, &str) -> phx_num::missing::Missing<i64>
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>
 pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)
-pub struct phx_core::InsolvencyDecl
-pub phx_core::InsolvencyDecl::clause: &'static str
-pub phx_core::InsolvencyDecl::grace_days: &'static str
-pub phx_core::InsolvencyDecl::kind: &'static str
-pub struct phx_core::Intents
-impl phx_core::handler::Intents
-pub fn phx_core::handler::Intents::append(&mut self, phx_core::handler::Intents)
-pub fn phx_core::handler::Intents::is_empty(&self) -> bool
-pub fn phx_core::handler::Intents::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (&'static str, &[u64])> + '_
-pub fn phx_core::handler::Intents::len(&self) -> usize
 pub struct phx_core::ItemDecl
 pub phx_core::ItemDecl::clause: &'static str
 pub phx_core::ItemDecl::kind: phx_core::facts::ItemKind
@@ -3401,36 +2304,6 @@ impl phx_core::register::values::PrimType for phx_core::register::profile::Joint
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool
-pub struct phx_core::KernelMap<K, V>
-impl<K: phx_core::map::MapKey, V> phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::buckets<I>() -> alloc::vec::Vec<alloc::vec::Vec<(K, I)>>
-pub fn phx_core::map::KernelMap<K, V>::capacity(&self) -> usize
-pub fn phx_core::map::KernelMap<K, V>::clear(&mut self)
-pub fn phx_core::map::KernelMap<K, V>::drain_sorted(&mut self) -> alloc::vec::Vec<(K, V)>
-pub fn phx_core::map::KernelMap<K, V>::each(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
-pub fn phx_core::map::KernelMap<K, V>::fold<I: core::marker::Sync>(&mut self, core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<alloc::vec::Vec<(K, I)>>], impl core::ops::function::Fn() -> V + core::marker::Sync, impl core::ops::function::Fn(&mut V, &I) + core::marker::Sync) where K: core::marker::Send + core::marker::Sync, V: core::marker::Send
-pub fn phx_core::map::KernelMap<K, V>::get(&self, K) -> core::option::Option<&V>
-pub fn phx_core::map::KernelMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
-pub fn phx_core::map::KernelMap<K, V>::get_or_insert_with(&mut self, K, impl core::ops::function::FnOnce() -> V) -> &mut V
-pub fn phx_core::map::KernelMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
-pub fn phx_core::map::KernelMap<K, V>::is_empty(&self) -> bool
-pub fn phx_core::map::KernelMap<K, V>::len(&self) -> usize
-pub fn phx_core::map::KernelMap<K, V>::new() -> phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
-pub fn phx_core::map::KernelMap<K, V>::shard_of(K) -> usize
-pub fn phx_core::map::KernelMap<K, V>::sorted(&self) -> alloc::vec::Vec<(K, &V)>
-pub fn phx_core::map::KernelMap<K, V>::with_room_of(&self) -> phx_core::map::KernelMap<K, V>
-impl<K: phx_core::map::MapKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::map::KernelMap<K, V>, phx_store::save::LoadError>
-pub fn phx_core::map::KernelMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
-impl<K: phx_core::map::MapKey, V> core::default::Default for phx_core::map::KernelMap<K, V>
-pub fn phx_core::map::KernelMap<K, V>::default() -> Self
-pub struct phx_core::KernelTable
-pub phx_core::KernelTable::columns: phx_core::columns::FactColumns
-pub phx_core::KernelTable::name: &'static str
-impl phx_store::save::Saved for phx_core::columns::KernelTable where &'static str: phx_store::save::Saved, phx_core::columns::FactColumns: phx_store::save::Saved
-pub fn phx_core::columns::KernelTable::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::columns::KernelTable::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::KindDecl
 pub phx_core::KindDecl::clause: &'static str
 pub phx_core::KindDecl::legal_form: &'static str
@@ -3440,72 +2313,6 @@ pub phx_core::KindDecl::table: phx_core::kinds::KindTableRef
 impl phx_core::kinds::KindId
 pub const fn phx_core::kinds::KindId::get(self) -> u16
 pub const fn phx_core::kinds::KindId::new(u16) -> phx_core::kinds::KindId
-pub struct phx_core::KindTable<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::add(&mut self, &mut phx_store::backing::AddressSpace, phx_core::kind_tables::NewIndividual<'_>) -> phx_id::ids::Slot
-pub fn phx_core::kind_tables::KindTable<B>::arena_mut(&mut self, phx_id::ids::Slot) -> &mut phx_store::arena::ChunkArena<B>
-pub fn phx_core::kind_tables::KindTable<B>::compact_due(&mut self) -> u64
-pub fn phx_core::kind_tables::KindTable<B>::created(&self, phx_id::ids::Slot) -> phx_id::day::Day
-pub fn phx_core::kind_tables::KindTable<B>::edit_list<R>(&mut self, phx_id::ids::Slot, phx_core::kind_tables::ListKind, impl core::ops::function::FnOnce(&mut phx_store::arena::ChunkArena<B>, &mut phx_store::arena::ListRef) -> R) -> R
-pub fn phx_core::kind_tables::KindTable<B>::facet_named(&self, &str) -> core::option::Option<phx_core::schema::FactColumn>
-pub fn phx_core::kind_tables::KindTable<B>::fact(&self, phx_id::ids::Slot, phx_core::schema::FactColumn) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::id(&self) -> phx_id::ids::TableId
-pub fn phx_core::kind_tables::KindTable<B>::is_live(&self, phx_id::ids::Slot) -> bool
-pub fn phx_core::kind_tables::KindTable<B>::kind(&self) -> &'static str
-pub fn phx_core::kind_tables::KindTable<B>::list(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> phx_store::arena::ListRef
-pub fn phx_core::kind_tables::KindTable<B>::live_words(&self) -> &[u64]
-pub fn phx_core::kind_tables::KindTable<B>::new(&mut phx_store::backing::AddressSpace, &'static str, phx_id::ids::TableId, u32, u32, usize) -> phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::overwrite_words(&mut self, core::option::Option<&phx_exec::pool::Pool>, phx_core::kind_tables::ListKind, &[(phx_id::ids::Slot, usize, u64)])
-pub fn phx_core::kind_tables::KindTable<B>::party(&self, phx_id::ids::Slot) -> phx_id::ids::PartyId
-pub fn phx_core::kind_tables::KindTable<B>::remove(&mut self, phx_id::ids::Slot)
-pub fn phx_core::kind_tables::KindTable<B>::row_hint(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>
-pub fn phx_core::kind_tables::KindTable<B>::run_head(&self, phx_id::ids::Slot) -> phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::KindTable<B>::set_row_hint(&mut self, phx_id::ids::Slot, u64, usize)
-pub fn phx_core::kind_tables::KindTable<B>::set_run_head(&mut self, phx_id::ids::Slot, phx_core::kind_tables::RunHead)
-pub fn phx_core::kind_tables::KindTable<B>::shift_row_hints(&mut self, phx_id::ids::Slot, usize, (usize, bool))
-pub fn phx_core::kind_tables::KindTable<B>::site(&self, phx_id::ids::Slot) -> phx_id::ids::TileId
-pub fn phx_core::kind_tables::KindTable<B>::slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_core::kind_tables::KindTable<B>::words(&self, phx_id::ids::Slot, phx_core::kind_tables::ListKind) -> &[u64]
-pub fn phx_core::kind_tables::KindTable<B>::write_fact(&mut self, phx_id::ids::Slot, phx_core::schema::FactColumn, i64)
-impl<B: phx_store::backing::Backing> phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::take_moved(&mut self) -> alloc::vec::Vec<(&'static str, u64)>
-pub fn phx_core::kind_tables::KindTable<B>::take_undeclared(&mut self) -> usize
-pub fn phx_core::kind_tables::KindTable<B>::trace(&mut self, core::option::Option<phx_core::columns::ColumnTrace>)
-impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
-pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::kind_tables::KindTable<B> where &'static str: phx_store::save::Saved, phx_store::table::Table<B>: phx_store::save::Saved, phx_store::column::Column<u64, B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::column::Column<u16, B>>: phx_store::save::Saved, Lists<B>: phx_store::save::Saved, phx_store::column::Column<phx_core::kind_tables::RunHead, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, alloc::vec::Vec<Facet<B>>: phx_store::save::Saved, core::option::Option<phx_core::columns::ColumnTrace>: core::default::Default, usize: core::default::Default, alloc::vec::Vec<(&'static str, u64)>: core::default::Default, alloc::collections::btree::map::BTreeMap<(u32, u64), usize>: core::default::Default
-pub fn phx_core::kind_tables::KindTable<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::kind_tables::KindTable<B>::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::KinkDecl
-pub phx_core::KinkDecl::clause: &'static str
-pub phx_core::KinkDecl::name: &'static str
-pub phx_core::KinkDecl::on: phx_core::kinks::KinkOn
-pub phx_core::KinkDecl::owner: &'static str
-pub phx_core::KinkDecl::points: u16
-pub phx_core::KinkDecl::source: phx_core::kinks::KinkSource
-pub struct phx_core::KinkRegistry
-impl phx_core::kinks::KinkRegistry
-pub fn phx_core::kinks::KinkRegistry::get(&self, usize) -> core::option::Option<&phx_core::kinks::KinkDecl>
-pub fn phx_core::kinks::KinkRegistry::on(&self, phx_core::kinks::KinkOn) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::kinks::KinkDecl> + '_
-pub fn phx_core::kinks::KinkRegistry::register(&mut self, phx_core::kinks::KinkDecl) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::LegDigest
-pub phx_core::LegDigest::account: u64
-pub phx_core::LegDigest::before: i64
-pub phx_core::LegDigest::denom: u32
-pub phx_core::LegDigest::flow: i64
-pub phx_core::LegDigest::issued: phx_num::missing::Missing<i64>
-pub phx_core::LegDigest::made: phx_num::missing::Missing<u32>
-pub phx_core::LegDigest::money: bool
-pub phx_core::LegDigest::paired: bool
-pub phx_core::LegDigest::party: phx_id::ids::PartyId
-pub phx_core::LegDigest::qty: i64
-pub phx_core::LegDigest::source: phx_num::missing::Missing<phx_core::family::Transformed>
-pub phx_core::LegDigest::worn: phx_num::missing::Missing<(u32, u32)>
 pub struct phx_core::LegalForm
 pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>
 pub phx_core::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
@@ -3517,46 +2324,6 @@ impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool
 pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::Made
-pub phx_core::Made::instruction: u64
-pub phx_core::Made::legs: alloc::vec::Vec<phx_core::family::MadeLeg>
-pub phx_core::Made::way: u32
-pub struct phx_core::MadeLeg
-pub phx_core::MadeLeg::denom: u32
-pub phx_core::MadeLeg::party: phx_id::ids::PartyId
-pub phx_core::MadeLeg::qty: i64
-#[repr(C)] pub struct phx_core::Message
-impl phx_core::messages::Message
-pub fn phx_core::messages::Message::addressee(&self) -> phx_core::messages::Address
-pub fn phx_core::messages::Message::concerns(&self) -> phx_core::messages::Concerns
-pub fn phx_core::messages::Message::due(&self) -> phx_id::day::Day
-pub fn phx_core::messages::Message::id(&self) -> phx_id::ids::MsgId
-pub fn phx_core::messages::Message::issued(&self) -> phx_id::day::Day
-pub fn phx_core::messages::Message::kind(&self) -> u16
-pub fn phx_core::messages::Message::new(u16, phx_core::messages::Address, phx_core::messages::Address, phx_id::day::Day, phx_id::day::Day, phx_core::messages::Concerns) -> phx_core::messages::Message
-pub fn phx_core::messages::Message::sender(&self) -> phx_core::messages::Address
-pub fn phx_core::messages::Message::state(&self) -> phx_core::messages::MessageState
-impl phx_store::pod::Pod for phx_core::messages::Message
-pub fn phx_core::messages::Message::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_core::messages::Message
-pub struct phx_core::MessageKindDecl
-pub phx_core::MessageKindDecl::acceptance: phx_num::missing::Missing<(&'static str, &'static str)>
-pub phx_core::MessageKindDecl::answering: &'static [phx_core::messages::Answering]
-pub phx_core::MessageKindDecl::clause: &'static str
-pub phx_core::MessageKindDecl::lives_across_days: bool
-pub phx_core::MessageKindDecl::name: &'static str
-pub phx_core::MessageKindDecl::opens_commitment: bool
-pub phx_core::MessageKindDecl::pins: bool
-pub phx_core::MessageKindDecl::reaches: &'static [&'static str]
-impl phx_core::messages::MessageKindDecl
-pub fn phx_core::messages::MessageKindDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
-pub struct phx_core::MessageStore<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::messages::MessageStore<B>
-pub fn phx_core::messages::MessageStore<B>::get(&self, phx_id::ids::Slot) -> phx_core::messages::Message
-pub fn phx_core::messages::MessageStore<B>::issue(&mut self, phx_core::messages::Message) -> (phx_id::ids::MsgId, phx_id::ids::Slot)
-pub fn phx_core::messages::MessageStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::messages::MessageStore<B>
-pub fn phx_core::messages::MessageStore<B>::release(&mut self, phx_id::ids::Slot)
-pub fn phx_core::messages::MessageStore<B>::set_state(&mut self, phx_id::ids::Slot, phx_core::messages::MessageState)
 pub struct phx_core::NewEvent<'a>
 pub phx_core::NewEvent::day: phx_id::day::Day
 pub phx_core::NewEvent::details: &'a [(phx_rand::key::Subject, i64)]
@@ -3564,35 +2331,9 @@ pub phx_core::NewEvent::develops_from: phx_num::missing::Missing<u64>
 pub phx_core::NewEvent::kind: u16
 pub phx_core::NewEvent::subjects: &'a [phx_rand::key::Subject]
 pub phx_core::NewEvent::substep: phx_core::substep::SubStep
-pub struct phx_core::NewIndividual<'a>
-pub phx_core::NewIndividual::created: phx_id::day::Day
-pub phx_core::NewIndividual::party: phx_id::ids::PartyId
-pub phx_core::NewIndividual::site: phx_id::ids::TileId
-pub phx_core::NewIndividual::types: &'a [phx_core::register::values::TypeId]
 pub struct phx_core::NewsEntry
 pub phx_core::NewsEntry::kind: alloc::string::String
 pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice
-pub struct phx_core::NoGoods
-impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
 pub struct phx_core::NotObserver
 pub struct phx_core::ObserverDraws<'a>
 impl<'a> phx_core::streams::ObserverDraws<'a>
@@ -3631,24 +2372,6 @@ pub struct phx_core::OpeningPhase(pub u8)
 impl phx_core::streams::OpeningPhase
 pub fn phx_core::streams::OpeningPhase::ordinal(self) -> u8
 pub struct phx_core::OutsideAxes
-pub struct phx_core::PagedMap<K, V>
-impl<K: phx_core::pages::PageKey, V> phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::bytes(&self) -> usize
-pub fn phx_core::pages::PagedMap<K, V>::get(&self, K) -> core::option::Option<&V>
-pub fn phx_core::pages::PagedMap<K, V>::get_mut(&mut self, K) -> core::option::Option<&mut V>
-pub fn phx_core::pages::PagedMap<K, V>::insert(&mut self, K, V) -> core::option::Option<V>
-pub fn phx_core::pages::PagedMap<K, V>::is_empty(&self) -> bool
-pub fn phx_core::pages::PagedMap<K, V>::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (K, &V)> + '_
-pub fn phx_core::pages::PagedMap<K, V>::len(&self) -> usize
-pub fn phx_core::pages::PagedMap<K, V>::new() -> phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::remove(&mut self, K) -> core::option::Option<V>
-impl<K, V> core::fmt::Debug for phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
-impl<K: phx_core::pages::PageKey + phx_store::save::Saved, V: phx_store::save::Saved> phx_store::save::Saved for phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::pages::PagedMap<K, V>, phx_store::save::LoadError>
-pub fn phx_core::pages::PagedMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)
-impl<K: phx_core::pages::PageKey, V> core::default::Default for phx_core::pages::PagedMap<K, V>
-pub fn phx_core::pages::PagedMap<K, V>::default() -> Self
 pub struct phx_core::Period
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16
@@ -3787,46 +2510,6 @@ pub struct phx_core::RateFn
 pub phx_core::RateFn::axes: &'static [&'static str]
 pub phx_core::RateFn::changes: &'static [phx_core::hazards::RateChange]
 pub phx_core::RateFn::table: &'static str
-pub struct phx_core::ReadTrace
-pub phx_core::ReadTrace::duplicate_opens: usize
-pub phx_core::ReadTrace::later_writes: usize
-pub phx_core::ReadTrace::undeclared_reads: usize
-impl phx_store::save::Saved for phx_core::family::ReadTrace where usize: phx_store::save::Saved
-pub fn phx_core::family::ReadTrace::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::family::ReadTrace::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_core::Reader
-pub phx_core::Reader::day: phx_id::day::Day
-pub phx_core::Reader::kind: &'static str
-pub phx_core::Reader::party: phx_id::ids::PartyId
-pub phx_core::Reader::substep: phx_core::substep::SubStep
-pub struct phx_core::RecordEntry
-pub phx_core::RecordEntry::day: phx_id::day::Day
-pub phx_core::RecordEntry::payload: alloc::vec::Vec<u64>
-pub phx_core::RecordEntry::subject: phx_id::ids::PartyId
-pub phx_core::RecordEntry::substep: u8
-pub struct phx_core::RecordKindDecl
-pub phx_core::RecordKindDecl::audience: phx_core::facts::Audience
-pub phx_core::RecordKindDecl::clause: &'static str
-pub phx_core::RecordKindDecl::horizon: phx_core::facts::Lag
-pub phx_core::RecordKindDecl::name: &'static str
-pub phx_core::RecordKindDecl::writer: &'static str
-pub struct phx_core::RecordStamp
-pub phx_core::RecordStamp::day: phx_id::day::Day
-pub phx_core::RecordStamp::subject: phx_id::ids::PartyId
-pub phx_core::RecordStamp::substep: u8
-pub struct phx_core::RecordStore<B: phx_store::backing::Backing>
-impl<B: phx_store::backing::Backing> phx_core::records::RecordStore<B>
-pub fn phx_core::records::RecordStore<B>::dates(&self) -> alloc::vec::Vec<(phx_id::day::Day, u8)>
-pub fn phx_core::records::RecordStore<B>::hash_into(&self, &mut phx_store::hash::LogicalHasher)
-pub fn phx_core::records::RecordStore<B>::is_empty(&self) -> bool
-pub fn phx_core::records::RecordStore<B>::kinds(&self) -> &[phx_core::records::RecordKindDecl]
-pub fn phx_core::records::RecordStore<B>::len(&self) -> usize
-pub fn phx_core::records::RecordStore<B>::load_from(&mut phx_store::save::Reader<'_>, alloc::vec::Vec<phx_core::records::RecordKindDecl>) -> core::result::Result<phx_core::records::RecordStore<B>, phx_store::save::LoadError>
-pub fn phx_core::records::RecordStore<B>::new(&mut phx_store::backing::AddressSpace, alloc::vec::Vec<phx_core::records::RecordKindDecl>, u32, u32) -> phx_core::records::RecordStore<B>
-pub fn phx_core::records::RecordStore<B>::read(&self, &str, &phx_core::records::Reader, &phx_core::calendar::Calendar) -> alloc::vec::Vec<phx_core::records::RecordEntry>
-pub fn phx_core::records::RecordStore<B>::save_to(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_core::records::RecordStore<B>::stamp(&self, usize) -> core::option::Option<phx_core::records::RecordStamp>
-pub fn phx_core::records::RecordStore<B>::write(&mut self, &str, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep, &[u64])
 pub struct phx_core::Register
 impl phx_core::register::Register
 pub fn phx_core::register::Register::count(&self, &str) -> core::result::Result<u64, alloc::string::String>
@@ -3858,29 +2541,6 @@ pub struct phx_core::RoleDecl
 pub phx_core::RoleDecl::clause: &'static str
 pub phx_core::RoleDecl::name: &'static str
 pub struct phx_core::RoleId(pub &'static str)
-pub struct phx_core::RuleSig<I, O>
-pub phx_core::RuleSig::implementer: &'static str
-pub phx_core::RuleSig::name: &'static str
-impl<I, O> phx_core::rules::RuleSig<I, O>
-pub const fn phx_core::rules::RuleSig<I, O>::new(&'static str, &'static str) -> phx_core::rules::RuleSig<I, O>
-impl<I, O> core::clone::Clone for phx_core::rules::RuleSig<I, O>
-pub fn phx_core::rules::RuleSig<I, O>::clone(&self) -> Self
-impl<I, O> core::marker::Copy for phx_core::rules::RuleSig<I, O>
-pub struct phx_core::RuleTable
-impl phx_core::rules::RuleTable
-pub fn phx_core::rules::RuleTable::call<I: 'static, O: 'static>(&self, phx_core::rules::RuleSig<I, O>, &I) -> O
-pub fn phx_core::rules::RuleTable::check(&self, &[(&'static str, &'static str)]) -> core::result::Result<(), alloc::vec::Vec<alloc::string::String>>
-pub fn phx_core::rules::RuleTable::implement<I: 'static, O: 'static>(&mut self, &'static str, phx_core::rules::RuleSig<I, O>, fn(&I) -> O)
-#[repr(C)] pub struct phx_core::RunHead
-pub phx_core::RunHead::len: u32
-pub phx_core::RunHead::next_due: u32
-pub phx_core::RunHead::offset: u32
-impl phx_core::kind_tables::RunHead
-pub const phx_core::kind_tables::RunHead::EMPTY: phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::RunHead::due(self, phx_id::day::Day) -> bool
-impl phx_store::pod::Pod for phx_core::kind_tables::RunHead
-pub fn phx_core::kind_tables::RunHead::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
-impl phx_store::pod::__seal::Sealed for phx_core::kind_tables::RunHead
 pub struct phx_core::ScheduleDates
 pub phx_core::ScheduleDates::anchor: phx_id::day::Date
 pub phx_core::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention
@@ -3896,21 +2556,10 @@ pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::sa
 pub struct phx_core::SetupValue
 pub phx_core::SetupValue::derived: &'static str
 pub phx_core::SetupValue::prim: &'static phx_core::register::PrimDecl
-pub struct phx_core::Span
-pub phx_core::Span::end: usize
-pub phx_core::Span::start: usize
-impl phx_core::family::Span
-pub fn phx_core::family::Span::iter(self) -> impl core::iter::traits::iterator::Iterator<Item = usize>
 pub struct phx_core::SpoilageDecl
 pub phx_core::SpoilageDecl::clause: &'static str
 pub phx_core::SpoilageDecl::rates: fn(&phx_core::register::Register) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub phx_core::SpoilageDecl::visit: &'static str
-pub struct phx_core::StockDay
-pub phx_core::StockDay::account: u64
-pub phx_core::StockDay::opening: i64
-pub phx_core::StockDay::traded: i128
-pub phx_core::StockDay::transformed: alloc::vec::Vec<(phx_core::family::Transformed, i128, i128)>
-pub phx_core::StockDay::unaccounted: i128
 pub struct phx_core::StreamDecl
 pub phx_core::StreamDecl::clause: &'static str
 pub phx_core::StreamDecl::keyed: bool
@@ -3955,21 +2604,7 @@ impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>
 pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool
-pub struct phx_core::TableToday
-pub phx_core::TableToday::reasons: alloc::vec::Vec<u16>
-pub phx_core::TableToday::slots: alloc::vec::Vec<phx_id::ids::Slot>
-pub phx_core::TableToday::table: phx_id::ids::TableId
 pub struct phx_core::TermsToken(_)
-pub struct phx_core::TodayAgenda
-pub phx_core::TodayAgenda::day: phx_id::day::Day
-pub phx_core::TodayAgenda::per_table: alloc::vec::Vec<phx_core::agenda::TableToday>
-pub struct phx_core::TouchedRows
-impl phx_core::touched::TouchedRows
-pub fn phx_core::touched::TouchedRows::clear(&mut self)
-pub fn phx_core::touched::TouchedRows::count(&self) -> u64
-pub fn phx_core::touched::TouchedRows::mark(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub fn phx_core::touched::TouchedRows::rows(&self, phx_id::ids::TableId) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_core::touched::TouchedRows::tables(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::TableId> + '_
 #[repr(transparent)] pub struct phx_core::TypeId(_)
 impl phx_core::register::values::TypeId
 pub const fn phx_core::register::values::TypeId::get(self) -> u16
@@ -3983,13 +2618,6 @@ pub struct phx_core::TypeShare
 pub phx_core::TypeShare::id: phx_core::register::values::TypeId
 pub phx_core::TypeShare::share_ppm: u32
 pub phx_core::TypeShare::value: i64
-pub struct phx_core::VisitDecl
-pub phx_core::VisitDecl::cadence: phx_core::visit::Cadence
-pub phx_core::VisitDecl::clause: &'static str
-pub phx_core::VisitDecl::handler: &'static str
-pub phx_core::VisitDecl::kind: &'static str
-pub phx_core::VisitDecl::stream: &'static str
-pub phx_core::VisitDecl::wakes: &'static [phx_core::schedule::WakeKind]
 pub struct phx_core::WearDecl
 pub phx_core::WearDecl::clause: &'static str
 pub phx_core::WearDecl::specs: fn(&phx_core::register::Register) -> core::result::Result<alloc::vec::Vec<phx_core::wear::WearSpec>, alloc::string::String>
@@ -4000,14 +2628,6 @@ pub phx_core::WearSpec::tag: u32
 pub phx_core::WearSpec::values: alloc::vec::Vec<f64>
 pub struct phx_core::WeekendRule
 pub phx_core::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>
-pub struct phx_core::Worn
-pub phx_core::Worn::instruction: u64
-pub phx_core::Worn::legs: alloc::vec::Vec<phx_core::family::WornLeg>
-pub struct phx_core::WornLeg
-pub phx_core::WornLeg::chain: u32
-pub phx_core::WornLeg::class: u32
-pub phx_core::WornLeg::party: phx_id::ids::PartyId
-pub phx_core::WornLeg::qty: i64
 pub struct phx_core::WriteRecord
 pub phx_core::WriteRecord::amount: i128
 pub phx_core::WriteRecord::counter: phx_id::ids::PartyId
@@ -4016,7 +2636,6 @@ pub phx_core::WriteRecord::party: phx_id::ids::PartyId
 impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)
-pub const phx_core::AUDIT_SUBSTEP: phx_core::substep::SubStep
 pub const phx_core::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl
 pub const phx_core::CONTRACTS: phx_core::streams::OpeningPhase
@@ -4032,32 +2651,6 @@ pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::PUBLIC_EVENTS: phx_core::register::PrimDecl
 pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
-pub trait phx_core::AccountsAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::AccountsAudit::claims(&self) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub fn phx_core::AccountsAudit::equity(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::AccountsAudit::income(&self) -> i128
-pub fn phx_core::AccountsAudit::parties(&self) -> usize
-pub fn phx_core::AccountsAudit::periods(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub trait phx_core::AgentsAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::AgentsAudit::agent(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::AgentsAudit::agents(&self) -> usize
-pub fn phx_core::AgentsAudit::populations(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub trait phx_core::AuditFamily: core::marker::Send + core::marker::Sync
-pub fn phx_core::AuditFamily::check(&self, &phx_core::family::FamilyCtx<'_>, &mut phx_core::findings::Findings) -> u64
-pub fn phx_core::AuditFamily::decl(&self) -> phx_core::family::FamilyDecl
-pub fn phx_core::AuditFamily::inject(&self, &mut dyn phx_core::family::InjectTarget) -> core::result::Result<(), alloc::string::String>
-pub trait phx_core::AuditStream
-pub fn phx_core::AuditStream::applied(&mut self, u64)
-pub fn phx_core::AuditStream::leg(&mut self, u64, phx_core::family::LegDigest)
-pub fn phx_core::AuditStream::touched(&mut self, phx_id::ids::TableId, phx_id::ids::Slot)
-pub trait phx_core::BooksAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::BooksAudit::contracts(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::BooksAudit::good(&self, u64) -> phx_num::missing::Missing<phx_core::family::GoodStock>
-pub fn phx_core::BooksAudit::instruments(&self) -> usize
-pub fn phx_core::BooksAudit::lines(&self) -> usize
-pub fn phx_core::BooksAudit::money(&self, core::ops::range::Range<usize>) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::BooksAudit::ownership(&self, usize) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::BooksAudit::position(&self, phx_id::ids::PartyId, u64) -> i64
 pub trait phx_core::Contribution: core::marker::Send + core::marker::Sync
 pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::Opening<'_>)
 pub fn phx_core::Contribution::derived(&self) -> &'static [&'static str]
@@ -4066,111 +2659,8 @@ pub fn phx_core::Contribution::name(&self) -> &'static str
 pub fn phx_core::Contribution::phase(&self) -> phx_core::streams::OpeningPhase
 pub fn phx_core::Contribution::reads(&self) -> &'static [&'static str]
 pub fn phx_core::Contribution::writes(&self) -> &'static [&'static str]
-pub trait phx_core::DrawsFrom<S: phx_core::streams::StreamDef>
-pub trait phx_core::Emits<I: phx_core::handler::IntentDef>
 pub trait phx_core::FactDef
 pub const phx_core::FactDef::ITEM: phx_core::facts::ItemDecl
-pub trait phx_core::FactRead: core::marker::Sync
-pub fn phx_core::FactRead::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-impl<B: phx_store::backing::Backing> phx_core::handler::FactRead for phx_core::kind_tables::KindTable<B> where phx_core::kind_tables::KindTable<B>: core::marker::Sync
-pub fn phx_core::kind_tables::KindTable<B>::peek(&self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub trait phx_core::FactStore
-pub fn phx_core::FactStore::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::FactStore::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::column_facts::ColumnFacts<'_>
-pub fn phx_core::column_facts::ColumnFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::ColumnFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::column_facts::RecordFacts<'_>
-pub fn phx_core::column_facts::RecordFacts<'_>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::column_facts::RecordFacts<'_>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::columns::FactColumns
-pub fn phx_core::columns::FactColumns::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::columns::FactColumns::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl phx_core::handler::FactStore for phx_core::handler::FactOverlay
-pub fn phx_core::handler::FactOverlay::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::FactOverlay::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-impl<B: phx_store::backing::Backing> phx_core::handler::FactStore for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::read(&mut self, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::kind_tables::KindTable<B>::write(&mut self, &'static str, phx_id::ids::Slot, i64)
-pub trait phx_core::GoodsView: core::fmt::Debug
-pub fn phx_core::GoodsView::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::GoodsView::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::GoodsView::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::GoodsView::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::GoodsView::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::GoodsView::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::GoodsView::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::GoodsView::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::GoodsView::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::GoodsView::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::GoodsView::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::GoodsView::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::GoodsView::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-impl phx_core::handler::GoodsView for phx_core::handler::NoGoods
-pub fn phx_core::handler::NoGoods::away(&self, phx_id::ids::Slot, u16, u8) -> alloc::vec::Vec<phx_core::handler::Away>
-pub fn phx_core::handler::NoGoods::country(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::CountryId>
-pub fn phx_core::handler::NoGoods::delivered(&self, phx_id::ids::Slot, u16) -> i64
-pub fn phx_core::handler::NoGoods::elsewhere(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldAway]
-pub fn phx_core::handler::NoGoods::goods(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldGood]
-pub fn phx_core::handler::NoGoods::grades(&self, u16) -> alloc::vec::Vec<u8>
-pub fn phx_core::handler::NoGoods::held(&self, phx_id::ids::Slot, u16, u8) -> i64
-pub fn phx_core::handler::NoGoods::mark(&self, phx_id::ids::Slot, u16, u8) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::money(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::net_assets(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::outlook(&self, phx_id::ids::Slot, u16, u8, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::party(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<phx_id::ids::PartyId>
-pub fn phx_core::handler::NoGoods::plant(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldPlant]
-pub fn phx_core::handler::NoGoods::posted(&self, phx_id::ids::Slot, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::record(&self, phx_id::ids::Slot, u16, u16) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::rights(&self, phx_id::ids::Slot) -> &[phx_core::handler::HeldRight]
-pub fn phx_core::handler::NoGoods::staff_hours(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::handler::NoGoods::unsold(&self, phx_id::ids::Slot, u16, u8) -> bool
-pub fn phx_core::handler::NoGoods::zone(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>
-pub trait phx_core::HandlerDecl: 'static
-pub const phx_core::HandlerDecl::CLAUSE: &'static str
-pub const phx_core::HandlerDecl::INTENTS: &'static [&'static str]
-pub const phx_core::HandlerDecl::NAME: &'static str
-pub const phx_core::HandlerDecl::READS: &'static [&'static str]
-pub const phx_core::HandlerDecl::RUN: phx_num::missing::Missing<phx_core::handler::RunChunk>
-pub const phx_core::HandlerDecl::STREAMS: &'static [&'static str]
-pub const phx_core::HandlerDecl::SUBSTEP: phx_core::substep::SubStep
-pub const phx_core::HandlerDecl::TABLE: &'static str
-pub const phx_core::HandlerDecl::WRITES: &'static [&'static str]
-pub trait phx_core::InjectTarget
-pub fn phx_core::InjectTarget::accounts(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::InjectTarget::add_event(&mut self, phx_rand::key::Subject, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
-pub fn phx_core::InjectTarget::add_record(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::substep::SubStep) -> core::result::Result<(), alloc::string::String>
-pub fn phx_core::InjectTarget::agents(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::InjectTarget::books(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::InjectTarget::day(&self) -> phx_id::day::Day
-pub fn phx_core::InjectTarget::fact(&self, &str, &'static str, phx_id::ids::Slot) -> phx_num::missing::Missing<i64>
-pub fn phx_core::InjectTarget::live_party(&self) -> core::option::Option<phx_id::ids::PartyId>
-pub fn phx_core::InjectTarget::markets(&mut self) -> &mut dyn core::any::Any
-pub fn phx_core::InjectTarget::own(&mut self, &str) -> core::option::Option<&mut dyn core::any::Any>
-pub fn phx_core::InjectTarget::set_fact(&mut self, &str, &'static str, phx_id::ids::Slot, i64) -> core::result::Result<(), alloc::string::String>
-pub fn phx_core::InjectTarget::stream(&mut self) -> &mut dyn phx_core::family::AuditStream
-pub fn phx_core::InjectTarget::unhanded_party(&self) -> phx_id::ids::PartyId
-pub trait phx_core::IntentDef
-pub const phx_core::IntentDef::NAME: &'static str
-pub fn phx_core::IntentDef::encode(&self, &mut alloc::vec::Vec<u64>)
-impl phx_core::handler::IntentDef for phx_core::events::EventIntent
-pub const phx_core::events::EventIntent::NAME: &'static str
-pub fn phx_core::events::EventIntent::encode(&self, &mut alloc::vec::Vec<u64>)
-pub trait phx_core::LegRecords: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::LegRecords::flow_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::LegRecords::instructions(&self) -> u64
-pub fn phx_core::LegRecords::made(&self) -> alloc::vec::Vec<phx_core::family::Made>
-pub fn phx_core::LegRecords::money_gaps(&self) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::LegRecords::positions(&self) -> u64
-pub fn phx_core::LegRecords::stocks(&self) -> alloc::vec::Vec<phx_core::family::StockDay>
-pub fn phx_core::LegRecords::unit_gaps(&self, &dyn phx_core::family::BooksAudit) -> alloc::vec::Vec<phx_core::family::Gap>
-pub fn phx_core::LegRecords::worn(&self) -> alloc::vec::Vec<phx_core::family::Worn>
 pub trait phx_core::Limited: core::marker::Copy
 pub fn phx_core::Limited::smallest_units(self) -> i128
 pub fn phx_core::Limited::split(Self, Self) -> (Self, Self)
@@ -4189,28 +2679,6 @@ pub fn phx_num::qty::Qty::split(phx_num::qty::Qty, phx_num::qty::Qty) -> (phx_nu
 impl phx_core::register::limit::Limited for phx_num::qty::QtyRaw
 pub fn phx_num::qty::QtyRaw::smallest_units(self) -> i128
 pub fn phx_num::qty::QtyRaw::split(phx_num::qty::QtyRaw, phx_num::qty::QtyRaw) -> (phx_num::qty::QtyRaw, phx_num::qty::QtyRaw)
-pub trait phx_core::MapKey: core::marker::Copy + core::cmp::Eq + core::hash::Hash + core::cmp::Ord
-pub fn phx_core::MapKey::key64(self) -> u64
-impl phx_core::map::MapKey for (phx_id::ids::PartyId, u64)
-pub fn (phx_id::ids::PartyId, u64)::key64(self) -> u64
-impl phx_core::map::MapKey for phx_id::ids::InstrumentId
-pub fn phx_id::ids::InstrumentId::key64(self) -> u64
-impl phx_core::map::MapKey for phx_id::ids::LineId
-pub fn phx_id::ids::LineId::key64(self) -> u64
-impl phx_core::map::MapKey for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::key64(self) -> u64
-impl phx_core::map::MapKey for u64
-pub fn u64::key64(self) -> u64
-pub trait phx_core::MarketsAudit: core::fmt::Debug + core::marker::Sync
-pub fn phx_core::MarketsAudit::prices(&self, phx_id::day::Day) -> (u64, alloc::vec::Vec<phx_core::family::Gap>)
-pub trait phx_core::MessageDef
-pub const phx_core::MessageDef::DECL: phx_core::messages::MessageKindDecl
-pub trait phx_core::PageKey: core::marker::Copy + core::cmp::Ord
-pub fn phx_core::PageKey::from_index(u64) -> Self
-pub fn phx_core::PageKey::index(self) -> u64
-impl phx_core::pages::PageKey for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::from_index(u64) -> phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::index(self) -> u64
 pub trait phx_core::PopProcess: core::marker::Send + core::marker::Sync
 pub fn phx_core::PopProcess::bind(&mut self, &phx_core::register::Register)
 pub fn phx_core::PopProcess::changes_after(&self, &phx_core::pop_process::Person, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>
@@ -4310,7 +2778,6 @@ impl phx_core::decisions::QueuedPayload for i64
 pub fn i64::decode(&[i64]) -> core::option::Option<i64>
 impl phx_core::decisions::QueuedPayload for usize
 pub fn usize::decode(&[i64]) -> core::option::Option<usize>
-pub trait phx_core::Reads<F: phx_core::facts::FactDef>
 pub trait phx_core::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)
 pub fn phx_core::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>
@@ -4320,11 +2787,6 @@ pub const phx_core::StreamDef::DECL: phx_core::streams::StreamDecl
 pub trait phx_core::System: core::marker::Send + core::marker::Sync + 'static
 pub const phx_core::System::CODE: &'static str
 pub fn phx_core::System::declare(&mut phx_core::system::Declarations)
-pub trait phx_core::TableSchema
-pub fn phx_core::TableSchema::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-impl<B: phx_store::backing::Backing> phx_core::schema::TableSchema for phx_core::kind_tables::KindTable<B>
-pub fn phx_core::kind_tables::KindTable<B>::add_fact(&mut self, &mut phx_store::backing::AddressSpace, &'static str, &phx_core::facts::FactDecl) -> core::result::Result<phx_core::schema::FactColumn, alloc::string::String>
-pub trait phx_core::Writes<F: phx_core::facts::FactDef>
 pub fn phx_core::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date
 pub fn phx_core::annual_to_daily(f64, u32) -> f64
 pub fn phx_core::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>
@@ -4336,12 +2798,6 @@ pub fn phx_core::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::d
 pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_core::register::profile::Pinned], u8, &mut phx_rand::draws::Draws) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
-pub fn phx_core::fact_scale(phx_core::facts::ItemDecl) -> f64
 pub fn phx_core::next_due(&phx_core::calendar::Calendar, phx_id::ids::CountryId, phx_core::schedule::DecisionSchedule, phx_core::schedule::Phase, phx_id::day::Day) -> phx_id::day::Day
 pub fn phx_core::opening_subject(u32, u32) -> phx_rand::key::Subject
 pub fn phx_core::read_data(&std::path::Path, &[(phx_id::ids::CountryId, &str)]) -> core::result::Result<alloc::vec::Vec<phx_core::register::DataFile>, alloc::string::String>
-pub fn phx_core::rolling_slice(usize, u16, phx_id::day::Day) -> phx_core::family::Span
-pub type phx_core::HeldGood = (u16, u8, i64)
-pub type phx_core::HeldPlant = (u8, u8, i64)
-pub type phx_core::Opened = (&'static str, u64)
-pub type phx_core::RunChunk = fn(phx_core::handler::CtxParts<'_, dyn phx_core::handler::FactStore>, core::ops::range::Range<u32>)

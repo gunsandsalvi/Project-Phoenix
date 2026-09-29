@@ -9,7 +9,6 @@ use crate::kinds::KindDecl;
 use crate::pop::{PopEntry, PopKindBuilder};
 use crate::register::values::PrimType;
 use crate::register::{Prim, PrimDecl, RegisterBuilder};
-use crate::rules::{RuleSig, RuleTable};
 use crate::streams::StreamDecl;
 
 /// A system: a zero-sized type that declares what it owns.
@@ -36,7 +35,6 @@ pub struct Declarations {
     pub streams: Vec<(&'static str, StreamDecl)>,
     pub hazards: Vec<(&'static str, HazardDecl)>,
     pub decisions: Vec<DecisionMeta>,
-    pub rules: RuleTable,
     pub events: Vec<(&'static str, EventKindDecl)>,
     /// Each market kind a system declares, the template of its instances; opaque here, since the kernel crate that
     /// knows markets lies above this one.
@@ -102,10 +100,6 @@ impl Declarations {
     pub fn decision<I, O>(&mut self, decl: &DecisionPointDecl<I, O>) {
         let valid = decl.validate().map_err(|_| "no schedule and no wake");
         self.decisions.push(DecisionMeta { name: decl.name, system: decl.system, valid });
-    }
-
-    pub fn implement<I: 'static, O: 'static>(&mut self, sig: RuleSig<I, O>, f: fn(&I) -> O) {
-        self.rules.implement(self.system, sig, f);
     }
 
     pub fn event(&mut self, decl: EventKindDecl) {

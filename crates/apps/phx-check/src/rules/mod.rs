@@ -115,7 +115,7 @@ pub const RULES: &[Rule] = &[
         since: "S0.11",
         run: live_checks::run,
     },
-    Rule { id: "PC-21", title: "handlers name only the table's sub-steps", since: "S0.11", run: substeps::run },
+    Rule { id: "PC-21", title: "the code names only the table's sub-steps", since: "S0.11", run: substeps::run },
     Rule { id: "PC-22", title: "the audit reads the world only", since: "S0.12", run: audit_reads::run },
     Rule { id: "PC-23", title: "places belong to phx-geo", since: "S0.13", run: places::run },
     Rule {
