@@ -120,7 +120,7 @@ impl Core {
     }
 
     /// A party's bank on the core, by its account.
-    fn bank_of(&self, party: PartyKey) -> Option<PartyKey> {
+    pub(crate) fn bank_of(&self, party: PartyKey) -> Option<PartyKey> {
         let bank = self.bank_kind?;
         let b = self.kinds.get(usize::from(party.kind()))?.accounts.as_ref()?.bank.get(party.slot())?;
         (b != phx_core::settle::AT_ISSUER).then(|| PartyKey::new(bank, Slot::new(b)))

@@ -587,3 +587,29 @@ pub const LC_1_04: Check = live_check! {
     from_step: "S1.01",
     check: outlooks_are_own,
 };
+
+/// Every loan disbursed was lent by the borrower's own bank, a deposit made at the lender, and the money family, which
+/// reconciles each issuer's money to what its accounts moved, is clean.
+fn loans_make_deposits(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().days;
+    let lent: u64 = days.iter().map(|d| d.lent).sum();
+    if lent == 0 {
+        return Outcome::NotYet("no loan was disbursed in the run");
+    }
+    if let Some(d) = days.iter().find(|d| d.lent_elsewhere > 0) {
+        return Outcome::Fail(format!(
+            "day {}: {} loans lent by a bank the borrower holds no account at",
+            d.day.get(),
+            d.lent_elsewhere
+        ));
+    }
+    family_clean(w, "money")
+}
+
+pub const LC_1_26: Check = live_check! {
+    id: "LC-1-26",
+    title: "MON.6 in practice: every new loan's disbursement created a deposit at the lender, and money-stock \
+            changes reconcile to issuers' transactions",
+    from_step: "S1.09",
+    check: loans_make_deposits,
+};

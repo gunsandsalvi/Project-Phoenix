@@ -100,6 +100,9 @@ pub struct CoreDay {
     pub breaks: u64,
     /// The core's day's time, its chance and settlement together, by the run's clock.
     pub ns: u64,
+    /// The loans disbursed, and of them those a bank other than the borrower's own disbursed.
+    pub lent: u64,
+    pub lent_elsewhere: u64,
 }
 
 /// The day's working state, kept across days so a day allocates nothing once the heaviest has sized it.
@@ -493,6 +496,8 @@ impl Core {
             estates: 0,
             breaks: 0,
             ns: 0,
+            lent: 0,
+            lent_elsewhere: 0,
         };
         let before = self.money_totals();
         for family in &mut self.families {
@@ -508,6 +513,12 @@ impl Core {
             settling = self.estates_pay(day, calendar, buf);
             buf.append(&mut self.pending);
             self.lend_shortfalls(day, calendar, buf);
+            for f in buf.iter().filter(|f| f.reason == crate::consts::reason::LENT) {
+                record.lent += 1;
+                if self.bank_of(f.payee) != Some(f.payer) {
+                    record.lent_elsewhere += 1;
+                }
+            }
             // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
             record.flows = phx_rand::float::len_u64(buf.len());
             record.gross = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
