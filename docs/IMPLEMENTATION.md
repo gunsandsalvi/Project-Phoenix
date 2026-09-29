@@ -901,7 +901,10 @@ world switches to the core.
     the next round, where `LAB.price_outlook`'s placeholder stood (retired; before the index's first change is
     published, prices held, the opening's present prices being all a household has seen). Measured (120 days,
     150,000 persons, seed 1): after February's 16% rise in the developed country's index, 4,619 of 9,158 reviewed
-    asked more than their work pays and applied on from their jobs (2,770 before), 128 moving job to job. The day's
+    asked more than their work pays and applied on from their jobs (2,770 before), 128 moving job to job. An employee
+    offered less than its reservation — the least it works for (LAB.5) — quits for search rather than working on at the
+    offer: over 120 days the 1,389 offers of a cut all fell below their employees' reservations and each quit, and
+    unemployment in the developed country reached 8.5% by March (6.9% when they worked on at the cut). The day's
     pay rounds are answered together, one search per country: answered one by one, each search weighed every open
     vacancy, and the smoke's median turn rose from 1,569 ms to 2,674 ms (now 1,601 ms, worst 4,861 ms). Each
     method's lag behind a series' turns is counted in prints (VAL.13, LC-1-43 passes): over 120 days the trend and the

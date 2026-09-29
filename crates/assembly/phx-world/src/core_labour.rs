@@ -61,12 +61,13 @@ pub struct LabourDay {
     pub open: u64,
     pub searching: u64,
     /// The contracts whose pay round came, those raised and cut, the employees who applied on from their job at it,
-    /// and the hires of employees, who quit their job for the offer.
+    /// the hires of employees, who quit their job for the offer, and those who quit at their round for search.
     pub reviewed: u64,
     pub raised: u64,
     pub cut: u64,
     pub searching_on: u64,
     pub job_to_job: u64,
+    pub quits: u64,
 }
 
 /// A contract's offer at its pay round, waiting for its employee's answer: the contract, its household and person, its
@@ -84,14 +85,15 @@ pub struct Offered {
     pub seeker: Seeker,
 }
 
-/// A day's pay rounds: the contracts reviewed, those raised and cut, and the employees whose counter the work could
-/// not pay, who took the offer and applied to the vacancies they saw.
+/// A day's pay rounds: the contracts reviewed, those raised and cut, the employees whose counter the work could not
+/// pay, who took the offer and applied to the vacancies they saw, and those offered less than they work for, who quit.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Reviews {
     pub reviewed: u64,
     pub raised: u64,
     pub cut: u64,
     pub searching_on: u64,
+    pub quits: u64,
 }
 
 /// Labour's state on the core, kept from day to day.
@@ -343,6 +345,7 @@ impl Core {
         (record.reviewed, record.raised, record.cut, record.searching_on) =
             (r.reviewed, r.raised, r.cut, r.searching_on);
         record.job_to_job = std::mem::take(&mut self.labour.job_to_job);
+        record.quits = r.quits;
         self.keep_vacancies();
         record.open = self.labour.vacancies.iter().map(|v| u64::from(v.open)).sum();
         record.searching = len_u64(self.labour.searching.len());
@@ -665,9 +668,10 @@ impl Core {
 
     /// The day's pay rounds answered: each employee offered sees the vacancies a week's search of its own draws, in
     /// one search of its country's, and answers from its reservation, the best of them and the prices it expects by
-    /// the next round; the two conclude, or, where the work cannot pay its counter, it works on at the offer and applies
-    /// to the vacancies it saw, quitting when one of them offers it the job.
-    #[clause("LAB.17", "LAB.6", "LAB.8")]
+    /// the next round; the two conclude, or, where the work cannot pay its counter, it quits for search if the offer
+    /// is below its reservation, and otherwise works on at the offer and applies to the vacancies it saw, quitting when
+    /// one of them offers it the job.
+    #[clause("LAB.17", "LAB.5", "LAB.6", "LAB.8")]
     fn answer_reviews(&mut self, ctx: &LabourCtx<'_>, day: Day) {
         let offered = std::mem::take(&mut self.labour.offered);
         if offered.is_empty() {
@@ -709,6 +713,20 @@ impl Core {
             let answer = (ctx.kind.answer.rule)(&input);
             let concluded = match (ctx.kind.conclude)(o.offer, answer, o.revenue) {
                 Missing::Present(point) => point,
+                // An offer below what it works for is one it leaves for search; above it, it works on at the offer
+                // and applies to the vacancies it saw.
+                Missing::Absent if ctx.wage_at(&law, o.offer) < o.reservation => {
+                    let amount = self.families.get_mut(o.family).and_then(|f| {
+                        let row = f.store.edges.row(o.edge).filter(|_| f.store.edges.is_open(o.edge))?;
+                        f.store.close(o.edge);
+                        Some(row.amount)
+                    });
+                    if let Some(amount) = amount {
+                        self.searches_again(ctx, (o.seeker.household, o.seeker.person), amount, &law);
+                        self.labour.reviewing.quits += 1;
+                    }
+                    continue;
+                }
                 Missing::Absent => {
                     self.labour.on_the_job.extend(apps);
                     self.labour.reviewing.searching_on += 1;

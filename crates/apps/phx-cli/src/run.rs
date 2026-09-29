@@ -305,6 +305,7 @@ fn labour_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
                 "cut": d.cut,
                 "searching_on": d.searching_on,
                 "job_to_job": d.job_to_job,
+                "quits": d.quits,
             })
         })
         .collect()
