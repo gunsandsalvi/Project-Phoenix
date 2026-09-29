@@ -728,7 +728,7 @@ core when it becomes the next step, before its code (§0.1 rule 3).
 
 ### S1.24 — Stage 1's world on the core, with one kind of firm
 
-**Status**: building (a, b and c done; the committed world is the core's; d–g on the core; e's outlooks, stances, pay rounds and attention built, attention to be read at the next run; S1.26's decision core done, every decision on it; then the rest: h, the old kernel's crates, the core's day on the pool)
+**Status**: building (a, b and c done; j, one consistent dataset, next; the committed world is the core's; d–g on the core; e's outlooks, stances, pay rounds and attention built, attention to be read at the next run; S1.26's decision core done, every decision on it; then the rest: h, the old kernel's crates, the core's day on the pool)
 
 **Clauses**: Stage 1's systems as built: TEC, FRM, CAP, GDS, SRV, FRT, LAB, BNK, HH, IDX, VAL; the firm as one kind
 (FRM.23 restated); GEN.2 *(firm sizes derived)*; N1, N2; ACC.3, ACC.4, ACC.8, ACC.10–ACC.13, ACC.16 and FRM.17 *(moved from S0.19
@@ -1121,6 +1121,44 @@ world switches to the core.
     by their terms' shape (households' drawn by BNK's rule and apportioned the sheet's loans to households by income, firms' dealt from the sheet by turnover); income tax
     withheld from wages by band, consumption tax at the till, the benefit claimed on a job lost and ended at a hire;
     the money check counting what banks and parties pay each other.
+  - j. **One consistent dataset** (owner, 2026-09-29: every table the opening reads agrees with every other; no
+    sparse, unconnected tables). Each fact the opening reads has one table; any other table that touches it is
+    derived from it in the same derivation, or is a shape the opening scales to its total; the derivation and the
+    assembly's check test every identity across tables and refuse a break; a table nothing reads is deleted, its
+    sources kept. Found at the smoke after the reviews (150,000 persons, seed 1): 4,238 of 20,538 firms wound down in
+    four days. Each firm posts its markup over its own cost, but an employee's wage is the profile's mean wage times
+    its household's drawn income multiple (`DEM.income_shape`), whatever its occupation, activity or employer, so a
+    unit's cost at the opening spans 24 times within a product (its 10th to 90th percentile), the output each firm
+    was dealt at its productivity's price is not what it can sell at its own, and the dear firms sell 4% of what they
+    expect. Measured across the tables (the three groups' medians):
+    - hours: the ways' hours a unit times the flows' output ask 1,020, 911 and 525 hours a head a year of the
+      developed, emerging and developing groups; at seed 1's drawn countries they employ, over a full-time year, 1.20,
+      0.97 and 0.33 times the employed (c, above);
+    - occupations: persons are drawn by `LAB.occupation_shares`, firms need the ways' mix (developing: skilled
+      agriculture 0.42 of persons, 0.27 of the hours; crafts 0.09 against 0.20);
+    - the labour share: the profile draws 0.56 (developed), the flows' value added pays 0.48;
+    - the profile draws values the flows or stocks already hold and nothing reads (tax revenue, social spending, the
+      sector ratios, trade in a closed economy, investment, the banks' and central bank's assets, home ownership,
+      household wealth to income); `FRM.industry_by_size`, `FRM.product_share` and `PEN.*` are read by nothing;
+      `GEN.occupation_pay` is declared and unread.
+    - j1. **Labour from the flows**: each country's ways' hours a unit are its group's scaled by one factor, so the
+      hours its firms' output takes are the hours its employed work (its labour productivity, GDP over hours, an
+      identity of the accounts, GEN.4); a person's occupation is drawn from the ways' mix of hours at the country's
+      output, each occupation's sexes by `LAB.occupation_shares`; a job's wage an hour is its activity's compensation
+      in the flows over the activity's hours, shared over its occupations by `GEN.occupation_pay`, so the wages sum to
+      the flows' compensation and every firm's unit cost is its way's at its productivity. The income multiple is
+      retired; the incomes that result are read against `DEM.income_shape` as a measure (N3). GEN.2 and GEN.15
+      restated.
+    - j2. **The profile and the flows**: each drawn value the flows hold moves them as the drawn debts move the stocks
+      (the labour share splits value added; investment and collective consumption set their final uses), with the
+      dataset's closures; a drawn value nothing reads and no closure takes is dropped from the profile.
+    - j3. **Firms**: the unread firm tables deleted; firms per employed kept.
+    - j4. **The state**: the tax bands and rates and the benefits' coverage against the flows' taxes and social
+      spending, measured at the opening's first year and made one.
+    - j5. **Households' holdings**: accounts and borrowing, tenure and costs, and the wealth shape as shapes scaled
+      to the stocks' totals, each checked.
+    - j6. **The derivation's check**: one derivation writes every profile table; its check and the assembly's cover
+      every identity above.
 - **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
   birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
   by that identity, never by its place in its household (c, with the employment contracts, the pensions moving to it);
