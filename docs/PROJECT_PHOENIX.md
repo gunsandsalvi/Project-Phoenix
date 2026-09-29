@@ -2359,7 +2359,9 @@ consumed, spoiled.
 
 - **GDS.1 STATE** — A good is keyed by **grade and place**: the same grade in two places is two things with
   two prices; the gap between them is a read (FRT.10), an outcome of shippers who carry goods when it exceeds what
-  carrying costs (FRT.5).
+  carrying costs (FRT.5). A grade declares its **content** per unit — the metal in a tonne of ore, the heat in a tonne
+  of coal — and a way states a graded input in content, so a richer grade yields more in use and grades are priced
+  against each other by what they yield.
 - **GDS.2 STATE** — Stocks are holdings of lots at a site, each with its cost (ACC.6); goods in transit are
   their owner's, pledged to the carrier until they arrive (FRT).
 - **GDS.3 STATE** — A **commodity** is a standardised good extracted from a deposit (GEO.6) or grown on land the
@@ -2405,7 +2407,8 @@ consumed, spoiled.
 
 **Primitives**
 
-- **GDS.13 PRIMITIVE** — Grades, spoilage rates, storage technology (TECHNOLOGY); deposits (ENDOWMENT).
+- **GDS.13 PRIMITIVE** — Grades and each grade's content per unit, spoilage rates, storage technology (TECHNOLOGY);
+  deposits (ENDOWMENT).
 
 **Out of scope**
 
@@ -5536,10 +5539,10 @@ Decisions taken in writing this version, and decisions still open.
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
 it.
 
-45. **How a commodity's grade enters use** (GDS.1, GDS.13, TEC.9). A good is keyed by grade, and a way states its
-    inputs by product. Whether a richer grade yields more in use — more metal from a tonne of ore, more heat from a
-    tonne of coal — and so what sets one grade's price against another's, the text does not say. Until it is decided,
-    a way takes an input's units of any grade alike.
+45. **How a commodity's grade enters use** (GDS.1, GDS.13, TEC.9; owner, 2026-09-29). A grade declares its content
+    per unit and a way states a graded input in content, so a richer grade yields more in use — more metal from a
+    tonne of ore, more heat from a tonne of coal — and one grade's price stands against another's by what each
+    yields.
 
 ---
 
