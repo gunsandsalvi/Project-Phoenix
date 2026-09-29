@@ -37,7 +37,8 @@ pub fn answer(i: &AnswerIn) -> i64 {
 }
 
 /// How a review concludes, in two moves at most: the employee's answer at or below the offer takes the offer; a
-/// counter the work still pays for (no more than `most`) is the employer's to accept; any other, the employee quits.
+/// counter the work still pays for (no more than `most`) is the employer's to accept; any other is no agreement, and
+/// the employee quits only for a better offer.
 #[clause("LAB.17")]
 pub fn conclude(offer: i64, answer: i64, most: i64) -> Missing<i64> {
     if answer <= offer {

@@ -9,10 +9,11 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use if_labour::class;
-use if_labour::decisions::{AcceptIn, Need, PostIn, SelectIn};
+use if_labour::decisions::{AcceptIn, AnswerIn, Need, PostIn, ReviewIn, SelectIn};
 use if_labour::kind::LabourKind;
 use if_labour::law::Law;
 use phx_core::calendar::Calendar;
+use phx_core::calendar::period::Period;
 use phx_core::wheel::DueWheel;
 use phx_core::{OpeningCountry, Register, Streams, SubStep};
 use phx_id::{CountryId, Day, PartyKey, Slot};
@@ -59,6 +60,23 @@ pub struct LabourDay {
     /// The jobs open at the round's close, and the persons searching then.
     pub open: u64,
     pub searching: u64,
+    /// The contracts whose pay round came, those raised and cut, the employees who applied on from their job at it,
+    /// and the hires of employees, who quit their job for the offer.
+    pub reviewed: u64,
+    pub raised: u64,
+    pub cut: u64,
+    pub searching_on: u64,
+    pub job_to_job: u64,
+}
+
+/// A day's pay rounds: the contracts reviewed, those raised and cut, and the employees whose counter the work could
+/// not pay, who took the offer and applied to the vacancies they saw.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Reviews {
+    pub reviewed: u64,
+    pub raised: u64,
+    pub cut: u64,
+    pub searching_on: u64,
 }
 
 /// Labour's state on the core, kept from day to day.
@@ -89,6 +107,13 @@ pub struct CoreLabour {
     /// The firms whose production schedule came today, whose price reviews follow.
     pub due_today: Vec<u32>,
     pub separations: Vec<(u32, u64, Day, u8)>,
+    /// Each employer's next pay round.
+    pub reviews: BTreeMap<PartyKey, Day>,
+    /// Today's pay rounds, the applications employees made from their jobs at them, and the day's hires of
+    /// employees.
+    pub reviewing: Reviews,
+    pub on_the_job: Vec<Application>,
+    pub job_to_job: u64,
     pub days: Vec<LabourDay>,
 }
 
@@ -107,6 +132,9 @@ impl std::fmt::Debug for LabourCtx<'_> {
         f.debug_struct("LabourCtx").field("regions", &self.regions.len()).finish_non_exhaustive()
     }
 }
+
+/// A job as its employer's staff lists it: its occupation, weekly hours and monthly wage.
+type Job = (u32, u32, i64);
 
 /// A firm's record words the round reads.
 #[derive(Clone, Copy, Debug)]
@@ -294,6 +322,10 @@ impl Core {
         (record.posted, record.withdrawn, record.layoffs_wanted, record.employers) =
             (posted, withdrawn, layoffs, employers);
         (record.searchers, record.applications) = self.search_round(ctx, day);
+        let r = std::mem::take(&mut self.labour.reviewing);
+        (record.reviewed, record.raised, record.cut, record.searching_on) =
+            (r.reviewed, r.raised, r.cut, r.searching_on);
+        record.job_to_job = std::mem::take(&mut self.labour.job_to_job);
         self.keep_vacancies();
         record.open = self.labour.vacancies.iter().map(|v| u64::from(v.open)).sum();
         record.searching = len_u64(self.labour.searching.len());
@@ -419,6 +451,11 @@ impl Core {
             Missing::Present(m) => m / (law.weeks_a_month * full),
             Missing::Absent => 0.0,
         };
+        // What a unit leaves over its cost of making it at the price the firm expects.
+        if let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) {
+            let margin = self.price_expected(firm, slot, lot) - cost;
+            self.review_wages(ctx, day, (family, key, &law), (margin, &needs, &staff, f.region));
+        }
         let Some(units_a_day) = self.expected_of(firm, slot) else { return (0, 0, 0) };
         let input = PostIn { price: from_i64(f.price) / lot, units_a_day, financing, minimum_hour, needs };
         let out = (ctx.kind.post)(&input);
@@ -465,6 +502,210 @@ impl Core {
         }
         let layoffs = self.lay_off(ctx, day, (family, key, c, &law), &out.layoff);
         (posted, withdrawn, layoffs)
+    }
+
+    /// The price a unit a firm expects its product to sell for: its stance's outlook of its product's mark in its
+    /// region, or, before the mark has printed there, its own price.
+    fn price_expected(&self, firm: usize, slot: Slot, lot: f64) -> f64 {
+        use crate::consts::firm::{MEMORY, STANCE};
+        let Some(store) = self.kinds.get(firm) else { return 0.0 };
+        let rec = store.record(slot);
+        let read = |i: usize| match rec.get(i).map(|w| w.get()) {
+            Some(Missing::Present(v)) => usize::try_from(v).ok(),
+            _ => None,
+        };
+        let (Some(product), Some(region), Some(memory), Some(stance), Some(price)) =
+            (read(PRODUCT), read(REGION), read(MEMORY), read(STANCE), read(PRICE))
+        else {
+            return 0.0;
+        };
+        let series = (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX));
+        match self.goods.outlooks.outlook(series, memory, stance) {
+            Missing::Present(mark) => mark / lot,
+            Missing::Absent => from_u64(u64::try_from(price).unwrap_or(0)) / lot,
+        }
+    }
+
+    /// Whether an employer's pay round is due today, its next set a review period on; an employer seen the first time
+    /// draws the day in its first period its round falls on, so pay rounds are staggered.
+    fn review_due(&mut self, ctx: &LabourCtx<'_>, day: Day, employer: PartyKey, law: &Law) -> bool {
+        let Some(period) = u16::try_from(law.review_months).ok().and_then(Period::months) else {
+            violation!(clause = "LAB.17", "a review period beyond a period", months = law.review_months);
+        };
+        match self.labour.reviews.get(&employer).copied() {
+            Some(due) if due <= day => {
+                let mut next = ctx.calendar.plus(due, period);
+                while next <= day {
+                    next = ctx.calendar.plus(next, period);
+                }
+                self.labour.reviews.insert(employer, next);
+                true
+            }
+            Some(_) => false,
+            None => {
+                let end = ctx.calendar.plus(day, period);
+                let Some(days) = ctx.calendar.days_between(day, end) else { return false };
+                let mut d =
+                    ctx.draws(ctx.kind.review_stream, Subject::new(SubjectTag::Party, u64::from(employer.word())), day);
+                // The first round falls on one of the period's days after today, so a phase is never nought.
+                let phase = phx_rand::below_u64(&mut d, u64::from(days)) + 1;
+                self.labour.reviews.insert(employer, after(day, phase));
+                false
+            }
+        }
+    }
+
+    /// The vacancies an employee sees for its work — those a week's search of its own would draw, by its taste, among
+    /// the vacancies in its reach paying more than its job — and the best monthly wage among them.
+    fn seen_vacancies(
+        &self,
+        ctx: &LabourCtx<'_>,
+        day: Day,
+        (law, standing): (&Law, &Standing),
+        seeker: Seeker,
+    ) -> (Missing<f64>, Vec<Application>) {
+        let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+        let seen = search(
+            None,
+            (&self.labour.vacancies, standing),
+            &[seeker],
+            (law.wage_weight, law.applications_a_week),
+            &draws,
+        );
+        let best = seen
+            .iter()
+            .filter_map(|a| self.labour.vacancies.get(usize::try_from(a.vacancy).ok()?).map(|v| v.wage))
+            .reduce(|a, b| if b > a { b } else { a })
+            .map_or(Missing::Absent, Missing::Present);
+        (best, seen)
+    }
+
+    /// A person's whole years on a day, where its household still holds it.
+    fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
+        let place = self.names.iter().position(|n| *n == "household")?;
+        let decl = self.household_decl.as_ref()?;
+        let ps = self.persons.get(place)?.as_ref()?;
+        let at = ps.place_of(household.slot(), person)?;
+        let word = ps.of(household.slot()).nth(at)?.word;
+        u32::try_from(unpack(decl, word).age_on(date)).ok()
+    }
+
+    /// An employer's pay round, when due: each of its contracts not under notice offered the lesser of the point
+    /// nearest the most the job's month pays — its wage and what a unit leaves over its cost at the price the firm
+    /// expects, for each unit a month of the job's hours makes, the way's other hours and inputs being its cost's
+    /// already — and the point its fills show the market pays, never below the law's least; its employee answers from its reservation, the best vacancy it can
+    /// see for its work and the prices it expects by the next round, and stays at the point the two conclude, or quits
+    /// to search.
+    #[clause("LAB.17", "LAB.6", "LAB.11")]
+    fn review_wages(
+        &mut self,
+        ctx: &LabourCtx<'_>,
+        day: Day,
+        (family, key, law): (usize, PartyKey, &Law),
+        (margin, needs, staff, region): (f64, &[Need], &[Job], u32),
+    ) {
+        if staff.is_empty() || !self.review_due(ctx, day, key, law) {
+            return;
+        }
+        let Some(f) = self.families.get(family) else { return };
+        let contracts: Vec<(Slot, Due)> = f
+            .store
+            .of(0, key.slot())
+            .filter(|e| !self.labour.noticed.contains(&e.get()))
+            .filter_map(|e| Some((e, f.store.edges.row(e)?)))
+            .collect();
+        let full = f64::from(law.full_time_hours);
+        let standing = Standing::new(&self.labour.vacancies);
+        for (edge, row) in contracts {
+            let Some([occupation, hours, _]) =
+                self.families.get(family).and_then(|f| f.classes.get(usize::try_from(row.schedule).ok()?)).copied()
+            else {
+                continue;
+            };
+            let Some(current) = (ctx.kind.point_near)(law, from_i64(row.amount)) else { continue };
+            let Some(hours_a_unit) =
+                needs.iter().find(|n| n.occupation == occupation).map(|n| n.hours_a_unit).filter(|h| *h > 0.0)
+            else {
+                continue;
+            };
+            let month = f64::from(hours) * law.weeks_a_month;
+            // A job whose month pays nothing is the layoffs' to answer, not the pay round's.
+            let Some(revenue) = (ctx.kind.point_near)(law, from_i64(row.amount) + margin * month / hours_a_unit) else {
+                continue;
+            };
+            let least = match law.minimum_monthly {
+                Missing::Present(m) => match (ctx.kind.least_point)(law, m * f64::from(hours) / full) {
+                    Some(p) => Missing::Present(p),
+                    None => violation!(clause = "LAB.11", "a minimum wage beyond the wage points"),
+                },
+                Missing::Absent => Missing::Absent,
+            };
+            let market = self.offer_point(ctx, law, (key, occupation), staff);
+            let offer = (ctx.kind.review)(&ReviewIn { current, revenue, market, least });
+            let reservation = law.reservation_share * ctx.wage_at(law, current);
+            let Some(skill) = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied()
+            else {
+                continue;
+            };
+            let Some(experience) = self.age_of((row.ends[1], row.person), ctx.calendar.date(day)) else { continue };
+            // An employee moves only for more than its job pays.
+            let seeker = Seeker {
+                household: row.ends[1],
+                person: row.person,
+                subject: row.person,
+                region,
+                occupation,
+                skill,
+                experience,
+                reservation: ctx.wage_at(law, current),
+            };
+            let (best, seen) = self.seen_vacancies(ctx, day, (law, &standing), seeker);
+            let input = AnswerIn { offer, reservation, best, outlook: law.price_outlook, ratio: law.point_ratio };
+            let answer = (ctx.kind.answer.rule)(&input);
+            self.labour.reviewing.reviewed += 1;
+            // A counter the work cannot pay is not a quit into search: the employee works on at the offer and applies
+            // to the vacancies it saw, quitting when one of them offers it the job.
+            let concluded = match (ctx.kind.conclude)(offer, answer, revenue) {
+                Missing::Present(point) => point,
+                Missing::Absent => {
+                    self.labour.on_the_job.extend(seen);
+                    self.labour.reviewing.searching_on += 1;
+                    offer
+                }
+            };
+            match concluded {
+                point if point == current => {}
+                point => {
+                    let amount = phx_ledger::opening::whole(ctx.wage_at(law, point));
+                    if let Some(r) = self.families.get_mut(family).and_then(|f| {
+                        f.store.edges.rows_mut().get_mut(usize::try_from(edge.get()).unwrap_or(usize::MAX))
+                    }) {
+                        r.amount = amount;
+                    }
+                    self.set_last_point(ctx, (row.ends[1], row.person), point);
+                    if point > current {
+                        self.labour.reviewing.raised += 1;
+                    } else {
+                        self.labour.reviewing.cut += 1;
+                    }
+                }
+            }
+        }
+    }
+
+    /// A person's last wage point, as its pay round set it.
+    fn set_last_point(&mut self, ctx: &LabourCtx<'_>, (household, person): (PartyKey, u64), point: i64) {
+        let (Some(place), Some(decl)) =
+            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+        else {
+            return;
+        };
+        let Some(Some(ps)) = self.persons.get_mut(place) else { return };
+        let Some(at) = ps.place_of(household.slot(), person) else { return };
+        let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
+        let mut p = unpack(&decl, word);
+        p.set_attr(ctx.kind.last_point, u32::try_from(point).unwrap_or(class::NO_POINT));
+        ps.set_word(&mut self.space, household.slot(), at, pack(&decl, &p));
     }
 
     /// An employer's vacancies that stood past the law's patience raised a point.
@@ -569,6 +810,7 @@ impl Core {
                 &draws,
             ));
         }
+        sent.append(&mut self.labour.on_the_job);
         let n = len_u64(sent.len());
         self.labour.applications = sent;
         (len_u64(seekers.len()), n)
@@ -684,6 +926,19 @@ impl Core {
             person: hired.seeker.person,
             arrears: 0,
         };
+        // An employee hired quits the job it holds for this one.
+        let held: Vec<Slot> = f
+            .store
+            .of(1, household.slot())
+            .filter(|e| f.store.edges.row(*e).is_some_and(|r| r.person == hired.seeker.person))
+            .collect();
+        if !held.is_empty() {
+            self.labour.job_to_job += 1;
+        }
+        for e in held {
+            f.store.close(e);
+            self.labour.noticed.remove(&e.get());
+        }
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, nth)));
         let mut person = unpack(&decl, word);
         person.set_attr(ctx.kind.state, class::NOT_SEARCHING);

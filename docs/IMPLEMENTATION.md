@@ -761,7 +761,7 @@ world switches to the core.
     occupation (its staff's hours over its ways' at the opening output); the posting rule on each firm's production
     schedule, the daily search, selection and answer through the hiring kernel, hires as contracts; layoffs with
     notice, severance for the years served, the laid-off searching again; retirement closing jobs. Wage reviews at
-    contracts' review dates remain for e, with the firms' reviews. The self-employed hold no employment contract: the employees
+    contracts' review dates are e's (built). The self-employed hold no employment contract: the employees
     the books draw (49,453 at 150,000 persons, seed 1) are fewer than the employed firms are counted from (70,861);
     the rest are own-account workers, whose businesses are their own (FRM.23, PTY.3), opened in c3 as persons running
     unincorporated firms of the firm kind, with the firms' count.
@@ -895,8 +895,22 @@ world switches to the core.
     share fell from 25% to 13% as prices rose away from their long means, the adaptive and the last value's rose to
     29% each; 73% of reconsiderations change the stance, the heuristics' errors in widths lying close together at
     the declared intensities. The households' outlooks of the published statistics (read by their wage reviews'
-    answers, LAB.17), each outlook's lag behind the turning points (LC-1-43) and the days to a changed decision after
-    a surprise (LC-1-44) remain in e.
+    answers, LAB.17, in place of `LAB.price_outlook`'s placeholder), each outlook's lag behind the turning points
+    (LC-1-43) and the days to a changed decision after a surprise (LC-1-44) remain in e.
+  - e: the pay rounds on the core (LAB.17, LAB.6, LAB.9). Each employer draws the day of its first round within the
+    review period and reviews every contract not under notice once a period: it offers the lesser of the point its
+    fills show the market pays and the most the job's month pays — its wage and what a unit leaves over its cost at
+    the price the firm expects, for each unit a month of the job's hours makes, the way's other hours and inputs being
+    its cost's already — never below the law's least; the employee answers from its reservation, the best of the
+    vacancies a week's search of its own would draw, and its price outlook; a counter the work cannot pay is no
+    agreement, and the employee works on at the offer and applies to the vacancies it saw, quitting its job when one
+    offers it (a job-to-job move). Found and settled on the way (120 days, 150,000 persons, seed 1): with the
+    employee reading every vacancy of its region and quitting into search whenever the work could not pay its counter,
+    44% of the reviewed quit and unemployment in the developed country reached 16% by March; with the job's worth read
+    as the average product of an hour, the same for every job while the opening's wages follow the households'
+    incomes, 19% were cut. Now: of 9,139 contracts reviewed, 6,002 raised and 1,157 cut (at firms selling below their
+    cost), 2,770 applying on from their jobs and 83 moving job to job; unemployment follows its path before the
+    rounds (2.3% to 6.9% in the developed country by March); the consumer index rose 35% by March there (32% before).
   - h: the prices' reads (LC-1-08) keep each trade's reviews, the prices moved and the moves' sizes, and read the
     markups at the close. Measured (120 days, 150,000 persons, seed 1): goods move their price at 59% of reviews, by
     128% of the old price on average, services at 8% by 19%; the goods' median markup 0.65, the services' 0.20. The

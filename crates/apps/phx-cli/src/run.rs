@@ -284,8 +284,9 @@ fn prices_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// Each labour round's jobs open and persons searching at its close, its hires and separations: the Beveridge
-/// relation's points and the flows between jobs and search, as the run report publishes them.
+/// Each labour round's jobs open and persons searching at its close, its hires and separations, its pay rounds'
+/// contracts reviewed, raised and cut, the employees applying on from their jobs and those who moved job to job:
+/// the Beveridge relation's points and the flows between jobs and search, as the run report publishes them.
 fn labour_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
         .labour
@@ -299,6 +300,11 @@ fn labour_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
                 "hires": d.hires,
                 "separated": d.separated,
                 "posted": d.posted,
+                "reviewed": d.reviewed,
+                "raised": d.raised,
+                "cut": d.cut,
+                "searching_on": d.searching_on,
+                "job_to_job": d.job_to_job,
             })
         })
         .collect()

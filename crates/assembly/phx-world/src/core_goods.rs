@@ -654,6 +654,11 @@ impl Core {
         })
     }
 
+    /// A firm's cost of making a unit now, by its place.
+    pub(crate) fn unit_cost_of(&self, regions: &[CountryId], firm: usize, slot: Slot) -> Option<f64> {
+        self.unit_cost(&self.goods_firm(regions, firm, slot)?)
+    }
+
     /// A firm's cost of making a unit with its inputs at the costs given.
     fn cost_at(&self, f: &Firm, input_cost: &dyn Fn(u16) -> Option<f64>) -> Option<f64> {
         let mut inputs = 0.0;
