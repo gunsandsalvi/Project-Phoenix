@@ -626,7 +626,7 @@ is a party with a permanent identity.
   lumpy decision (REP.21); and **tastes** — a party's idiosyncratic taste for each alternative on a choice occasion
   (REP.22); **place draws** — the tile a held unit stands on when something depends on it (REP.23); **samples** — the records a
   statistics agency's survey or a polling firm's poll reads (STA.2, POL.4); the **opening draws** of the world and its
-  map (GEN.3, GEO.10); **schedule phases** — where in its period a new party's decision schedule falls (TIME.5); and
+  map (GEN.3, GEO.10); the **player's draw** — which household the player takes (OBS.4); **schedule phases** — where in its period a new party's decision schedule falls (TIME.5); and
   **lots** — any order or choice that matters and that no rule fixes (CHN.6): the order in which buyers reach a
   seller whose capacity runs out and orders reach a book (MKT.4), the order among a payer's payments of one payment
   order when it cannot pay them all (MON.5), and the choice among applicants or bidders a rule leaves equal.
@@ -4787,7 +4787,8 @@ age, and a stream of news generated from real events.
 
 - **OBS.4 PROCESS** — A human **player** acts as a named party in the world, with its own means, through the same
   markets and contracts as everybody else, and appears in every check. The player's party is a household (REP.1):
-  its household, drawn at the opening from the households of the country the setup names, each equally likely. Its
+  its household, drawn at the opening from the households of the country the setup names, each equally likely, on its
+  own stream (CHN.1), so the draw moves no other. Its
   persons have minds like everyone's (MND), which advise: each says what it would do and why, and the player decides
   or leaves the decision to them.
 - **OBS.8 PROCESS** — **Looking at a household or firm** shows the party itself: its attributes, persons,
