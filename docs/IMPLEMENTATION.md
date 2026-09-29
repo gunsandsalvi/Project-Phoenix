@@ -1052,6 +1052,11 @@ world switches to the core.
     country drawn at the assembly, its and its persons' decisions taken as the player says — a queued intent on the
     first day its decision comes, else the rule where the setup delegates, else not that day; LC-0-57 reads each day a
     decision came for it.
+  - h: the opening's report on the core (GEN.2, GEN.4, NUM.3), not yet run: each kind's parties the opening began and
+    the money written to them, and every distribution the register holds with its source, kept with the run's
+    measures; every party's own opening write (kind, identity, bank, amount) in the run's `opening.csv`; LC-0-24 reads
+    it. GDS.11's reads (LC-1-15) move to d: the basis between places tracks freight, which shipments bring, and the
+    commodity shocks are the weather's and the catastrophes'.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

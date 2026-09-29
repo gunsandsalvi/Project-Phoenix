@@ -129,6 +129,12 @@ impl<'a> Inspector<'a> {
         &self.world.news
     }
 
+    /// The opening's report: each kind's parties and money, and each distribution with its source.
+    #[must_use]
+    pub fn opened(&self) -> &'a crate::metrics::Opened {
+        &self.world.metrics.opened
+    }
+
     /// The saves the run took, as measured.
     #[must_use]
     pub fn saves(&self) -> &'a [crate::metrics::SaveMeasure] {

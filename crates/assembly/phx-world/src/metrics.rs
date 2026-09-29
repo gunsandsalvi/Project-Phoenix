@@ -34,9 +34,26 @@ pub struct InjectionRecord {
     pub refused: Option<String>,
 }
 
+/// A kind's parties as the opening began them: its name, how many, and the money written to their accounts.
+#[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
+pub struct OpenedKind {
+    pub kind: String,
+    pub parties: u64,
+    pub money: i128,
+}
+
+/// The opening's report beside the core's: each kind's parties and the money written to them, and every
+/// distribution the register holds, by its identifier, with its source.
+#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
+pub struct Opened {
+    pub kinds: Vec<OpenedKind>,
+    pub distributions: Vec<(String, String)>,
+}
+
 /// The run's measures.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Metrics {
+    pub opened: Opened,
     pub turns: Vec<TurnRecord>,
     pub saves: Vec<SaveMeasure>,
     pub injections: Vec<InjectionRecord>,

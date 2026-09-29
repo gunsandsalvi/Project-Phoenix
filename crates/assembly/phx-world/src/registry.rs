@@ -10,6 +10,7 @@ use phx_core::{
 use phx_geo::state::MAP_PHASE;
 use phx_geo::{Allotment, GeoState};
 use phx_id::{CountryId, SystemCode};
+use phx_macros::clause;
 use phx_num::Missing;
 use phx_rand::Seed;
 
@@ -539,7 +540,34 @@ pub fn assemble(
         .ok_or_else(|| AssemblyErrors(vec![format!("the player's country {}", player.country)]))?;
     core.seat_player((&parts.p.c.streams, today), (country, player.delegate), &regions)
         .map_err(|e| AssemblyErrors(vec![e]))?;
-    Ok(world_of(parts, core, (today, config.seed)))
+    let opened = opened(&core, &parts.p.c.register);
+    let mut world = world_of(parts, core, (today, config.seed));
+    world.metrics.opened = opened;
+    Ok(world)
+}
+
+/// The opening's report: each kind's parties and the money written to them, and each distribution with its source.
+#[clause("GEN.2", "GEN.4", "NUM.3")]
+fn opened(core: &crate::core::Core, register: &phx_core::Register) -> crate::metrics::Opened {
+    let kinds = core
+        .names
+        .iter()
+        .zip(&core.kinds)
+        .map(|(name, store)| {
+            let money = store.accounts.as_ref().map_or(0, |a| {
+                a.balance.slice().iter().zip(a.pending.slice()).map(|(m, p)| i128::from(*m) + i128::from(*p)).sum()
+            });
+            let parties = phx_rand::float::len_u64(store.parties.live_slots().count());
+            crate::metrics::OpenedKind { kind: (*name).to_owned(), parties, money }
+        })
+        .collect();
+    let distributions = register
+        .source_refs()
+        .into_iter()
+        .filter(|(id, _)| register.distribution(id).is_ok())
+        .map(|(id, source)| (id.to_owned(), source.to_owned()))
+        .collect();
+    crate::metrics::Opened { kinds, distributions }
 }
 
 /// A world read back from a save: assembled from the build and the data as the save's was, without its opening, its

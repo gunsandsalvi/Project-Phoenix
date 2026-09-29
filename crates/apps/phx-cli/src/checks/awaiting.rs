@@ -95,13 +95,6 @@ pub const LC_0_21: Check = live_check! {
     retired: "the line kinds' contract process at 2d was the old ledger's; the core holds a failed due in its contract's arrears, read by LC-0-55",
 };
 
-pub const LC_0_24: Check = live_check! {
-    id: "LC-0-24",
-    title: "The GEN report lists every opening write with party, amount and identity, and each distribution with its source",
-    from_step: "S0.16",
-    check: |_| Outcome::NotYet("awaits the core's opening report (S1.24 h)"),
-};
-
 pub const LC_0_28: Check = live_check! {
     id: "LC-0-28",
     title: "The settled set is sound and maximal, recomputed on the state at the start of stage 7",
@@ -264,7 +257,7 @@ pub const LC_1_15: Check = live_check! {
     title: "the reads of GDS.11 are reported: volatility against stocks, the basis between places against freight, \
             and producer prices moving before consumer prices",
     from_step: "S1.05",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the goods' reads"),
+    check: |_| Outcome::NotYet("awaits S1.24 d: the basis against freight reads shipments, the shocks the weather's"),
 };
 
 pub const LC_1_19: Check = live_check! {

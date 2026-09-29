@@ -190,6 +190,27 @@ fn apportioned_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
         .collect()
 }
 
+/// The opening's writes, every party's: its kind, its identity, the bank its account is at and the money written to
+/// it, as the GEN report lists them, in the run's own directory.
+fn write_opening(w: Inspector<'_>, path: &Path) -> Result<(), String> {
+    use std::fmt::Write as _;
+    let mut text = String::from("kind,identity,bank,amount\n");
+    let core = w.core();
+    for (name, store) in core.names.iter().zip(&core.kinds) {
+        let Some(a) = store.accounts.as_ref() else { continue };
+        for slot in store.parties.live_slots() {
+            let (Some(id), Some(bank), Some(m), Some(p)) =
+                (store.parties.id(slot), a.bank.get(slot), a.balance.get(slot), a.pending.get(slot))
+            else {
+                continue;
+            };
+            writeln!(text, "{name},{},{bank},{}", id.get(), i128::from(m) + i128::from(p))
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    std::fs::write(path, text).map_err(|e| format!("{}: {e}", path.display()))
+}
+
 /// The saves the run took: each one's day, its stores' sizes, its write and check times, and whether it read back to
 /// its close's hash.
 fn saves_report(w: Inspector<'_>) -> serde_json::Value {
@@ -557,6 +578,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let assembling = clock.now_ns();
     let mut world = assemble(SYSTEMS, INTERFACES, &config).map_err(|e| format!("assembly refused:\n{e}"))?;
     let assembly_ns = clock.now_ns().checked_sub(assembling);
+    std::fs::create_dir_all(&args.run_dir).map_err(|e| format!("{}: {e}", args.run_dir.display()))?;
+    write_opening(Inspector::new(&world), &args.run_dir.join("opening.csv"))?;
     let (settle_end, end) = span(Inspector::new(&world), args.days, args.total_days)?;
     let definitions = phx_obs::Definitions::read(&args.data)?;
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;

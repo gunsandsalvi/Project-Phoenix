@@ -179,6 +179,38 @@ fn audit_clean(w: Inspector<'_>) -> Outcome {
     }
 }
 
+/// The GEN report: every kind the core keeps is listed with the parties the opening began and the money written to
+/// them — each party's own write in the run's `opening.csv` — every amount shared by weight names its stratum, country
+/// and parties, and every distribution the register holds names its source.
+fn opening_writes_reported(w: Inspector<'_>) -> Outcome {
+    let opened = w.opened();
+    if opened.kinds.len() != w.core().kinds.len() {
+        return Outcome::Fail(format!(
+            "{} kinds reported of the {} the core keeps",
+            opened.kinds.len(),
+            w.core().kinds.len()
+        ));
+    }
+    if opened.kinds.iter().all(|k| k.parties == 0) {
+        return Outcome::Fail("the opening reports no party".to_owned());
+    }
+    if let Some(a) = w.core().apportioned.iter().find(|a| a.total != 0 && a.parties == 0) {
+        return Outcome::Fail(format!("{} in country {} was shared over no party", a.stratum, a.country));
+    }
+    match opened.distributions.iter().find(|(_, source)| source.trim().is_empty()) {
+        Some((id, _)) => Outcome::Fail(format!("the distribution {id} names no source")),
+        None if opened.distributions.is_empty() => Outcome::Fail("the report lists no distribution".to_owned()),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_0_24: Check = live_check! {
+    id: "LC-0-24",
+    title: "The GEN report lists every opening write with party, amount and identity, and each distribution with its source",
+    from_step: "S0.16",
+    check: opening_writes_reported,
+};
+
 /// The first day passes every family.
 fn day_one_clean(w: Inspector<'_>) -> Outcome {
     let Some(first) = w.core().days.first().map(|d| d.day) else { return Outcome::NotYet("the run closed no day") };
