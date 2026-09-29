@@ -69,6 +69,21 @@ pub struct LabourDay {
     pub job_to_job: u64,
 }
 
+/// A contract's offer at its pay round, waiting for its employee's answer: the contract, its household and person, its
+/// country, its point, the point offered and the most the job's month pays, the employee's reservation, and the
+/// search it sees the vacancies by.
+#[derive(Clone, Copy, Debug)]
+pub struct Offered {
+    pub family: usize,
+    pub edge: Slot,
+    pub country: u8,
+    pub current: i64,
+    pub offer: i64,
+    pub revenue: i64,
+    pub reservation: f64,
+    pub seeker: Seeker,
+}
+
 /// A day's pay rounds: the contracts reviewed, those raised and cut, and the employees whose counter the work could
 /// not pay, who took the offer and applied to the vacancies they saw.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -112,6 +127,7 @@ pub struct CoreLabour {
     /// Today's pay rounds, the applications employees made from their jobs at them, and the day's hires of
     /// employees.
     pub reviewing: Reviews,
+    pub offered: Vec<Offered>,
     pub on_the_job: Vec<Application>,
     pub job_to_job: u64,
     pub days: Vec<LabourDay>,
@@ -319,6 +335,7 @@ impl Core {
         (record.acceptances, record.hires) = self.answer_offers(ctx, day);
         record.offers = self.select_applicants(ctx, day);
         let (posted, withdrawn, layoffs, employers) = self.post(ctx, day);
+        self.answer_reviews(ctx, day);
         (record.posted, record.withdrawn, record.layoffs_wanted, record.employers) =
             (posted, withdrawn, layoffs, employers);
         (record.searchers, record.applications) = self.search_round(ctx, day);
@@ -555,31 +572,6 @@ impl Core {
         }
     }
 
-    /// The vacancies an employee sees for its work — those a week's search of its own would draw, by its taste, among
-    /// the vacancies in its reach paying more than its job — and the best monthly wage among them.
-    fn seen_vacancies(
-        &self,
-        ctx: &LabourCtx<'_>,
-        day: Day,
-        (law, standing): (&Law, &Standing),
-        seeker: Seeker,
-    ) -> (Missing<f64>, Vec<Application>) {
-        let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
-        let seen = search(
-            None,
-            (&self.labour.vacancies, standing),
-            &[seeker],
-            (law.wage_weight, law.applications_a_week),
-            &draws,
-        );
-        let best = seen
-            .iter()
-            .filter_map(|a| self.labour.vacancies.get(usize::try_from(a.vacancy).ok()?).map(|v| v.wage))
-            .reduce(|a, b| if b > a { b } else { a })
-            .map_or(Missing::Absent, Missing::Present);
-        (best, seen)
-    }
-
     /// A person's whole years on a day, where its household still holds it.
     fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
         let place = self.names.iter().position(|n| *n == "household")?;
@@ -593,10 +585,9 @@ impl Core {
     /// An employer's pay round, when due: each of its contracts not under notice offered the lesser of the point
     /// nearest the most the job's month pays — its wage and what a unit leaves over its cost at the price the firm
     /// expects, for each unit a month of the job's hours makes, the way's other hours and inputs being its cost's
-    /// already — and the point its fills show the market pays, never below the law's least; its employee answers from its reservation, the best vacancy it can
-    /// see for its work and the prices it expects by the next round, and stays at the point the two conclude, or quits
-    /// to search.
-    #[clause("LAB.17", "LAB.6", "LAB.11")]
+    /// already — and the point its fills show the market pays, never below the law's least; its employee answers with
+    /// the day's others.
+    #[clause("LAB.17", "LAB.11")]
     fn review_wages(
         &mut self,
         ctx: &LabourCtx<'_>,
@@ -615,7 +606,6 @@ impl Core {
             .filter_map(|e| Some((e, f.store.edges.row(e)?)))
             .collect();
         let full = f64::from(law.full_time_hours);
-        let standing = Standing::new(&self.labour.vacancies);
         for (edge, row) in contracts {
             let Some([occupation, hours, _]) =
                 self.families.get(family).and_then(|f| f.classes.get(usize::try_from(row.schedule).ok()?)).copied()
@@ -659,42 +649,89 @@ impl Core {
                 experience,
                 reservation: ctx.wage_at(law, current),
             };
-            let (best, seen) = self.seen_vacancies(ctx, day, (law, &standing), seeker);
-            let input = AnswerIn {
+            self.labour.offered.push(Offered {
+                family,
+                edge,
+                country: ctx.country_of(region),
+                current,
                 offer,
+                revenue,
                 reservation,
+                seeker,
+            });
+            self.labour.reviewing.reviewed += 1;
+        }
+    }
+
+    /// The day's pay rounds answered: each employee offered sees the vacancies a week's search of its own draws, in
+    /// one search of its country's, and answers from its reservation, the best of them and the prices it expects by
+    /// the next round; the two conclude, or, where the work cannot pay its counter, it works on at the offer and applies
+    /// to the vacancies it saw, quitting when one of them offers it the job.
+    #[clause("LAB.17", "LAB.6", "LAB.8")]
+    fn answer_reviews(&mut self, ctx: &LabourCtx<'_>, day: Day) {
+        let offered = std::mem::take(&mut self.labour.offered);
+        if offered.is_empty() {
+            return;
+        }
+        let standing = Standing::new(&self.labour.vacancies);
+        let mut seen: BTreeMap<(PartyKey, u64), Vec<Application>> = BTreeMap::new();
+        for (c, law) in self.labour.laws.iter().enumerate() {
+            let mine: Vec<Seeker> = offered.iter().filter(|o| usize::from(o.country) == c).map(|o| o.seeker).collect();
+            if mine.is_empty() {
+                continue;
+            }
+            let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            for a in search(
+                None,
+                (&self.labour.vacancies, &standing),
+                &mine,
+                (law.wage_weight, law.applications_a_week),
+                &draws,
+            ) {
+                seen.entry((a.seeker.household, a.seeker.person)).or_default().push(a);
+            }
+        }
+        for o in offered {
+            let law = at_country(&self.labour.laws, o.country).clone();
+            let apps = seen.remove(&(o.seeker.household, o.seeker.person)).unwrap_or_default();
+            let best = apps
+                .iter()
+                .filter_map(|a| self.labour.vacancies.get(usize::try_from(a.vacancy).ok()?).map(|v| v.wage))
+                .reduce(|a, b| if b > a { b } else { a })
+                .map_or(Missing::Absent, Missing::Present);
+            let input = AnswerIn {
+                offer: o.offer,
+                reservation: o.reservation,
                 best,
-                outlook: self.price_outlook(row.ends[1], ctx.country_of(region), law.review_months),
+                outlook: self.price_outlook(o.seeker.household, o.country, law.review_months),
                 ratio: law.point_ratio,
             };
             let answer = (ctx.kind.answer.rule)(&input);
-            self.labour.reviewing.reviewed += 1;
-            // A counter the work cannot pay is not a quit into search: the employee works on at the offer and applies
-            // to the vacancies it saw, quitting when one of them offers it the job.
-            let concluded = match (ctx.kind.conclude)(offer, answer, revenue) {
+            let concluded = match (ctx.kind.conclude)(o.offer, answer, o.revenue) {
                 Missing::Present(point) => point,
                 Missing::Absent => {
-                    self.labour.on_the_job.extend(seen);
+                    self.labour.on_the_job.extend(apps);
                     self.labour.reviewing.searching_on += 1;
-                    offer
+                    o.offer
                 }
             };
-            match concluded {
-                point if point == current => {}
-                point => {
-                    let amount = phx_ledger::opening::whole(ctx.wage_at(law, point));
-                    if let Some(r) = self.families.get_mut(family).and_then(|f| {
-                        f.store.edges.rows_mut().get_mut(usize::try_from(edge.get()).unwrap_or(usize::MAX))
-                    }) {
-                        r.amount = amount;
-                    }
-                    self.set_last_point(ctx, (row.ends[1], row.person), point);
-                    if point > current {
-                        self.labour.reviewing.raised += 1;
-                    } else {
-                        self.labour.reviewing.cut += 1;
-                    }
-                }
+            if concluded == o.current {
+                continue;
+            }
+            let amount = phx_ledger::opening::whole(ctx.wage_at(&law, concluded));
+            // A contract that ended since its offer, by its person's leaving, is not paid anew.
+            let Some(r) = self.families.get_mut(o.family).and_then(|f| {
+                let open = f.store.edges.is_open(o.edge);
+                f.store.edges.rows_mut().get_mut(usize::try_from(o.edge.get()).unwrap_or(usize::MAX)).filter(|_| open)
+            }) else {
+                continue;
+            };
+            r.amount = amount;
+            self.set_last_point(ctx, (o.seeker.household, o.seeker.person), concluded);
+            if concluded > o.current {
+                self.labour.reviewing.raised += 1;
+            } else {
+                self.labour.reviewing.cut += 1;
             }
         }
     }

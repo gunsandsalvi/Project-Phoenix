@@ -415,6 +415,12 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "population": population_report(w),
         "prices": prices_report(w),
         "labour": labour_report(w),
+        "lags": crate::checks::outlooks::lags(w).iter().map(|((memory, heuristic), (sum, n))| json!({
+            "memory": memory,
+            "heuristic": heuristic,
+            "turns": n,
+            "prints_behind": sum,
+        })).collect::<Vec<_>>(),
         "stances": w.core().goods.outlooks.days.iter().map(|d| json!({
             "day": d.day,
             "by_heuristic": d.by_heuristic,

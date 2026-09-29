@@ -120,3 +120,38 @@ pub const LC_1_38: Check = live_check! {
     from_step: "S1.14",
     check: read_when_published,
 };
+
+/// Each method's mean lag behind the turning points of the series it forecasts, in prints, by memory type and
+/// heuristic, over the firms' series and the households'.
+#[must_use]
+pub fn lags(w: Inspector<'_>) -> std::collections::BTreeMap<(usize, usize), (u64, u64)> {
+    let core = w.core();
+    let mut out = core.goods.outlooks.lags.clone();
+    for (k, (sum, n)) in &core.stats.outlooks.lags {
+        let e = out.entry(*k).or_insert((0, 0));
+        *e = (e.0 + sum, e.1 + n);
+    }
+    out
+}
+
+/// Methods lag the turning points by their memory and heuristic: their mean lags are not all one.
+fn lags_differ(w: Inspector<'_>) -> Outcome {
+    let lags = lags(w);
+    let means: Vec<(u64, u64)> = lags.values().filter(|(_, n)| *n > 0).copied().collect();
+    let Some(first) = means.first().copied() else {
+        return Outcome::NotYet("no series turned and was followed in the run");
+    };
+    // Two means are one where their cross products are.
+    if means.iter().any(|(s, n)| u128::from(*s) * u128::from(first.1) != u128::from(first.0) * u128::from(*n)) {
+        Outcome::Pass
+    } else {
+        Outcome::Fail(format!("every method of {} lags the turns alike", means.len()))
+    }
+}
+
+pub const LC_1_43: Check = live_check! {
+    id: "LC-1-43",
+    title: "each method's lag behind each turning point of a published series, by memory type and heuristic mix",
+    from_step: "S1.01",
+    check: lags_differ,
+};

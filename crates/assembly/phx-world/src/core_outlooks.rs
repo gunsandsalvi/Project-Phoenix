@@ -3,6 +3,7 @@
 //! the next print once for every firm using it, and scores each of its heuristics by its error in the method's widths.
 //! A firm relies on one heuristic, its stance, reconsidered at each price review by the heuristics' recent performance
 //! at its switching type's intensity and its own taste; its markup reads its stance's outlook of its product's mark.
+//! Each method's lag behind a series' turning points is counted in prints, by memory type and heuristic.
 
 use std::collections::BTreeMap;
 
@@ -23,6 +24,8 @@ pub struct MethodView {
     pub outlook: [Missing<f64>; HEURISTICS],
     pub performance: [Missing<f64>; HEURISTICS],
     pub width: Missing<f64>,
+    /// Each heuristic still to follow the series' last turn.
+    pub behind: [bool; HEURISTICS],
 }
 
 impl Default for MethodView {
@@ -31,6 +34,7 @@ impl Default for MethodView {
             outlook: [Missing::Absent; HEURISTICS],
             performance: [Missing::Absent; HEURISTICS],
             width: Missing::Absent,
+            behind: [false; HEURISTICS],
         }
     }
 }
@@ -45,6 +49,9 @@ pub struct Series {
     pub level: f64,
     pub prints: u64,
     pub methods: Vec<MethodView>,
+    /// The way the series last moved, and the print it last turned at.
+    pub direction: i8,
+    pub turned: u64,
 }
 
 /// A day's stances: the firms relying on each heuristic after the day's reviews, the stances reconsidered and those
@@ -62,6 +69,20 @@ pub struct StanceDay {
 pub struct Outlooks {
     pub series: BTreeMap<(u16, u32), Series>,
     pub days: Vec<StanceDay>,
+    /// By memory type and heuristic: the prints its outlooks took to turn after the series turned, summed, and the
+    /// turns they followed.
+    pub lags: BTreeMap<(usize, usize), (u64, u64)>,
+}
+
+/// The way a change goes: up, down, or nowhere.
+fn way(change: f64) -> i8 {
+    if change > 0.0 {
+        1
+    } else if change < 0.0 {
+        -1
+    } else {
+        0
+    }
 }
 
 /// What the methods read: each memory type's speed, the trend's and the anchor's parameters, the weight of the last
@@ -105,11 +126,25 @@ impl Outlooks {
             level: 0.0,
             prints: 0,
             methods: vec![MethodView::default(); types],
+            direction: 0,
+            turned: 0,
         });
         s.prints += 1;
         s.level += (value - s.level) / phx_rand::float::from_u64(s.prints);
+        let moved = way(value - s.last);
         (s.before, s.last, s.day) = (s.last, value, day);
+        // A turn is a move against the last one; every method is then behind it until its outlook moves the new way.
+        let turn = moved != 0 && s.direction != 0 && moved != s.direction;
+        if moved != 0 {
+            s.direction = moved;
+        }
+        if turn {
+            s.turned = s.prints;
+        }
         for (memory, view) in s.methods.iter_mut().enumerate() {
+            if turn {
+                view.behind = [true; HEURISTICS];
+            }
             let params = p.params(memory);
             let errors: Vec<Option<f64>> = view.outlook.iter().map(|o| present(*o).map(|o| value - o)).collect();
             let scored: Vec<f64> = errors.iter().flatten().map(|e| e.abs()).collect();
@@ -136,7 +171,16 @@ impl Outlooks {
                     horizon_end: day,
                 };
                 let heuristic = HeuristicId::new(u8::try_from(h).unwrap_or(u8::MAX));
-                *outlook = Missing::Present(heuristic.rule().outlook(&seen, &params));
+                let next = heuristic.rule().outlook(&seen, &params);
+                if let Some(behind) = view.behind.get_mut(h)
+                    && *behind
+                    && present(*outlook).is_some_and(|o| way(next - o) == s.direction)
+                {
+                    *behind = false;
+                    let lag = self.lags.entry((memory, h)).or_insert((0, 0));
+                    *lag = (lag.0 + (s.prints - s.turned), lag.1 + 1);
+                }
+                *outlook = Missing::Present(next);
             }
         }
     }
