@@ -545,10 +545,17 @@ impl Core {
         (record.spenders, record.wants) = (spenders, wants);
         let mut wants = std::mem::take(&mut self.goods.wants);
         wants.extend(self.public_wants(ctx.regions));
-        let leg = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
+        let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
         let (sales, spent) = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Final), &leg, &mut moved);
         let invest = self.investment_wants(ctx);
-        let held = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
+        // A service bought as investment is used as it is delivered, being made as it is sold; a good is held.
+        let stored = self.goods.stored.clone();
+        let held = |product: u16, unit: u16| GoodsLeg {
+            unit: Denom::units(unit),
+            reason: DELIVERED,
+            order: 0,
+            used: !stored.get(usize::from(product)).copied().unwrap_or(true),
+        };
         let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held, &mut moved);
         self.close_services(ctx, day, &mut moved);
         (record.sales, record.spent) = (sales, spent);
@@ -880,7 +887,7 @@ impl Core {
             }
         }
         let n = len_u64(wants.len());
-        let leg = |unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
+        let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
         let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg, moved);
         n
     }
@@ -1123,7 +1130,7 @@ impl Core {
         ctx: &GoodsCtx<'_>,
         day: Day,
         (wants, purpose): (&[(u16, Buyer)], crate::core_stats::Purchase),
-        leg: &dyn Fn(u16) -> GoodsLeg,
+        leg: &dyn Fn(u16, u16) -> GoodsLeg,
         moved: &mut Vec<Flow>,
     ) -> (u64, i64) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
@@ -1177,9 +1184,9 @@ impl Core {
                     continue;
                 };
                 out.clear();
-                sale.flows((Denom::money(ccy), SOLD, 0), Some(leg(unit)), sale.seller.slot().get(), &mut out);
+                sale.flows((Denom::money(ccy), SOLD, 0), Some(leg(product, unit)), sale.seller.slot().get(), &mut out);
                 if let (true, Some(Some(rate)), Some(included), Some(Some(treasury))) = (
-                    leg(unit).used,
+                    purpose == crate::core_stats::Purchase::Final,
                     self.state.consumption.get(usize::from(ccy)).copied(),
                     self.state.included,
                     self.treasuries.get(usize::from(ccy)).copied(),

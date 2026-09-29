@@ -408,13 +408,6 @@ pub const LC_1_16: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 h, the services' reads"),
 };
 
-pub const LC_1_17: Check = live_check! {
-    id: "LC-1-17",
-    title: "no service is stored: no good of a product delivered as it is made has units in existence at a close",
-    from_step: "S1.06",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the goods' reads"),
-};
-
 pub const LC_1_18: Check = live_check! {
     id: "LC-1-18",
     title: "HH.15 (part): every unit of household spending names its seller through a match-set record, and the \

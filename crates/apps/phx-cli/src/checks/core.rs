@@ -646,3 +646,26 @@ pub const LC_1_30: Check = live_check! {
     from_step: "S1.11",
     check: benefits_named,
 };
+
+/// No holding of a product delivered as it is made has units at the close: a service's capacity no sale took is lost
+/// the day it is offered, and what a sale took is used.
+fn services_not_stored(w: Inspector<'_>) -> Outcome {
+    let goods = &w.core().goods;
+    if goods.days.is_empty() {
+        return Outcome::NotYet("no goods day closed in the run");
+    }
+    for h in goods.stocks.all() {
+        let Some(phx_core::goods::Held::Good(g)) = goods.units.held(h.unit) else { continue };
+        if !goods.stored.get(usize::from(g.product)).copied().unwrap_or(true) && h.units != 0 {
+            return Outcome::Fail(format!("{} units of service {} held at region {}", h.units, g.product, g.zone));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_1_17: Check = live_check! {
+    id: "LC-1-17",
+    title: "no service is stored: no good of a product delivered as it is made has units in existence at a close",
+    from_step: "S1.06",
+    check: services_not_stored,
+};
