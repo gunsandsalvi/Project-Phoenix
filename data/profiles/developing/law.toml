@@ -170,15 +170,6 @@ source_ref = "Each income tax band's marginal rate: the IMF's means for low-inco
 value = { axis = [0, 1, 2], values = [0.000, 0.104, 0.290], outside = "refuse" }
 
 [[primitive]]
-id = "TAX.consumption_rate"
-kind = "POLICY"
-owner = "TAX"
-decided_by = "parliament"
-source = "measured"
-source_ref = "The standard rate of value-added tax: 16.0%, the median over 38 lower-middle- and low-income economies (PwC Worldwide Tax Summaries, VAT rates quick chart, fetched 2026-09-26)."
-value = "0.160"
-
-[[primitive]]
 id = "TIME.calendar"
 kind = "ENDOWMENT"
 owner = "TIME"

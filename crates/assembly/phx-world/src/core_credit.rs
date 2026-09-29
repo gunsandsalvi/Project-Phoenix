@@ -32,9 +32,17 @@ pub struct CreditOpening<'a> {
 
 impl Core {
     /// The state's laws on the core from the state's, and its benefit's family: each country's income tax as bands of
-    /// its mean wage, its consumption tax's rate and its benefit.
-    #[clause("TAX.1", "SOC.1")]
-    pub(crate) fn open_state(&mut self, state: &crate::state::State, today: Day) {
+    /// its mean wage, the tax on products each final use pays a unit spent in its accounts, and its benefit.
+    ///
+    /// # Errors
+    /// A primitive the accounts read that the register does not hold.
+    #[clause("TAX.1", "SOC.1", "GEN.15")]
+    pub(crate) fn open_state(
+        &mut self,
+        state: &crate::state::State,
+        (register, countries): (&phx_core::Register, &[phx_core::OpeningCountry]),
+        today: Day,
+    ) -> Result<(), String> {
         let laws = self.labour.laws.clone();
         let mut s = crate::core_day::CoreState {
             claim: state.benefit.map(|k| k.claim),
@@ -74,7 +82,22 @@ impl Core {
                 Missing::Present(o) => Some(o),
                 Missing::Absent => None,
             });
-            s.consumption.push(tax.map(|t| t.consumption_rate));
+            let taxed = match (&tax, countries.get(i)) {
+                (Some(_), Some(c)) => {
+                    let (flows, _) = crate::opening::economy::accounts(register, c.id)?;
+                    let n = flows.output.len();
+                    let mut rates = [0.0; crate::consts::final_use::TAXED];
+                    for (k, r) in rates.iter_mut().enumerate() {
+                        let Some(t) = flows.taxes.get(n + k) else {
+                            return Err(format!("country {}: no tax on products for final use {k}", c.id.get()));
+                        };
+                        *r = *t;
+                    }
+                    Some(rates)
+                }
+                _ => None,
+            };
+            s.consumption.push(taxed);
             s.benefit.push(match c.benefit {
                 Missing::Present(b) => Some(b),
                 Missing::Absent => None,
@@ -88,7 +111,7 @@ impl Core {
         let (Some(treasury), Some(household)) =
             (self.names.iter().position(|n| *n == "treasury"), self.names.iter().position(|n| *n == "household"))
         else {
-            return;
+            return Ok(());
         };
         let family = DatedFamily {
             name: crate::consts::families::BENEFIT,
@@ -109,6 +132,7 @@ impl Core {
             lost: 0,
         };
         self.families.push(family);
+        Ok(())
     }
 
     fn loan_family(&mut self, name: &'static str, borrower: usize, bank: usize, today: Day) -> DatedFamily {

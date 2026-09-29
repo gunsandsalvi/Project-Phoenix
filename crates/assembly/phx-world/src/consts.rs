@@ -36,7 +36,7 @@ pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 20;
+pub const SAVE_FORMAT: u32 = 21;
 /// A save's tasks on the pool: the core's store, the run's record and the world's hash.
 pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.
@@ -107,6 +107,15 @@ pub const SECTORS_WORTH_NOTHING: [usize; 3] = [1, 2, 3];
 /// The balance sheet's sectors by their column, and its instruments and closing real assets by their row, as the
 /// dataset's derivation lays them out.
 /// The families of dated contracts on the core, by name: every name a save of the core holds for them.
+/// The final uses a sale is taxed as, by the tax on products per unit spent the accounts give each.
+pub mod final_use {
+    pub const HOUSEHOLDS: usize = 0;
+    pub const COLLECTIVE: usize = 1;
+    pub const INVESTMENT: usize = 2;
+    /// The final uses bought at a sale; the changes in inventories are no one's purchase.
+    pub const TAXED: usize = 3;
+}
+
 pub mod families {
     pub const EMPLOYMENT: &str = "LAB.employment";
     pub const PUBLIC_EMPLOYMENT: &str = "LAB.public_employment";

@@ -387,7 +387,7 @@ holders (§7.8), and each holder's amount joins its (party, bank) leg in the pay
 so duty and import tax at a border are not levies: customs computes them per shipment through the tax's rule handles and
 issues a demand (§4.2).
 
-As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per currency, set in the core's state when the world opens or loads, its payee the country's treasury: a wage's levy is the year's share of `TAX.income_band_*`'s marginal bands over the wage times the payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once; the core takes it from each wage the day's dues pay (`Core::withhold`), and the employer, its collector, remits it to the treasury on the tax's remittance day. The consumption tax is inside the posted price: the seller owes `TAX.consumption_rate`'s share of the price paid, paid to the treasury in the sale's instruction; a country that declares a value-added tax is charged it this way (a placeholder naming TAX).
+As built at Stage 1, income tax is a `phx_ledger::levy::Withholding` per currency, set in the core's state when the world opens or loads, its payee the country's treasury: a wage's levy is the year's share of `TAX.income_band_*`'s marginal bands over the wage times the payments a year (a non-cumulative basis, since no year-to-date positions are kept), rounded once; the core takes it from each wage the day's dues pay (`Core::withhold`), and the employer, its collector, remits it to the treasury on the tax's remittance day. The taxes on products are the accounts' (`GEN.product_taxes`): a final purchase — households', the state's, fixed investment — pays its final use's tax a unit spent on top of the posted price, which is the seller's basic price; the seller owes the tax, paid to the treasury in the sale's instruction, and the product's mark counts the price before it (`meet_all`, `arise_tax`). A firm's inputs pay none. The statutory rate (`TAX.consumption_rate`) is retired: the standard rate of value-added tax, 20% in the developed group, is not what households pay a unit spent after exemptions and reduced rates, 10.9% in the accounts, and at the standard rate taken out of basic prices each household sale cost its seller a sixth of its price. A country's value-added tax charged along the chain remains a placeholder naming TAX.
 
 
 ### 4.4 Contract algebra, lines, instructions and transfers
@@ -1932,8 +1932,8 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
   are added, by income they are wages, not taken off the firms' surplus. Its staff's pay rounds wait for public pay
   scales (POL).
 - **Taxes' collectors on the core** (`core_taxes`, TAX.2, TAX.5): a tax arises on its base's payment once it settles —
-  income tax withheld by the employer from the wage it pays (the wage flow carries the net), consumption tax in a
-  final sale's price charged by the seller — and is then its collector's debt to its treasury, a contract of the
+  income tax withheld by the employer from the wage it pays (the wage flow carries the net), the tax on products
+  a final sale pays on top of its price, charged by the seller — and is then its collector's debt to its treasury, a contract of the
   `TAX.collected` family reckoned from terms (its balance paid in full on `TAX.remit_day` of the month after, asked
   again each month while unpaid, a claim in its collector's estate); the collector's tax is entered when it arises.
   The treasury paying its own staff collects to itself. At each close what arose is held to what was remitted, what

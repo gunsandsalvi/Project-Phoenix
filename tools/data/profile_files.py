@@ -37,7 +37,7 @@ LAW = {
     "LAB.minimum_wage_share", "SOC.benefit_replacement", "SOC.benefit_months", "SOC.pension_age",
     "SOC.replacement_rate", "SOC.pension_coverage", "SOC.disability_benefit_coverage", "STA.release_day",
     "STA.release_lag", "STA.sample_share", "STA.early_returns", "STA.revision_months", "TAX.income_band_edges",
-    "TAX.income_band_rates", "TAX.consumption_rate", "TIME.calendar", "TRS.payment_order",
+    "TAX.income_band_rates", "TIME.calendar", "TRS.payment_order",
 }
 PROFILE = {"GEN.profile"}
 LATER = {"HSG", "PEN"}

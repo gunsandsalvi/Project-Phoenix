@@ -3,11 +3,10 @@
 use phx_core::{OpeningCountry, Register};
 
 /// A country's taxes: the income tax's marginal bands over a member's yearly wage, each band's lower edge a multiple
-/// of the mean wage with its rate, and the consumption tax's rate on the price before it.
+/// of the mean wage with its rate. The taxes on products each final use pays are its accounts'.
 #[derive(Clone, Debug, PartialEq)]
 pub struct TaxLaw {
     pub bands: Vec<(f64, f64)>,
-    pub consumption_rate: f64,
     /// The day of the month after a tax is collected by which its collector remits it.
     pub remit_day: u32,
 }

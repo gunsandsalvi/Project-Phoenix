@@ -93,12 +93,13 @@ pub struct Arrears {
     pub terms: bool,
 }
 
-/// The state's laws on the core, by country: the income tax withheld from wages, the consumption tax's rate, the
+/// The state's laws on the core, by country: the income tax withheld from wages, the tax on products each final use
+/// pays a unit spent, the
 /// benefit for a job lost, each country's treasury the taxes are paid to, and the state pension.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct CoreState {
     pub withholding: Vec<Option<phx_ledger::levy::Withholding>>,
-    pub consumption: Vec<Option<f64>>,
+    pub consumption: Vec<Option<[f64; crate::consts::final_use::TAXED]>>,
     pub benefit: Vec<Option<if_state::kinds::BenefitLaw>>,
     #[saved(skip)]
     pub claim: Option<&'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>>,

@@ -75,7 +75,6 @@ pub if_state::kinds::TaxKind::included: fn(f64, f64) -> f64
 pub if_state::kinds::TaxKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::TaxLaw, alloc::string::String>
 pub struct if_state::kinds::TaxLaw
 pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>
-pub if_state::kinds::TaxLaw::consumption_rate: f64
 pub if_state::kinds::TaxLaw::remit_day: u32
 pub struct if_state::kinds::TreasuryKind
 pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>

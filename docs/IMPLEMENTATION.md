@@ -1220,8 +1220,15 @@ world switches to the core.
       they made or sold, and firms' median markups sit near the accounts' (developed product 12: 0.64 against 0.48;
       education still −0.14 against 0.18). The voluntary close is
       blocked until S8.03 (owner, 2026-09-29): with it off, twelve days run clean, no firm ending.
-    - j5. **The state**: the tax rates and benefits against the flows' taxes and collective consumption, measured at
-      the opening's first year and made one.
+    - j5. **The state** (built). The tax at a sale is the accounts' tax on products each final use pays a unit spent
+      (`GEN.product_taxes`: households 10.9%, 6.9% and 5.1%; the state 0.7%, 0.6% and 0.1%; fixed investment 5.1%,
+      5.3% and 4.4%), paid on top of the seller's posted basic price; before, households paid the statutory
+      value-added rate (20%, 16%, 16%) out of the posted price, each household sale losing its seller a sixth, the
+      state paid it too and investment none. `TAX.consumption_rate` retired. The agency buys, beside the state's
+      final uses, what public administration's way uses of each product, which its output in the accounts pays for
+      and nothing bought before. The opening's expected household demand nets the tax. Twelve days at 150,000
+      persons run clean. The income tax and the benefits have no counterpart in the flows; the state's balance they
+      leave is read at the gate.
     - j6. **The check**: the derivation's and the assembly's checks cover every identity above.
 - **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
   birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
@@ -8202,7 +8209,7 @@ member and never on an aggregate:
   under the insolvency law (S2.03 for firms, S2.11 for households), and the claim ranks in the estate where the law
   places it.
 - **Behaviour** (TAX.4) is never computed here. Each form reads the handle with the law's schedule:
-  - retail prices include the consumption tax because sellers post gross points (S1.11, S1.03);
+  - a final purchase pays its final use's tax on products on top of the seller's posted basic price (S1.24 j5);
   - `phx-val`'s project and firm values (S1.01) and investment (S1.04) are after `corporate_tax`;
   - a holder's sell decision (S3.03's schedule, S3.05's `choose_holdings`) counts `gains_tax` on the gain the sale
     would realise at the seller's own positions, so holders time sales against the allowance and the band;

@@ -23,9 +23,6 @@ MONTHS = 12
 # personal income tax's first taxed income and top-rate threshold, in multiples of output per person, and its rates.
 EDGES_PER_OUTPUT = [0.0, 1.3, 34.0]
 RATES = [0.0, 0.104, 0.290]
-# The standard rate of value-added tax: the median over the group's economies in PwC's Worldwide Tax Summaries.
-CONSUMPTION = ("0.160", "The standard rate of value-added tax: 16.0%, the median over 38 lower-middle- and low-income "
-               "economies (PwC Worldwide Tax Summaries, VAT rates quick chart, fetched 2026-09-26).")
 
 
 def wage_over_output() -> tuple:
@@ -56,10 +53,9 @@ def main() -> None:
          "{ axis = [0, 1, 2], values = [" + ", ".join(f"{e:.2f}" for e in edges) + '], outside = "refuse" }'),
         ("TAX.income_band_rates", f"Each income tax band's marginal rate: {imf}.",
          "{ axis = [0, 1, 2], values = [" + ", ".join(f"{r:.3f}" for r in RATES) + '], outside = "refuse" }'),
-        ("TAX.consumption_rate", CONSUMPTION[1], f'"{CONSUMPTION[0]}"'),
     ]
-    lines = ["# The developing group's taxes (spec TAX.1): the income tax's marginal bands over a member's yearly wage "
-             "and the consumption tax's rate, derived by tools/data/derive_tax.py; never edited by hand."]
+    lines = ["# The developing group's taxes (spec TAX.1): the income tax's marginal bands over a member's yearly wage, "
+             "derived by tools/data/derive_tax.py; never edited by hand."]
     for pid, ref, value in entries:
         lines += ["", "[[primitive]]", f'id = "{pid}"', 'kind = "POLICY"', 'owner = "TAX"',
                   'decided_by = "parliament"', 'source = "measured"', f"source_ref = {json.dumps(ref)}",

@@ -24,6 +24,7 @@ use phx_num::{Missing, violation};
 use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 use phx_rand::{Subject, SubjectTag};
 
+use crate::consts::final_use;
 use crate::consts::firm::{
     EXPECTED, MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED, SALES_WIDTH,
     SEEN_SOLD, SOLD as SOLD_UNITS,
@@ -95,7 +96,8 @@ pub struct CoreGoods {
     /// Each product's lot, the units its price is posted for; and each country's stored inputs a unit of each product.
     pub lots: Vec<f64>,
     pub recipes: Vec<Vec<Vec<(u16, f64)>>>,
-    /// Each country's GDP, and each product's collective consumption and fixed investment over it, by country.
+    /// Each country's GDP, and over it, by country, each product's purchases by the state — its collective consumption
+    /// and what public administration's making uses — and its fixed investment.
     pub gdp: Vec<f64>,
     pub final_uses: Vec<Vec<[f64; 2]>>,
     /// Each region's share of its country's persons.
@@ -325,9 +327,24 @@ impl Core {
         for c in countries {
             goods.inputs.push(table(ctx.register, "TEC.inputs", c.id)?.0);
             prices.push(crate::core_firms::snapshot(ctx.register, c)?.price);
-            let uses = crate::opening::economy::accounts(ctx.register, c.id)?.0.finals;
+            let (flows, _) = crate::opening::economy::accounts(ctx.register, c.id)?;
             let at = |row: &Vec<f64>, k: usize| row.get(k).copied().unwrap_or(0.0);
-            goods.final_uses.push(uses.iter().take(products.len()).map(|r| [at(r, 1), at(r, 2)]).collect());
+            // The state buys what public administration's making uses of each product, as it buys its final uses.
+            let public = at(&flows.output, crate::consts::firm::PUBLIC_ADMINISTRATION);
+            let state = |q: usize, r: &Vec<f64>| {
+                at(r, final_use::COLLECTIVE)
+                    + flows.inputs.get(q).map_or(0.0, |row| at(row, crate::consts::firm::PUBLIC_ADMINISTRATION))
+                        * public
+            };
+            goods.final_uses.push(
+                flows
+                    .finals
+                    .iter()
+                    .take(products.len())
+                    .enumerate()
+                    .map(|(q, r)| [state(q, r), at(r, final_use::INVESTMENT)])
+                    .collect(),
+            );
             goods.gdp.push(c.gdp);
         }
         goods.region_share = self.region_shares(ctx.regions);
@@ -416,7 +433,13 @@ impl Core {
             else {
                 continue;
             };
-            let households = spending.get(&country).copied().unwrap_or(0.0);
+            // What households spend pays the tax on products their purchases bear on top of the prices, where the
+            // country taxes them.
+            let spent = spending.get(&country).copied().unwrap_or(0.0);
+            let households = match self.state.consumption.get(country).copied().flatten() {
+                Some(rates) => rates.get(final_use::HOUSEHOLDS).map_or(spent, |t| spent / (1.0 + t)),
+                None => spent,
+            };
             let n = uses.len();
             // Each product's final demand in units a year at its makers' mean price, their output its weight.
             let mut last: Vec<f64> = (0..n)
@@ -583,10 +606,13 @@ impl Core {
         record.inputs_wanted = self.buy_inputs(ctx, day) + self.buy_services(ctx, day);
         let (spenders, wants) = self.decide_spending(ctx, day);
         (record.spenders, record.wants) = (spenders, wants);
-        let mut wants = std::mem::take(&mut self.goods.wants);
-        wants.extend(self.public_wants(ctx.regions));
+        let wants = std::mem::take(&mut self.goods.wants);
+        let public = self.public_wants(ctx.regions);
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: SOLD, order: 0, used: true };
-        let (sales, spent) = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Final), &leg);
+        let bought = crate::core_stats::Purchase::Final;
+        let (sales, spent) = self.meet_all(ctx, day, (&wants, bought, Some(final_use::HOUSEHOLDS)), &leg);
+        let (state_sales, state_spent) = self.meet_all(ctx, day, (&public, bought, Some(final_use::COLLECTIVE)), &leg);
+        let (sales, spent) = (sales + state_sales, spent + state_spent);
         let invest = self.investment_wants(ctx, day);
         // A service bought as investment is used as it is delivered, being made as it is sold; a good is held.
         let stored = self.goods.stored.clone();
@@ -598,7 +624,12 @@ impl Core {
             order: 0,
             used: !stored.get(usize::from(product)).copied().unwrap_or(true) || plant.contains(&product),
         };
-        let _ = self.meet_all(ctx, day, (&invest, crate::core_stats::Purchase::Investment), &held);
+        let _ = self.meet_all(
+            ctx,
+            day,
+            (&invest, crate::core_stats::Purchase::Investment, Some(final_use::INVESTMENT)),
+            &held,
+        );
         self.close_services(ctx, day, &mut moved);
         (record.productions, record.unfed) = std::mem::take(&mut self.goods.production);
         (record.sales, record.spent) = (sales, spent);
@@ -1037,7 +1068,7 @@ impl Core {
         let wants: Vec<(u16, Buyer)> = orders.into_iter().flatten().collect();
         let n = len_u64(wants.len());
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };
-        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg);
+        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs, None), &leg);
         n
     }
 
@@ -1074,7 +1105,7 @@ impl Core {
         }
         let n = len_u64(wants.len());
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: true };
-        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs), &leg);
+        let _ = self.meet_all(ctx, day, (&wants, crate::core_stats::Purchase::Inputs, None), &leg);
         n
     }
 
@@ -1601,13 +1632,15 @@ impl Core {
 
     /// Each product's posted-price meeting over its firms holding it free with a price, each region a place whose
     /// firms are in its reach at no distance until the finer cells: each sale's money a flow settled with the day's,
-    /// and its goods covered by the seller's units until then. Returns the sales and what they paid.
-    #[clause("SRV.4", "SRV.5", "MKT.6", "GDS.4")]
+    /// and its goods covered by the seller's units until then. A final use's purchase pays the tax on products its
+    /// accounts give it on top of the posted price, which its seller collects for its treasury; the mark counts the
+    /// price before it. Returns the sales and what they paid.
+    #[clause("SRV.4", "SRV.5", "MKT.6", "GDS.4", "TAX.1", "SRV.6")]
     fn meet_all(
         &mut self,
         ctx: &GoodsCtx<'_>,
         day: Day,
-        (wants, purpose): (&[(u16, Buyer)], crate::core_stats::Purchase),
+        (wants, purpose, taxed): (&[(u16, Buyer)], crate::core_stats::Purchase, Option<usize>),
         leg: &dyn Fn(u16, u16) -> GoodsLeg,
     ) -> (u64, i64) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
@@ -1621,6 +1654,7 @@ impl Core {
         };
         let key = ctx.streams.key(&taste);
         let by_product = self.stalls(ctx, firm, wants);
+        let rates = self.state.consumption.clone();
         let (mut sales, mut spent) = (0, 0);
         let mut money = Vec::new();
         for (product, stalls) in by_product {
@@ -1635,7 +1669,16 @@ impl Core {
                     place.near.push((i, 0.0));
                 }
             }
-            let plain: Vec<Stall> = stalls.iter().map(|x| x.0).collect();
+            let rate_of = |ccy: u8| -> Option<f64> {
+                rates.get(usize::from(ccy)).copied().flatten().and_then(|r| r.get(taxed?).copied())
+            };
+            let plain: Vec<Stall> = stalls
+                .iter()
+                .map(|(stall, _, ccy, _)| match rate_of(*ccy) {
+                    Some(r) => Stall { price: whole_units(from_i64(stall.price) * (1.0 + r)), ..*stall },
+                    None => *stall,
+                })
+                .collect();
             let Some(lot) = floor_to_i64(self.lot(product)) else { continue };
             let tastes = Tastes { key, day: day.get(), substep: SubStep::S5c.ordinal() };
             let lots = |seller: PartyKey, round: u32| {
@@ -1662,24 +1705,7 @@ impl Core {
                 };
                 out.clear();
                 sale.flows((Denom::money(ccy), SOLD, 0), Some(leg(product, unit)), sale.seller.slot().get(), &mut out);
-                if let (true, Some(Some(rate)), Some(included)) = (
-                    purpose == crate::core_stats::Purchase::Final,
-                    self.state.consumption.get(usize::from(ccy)).copied(),
-                    self.state.included,
-                ) {
-                    // The consumption tax a price paid includes, which the seller collects for its treasury once paid.
-                    let tax = phx_ledger::opening::whole(included(from_i64(sale.paid), rate));
-                    if tax > 0 {
-                        self.taxes.arising.push(crate::core_taxes::Arising {
-                            collector: sale.seller,
-                            payer: sale.buyer,
-                            base: crate::core_taxes::CONSUMPTION,
-                            tax,
-                            ccy,
-                            on: (sale.buyer, sale.seller, sale.paid, SOLD, sale.seller.slot().get()),
-                        });
-                    }
-                }
+                let tax = rate_of(ccy).map_or(0, |rate| self.arise_tax(&sale, ccy, rate));
                 for f in out.drain(..) {
                     if f.denomination.is_money() {
                         if f.payer == sale.buyer && f.payee == sale.seller {
@@ -1697,7 +1723,7 @@ impl Core {
                     self.set_record_word(firm, sale.seller.slot(), SOLD_UNITS, sold + sale.units);
                 }
                 let t = self.goods.traded.entry((product, region)).or_insert((0, 0));
-                (t.0, t.1) = (t.0 + i128::from(sale.paid), t.1 + i128::from(sale.units));
+                (t.0, t.1) = (t.0 + i128::from(sale.paid - tax), t.1 + i128::from(sale.units));
                 sales += 1;
                 spent += sale.paid;
                 let r = recorded.entry((ccy, sale.buyer.kind())).or_insert((0, 0));
@@ -1709,6 +1735,24 @@ impl Core {
         }
         self.pending.append(&mut money);
         (sales, spent)
+    }
+
+    /// The tax on products a final sale's price paid includes, at its final use's rate, arising for its seller to
+    /// collect for its treasury once the sale is paid; what it is.
+    fn arise_tax(&mut self, sale: &Sale, ccy: u8, rate: f64) -> i64 {
+        let Some(included) = self.state.included else { return 0 };
+        let tax = phx_ledger::opening::whole(included(from_i64(sale.paid), rate));
+        if tax > 0 {
+            self.taxes.arising.push(crate::core_taxes::Arising {
+                collector: sale.seller,
+                payer: sale.buyer,
+                base: crate::core_taxes::CONSUMPTION,
+                tax,
+                ccy,
+                on: (sale.buyer, sale.seller, sale.paid, SOLD, sale.seller.slot().get()),
+            });
+        }
+        tax
     }
 
     /// A sale's goods leg covered by its seller's units until its payment settles.

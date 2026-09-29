@@ -5,7 +5,6 @@
 use if_state::kinds::{TaxKind, TaxLaw};
 use phx_core::{Declarations, OpeningCountry, Register, System, declare_prim};
 use phx_macros::clause;
-use phx_num::Fixed;
 
 declare_prim! {
     /// Each income tax band's lower edge, as a multiple of the mean wage, the first at nothing.
@@ -18,13 +17,6 @@ declare_prim! {
     /// Each income tax band's marginal rate.
     pub BAND_RATES = "TAX.income_band_rates" {
         kind: Policy, decided_by: "parliament", value: Table1 { axis_exp: 0, exp: 3 }, clause: "TAX.1", scope: PerCountry
-    }
-}
-
-declare_prim! {
-    /// The consumption tax's rate on the price before it.
-    pub CONSUMPTION_RATE = "TAX.consumption_rate" {
-        kind: Policy, decided_by: "parliament", value: Fixed { exp: 3 }, clause: "TAX.1", scope: PerCountry
     }
 }
 
@@ -56,7 +48,6 @@ pub fn law(register: &Register, c: &OpeningCountry) -> Result<TaxLaw, String> {
     }
     Ok(TaxLaw {
         bands: edges.into_iter().zip(rates).collect(),
-        consumption_rate: register.fixed_in(CONSUMPTION_RATE.id, c.id)?,
         remit_day: u32::try_from(register.count(REMIT_DAY.id)?).map_err(|e| e.to_string())?,
     })
 }
@@ -94,7 +85,6 @@ impl System for Tax {
         for p in [&BAND_EDGES, &BAND_RATES] {
             let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(p);
         }
-        let _: phx_core::Prim<Fixed<3>> = d.prim(&CONSUMPTION_RATE);
         let _: phx_core::Prim<phx_num::Count> = d.prim(&REMIT_DAY);
         d.market(Box::new(TAXES));
     }
