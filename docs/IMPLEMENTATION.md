@@ -787,7 +787,12 @@ world switches to the core.
     check kept by its identity and reporting "not yet" until h rebuilds it on the core. The first smoke on the core
     (750,000 persons, 20 days): a median turn of 2,502 ms and a worst of 7,522 ms (the old world's ratchets stood at
     10,000 and 32,700), 2,403 bytes a person, one core busy — the core's day runs on one thread, so the ratchet of
-    cores busy stays broken until the day is sharded on the pool, the next budget work. Left: the old kernel's crates
+    cores busy stays broken until the day is sharded on the pool, the next budget work. Since (2026-09-29): the
+    employers' decisions read their own vacancies by an index, the goods day caches lots and recipes and builds only
+    the wanted products' stalls, and the world holds the device's pool, on which each meeting's choices and sales run
+    (their outcome the same on any pool): a median turn of 1,637 ms, a worst of 5,147 ms, 1.52 cores busy, every
+    ratchet kept. The rest of the goods day — making, input orders, the sales' flows — runs on one thread; it is the
+    next to shard. Left: the old kernel's crates
     and the systems' handlers, which nothing runs now (the books, the agents' tables, the markets' old instances, the
     accounts, the old audit), deleted with the primitives only they read.
   - Measured at the first 35-day run on the core (150,000 persons, seed 1): at the month's end payday 4,326 of
