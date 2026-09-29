@@ -7,6 +7,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::calendar::Calendar;
+use phx_core::calendar::period::ScheduleDates;
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::Flow;
 use phx_id::{CountryId, Day, PartyKey, Slot};
@@ -55,6 +56,17 @@ pub struct Taxes {
     pub remitted: i128,
     pub recovered: i128,
     pub sample: Vec<(i64, i64, u8)>,
+}
+
+/// A currency's collection dates from this month's collection day, and the coming one.
+fn collection_day(ccy: u8, (day, calendar, remit): (Day, &Calendar, u32)) -> (ScheduleDates, Day) {
+    let date = calendar.date(day);
+    let Some(anchor) = u8::try_from(remit).ok().and_then(|d| phx_id::Date::new(date.year(), date.month(), d)) else {
+        phx_num::violation!(clause = "TAX.8", "a collection day no month has", day = remit);
+    };
+    let dates = phx_ledger::opening::monthly(anchor, CountryId::new(ccy));
+    let due = dates.nth(calendar, 1);
+    (dates, due)
 }
 
 impl Core {
@@ -112,6 +124,10 @@ impl Core {
             }
         }
         let Some(family) = self.families.iter().position(|f| f.name == COLLECTED) else { return };
+        // The debts due before today are closed, so none takes today's taxes.
+        self.taxes.open.retain(|(_, _, d), _| *d >= day);
+        // Every tax arising today in a currency is owed on the same collection day.
+        let mut collection: BTreeMap<u8, (ScheduleDates, Day)> = BTreeMap::new();
         for a in std::mem::take(&mut self.taxes.arising) {
             if let Some(n) = unpaid.get_mut(&a.on).filter(|n| **n > 0) {
                 *n -= 1;
@@ -128,26 +144,15 @@ impl Core {
                 continue;
             }
             let Some(Some(remit)) = self.state.remit_day.get(usize::from(a.ccy)).copied() else { continue };
-            self.owe_tax(family, (a, treasury), (day, calendar, remit));
+            let due = *collection.entry(a.ccy).or_insert_with(|| collection_day(a.ccy, (day, calendar, remit)));
+            self.owe_tax(family, (a, treasury), due);
             self.recognise(a.collector, Line::Taxes, a.tax);
         }
     }
 
     /// A collector's debt for a tax: added to the one it owes for the base on the coming collection day, or opened.
-    fn owe_tax(
-        &mut self,
-        family: usize,
-        (a, treasury): (Arising, PartyKey),
-        (day, calendar, remit): (Day, &Calendar, u32),
-    ) {
-        let date = calendar.date(day);
-        let Some(anchor) = u8::try_from(remit).ok().and_then(|d| phx_id::Date::new(date.year(), date.month(), d))
-        else {
-            phx_num::violation!(clause = "TAX.8", "a collection day no month has", day = remit);
-        };
+    fn owe_tax(&mut self, family: usize, (a, treasury): (Arising, PartyKey), (dates, due): (ScheduleDates, Day)) {
         let country = CountryId::new(a.ccy);
-        let dates = phx_ledger::opening::monthly(anchor, country);
-        let due = dates.nth(calendar, 1);
         let Some(f) = self.families.get_mut(family) else { return };
         if let Some(edge) = self.taxes.open.get(&(a.collector, a.base, due)).copied()
             && f.store.edges.is_open(Slot::new(edge))
@@ -168,7 +173,6 @@ impl Core {
             Some(due),
         );
         f.moves.lent.push((treasury, a.tax));
-        self.taxes.open.retain(|(_, _, d), _| *d >= day);
         self.taxes.open.insert((a.collector, a.base, due), edge.get());
     }
 
