@@ -44,8 +44,8 @@ pub struct Arising {
 }
 
 /// The taxes: those waiting on their bases' settlement, each collector's debt open for a base and a collection day,
-/// what arose by base and how often, what was remitted, and a sample of the income tax withheld, with the gross wage
-/// it was withheld from, for the levies' check.
+/// what arose by base and how often, what was remitted, what estates paid of the debts lost when their collectors
+/// ended, and a sample of the income tax withheld, with the gross wage it was withheld from, for the levies' check.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Taxes {
     pub(crate) arising: Vec<Arising>,
@@ -53,6 +53,7 @@ pub struct Taxes {
     pub arisen: [i128; BASES],
     pub arisings: [u64; BASES],
     pub remitted: i128,
+    pub recovered: i128,
     pub sample: Vec<(i64, i64, u8)>,
 }
 
@@ -95,6 +96,7 @@ impl Core {
             *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
         }
         let mut remitted_failed = unpaid.clone();
+        let estate = self.names.iter().position(|n| *n == phx_core::ESTATE_KIND.name).map(kind_number);
         for f in flows.iter().filter(|f| f.reason == TAXED && f.denomination.is_money()) {
             if let Some(n) =
                 remitted_failed.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0)
@@ -102,7 +104,12 @@ impl Core {
                 *n -= 1;
                 continue;
             }
+            // An estate pays its collector's debt, which closed as lost when the collector ended: remitted, and
+            // recovered of what was lost.
             self.taxes.remitted += i128::from(f.amount);
+            if Some(f.payer.kind()) == estate {
+                self.taxes.recovered += i128::from(f.amount);
+            }
         }
         let Some(family) = self.families.iter().position(|f| f.name == COLLECTED) else { return };
         for a in std::mem::take(&mut self.taxes.arising) {
@@ -165,8 +172,8 @@ impl Core {
         self.taxes.open.insert((a.collector, a.base, due), edge.get());
     }
 
-    /// What arose held to what was remitted, what collectors still owe and what their debts owed when they closed; a
-    /// difference is a finding of the taxes family.
+    /// What arose held to what was remitted, what collectors still owe and what their debts owed when they closed, less
+    /// what their estates recovered of that; a difference is a finding of the taxes family.
     #[clause("TAX.5", "N1", "II.5")]
     pub(crate) fn audit_taxes(&mut self, day: Day) {
         let Some(f) = self.families.iter().find(|f| f.name == COLLECTED) else { return };
@@ -178,7 +185,7 @@ impl Core {
             .map(|r| i128::from(r.amount) + i128::from(r.arrears))
             .sum();
         let arisen: i128 = self.taxes.arisen.iter().sum();
-        let accounted = self.taxes.remitted + owed + f.lost;
+        let accounted = self.taxes.remitted + owed + f.lost - self.taxes.recovered;
         if arisen != accounted {
             self.found.push(Finding {
                 family: "taxes",
@@ -188,8 +195,8 @@ impl Core {
                 unit: Unit::Count,
                 day,
                 detail: format!(
-                    "{arisen} of tax arose where {} was remitted, {owed} is owed and {} was lost",
-                    self.taxes.remitted, f.lost
+                    "{arisen} of tax arose where {} was remitted, {owed} is owed and {} was lost, {} of it recovered",
+                    self.taxes.remitted, f.lost, self.taxes.recovered
                 ),
             });
         }

@@ -744,15 +744,19 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
         std::fs::write(path, text + "\n").map_err(|e| format!("{}: {e}", path.display()))?;
     }
+    // A run is clean only when its audit found nothing: a finding is a missing or wrong mechanism.
+    let findings = w.findings().len();
+    let clean = all_pass && ratchet_failures.is_empty() && memory_ok && findings == 0;
     println!(
-        "{} turns, {} days, peak {} MiB; {}; budget {}",
+        "{} turns, {} days, peak {} MiB; {} findings; {}; budget {}",
         turns.len(),
         turns.iter().map(|t| u64::from(t.days)).sum::<u64>(),
         peak.map_or(0, |p| p >> 20),
-        if all_pass && ratchet_failures.is_empty() && memory_ok { "clean" } else { "not clean" },
+        findings,
+        if clean { "clean" } else { "not clean" },
         if budget_kept { "kept" } else { "missed" }
     );
-    Ok(all_pass && ratchet_failures.is_empty() && memory_ok && budget_kept)
+    Ok(clean && budget_kept)
 }
 
 /// Assembles the world and writes its calendar's measurement.

@@ -106,18 +106,18 @@ pub fn attend(i: &AttendIn) -> bool {
     i.draw < super::attention::review_chance(i.revenue_per_day, i.markup, (i.own, &i.public), i.cost)
 }
 
-/// What winding down weighs: continuing's worth at the return required, against its money and goods less what ending
-/// would owe.
+/// What winding down weighs: continuing's worth at the return required, against what ending adds — what the firm's
+/// stock and plant would fetch, less what ending alone costs.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct CloseIn {
     pub continuing: f64,
-    pub held: f64,
-    pub owed: f64,
+    pub proceeds: f64,
+    pub ending_costs: f64,
 }
 
 /// Whether its owner winds the firm down.
-#[clause("FRM.15")]
+#[clause("FRM.11")]
 #[must_use]
 pub fn close(i: &CloseIn) -> bool {
-    super::endings::closes(i.continuing, (i.held, i.owed))
+    super::endings::closes(i.continuing, (i.proceeds, i.ending_costs))
 }

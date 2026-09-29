@@ -122,10 +122,10 @@ impl Core {
 
     /// Whether a solvent firm's owner winds it down on its production schedule: continuing — the margin a year it
     /// expects on the sales it expects, at the price it expects over its cost of making a unit, held at the return
-    /// its management requires — against what winding down returns: its money and goods, its own product at the price
-    /// it expects and the rest at their cost, less what it would owe on ending, its staff's severance with it. A firm
-    /// whose management requires no return, or that does not know its cost, goes on.
-    #[clause("FRM.11", "FRM.15")]
+    /// its management requires — against what ending adds: what its stock and plant would fetch, none while no
+    /// market buys them, less its staff's severance, which only ending owes. Its money and debts are its owners'
+    /// either way. A decision it cannot weigh — no return required, no cost known, no price expected — is not taken.
+    #[clause("FRM.11")]
     pub(crate) fn winds_down(&self, ctx: &LabourCtx<'_>, (firm, slot): (usize, Slot), day: Day) -> bool {
         let key = PartyKey::new(crate::core::kind_number(firm), slot);
         let closing = self.bind(&sys_frm::points::CLOSE);
@@ -144,32 +144,17 @@ impl Core {
         let Ok(product) = u16::try_from(product) else { return false };
         let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) else { return false };
         let lot = sys_frm::FilingPrims::lot(ctx.register, product);
-        let price = self.price_expected(firm, slot, lot, &prefs);
+        let phx_num::Missing::Present(price) = self.price_expected(firm, slot, lot, &prefs) else { return false };
         let expected = phx_rand::float::from_i64(expected) / crate::consts::firm::PART_ONE;
         let continuing = (price - cost) * expected * crate::consts::DAYS_A_YEAR / rate;
-        let money = self
-            .kinds
-            .get(firm)
-            .and_then(|k| k.accounts.as_ref())
-            .map_or(0, |a| a.balance.get(slot).unwrap_or(0) + a.pending.get(slot).unwrap_or(0));
-        let goods: f64 = self
-            .goods
-            .stocks
-            .holdings(key)
-            .map(|h| match self.goods.units.held(h.unit) {
-                Some(phx_core::goods::Held::Good(g)) if g.product == product => {
-                    phx_rand::float::from_i64(h.units) * price
-                }
-                _ => phx_rand::float::from_i64(h.cost),
-            })
-            .sum();
         let country = ctx.country_of(u32::try_from(region).unwrap_or(u32::MAX));
         let (claims, _) = self.claims_of(ctx, (key, country), day);
-        let owed: i64 = claims.iter().map(|c| c.amount).sum();
+        let severance: i64 =
+            claims.iter().filter(|c| c.reason == crate::consts::reason::SEVERANCE).map(|c| c.amount).sum();
         self.decide(closing, key, |_| sys_frm::rules::review::CloseIn {
             continuing,
-            held: phx_rand::float::from_i64(money) + goods,
-            owed: phx_rand::float::from_i64(owed),
+            proceeds: 0.0,
+            ending_costs: phx_rand::float::from_i64(severance),
         })
     }
 
@@ -213,6 +198,9 @@ impl Core {
         self.pass_goods(key, estate);
         self.pass_rights(key, estate);
         self.pass_projects(key, estate);
+        if !defaulted {
+            self.leave_classed_book(key);
+        }
         let claims = self.close_contracts(ctx, (key, country.get()), day);
         self.insolvency.claims.insert(estate, claims);
         let workers = self.owners_to_estate(key, estate);
@@ -224,6 +212,13 @@ impl Core {
         for v in self.labour.vacancies.iter_mut().filter(|v| v.employer == key) {
             v.open = 0;
         }
+        // Its offers and applications go with its vacancies, so no one is hired by a firm that has ended.
+        let vacancies = &self.labour.vacancies;
+        let theirs = |a: &phx_market::hiring::Application| {
+            vacancies.get(usize::try_from(a.vacancy).unwrap_or(usize::MAX)).is_some_and(|v| v.employer == key)
+        };
+        self.labour.offers.retain(|a| !theirs(a));
+        self.labour.applications.retain(|a| !theirs(a));
         self.labour.fills.retain(|(employer, _), _| *employer != key);
         self.labour.reviews.remove(&key);
         self.goods.outlooks.awaiting.remove(&key.slot().get());
@@ -239,6 +234,18 @@ impl Core {
             region: u32::try_from(region).unwrap_or(u32::MAX),
             defaulted,
         });
+    }
+
+    /// A solvent firm's loans taken off its lenders' classed book before they close: its estate repays them, so their
+    /// closing is no default a bank learns from.
+    #[clause("BNK.20")]
+    fn leave_classed_book(&mut self, borrower: PartyKey) {
+        for (i, family) in self.families.iter().enumerate() {
+            let Some(side) = family.store.kinds.first().filter(|k| **k == borrower.kind()).map(|_| 0) else { continue };
+            for edge in family.store.of(side, borrower.slot()) {
+                self.credit.classes.remove(&(i, edge.get()));
+            }
+        }
     }
 
     /// Every good a firm holds passed to its estate at its cost, where it lies, with what binds it — a cover of a sale not

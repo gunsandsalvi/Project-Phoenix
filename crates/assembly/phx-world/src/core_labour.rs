@@ -502,8 +502,9 @@ impl Core {
         // What a unit leaves over its cost of making it at the price the head of its line expects.
         if let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) {
             let (_, prefs) = self.decider(self.bind(ctx.kind.offer), key);
-            let margin = self.price_expected(firm, slot, lot, &prefs) - cost;
-            self.review_wages(ctx, day, (family, key, &law), (margin, &needs, &staff, f.region));
+            if let Missing::Present(price) = self.price_expected(firm, slot, lot, &prefs) {
+                self.review_wages(ctx, day, (family, key, &law), (price - cost, &needs, &staff, f.region));
+            }
         }
         let Some(units_a_day) = self.expected_of(firm, slot) else { return (0, 0, 0) };
         let input = PostIn { price: from_i64(f.price) / lot, units_a_day, financing, minimum_hour, needs };
@@ -554,9 +555,9 @@ impl Core {
     }
 
     /// The price a unit a firm expects its product to sell for: its stance's outlook of its product's mark in its
-    /// region, or, before the mark has printed there, its own price.
-    pub(crate) fn price_expected(&self, firm: usize, slot: Slot, lot: f64, prefs: &phx_core::Prefs) -> f64 {
-        let Some(store) = self.kinds.get(firm) else { return 0.0 };
+    /// region, or, before the mark has printed there, its own price; missing where it holds no price or stance.
+    pub(crate) fn price_expected(&self, firm: usize, slot: Slot, lot: f64, prefs: &phx_core::Prefs) -> Missing<f64> {
+        let Some(store) = self.kinds.get(firm) else { return Missing::Absent };
         let rec = store.record(slot);
         let read = |i: usize| match rec.get(i).map(|w| w.get()) {
             Some(Missing::Present(v)) => usize::try_from(v).ok(),
@@ -569,12 +570,12 @@ impl Core {
         let (Some(product), Some(region), Some(view), Some(stance), Some(price)) =
             (read(PRODUCT), read(REGION), self.goods.outlooks.view(prefs), as_index(prefs.stance), read(PRICE))
         else {
-            return 0.0;
+            return Missing::Absent;
         };
         let series = (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX));
         match self.goods.outlooks.outlook(series, view, stance) {
-            Missing::Present(mark) => mark / lot,
-            Missing::Absent => from_u64(u64::try_from(price).unwrap_or(0)) / lot,
+            Missing::Present(mark) => Missing::Present(mark / lot),
+            Missing::Absent => Missing::Present(from_u64(u64::try_from(price).unwrap_or(0)) / lot),
         }
     }
 
@@ -1003,6 +1004,11 @@ impl Core {
             return false;
         };
         let Some(family) = self.employer_family(v.employer) else { return false };
+        let employer_live =
+            self.kinds.get(usize::from(v.employer.kind())).is_some_and(|k| k.parties.at(v.employer.slot()).is_some());
+        if !employer_live {
+            violation!(clause = "LAB.15", "a hire by an employer that has ended", employer = v.employer.word());
+        }
         let household = hired.seeker.household;
         let Some(ps) = self.persons.get(place).and_then(Option::as_ref) else { return false };
         let Some(at) = ps.place_of(household.slot(), hired.seeker.person) else {

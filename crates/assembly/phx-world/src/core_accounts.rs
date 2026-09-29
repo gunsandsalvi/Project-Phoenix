@@ -183,6 +183,7 @@ impl Core {
         for f in failed {
             *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
         }
+        let estate = self.names.iter().position(|n| *n == phx_core::ESTATE_KIND.name).map(crate::core::kind_number);
         for f in flows.iter().filter(|f| f.denomination.is_money()) {
             if let Some(n) = unpaid.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0) {
                 *n -= 1;
@@ -190,6 +191,8 @@ impl Core {
             }
             match f.reason {
                 WAGE | SEVERANCE => self.recognise(f.payer, Line::Wages, f.amount),
+                // An estate paying a loan its borrower's ending wrote off is a recovery of that loss, not interest.
+                REPAID if Some(f.payer.kind()) == estate => self.recognise(f.payee, Line::WrittenOff, -f.amount),
                 REPAID => {
                     self.recognise(f.payer, Line::InterestPaid, f.amount);
                     self.recognise(f.payee, Line::InterestReceived, f.amount);

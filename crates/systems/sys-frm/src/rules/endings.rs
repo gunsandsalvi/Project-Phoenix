@@ -10,12 +10,13 @@ pub fn founds(venture: f64, alternative: f64) -> bool {
     venture > alternative
 }
 
-/// An owner closes a solvent firm when continuing is worth less than what winding down returns: its stock and plant
-/// at the prices it expects to fetch, less what it owes.
-#[clause("FRM.15")]
+/// An owner exits a line it cannot make pay: when continuing is worth less than what ending adds — what its stock
+/// and plant would fetch, less what ending alone costs. Its money and its debts are the owner's either way, so they
+/// weigh on neither side.
+#[clause("FRM.11")]
 #[must_use]
-pub fn closes(continuing: f64, (stock_and_plant, owed): (f64, f64)) -> bool {
-    continuing < stock_and_plant - owed
+pub fn closes(continuing: f64, (proceeds, ending_costs): (f64, f64)) -> bool {
+    continuing < proceeds - ending_costs
 }
 
 #[cfg(test)]
@@ -32,5 +33,7 @@ mod tests {
     fn close_compares_continuing_and_winding_down() {
         assert!(closes(50.0, (100.0, 40.0)));
         assert!(!closes(70.0, (100.0, 40.0)));
+        assert!(!closes(0.0, (0.0, 40.0)), "a line that pays nothing still saves its severance by going on");
+        assert!(closes(-50.0, (0.0, 40.0)), "one that loses more than ending costs ends");
     }
 }
