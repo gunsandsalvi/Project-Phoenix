@@ -68,6 +68,7 @@ impl World {
             processes: &self.processes,
             regions: &regions,
         };
+        self.core.weather_day(crate::world::geo_arc(&self.own), (&self.streams, &self.calendar), day);
         self.core.measure_rates(&ctx, day);
         let pop_day = self.core.run_hazards(&ctx, day);
         self.core.pop_days.push((day, pop_day));

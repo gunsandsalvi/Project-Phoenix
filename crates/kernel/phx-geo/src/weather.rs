@@ -86,6 +86,31 @@ pub fn next_latent(latent: Missing<f64>, persistence: f64, shock: f64) -> f64 {
     }
 }
 
+/// A region's latents, one a weather variable in `VARIABLES`' order; absent before its first day.
+pub type Latents = [Missing<f64>; VARIABLES.len()];
+
+/// A region's day of weather: each variable's latent moved on by its declared persistence from the region's own draws,
+/// in `VARIABLES`' order, and its value through the month's marginal, in its event's units.
+#[clause("CHN.3")]
+pub fn region_day(climate: &crate::climate::RegionClimate, month: u8, latents: &mut Latents, d: &mut Draws) -> Latents {
+    let marginals = climate.month(month);
+    if marginals.len() != VARIABLES.len() || climate.persistence.len() != VARIABLES.len() {
+        violation!(
+            clause = "CHN.3",
+            "a climate that does not declare every weather variable",
+            declared = marginals.len()
+        );
+    }
+    let mut out = [Missing::Absent; VARIABLES.len()];
+    let steps = latents.iter_mut().zip(&climate.persistence).zip(marginals).zip(&VARIABLES).zip(out.iter_mut());
+    for ((((latent, phi), marginal), var), o) in steps {
+        let z = next_latent(*latent, *phi, normal(d));
+        *latent = Missing::Present(z);
+        *o = Missing::Present(marginal.quantile(normal_cdf(z)) * var.units_per);
+    }
+    out
+}
+
 /// A latent as its fact's fixed-point value, and back.
 fn to_fact(z: f64) -> i64 {
     let Ok(f) = Fixed::<6>::from_f64(z, Round::HalfEven) else {

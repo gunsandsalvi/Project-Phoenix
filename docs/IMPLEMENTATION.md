@@ -1057,6 +1057,11 @@ world switches to the core.
     measures; every party's own opening write (kind, identity, bank, amount) in the run's `opening.csv`; LC-0-24 reads
     it. GDS.11's reads (LC-1-15) move to d: the basis between places tracks freight, which shipments bring, and the
     commodity shocks are the weather's and the catastrophes'.
+  - d: the weather and catastrophes on the core (CHN.3, GEO.8, GDS.9; `core_weather`, ARCHITECTURE §7.8), not yet
+    run: each region's weather and each country's catastrophes drawn at the day's start and recorded as events; the
+    goods standing on a struck tile destroyed at their owners by its severity; each catastrophe's regions and the
+    first rise after it of every product's mark followed. LC-0-13, LC-0-14 and LC-1-46 read them; LC-0-58 now has
+    public events to read.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

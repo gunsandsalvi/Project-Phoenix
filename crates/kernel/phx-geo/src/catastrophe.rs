@@ -60,13 +60,15 @@ pub fn footprint(grid: &Grid, exposure: &[Option<u8>], spread: &[f64], origin: T
 }
 
 /// Days in a date's year, over which a yearly chance compounds.
-fn days_in_year(date: Date) -> u32 {
+#[must_use]
+pub fn days_in_year(date: Date) -> u32 {
     (1..=crate::consts::MONTHS_U8).filter_map(|m| Date::days_in_month(date.year(), m)).map(u32::from).sum()
 }
 
 /// One hazard's day in one country: per exposure class, the count of origins a binomial over the class's tiles at
 /// its daily chance, the origins uniform among them, and each origin's footprint with its tiles' severities.
-fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d: &mut Draws) -> Vec<EventIntent> {
+#[must_use]
+pub fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d: &mut Draws) -> Vec<EventIntent> {
     let mut out = Vec::new();
     let Some(classes) = h.by_country.get(country) else {
         violation!(clause = "GEO.8", "a country the map does not have", country = country);

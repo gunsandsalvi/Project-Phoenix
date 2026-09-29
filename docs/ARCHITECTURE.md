@@ -1435,6 +1435,16 @@ class's land tiles at its daily chance, the origins picked uniformly among them 
 breadth first over the eight neighbours in tile-id order, each untried land tile joining at the hazard's spread chance
 for its exposure, and each struck tile draws its severity from its exposure's distribution.
 
+**On the core** (`core_weather`): the world's day begins with `Core::weather_day`, which draws each region's
+weather (`phx_geo::weather::region_day`, its latents kept in the core's `Weather`, saved with it) and each country's
+catastrophes (`phx_geo::catastrophe::hazard_day`), each recorded in the core's event store with its region or its
+struck tiles, the weather public by the declared rule. The struck tiles and their severities wait for the day's goods,
+where `Core::destroy`, beside spoilage, destroys each severity's share in permille of every free unit of every good a
+firm sited on the tile holds, whole units, as a flow to nature (`DESTROYED`) the goods family reads and a loss of the
+units' cost in the owner's accounts. Plant, dwellings and infrastructure join what a catastrophe destroys when they
+are held on the core. Each catastrophe is followed for the prices' reads: its regions and every mark on its day, and
+the first day after it each (product, region) mark rose above that (`Shock`), which LC-1-46 reads.
+
 ### 7.9 The valve
 
 - **The world runs once** (spec Appendix E 36): there is no weight-one run, and no run at another resolution or seed

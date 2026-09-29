@@ -229,8 +229,10 @@ pub mod reason {
     pub const REMITTED: u8 = 15;
     /// A treasury's money to its public agency for what the agency pays that day.
     pub const FUNDED: u8 = 16;
+    /// Goods destroyed where a catastrophe struck.
+    pub const DESTROYED: u8 = 17;
     /// The reasons a day's record counts failed flows by: every reason above.
-    pub const REASONS: usize = 17;
+    pub const REASONS: usize = 18;
 }
 /// The bits a draw's subject gives a region beside its buyer, and a meeting's round beside its seller.
 pub mod draws {

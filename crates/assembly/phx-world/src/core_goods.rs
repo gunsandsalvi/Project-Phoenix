@@ -41,6 +41,8 @@ use sys_frm::rules::produce::{Produce, ProduceIn};
 pub struct GoodsDay {
     pub day: u32,
     pub made: i64,
+    /// The units destroyed where a catastrophe struck.
+    pub destroyed: i64,
     /// The productions made today, and those whose way's inputs were not all there to use.
     pub productions: u64,
     pub unfed: u64,
@@ -599,6 +601,7 @@ impl Core {
         self.goods.cheapest = self.cheapest(ctx);
         let mut moved: Vec<Flow> = Vec::new();
         self.spoil(day, &mut moved);
+        record.destroyed = self.destroy(day, &mut moved);
         record.made = self.make(ctx, day, &mut moved);
         record.inputs_wanted = self.buy_inputs(ctx, day);
         let (spenders, wants) = self.decide_spending(ctx, day);
@@ -622,14 +625,17 @@ impl Core {
         (record.sales, record.spent) = (sales, spent);
         (record.debits, record.credits, record.unnamed) = std::mem::take(&mut self.goods.named);
         let types = &ctx.management.types;
+        let mut printed = Vec::new();
         for ((product, region), (paid, units)) in std::mem::take(&mut self.goods.traded) {
             if units > 0 {
                 let lot = self.lot(product);
                 let mark = phx_rand::float::from_i128(paid) / phx_rand::float::from_i128(units) * lot;
                 self.goods.marks.insert((product, region), mark);
                 self.goods.outlooks.print((product, region), mark, (day, Some(ctx.management.sensitivity)), types);
+                printed.push(((product, region), mark));
             }
         }
+        self.note_rises(day, &printed);
         self.attend(ctx, day);
         (record.reviews, record.repriced) = self.review_prices(ctx, day);
         self.count_stances(day);
@@ -654,7 +660,7 @@ impl Core {
 
     /// A goods flow applied at once from the payer's free units, its payee receiving them at `cost`; the cost the
     /// payer's units carried out, none where the payer held too few.
-    fn move_goods(&mut self, flow: Flow, cost: Cost, day: Day, moved: &mut Vec<Flow>) -> Option<i64> {
+    pub(crate) fn move_goods(&mut self, flow: Flow, cost: Cost, day: Day, moved: &mut Vec<Flow>) -> Option<i64> {
         match self.goods.stocks.apply(&flow, Bound::Free, cost, day) {
             Ok(carried) => {
                 moved.push(flow);

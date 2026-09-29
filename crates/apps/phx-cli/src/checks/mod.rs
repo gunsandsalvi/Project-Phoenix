@@ -86,8 +86,8 @@ pub const CHECKS: &[Check] = &[
     saves::LC_0_10,
     geo::LC_0_11,
     geo::LC_0_12,
-    awaiting::LC_0_13,
-    awaiting::LC_0_14,
+    geo::LC_0_13,
+    geo::LC_0_14,
     awaiting::LC_0_15,
     core::LC_0_16,
     awaiting::LC_0_17,
@@ -185,6 +185,6 @@ pub const CHECKS: &[Check] = &[
     lives::LC_1_51,
     core::LC_1_52,
     services::LC_1_45,
-    awaiting::LC_1_46,
+    geo::LC_1_46,
     awaiting::LC_1_47,
 ];

@@ -75,6 +75,8 @@ pub struct Core {
     pub(crate) events_today: Vec<crate::core_pop::EventCount>,
     /// Every event, dated, with the parties it names, and whether the declared rule has made it public.
     pub happened: phx_core::EventStore,
+    /// The regions' weather and today's struck tiles.
+    pub weather: crate::core_weather::Weather,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,

@@ -186,6 +186,7 @@ impl Core {
             events: Vec::new(),
             events_today: Vec::new(),
             happened,
+            weather: crate::core_weather::Weather::default(),
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),

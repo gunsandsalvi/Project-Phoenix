@@ -53,20 +53,6 @@ pub const LC_0_08: Check = live_check! {
     retired: "it compared the world with a second run of it; a stream's key comes from its own name alone",
 };
 
-pub const LC_0_13: Check = live_check! {
-    id: "LC-0-13",
-    title: "Each region's realised weather is within z = 6.1 of its declared climate for the month, adjusted for persistence",
-    from_step: "S0.13",
-    check: |_| Outcome::NotYet("awaits the weather's events on the core (S1.24 d)"),
-};
-
-pub const LC_0_14: Check = live_check! {
-    id: "LC-0-14",
-    title: "Catastrophe frequencies per hazard are within z = 6.1 of their declared rates over the run, and their losses cluster in place and time",
-    from_step: "S0.13",
-    check: |_| Outcome::NotYet("awaits the catastrophes' events on the core (S1.24 d)"),
-};
-
 pub const LC_0_15: Check = live_check! {
     id: "LC-0-15",
     title: "For every finite deposit, extracted plus remaining equals its opening quantity",
@@ -287,13 +273,6 @@ pub const LC_1_39: Check = live_check! {
     title: "IDX.5: an index's return equals the weighted return of its constituents",
     from_step: "S1.14",
     retired: "market indices, whose returns it read, are built with S3.09",
-};
-
-pub const LC_1_46: Check = live_check! {
-    id: "LC-1-46",
-    title: "when a drought strikes one place, the price there rises before prices elsewhere (GDS.9)",
-    from_step: "S1.05",
-    check: |_| Outcome::NotYet("awaits S1.24 d, the weather's shocks"),
 };
 
 pub const LC_1_47: Check = live_check! {

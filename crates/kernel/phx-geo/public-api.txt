@@ -42,8 +42,10 @@ pub const phx_geo::catastrophe::Catastrophes::STREAMS: &'static [&'static str]
 pub const phx_geo::catastrophe::Catastrophes::SUBSTEP: phx_core::substep::SubStep
 pub const phx_geo::catastrophe::Catastrophes::TABLE: &'static str
 pub const phx_geo::catastrophe::Catastrophes::WRITES: &'static [&'static str]
+pub fn phx_geo::catastrophe::days_in_year(phx_id::day::Date) -> u32
 pub fn phx_geo::catastrophe::distinct_picks(&mut phx_rand::draws::Draws, u64, u64) -> alloc::vec::Vec<u64>
 pub fn phx_geo::catastrophe::footprint(&phx_geo::grid::Grid, &[core::option::Option<u8>], &[f64], phx_id::ids::TileId, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
+pub fn phx_geo::catastrophe::hazard_day(&phx_geo::state::GeoState, &phx_geo::state::HazardState, usize, u32, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_core::events::EventIntent>
 pub mod phx_geo::climate
 pub enum phx_geo::climate::Marginal
 pub phx_geo::climate::Marginal::Beta
@@ -576,6 +578,8 @@ pub const phx_geo::weather::WeatherStream::DECL: phx_core::streams::StreamDecl
 pub const phx_geo::weather::VARIABLES: [phx_geo::weather::Variable; 4]
 pub fn phx_geo::weather::next_latent(phx_num::missing::Missing<f64>, f64, f64) -> f64
 pub fn phx_geo::weather::normal_cdf(f64) -> f64
+pub fn phx_geo::weather::region_day(&phx_geo::climate::RegionClimate, u8, &mut phx_geo::weather::Latents, &mut phx_rand::draws::Draws) -> phx_geo::weather::Latents
+pub type phx_geo::weather::Latents = [phx_num::missing::Missing<f64>; 4]
 pub struct phx_geo::Allotment
 pub phx_geo::Allotment::land: alloc::vec::Vec<u64>
 pub phx_geo::Allotment::regions: alloc::vec::Vec<u64>
