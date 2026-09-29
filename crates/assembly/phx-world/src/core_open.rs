@@ -60,6 +60,7 @@ pub(crate) struct OpenLoan {
 #[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub(crate) struct Drawn {
     pub jobs: Vec<OpenJob>,
+    pub owners: Vec<crate::core_owners::OpenOwner>,
     pub loans: Vec<OpenLoan>,
 }
 
@@ -190,6 +191,7 @@ impl Core {
             deposits: crate::core_deposits::Deposits::default(),
             plant: crate::core_plant::Plant::default(),
             freight: crate::core_freight::Freight::default(),
+            owners: crate::core_owners::Owners::default(),
             labour: crate::core_labour::CoreLabour::default(),
             goods: crate::core_goods::CoreGoods::default(),
             state: crate::core_day::CoreState::default(),
@@ -343,6 +345,20 @@ impl Core {
         let ids: Vec<u64> = self.persons_of(key);
         let country = draw.c.id.get();
         for l in &labour {
+            // Employed but no one's employee: self-employed, owning and working in a firm of its region.
+            if l.job.is_none()
+                && l.state != if_labour::class::SEARCHING
+                && l.occupation != if_labour::class::NO_OCCUPATION
+                && let Some(person) = ids.get(l.place)
+            {
+                self.drawn.owners.push(crate::core_owners::OpenOwner {
+                    household: key,
+                    person: *person,
+                    occupation: l.occupation,
+                    country,
+                    region,
+                });
+            }
             let (Some(job), Some(person)) = (l.job.as_ref(), ids.get(l.place)) else { continue };
             let at = |i: usize| job.class.get(i).copied().unwrap_or(0);
             self.drawn.jobs.push(OpenJob {

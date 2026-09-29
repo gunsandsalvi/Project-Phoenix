@@ -50,12 +50,7 @@ impl Decisions {
         if let Some((_, prefs)) = self.holders.get(&(party, office)) {
             return Some((Standing::Holder, *prefs));
         }
-        let founding = self
-            .founding
-            .get(usize::from(party.kind()))
-            .and_then(|f| f.get(usize::try_from(party.slot().get()).unwrap_or(usize::MAX)))
-            .copied();
-        Some((Standing::Founding, founding.unwrap_or(Prefs::NONE)))
+        Some((Standing::Founding, self.founding_of(party)))
     }
 
     /// Each decision's name and how many times it was taken by each standing of decider.
@@ -83,6 +78,47 @@ impl Decisions {
     #[must_use]
     pub fn position(&self, name: &str) -> Option<usize> {
         self.names.iter().position(|n| n == name)
+    }
+
+    /// A person put in every office a decision is taken in by its party's form, bringing its own preferences.
+    #[clause("PTY.16")]
+    pub(crate) fn appoint(&mut self, party: PartyKey, person: u64, prefs: Prefs) {
+        let kind = usize::from(party.kind());
+        let mut offices: Vec<u8> = self.office.iter().filter_map(|o| o.get(kind).copied().flatten()).collect();
+        offices.sort_unstable();
+        offices.dedup();
+        for office in offices {
+            self.holders.insert((party, office), (person, prefs));
+        }
+    }
+
+    /// The offices a person holds at a party left empty, or every one of its offices where no person is named.
+    #[clause("PTY.16")]
+    pub(crate) fn vacate(&mut self, party: PartyKey, person: Option<u64>) {
+        let held: Vec<(PartyKey, u8)> = self
+            .holders
+            .range((party, 0)..=(party, u8::MAX))
+            .filter(|(_, (holder, _))| person.is_none_or(|p| p == *holder))
+            .map(|(k, _)| *k)
+            .collect();
+        for k in held {
+            self.holders.remove(&k);
+        }
+    }
+
+    /// The preferences a party's institution was founded with.
+    pub(crate) fn founding_of(&self, party: PartyKey) -> Prefs {
+        self.founding
+            .get(usize::from(party.kind()))
+            .and_then(|f| f.get(usize::try_from(party.slot().get()).unwrap_or(usize::MAX)))
+            .copied()
+            .unwrap_or(Prefs::NONE)
+    }
+
+    /// How many offices a person holds.
+    #[must_use]
+    pub fn held(&self) -> usize {
+        self.holders.len()
     }
 
     /// A decision counted as taken by a standing of decider.
@@ -338,5 +374,18 @@ mod tests {
         let own = Prefs { required_return: Missing::Present(0.2), ..Prefs::NONE };
         d.holders.insert((firm, 1), (42, own));
         assert_eq!(d.in_office(0, firm), Some((Standing::Holder, own)), "the holder's, never the founding ones");
+    }
+
+    #[test]
+    fn owner_holds_every_office_until_it_leaves() {
+        let (mut d, firm) = fixture();
+        let own = Prefs { required_return: Missing::Present(0.2), ..Prefs::NONE };
+        d.appoint(firm, 42, own);
+        assert_eq!(d.in_office(0, firm), Some((Standing::Holder, own)), "the owner's own");
+        d.vacate(firm, Some(7));
+        assert_eq!(d.in_office(0, firm), Some((Standing::Holder, own)), "another person's leaving empties nothing");
+        d.vacate(firm, Some(42));
+        assert_eq!(d.in_office(0, firm).map(|x| x.0), Some(Standing::Founding), "empty, the founding preferences");
+        assert_eq!(d.held(), 0, "no office held");
     }
 }

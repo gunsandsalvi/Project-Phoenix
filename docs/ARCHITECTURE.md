@@ -2197,7 +2197,22 @@ persons. What exists of it, beside the kernel above until the world moves (S1.23
   household, naming the person by its identity and paying the wage on the job's dates. Jobs no firm's way in their
   region takes (the armed forces') are the state's, contracts from their country's treasury in `LAB.public_employment`,
   until the public agencies hold their staff.
-- **Labour on the core** (`core_labour`): each country's level by occupation is its opening staff's hours in it over
+- **Owners on the core** (`core_owners`, FRM.1, FRM.23, PTY.16): an adult the labour draw finds employed but no one's
+  employee is self-employed. After the jobs, each region's self-employed, in an order drawn by lot under the firms'
+  opening stream (purpose `OWNERS_PURPOSE`), are dealt one to each of its firms, the rest of each occupation over its
+  firms by the hours their output takes of it (`deal`), evenly where none takes it; a firm left with none is counted.
+  Each dealt person's household holds a share of the firm (`Owners::of`, `holds`) and the person works in it
+  (`Owners::working`) its country's full-time week (`LAB.full_time_hours`) in its occupation, counted with the staff
+  in the level, the posting rule's hours held and the staff's capacity, and as employed in the statistics. The first
+  working owner manages the firm: it holds every office a decision is taken in by the firm's form
+  (`Decisions::appoint`), with the preferences the firm was founded with, so the firm's decisions are counted as its
+  holder's. A working owner who dies, emigrates or retires stops working there, its offices passing to the next
+  owner working there or standing empty; the share stays its household's. A household that ends passes its shares
+  to its estate, opened even with no money; a firm that ends makes its owners its estate's, its working owners search
+  again (with no benefit, being paid no wage), and the estate pays what its claims leave to its owners, a share each;
+  an estate with no owners pays it to its country's treasury, to which what the estate owns passes too. The owners'
+  income while the firm runs is its payout (FRM.10, S2.03).
+- **Labour on the core** (`core_labour`): each country's level by occupation is its opening staff's and working owners' hours in it over
   the hours its ways ask of it at the opening output, so a firm's hours a unit of an occupation are its way's, fewer by
   its productivity, at that level. Each firm decides on its production schedule (a phase drawn per firm) by the
   labour kind's posting rule; its vacancies stand in `CoreLabour`, searchers are an index of (household, person)

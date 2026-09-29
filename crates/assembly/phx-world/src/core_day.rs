@@ -448,12 +448,13 @@ impl Core {
     }
 
     /// Each estate opened before today, on its country's business day, pays its claims by rank, each rank in proportion
-    /// to what it is owed as far as the money goes, and the rest to the party the law names where no heir is drawn —
-    /// its country's treasury, a firm's owners not yet being parties to it on the core — and is ended after the day's
-    /// settlement once it holds nothing.
+    /// to what it is owed as far as the money goes, and the rest to its owners, a share each — a firm's estate's are the
+    /// firm's — or, where it has none, to the party the law names where no heir is drawn, its country's treasury, to
+    /// which what it owns passes too; it is ended after the day's settlement once it holds nothing.
     #[clause("PTY.9", "POP.15", "L3")]
     fn estates_pay(&mut self, day: Day, calendar: &Calendar, out: &mut Vec<Flow>) -> Vec<PartyKey> {
         let mut settling = Vec::new();
+        let mut heirless = Vec::new();
         let treasury = self.names.iter().position(|n| *n == crate::consts::HEIRLESS_DESTINATION);
         for (estate, country, opened) in &self.estates {
             if *opened >= day || !calendar.is_business(*country, day) {
@@ -491,11 +492,17 @@ impl Core {
                     order: 0,
                 });
             }
-            if left > 0 {
-                let amount = left;
+            let owners = self.owners.holders_of(*estate);
+            let rest: Vec<(PartyKey, i64)> = if owners.is_empty() {
+                vec![(to, left)]
+            } else {
+                let shares = crate::core_firms::apportion_amount(left, &vec![1; owners.len()]);
+                owners.iter().copied().zip(shares).collect()
+            };
+            for (payee, amount) in rest.into_iter().filter(|(_, a)| *a > 0) {
                 out.push(Flow {
                     payer: *estate,
-                    payee: to,
+                    payee,
                     amount,
                     source: estate.slot().get(),
                     denomination: Denom::money(country.get()),
@@ -503,7 +510,11 @@ impl Core {
                     order: 0,
                 });
             }
+            heirless.push((*estate, to));
             settling.push(*estate);
+        }
+        for (estate, to) in heirless {
+            self.pass_holdings(estate, to);
         }
         settling
     }
@@ -764,6 +775,7 @@ impl Core {
                 self.waiting.insert(estate, why);
             }
             if empty && !goods {
+                self.estate_ended(estate);
                 self.waiting.remove(&estate);
                 self.goods.stocks.end(estate);
                 self.estates.retain(|(e, _, _)| *e != estate);

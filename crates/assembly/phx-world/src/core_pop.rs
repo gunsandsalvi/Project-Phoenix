@@ -426,9 +426,10 @@ impl Core {
         }
     }
 
-    /// A person gone from its household: every contract naming it closes.
+    /// A person gone from its household: every contract naming it closes, and it no longer works in a firm it owns.
     #[clause("REP.3", "REP.26")]
     fn person_left(&mut self, household: PartyKey, person: u64) {
+        self.stop_working(household, person);
         for family in &mut self.families {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
@@ -440,8 +441,8 @@ impl Core {
         }
     }
 
-    /// A household no one is left in ends: what its account holds passes to an estate that opens at the same bank,
-    /// owing what the household owed, its contracts close, and its slot is released after the day.
+    /// A household no one is left in ends: what its account holds and the shares it owns pass to an estate that opens at
+    /// the same bank, owing what the household owed, its contracts close, and its slot is released after the day.
     #[clause("PTY.9")]
     fn end_household(&mut self, key: PartyKey, (country, day): (CountryId, Day)) -> Option<PartyKey> {
         let place = usize::from(key.kind());
@@ -452,8 +453,10 @@ impl Core {
         });
         let debts = self.debts_of(key);
         let mut estate = None;
-        if let Some((bank, money)) = account.filter(|(_, m)| *m != 0) {
+        let owns = self.owners.holds.contains_key(&key);
+        if let Some((bank, money)) = account.filter(|(_, m)| *m != 0 || owns) {
             let e = self.open_estate((bank, money), (country, day));
+            self.pass_holdings(key, e);
             self.insolvency.claims.insert(e, debts);
             if let Some(a) = self.kinds.get_mut(place).and_then(|k| k.accounts.as_mut()) {
                 a.balance.set(key.slot(), 0);

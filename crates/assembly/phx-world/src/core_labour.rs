@@ -246,7 +246,7 @@ impl Core {
             .collect()
     }
 
-    /// Labour opened on the core: each country's law and ways, its level from the opening's staff, what financing
+    /// Labour opened on the core: each country's law and ways, its level from the opening's staff and working owners, what financing
     /// costs it, every searching person, and every firm's production schedule begun at a phase drawn for it.
     ///
     /// # Errors
@@ -279,7 +279,8 @@ impl Core {
             let Some(f) = self.firm_record(firm, *slot) else { continue };
             let c = usize::from(ctx.country_of(f.region));
             let key = PartyKey::new(kind_number(firm), *slot);
-            for (o, h, _) in self.staff_of(family, key) {
+            let owners: Vec<(u32, u32)> = self.owners.hours_of(key).collect();
+            for (o, h) in self.staff_of(family, key).into_iter().map(|(o, h, _)| (o, h)).chain(owners) {
                 if let Some(s) =
                     staff_hours.get_mut(c).and_then(|r| r.get_mut(usize::try_from(o).unwrap_or(usize::MAX)))
                 {
@@ -474,8 +475,13 @@ impl Core {
             let way = ways.get(usize::try_from(occupation).unwrap_or(usize::MAX)).and_then(|o| o.get(f.product));
             let at = level.get(usize::try_from(occupation).unwrap_or(usize::MAX)).copied().unwrap_or(0.0);
             let hours_a_unit = at * sys_frm::rules::way::own_hours(way.copied().unwrap_or(0.0), f.productivity);
-            let held: f64 =
-                staff.iter().filter(|(o, _, _)| *o == occupation).map(|(_, h, _)| f64::from(*h) / DAYS_A_WEEK).sum();
+            let held: f64 = staff
+                .iter()
+                .map(|(o, h, _)| (*o, *h))
+                .chain(self.owners.hours_of(key))
+                .filter(|(o, _)| *o == occupation)
+                .map(|(_, h)| f64::from(h) / DAYS_A_WEEK)
+                .sum();
             if hours_a_unit <= 0.0 && held <= 0.0 {
                 continue;
             }
@@ -756,7 +762,7 @@ impl Core {
                         Some(row.amount)
                     });
                     if let Some(amount) = amount {
-                        self.searches_again(ctx, (o.seeker.household, o.seeker.person), amount, &law);
+                        self.searches_again(ctx, (o.seeker.household, o.seeker.person), Some(amount), &law);
                         self.labour.reviewing.quits += 1;
                     }
                     continue;
@@ -1143,19 +1149,19 @@ impl Core {
                     order: 0,
                 });
             }
-            self.searches_again(ctx, (row.ends[1], person), row.amount, &law);
+            self.searches_again(ctx, (row.ends[1], person), Some(row.amount), &law);
             self.claim_benefit(ctx, day, (row.ends[1], person), (row.amount, country), &law);
             n += 1;
         }
         n
     }
 
-    /// A person whose job ended searching again, its last point its job's.
+    /// A person whose work ended searching again, its last point its job's where it was paid a wage.
     pub(crate) fn searches_again(
         &mut self,
         ctx: &LabourCtx<'_>,
         (household, person): (PartyKey, u64),
-        amount: i64,
+        amount: Option<i64>,
         law: &Law,
     ) {
         let (Some(place), Some(decl)) =
@@ -1168,7 +1174,9 @@ impl Core {
         let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
         let mut p = unpack(&decl, word);
         p.set_attr(ctx.kind.state, class::SEARCHING);
-        if let Some(point) = (ctx.kind.point_near)(law, from_i64(amount)).and_then(|x| u32::try_from(x).ok()) {
+        if let Some(point) =
+            amount.and_then(|a| (ctx.kind.point_near)(law, from_i64(a))).and_then(|x| u32::try_from(x).ok())
+        {
             p.set_attr(ctx.kind.last_point, point);
         }
         ps.set_word(&mut self.space, household.slot(), at, pack(&decl, &p));
@@ -1240,9 +1248,10 @@ impl Core {
         }
     }
 
-    /// A person who retired leaves its jobs and the searchers.
+    /// A person who retired leaves its jobs, the firm it works in as an owner and the searchers.
     #[clause("LAB.1", "LAB.6")]
     pub(crate) fn leave_jobs(&mut self, household: PartyKey, person: u64) {
+        self.stop_working(household, person);
         for family in self.families.iter_mut().filter(|f| f.name.starts_with("LAB.")) {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();

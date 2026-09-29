@@ -114,7 +114,7 @@ impl Core {
 
     /// Each firm's hours a year of each occupation its output takes: its output times its way's hours of the
     /// occupation a unit, fewer by its productivity's factor; by region, each firm with its slot.
-    fn firm_hours(&self, o: &JobsOpening<'_>, firm: usize) -> Result<ByRegion, String> {
+    pub(crate) fn firm_hours(&self, o: &JobsOpening<'_>, firm: usize) -> Result<ByRegion, String> {
         let mut by_region: ByRegion = BTreeMap::new();
         let Some(store) = self.kinds.get(firm) else { return Ok(by_region) };
         let mut ways: BTreeMap<u8, Vec<Vec<f64>>> = BTreeMap::new();

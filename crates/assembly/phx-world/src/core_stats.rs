@@ -353,7 +353,7 @@ impl Core {
         out
     }
 
-    /// Each country's labour force at the day: its persons employed (holding a job), unemployed and searching, and the
+    /// Each country's labour force at the day: its persons employed (holding a job or working as owners), unemployed and searching, and the
     /// adults out of the labour force.
     fn labour_force(&self, regions: &[phx_id::CountryId]) -> Vec<[i64; if_state::stats::LABOUR_STATES]> {
         let mut out = vec![[0_i64; if_state::stats::LABOUR_STATES]; self.stats.laws.len()];
@@ -394,13 +394,14 @@ impl Core {
         out
     }
 
-    /// The persons holding a job, by identity, sorted.
+    /// The persons holding a job or working in a firm they own, by identity, sorted.
     fn employed_ids(&self) -> Vec<u64> {
         let mut ids: Vec<u64> = self
             .families
             .iter()
             .filter(|f| f.reason == crate::consts::reason::WAGE)
             .flat_map(|f| f.store.edges.open_slots().filter_map(|e| f.store.edges.row(e)).map(|r| r.person))
+            .chain(self.owners.works_at.keys().map(|(_, person)| *person))
             .collect();
         ids.sort_unstable();
         ids.dedup();

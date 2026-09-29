@@ -764,7 +764,14 @@ world switches to the core.
     contracts' review dates are e's (built). The self-employed hold no employment contract: the employees
     the books draw (49,453 at 150,000 persons, seed 1) are fewer than the employed firms are counted from (70,861);
     the rest are own-account workers, whose businesses are their own (FRM.23, PTY.3), opened in c3 as persons running
-    unincorporated firms of the firm kind, with the firms' count.
+    unincorporated firms of the firm kind, with the firms' count. c3 is built (`core_owners`, ARCHITECTURE §7.17), not
+    yet run: each region's self-employed dealt one to each of its firms and the rest by the hours of their occupation,
+    each working its country's full-time week in the firm and counted employed; the first managing it, holding its
+    offices; shares passing with households' and firms' estates, a firm's estate paying its rest to its owners. FRM.23's
+    unincorporated business, which the spec held apart as a household of another kind, is restated as a firm of the
+    one kind whose legal form declares it no separate party (REP.1, Law 10); every firm keeps the company form until
+    S2.03 declares the unincorporated one with its owners' unlimited liability. The owners' income while their firm
+    runs is its payout (FRM.10, S2.03).
   - d. Goods and services on the core: plant and stocks derived and held, production within plant, the retail and
     between-firms meetings with their goods legs, spoilage, wear and shipments, the goods family. Begun: each firm's
     stock opens at its management's days of cover and grows by its planned output's day within what its staff's
@@ -1920,6 +1927,9 @@ of their own: they are in the cell's row list and its due-day run):
   buyer, which is S4.06)*.
 - PROCESS: FRM.15 *(completes it: the balance-sheet test, the law's procedures, restructuring)*; FRT.8 *(completes
   it, from S1.07: goods aboard a failed carrier recovered from its estate after the law's delay and at its cost)*.
+- STATE: FRM.23 *(part, from S1.24 c3: each firm's legal form — the unincorporated one, a sole trader's or a
+  partnership's, declared beside the company, no party separate from its owners — whose owners answer for its debts
+  without limit when its estate falls short)*.
 - DECISION: CAP.4 *(moved from S1.15: an owner maintains, repairs, sells or scraps a unit at its plant review, selling
   through the plant's resale market)*. PROCESS: CAP.6 *(completes it, from S1.04: failures and repairs, at each kind's
   failure hazard by age)*. PRIMITIVE: CAP.13 *(completes it, from S1.15: the managements' hurdle and horizon distributions)*.
@@ -1985,7 +1995,7 @@ estate.
   - the dividend moves from the last one by its management's adjustment speed s: `D = D_last + s·(D* − D_last)`,
     what owners expect being the last dividend; it is paid only within the law's distributable reserves (a
     `DeclaredLimit` from the company law), and not at all while negative;
-  - paid to the holders of its ownership lines (FRM.23) as an instruction at 7.
+  - paid to its owners, a share each (`Owners::of`, S1.24 c3), as an instruction at 7.
 
   The form is Lintner's (1956) partial adjustment, its target derived from the firm's own cash and plans rather than
   declared, listed in `SHAPES.toml`. The adjustment speed is PREFERENCE; no payout ratio is a parameter.
@@ -9984,7 +9994,8 @@ ratchet.
 
 **Clauses**:
 - STATE: OBS.2; OBS.3 *(completes it: events that develop)*.
-- PROCESS: OBS.4 *(completes it: the player acts through every decision point its party has)*; OBS.8.
+- PROCESS: OBS.4 *(completes it: the player acts through every decision point its party has, the offices its
+  persons hold at the firms they own among them)*; OBS.8.
 - FORBID: OBS.5, OBS.6, OBS.7.
 
 **Architecture**: §3.4 (view schemas), §3.6, §4.9, §4.10, §6.1 (1c, 10a, 10e), §11, §12, §13.

@@ -83,6 +83,8 @@ pub struct Core {
     pub plant: crate::core_plant::Plant,
     /// Freight: the carriers' modes, the shipments on their way and the days' records.
     pub freight: crate::core_freight::Freight,
+    /// Who owns each firm, who works in it as an owner, and who manages it.
+    pub owners: crate::core_owners::Owners,
     pub labour: crate::core_labour::CoreLabour,
     pub goods: crate::core_goods::CoreGoods,
     pub state: crate::core_day::CoreState,

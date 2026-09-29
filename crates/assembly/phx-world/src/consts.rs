@@ -36,7 +36,7 @@ pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 12;
+pub const SAVE_FORMAT: u32 = 13;
 /// A save's tasks on the pool: the core's store, the run's record and the world's hash.
 pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.
@@ -199,12 +199,13 @@ pub mod firm {
     pub const SEEN_SOLD: usize = 11;
     pub const PART_ONE: f64 = 1_000_000.0;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
-    pub const PURPOSES: u32 = 5;
+    pub const PURPOSES: u32 = 6;
     pub const PRODUCTIVITY_PURPOSE: u32 = 0;
     pub const SITE_PURPOSE: u32 = 1;
     pub const JOBS_PURPOSE: u32 = 2;
     pub const LOANS_PURPOSE: u32 = 3;
     pub const MANAGEMENT_PURPOSE: u32 = 4;
+    pub const OWNERS_PURPOSE: u32 = 5;
     pub const COMPENSATION: usize = 0;
 }
 /// The reasons the core's flows are made for, by their code.

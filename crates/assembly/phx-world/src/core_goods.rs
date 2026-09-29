@@ -895,7 +895,8 @@ impl Core {
         }
     }
 
-    /// The whole units a firm's staff's hours a day make at its hours a unit; none known where it has no hours a unit.
+    /// The whole units the hours a day of a firm's staff and working owners make at its hours a unit; none known where it
+    /// has no hours a unit.
     pub(crate) fn staff_capacity(&self, f: &Firm) -> Option<i64> {
         let family = self.families.iter().position(|x| x.name == crate::consts::families::EMPLOYMENT)?;
         let (level, ways) = (self.labour.level.get(f.country)?, self.labour.ways.get(f.country)?);
@@ -909,7 +910,7 @@ impl Core {
             return None;
         }
         let fam = self.families.get(family)?;
-        let hours: f64 = fam
+        let staff: f64 = fam
             .store
             .of(0, f.key.slot())
             .filter_map(|e| {
@@ -917,6 +918,8 @@ impl Core {
                 fam.classes.get(usize::try_from(row.schedule).ok()?).map(|k| f64::from(k[1]) / DAYS_A_WEEK)
             })
             .sum();
+        let owners: f64 = self.owners.hours_of(f.key).map(|(_, h)| f64::from(h) / DAYS_A_WEEK).sum();
+        let hours = staff + owners;
         floor_to_i64((hours / a_unit).floor())
     }
 

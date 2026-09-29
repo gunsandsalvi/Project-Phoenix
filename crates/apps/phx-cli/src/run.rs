@@ -174,6 +174,7 @@ fn sections(w: Inspector<'_>) -> Vec<(String, serde_json::Value)> {
         ("injections".to_owned(), crate::inject::report(w.injections())),
         ("plant".to_owned(), plant_report(w)),
         ("freight".to_owned(), freight_report(w)),
+        ("owners".to_owned(), owners_report(w)),
     ]
 }
 
@@ -220,6 +221,21 @@ fn freight_report(w: Inspector<'_>) -> serde_json::Value {
             "on_the_way": d.on_the_way,
         })).collect::<Vec<_>>(),
         "basis": core.basis(w.regions()).iter().map(|(g, f)| json!({ "gap": g, "freight": f })).collect::<Vec<_>>(),
+    })
+}
+
+/// The firms' owners at the close: the self-employed the opening drew and dealt, the firms it left with no owner, the
+/// firms with an owner working in them and those owners, the offices held, and the parties holding shares.
+fn owners_report(w: Inspector<'_>) -> serde_json::Value {
+    let o = &w.core().owners;
+    json!({
+        "drawn": o.drawn,
+        "dealt": o.dealt,
+        "unowned_at_opening": o.unowned,
+        "firms_worked_by_owners": o.working.len(),
+        "working_owners": o.works_at.len(),
+        "offices_held": w.core().decisions.held(),
+        "holders": o.holds.len(),
     })
 }
 

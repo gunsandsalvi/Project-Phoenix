@@ -2174,9 +2174,10 @@ to owners, can belong to a group, and can be born and die.
   inventory and cumulative output as positions (REP.20); its jobs, ownership, loans and invoices as contracts naming
   their parties (REP.3). What a listed firm does that another does not — publish reports, issue bonds, hold a rating
   — follows from its legal form and its instruments (PTY.4, Law 10). An
-  **unincorporated** business (a sole trader or a partnership, PTY.4) is not a separate party: its stock, plant,
-  receivables and debts are its owners' own, as the law of such businesses has it, and a household running
-  one is of a kind whose attributes and positions add the business's ways, posted price, plant, stock and sales.
+  **unincorporated** business (a sole trader or a partnership, PTY.4) is a firm of this kind whose legal form
+  declares it no party separate from its owners: they answer for its debts without limit and its profit is their
+  income, as the law of such businesses has it. Its owners are the persons running it, each working in it, the first
+  managing it and holding all its offices (PTY.16); what each owns is its household's (Appendix E 24).
 - **FRM.3 STATE** — A firm may be a **parent or subsidiary** in a group: it controls another through a
   majority of its votes; intra-group loans, sales and guarantees are real contracts; each member keeps
   limited liability unless it has guaranteed another's debts.

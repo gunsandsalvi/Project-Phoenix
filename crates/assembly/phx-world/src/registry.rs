@@ -373,16 +373,16 @@ fn core_of(
         today,
     })
     .map_err(|e| AssemblyErrors(vec![e]))?;
-    let _ = core
-        .open_jobs(&crate::core_jobs::JobsOpening {
-            register: &p.c.register,
-            countries: &opening,
-            calendar,
-            today,
-            streams: &p.c.streams,
-            stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
-        })
-        .map_err(|e| AssemblyErrors(vec![e]))?;
+    let jobs = crate::core_jobs::JobsOpening {
+        register: &p.c.register,
+        countries: &opening,
+        calendar,
+        today,
+        streams: &p.c.streams,
+        stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+    };
+    let _ = core.open_jobs(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
+    core.open_owners(&jobs).map_err(|e| AssemblyErrors(vec![e]))?;
     core.open_loans(&crate::core_credit::CreditOpening {
         register: &p.c.register,
         countries: &opening,

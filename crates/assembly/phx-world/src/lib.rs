@@ -20,6 +20,7 @@ pub mod core_labour;
 pub mod core_lending;
 pub mod core_open;
 pub mod core_outlooks;
+pub mod core_owners;
 pub mod core_plant;
 pub mod core_player;
 pub mod core_pop;

@@ -181,8 +181,9 @@ impl Core {
         }
     }
 
-    /// A firm ended into an estate: its money, goods and rights to deposits pass to it, each contract it was party to closes into a claim
-    /// on it, its employees search again, and its vacancies close.
+    /// A firm ended into an estate: its money, goods and rights to deposits pass to it, each contract it was party to
+    /// closes into a claim on it, its owners own the estate, its employees and working owners search again, and its
+    /// vacancies close.
     #[clause("PTY.9", "LAB.12", "L3")]
     pub(crate) fn end_firm(
         &mut self,
@@ -215,6 +216,12 @@ impl Core {
         self.pass_projects(key, estate);
         let claims = self.close_contracts(ctx, (key, country.get()), day);
         self.insolvency.claims.insert(estate, claims);
+        let workers = self.owners_to_estate(key, estate);
+        if let Some(law) = self.labour.laws.get(usize::from(country.get())).cloned() {
+            for w in workers {
+                self.searches_again(ctx, (w.household, w.person), None, &law);
+            }
+        }
         for v in self.labour.vacancies.iter_mut().filter(|v| v.employer == key) {
             v.open = 0;
         }
@@ -348,7 +355,7 @@ impl Core {
         }
         if let Some(law) = self.labour.laws.get(usize::from(country)).cloned() {
             for (household, person, wage) in staff {
-                self.searches_again(ctx, (household, person), wage, &law);
+                self.searches_again(ctx, (household, person), Some(wage), &law);
                 self.claim_benefit(ctx, day, (household, person), (wage, country), &law);
             }
         }
