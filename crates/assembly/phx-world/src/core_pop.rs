@@ -277,7 +277,7 @@ impl Core {
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let attrs = h.attrs.clone();
         let attr = |name: &str| attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
-        let decider = |name: &str| self.decided_in_process(name, slot);
+        let decider = |name: &str| self.decided_in_process(name, (crate::core::kind_number(place), slot));
         let view = phx_core::pop_process::AgentView {
             kind: decl.kind,
             party: id,

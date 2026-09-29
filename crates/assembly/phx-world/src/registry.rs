@@ -528,7 +528,17 @@ pub fn assemble(
     let parts = parts(systems, interfaces, config)?;
     let today = parts.p.c.day_zero;
     let calendar = parts.p.c.calendar.clone();
-    let core = core_of(&parts.p, &parts.geo, (&parts.state, &calendar, today), (&parts.own, parts.labour.as_ref()))?;
+    let mut core =
+        core_of(&parts.p, &parts.geo, (&parts.state, &calendar, today), (&parts.own, parts.labour.as_ref()))?;
+    let player = parts.p.game.setup.player;
+    let regions: Vec<CountryId> = parts.geo.map.regions.iter().map(|r| r.country).collect();
+    let country = player
+        .country
+        .checked_sub(1)
+        .and_then(|c| u8::try_from(c).ok())
+        .ok_or_else(|| AssemblyErrors(vec![format!("the player's country {}", player.country)]))?;
+    core.seat_player((&parts.p.c.streams, today), (country, player.delegate), &regions)
+        .map_err(|e| AssemblyErrors(vec![e]))?;
     Ok(world_of(parts, core, (today, config.seed)))
 }
 

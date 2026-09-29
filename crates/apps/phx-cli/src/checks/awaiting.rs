@@ -221,13 +221,6 @@ pub const LC_0_50: Check = live_check! {
     retired: "agents are never renumbered (S0.28)",
 };
 
-pub const LC_0_57: Check = live_check! {
-    id: "LC-0-57",
-    title: "the player's queued intents are decided on the first day their point runs; with none, the rule decides",
-    from_step: "S0.26",
-    check: |_| Outcome::NotYet("awaits the player's party on the core (S1.24 h)"),
-};
-
 pub const LC_0_61: Check = live_check! {
     id: "LC-0-61",
     title: "On sampled holders, every row due was read in the holder's run, and no head was later than its segment's earliest due day",

@@ -63,7 +63,7 @@ pub use contribution::{
 };
 pub use decisions::{
     DECISIONS, Decider, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Player, PlayerQueue, Prefs, QueuedIntent,
-    QueuedPayload, Standing, TakenIn, dispatch,
+    QueuedPayload, Say, Standing, TakenIn, dispatch,
 };
 pub use directory::{Directory, PartyState, Resolved};
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};

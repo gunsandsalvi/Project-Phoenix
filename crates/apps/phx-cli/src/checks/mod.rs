@@ -130,7 +130,7 @@ pub const CHECKS: &[Check] = &[
     lives::LC_0_54,
     core::LC_0_55,
     core::LC_0_56,
-    awaiting::LC_0_57,
+    observer::LC_0_57,
     observer::LC_0_58,
     core::LC_0_59,
     core::LC_0_60,

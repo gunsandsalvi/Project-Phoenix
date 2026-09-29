@@ -111,6 +111,12 @@ impl<'a> Inspector<'a> {
         &self.world.metrics.turns
     }
 
+    /// The player's household, its intents and each day a decision came for it.
+    #[must_use]
+    pub fn player(&self) -> &'a crate::core_player::PlayerDesk {
+        &self.world.core.player
+    }
+
     /// Every event the world recorded.
     #[must_use]
     pub fn events(&self) -> &'a phx_core::EventStore {

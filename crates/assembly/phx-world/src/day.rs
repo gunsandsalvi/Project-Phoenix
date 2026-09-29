@@ -22,15 +22,17 @@ impl World {
 
     /// Runs a turn: every day from the day after the last turn up to the next day that is a business day in some
     /// country, each as its own day, the observer reading each once it has ended; its reading is inside the turn's
-    /// time, as the phone's views are. The player's intents wait for the player's party on the core.
+    /// time, as the phone's views are. The player's intents are queued first, each taken on the first day its
+    /// decision comes for the player's household.
     #[clause("TIME.6", "N8.2", "Law 17")]
     pub fn run_turn_observed(
         &mut self,
-        _intents: &[QueuedIntent],
+        intents: &[QueuedIntent],
         clock: &dyn Clock,
         mut observer: Option<&mut dyn crate::observe::Observer>,
     ) -> TurnRecord {
         let start = clock.now_ns();
+        self.core.queue(intents, self.today);
         let first = self.today.succ();
         let last = self.calendar.next_turn_day(self.today);
         let mut days = 0_u32;
@@ -101,6 +103,7 @@ impl World {
         self.core.audit(day);
         self.core.stats_day(day, (&self.calendar, &regions), hh.map(|h| &h.types));
         let _ = self.core.happened.publish(day, &self.news);
+        self.core.player_day(day);
         for f in self.core.found.drain(..) {
             self.findings.record(f);
         }

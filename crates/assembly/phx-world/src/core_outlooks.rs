@@ -253,9 +253,10 @@ impl crate::core::Core {
             );
         };
         let key = crate::core_stats::cpi_series(country);
-        let chosen = self.decide(reconsidering, household, |_| {
+        let chosen = self.decide_own(reconsidering, household, |_| {
             self.stats.outlooks.stance_in((key, usize::from(memory), beta), (streams, &stream), (id, day))
         });
+        let Some(chosen) = chosen else { return };
         if let Ok(chosen) = u16::try_from(chosen)
             && chosen != stance
         {

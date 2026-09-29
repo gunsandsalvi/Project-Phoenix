@@ -200,6 +200,55 @@ impl QueuedPayload for Vec<u32> {
     }
 }
 
+/// A sum of money, queued as its amount in its currency's smallest unit.
+impl QueuedPayload for f64 {
+    fn decode(words: &[i64]) -> Option<f64> {
+        match words {
+            [w] => Some(phx_rand::float::from_i64(*w)),
+            _ => None,
+        }
+    }
+}
+
+/// A choice by its place, queued as one word.
+impl QueuedPayload for usize {
+    fn decode(words: &[i64]) -> Option<usize> {
+        match words {
+            [w] => usize::try_from(*w).ok(),
+            _ => None,
+        }
+    }
+}
+
+/// What a decision's decider says before its rule is called: the rule decides, by these preferences; the player
+/// queued the decision's output; or the player keeps the decision and queued nothing, and it is not taken that day.
+#[clause("OBS.4", "MND.20")]
+#[derive(Clone, Debug, PartialEq)]
+pub enum Say {
+    Rule(Prefs),
+    Queued(Vec<i64>),
+    Kept,
+}
+
+impl Say {
+    /// The decision taken as its decider says: the queued output, the rule's on the input built from the decider's
+    /// preferences, or none.
+    pub fn take<I, O: QueuedPayload>(
+        self,
+        point: &DecisionPointDecl<I, O>,
+        input: impl FnOnce(&Prefs) -> I,
+    ) -> Option<O> {
+        match self {
+            Say::Rule(prefs) => Some((point.rule)(&input(&prefs))),
+            Say::Queued(words) => match O::decode(&words) {
+                Some(out) => Some(out),
+                None => violation!(clause = "OBS.4", "a queued intent that is not its decision's output"),
+            },
+            Say::Kept => None,
+        }
+    }
+}
+
 /// A player's intent for one decision point, as queued for the next turn.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct QueuedIntent {
@@ -303,8 +352,8 @@ mod tests {
     use phx_num::Missing;
 
     use super::{
-        Decider, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Player, PlayerQueue, QueuedIntent,
-        QueuedPayload, TakenIn, dispatch,
+        Decider, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Player, PlayerQueue, Prefs, QueuedIntent,
+        QueuedPayload, Say, TakenIn, dispatch,
     };
     use crate::kinds::{Feature, LegalForm};
     use crate::schedule::WakeKind;
@@ -341,6 +390,15 @@ mod tests {
         assert_eq!(Vec::<u32>::decode(&[-1]), None, "no place is negative");
         assert_eq!(i64::decode(&[-4]), Some(-4));
         assert_eq!(i64::decode(&[]), None, "a number is one word");
+    }
+
+    #[test]
+    fn a_decision_is_taken_as_its_decider_says() {
+        assert_eq!(Say::Rule(Prefs::NONE).take(&SPEND, |_| [10, 0]), Some(Spend(5)), "the rule on its input");
+        assert_eq!(Say::Queued(vec![7]).take(&SPEND, |_| [10, 0]), Some(Spend(7)), "the player's queued output");
+        assert_eq!(Say::Kept.take(&SPEND, |_| [10, 0]), None, "kept and not queued: not taken");
+        assert_eq!(f64::decode(&[250]), Some(250.0));
+        assert_eq!(usize::decode(&[-1]), None, "no place is negative");
     }
 
     #[test]

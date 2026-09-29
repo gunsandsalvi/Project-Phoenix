@@ -713,8 +713,9 @@ impl Core {
                 continue;
             }
             let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            // A search the player keeps and queued nothing for sees no vacancy today.
             let choose = |s: &Seeker, reach: Vec<(u32, f64)>, draws: Vec<f64>| {
-                self.decide(searching, s.household, |_| SearchIn { reach, draws })
+                self.decide_own(searching, s.household, |_| SearchIn { reach, draws }).unwrap_or_default()
             };
             for a in search(
                 None,
@@ -735,13 +736,15 @@ impl Core {
                 .filter_map(|a| self.labour.vacancies.get(usize::try_from(a.vacancy).ok()?).map(|v| v.wage))
                 .reduce(|a, b| if b > a { b } else { a })
                 .map_or(Missing::Absent, Missing::Present);
-            let answer = self.decide(answering, o.seeker.household, |prefs| AnswerIn {
+            let answer = self.decide_own(answering, o.seeker.household, |prefs| AnswerIn {
                 offer: o.offer,
                 reservation: o.reservation,
                 best,
                 outlook: self.price_outlook(prefs, o.country, law.review_months),
                 ratio: law.point_ratio,
             });
+            // An answer the player keeps and queued nothing for is none: the employee works on at the offer.
+            let answer = answer.unwrap_or(o.offer);
             let concluded = match (ctx.kind.conclude)(o.offer, answer, o.revenue) {
                 Missing::Present(point) => point,
                 // An offer below what it works for is one it leaves for search; above it, it works on at the offer
@@ -895,8 +898,9 @@ impl Core {
                 continue;
             }
             let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            // A search the player keeps and queued nothing for sees no vacancy today.
             let choose = |s: &Seeker, reach: Vec<(u32, f64)>, draws: Vec<f64>| {
-                self.decide(searching, s.household, |_| SearchIn { reach, draws })
+                self.decide_own(searching, s.household, |_| SearchIn { reach, draws }).unwrap_or_default()
             };
             sent.extend(search(
                 None,
@@ -959,12 +963,13 @@ impl Core {
             let law = at_country(&laws, p.country);
             let mut d = ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, o.seeker.person), day);
             let taste = phx_rand::gumbel(&mut d, 0.0, 1.0) - phx_rand::gumbel(&mut d, 0.0, 1.0);
-            self.decide(accepting, o.seeker.household, |_| AcceptIn {
+            // An offer the player keeps and queued nothing for is not accepted today.
+            self.decide_own(accepting, o.seeker.household, |_| AcceptIn {
                 wage: v.wage,
                 reservation: o.seeker.reservation,
                 taste,
                 wage_weight: law.wage_weight,
-            })
+            }) == Some(true)
         };
         let hires = answer(&mut vacancies, &offers, accepts);
         self.labour.vacancies = vacancies;
@@ -1199,7 +1204,8 @@ impl Core {
             months: f64::from(benefit.months),
             claiming_cost: benefit.claim_hours * hour,
         };
-        if !self.decide(self.bind(claim), household, |_| input) {
+        // A claim the player keeps and queued nothing for is not made.
+        if self.decide_own(self.bind(claim), household, |_| input) != Some(true) {
             return;
         }
         let date = ctx.calendar.date(day);

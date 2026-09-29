@@ -176,6 +176,7 @@ impl Core {
             accounts: crate::core_accounts::Accounts::default(),
             credit: crate::core_lending::Credit::default(),
             decisions: crate::core_decide::Decisions::default(),
+            player: crate::core_player::PlayerDesk::default(),
             central: crate::core_central::Central::default(),
             taxes: crate::core_taxes::Taxes::default(),
             bills: crate::core_bills::Bills::default(),

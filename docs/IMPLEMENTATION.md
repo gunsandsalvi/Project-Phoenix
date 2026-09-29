@@ -1048,6 +1048,10 @@ world switches to the core.
   - h: the public events on the core (OBS.3, OBS.9), not yet run: each hazard's hit recorded as an event with its
     household and persons, made public at the close by the declared rule; LC-0-58 reads it, and reports "not yet"
     until an event of a kind the rule makes public is recorded — the weather's and catastrophes', which come in d.
+  - h: the player on the core (OBS.4; `core_player`, ARCHITECTURE §12), not yet run: a household of the setup's
+    country drawn at the assembly, its and its persons' decisions taken as the player says — a queued intent on the
+    first day its decision comes, else the rule where the setup delegates, else not that day; LC-0-57 reads each day a
+    decision came for it.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

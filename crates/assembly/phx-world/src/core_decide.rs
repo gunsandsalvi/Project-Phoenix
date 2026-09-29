@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use phx_core::decisions::{DecisionKinds, DecisionPointDecl, Prefs, Standing, TakenIn};
+use phx_core::decisions::{DecisionKinds, DecisionPointDecl, Prefs, QueuedPayload, Say, Standing, TakenIn};
 use phx_core::kinds::LegalForm;
 use phx_id::{PartyKey, Slot};
 use phx_macros::clause;
@@ -66,6 +66,30 @@ impl Decisions {
             .zip(&self.taken)
             .map(|(n, t)| (n.as_str(), std::array::from_fn(|i| t.get(i).map_or(0, phx_exec::Tally::get))))
             .collect()
+    }
+
+    /// How many decisions the world takes.
+    #[must_use]
+    pub fn len(&self) -> usize {
+        self.names.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.names.is_empty()
+    }
+
+    /// A decision's place, by its name.
+    #[must_use]
+    pub fn position(&self, name: &str) -> Option<usize> {
+        self.names.iter().position(|n| n == name)
+    }
+
+    /// A decision counted as taken by a standing of decider.
+    pub(crate) fn count(&self, at: usize, standing: Standing) {
+        if let Some(c) = self.taken.get(at).and_then(|t| t.get(standing_at(standing))) {
+            c.add(1);
+        }
     }
 }
 
@@ -187,9 +211,27 @@ impl Core {
     /// and the decision counted by its decider.
     #[clause("MND.20")]
     pub(crate) fn decide<I, O>(&self, b: Bound<I, O>, party: PartyKey, input: impl FnOnce(&Prefs) -> I) -> O {
+        if self.player.household == Some(party) {
+            violation!(clause = "OBS.4", "a decision of the player's household taken past the player");
+        }
         let (standing, prefs) = self.decider(b, party);
         self.tally(b, standing);
         (b.point.rule)(&input(&prefs))
+    }
+
+    /// A decision a household or its person takes: as the player says where the household is the player's, none
+    /// where the player keeps it and queued nothing; by the rule for every other household.
+    #[clause("MND.20", "OBS.4")]
+    pub(crate) fn decide_own<I, O: QueuedPayload>(
+        &self,
+        b: Bound<I, O>,
+        household: PartyKey,
+        input: impl FnOnce(&Prefs) -> I,
+    ) -> Option<O> {
+        match self.say(b.at, household, || self.decider(b, household).1) {
+            Some(say) => say.take(b.point, input),
+            None => Some(self.decide(b, household, input)),
+        }
     }
 
     /// A decision taken at a party's founding, before the party is begun, by the preferences drawn for it.
@@ -199,9 +241,10 @@ impl Core {
         (b.point.rule)(&input(prefs))
     }
 
-    /// A decision taken by a population process, counted by its household's standing, with its preferences.
-    pub(crate) fn decided_in_process(&self, name: &str, slot: Slot) -> Prefs {
-        let Some(at) = self.decisions.names.iter().position(|n| n == name) else {
+    /// A decision taken by a population process for the household at a slot of a kind: as the player says where the
+    /// household is the player's; else by the rule at its preferences, counted by its household's standing.
+    pub(crate) fn decided_in_process(&self, name: &str, (kind, slot): (u8, Slot)) -> Say {
+        let Some(at) = self.decisions.position(name) else {
             violation!(clause = "MND.20", "a process's decision the register does not declare");
         };
         let standing = match self.decisions.taken_in.get(at) {
@@ -209,16 +252,15 @@ impl Core {
             Some(TakenIn::Household) => Standing::Household,
             _ => violation!(clause = "MND.20", "a process's decision taken in an office"),
         };
-        if let Some(c) = self.decisions.taken.get(at).and_then(|t| t.get(standing_at(standing))) {
-            c.add(1);
+        if let Some(say) = self.say(at, PartyKey::new(kind, slot), || self.household_prefs(slot)) {
+            return say;
         }
-        self.household_prefs(slot)
+        self.decisions.count(at, standing);
+        Say::Rule(self.household_prefs(slot))
     }
 
     fn tally<I, O>(&self, b: Bound<I, O>, standing: Standing) {
-        if let Some(c) = self.decisions.taken.get(b.at).and_then(|t| t.get(standing_at(standing))) {
-            c.add(1);
-        }
+        self.decisions.count(b.at, standing);
     }
 
     /// A decider's stance, reconsidered in a decision, written where its preferences live: its holder's, its

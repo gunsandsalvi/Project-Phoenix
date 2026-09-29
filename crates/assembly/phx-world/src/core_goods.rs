@@ -1109,7 +1109,7 @@ impl Core {
                 continue;
             }
             let rule = &ctx.rule.rule;
-            let spent = self.decide(spending, party, |_| sys_hh::points::SpendIn {
+            let spent = self.decide_own(spending, party, |_| sys_hh::points::SpendIn {
                 at_target: rule.at_target,
                 kappa: rule.kappa,
                 target: rule.target,
@@ -1118,6 +1118,11 @@ impl Core {
                 period: ctx.rule.period,
                 free: from_i64(free),
             });
+            // The player keeping the decision and queuing nothing spends nothing today.
+            let Some(spent) = spent else {
+                self.set_record_word(place, slot, after_at, money);
+                continue;
+            };
             let Some(Missing::Present(region)) =
                 self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
             else {

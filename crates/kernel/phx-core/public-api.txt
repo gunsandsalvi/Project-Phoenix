@@ -380,6 +380,12 @@ pub phx_core::decisions::Decider::Rule
 pub enum phx_core::decisions::Mode
 pub phx_core::decisions::Mode::Best
 pub phx_core::decisions::Mode::Satisfice
+pub enum phx_core::decisions::Say
+pub phx_core::decisions::Say::Kept
+pub phx_core::decisions::Say::Queued(alloc::vec::Vec<i64>)
+pub phx_core::decisions::Say::Rule(phx_core::decisions::Prefs)
+impl phx_core::decisions::Say
+pub fn phx_core::decisions::Say::take<I, O: phx_core::decisions::QueuedPayload>(self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>
 pub enum phx_core::decisions::Standing
 pub phx_core::decisions::Standing::Founding
 pub phx_core::decisions::Standing::Holder
@@ -465,8 +471,12 @@ impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
 pub fn alloc::vec::Vec<u32>::decode(&[i64]) -> core::option::Option<alloc::vec::Vec<u32>>
 impl phx_core::decisions::QueuedPayload for bool
 pub fn bool::decode(&[i64]) -> core::option::Option<bool>
+impl phx_core::decisions::QueuedPayload for f64
+pub fn f64::decode(&[i64]) -> core::option::Option<f64>
 impl phx_core::decisions::QueuedPayload for i64
 pub fn i64::decode(&[i64]) -> core::option::Option<i64>
+impl phx_core::decisions::QueuedPayload for usize
+pub fn usize::decode(&[i64]) -> core::option::Option<usize>
 pub fn phx_core::decisions::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>
 pub mod phx_core::directory
 pub enum phx_core::directory::PartyState
@@ -1507,11 +1517,11 @@ pub struct phx_core::pop_process::AgentView<'a>
 pub phx_core::pop_process::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
 pub phx_core::pop_process::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
 pub phx_core::pop_process::AgentView::date: phx_id::day::Date
-pub phx_core::pop_process::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Prefs
+pub phx_core::pop_process::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say
 pub phx_core::pop_process::AgentView::kind: &'static str
 pub phx_core::pop_process::AgentView::party: phx_id::ids::PartyId
 impl phx_core::pop_process::AgentView<'_>
-pub fn phx_core::pop_process::AgentView<'_>::decide<I, O>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> O
+pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::pop_process::Household
@@ -2724,6 +2734,12 @@ pub phx_core::Resolved::Unknown
 pub enum phx_core::RunsOn
 pub phx_core::RunsOn::Any
 pub phx_core::RunsOn::Business
+pub enum phx_core::Say
+pub phx_core::Say::Kept
+pub phx_core::Say::Queued(alloc::vec::Vec<i64>)
+pub phx_core::Say::Rule(phx_core::decisions::Prefs)
+impl phx_core::decisions::Say
+pub fn phx_core::decisions::Say::take<I, O: phx_core::decisions::QueuedPayload>(self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>
 pub enum phx_core::Scope
 pub phx_core::Scope::PerCountry
 pub phx_core::Scope::Shared
@@ -2922,11 +2938,11 @@ pub struct phx_core::AgentView<'a>
 pub phx_core::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>
 pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>
 pub phx_core::AgentView::date: phx_id::day::Date
-pub phx_core::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Prefs
+pub phx_core::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say
 pub phx_core::AgentView::kind: &'static str
 pub phx_core::AgentView::party: phx_id::ids::PartyId
 impl phx_core::pop_process::AgentView<'_>
-pub fn phx_core::pop_process::AgentView<'_>::decide<I, O>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> O
+pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_core::Announcement<T>
@@ -4347,8 +4363,12 @@ impl phx_core::decisions::QueuedPayload for alloc::vec::Vec<u32>
 pub fn alloc::vec::Vec<u32>::decode(&[i64]) -> core::option::Option<alloc::vec::Vec<u32>>
 impl phx_core::decisions::QueuedPayload for bool
 pub fn bool::decode(&[i64]) -> core::option::Option<bool>
+impl phx_core::decisions::QueuedPayload for f64
+pub fn f64::decode(&[i64]) -> core::option::Option<f64>
 impl phx_core::decisions::QueuedPayload for i64
 pub fn i64::decode(&[i64]) -> core::option::Option<i64>
+impl phx_core::decisions::QueuedPayload for usize
+pub fn usize::decode(&[i64]) -> core::option::Option<usize>
 pub trait phx_core::Reads<F: phx_core::facts::FactDef>
 pub trait phx_core::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)

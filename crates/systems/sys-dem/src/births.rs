@@ -116,8 +116,12 @@ impl PopProcess for Fertility {
             }
         }
         let child = ChildIn { income, adults, children, youngest, ideal, taste };
-        let tries =
-            agent.decide(&crate::points::TRY_FOR_CHILD, |_| crate::points::TryIn { child, scale: self.scale() });
+        // A decision the player keeps and has not taken leaves the household as it was.
+        let Some(tries) =
+            agent.decide(&crate::points::TRY_FOR_CHILD, |_| crate::points::TryIn { child, scale: self.scale() })
+        else {
+            return;
+        };
         h.set_attr(TRYING.name, if tries { TRYING_FOR_CHILD } else { NOT_TRYING });
     }
 }

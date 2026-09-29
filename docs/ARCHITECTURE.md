@@ -2933,14 +2933,17 @@ world on the phone. CI never runs the world.
   reads it.
 - **An agent's page** (OBS.8) shows the agent itself: its attributes, persons, positions and rows, and the recorded
   events that name it. Nothing is drawn to show it.
-- **The player** is an agent (REP.1, OBS.4) whose decider fact names the player. A queued intent is
-  a **wake**: at 1c of the first day its decision point runs, it gives the player an occasion for that decision (REP.21)
-  and is decided there; until then it stays queued. On days the player has queued nothing for a scheduled decision, the
-  rule decides only if the player's settings delegate (OBS.4). It appears in every audit family. As built, the setup
-  states the player's country and whether it delegates; at the end of the assembly the world draws a household of that
-  country from the stream `GEN.player`, each household equally likely (§7.1), and seats
-  it in `PlayerQueue`, saved and hashed with the world, which names the player's decider (`Decider::Player`) and refuses
-  an intent queued for any other party.
+- **The player** (OBS.4, `core_player`) is a household drawn at the end of the assembly from the households of the
+  country its setup names, each equally likely, by the stream `GEN.player`, and seated in the core's `PlayerDesk`, saved
+  with the core. Every decision a household or its person takes runs through the decision core's `say`
+  (`Core::decide_own`, and a population process's `AgentView::decide`): for the player's household it counts the
+  decision under the player's standing and says `Say::Queued` with the intent queued for that decision, else
+  `Say::Rule` where the setup delegates, else `Say::Kept`, which leaves the decision untaken that day (no spending, no
+  search, no acceptance or claim, the stance and the household's trying unchanged, the employee working on at an
+  offer); for every other household it is the rule's. `decide` refuses a decision of the player's household that
+  passes the player. A turn's intents are queued before its first day; at each close each decision that came for the
+  household is recorded with how it was taken (`PlayerDay`) and the intent it took leaves the queue, so an intent is
+  taken on the first day its decision comes. LC-0-57 reads the record.
 - **On the phone**, `phx-ffi` runs the engine on its own thread with the pinned pool: create, load, step a turn, read
   a view page, submit an action, save, and in the inspector build export the recorder's series (§14.8). As built at
   Stage 0 that play surface is not built: `phx-ffi` exports `run_bench` (the probe and micro-benchmarks), `run_world`,

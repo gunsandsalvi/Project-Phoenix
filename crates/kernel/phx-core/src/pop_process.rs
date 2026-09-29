@@ -7,28 +7,27 @@ use phx_macros::clause;
 use crate::register::Register;
 
 /// An agent as a process reads it: its kind, its party, the value of each of its attributes by name, the country each
-/// region lies in, the day, and the decision core, which counts a decision the process takes by its name and hands back
-/// its decider's preferences.
+/// region lies in, the day, and the decision core, which counts a decision the process takes by its name and says how
+/// it is taken: by the rule at its decider's preferences, by the player's queued intent, or not that day.
 pub struct AgentView<'a> {
     pub kind: &'static str,
     pub party: PartyId,
     pub attr: &'a dyn Fn(&str) -> Option<u32>,
     pub country_of: &'a dyn Fn(u32) -> Option<CountryId>,
     pub date: Date,
-    pub decider: &'a dyn Fn(&str) -> crate::decisions::Prefs,
+    pub decider: &'a dyn Fn(&str) -> crate::decisions::Say,
 }
 
 impl AgentView<'_> {
-    /// A decision the process takes, through the decision core: its input built from its decider's preferences and
-    /// its rule called on it.
-    #[clause("MND.20")]
-    pub fn decide<I, O>(
+    /// A decision the process takes, through the decision core: as its decider says, none where the player keeps it
+    /// and queued nothing.
+    #[clause("MND.20", "OBS.4")]
+    pub fn decide<I, O: crate::decisions::QueuedPayload>(
         &self,
         point: &crate::decisions::DecisionPointDecl<I, O>,
         input: impl FnOnce(&crate::decisions::Prefs) -> I,
-    ) -> O {
-        let prefs = (self.decider)(point.name);
-        (point.rule)(&input(&prefs))
+    ) -> Option<O> {
+        (self.decider)(point.name).take(point, input)
     }
 }
 

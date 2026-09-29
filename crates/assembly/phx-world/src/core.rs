@@ -63,6 +63,8 @@ pub struct Core {
     pub central: crate::core_central::Central,
     /// The decisions the world takes, who takes each, and how many each decider took.
     pub decisions: crate::core_decide::Decisions,
+    /// The player's household, its intents and each day a decision came for it.
+    pub player: crate::core_player::PlayerDesk,
     /// The next identity the core hands a party or person it begins.
     pub next_id: u64,
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.
