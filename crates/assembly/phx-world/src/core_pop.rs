@@ -163,6 +163,15 @@ impl Core {
         let mut due = Vec::new();
         let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
         let mut buffers = Buffers::default();
+        // A household whose persons labour changed since the last draws has its chances read again from today.
+        for s in std::mem::take(&mut self.touched) {
+            let slot = Slot::new(s);
+            if self.kinds.get(place).and_then(|k| k.parties.at(slot)).is_none() {
+                continue;
+            }
+            self.read_household((place, decl), slot, &mut h);
+            self.book_all(ctx, (place, decl), slot, (&h, &mut buffers), day);
+        }
         for at in 0..self.hazards.len() {
             let Some(hz) = self.hazards.get_mut(at) else { continue };
             hz.wheel.take(day, &mut due, None);

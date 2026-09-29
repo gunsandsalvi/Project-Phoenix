@@ -236,7 +236,7 @@ pub fn meet(
 /// Whether a buyer wants anything at all.
 fn wanted(want: Want) -> bool {
     match want {
-        Want::Units(q) => q > 0,
+        Want::Units(q) | Want::UpTo(q, _) => q > 0,
         Want::Money(m) => m > 0,
     }
 }
@@ -295,7 +295,7 @@ fn pick(c: &Choosing, tables: &[Option<Table>], lot: i64, d: &mut Draws) -> Opti
     let t = tables.get(to_usize(c.place))?.as_ref()?;
     match c.want {
         Want::Units(_) => t.stalls.get(t.alias.draw(d)).copied(),
-        Want::Money(_) => {
+        Want::Money(_) | Want::UpTo(..) => {
             let can = t.by_price.partition_point(|(price, _)| units_wanted(c.want, lot, *price) > 0);
             let total = *t.sums.get(can.checked_sub(1)?)?;
             let u = open_unit(d) * total;

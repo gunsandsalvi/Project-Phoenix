@@ -24,7 +24,7 @@ use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::firm::{
-    EXPECTED, MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
+    EXPECTED, MARKUP, MEMORY, OUTPUT, PART_ONE, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION, REVIEWED,
     SOLD as SOLD_UNITS,
 };
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, USED};
@@ -73,6 +73,8 @@ pub struct CoreGoods {
     pub wants: Vec<(u16, Buyer)>,
     pub meeting: Meeting,
     pub days: Vec<GoodsDay>,
+    /// Each product's least posted price a unit at each region, as the day opened.
+    pub cheapest: BTreeMap<(u16, u32), f64>,
 }
 
 /// What the goods day reads of the world besides the core.
@@ -373,6 +375,7 @@ impl Core {
             return record;
         }
         let open = self.goods.stocks.totals();
+        self.goods.cheapest = self.cheapest(ctx);
         let mut moved: Vec<Flow> = Vec::new();
         record.made = self.make(ctx, day, &mut moved);
         record.inputs_wanted = self.buy_inputs(ctx, day, &mut moved);
@@ -425,24 +428,33 @@ impl Core {
         Some(from_i64(held.cost) / from_i64(held.units))
     }
 
-    /// A firm's cost of making a unit now: its wage bill a unit of what it expects to sell and the inputs a unit uses
-    /// at what they cost it. What it uses of its own product costs what making it costs, so the rest is grossed up
-    /// by the share of a unit it uses of itself; its stock's cost, which mixes units it bought at others' prices, is
-    /// not its cost of making. None known while an input it uses is not held.
-    fn unit_cost(&self, f: &Firm, expected: f64) -> Option<f64> {
+    /// A firm's cost of making a unit now: its wage bill a day over what its staff make a day and the inputs a unit uses
+    /// at what they cost it, what it holds at what it paid and what it must buy at the least price it is sold at in its
+    /// region.
+    /// What it uses of its own product costs what making it costs, so the rest is grossed up by the share of a unit it
+    /// uses of itself; its stock's cost, which mixes units it bought at others' prices, is not its cost of making.
+    /// None known while its staff make nothing, or an input it uses is neither held nor sold in its region.
+    fn unit_cost(&self, f: &Firm) -> Option<f64> {
         let mut inputs = 0.0;
         let mut own = 0.0;
         for (q, a) in self.stored_inputs(f) {
             if q == f.product {
                 own = a;
             } else {
-                inputs += a * self.average_cost(f.key, q, f.region)?;
+                let cost = self
+                    .average_cost(f.key, q, f.region)
+                    .or_else(|| self.goods.cheapest.get(&(q, f.region)).copied())?;
+                inputs += a * cost;
             }
         }
         let wage_bill: f64 = self.families.iter().find(|x| x.name == "LAB.employment").map_or(0.0, |fam| {
             fam.store.of(0, f.key.slot()).filter_map(|e| fam.store.edges.row(e)).map(|r| from_i64(r.amount)).sum()
         });
-        let labour = if expected > 0.0 { wage_bill * MONTHS_A_YEAR / DAYS_A_YEAR / expected } else { 0.0 };
+        let made = from_i64(self.staff_capacity(f)?);
+        if made <= 0.0 {
+            return None;
+        }
+        let labour = wage_bill * MONTHS_A_YEAR / DAYS_A_YEAR / made;
         (own < 1.0).then(|| (inputs + labour) / (1.0 - own))
     }
 
@@ -469,7 +481,7 @@ impl Core {
                 capacity = if can < capacity { can } else { capacity };
             }
             let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, f.product)) else { continue };
-            let Some(unit_cost) = self.unit_cost(&f, expected) else { continue };
+            let Some(unit_cost) = self.unit_cost(&f) else { continue };
             let rate = self.labour.financing.get(f.country).copied().unwrap_or(0.0);
             // A service's stall is the day's capacity, where a unit pays: it is made as it sells.
             if !stored && !capacity.is_finite() {
@@ -479,14 +491,15 @@ impl Core {
                 expected_demand: if stored { expected } else { capacity },
                 stock: from_i64(stock),
                 cover: if stored { m.cover_days } else { 0.0 },
-                adjustment: m.production_days,
+                adjustment: m.adjustment_days,
                 capacity,
                 expected_price: from_i64(f.price) / from_i64(lot),
                 unit_cost,
                 financing_rate: rate / DAYS_A_YEAR,
                 lead: self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0),
             };
-            let sys_frm::rules::produce::Produce::Make(units) = sys_frm::rules::produce::target(&input) else {
+            let outcome = sys_frm::rules::produce::target(&input);
+            let sys_frm::rules::produce::Produce::Make(units) = outcome else {
                 continue;
             };
             let today = floor_to_i64(units.floor()).unwrap_or(0);
@@ -616,25 +629,80 @@ impl Core {
         floor_to_i64((hours / a_unit).floor())
     }
 
-    /// Each firm's stored inputs topped up to what the days of making and cover its planned output asks, bought from
-    /// the firms of its region at their posted prices; each purchase a flow of money and one of goods to the buyer.
+    /// Each product's least price a unit at each region among the sellers that can sell it: those holding it, and
+    /// every provider of a service, which is made as it sells. A price no one can buy at is no cost.
+    fn cheapest(&self, ctx: &GoodsCtx<'_>) -> BTreeMap<(u16, u32), f64> {
+        let mut out: BTreeMap<(u16, u32), f64> = BTreeMap::new();
+        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return out };
+        for slot in self.firm_slots(firm) {
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let offers = !self.is_stored(f.product) || self.free_units(f.key, f.product, f.region) > 0;
+            if f.price > 0 && offers {
+                let unit = from_i64(f.price) / sys_frm::FilingPrims::lot(ctx.register, f.product);
+                let e = out.entry((f.product, f.region)).or_insert(unit);
+                *e = if unit < *e { unit } else { *e };
+            }
+        }
+        out
+    }
+
+    /// Each firm's stored inputs other than its own product, which it uses from its own stock, ordered up to what its
+    /// planned output uses over the days a unit takes and its stock's cover, where a unit of the input is worth its
+    /// least price in the region financed over those days — that price and the margin a unit made earns over its
+    /// cost, over what the unit takes of it; bought from the firms of its region at no more than that worth, each
+    /// purchase a flow of money and one of goods to the buyer.
     #[clause("FRM.7", "GDS.5", "MKT.6")]
     fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> u64 {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let m = ctx.management;
         let mut wants: Vec<(u16, Buyer)> = Vec::new();
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
             let lead = self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0);
-            let Some(per_day) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
+            let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else {
                 continue;
             };
-            for (q, a) in self.stored_inputs(&f) {
-                let short = whole_units(a * per_day * (lead + self.goods.cover)) - self.free_units(f.key, q, f.region);
-                if short > 0 {
+            let Some(unit_cost) = self.unit_cost(&f) else { continue };
+            let lot = sys_frm::FilingPrims::lot(ctx.register, f.product);
+            let margin = from_i64(f.price) / lot - unit_cost;
+            let planned = if self.is_stored(f.product) {
+                let stock = from_i64(self.free_units(f.key, f.product, f.region));
+                expected + (m.cover_days * expected - stock) / m.adjustment_days
+            } else {
+                expected
+            };
+            let financing = self.labour.financing.get(f.country).copied().unwrap_or(0.0) / DAYS_A_YEAR;
+            // What it holds beyond what its contracts take before its next schedule is what it can spend on inputs.
+            let Some(money) = self.kinds.get(firm).and_then(|k| k.accounts.as_ref()).and_then(|a| a.balance.get(slot))
+            else {
+                continue;
+            };
+            let next = after(day, u64::from(self.labour.production_days));
+            let free = from_i64(money - self.owed_until(f.key, (day, next), ctx.calendar));
+            let mut orders: Vec<(u16, f64, f64, i64)> = Vec::new();
+            for (q, a) in self.stored_inputs(&f).into_iter().filter(|(q, _)| *q != f.product) {
+                let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
+                let input_lot = sys_frm::FilingPrims::lot(ctx.register, q);
+                let worth = per_unit + margin / a;
+                let carried = sys_frm::rules::inputs::carried_cost(per_unit, financing, lead + m.cover_days);
+                let held = from_i64(self.free_units(f.key, q, f.region));
+                let use_a_day = if planned > 0.0 { a * planned } else { 0.0 };
+                let short = sys_frm::rules::inputs::order(use_a_day, (lead, m.cover_days), held, worth, carried);
+                let Some(limit) = floor_to_i64(worth * input_lot) else { continue };
+                if short > 0.0 && limit > 0 {
+                    orders.push((q, short, per_unit, limit));
+                }
+            }
+            // Its orders at the least prices posted, cut alike to what it can spend.
+            let cost: f64 = orders.iter().map(|(_, units, price, _)| units * price).sum();
+            let scale = if cost > free { free / cost } else { 1.0 };
+            for (q, short, _, limit) in orders {
+                let Some(units) = floor_to_i64((short * scale).floor()) else { continue };
+                if units > 0 {
                     let buyer = Buyer {
                         party: f.key,
                         subject: u64::from(f.key.word()),
-                        want: Want::Units(short),
+                        want: Want::UpTo(units, limit),
                         place: f.region,
                     };
                     wants.push((q, buyer));
@@ -748,27 +816,52 @@ impl Core {
         (spenders, n)
     }
 
-    /// The firms whose production schedule came today review their price: the sales a day they expect corrected toward
-    /// what they sold since their last review at their management's speed; the pressure of that demand and their stock
-    /// against its target; the price they would like, their markup over their unit cost — their stock's average cost
-    /// and their wage bill a unit — raised by that pressure; and the move made only where it gains more than changing
-    /// the price costs their staff's hours.
+    /// What a firm keeps of its own product for its own making, never offered: what its way uses of it over the days
+    /// a unit takes and its stock's cover at the sales it expects.
+    fn own_use(&self, ctx: &GoodsCtx<'_>, (firm, slot): (usize, Slot), f: &Firm) -> i64 {
+        let Some(a) = self.stored_inputs(f).iter().find(|(q, _)| *q == f.product).map(|(_, a)| *a) else { return 0 };
+        let Some(expected) = self.record_word(firm, slot, EXPECTED).map(|e| from_i64(e) / PART_ONE) else { return 0 };
+        let lead = self.goods.lead.get(usize::from(f.product)).copied().unwrap_or(0.0);
+        whole_units(a * expected * (lead + ctx.management.cover_days))
+    }
+
+    /// Each product's posted prices at each region: their sum and their count.
+    fn posted(&self, ctx: &GoodsCtx<'_>, firm: usize) -> BTreeMap<(u16, u32), (f64, f64)> {
+        let mut out: BTreeMap<(u16, u32), (f64, f64)> = BTreeMap::new();
+        for slot in self.firm_slots(firm) {
+            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let e = out.entry((f.product, f.region)).or_insert((0.0, 0.0));
+            (e.0, e.1) = (e.0 + from_i64(f.price), e.1 + 1.0);
+        }
+        out
+    }
+
+    /// The firms whose production schedule came today review their price: their markup moved by their sales since
+    /// their last review against those they expected and by what the competitors of their region post; the sales a day
+    /// they expect corrected toward those sales at their memory type's gain; the pressure of that demand and their
+    /// stock against its target; the price they would like, their markup over their cost of making a unit raised by
+    /// that pressure; and the move made only where it gains more than changing the price costs their staff's hours.
     #[clause("FRM.5", "FRM.14", "REP.34", "VAL.6")]
     fn review_prices(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
         let m = ctx.management;
         let due = std::mem::take(&mut self.labour.due_today);
+        let posted = if due.is_empty() { BTreeMap::new() } else { self.posted(ctx, firm) };
         let (mut reviews, mut repriced) = (0, 0);
         for s in due {
             let slot = Slot::new(s);
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let (Some(markup), Some(expected), Some(sold), Some(last)) = (
+            let (Some(markup), Some(expected), Some(sold), Some(last), Some(memory)) = (
                 self.record_word(firm, slot, MARKUP),
                 self.record_word(firm, slot, EXPECTED),
                 self.record_word(firm, slot, SOLD_UNITS),
                 self.record_word(firm, slot, REVIEWED),
+                self.record_word(firm, slot, MEMORY),
             ) else {
                 continue;
+            };
+            let Some(gain) = usize::try_from(memory).ok().and_then(|t| m.gains.get(t)).copied() else {
+                violation!(clause = "VAL.6", "a firm's memory type beyond the types", slot = s);
             };
             let days = i64::from(day.get()) - last;
             if days <= 0 {
@@ -778,7 +871,24 @@ impl Core {
             self.set_record_word(firm, slot, REVIEWED, i64::from(day.get()));
             let (markup, expected) = (from_i64(markup) / PART_ONE, from_i64(expected) / PART_ONE);
             let demand = from_i64(sold) / from_i64(days);
-            let expected = expected + m.sales_speed * (demand - expected);
+            let price = from_i64(f.price);
+            // What the others of its region post, where it has any competitor there.
+            let seen = match posted.get(&(f.product, f.region)) {
+                Some((sum, n)) if *n > 1.0 => Missing::Present((sum - price) / (n - 1.0)),
+                _ => Missing::Absent,
+            };
+            let markup = match sys_frm::rules::markup::update(
+                markup,
+                (m.sales_speed, m.seen_speed),
+                (demand, expected),
+                seen,
+                price,
+            ) {
+                Missing::Present(x) => x,
+                Missing::Absent => markup,
+            };
+            self.set_record_word(firm, slot, MARKUP, whole_units(markup * PART_ONE));
+            let expected = phx_val::heuristics::adaptive(expected, demand, gain);
             self.set_record_word(firm, slot, EXPECTED, whole_units(expected * PART_ONE));
             self.set_record_word(firm, slot, SOLD_UNITS, 0);
             // A service is never held, so its provider's pressure is its demand's alone.
@@ -787,7 +897,7 @@ impl Core {
             } else {
                 (0.0, 0.0)
             };
-            let Some(unit_cost) = self.unit_cost(&f, expected) else { continue };
+            let Some(unit_cost) = self.unit_cost(&f) else { continue };
             let Some(lot) = floor_to_i64(sys_frm::FilingPrims::lot(ctx.register, f.product)) else { continue };
             let lot = from_i64(lot);
             let pressure = match sys_frm::rules::price::pressure_stocked(demand, expected, cover * expected, stock) {
@@ -800,7 +910,9 @@ impl Core {
             let wanted = sys_frm::rules::price::desired(markup, unit_cost * lot, pressure, m.curvature);
             let law = self.labour.laws.get(f.country);
             let hour = law.map_or(0.0, |l| l.mean_monthly / (l.weeks_a_month * f64::from(l.full_time_hours)));
-            let revenue = demand * from_i64(f.price) / lot * m.production_days;
+            // What a gap costs it is read on the sales it expects, so a firm that sold nothing at a price it cannot
+            // make at still weighs moving it.
+            let revenue = expected * from_i64(f.price) / lot * m.production_days;
             let points = m.points_near(wanted);
             if let Some(p) =
                 sys_frm::rules::price::reprice(&points, f.price, wanted, revenue, markup, m.menu_hours * hour)
@@ -838,7 +950,7 @@ impl Core {
         let mut by_product: BTreeMap<u16, Vec<(Stall, u16, u8, u32)>> = BTreeMap::new();
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let free = self.free_units(f.key, f.product, f.region);
+            let free = self.free_units(f.key, f.product, f.region) - self.own_use(ctx, (firm, slot), &f);
             if free <= 0 || f.price <= 0 {
                 continue;
             }

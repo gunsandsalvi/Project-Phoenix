@@ -95,6 +95,8 @@ impl DecidePrims {
 pub struct Management {
     pub production_days: f64,
     pub cover_days: f64,
+    /// The days over which a firm closes the gap to the stock it aims for.
+    pub adjustment_days: f64,
     pub sales_speed: f64,
     pub seen_speed: f64,
     pub curvature: f64,
@@ -102,8 +104,10 @@ pub struct Management {
     pub menu_hours: f64,
     /// The points within a decade, each over the decade's top.
     pub points: Vec<i64>,
-    /// Each memory type's speed of correction, by its place, and how many widths a surprise must pass to wake.
+    /// Each memory type's speed of correction, by its place, and how many widths a surprise must pass to wake; the
+    /// memory types with their shares, by which a firm's is drawn.
     pub gains: Vec<f64>,
+    pub memory: phx_core::register::values::TypeSet,
     pub sensitivity: f64,
     /// Each switching type's intensity, by its place.
     pub intensities: Vec<f64>,
@@ -124,11 +128,8 @@ impl Management {
         let types = u16::try_from(register.count("VAL.memory_types")?).map_err(|e| e.to_string())?;
         let gain = register.distribution("VAL.adaptive_gain")?;
         let scale = libm::pow(crate::consts::DECADE, f64::from(gain.exp));
-        let gains = phx_core::register::values::TypeSet::build(gain, types)?
-            .types()
-            .iter()
-            .map(|t| from_i64(t.value) / scale)
-            .collect();
+        let memory = phx_core::register::values::TypeSet::build(gain, types)?;
+        let gains = memory.types().iter().map(|t| from_i64(t.value) / scale).collect();
         let switching = u16::try_from(register.count("VAL.switching_types")?).map_err(|e| e.to_string())?;
         let intensity = register.distribution("VAL.switching_intensity")?;
         let per = libm::pow(crate::consts::DECADE, f64::from(intensity.exp));
@@ -137,8 +138,14 @@ impl Management {
             .iter()
             .map(|t| from_i64(t.value) / per)
             .collect();
+        let adjustment = p.adjustment_days.shared(register).get();
+        if adjustment == 0 {
+            return Err("a stock's gap closed over no days".to_owned());
+        }
         Ok(Management {
             gains,
+            memory,
+            adjustment_days: phx_rand::float::from_u64(adjustment),
             intensities,
             sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
@@ -205,6 +212,7 @@ mod tests {
         let m = Management {
             production_days: 7.0,
             cover_days: 42.0,
+            adjustment_days: 152.0,
             sales_speed: 0.05,
             seen_speed: 0.05,
             curvature: 0.5,
@@ -212,6 +220,12 @@ mod tests {
             menu_hours: 2.0,
             points: vec![100, 199, 499, 999],
             gains: vec![0.5],
+            memory: phx_core::register::values::TypeSet::new(vec![phx_core::register::values::TypeShare {
+                id: phx_core::register::values::TypeId::new(0),
+                share_ppm: 1_000_000,
+                value: 5,
+            }])
+            .unwrap_or_else(|e| panic!("{e}")),
             sensitivity: 2.0,
             intensities: vec![1.0],
         };

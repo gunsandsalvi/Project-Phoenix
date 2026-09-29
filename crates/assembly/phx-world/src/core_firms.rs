@@ -13,7 +13,9 @@ use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
 use phx_rand::{below_u64, normal};
 use phx_store::SystemBacking;
 
-use crate::consts::firm::{COMPENSATION, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PURPOSES, RECORD, SITE_PURPOSE};
+use crate::consts::firm::{
+    COMPENSATION, MEMORY_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PURPOSES, RECORD, SITE_PURPOSE,
+};
 use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, WEEKS_A_YEAR};
 use crate::core::Core;
 use crate::opening::economy::table;
@@ -215,6 +217,7 @@ struct Draft {
     bank: u32,
     price: i64,
     output: f64,
+    memory: u16,
 }
 
 /// What the firms' opening reads besides the core: the register, the countries with their sheets, the stream its
@@ -258,7 +261,8 @@ fn share_output(drafts: &mut [Draft], snap: &Snapshot, persons: &[(u32, u64)], p
 
 impl Core {
     /// The firms drawn on the core, of one kind: every country's firms begun by product and region, each with its
-    /// productivity drawn from its group's spread around one, its site drawn among its region's land, an account at a
+    /// productivity drawn from its group's spread around one, its site drawn among its region's land, its management's
+    /// memory type drawn by the types' shares, an account at a
     /// bank drawn by the banks' deposits, its day-zero price posted from its own cost and its output the demand that
     /// price wins; each country's firms' deposits shared over them by their turnover.
     ///
@@ -304,6 +308,7 @@ impl Core {
                     MaybeI64::present(parts(from_i64(output) / crate::consts::DAYS_A_YEAR)),
                     MaybeI64::present(0),
                     MaybeI64::present(i64::from(o.today.get())),
+                    MaybeI64::present(i64::from(d.memory)),
                 ];
                 let id = PartyId::new(self.next_id);
                 self.next_id += 1;
@@ -354,6 +359,8 @@ impl Core {
                     None => violation!(clause = "PTY.5", "a firm's region with no land", region = cell.region),
                 };
                 let bank = pick(&banks, below_u64(&mut at, bank_weight));
+                let mut m = o.streams.open(o.stream, subject(MEMORY_PURPOSE), phx_id::Day::new(0), 0);
+                let memory = phx_core::register::values::draw_type(&o.management.memory, &mut m).get();
                 let wanted = lot * snap.price_at(product, log);
                 let Some(price) = sys_frm::rules::price::nearest_point(&o.management.points_near(wanted), wanted)
                 else {
@@ -367,6 +374,7 @@ impl Core {
                     bank,
                     price,
                     output: 0.0,
+                    memory,
                 });
                 ordinal += 1;
             }

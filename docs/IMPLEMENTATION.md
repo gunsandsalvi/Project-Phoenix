@@ -837,12 +837,28 @@ world switches to the core.
     of 42 days they never reached, and their prices rose up to a hundredfold in two weeks. A firm's unit cost is its
     cost of making a unit now — its wage bill a unit of expected sales and its inputs at what they cost it, its own
     product as an input grossed up — never its stock's average cost, which mixes units bought from competitors at
-    their prices and fed each firm's price back into the others'. Measured after (120 days, 150,000 persons, seed 1):
-    the flows settle every day but month ends; but the goods makers' stocks in the developed country still run down
-    (tobacco-to-chemicals and metals: 42 days of cover at the opening to none by April), their staff's hours making
-    about nine tenths of what they expect to sell while their employers post few vacancies, and the producer index
-    doubles in February. To settle in d and e: planned output within staff read against the stock's target, the
-    postings' response, and the input buyers' orders.
+    their prices and fed each firm's price back into the others'; its labour a unit is its wage bill a day over what
+    its staff make a day, and an input it does not hold costs the least price it is sold at in its region, a price
+    posted by a seller with nothing to sell being no cost.
+  - e begun: each firm draws its management's memory type at the opening (VAL.6, by the types' shares); at each review
+    its markup moves by its sales against those expected and by what its region's competitors post (FRM.5), and its
+    expected sales take in the surprise at its memory type's gain — until then they moved at the markup's speed; its
+    stock's gap closes over `FRM.adjustment_days`, not its production period. A firm orders its stored inputs by the
+    inputs rule (FRM.7, GDS.5): its planned output's use over the lead and cover days less what it holds, each at no
+    more than the input is worth to it (`Want::UpTo`, a buyer's limit at the meeting), within the money it holds beyond
+    what its contracts take before its next schedule; what its way uses of its own product comes from its own stock,
+    kept off its offer. A price move is weighed on the sales it expects, so a firm that sold nothing still reprices.
+    Labour's changes to a household's persons (a hire, a separation) book its chances again from the next day, as the
+    hazards' outcomes do. Each change was a finding of the 120-day run: the producer index rose a millionfold, then
+    tenfold, as firms bought inputs without limit or money, bought their own product from each other, and froze at a
+    price below their cost. Measured now (120 days, 150,000 persons, seed 1): the flows settle every day but the month
+    ends; consumer prices rise 45% in February and 100% by March in the developed country (44% and 103% in the
+    emerging, 29% and 46% in the developing), unemployment there from 2.5% to 11.6%. The trigger is the opening: at the
+    opening's prices households ask up to twice what the firms expect to sell of some goods (households' spending is
+    72% of output, as the accounts say, but the budget shares renormalised over the products the world makes, and the
+    firms' expected sales count exports no one buys until XB), so the goods with the most household demand sell out in
+    weeks while their makers cannot hire as fast. To settle in e: each firm's expected sales and output at the opening
+    read the demand the world's buyers bring at the opening's prices; the management types' spread of the review.
   - The live checks on the core (65 days, 150,000 persons, seed 1): 22 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and

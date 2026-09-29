@@ -149,7 +149,7 @@ pub const CORE_WHEEL_DAYS: u32 = 64;
 /// purposes its opening
 /// draws and its jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
-    pub const RECORD: usize = 10;
+    pub const RECORD: usize = 11;
     pub const PRODUCT: usize = 0;
     pub const REGION: usize = 1;
     pub const SITE: usize = 2;
@@ -160,13 +160,16 @@ pub mod firm {
     pub const EXPECTED: usize = 7;
     pub const SOLD: usize = 8;
     pub const REVIEWED: usize = 9;
+    /// The memory type a firm's outlooks correct at.
+    pub const MEMORY: usize = 10;
     pub const PART_ONE: f64 = 1_000_000.0;
     pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
-    pub const PURPOSES: u32 = 4;
+    pub const PURPOSES: u32 = 5;
     pub const PRODUCTIVITY_PURPOSE: u32 = 0;
     pub const SITE_PURPOSE: u32 = 1;
     pub const JOBS_PURPOSE: u32 = 2;
     pub const LOANS_PURPOSE: u32 = 3;
+    pub const MEMORY_PURPOSE: u32 = 4;
     pub const COMPENSATION: usize = 0;
 }
 /// The reasons the core's flows are made for, by their code.

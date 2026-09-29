@@ -173,6 +173,7 @@ impl Core {
             lending: Vec::new(),
             drawn: Drawn::default(),
             rates: crate::core_rates::Rates::default(),
+            touched: std::collections::BTreeSet::new(),
         }
     }
 

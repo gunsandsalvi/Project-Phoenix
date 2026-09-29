@@ -675,6 +675,7 @@ impl Core {
         if let Some(Some(ps)) = self.persons.get_mut(place) {
             ps.set_word(&mut self.space, household.slot(), at, packed);
         }
+        self.touched.insert(household.slot().get());
         self.labour.searching.remove(&(household, hired.seeker.person));
         self.end_benefit(household, hired.seeker.person);
         let stood = ctx.calendar.days_between(p.first, day).unwrap_or(0);
@@ -793,6 +794,7 @@ impl Core {
             p.set_attr(ctx.kind.last_point, point);
         }
         ps.set_word(&mut self.space, household.slot(), at, pack(&decl, &p));
+        self.touched.insert(household.slot().get());
         self.labour.searching.insert((household, person));
     }
 

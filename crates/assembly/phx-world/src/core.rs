@@ -59,6 +59,8 @@ pub struct Core {
     pub(crate) drawn: crate::core_open::Drawn,
     /// The realised rates over the sampled households, beside their expectations.
     pub rates: crate::core_rates::Rates,
+    /// The households whose persons the day's labour changed, booked again for every process from the next day.
+    pub(crate) touched: std::collections::BTreeSet<u32>,
 }
 
 pub(crate) fn kind_number(place: usize) -> u8 {

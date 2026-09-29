@@ -99,50 +99,6 @@ impl OrderIntent {
     }
 }
 
-/// A buyer's want of a product as a handler asks it: its row, the retail kind's code, the product, and what it wants,
-/// units it needs or money it spends.
-#[clause("SRV.4", "HH.5")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ShopIntent {
-    pub row: Slot,
-    pub kind: u64,
-    pub product: u16,
-    pub want: crate::retail::Want,
-}
-
-const MONEY: u64 = 1;
-
-impl IntentDef for ShopIntent {
-    const NAME: &'static str = "SRV.shop";
-
-    fn encode(&self, out: &mut Vec<u64>) {
-        let (tag, amount) = match self.want {
-            crate::retail::Want::Units(q) => (0, q),
-            crate::retail::Want::Money(m) => (MONEY, m),
-        };
-        out.extend([u64::from(self.row.get()), self.kind, u64::from(self.product), tag, amount.cast_unsigned()]);
-    }
-}
-
-impl ShopIntent {
-    /// The intent its words encode, or none when they are not a buyer's want.
-    #[must_use]
-    pub fn decode(words: &[u64]) -> Option<ShopIntent> {
-        let [row, kind, product, tag, amount] = words else { return None };
-        let want = match *tag {
-            0 => crate::retail::Want::Units(amount.cast_signed()),
-            MONEY => crate::retail::Want::Money(amount.cast_signed()),
-            _ => return None,
-        };
-        Some(ShopIntent {
-            row: Slot::new(u32::try_from(*row).ok()?),
-            kind: *kind,
-            product: u16::try_from(*product).ok()?,
-            want,
-        })
-    }
-}
-
 /// A shipper's want to carry goods as a handler asks it: its row, the carriage kind's code, the product and grade
 /// class of the goods, the place they are at where that is not the row's own, the units, the zone they go to, and the
 /// mode.
@@ -282,16 +238,6 @@ mod tests {
             let mut words = Vec::new();
             s.encode(&mut words);
             assert_eq!(super::ShipIntent::decode(&words), Some(s));
-        }
-    }
-
-    #[test]
-    fn a_want_survives_its_words() {
-        for want in [crate::retail::Want::Units(12), crate::retail::Want::Money(-1), crate::retail::Want::Money(900)] {
-            let s = super::ShopIntent { row: Slot::new(4), kind: 77, product: 3, want };
-            let mut words = Vec::new();
-            s.encode(&mut words);
-            assert_eq!(super::ShopIntent::decode(&words), Some(s));
         }
     }
 }

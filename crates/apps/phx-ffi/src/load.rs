@@ -707,7 +707,7 @@ fn choices(
                         .map(|b| {
                             let limit = PRICE_FLOOR + i64::try_from(mix64(b.subject) % PRICE_SPAN).unwrap_or(0);
                             let units = match b.want {
-                                Want::Units(q) => q,
+                                Want::Units(q) | Want::UpTo(q, _) => q,
                                 Want::Money(m) => m / limit,
                             };
                             Bid { buyer: b.party, limit, units, lot: 1 }
