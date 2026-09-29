@@ -1229,7 +1229,11 @@ world switches to the core.
       and nothing bought before. The opening's expected household demand nets the tax. Twelve days at 150,000
       persons run clean. The income tax and the benefits have no counterpart in the flows; the state's balance they
       leave is read at the gate.
-    - j6. **The check**: the derivation's and the assembly's checks cover every identity above.
+    - j6. **The check** (built): the assembly's check (`opening::economy::check`) covers the tables j4 and j5 made
+      load-bearing — `TEC.labour`'s columns the accounts' activities, none below nothing, every staffed activity
+      asking hours; `LAB.self_employed_shares`, `FRM.firms_per_employed` and `LAB.women_by_occupation` shares of the
+      right length, each product making some firms; `GEN.product_taxes` one an activity and one a final use — beside
+      the flows' and stocks' identities; the derivations refuse a product or occupation no source reports.
 - **Persons as parties** (PTY.1, PTY.3, REP.26, Appendix E 46, owner 2026-09-28): each person keeps one identity from
   birth to death, the persons store holding it beside the person's word, and every contract naming a person names it
   by that identity, never by its place in its household (c, with the employment contracts, the pensions moving to it);

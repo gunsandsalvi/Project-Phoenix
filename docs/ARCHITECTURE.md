@@ -2651,7 +2651,10 @@ first reruns the ways and price levels (`derive_tec.py`), reads the budget share
 Assembly checks every country's dataset (`opening::economy::check`, at compile) and refuses it with each break
 named, primitive and residue: each activity's supply is its uses, its output its inputs, taxes and value added, GDP
 by production and by expenditure one, no output or value added below nothing, each holding a share of its whole and
-no real asset below nothing; and each country's closed sheet (`opening::sheet::country_sheet`): each instrument's
+no real asset below nothing; the ways' hours one column an activity, none below nothing, every activity the world
+staffs asking some; each product's self-employed share and firms per person employed, and each occupation's women, a
+share each, and a product making some firms; the taxes on products one an activity and one a final use; and each
+country's closed sheet (`opening::sheet::country_sheet`): each instrument's
 assets its liabilities, firms, banks and the central bank worth nothing beyond their equity. The tolerance is the
 rounding of the stored places over the terms summed (Law 7).
 

@@ -256,6 +256,54 @@ fn level_breaks(register: &Register, country: CountryId, f: &Flows) -> Result<Ve
     Ok(out)
 }
 
+/// What the labour and firm tables must hold against the accounts: the ways' hours one column an activity, none below
+/// nothing, and every activity the world staffs — the products and public administration — asking some; a share of
+/// each product's employed self-employed and a number of firms per person employed, a share each; each occupation's
+/// women a share of it; and the taxes on products one an activity and one a final use.
+fn labour_breaks(register: &Register, country: CountryId, f: &Flows) -> Result<Vec<String>, String> {
+    let mut out = Vec::new();
+    let activities = f.output.len();
+    let (ways, _) = table(register, "TEC.labour", country)?;
+    let products = table(register, "TEC.inputs", country)?.0.len();
+    for (o, r) in ways.iter().enumerate() {
+        if r.len() != activities {
+            out.push(format!("TEC.labour: occupation {o} has {} columns for {activities} activities", r.len()));
+        }
+        if r.iter().any(|h| h.is_nan() || *h < 0.0) {
+            out.push(format!("TEC.labour: occupation {o} asks hours below nothing"));
+        }
+    }
+    for a in (0..products).chain([crate::consts::firm::PUBLIC_ADMINISTRATION]) {
+        let asked: f64 = ways.iter().map(|r| at(r, a)).sum();
+        if asked.is_nan() || asked <= 0.0 {
+            out.push(format!("TEC.labour: activity {a}, which the world staffs, asks no hours"));
+        }
+    }
+    let share = |id: &str, n: usize, v: &[f64], out: &mut Vec<String>| {
+        if v.len() != n {
+            out.push(format!("{id}: {} values for {n}", v.len()));
+        }
+        for (i, x) in v.iter().enumerate() {
+            if x.is_nan() || *x < 0.0 || *x > 1.0 {
+                out.push(format!("{id}: value {i}, {x}, is no share"));
+            }
+        }
+    };
+    share("LAB.self_employed_shares", products, &row(register, "LAB.self_employed_shares", country)?, &mut out);
+    let density = row(register, "FRM.firms_per_employed", country)?;
+    share("FRM.firms_per_employed", products, &density, &mut out);
+    if let Some(i) = density.iter().position(|d| *d <= 0.0) {
+        out.push(format!("FRM.firms_per_employed: product {i} makes no firm"));
+    }
+    share("LAB.women_by_occupation", ways.len(), &row(register, "LAB.women_by_occupation", country)?, &mut out);
+    let taxes = f.taxes.len();
+    let finals = f.finals.first().map_or(0, Vec::len);
+    if taxes != activities + finals {
+        out.push(format!("GEN.product_taxes: {taxes} rates for {activities} activities and {finals} final uses"));
+    }
+    Ok(out)
+}
+
 /// Every country's dataset checked; the breaks, each naming its primitive and residue.
 ///
 /// # Errors
@@ -270,6 +318,7 @@ pub fn check(register: &Register, countries: usize) -> Result<(), Vec<String>> {
             let (flows, unit) = accounts(register, country)?;
             let mut breaks = flows_breaks(&flows, unit);
             breaks.extend(level_breaks(register, country, &flows)?);
+            breaks.extend(labour_breaks(register, country, &flows)?);
             Ok(breaks)
         };
         match read() {
