@@ -36,7 +36,7 @@ pub const BOOK_ROWS_PER_CHUNK: u32 = 1 << 14;
 pub const HOLDER_BLOCKS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 18;
+pub const SAVE_FORMAT: u32 = 19;
 /// A save's tasks on the pool: the core's store, the run's record and the world's hash.
 pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.
@@ -207,6 +207,9 @@ pub mod firm {
     pub const MANAGEMENT_PURPOSE: u32 = 4;
     pub const OWNERS_PURPOSE: u32 = 5;
     pub const COMPENSATION: usize = 0;
+    /// The flows' activity the public agencies' staff work in: public administration, after the products, finance and
+    /// real estate.
+    pub const PUBLIC_ADMINISTRATION: usize = 21;
 }
 /// The reasons the core's flows are made for, by their code.
 pub mod reason {

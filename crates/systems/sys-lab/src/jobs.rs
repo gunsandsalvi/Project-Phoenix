@@ -1,11 +1,9 @@
 //! The households' jobs and their persons' labour state at the opening. Each adult is employed at the country's
 //! employment rate, and an employee at its sex's share of employees among the employed. An employee's job has an
 //! occupation drawn by its sex among those its skill reaches, part-time hours at its sex's share, the law's notice and
-//! severance, its household's region and the band its tenure, drawn from the tenure shares, began in. Its wage is its
-//! hours times the mean wage the labour share gives an employee's mean hours, times its household's income as a
-//! multiple of the mean, on the nearest wage point. A job is a row on the employment line of its class and point. Once every household is drawn, each region and
-//! occupation's jobs are apportioned over the region's firms by their headcounts and the share of the occupation in
-//! their product's work, and dealt to the lines in an order drawn by lot. Of those not employed, the
+//! severance, its household's region and the band its tenure, drawn from the tenure shares, began in. Its wage is not
+//! drawn: it follows from its employer's activity once each region and occupation's jobs are dealt over the region's
+//! employers by the hours their output takes of the occupation, in an order drawn by lot. Of those not employed, the
 //! unemployed search, at the rate that makes their share of the labour force the country's; an adult past its
 //! pension's age not employed is retired.
 
@@ -60,29 +58,18 @@ pub struct Rule {
     searching: [f64; 2],
     occupations: Vec<[f64; 2]>,
     tenure: Vec<(i64, f64)>,
-    wage: f64,
-    /// An employee's mean weekly hours, over the sexes' shares of employees and their part-time shares.
-    mean_hours: f64,
     date: phx_id::Date,
 }
 
-/// An adult's labour as drawn: its place in its household, its state, the occupation recorded on it, the wage point
-/// full time would pay it, and its job where it is an employee.
+/// An adult's labour as drawn: its place in its household, its state, the occupation recorded on it, and its job's
+/// class where it is an employee — occupation, skill, hours, notice, severance, region and the band its tenure began
+/// in.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Drawn {
     pub place: usize,
     pub state: u32,
     pub occupation: u32,
-    pub last: u32,
-    pub job: Option<DrawnJob>,
-}
-
-/// An employee's job as drawn: its wage point and its class — occupation, skill, hours, notice, severance, region
-/// and the band its tenure began in.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct DrawnJob {
-    pub point: i64,
-    pub class: Vec<u32>,
+    pub job: Option<Vec<u32>>,
 }
 
 impl Jobs {
@@ -140,14 +127,6 @@ impl Jobs {
         let Ok(part_time_hours) = u32::try_from(self.part_time_hours.get(register, c.id).get()) else {
             violation!(clause = "LAB.1", "part-time hours beyond a week's", country = c.id.get())
         };
-        let of_employees: f64 = employees.iter().sum();
-        let mean_hours: f64 = employees
-            .iter()
-            .zip(&part_time)
-            .map(|(e, p)| {
-                e / of_employees * (p * f64::from(part_time_hours) + (1.0 - p) * f64::from(law.full_time_hours))
-            })
-            .sum();
         let t = self.by_age.get(register, c.id);
         let by_age = t
             .rows()
@@ -162,26 +141,14 @@ impl Jobs {
                 )
             })
             .collect();
-        Rule {
-            law,
-            employed,
-            by_age,
-            employees,
-            part_time,
-            part_time_hours,
-            searching,
-            occupations,
-            tenure,
-            wage: phx_ledger::opening::mean_wage(c),
-            mean_hours,
-            date,
-        }
+        Rule { law, employed, by_age, employees, part_time, part_time_hours, searching, occupations, tenure, date }
     }
 }
 
 impl Rule {
     /// The wage point nearest a month's wage.
-    fn point_of(&self, wage: f64) -> u32 {
+    #[must_use]
+    pub fn point_of(&self, wage: f64) -> u32 {
         let Some(point) = phx_rand::float::floor_to_i64(libm::rint(libm::log(wage) / libm::log(self.law.point_ratio)))
         else {
             violation!(clause = "REP.34", "a wage beyond the wage points");
@@ -245,17 +212,14 @@ impl Rule {
     }
 
     /// Each adult's labour in a household drawn at the opening: employed at the country's rate times its age band's
-    /// and sex's ratio to it, an employee at its sex's share, with its job's occupation, hours, wage point and class;
-    /// of those not employed, searching at the rate that makes the unemployed the country's share, or retired past
-    /// the pension's age. A week's hour of the household's work pays the mean wage over an employee's mean hours at
-    /// its income's multiple.
-    #[clause("GEN.2", "LAB.1", "REP.34", "PTY.3")]
+    /// and sex's ratio to it, an employee at its sex's share, with its job's occupation, hours and class; of those not
+    /// employed, searching at the rate that makes the unemployed the country's share, or retired past the pension's
+    /// age.
+    #[clause("GEN.2", "LAB.1", "PTY.3")]
     #[must_use]
-    pub fn draw(&self, household: &phx_core::Household, income: f64, d: &mut Draws) -> Vec<Drawn> {
+    pub fn draw(&self, household: &phx_core::Household, d: &mut Draws) -> Vec<Drawn> {
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
         let region = household.attr(if_pop::REGION.name);
-        let hourly = self.wage * income / self.mean_hours;
-        let last = self.point_of(hourly * f64::from(self.law.full_time_hours));
         let mut out = Vec::new();
         for (place, p) in household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
             let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
@@ -289,16 +253,15 @@ impl Rule {
                     NOT_SEARCHING
                 };
                 let known = if state == SEARCHING { occupation } else { NO_OCCUPATION };
-                out.push(Drawn { place, state, occupation: known, last, job: None });
+                out.push(Drawn { place, state, occupation: known, job: None });
                 continue;
             }
             let state = if retired { RETIRED } else { NOT_SEARCHING };
             if as_employee >= employee {
-                out.push(Drawn { place, state, occupation, last, job: None });
+                out.push(Drawn { place, state, occupation, job: None });
                 continue;
             }
             let hours = if open_unit(d) < part_time { self.part_time_hours } else { self.law.full_time_hours };
-            let point = i64::from(self.point_of(hourly * f64::from(hours)));
             let mut class = vec![0; PLACES];
             let places = [
                 (if_labour::class::OCCUPATION, occupation),
@@ -314,7 +277,7 @@ impl Rule {
                     *c = v;
                 }
             }
-            out.push(Drawn { place, state, occupation, last, job: Some(DrawnJob { point, class }) });
+            out.push(Drawn { place, state, occupation, job: Some(class) });
         }
         out
     }

@@ -81,10 +81,6 @@ declare_prim! {
     }
 }
 declare_prim! {
-    /// The shape of income, a lognormal body with a Pareto top.
-    pub INCOME = "DEM.income_shape" { kind: Endowment, value: Distribution { exp: 6 }, clause: "GEN.2", scope: PerCountry }
-}
-declare_prim! {
     /// The shape of wealth, a lognormal body with a Pareto top.
     pub WEALTH = "DEM.wealth_shape" { kind: Endowment, value: Distribution { exp: 6 }, clause: "GEN.2", scope: PerCountry }
 }
@@ -176,7 +172,6 @@ pub struct Prims {
     pub grown_children: Prim<Table2>,
     pub minor_children: Prim<Table2>,
     pub education: [Prim<Table2>; 2],
-    pub income: Prim<Distribution>,
     pub wealth: Prim<Distribution>,
     pub age_classes: Prim<Partition>,
     pub majority: Prim<Count>,
@@ -208,7 +203,6 @@ impl Prims {
             grown_children: d.prim(&GROWN_CHILDREN),
             minor_children: d.prim(&MINOR_CHILDREN),
             education: [d.prim(&EDUCATION_FEMALE), d.prim(&EDUCATION_MALE)],
-            income: d.prim(&INCOME),
             wealth: d.prim(&WEALTH),
             age_classes: d.prim(&AGE_CLASSES),
             majority: d.prim(&MAJORITY),
@@ -244,7 +238,6 @@ impl Prims {
             grown_children: register.handle(&GROWN_CHILDREN)?,
             minor_children: register.handle(&MINOR_CHILDREN)?,
             education: [register.handle(&EDUCATION_FEMALE)?, register.handle(&EDUCATION_MALE)?],
-            income: register.handle(&INCOME)?,
             wealth: register.handle(&WEALTH)?,
             age_classes: register.handle(&AGE_CLASSES)?,
             majority: register.handle(&MAJORITY)?,

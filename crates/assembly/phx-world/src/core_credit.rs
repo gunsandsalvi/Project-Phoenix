@@ -167,15 +167,45 @@ impl Core {
 
     /// Each household's loan as the opening drew it: its share of the loans to households, lent by its bank at the
     /// lending rate over the years it has left, repaid monthly in equal parts with interest on what it owes; owed by
-    /// its head.
+    /// its head. A loan's balance is what its payments repay over the years it has left, so each household's share of
+    /// its country's debt is its income a year times those years, its payment then in proportion to its income.
     fn household_loans(&mut self, o: &CreditOpening<'_>, household: usize, bank: usize) -> Result<DatedFamily, String> {
         let mut family = self.loan_family(crate::consts::families::HOUSEHOLD_LOANS, household, bank, o.today);
         let date = o.calendar.date(o.today);
-        for l in std::mem::take(&mut self.drawn.loans) {
+        let drawn = std::mem::take(&mut self.drawn.loans);
+        let mut amounts = vec![0_i64; drawn.len()];
+        for (c, sheet) in o.countries.iter().zip(o.sheets) {
+            let debt = phx_ledger::opening::whole(
+                sheet.at(crate::consts::sheet::LOANS_TO_HOUSEHOLDS, crate::consts::sheet::BANKS) * c.gdp,
+            );
+            let at: Vec<usize> =
+                (0..drawn.len()).filter(|i| drawn.get(*i).is_some_and(|l| l.country == c.id.get())).collect();
+            let weights: Vec<u64> = at
+                .iter()
+                .filter_map(|i| drawn.get(*i))
+                .map(|l| {
+                    let income = self.income_of(l.household).unwrap_or_else(|| {
+                        violation!(
+                            clause = "GEN.2",
+                            "a borrowing household with no income",
+                            slot = l.household.slot().get()
+                        )
+                    });
+                    u64::try_from(income).unwrap_or(0).checked_mul(l.years).unwrap_or_else(|| {
+                        phx_num::capacity_exceeded!("a household loan's weight", u64::MAX, l.years);
+                    })
+                })
+                .collect();
+            for (i, amount) in at.iter().zip(self.apportion(("households' loans", c.id.get()), debt, &weights)) {
+                if let Some(a) = amounts.get_mut(*i) {
+                    *a = amount;
+                }
+            }
+        }
+        for (l, amount) in drawn.into_iter().zip(amounts) {
             let Some(c) = o.countries.iter().find(|c| c.id.get() == l.country) else {
                 return Err(format!("a loan drawn in country {}, which the world does not hold", l.country));
             };
-            let Ok(amount) = i64::try_from(l.weight) else { continue };
             if amount == 0 {
                 continue;
             }

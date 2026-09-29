@@ -51,7 +51,6 @@ struct Country {
     education_rows: Vec<i64>,
     education: [Vec<AliasTable>; 2],
     wealth: Distribution,
-    income: Distribution,
 }
 
 fn derived(c: &OpeningCountry, name: &str) -> f64 {
@@ -330,7 +329,6 @@ impl Country {
             education_rows,
             education,
             wealth: p.wealth.get(register, id).clone(),
-            income: p.income.get(register, id).clone(),
         }
     }
 
@@ -408,14 +406,14 @@ fn person(country: &Country, m: &Member, (d, health, school): (&mut Draws, &mut 
 }
 
 /// A household drawn in a region, before the books hold it: the subject its draws are keyed by, what formed it, its
-/// persons and the means it was drawn.
+/// persons and the wealth it was drawn, as a multiple of the mean.
 #[derive(Debug)]
 pub struct Formed {
     pub subject: phx_rand::Subject,
     pub raised: bool,
     pub kind: usize,
     pub h: Household,
-    pub drawn: (f64, f64),
+    pub wealth: f64,
 }
 
 /// A country's households drawn region by region, its persons apportioned over its regions by their land: each
@@ -477,11 +475,8 @@ fn draw_region(
         let names: Vec<(&'static str, u32)> = kind.attrs.iter().zip(&attrs).map(|(a, v)| (a.item.name, *v)).collect();
         let h = Household { attrs: names, persons, positions: Vec::new() };
         let mut means = opening_ctx.draws(&MeansStream::DECL, subject);
-        let drawn = (
-            country.wealth.draw(&mut means) / country.wealth.mean(),
-            country.income.draw(&mut means) / country.income.mean(),
-        );
-        out.push(Formed { subject, raised: formed.raised, kind: formed.kind.index, h, drawn });
+        let wealth = country.wealth.draw(&mut means) / country.wealth.mean();
+        out.push(Formed { subject, raised: formed.raised, kind: formed.kind.index, h, wealth });
         let Some(next) = ordinal.checked_add(1) else {
             capacity_exceeded!("households of a region", u32::MAX, ordinal);
         };

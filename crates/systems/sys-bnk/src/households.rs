@@ -43,12 +43,11 @@ pub struct Banking {
 }
 
 /// A household's banking as drawn: none, its persons holding banknotes; or its bank among the country's, by its place
-/// there, its deposit's weight by its wealth, and its loan's place among the years' choices and weight by its income
-/// where it has borrowed.
+/// there, its deposit's weight by its wealth, and its loan's place among the years' choices where it has borrowed.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Banked {
     Unbanked { persons: u64 },
-    At { bank: usize, deposit: u64, loan: Option<(usize, u64)> },
+    At { bank: usize, deposit: u64, loan: Option<usize> },
 }
 
 impl HouseholdLines {
@@ -93,7 +92,7 @@ impl Banking {
     /// A household's banking: whether any of its adults holds an account, and any has borrowed, each adult drawn
     /// once; a household with an account banks at a bank chosen online by the banks' shares.
     #[clause("GEN.2", "REP.23", "BNK.1")]
-    pub fn draw(&mut self, household: &phx_core::Household, (wealth, income): (f64, f64), d: &mut Draws) -> Banked {
+    pub fn draw(&mut self, household: &phx_core::Household, wealth: f64, d: &mut Draws) -> Banked {
         let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
         let adults = household.persons.iter().filter(|p| adult_roles.contains(&p.role)).count();
         let account = any_of(adults, self.account, d);
@@ -111,7 +110,7 @@ impl Banking {
             else {
                 violation!(clause = "GEN.2", "a household loan's term beyond those drawn");
             };
-            (at, weight(income))
+            at
         });
         Banked::At { bank, deposit: weight(wealth), loan }
     }

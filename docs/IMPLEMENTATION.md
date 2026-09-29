@@ -1147,8 +1147,12 @@ world switches to the core.
       output, each occupation's sexes by `LAB.occupation_shares`; a job's wage an hour is its activity's compensation
       in the flows over the activity's hours, shared over its occupations by `GEN.occupation_pay`, so the wages sum to
       the flows' compensation and every firm's unit cost is its way's at its productivity. The income multiple is
-      retired; the incomes that result are read against `DEM.income_shape` as a measure (N3). GEN.2 and GEN.15
-      restated.
+      retired with `DEM.income_shape` (the incomes that result are F13's to read). Built: wages from the flows at
+      the jobs' dealing, incomes and loans from them, each firm's markup its day-zero price over its own cost. Left:
+      the working owners' hours, which capacity counts and no wage pays, are costed at the self-employed's labour
+      income an hour — `GEN.labour_share` (ILO SDG 10.4.1, which includes it) less the flows' compensation share —
+      with the check that no activity's owners earn beyond its surplus; the ways' one scale factor and the
+      occupations drawn from their mix. GEN.2 and GEN.15 restated.
     - j2. **The profile and the flows**: each drawn value the flows hold moves them as the drawn debts move the stocks
       (the labour share splits value added; investment and collective consumption set their final uses), with the
       dataset's closures; a drawn value nothing reads and no closure takes is dropped from the profile.

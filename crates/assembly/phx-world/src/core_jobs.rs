@@ -4,6 +4,9 @@
 //! naming the person by its identity and paying the job's wage on its dates. Public administration's share of each
 //! occupation's jobs, and every job whose occupation no firm's way in its region takes, is its country's public
 //! agency's. The employed are the persons drawn employed, so the staff is exactly the employed the population gives.
+//! A wage is not drawn: an activity's compensation in the country's accounts is shared over the hours its jobs work,
+//! each occupation's hour paid in proportion to its pay, so the wages are the accounts' and a firm's cost of a unit
+//! is its way's at its productivity.
 
 use std::collections::BTreeMap;
 
@@ -14,36 +17,87 @@ use phx_macros::clause;
 use phx_num::violation;
 use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 
-use crate::consts::firm::{JOBS_PURPOSE, OUTPUT, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, PURPOSES, REGION};
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_WHEEL_DAYS};
+use crate::consts::firm::{
+    COMPENSATION, JOBS_PURPOSE, OUTPUT, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, PUBLIC_ADMINISTRATION, PURPOSES,
+    REGION,
+};
+use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_WHEEL_DAYS, MONTHS_A_YEAR, WEEKS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, WAGE};
 use crate::opening::economy::table;
 
-/// A job as dealt: its household, its person, its wage, where its schedule is, its region and occupation.
+/// A job as drawn: its household, its person, where its schedule is, its region, occupation, weekly hours and
+/// country.
 #[derive(Clone, Copy, Debug)]
 struct Job {
     household: PartyKey,
     person: u64,
-    amount: i64,
     schedule: u32,
     nth: u32,
     region: u32,
     occupation: u32,
+    hours: u32,
+    country: u8,
 }
 
 impl Job {
-    /// The job as a contract from its employer to its household, naming its person.
-    fn due(&self, employer: PartyKey) -> Due {
+    /// The job as a contract from its employer to its household at a month's wage, naming its person.
+    fn due(&self, employer: PartyKey, amount: i64) -> Due {
         Due {
             ends: [employer, self.household],
-            amount: self.amount,
+            amount,
             nth: self.nth,
             schedule: self.schedule,
             person: self.person,
             arrears: 0,
         }
     }
+}
+
+/// A job dealt to its employer: the job's place among those drawn, its employer and the activity it works in.
+type Placed = (usize, PartyKey, usize);
+
+/// Each activity's compensation a year over the hours its jobs work a year, each hour weighed by its occupation's pay:
+/// an occupation's wage an hour there is this times its pay. None for an activity no job works in, or whose jobs' pay
+/// weighs nothing.
+#[clause("GEN.2", "GEN.4", "LAB.1")]
+#[must_use]
+pub fn activity_rates(compensation: &[f64], pay: &[f64], hours: &BTreeMap<(usize, u32), f64>) -> BTreeMap<usize, f64> {
+    let mut weighed: BTreeMap<usize, f64> = BTreeMap::new();
+    for ((a, o), h) in hours {
+        if let Some(p) = usize::try_from(*o).ok().and_then(|o| pay.get(o)) {
+            *weighed.entry(*a).or_insert(0.0) += h * p;
+        }
+    }
+    weighed.into_iter().filter(|(_, w)| *w > 0.0).filter_map(|(a, w)| Some((a, compensation.get(a)? / w))).collect()
+}
+
+/// An occupation's wage an hour in an activity, from the activity's rate and the occupation's pay.
+#[must_use]
+pub fn wage_in(rates: &BTreeMap<usize, f64>, pay: &[f64], (activity, occupation): (usize, u32)) -> Option<f64> {
+    Some(rates.get(&activity)? * pay.get(usize::try_from(occupation).ok()?)?)
+}
+
+/// Each occupation's wage an hour over every activity, weighed by the hours each works of it.
+#[must_use]
+pub fn occupation_wages(
+    rates: &BTreeMap<usize, f64>,
+    pay: &[f64],
+    hours: &BTreeMap<(usize, u32), f64>,
+) -> BTreeMap<u32, f64> {
+    let mut sums: BTreeMap<u32, (f64, f64)> = BTreeMap::new();
+    for (k, h) in hours {
+        if let Some(r) = wage_in(rates, pay, *k) {
+            let e = sums.entry(k.1).or_insert((0.0, 0.0));
+            (e.0, e.1) = (e.0 + r * h, e.1 + h);
+        }
+    }
+    sums.into_iter().filter(|(_, (_, h))| *h > 0.0).map(|(o, (paid, h))| (o, paid / h)).collect()
+}
+
+/// The wage point nearest a month's wage at an hourly rate and weekly hours.
+pub(crate) fn month_point(law: &if_labour::law::Law, hourly: f64, hours: u32) -> Option<i64> {
+    sys_lab::wages::point_near(law, hourly * f64::from(hours) * WEEKS_A_YEAR / MONTHS_A_YEAR)
 }
 
 /// A job's next date, read from its schedule.
@@ -98,15 +152,16 @@ impl Core {
                 return Err(format!("a job drawn in country {}, which the world does not hold", j.country));
             };
             let schedule = family.schedule_of((c, date), j.class, None);
-            let [occupation, _, _] = j.class;
+            let [occupation, hours, _] = j.class;
             jobs.push(Job {
                 household: j.household,
                 person: j.person,
-                amount: j.amount,
                 schedule,
                 nth: 1,
                 region: j.region,
                 occupation,
+                hours,
+                country: j.country,
             });
         }
         Ok(jobs)
@@ -198,6 +253,7 @@ impl Core {
             groups.entry((j.region, j.occupation)).or_default().push(i);
         }
         let mut public_jobs = 0_u64;
+        let mut placed: Vec<Placed> = Vec::new();
         for ((region, occupation), mut members) in groups {
             let here = firms.get(&region).map_or(&[][..], Vec::as_slice);
             let o_at = usize::try_from(occupation).unwrap_or(usize::MAX);
@@ -235,8 +291,7 @@ impl Core {
             };
             let mut next = members.into_iter();
             for job in next.by_ref().take(usize::try_from(public_n).unwrap_or(usize::MAX)) {
-                let Some(j) = jobs.get(job) else { continue };
-                let _ = public.store.open(j.due(state), first_date(&public, o.calendar, j));
+                placed.push((job, state, PUBLIC_ADMINISTRATION));
                 public_jobs += 1;
             }
             let Some(rest) = n.checked_sub(public_n) else {
@@ -244,16 +299,126 @@ impl Core {
             };
             let parts = deal(rest, &weights);
             for ((slot, _), n) in here.iter().zip(parts) {
+                let Some(product) = self.record_word(firm, *slot, PRODUCT).and_then(|p| usize::try_from(p).ok()) else {
+                    violation!(clause = "FRM.23", "a firm with no product", slot = slot.get());
+                };
+                let employer = PartyKey::new(kind_number(firm), *slot);
                 for job in next.by_ref().take(usize::try_from(n).unwrap_or(usize::MAX)) {
-                    let Some(j) = jobs.get(job) else { continue };
-                    let first = first_date(&family, o.calendar, j);
-                    let _ = family.store.open(j.due(PartyKey::new(kind_number(firm), *slot)), first);
+                    placed.push((job, employer, product));
                 }
             }
         }
+        self.pay_jobs(o, &jobs, &placed, (&mut family, &mut public))?;
         self.families.push(family);
         self.families.push(public);
         Ok(public_jobs)
+    }
+
+    /// Each dealt job opened at its wage: each country's activities' compensation shared over their jobs' hours by
+    /// their occupations' pay, a month's wage on the nearest wage point; its household's income a year raised by it,
+    /// and its person's last wage point set to it. An adult with an occupation and no job — searching, or working in
+    /// the firm it owns — is given its occupation's wage over every activity, full time, as its last point.
+    #[clause("GEN.2", "GEN.4", "LAB.1", "REP.34")]
+    fn pay_jobs(
+        &mut self,
+        o: &JobsOpening<'_>,
+        jobs: &[Job],
+        placed: &[Placed],
+        (family, public): (&mut DatedFamily, &mut DatedFamily),
+    ) -> Result<(), String> {
+        let year_hours = |j: &Job| f64::from(j.hours) * WEEKS_A_YEAR;
+        let mut by_occupation: BTreeMap<u8, BTreeMap<u32, f64>> = BTreeMap::new();
+        for c in o.countries {
+            let id = c.id.get();
+            let mut hours: BTreeMap<(usize, u32), f64> = BTreeMap::new();
+            for (job, _, activity) in placed {
+                let Some(j) = jobs.get(*job).filter(|j| j.country == id) else { continue };
+                *hours.entry((*activity, j.occupation)).or_insert(0.0) += year_hours(j);
+            }
+            let compensation: Vec<f64> = table(o.register, "GEN.value_added", c.id)?
+                .0
+                .iter()
+                .map(|r| r.get(COMPENSATION).copied().unwrap_or(f64::NAN) * c.gdp)
+                .collect();
+            let pay = table(o.register, "GEN.occupation_pay", c.id)?.0.into_iter().next().unwrap_or_default();
+            let rates = activity_rates(&compensation, &pay, &hours);
+            by_occupation.insert(id, occupation_wages(&rates, &pay, &hours));
+            for (a, r) in rates {
+                self.drawn.rates.insert((id, a), r);
+            }
+            self.drawn.pay.insert(id, pay);
+        }
+        let laws: BTreeMap<u8, if_labour::law::Law> = o
+            .countries
+            .iter()
+            .map(|c| sys_lab::law::law(o.register, c).map(|l| (c.id.get(), l)))
+            .collect::<Result<_, _>>()?;
+        let months: BTreeMap<u8, i64> = o
+            .countries
+            .iter()
+            .map(|c| {
+                let dates = phx_ledger::opening::monthly(o.calendar.date(o.today), c.id);
+                (c.id.get(), crate::core_open::months_a_year(o.calendar, o.today, dates))
+            })
+            .collect();
+        for (job, employer, activity) in placed {
+            let Some(j) = jobs.get(*job) else { continue };
+            let (Some(law), Some(m)) = (laws.get(&j.country), months.get(&j.country)) else { continue };
+            let Some(hourly) = self.drawn.wage_in((j.country, *activity), j.occupation) else {
+                return Err(format!("country {}: activity {activity}'s jobs with no compensation", j.country));
+            };
+            let Some(point) = month_point(law, hourly, j.hours) else {
+                violation!(clause = "REP.34", "a wage beyond the wage points", activity = *activity);
+            };
+            let amount = phx_ledger::opening::whole(sys_lab::wages::wage_at(law, point));
+            let book = if *activity == PUBLIC_ADMINISTRATION { &mut *public } else { &mut *family };
+            let first = first_date(book, o.calendar, j);
+            let _ = book.store.open(j.due(*employer, amount), first);
+            self.add_income(j.household, amount * m);
+            self.put_last_point((j.household, j.person), point);
+        }
+        let idle = std::mem::take(&mut self.drawn.idle);
+        for i in &idle {
+            let (Some(of_occupation), Some(law)) = (by_occupation.get(&i.country), laws.get(&i.country)) else {
+                continue;
+            };
+            let Some(hourly) = of_occupation.get(&i.occupation).copied() else { continue };
+            if let Some(point) = month_point(law, hourly, law.full_time_hours) {
+                self.put_last_point((i.household, i.person), point);
+            }
+        }
+        Ok(())
+    }
+
+    /// Where a household's record holds its income a year, as its kind's position.
+    fn income_word(&self) -> Option<usize> {
+        let decl = self.household_decl.as_ref()?;
+        let income_name = <if_pop::facts::Income as phx_core::FactDef>::ITEM.name;
+        Some(decl.attrs.len() + decl.positions.iter().position(|p| p.item.name == income_name)?)
+    }
+
+    /// A household's income a year; none where its record holds none.
+    pub(crate) fn income_of(&self, household: PartyKey) -> Option<i64> {
+        self.record_word(usize::from(household.kind()), household.slot(), self.income_word()?)
+    }
+
+    /// A household's income a year raised by an amount.
+    fn add_income(&mut self, household: PartyKey, amount: i64) {
+        let (Some(at), Some(held)) = (self.income_word(), self.income_of(household)) else {
+            violation!(clause = "GEN.2", "a household with no income to add a wage to", slot = household.slot().get());
+        };
+        self.set_record_word(usize::from(household.kind()), household.slot(), at, held + amount);
+    }
+
+    /// A person's last wage point written to it.
+    pub(crate) fn put_last_point(&mut self, (household, person): (PartyKey, u64), point: i64) {
+        let Some(decl) = self.household_decl.clone() else { return };
+        let Some(Some(ps)) = self.persons.get_mut(usize::from(household.kind())) else { return };
+        let Some(at) = ps.place_of(household.slot(), person) else { return };
+        let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
+        let mut p = phx_pop::person::unpack(&decl, word);
+        p.set_attr(sys_lab::LAST_POINT.name, u32::try_from(point).unwrap_or(if_labour::class::NO_POINT));
+        ps.set_word(&mut self.space, household.slot(), at, phx_pop::person::pack(&decl, &p));
     }
 }
 

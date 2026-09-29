@@ -206,7 +206,7 @@ impl Core {
         }
     }
 
-    fn set_record_word(&mut self, kind: usize, slot: Slot, at: usize, v: i64) {
+    pub(crate) fn set_record_word(&mut self, kind: usize, slot: Slot, at: usize, v: i64) {
         if let Some(w) = self.kinds.get_mut(kind).and_then(|k| k.record_mut(slot).get_mut(at)) {
             *w = phx_num::MaybeI64::present(v);
         }
@@ -319,7 +319,7 @@ impl Core {
         goods.region_share = self.region_shares(ctx.regions);
         self.goods = goods;
         self.goods.recipes = self.recipes();
-        self.open_prices(ctx, firm, &prices);
+        self.open_markups(ctx, firm, &prices);
         self.open_expected(ctx, firm, today);
         self.open_stocks(ctx.regions, firm, &prices, today);
         let mut wheel = DueWheel::new(today.succ(), CORE_WHEEL_DAYS);
@@ -337,22 +337,17 @@ impl Core {
         Ok(())
     }
 
-    /// Each firm's day-zero price posted from its own cost on the core: its markup in the accounts over what a unit
-    /// costs it to make — its staff's wages over what they make, and its inputs at the opening's prices it holds them
-    /// at — at the nearest point of its trade's table.
-    #[clause("FRM.5", "GEN.13", "REP.34")]
-    fn open_prices(&mut self, ctx: &GoodsCtx<'_>, firm: usize, prices: &[Vec<f64>]) {
-        let pricing = self.bind(&sys_frm::points::DAY_ZERO_PRICE);
+    /// Each firm's markup at the opening: the day-zero price it posted, its product's in the accounts at its
+    /// productivity, over what a unit costs it to make — its staff's wages over what they make, and its inputs at the
+    /// opening's prices. What its owners' hours earn is in the margin, as the accounts hold mixed income in surplus.
+    #[clause("FRM.5", "FRM.14", "GEN.13")]
+    fn open_markups(&mut self, ctx: &GoodsCtx<'_>, firm: usize, prices: &[Vec<f64>]) {
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
-            let Some(markup) = self.record_word(firm, slot, MARKUP).map(|m| from_i64(m) / PART_ONE) else { continue };
             let Some(price) = prices.get(f.country) else { continue };
             let Some(cost) = self.cost_at(&f, &|q| price.get(usize::from(q)).copied()) else { continue };
-            let wanted = (1.0 + markup) * cost * self.lot(f.product);
-            let points = ctx.management.points_near(wanted);
-            if let Some(p) = self.decide(pricing, f.key, |_| sys_frm::rules::review::DayZeroIn { points, wanted }) {
-                self.set_record_word(firm, slot, PRICE, p);
-            }
+            let markup = from_i64(f.price) / (cost * self.lot(f.product)) - 1.0;
+            self.set_record_word(firm, slot, MARKUP, whole_units(markup * PART_ONE));
         }
     }
 

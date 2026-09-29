@@ -466,10 +466,9 @@ def shapes(what: str, members: set) -> pd.DataFrame:
     return wide
 
 
-def income_wealth(level: str, members: set, m: dict) -> list:
+def wealth(level: str, members: set, m: dict) -> list:
     out = []
     for what, pid, drawn, variable in [
-        ("income", "DEM.income_shape", "GEN.income_gini", "sptincj992, pre-tax national income"),
         ("wealth", "DEM.wealth_shape", "GEN.top10_wealth_share", "shwealj992, net personal wealth"),
     ]:
         d = shapes(what, members)
@@ -485,11 +484,8 @@ def income_wealth(level: str, members: set, m: dict) -> list:
                f"2010-2025 ({left} left out, their bottom half holding nothing or less, or their top no finite mean), "
                f"WID {variable}, equal-split adults, from {fetched(m, 'wid_shares')}. The body's median is one; the "
                f"mapping keeps the exponent and the top's start at the body's 90th percentile, solves the body's "
-               f"sigma so that the whole distribution's {'Gini' if what == 'income' else 'top tenth share'} is the "
-               f"country's drawn {drawn}, and scales it to the country's mean."
-               + (" The drawn Gini is the World Bank's, from surveys of disposable income or consumption, where WID's "
-                  "shares are of pre-tax income: the mapping takes the shape from one and the level from the other."
-                  if what == "income" else ""))
+               f"sigma so that the whole distribution's top tenth share is the country's drawn {drawn}, and scales "
+               f"it to the country's mean.")
         out.append(entry(pid, "ENDOWMENT", "DEM", "measured", ref,
                          f'{{ family = "lognormal_pareto_tail", discretisation = "equal_shares", mu = "0", '
                          f'sigma = "{num(sigma)}", threshold = "{num(threshold)}", alpha = "{num(alpha)}" }}'))
@@ -807,11 +803,11 @@ def main() -> None:
     pairs = couples(members_of, m)
     pen = pensions(members_of, m)
     for level, members in members_of.items():
-        money = income_wealth(level, members, m)
+        money = wealth(level, members, m)
         dem = demography(level, members, m) + hh[level] + pairs[level] + education(level, members, m) + money
-        write(level, "DEM", f"# The {level} group's demography, households, and shapes of income and wealth (spec "
+        write(level, "DEM", f"# The {level} group's demography, households, and the shape of wealth (spec "
                             "POP.3, POP.4, GEN.2), derived by tools/data/derive_pop.py; never edited by hand. DEM "
-                            "declares income and wealth until HH does.", dem)
+                            "declares wealth until HH does.", dem)
         lab = employment(level, members, m)
         write(level, "LAB", f"# The {level} group's employment by occupation and status (spec GEN.2, LAB), derived "
                             "by tools/data/derive_pop.py; never edited by hand.", lab)

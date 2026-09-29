@@ -50,13 +50,6 @@ fn parts(x: f64) -> i64 {
 }
 
 impl Snapshot {
-    /// A product's markup in the opening's accounts: its price over its cost there.
-    #[must_use]
-    pub fn markup(&self, product: usize) -> f64 {
-        let at = |v: &[f64]| v.get(product).copied().unwrap_or(f64::NAN);
-        at(&self.price) / (at(&self.materials) + at(&self.labour)) - 1.0
-    }
-
     /// A unit's price at a productivity: the product's markup over its cost in the accounts, over the firm's own cost,
     /// its labour's hours fewer by its productivity's factor.
     #[clause("FRM.5", "FRM.14", "GEN.13")]
@@ -306,7 +299,7 @@ impl Core {
                     MaybeI64::present(d.productivity),
                     MaybeI64::present(d.price),
                     MaybeI64::present(output),
-                    MaybeI64::present(parts(snap.markup(phx_rand::float::index(u64::from(d.product))))),
+                    MaybeI64::from_missing(phx_num::Missing::Absent),
                     MaybeI64::present(parts(from_i64(output) / crate::consts::DAYS_A_YEAR)),
                     MaybeI64::present(0),
                     MaybeI64::present(i64::from(o.today.get())),

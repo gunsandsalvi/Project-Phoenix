@@ -4,8 +4,11 @@
 //! pension drawn by their systems' rules; every person given its identity. Each party's account from its country's
 //! balance sheet: the banks' reserves by their shares, the treasury's deposits, the households' deposits over those
 //! that bank by their wealth, and the currency the households hold over those that bank nowhere by their persons.
-//! The state pensions are contracts from the treasury naming their person; the jobs and the households' loans are
-//! kept for the jobs' dealing and the loans' opening, which follow the firms'.
+//! The state pensions are contracts from the treasury naming their person; the jobs, the adults with an occupation
+//! and no job, and the households' loans are kept for the jobs' dealing and the loans' opening, which follow the
+//! firms', since a wage follows from its employer and a loan from its household's income.
+
+use std::collections::BTreeMap;
 
 use phx_core::calendar::Calendar;
 use phx_core::settle::AT_ISSUER;
@@ -19,7 +22,7 @@ use phx_pop::persons::{Held, Persons};
 use phx_rand::float::len_u64;
 use phx_store::{AddressSpace, SystemBacking};
 
-use crate::consts::sheet::{BANKS, CURRENCY, DEPOSITS, GOVERNMENT, HOUSEHOLDS, LOANS_TO_HOUSEHOLDS, RESERVES};
+use crate::consts::sheet::{BANKS, CURRENCY, DEPOSITS, GOVERNMENT, HOUSEHOLDS, RESERVES};
 use crate::consts::{
     AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, CORE_WHEEL_DAYS, KIND_ROWS, KIND_ROWS_PER_CHUNK,
 };
@@ -32,36 +35,56 @@ use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, 
 /// The kinds that hold an account.
 const HOLDS_MONEY: [usize; 6] = [TREASURY, BANK, FIRM, ESTATE, HOUSEHOLD, AGENCY];
 
-/// A job drawn at the opening, before its employer is dealt: its household, its person, its month's wage, its
-/// country, its class — occupation, hours and the band its tenure began in — and its region.
+/// A job drawn at the opening, before its employer is dealt: its household, its person, its country, its class —
+/// occupation, hours and the band its tenure began in — and its region.
 #[derive(Clone, Copy, Debug, phx_macros::Saved)]
 pub(crate) struct OpenJob {
     pub household: PartyKey,
     pub person: u64,
-    pub amount: i64,
     pub country: u8,
     pub class: [u32; 3],
     pub region: u32,
 }
 
-/// A household's loan drawn at the opening: its household, its bank, its head, its weight by income, its country and
-/// the years it has left.
+/// An adult drawn with an occupation and no job — searching, or working in a firm it owns: its household, its
+/// person, its occupation and its country.
+#[derive(Clone, Copy, Debug, phx_macros::Saved)]
+pub(crate) struct OpenIdle {
+    pub household: PartyKey,
+    pub person: u64,
+    pub occupation: u32,
+    pub country: u8,
+}
+
+/// A household's loan drawn at the opening: its household, its bank, its head, its country and the years it has
+/// left.
 #[derive(Clone, Copy, Debug, phx_macros::Saved)]
 pub(crate) struct OpenLoan {
     pub household: PartyKey,
     pub bank: PartyKey,
     pub person: u64,
-    pub weight: u64,
     pub country: u8,
     pub years: u64,
 }
 
-/// What the opening drew for the openings that follow the firms'.
+/// What the opening drew for the openings that follow the firms', and the wages the jobs' dealing found: each
+/// country's activities' rates, an hour weighed by its occupation's pay, and its occupations' pay.
 #[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub(crate) struct Drawn {
     pub jobs: Vec<OpenJob>,
+    pub idle: Vec<OpenIdle>,
     pub owners: Vec<crate::core_owners::OpenOwner>,
     pub loans: Vec<OpenLoan>,
+    pub rates: BTreeMap<(u8, usize), f64>,
+    pub pay: BTreeMap<u8, Vec<f64>>,
+}
+
+impl Drawn {
+    /// An occupation's wage an hour in a country's activity.
+    pub(crate) fn wage_in(&self, (country, activity): (u8, usize), occupation: u32) -> Option<f64> {
+        let rate = self.rates.get(&(country, activity))?;
+        Some(rate * self.pay.get(&country)?.get(usize::try_from(occupation).ok()?)?)
+    }
 }
 
 /// What the core's opening reads.
@@ -280,22 +303,8 @@ impl Core {
                     core.open_household((&ctx, o.calendar, decl), &mut draw, &mut pensions, (region, f));
                 }
             }
-            let CountryDraw { money, mut loans, banks, .. } = draw;
+            let CountryDraw { money, loans, banks, .. } = draw;
             core.open_deposits(c, &money, (at(DEPOSITS, HOUSEHOLDS), at(CURRENCY, HOUSEHOLDS)), &banks)?;
-            // A loan's balance is what its payments repay over the years it has left, so each household's share of
-            // the debt is its income's weight times those years, its payment then in proportion to its income.
-            let debt = at(LOANS_TO_HOUSEHOLDS, BANKS);
-            let weights: Vec<u64> = loans
-                .iter()
-                .map(|l| {
-                    l.weight.checked_mul(l.years).unwrap_or_else(|| {
-                        phx_num::capacity_exceeded!("a household loan's weight", u64::MAX, l.weight);
-                    })
-                })
-                .collect();
-            for (l, amount) in loans.iter_mut().zip(core.apportion(("households' loans", c.id.get()), debt, &weights)) {
-                l.weight = u64::try_from(amount).unwrap_or(0);
-            }
             core.drawn.loans.extend(loans);
         }
         core.families.push(pensions);
@@ -313,10 +322,10 @@ impl Core {
         pensions: &mut DatedFamily,
         (region, formed): (u32, sys_dem::Formed),
     ) {
-        let sys_dem::Formed { subject, mut h, drawn, .. } = formed;
-        let labour = draw.labour.draw(&h, drawn.1, &mut ctx.draws(&sys_lab::JobsStream::DECL, subject));
+        let sys_dem::Formed { subject, mut h, wealth, .. } = formed;
+        let labour = draw.labour.draw(&h, &mut ctx.draws(&sys_lab::JobsStream::DECL, subject));
         let banked =
-            draw.banking.draw(&h, drawn, &mut ctx.draws(&sys_bnk::households::HouseholdsStream::DECL, subject));
+            draw.banking.draw(&h, wealth, &mut ctx.draws(&sys_bnk::households::HouseholdsStream::DECL, subject));
         let pensioners = draw.paid.draw(&h, &mut ctx.draws(&sys_soc::PensionStream::DECL, subject));
         // Its outlook types by their shares, and its first stance by its taste alone, no heuristic being scored yet.
         let mut t = ctx.draws(&sys_hh::TypesStream::DECL, subject);
@@ -337,7 +346,6 @@ impl Core {
             let Some(p) = h.persons.get_mut(l.place) else {
                 violation!(clause = "REP.26", "labour drawn for a person the household does not hold");
             };
-            p.put_attr(sys_lab::LAST_POINT.name, l.last);
             p.put_attr(sys_lab::STATE.name, l.state);
             p.put_attr(sys_lab::OCCUPATION_ATTR.name, l.occupation);
         }
@@ -347,10 +355,10 @@ impl Core {
             };
             h.set_attr(sys_bnk::households::BANK_ATTR.name, place);
         }
-        // A year's income owed at the opening: the wages and pensions drawn, on the months of the year.
-        let wages: i64 = labour.iter().filter_map(|l| l.job.as_ref()).map(|j| draw.labour.wage_at(j.point)).sum();
+        // A year's income owed at the opening: the pensions drawn, on the months of the year; the wages join it as the
+        // jobs are dealt to their employers.
         let pension: i64 = pensioners.iter().filter_map(|(_, sex)| draw.paid.amount.get(*sex)).sum();
-        let key = self.begin_household(decl, &h, (wages + pension) * draw.months, &banked, &draw.banks);
+        let key = self.begin_household(decl, &h, pension * draw.months, &banked, &draw.banks);
         let ids: Vec<u64> = self.persons_of(key);
         let country = draw.c.id.get();
         for l in &labour {
@@ -368,12 +376,17 @@ impl Core {
                     region,
                 });
             }
+            if l.job.is_none()
+                && l.occupation != if_labour::class::NO_OCCUPATION
+                && let Some(person) = ids.get(l.place)
+            {
+                self.drawn.idle.push(OpenIdle { household: key, person: *person, occupation: l.occupation, country });
+            }
             let (Some(job), Some(person)) = (l.job.as_ref(), ids.get(l.place)) else { continue };
-            let at = |i: usize| job.class.get(i).copied().unwrap_or(0);
+            let at = |i: usize| job.get(i).copied().unwrap_or(0);
             self.drawn.jobs.push(OpenJob {
                 household: key,
                 person: *person,
-                amount: draw.labour.wage_at(job.point),
                 country,
                 class: [at(if_labour::consts::OCCUPATION), at(if_labour::consts::HOURS), at(if_labour::consts::BAND)],
                 region,
@@ -390,12 +403,11 @@ impl Core {
         match banked {
             sys_bnk::households::Banked::At { bank, deposit, loan } => {
                 draw.money.banked.push((key.slot(), bank, deposit));
-                if let (Some((years, weight)), Some(lender), Some(head)) = (loan, draw.banks.get(bank), ids.first()) {
+                if let (Some(years), Some(lender), Some(head)) = (loan, draw.banks.get(bank), ids.first()) {
                     draw.loans.push(OpenLoan {
                         household: key,
                         bank: *lender,
                         person: *head,
-                        weight,
                         country,
                         years: draw.least + len_u64(years),
                     });
@@ -627,7 +639,7 @@ pub(crate) fn next_after(dates: &phx_core::calendar::period::ScheduleDates, cale
 }
 
 /// The months of a monthly schedule's dates in the year after `today`.
-fn months_a_year(calendar: &Calendar, today: Day, dates: phx_core::calendar::period::ScheduleDates) -> i64 {
+pub(crate) fn months_a_year(calendar: &Calendar, today: Day, dates: phx_core::calendar::period::ScheduleDates) -> i64 {
     let date = calendar.date(today);
     let Some(next) = phx_id::Date::new(date.year() + 1, date.month(), date.day())
         .or_else(|| phx_id::Date::new(date.year() + 1, date.month(), date.day() - 1))
