@@ -77,8 +77,6 @@ pub struct Meeting {
     left: Vec<i64>,
     #[saved(skip)]
     log_prices: Vec<Option<f64>>,
-    #[saved(skip)]
-    starts: Vec<usize>,
 }
 
 impl Meeting {
@@ -190,6 +188,14 @@ pub fn meet(
         stall: None,
         bought: false,
     }));
+    // Each place's sellers by price once for the meeting, and the places each seller stands in: a place's table is
+    // kept from round to round and made again only once a seller in it has sold out and a buyer stands there.
+    let orders: Vec<Order> = phx_exec::pool::map(pool, places.len(), |p| {
+        places.get(p).map_or_else(Vec::new, |place| by_price(place, stalls))
+    });
+    let standing = Standing::of(places, stalls.len());
+    let mut tables: Vec<Option<Table>> = std::iter::repeat_with(|| None).take(places.len()).collect();
+    let mut stale = vec![true; places.len()];
     let mut round = 0_u32;
     while !out.choosing.is_empty() {
         round += 1;
@@ -205,10 +211,8 @@ pub fn meet(
                 ],
             );
         }
-        let (left, log_prices) = (&out.left, &out.log_prices);
-        let tables: Vec<Option<Table>> = phx_exec::pool::map(pool, places.len(), |p| {
-            places.get(p).and_then(|place| table(place, stalls, (left, log_prices), weights))
-        });
+        let open = (out.left.as_slice(), out.log_prices.as_slice());
+        remake(pool, (places, &orders), (open, weights), &out.choosing, (&mut tables, &mut stale));
         let jobs: Vec<&mut [Choosing]> = out.choosing.chunks_mut(CHOICE_CHUNK).collect();
         phx_exec::pool::each(pool, jobs, |chunk| choose(chunk, &tables, (tastes, lot, round)));
         for c in out.choosing.iter().filter(|c| c.stall.is_none()) {
@@ -218,34 +222,14 @@ pub fn meet(
             }
         }
         out.choosing.retain(|c| c.stall.is_some());
-        by_stall(pool, &mut out.choosing, stalls.len(), (&mut out.scratch, &mut out.starts));
-        // Sellers are served a chunk of stalls a job, each stall its own buyers in place, so a job outweighs its
-        // dispatch; a job adds to its chunk's sales and lists the buyers it served short.
-        let starts = &out.starts;
-        let mut jobs = Vec::with_capacity(jobs_n);
-        let mut rest = out.choosing.as_mut_slice();
-        for (((c, l), sales), again) in
-            out.left.chunks_mut(STALL_CHUNK).enumerate().zip(&mut out.sales).zip(&mut out.again)
-        {
-            let first = c * STALL_CHUNK;
-            let n = at(starts, first + l.len()) - at(starts, first);
-            let (mine, tail) = std::mem::take(&mut rest).split_at_mut(n);
-            jobs.push((first, l, mine, sales, again));
-            rest = tail;
-        }
-        phx_exec::pool::each(pool, jobs, |(first, left, mine, sales, again)| {
-            again.clear();
-            let base = at(starts, first);
-            for (k, l) in left.iter_mut().enumerate() {
-                let s = first + k;
-                let (Some(stall), Some(list)) =
-                    (stalls.get(s), mine.get_mut(at(starts, s) - base..at(starts, s + 1) - base))
-                else {
-                    continue;
-                };
-                serve(stall, l, list, (lot, round), lots, (sales, again));
+        by_stall(pool, &mut out.choosing, stalls.len(), &mut out.scratch);
+        for s in serve_round(out, pool, stalls, (lot, round), lots) {
+            for p in standing.places(s) {
+                if let Some(x) = stale.get_mut(to_usize(*p)) {
+                    *x = true;
+                }
             }
-        });
+        }
         out.choosing.clear();
         for again in &out.again {
             out.choosing.extend_from_slice(again);
@@ -274,35 +258,121 @@ fn wanted(want: Want) -> bool {
     }
 }
 
-/// A place's table of its open sellers this round, or none if none is open.
-fn table(place: &Place, stalls: &[Stall], (left, logs): (&[i64], &[Option<f64>]), w: Weights) -> Option<Table> {
-    let values: Vec<(u32, f64)> = place
-        .near
-        .iter()
-        .filter(|(s, _)| left.get(to_usize(*s)).is_some_and(|l| *l > 0))
-        .filter_map(|(s, km)| logs.get(to_usize(*s)).copied().flatten().map(|lp| (*s, -w.price * lp - w.distance * km)))
-        .collect();
+/// A place's sellers by their price, then who they are, each with its place among the place's sellers.
+type Order = Vec<(i64, u32, usize)>;
+
+fn by_price(place: &Place, stalls: &[Stall]) -> Order {
+    let price = |s: u32| stalls.get(to_usize(s)).map_or(0, |x| x.price);
+    let mut order: Order = place.near.iter().enumerate().map(|(i, (s, _))| (price(*s), *s, i)).collect();
+    order.sort_by_key(|(p, s, _)| (*p, *s));
+    order
+}
+
+/// The places each seller stands in, every seller's run of them in one list.
+struct Standing {
+    starts: Vec<usize>,
+    places: Vec<u32>,
+}
+
+impl Standing {
+    fn of(places: &[Place], stalls: usize) -> Standing {
+        let mut starts = vec![0_usize; stalls + 1];
+        for place in places {
+            for (s, _) in &place.near {
+                if let Some(n) = starts.get_mut(to_usize(*s) + 1) {
+                    *n += 1;
+                }
+            }
+        }
+        let mut sum = 0;
+        for n in &mut starts {
+            sum += *n;
+            *n = sum;
+        }
+        let mut next = starts.clone();
+        let mut at = vec![0_u32; sum];
+        for (p, place) in (0_u32..).zip(places) {
+            for (s, _) in &place.near {
+                if let Some(k) = next.get_mut(to_usize(*s)) {
+                    if let Some(x) = at.get_mut(*k) {
+                        *x = p;
+                    }
+                    *k += 1;
+                }
+            }
+        }
+        Standing { starts, places: at }
+    }
+
+    fn places(&self, stall: u32) -> &[u32] {
+        let s = to_usize(stall);
+        match (self.starts.get(s), self.starts.get(s + 1)) {
+            (Some(a), Some(b)) => self.places.get(*a..*b).unwrap_or(&[]),
+            _ => &[],
+        }
+    }
+}
+
+/// The tables of the places where a buyer stands this round and a seller has sold out since theirs was made, made
+/// again; the rest kept, since their sellers are as they were.
+fn remake(
+    pool: Option<&Pool>,
+    (places, orders): (&[Place], &[Order]),
+    (open, w): ((&[i64], &[Option<f64>]), Weights),
+    choosing: &[Choosing],
+    (tables, stale): (&mut [Option<Table>], &mut [bool]),
+) {
+    let mut wanted = vec![false; places.len()];
+    for c in choosing {
+        if let Some(x) = wanted.get_mut(to_usize(c.place)) {
+            *x = true;
+        }
+    }
+    let todo: Vec<usize> =
+        wanted.iter().zip(stale.iter()).enumerate().filter(|(_, (w, s))| **w && **s).map(|(p, _)| p).collect();
+    let made = phx_exec::pool::map(pool, todo.len(), |i| {
+        let p = *todo.get(i)?;
+        table((places.get(p)?, orders.get(p)?), open, w)
+    });
+    for (p, t) in todo.into_iter().zip(made) {
+        if let (Some(slot), Some(x)) = (tables.get_mut(p), stale.get_mut(p)) {
+            *slot = t;
+            *x = false;
+        }
+    }
+}
+
+/// A place's table of its open sellers this round, or none if none is open: their weights in the place's order, and
+/// by price with the weights' running sums.
+fn table(
+    (place, order): (&Place, &[(i64, u32, usize)]),
+    (left, logs): (&[i64], &[Option<f64>]),
+    w: Weights,
+) -> Option<Table> {
+    let mut at: Vec<Option<usize>> = vec![None; place.near.len()];
+    let mut values: Vec<(u32, f64)> = Vec::new();
+    for (i, (s, km)) in place.near.iter().enumerate() {
+        if left.get(to_usize(*s)).is_none_or(|l| *l <= 0) {
+            continue;
+        }
+        if let Some(lp) = logs.get(to_usize(*s)).copied().flatten() {
+            if let Some(a) = at.get_mut(i) {
+                *a = Some(values.len());
+            }
+            values.push((*s, -w.price * lp - w.distance * km));
+        }
+    }
     let best = values.iter().map(|(_, v)| *v).reduce(|a, b| if b > a { b } else { a })?;
     // Over the best's, so the best weighs one and none overflows.
     let weights: Vec<f64> = values.iter().map(|(_, v)| libm::exp(v - best)).collect();
-    let stall_ids: Vec<u32> = values.iter().map(|(s, _)| *s).collect();
-    let price = |s: u32| stalls.get(to_usize(s)).map_or(0, |x| x.price);
-    let mut order: Vec<(i64, u32, f64)> = stall_ids.iter().zip(&weights).map(|(s, w)| (price(*s), *s, *w)).collect();
-    order.sort_by_key(|(p, s, _)| (*p, *s));
-    let mut sum = 0.0;
-    let sums = order
-        .iter()
-        .map(|(_, _, w)| {
-            sum += w;
-            sum
-        })
-        .collect();
-    Some(Table {
-        stalls: stall_ids,
-        alias: AliasTable::new(&weights),
-        by_price: order.iter().map(|(p, s, _)| (*p, *s)).collect(),
-        sums,
-    })
+    let (mut by_price, mut sums, mut sum) = (Vec::with_capacity(values.len()), Vec::with_capacity(values.len()), 0.0);
+    for (p, s, i) in order {
+        let Some(weight) = at.get(*i).copied().flatten().and_then(|j| weights.get(j)) else { continue };
+        sum += weight;
+        sums.push(sum);
+        by_price.push((*p, *s));
+    }
+    Some(Table { stalls: values.iter().map(|(s, _)| *s).collect(), alias: AliasTable::new(&weights), by_price, sums })
 }
 
 /// A chunk's choices, four buyers' draws made together, each from its own stream's block for the round.
@@ -341,14 +411,8 @@ fn pick(c: &Choosing, tables: &[Option<Table>], lot: i64, d: &mut Draws) -> Opti
 }
 
 /// The buyers grouped by the stall they chose, stably, by a pass of `STALL_DIGIT_BITS` bits of the stall at a time
-/// from the lowest, so each pass writes to few streams; `starts` is where each stall's buyers start, and one past the
-/// last.
-fn by_stall(
-    pool: Option<&Pool>,
-    items: &mut Vec<Choosing>,
-    stalls: usize,
-    (scratch, starts): (&mut Partitioned<Choosing>, &mut Vec<usize>),
-) {
+/// from the lowest, so each pass writes to few streams.
+fn by_stall(pool: Option<&Pool>, items: &mut Vec<Choosing>, stalls: usize, scratch: &mut Partitioned<Choosing>) {
     let buckets = 1_usize << STALL_DIGIT_BITS;
     let mut shift = 0_u32;
     loop {
@@ -363,18 +427,59 @@ fn by_stall(
             break;
         }
     }
-    starts.clear();
-    starts.resize(stalls + 1, 0);
-    for c in items.iter() {
-        if let Some(n) = c.stall.and_then(|s| starts.get_mut(to_usize(s) + 1)) {
-            *n += 1;
+}
+
+/// A chunk of stalls, with the buyers that chose them this round, where its sales go and those it serves short.
+type ServeJob<'a> = (usize, &'a mut [i64], &'a mut [Choosing], &'a mut Vec<Sale>, &'a mut Vec<Choosing>);
+
+/// The round's service: the buyers, grouped by the stall they chose, served a chunk of stalls a job, each chosen stall
+/// its own buyers in place, so a job outweighs its dispatch and no stall no one chose is visited; a job adds to its
+/// chunk's sales and lists the buyers it served short. Returns the stalls the round sold out.
+fn serve_round(
+    out: &mut Meeting,
+    pool: Option<&Pool>,
+    stalls: &[Stall],
+    (lot, round): (i64, u32),
+    lots: &(impl Fn(PartyKey, u32) -> Draws + Sync),
+) -> Vec<u32> {
+    for again in &mut out.again {
+        again.clear();
+    }
+    let mut jobs: Vec<ServeJob<'_>> = Vec::new();
+    let mut rest = out.choosing.as_mut_slice();
+    for (((c, l), sales), again) in out.left.chunks_mut(STALL_CHUNK).enumerate().zip(&mut out.sales).zip(&mut out.again)
+    {
+        let (first, end) = (c * STALL_CHUNK, c * STALL_CHUNK + l.len());
+        let n = rest.partition_point(|x| x.stall.is_some_and(|s| to_usize(s) < end));
+        let (mine, tail) = std::mem::take(&mut rest).split_at_mut(n);
+        rest = tail;
+        if !mine.is_empty() {
+            jobs.push((first, l, mine, sales, again));
         }
     }
-    let mut sum = 0;
-    for n in starts.iter_mut() {
-        sum += *n;
-        *n = sum;
-    }
+    let serve_job = |(first, left, mine, sales, again): ServeJob<'_>| -> Vec<u32> {
+        let mut sold_out = Vec::new();
+        let mut i = 0;
+        while let Some(s) = mine.get(i).and_then(|c| c.stall) {
+            let run = mine.get(i..).map_or(0, |m| m.iter().take_while(|c| c.stall == Some(s)).count());
+            let (Some(stall), Some(l), Some(list)) =
+                (stalls.get(to_usize(s)), left.get_mut(to_usize(s) - first), mine.get_mut(i..i + run))
+            else {
+                violation!(clause = "MKT.6", "a buyer at a stall beyond the meeting's", stall = s);
+            };
+            serve(stall, l, list, (lot, round), lots, (sales, again));
+            if *l == 0 {
+                sold_out.push(s);
+            }
+            i += run;
+        }
+        sold_out
+    };
+    let sold_out: Vec<Vec<u32>> = match pool {
+        Some(p) => p.map_items(jobs, serve_job),
+        None => jobs.into_iter().map(serve_job).collect(),
+    };
+    sold_out.into_iter().flatten().collect()
 }
 
 /// A seller's service of the buyers that chose it this round: all of them if its units reach, else one at a time
@@ -419,14 +524,6 @@ fn serve(
             again.push(after);
         }
     }
-}
-
-/// Where a stall's buyers start in the grouped list; every stall, and one past the last, has a start.
-fn at(starts: &[usize], s: usize) -> usize {
-    let Some(a) = starts.get(s) else {
-        violation!(clause = "MKT.6", "a stall beyond the meeting's grouping", stall = s);
-    };
-    *a
 }
 
 fn to_usize(n: u32) -> usize {
