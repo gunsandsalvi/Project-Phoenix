@@ -70,6 +70,10 @@ impl Core {
                 }
             }));
             s.remit_day.push(tax.as_ref().map(|t| t.remit_day));
+            s.order.push(match c.order {
+                Missing::Present(o) => Some(o),
+                Missing::Absent => None,
+            });
             s.consumption.push(tax.map(|t| t.consumption_rate));
             s.benefit.push(match c.benefit {
                 Missing::Present(b) => Some(b),

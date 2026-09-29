@@ -6,5 +6,5 @@ kind = "POLICY"
 owner = "TRS"
 decided_by = "parliament"
 source = "assumed"
-source_ref = "The rank of the treasury's debt service, its pensions and its benefits in its payment order, the first paid first: debt service and pensions first, benefits after, assumed from the priority governments give debt service when cash is short, until each parliament's order is read."
-value = { axis = [0, 1, 2], values = [0, 0, 1], outside = "refuse" }
+source_ref = "The rank of the treasury's debt service, its pensions, its benefits, its public staff's wages and its public purchases in its payment order (rows in that order), the first paid first: debt service, pensions and wages first, benefits after, purchases last, assumed from the priority governments give debt service and their payroll when cash is short and the order the spec's TRS.10 lists, until each parliament's order is read."
+value = { axis = [0, 1, 2, 3, 4], values = [0, 0, 1, 0, 2], outside = "refuse" }

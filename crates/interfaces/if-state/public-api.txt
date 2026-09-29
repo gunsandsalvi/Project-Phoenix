@@ -52,6 +52,8 @@ pub struct if_state::kinds::PaymentOrder
 pub if_state::kinds::PaymentOrder::benefits: u8
 pub if_state::kinds::PaymentOrder::debt_service: u8
 pub if_state::kinds::PaymentOrder::pensions: u8
+pub if_state::kinds::PaymentOrder::purchases: u8
+pub if_state::kinds::PaymentOrder::wages: u8
 pub struct if_state::kinds::PensionKind
 pub if_state::kinds::PensionKind::claimed: &'static str
 pub if_state::kinds::PensionKind::covered: &'static str

@@ -104,6 +104,8 @@ pub struct CoreState {
     pub included: Option<fn(f64, f64) -> f64>,
     /// Each country's day of the month after a tax is collected by which it is remitted.
     pub remit_day: Vec<Option<u32>>,
+    /// Each country's treasury's payment order.
+    pub order: Vec<Option<if_state::kinds::PaymentOrder>>,
 }
 
 /// What the core's day did: the flows made, settled, failed and committed.
@@ -598,16 +600,45 @@ impl Core {
         moved
     }
 
+    /// The day's flows gathered beside its dues: the estates' payments, the day's sales and severance, the loans the
+    /// firms short of their dues take, the agencies' funding, all ranked in their payers' orders; the day's lending
+    /// and gross counted. Returns the estates paying out today.
+    fn gather(
+        &mut self,
+        (day, calendar, streams): (Day, &Calendar, &Streams),
+        buf: &mut Vec<Flow>,
+        record: &mut CoreDay,
+    ) -> Vec<PartyKey> {
+        let settling = self.estates_pay(day, calendar, buf);
+        buf.append(&mut self.pending);
+        self.lend_shortfalls((day, calendar, streams), buf);
+        self.fund_agencies(buf);
+        self.order_payments(buf);
+        for f in buf.iter().filter(|f| f.reason == crate::consts::reason::LENT) {
+            record.lent += 1;
+            if self.bank_of(f.payee) != Some(f.payer) {
+                record.lent_elsewhere += 1;
+            }
+        }
+        // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
+        record.flows = phx_rand::float::len_u64(buf.len());
+        record.gross = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
+        settling
+    }
+
     /// Each public agency funded by its treasury for what it pays today beyond what it holds: the state keeps one purse,
     /// its agencies drawing on it as they pay, within their appropriations.
     #[clause("SOC.8", "TRS.10")]
     fn fund_agencies(&self, buf: &mut Vec<Flow>) {
-        let mut due: BTreeMap<PartyKey, (i64, u8)> = BTreeMap::new();
+        // Each agency's wages and its other payments due today, apart, since its treasury ranks them apart.
+        let mut due: BTreeMap<PartyKey, ([i64; 2], u8)> = BTreeMap::new();
         for f in buf.iter().filter(|f| f.denomination.is_money() && self.agencies.contains(&Some(f.payer))) {
-            let e = due.entry(f.payer).or_insert((0, f.denomination.ccy()));
-            e.0 += f.amount;
+            let e = due.entry(f.payer).or_insert(([0, 0], f.denomination.ccy()));
+            if let Some(v) = e.0.get_mut(usize::from(f.reason != WAGE)) {
+                *v += f.amount;
+            }
         }
-        for (agency, (out, ccy)) in due {
+        for (agency, ([wages, other], ccy)) in due {
             let (Some(Some(treasury)), Some(held)) = (
                 self.treasuries.get(usize::from(ccy)).copied(),
                 self.kinds
@@ -617,17 +648,46 @@ impl Core {
             ) else {
                 continue;
             };
-            if out > held {
-                buf.push(Flow {
-                    payer: treasury,
-                    payee: agency,
-                    amount: out - held,
-                    source: agency.slot().get(),
-                    denomination: Denom::money(ccy),
-                    reason: crate::consts::reason::FUNDED,
-                    order: 0,
-                });
+            let for_wages = if wages > held { wages - held } else { 0 };
+            let left = if held > wages { held - wages } else { 0 };
+            let for_other = if other > left { other - left } else { 0 };
+            for amount in [for_wages, for_other] {
+                if amount > 0 {
+                    buf.push(Flow {
+                        payer: treasury,
+                        payee: agency,
+                        amount,
+                        source: agency.slot().get(),
+                        denomination: Denom::money(ccy),
+                        reason: crate::consts::reason::FUNDED,
+                        order: 0,
+                    });
+                }
             }
+        }
+    }
+
+    /// The treasuries' and their agencies' payments ranked by each treasury's payment order: its debt service, its
+    /// pensions, its benefits, its staff's wages and its purchases, each at its declared rank, so a treasury short of
+    /// cash leaves unpaid the last of them first.
+    #[clause("TRS.10", "TRS.5")]
+    fn order_payments(&self, buf: &mut [Flow]) {
+        use crate::consts::reason::{BENEFIT, FUNDED, PENSION, REPAID};
+        let state = |p: PartyKey| self.treasuries.contains(&Some(p)) || self.agencies.contains(&Some(p));
+        // An agency's first funding of the day is for its wages, the second for the rest.
+        let mut funded_wages: std::collections::BTreeSet<PartyKey> = std::collections::BTreeSet::new();
+        for f in buf.iter_mut().filter(|f| f.denomination.is_money() && state(f.payer)) {
+            let Some(Some(order)) = self.state.order.get(usize::from(f.denomination.ccy())).copied() else { continue };
+            let agency = self.agencies.contains(&Some(f.payer));
+            f.order = match f.reason {
+                REPAID => order.debt_service,
+                PENSION => order.pensions,
+                BENEFIT => order.benefits,
+                WAGE => order.wages,
+                FUNDED if funded_wages.insert(f.payee) => order.wages,
+                _ if agency || f.reason == FUNDED => order.purchases,
+                _ => f.order,
+            };
         }
     }
 
@@ -752,19 +812,7 @@ impl Core {
         }
         let mut settling = Vec::new();
         if let Some(buf) = work.flows.chunks_mut().first_mut() {
-            settling = self.estates_pay(day, calendar, buf);
-            buf.append(&mut self.pending);
-            self.lend_shortfalls((day, calendar, streams), buf);
-            self.fund_agencies(buf);
-            for f in buf.iter().filter(|f| f.reason == crate::consts::reason::LENT) {
-                record.lent += 1;
-                if self.bank_of(f.payee) != Some(f.payer) {
-                    record.lent_elsewhere += 1;
-                }
-            }
-            // Every flow the day settles is one it made: its dues, the taxes withheld from them, estates and sales.
-            record.flows = phx_rand::float::len_u64(buf.len());
-            record.gross = buf.iter().filter(|f| f.denomination.is_money()).map(|f| i128::from(f.amount)).sum();
+            settling = self.gather((day, calendar, streams), buf, &mut record);
         }
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
         let ranges = Ranges::new(self.range_bits, &high);

@@ -1864,9 +1864,11 @@ Four systems declare kinds the world binds (`if-state`'s `kinds`), kept in `phx-
   collectors owe and what their debts owed when they closed (each family's `lost`), a difference a finding of the
   taxes family (LC-1-28). The income tax withheld from sampled households' wages is kept with its gross wage, and
   LC-0-29 recomputes it band by band under its rounding.
-- **The payment order** (`sys-trs`, TRS.10): the ranks of debt service, pensions and benefits, read from
-  `TRS.payment_order`, are carried on each such line's terms (`Terms::payment_order`), so a treasury short of cash
-  fails as a prefix of that order (§6.5).
+- **The payment order** (`sys-trs`, TRS.10; on the core `order_payments`): each treasury's payments are ranked by
+  `TRS.payment_order` — its debt service (its bills' redemptions), its pensions, its benefits, its public staff's
+  wages and its public purchases — carried on each flow's order, so a treasury short of cash fails the last of them
+  first (§6.5); its agency's funding is two flows, one for the day's wages and one for the rest, each at its rank,
+  and the agency's own payments take the same ranks.
 
 ### 7.17 The core
 

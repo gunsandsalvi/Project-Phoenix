@@ -84,12 +84,15 @@ pub struct TreasuryKind {
     pub order: fn(&Register, &OpeningCountry) -> Result<PaymentOrder, String>,
 }
 
-/// A treasury's payment order: the rank of its debt service, its pensions and its benefits.
+/// A treasury's payment order: the rank of its debt service, its pensions, its benefits, its public staff's wages and
+/// its public purchases.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PaymentOrder {
     pub debt_service: u8,
     pub pensions: u8,
     pub benefits: u8,
+    pub wages: u8,
+    pub purchases: u8,
 }
 
 /// What the treasury reads when it sizes an auction: its cash, its outflow over the last week, the bills falling due
