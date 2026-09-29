@@ -3,7 +3,8 @@
 //! published on its release day, after its law's lag: the consumer and producer price indices, chained over the
 //! products sold in both months at their unit values; the labour force survey from the persons' states; the money
 //! stock from the accounts; and the national accounts by production, by expenditure and by income, with the
-//! discrepancy between expenditure and income.
+//! discrepancy between expenditure and income. The consumer index's change reaches the households' outlooks on the
+//! day it is published.
 
 use std::collections::BTreeMap;
 

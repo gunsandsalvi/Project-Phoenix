@@ -4,7 +4,9 @@
 //! opening's staff in it give over the hours the ways ask of it at the opening's output — so the opening's staff is
 //! what its output needs, occupation by occupation. Each searching person applies to the
 //! vacancies in its reach; the next day each employer meets its applicants and offers its jobs; the day after each
-//! person answers, and each hire is a contract from the firm to the household naming the person.
+//! person answers, and each hire is a contract from the firm to the household naming the person. Once a review
+//! period each employer's pay round offers its contracts new wages, which its employees accept, counter, leave for
+//! search, or take while applying on from their jobs; a hire of one who holds a job moves it job to job.
 
 use std::collections::{BTreeMap, BTreeSet};
 

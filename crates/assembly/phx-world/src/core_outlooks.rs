@@ -1,9 +1,12 @@
-//! The firms' outlooks of public series on the core. What a product last sold for in a region, its mark, is a public
-//! series printed each day it trades. Every method — a heuristic of the menu at a memory type — forms its outlook of
-//! the next print once for every firm using it, and scores each of its heuristics by its error in the method's widths.
-//! A firm relies on one heuristic, its stance, reconsidered at each price review by the heuristics' recent performance
-//! at its switching type's intensity and its own taste; its markup reads its stance's outlook of its product's mark.
-//! Each method's lag behind a series' turning points is counted in prints, by memory type and heuristic.
+//! Outlooks of public series on the core. What a product last sold for in a region, its mark, is a public series
+//! printed each day it trades, read by the firms; each country's consumer index, its change printed on its release
+//! day, is read by the households. Every method — a heuristic of the menu at a memory type — forms its outlook of the
+//! next print once for every party using it, and scores each of its heuristics by its error in the method's widths.
+//! A party relies on one heuristic, its stance, reconsidered on its occasions — a firm's price review, a household's
+//! spending — by the heuristics' recent performance at its switching type's intensity and its own taste. A firm's
+//! markup reads its stance's outlook of its product's mark; a household's employed persons answer their pay rounds
+//! from its stance's outlook of prices. Each method's lag behind a series' turning points is counted in prints, by
+//! memory type and heuristic.
 
 use std::collections::BTreeMap;
 
