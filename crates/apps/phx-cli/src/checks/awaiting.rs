@@ -351,14 +351,6 @@ pub const LC_1_15: Check = live_check! {
     check: |_| Outcome::NotYet("awaits S1.24 h, the goods' reads"),
 };
 
-pub const LC_1_16: Check = live_check! {
-    id: "LC-1-16",
-    title: "SRV.7: the services' share of output and employment, the retail margin and its compression when \
-            wholesale costs rise, and the frequency and size of retail price changes are reported",
-    from_step: "S1.06",
-    check: |_| Outcome::NotYet("awaits S1.24 h, the services' reads"),
-};
-
 pub const LC_1_19: Check = live_check! {
     id: "LC-1-19",
     title: "FRT.9 and GEO.13: every shipment has one owner, one carrier and its goods pledged to it; no carrier books \

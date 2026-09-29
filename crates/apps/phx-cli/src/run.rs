@@ -321,6 +321,20 @@ fn population_report(w: Inspector<'_>) -> serde_json::Value {
     })
 }
 
+/// SRV.7's reads at the close: services' share of the sales and of the jobs, and services' and goods' median markups,
+/// changes a review and mean change, as the run report publishes them.
+fn services_report(w: Inspector<'_>) -> Option<serde_json::Value> {
+    crate::checks::services::services(w).map(|r| {
+        json!({
+            "sales_share": r.sales_share,
+            "jobs_share": r.jobs_share,
+            "median_markup": r.median_markup,
+            "changes_a_review": r.changes_a_review,
+            "mean_change": r.mean_change,
+        })
+    })
+}
+
 /// Each release the agencies published: its series, country, period, day and values.
 fn statistics_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
     w.core()
@@ -415,6 +429,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "population": population_report(w),
         "prices": prices_report(w),
         "labour": labour_report(w),
+        "services": services_report(w),
         "lags": crate::checks::outlooks::lags(w).iter().map(|((memory, heuristic), (sum, n))| json!({
             "memory": memory,
             "heuristic": heuristic,

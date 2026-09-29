@@ -3,6 +3,7 @@ pub mod core;
 pub mod geo;
 pub mod lives;
 pub mod outlooks;
+pub mod services;
 
 use phx_world::Inspector;
 
@@ -152,7 +153,7 @@ pub const CHECKS: &[Check] = &[
     core::LC_1_13,
     awaiting::LC_1_14,
     awaiting::LC_1_15,
-    awaiting::LC_1_16,
+    services::LC_1_16,
     core::LC_1_17,
     core::LC_1_18,
     awaiting::LC_1_19,
