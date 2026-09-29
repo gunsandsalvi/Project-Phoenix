@@ -60,15 +60,6 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::persons
 pub fn phx_pop::persons::Persons<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_pop::prims
-pub struct phx_pop::prims::ClearedStream
-impl phx_core::streams::StreamDef for phx_pop::prims::ClearedStream
-pub const phx_pop::prims::ClearedStream::DECL: phx_core::streams::StreamDecl
-pub struct phx_pop::prims::EstateSiteStream
-impl phx_core::streams::StreamDef for phx_pop::prims::EstateSiteStream
-pub const phx_pop::prims::EstateSiteStream::DECL: phx_core::streams::StreamDecl
-pub struct phx_pop::prims::LeavingStream
-impl phx_core::streams::StreamDef for phx_pop::prims::LeavingStream
-pub const phx_pop::prims::LeavingStream::DECL: phx_core::streams::StreamDecl
 pub struct phx_pop::prims::RepPrims
 pub phx_pop::prims::RepPrims::persons: phx_core::register::Prim<phx_num::qty::Count>
 impl phx_pop::prims::RepPrims

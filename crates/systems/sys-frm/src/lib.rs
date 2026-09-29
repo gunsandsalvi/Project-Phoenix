@@ -17,7 +17,6 @@ use phx_num::{Count, Fixed};
 declare_kind! { pub FIRM = "firm" { legal_form: "company", clause: "FRM.1" } }
 
 declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub SmallStream = "FRM.opening_small" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub VisitStream = "FRM.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
 declare_stream! { pub StanceStream = "FRM.stance" { purpose: Occasion, keyed: false, clause: "VAL.7" } }
 

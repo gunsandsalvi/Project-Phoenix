@@ -1,6 +1,6 @@
 //! The representation's setting, shared by every population kind, and the streams it draws from.
 
-use phx_core::{Declarations, Prim, Register, StreamDef, declare_prim, declare_stream};
+use phx_core::{Declarations, Prim, Register, declare_prim};
 use phx_macros::clause;
 use phx_num::{Count, violation};
 
@@ -10,10 +10,6 @@ declare_prim! {
     pub PERSONS = "REP.persons" { kind: Resolution, value: Count, clause: "REP.40", scope: Shared }
 }
 
-declare_stream! { pub ClearedStream = "REP.cleared" { purpose: Pairing, keyed: false, clause: "REP.23" } }
-declare_stream! { pub LeavingStream = "REP.leaving" { purpose: Pairing, keyed: false, clause: "REP.23" } }
-declare_stream! { pub EstateSiteStream = "REP.estate_site" { purpose: Sample, keyed: false, clause: "PTY.9" } }
-
 /// The representation's primitive as the world reads it.
 #[derive(Debug)]
 pub struct RepPrims {
@@ -22,9 +18,6 @@ pub struct RepPrims {
 
 impl RepPrims {
     pub fn declare(d: &mut Declarations) -> RepPrims {
-        d.stream(LeavingStream::DECL);
-        d.stream(EstateSiteStream::DECL);
-        d.stream(ClearedStream::DECL);
         RepPrims { persons: d.prim(&PERSONS) }
     }
 }

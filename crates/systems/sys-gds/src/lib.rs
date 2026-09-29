@@ -9,7 +9,6 @@ use phx_core::register::values::{Table1, Table2};
 use phx_core::{Declarations, Register, StreamDef, System, declare_prim, declare_stream};
 use phx_num::Count;
 
-declare_stream! { pub LotsStream = "GDS.lots" { purpose: Meeting, keyed: false, clause: "MKT.3" } }
 declare_stream! { pub VisitStream = "GDS.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
 declare_stream! { pub OpeningStream = "GDS.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 
@@ -132,7 +131,6 @@ impl System for Gds {
             let _ = d.prim::<Count>(count);
         }
         let _ = d.prim::<Count>(&SPOILAGE_DAYS);
-        d.stream(LotsStream::DECL);
         d.stream(VisitStream::DECL);
         d.stream(OpeningStream::DECL);
         let _ = d.prim::<Table1>(&OPENING_PRICE);
