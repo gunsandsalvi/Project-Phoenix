@@ -205,6 +205,20 @@ impl LabourCtx<'_> {
     }
 }
 
+/// An employer's staff's mean wage in each occupation it has staff in.
+pub(crate) type StaffMeans = BTreeMap<u32, f64>;
+
+/// The staff's mean wage by occupation, each occupation's wages added in the staff's order.
+pub(crate) fn staff_means(staff: &[(u32, u32, i64)]) -> StaffMeans {
+    let mut by: BTreeMap<u32, Vec<i64>> = BTreeMap::new();
+    for (o, _, a) in staff {
+        by.entry(*o).or_default().push(*a);
+    }
+    by.into_iter()
+        .map(|(o, mine)| (o, mine.iter().map(|a| from_i64(*a)).sum::<f64>() / from_u64(len_u64(mine.len()))))
+        .collect()
+}
+
 impl Core {
     /// The employment family's place among the core's families.
     fn employment(&self) -> Option<usize> {
@@ -416,16 +430,13 @@ impl Core {
         ctx: &LabourCtx<'_>,
         law: &Law,
         (employer, occupation): (PartyKey, u32),
-        staff: &[(u32, u32, i64)],
+        means: &StaffMeans,
     ) -> i64 {
         let fill = self.labour.fills.get(&(employer, occupation)).copied();
-        let mine: Vec<i64> = staff.iter().filter(|(o, _, _)| *o == occupation).map(|(_, _, a)| *a).collect();
-        let theirs = if mine.is_empty() {
-            Missing::Absent
-        } else {
-            let mean = mine.iter().map(|a| from_i64(*a)).sum::<f64>() / from_u64(len_u64(mine.len()));
-            (ctx.kind.point_near)(law, mean).map_or(Missing::Absent, Missing::Present)
-        };
+        let theirs = means
+            .get(&occupation)
+            .and_then(|mean| (ctx.kind.point_near)(law, *mean))
+            .map_or(Missing::Absent, Missing::Present);
         let Some(mean) = (ctx.kind.point_near)(law, law.mean_monthly) else {
             violation!(clause = "REP.34", "a mean wage beyond the wage points");
         };
@@ -456,6 +467,7 @@ impl Core {
         let law = at_country(&self.labour.laws, c).clone();
         self.raise_stale(ctx, day, own, &law);
         let staff = self.staff_of(family, key);
+        let means = staff_means(&staff);
         let ways = at_country(&self.labour.ways, c);
         let level = at_country(&self.labour.level, c).clone();
         let lot = sys_frm::FilingPrims::lot(ctx.register, u16::try_from(f.product).unwrap_or(u16::MAX));
@@ -489,7 +501,7 @@ impl Core {
                 .filter(|v| v.occupation == occupation)
                 .map(|v| f64::from(v.open) * job_hours)
                 .sum();
-            let point = self.offer_point(ctx, &law, (key, occupation), &staff);
+            let point = self.offer_point(ctx, &law, (key, occupation), &means);
             let wage_hour = ctx.wage_at(&law, point) / (law.weeks_a_month * full);
             needs.push(Need { occupation, hours_a_unit, staff_hours: held, open_hours: open, job_hours, wage_hour });
         }
@@ -516,7 +528,7 @@ impl Core {
             if open == 0 {
                 continue;
             }
-            let point = self.offer_point(ctx, &law, (key, occupation), &staff);
+            let point = self.offer_point(ctx, &law, (key, occupation), &means);
             self.labour.vacancies.push(Vacancy {
                 employer: key,
                 region: f.region,
@@ -632,6 +644,7 @@ impl Core {
         if staff.is_empty() || !self.review_due(ctx, day, key, law) {
             return;
         }
+        let means = staff_means(staff);
         let Some(f) = self.families.get(family) else { return };
         let contracts: Vec<(Slot, Due)> = f
             .store
@@ -665,7 +678,7 @@ impl Core {
                 },
                 Missing::Absent => Missing::Absent,
             };
-            let market = self.offer_point(ctx, law, (key, occupation), staff);
+            let market = self.offer_point(ctx, law, (key, occupation), &means);
             let offer = self.decide(offering, key, |_| ReviewIn { current, revenue, market, least });
             let reservation = law.reservation_share * ctx.wage_at(law, current);
             let Some(skill) = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied()

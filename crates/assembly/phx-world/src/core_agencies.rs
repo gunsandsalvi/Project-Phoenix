@@ -101,6 +101,7 @@ impl Core {
                 .collect();
             self.raise_stale(ctx, day, &own, &law);
             let staff = self.staff_of(family, agency);
+            let means = crate::core_labour::staff_means(&staff);
             let mut have: BTreeMap<(u32, u32), u32> = BTreeMap::new();
             for (_, region, occupation, _) in self.posts_held(Some(agency)) {
                 *have.entry((region, occupation)).or_insert(0) += 1;
@@ -120,7 +121,7 @@ impl Core {
                 }
                 let held = have.get(&(*region, *occupation)).copied().unwrap_or(0);
                 if held < *target {
-                    let point = self.offer_point(ctx, &law, (agency, *occupation), &staff);
+                    let point = self.offer_point(ctx, &law, (agency, *occupation), &means);
                     gaps.push(sys_soc::points::Gap {
                         region: *region,
                         occupation: *occupation,
@@ -136,7 +137,7 @@ impl Core {
             });
             for (region, occupation, jobs) in posts {
                 posted += u64::from(jobs);
-                self.post_vacancy(ctx, (agency, ccy, &law), (region, occupation, jobs), (day, &staff));
+                self.post_vacancy(ctx, (agency, ccy, &law), (region, occupation, jobs), (day, &means));
             }
             let bill_now: i64 = staff.iter().map(|(_, _, a)| *a).sum();
             self.agencies_kept.days.push(AgencyDay {
@@ -157,12 +158,12 @@ impl Core {
         ctx: &LabourCtx<'_>,
         (employer, country, law): (PartyKey, u8, &Law),
         (region, occupation, open): (u32, u32, u32),
-        (day, staff): (Day, &[(u32, u32, i64)]),
+        (day, means): (Day, &crate::core_labour::StaffMeans),
     ) {
         let Some(skill) = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied() else {
             return;
         };
-        let point = self.offer_point(ctx, law, (employer, occupation), staff);
+        let point = self.offer_point(ctx, law, (employer, occupation), means);
         self.labour.vacancies.push(Vacancy {
             employer,
             region,
