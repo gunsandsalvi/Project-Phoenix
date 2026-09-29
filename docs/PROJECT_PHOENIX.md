@@ -852,8 +852,8 @@ The work of a day follows the number of parties something happens to, not the nu
   decisions), and nothing drawn is contradicted afterwards. Who is party to a contract is never drawn (REP.3).
 - **REP.24 PROCESS** — **Where households and firms are.**
   - A household's zone, and the zone of each of a firm's sites, are attributes. Their dwellings, plant and vehicles
-    are held by zone and **class** (kind, size, quality band, condition band). Wear, damage and repair move units
-    between condition classes.
+    are held by zone and **class** (kind, size, quality band, condition band, age class). Wear, damage and repair
+    move units between condition classes, and time between age classes.
   - A unit within a building stands on the building's cell, which is recorded (GEO.19, HSG.21); a unit counted by zone
     and class and in no building has its tile drawn when something depends on it (REP.23).
   - Distance for households and firms is measured between zones, and between cells where both ends are in buildings
@@ -2283,7 +2283,8 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
 **State**
 
 - **CAP.1 STATE** — A **capital good** is a unit with a kind, a site, a service date, a capacity, a condition
-  and a remaining life; a household's or firm's plant is counted by zone and class (REP.24). Kinds differ, and a use needing
+  and a remaining life; a household's or firm's plant is counted by zone and class (REP.24), its service date and
+  remaining life carried by its age class. Kinds differ, and a use needing
   several kinds is limited by the scarcest.
 - **CAP.2 STATE** — A **construction project** has an owner, a site, a builder, a budget, a schedule, and
   work done to date; while under construction it is an asset of its owner at cost.
