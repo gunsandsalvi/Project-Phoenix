@@ -685,7 +685,8 @@ exposure; it never writes an economic outcome.
   A country's land and its number of regions follow its population share (GEN.14): the regions, a world constant in
   number, are allotted by largest remainder with at least three per country, and each country's land is its share of
   the map, so regions are of like size. A **zone** is a declared set of neighbouring tiles within one region
-  (RESOLUTION), the place at which households and firms are carried (REP.24). A **site** is the exact tile on which a
+  (RESOLUTION), the place at which households and firms are carried and from which distance enters a choice within
+  its region (REP.24). A **site** is the exact tile on which a
   party, plant, dwelling, warehouse, port or piece of infrastructure stands; country, region and zone are read through
   the site.
 - **GEO.4 STATE** — **Infrastructure** — roads, rail, bridges, tunnels, ports, pipelines, power lines — is
@@ -856,7 +857,10 @@ The work of a day follows the number of parties something happens to, not the nu
   - A unit within a building stands on the building's cell, which is recorded (GEO.19, HSG.21); a unit counted by zone
     and class and in no building has its tile drawn when something depends on it (REP.23).
   - Distance for households and firms is measured between zones, and between cells where both ends are in buildings
-    (a commute, HSG.23). The zone is the spatial resolution at which markets meet.
+    (a commute, HSG.23).
+  - A local market — labour, housing, services, retail — meets per region (GEO.3). Within it, a buyer's choice among
+    the sellers, vacancies and dwellings it can reach weighs the distance from its zone to each (HH.5, HH.8, SRV.4,
+    LAB.5).
 - **REP.25 PROCESS** — **Age.** Every person holds its **birth date**. Its age on any day, and the day it reaches a
   statutory age or an entitlement, are read from it exactly.
 - **REP.26 PROCESS** — **Persons are held in their household.** A household holds each of its persons, with its
@@ -1505,7 +1509,7 @@ what happens when a market does not clear.
 
 - **MKT.1 STATE** — A **market** is a place where parties with **different reasons** meet over one
   thing, keyed as that thing is keyed (Law 9): an instrument, a good at a place, a service in a region,
-  labour of an occupation in a region, dwellings in a location, a route's carriage. It has a declared
+  labour of an occupation in a region, dwellings in a region, a route's carriage. It has a declared
   **form** (MKT.3–MKT.8), **meeting days**, a **settlement convention**, and **who may take part**.
 - **MKT.2 STATE** — A **print** is a formed price with its market, instrument, day, unit, currency, quantity
   and form. A print is public (OBS). A market that formed no price has **no new print**, and its last print
