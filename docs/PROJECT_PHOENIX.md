@@ -3691,8 +3691,8 @@ that information and its errors move markets.
   the calendar as they do in real markets.
 - **RAT.3 STATE** — **Guidance** is management's published expectation; an **estimate** is a named analyst
   bank's published expectation, formed like any outlook from what that bank observed.
-- **RAT.8 STATE** — Every incorporated firm **files** annual accounts with its country's companies registry by a
-  legal deadline (POLICY); filed accounts are public, later and less detailed than a listed company's reports, and
+- **RAT.8 STATE** — Every incorporated firm **files** annual accounts for the fiscal year it chose (RAT.2) with its
+  country's companies registry, on a day of its choosing before the legal deadline (POLICY); filed accounts are public, later and less detailed than a listed company's reports, and
   are what lenders and suppliers read of a firm that does not publish.
 
 **Processes**
