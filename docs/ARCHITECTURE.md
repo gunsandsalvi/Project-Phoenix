@@ -1766,19 +1766,33 @@ Carriage pays under `FRT carried` and arrivals move under `FRT arrived`; the mee
 
 ### 7.14 The central bank's fund stage
 
-- **The facilities** (`if_credit::central::CentralKind`, declared by `sys-cb`): each country's deposit facility and
-  lending facility are lines opened at its first fund stage, a row for each bank that uses them, positions held as
-  balances (`Books::move_balances`, reserves against the facility's balance in one instruction).
-- **8d** on a country's business days: each bank's positions returned with the days' interest, then its request —
-  the credit kind's rule over its reserves, its target and its collateral — met; the central bank's net interest
-  kept in the book (`central`, saved) and remitted to the treasury's account on a month's first fund stage.
-- **Intraday credit** is the reserve accounts' facility (MON.3): settlement lets a bank's reserves fall below nothing
-  within it, so a payment is not removed for a bank's intraday shortfall.
-- **The request** (a placeholder naming BFL, the credit kind's `request`): a bank's target is its reserves over its deposits when it first came to the fund stage, times its deposits now; it places what its reserves exceed the target by and borrows the shortfall as far as its collateral lends, `1 − CB.loan_haircut` of its firm loans' balances.
-- **The corridor** (placeholders naming CB): the policy rate at the opening less `CB.deposit_spread` for the deposit facility and plus `CB.lending_spread` for the lending facility. A reserve account's terms let a bank overdraw it intraday by as much as every bank's reserves at the opening, at the lending rate. A month's net income remitted is its surplus only; a loss is kept against the central bank's equity.
-
-
----
+On the core (`core_central`):
+- **The facilities** are two families of overnight contracts, `CB.deposit_facility` (the central bank owing a bank)
+  and `CB.lending_facility` (a bank owing its central bank), each position a row reckoned from terms at its
+  facility's rate, so the loan books, the accounts and a bank's balance sheet read it as any loan.
+- **The fund stage** runs after settlement on each country's business days (TIME.6's 8): every position is returned
+  with its interest over the days it stood; on a month's first stage the central bank's net interest since the last
+  is remitted to its treasury's account, a loss kept against its equity (CB.10); then each bank's chief executive asks
+  the facilities (`BNK.request`, through the decision core) from its reserves after the returns. The stage's flows —
+  returns first in each bank's payment order, then what it opens — settle together through the settlement kernel with
+  the issuer on one side, which never fails; a return that fails leaves its position standing, overdue.
+- **Intraday credit** is each bank's reserve account's facility (MON.3): as much as every bank of its country held in
+  reserves at the opening. Reserves left below nothing after the stage are the central bank's overdue claim, counted
+  each day with the banks that owe it (BFL.10's liquidity failure; the bank's resolution is Stage 2's).
+- **The request** (a placeholder naming BFL): a bank's target is its reserves over its deposits at its first fund
+  stage, times its deposits now; it places what it holds above the target and borrows what it lacks as far as its
+  collateral lends — its firm loans' balances less `CB.loan_haircut`.
+- **The corridor** (placeholders naming CB): the policy rate at the opening less `CB.deposit_spread` and plus
+  `CB.lending_spread`.
+- **The opening's central-bank loans** — the sheet's `CENTRAL_BANK_LOANS` — are shared over each country's banks by
+  their weights and opened as lending-facility positions, returned and asked anew at the first fund stage.
+- **The issuers' record** (MON.7, MON.9): the core keeps what the issuers owe as money by class — reserves, the
+  treasuries' accounts, banknotes (the accounts held at the issuer by anyone else) — moved by every settled flow, the
+  payer's class less and the payee's more, the issuer's own side moving none; at each close it is held to what the
+  accounts show, a difference a finding of the money family. The parties' money is held to what the banks and the
+  issuers paid them.
+- The run report's `fund_stages` gives each country's stage a day: placed, borrowed, the banks doing each, what stood
+  overdue, the positions unreturned, what was remitted; LC-1-27 reads it with the money family.
 
 ### 7.15 Statistics
 

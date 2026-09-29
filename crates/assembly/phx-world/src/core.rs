@@ -36,6 +36,10 @@ pub struct Core {
     /// Each country's treasury, and the estates waiting to settle: each with its country and the day it opened.
     pub treasuries: Vec<Option<PartyKey>>,
     pub estates: Vec<(PartyKey, phx_id::CountryId, phx_id::Day)>,
+    /// Why each estate that has paid what it can still stands: the goods it holds waiting for their liquidation.
+    pub waiting: std::collections::BTreeMap<PartyKey, &'static str>,
+    /// Every death: its person, household, cause and where what it held and owed went.
+    pub deaths: Vec<crate::core_pop::Death>,
     /// The insolvency law on the core: graces, contracts in arrears, estates' claims and firms ended.
     pub insolvency: crate::core_default::Insolvency,
     /// Each creditor's loan book, kept by what moves it.
@@ -44,6 +48,8 @@ pub struct Core {
     pub accounts: crate::core_accounts::Accounts,
     /// Each country's lending law, the firms' filed earnings and each bank's lending.
     pub credit: crate::core_lending::Credit,
+    /// The central banks' facilities, their positions' days, their income and the money they record owing.
+    pub central: crate::core_central::Central,
     /// The decisions the world takes, who takes each, and how many each decider took.
     pub decisions: crate::core_decide::Decisions,
     /// The next identity the core hands a party or person it begins.

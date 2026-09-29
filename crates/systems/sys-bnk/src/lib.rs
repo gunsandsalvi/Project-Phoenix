@@ -194,6 +194,7 @@ impl System for Bnk {
         d.decision(&points::QUOTE);
         d.decision(&points::STANDARD);
         d.decision(&points::CHOOSE);
+        d.decision(&points::REQUEST);
     }
 
     fn handlers(_: &mut HandlerTable) {}

@@ -463,14 +463,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "services": services_report(w),
         "outlooks": outlooks_report(w),
         "decisions": decisions_report(w),
-        "lenders": w.core().credit.lenders.iter().map(|(b, l)| json!({
-            "bank": b.word(),
-            "standard": l.standard,
-            "applications": l.applications,
-            "declined": l.declined,
-            "quoted": l.quoted,
-            "lent": l.lent,
-        })).collect::<Vec<_>>(),
+        "fund_stages": fund_report(w),
+        "lenders": lenders_report(w),
         "closures": w.core().closures.iter().map(|(c, name, share)| json!({ "country": c, "closure": name, "share_of_gdp": share })).collect::<Vec<_>>(),
         "apportioned": w.core().apportioned.iter().map(|a| json!({
             "stratum": a.stratum,
@@ -544,6 +538,48 @@ pub fn measure_budget(build_run: &Path, device: &Path, out: &Path) -> Result<boo
     std::fs::write(out, text + "\n").map_err(|e| format!("{}: {e}", out.display()))?;
     println!("{}", out.display());
     Ok(true)
+}
+
+/// Each country's fund stage a day: what its banks placed and borrowed, what stood overdue, what was remitted.
+fn fund_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .central
+        .days
+        .iter()
+        .map(|d| {
+            json!({
+                "day": d.day,
+                "country": d.country,
+                "placed": d.placed,
+                "borrowed": d.borrowed,
+                "banks_placing": d.placing,
+                "banks_borrowing": d.borrowing,
+                "overdue": d.overdue,
+                "banks_overdue": d.overdue_banks,
+                "unreturned": d.unreturned,
+                "remitted": d.remitted,
+            })
+        })
+        .collect::<Vec<_>>()
+}
+
+/// Each bank's applications, declines, quotes and loans, and its standard.
+fn lenders_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
+    w.core()
+        .credit
+        .lenders
+        .iter()
+        .map(|(b, l)| {
+            json!({
+                "bank": b.word(),
+                "standard": l.standard,
+                "applications": l.applications,
+                "declined": l.declined,
+                "quoted": l.quoted,
+                "lent": l.lent,
+            })
+        })
+        .collect::<Vec<_>>()
 }
 
 /// Each decision the world declares, with how many times each standing of decider took it.

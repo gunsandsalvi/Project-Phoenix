@@ -1,6 +1,7 @@
 //! Credit's decision points: a bank's loan officer's decline and quote, its chief executive's standard, and a
 //! borrower's choice among the quotes.
 
+use if_credit::central::{Request, RequestIn};
 use if_credit::decisions::{ChooseIn, DeclineIn, QuoteIn, StandardIn};
 use phx_core::decisions::DecisionPointDecl;
 use phx_core::schedule::WakeKind;
@@ -48,4 +49,15 @@ pub const CHOOSE: DecisionPointDecl<ChooseIn, Missing<u32>> = DecisionPointDecl 
     wakes: &[WakeKind::Message],
     runs_on_non_business: false,
     clause: "BNK.6",
+};
+
+/// A bank's request at the central bank's facilities, at each business day's fund stage.
+pub const REQUEST: DecisionPointDecl<RequestIn, Request> = DecisionPointDecl {
+    name: "BNK.request",
+    system: "BNK",
+    rule: crate::credit::request,
+    schedule: Missing::Present("CB.fund_stage"),
+    wakes: &[],
+    runs_on_non_business: false,
+    clause: "CB.7",
 };

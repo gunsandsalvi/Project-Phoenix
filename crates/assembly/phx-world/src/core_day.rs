@@ -487,29 +487,35 @@ impl Core {
     /// The money every party but the banks holds, and the banks' reserves with every account held at the issuer:
     /// the first changes only by the issuer's own flows, the second only by what the issuer pays or is paid.
     #[must_use]
-    pub fn money_totals(&self) -> (i128, i128) {
-        let (mut parties, mut at_issuer) = (0_i128, 0_i128);
+    pub fn money_totals(&self) -> i128 {
+        let mut parties = 0_i128;
         for (k, store) in self.kinds.iter().enumerate() {
             let Some(a) = store.accounts.as_ref() else { continue };
-            let bank = self.bank_kind.is_some_and(|b| usize::from(b) == k);
-            for ((b, m), p) in a.bank.slice().iter().zip(a.balance.slice()).zip(a.pending.slice()) {
-                let held = i128::from(*m) + i128::from(*p);
-                if !bank {
-                    parties += held;
-                }
-                if bank || *b == phx_core::settle::AT_ISSUER {
-                    at_issuer += held;
-                }
+            if self.bank_kind.is_some_and(|b| usize::from(b) == k) {
+                continue;
             }
+            parties += a
+                .balance
+                .slice()
+                .iter()
+                .zip(a.pending.slice())
+                .map(|(m, p)| i128::from(*m) + i128::from(*p))
+                .sum::<i128>();
         }
-        (parties, at_issuer)
+        parties
     }
 
-    /// The money family on the core after the day's settlement, reading only: each bank owes what its customers hold;
-    /// the money the parties hold moved only by what they and the banks paid each other, the issuer making no flow on
-    /// the core yet; and the banks' reserves with the accounts at the issuer did not move.
-    #[clause("MON.5", "N1", "REP.14")]
-    fn money_breaks(&mut self, (day, before): (Day, (i128, i128)), bank_net: i128, deposits: &mut [i64]) -> u64 {
+    /// The money family on the core after the day's settlement and fund stage, reading only: each bank owes what its
+    /// customers hold; the money the parties hold moved only by what they, the banks and the issuers paid each other;
+    /// and the issuers' money — reserves, the treasuries' accounts and banknotes — what their own record of the flows
+    /// that moved it says.
+    #[clause("MON.5", "MON.7", "MON.8", "MON.9", "N1", "REP.14")]
+    fn money_breaks(
+        &mut self,
+        (day, before): (Day, i128),
+        (net, classes): (i128, [i128; 3]),
+        deposits: &mut [i64],
+    ) -> u64 {
         let owed = deposits_of(self.kinds.iter(), deposits.len());
         let mut found = Vec::new();
         for (slot, (a, b)) in (0_u32..).zip(owed.iter().zip(deposits.iter())) {
@@ -524,29 +530,81 @@ impl Core {
                 format!("a bank owes {a} where its customers hold {b}"),
             ));
         }
-        let (parties, at_issuer) = self.money_totals();
-        if parties != before.0 + bank_net {
-            let detail = format!("the parties hold {parties} where the day's flows leave {}", before.0 + bank_net);
-            found.push(finding((day, "Law 2"), FindingOwner::Run, parties - before.0 - bank_net, detail));
+        let parties = self.money_totals();
+        if parties != before + net {
+            let detail = format!("the parties hold {parties} where the day's flows leave {}", before + net);
+            found.push(finding((day, "Law 2"), FindingOwner::Run, parties - before - net, detail));
         }
-        if at_issuer != before.1 {
-            let detail = format!("the issuer's accounts hold {at_issuer} where they held {}", before.1);
-            found.push(finding((day, "MON.5"), FindingOwner::Run, at_issuer - before.1, detail));
+        let held = self.issuer_held();
+        if let Some(recorded) = self.central.recorded.as_mut() {
+            for (r, c) in recorded.iter_mut().zip(classes) {
+                *r += c;
+            }
+            let names = ["reserves", "treasuries' accounts", "banknotes"];
+            for ((h, r), (class, name)) in held.iter().zip(recorded.iter()).zip(names.iter().enumerate()) {
+                if h != r {
+                    let clause = if class == crate::core_central::NOTES { "MON.9" } else { "MON.7" };
+                    let detail = format!("the issuers owe {h} in {name} where their record of it holds {r}");
+                    found.push(finding((day, clause), FindingOwner::Run, h - r, detail));
+                }
+            }
         }
         let n = phx_rand::float::len_u64(found.len());
         self.found.extend(found);
         n
     }
 
-    /// What a flow moves into the parties other than banks from the banks: a bank paying a party is money made, a
-    /// party paying a bank money gone; a flow between two banks or two parties moves none.
-    fn bank_net_of(&self, f: &Flow) -> i128 {
-        let bank = |k: PartyKey| self.bank_kind.is_some_and(|b| b == k.kind());
-        match (bank(f.payer), bank(f.payee)) {
-            (true, false) => i128::from(f.amount),
-            (false, true) => -i128::from(f.amount),
-            _ => 0,
+    /// The day's settled flows entered as income, then the fund stage; returns what both moved of the parties' and
+    /// the issuers' money.
+    fn after_settle(
+        &mut self,
+        work: &mut Work,
+        failed: &[Flow],
+        at: (Day, &Calendar, &Streams, &StreamDecl),
+        ranges: &Ranges,
+    ) -> (i128, [i128; 3]) {
+        let mut moved = (0_i128, [0_i128; 3]);
+        if let Some(buf) = work.flows.chunks_mut().first() {
+            self.account_flows(buf, failed);
+            moved = self.money_moves(buf, failed);
         }
+        let (fund, fund_failed) = self.fund_stage(work, at, ranges);
+        let fund_moved = self.money_moves(&fund, &fund_failed);
+        moved.0 += fund_moved.0;
+        for (m, f) in moved.1.iter_mut().zip(fund_moved.1) {
+            *m += f;
+        }
+        moved
+    }
+
+    /// What a day's settled money flows moved: into the parties other than banks from the banks and the issuers, and
+    /// each class of the issuers' money, a flow taking from its payer's class and adding to its payee's.
+    fn money_moves(&self, flows: &[Flow], failed: &[Flow]) -> (i128, [i128; 3]) {
+        let mut unpaid: BTreeMap<(PartyKey, PartyKey, i64, u8, u32), u32> = BTreeMap::new();
+        for f in failed {
+            *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
+        }
+        let money_maker = |k: PartyKey| self.bank_kind == Some(k.kind()) || self.issuers.contains(&k);
+        let (mut net, mut classes) = (0_i128, [0_i128; 3]);
+        for f in flows.iter().filter(|f| f.denomination.is_money()) {
+            if let Some(n) = unpaid.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0) {
+                *n -= 1;
+                continue;
+            }
+            let a = i128::from(f.amount);
+            match (money_maker(f.payer), money_maker(f.payee)) {
+                (true, false) => net += a,
+                (false, true) => net -= a,
+                _ => {}
+            }
+            if let Some(c) = self.money_class(f.payer).and_then(|c| classes.get_mut(c)) {
+                *c -= a;
+            }
+            if let Some(c) = self.money_class(f.payee).and_then(|c| classes.get_mut(c)) {
+                *c += a;
+            }
+        }
+        (net, classes)
     }
 
     /// After the day's settlement: the sales delivered or released, each failed due held in its contract's arrears
@@ -579,7 +637,12 @@ impl Core {
             });
             // Goods an estate holds wait for its liquidation, which sells them; until then it stays.
             let goods = self.goods.stocks.holdings(estate).any(|h| h.units != 0);
+            if !empty || goods {
+                let why = if goods { "its goods wait for their liquidation" } else { "its money waits to be paid out" };
+                self.waiting.insert(estate, why);
+            }
             if empty && !goods {
+                self.waiting.remove(&estate);
                 self.goods.stocks.end(estate);
                 self.estates.retain(|(e, _, _)| *e != estate);
                 if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
@@ -616,6 +679,9 @@ impl Core {
             lent_elsewhere: 0,
         };
         let before = self.money_totals();
+        if self.central.recorded.is_none() {
+            self.central.recorded = Some(self.issuer_held());
+        }
         for family in &mut self.families {
             if let Some(buf) = work.flows.chunks_mut().first_mut() {
                 record.flows += family.dues(day, calendar, &mut work.due, buf);
@@ -646,11 +712,6 @@ impl Core {
         });
         let mut deposits = deposits_of(self.kinds.iter(), banks);
         let closed = vec![false; banks];
-        let mut bank_net: i128 = work
-            .flows
-            .chunks_mut()
-            .first_mut()
-            .map_or(0, |buf| buf.iter().filter(|f| f.denomination.is_money()).map(|f| self.bank_net_of(f)).sum());
         let mut failed: Vec<Flow> = Vec::new();
         for (country, issuer) in self.issuers.iter().enumerate() {
             let Ok(ccy) = u8::try_from(country) else { continue };
@@ -675,9 +736,7 @@ impl Core {
                 record.committed += phx_rand::float::len_u64(grouped.end());
             }
         }
-        if let Some(buf) = work.flows.chunks_mut().first() {
-            self.account_flows(buf, &failed);
-        }
+        let moved = self.after_settle(&mut work, &failed, (day, calendar, streams, order), &ranges);
         self.work = work;
         for f in &failed {
             if let Some(n) = record.failed_by.get_mut(usize::from(f.reason)) {
@@ -686,8 +745,7 @@ impl Core {
         }
         record.arrears = self.after_settlement(day, calendar, &failed);
         record.wages = self.record_wages_settled(&failed);
-        bank_net -= failed.iter().map(|f| self.bank_net_of(f)).sum::<i128>();
-        record.breaks += self.money_breaks((day, before), bank_net, &mut deposits);
+        record.breaks += self.money_breaks((day, before), moved, &mut deposits);
         record.estates += self.end_settled(settling);
         self.keep_books(day, calendar);
         for k in &mut self.kinds {

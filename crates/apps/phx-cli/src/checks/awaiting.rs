@@ -256,13 +256,6 @@ pub const LC_0_50: Check = live_check! {
     retired: "agents are never renumbered (S0.28)",
 };
 
-pub const LC_0_53: Check = live_check! {
-    id: "LC-0-53",
-    title: "Every death has a cause and a destination for everything held and owed; every estate settles or waits, named",
-    from_step: "S0.25",
-    check: |_| Outcome::NotYet("awaits estates' destinations named on the core (S1.24 f)"),
-};
-
 pub const LC_0_57: Check = live_check! {
     id: "LC-0-57",
     title: "the player's queued intents are decided on the first day their point runs; with none, the rule decides",
@@ -336,13 +329,6 @@ pub const LC_1_20: Check = live_check! {
     title: "FRT.10: freight rates and price gaps between places are reported, and gaps track freight",
     from_step: "S1.07",
     check: |_| Outcome::NotYet("awaits S1.24 d, shipments"),
-};
-
-pub const LC_1_27: Check = live_check! {
-    id: "LC-1-27",
-    title: "MON.7 and MON.9 clean with the central bank's facilities in use; facility quantities are reported daily",
-    from_step: "S1.10",
-    check: |_| Outcome::NotYet("awaits S1.24 f, the central bank"),
 };
 
 pub const LC_1_28: Check = live_check! {

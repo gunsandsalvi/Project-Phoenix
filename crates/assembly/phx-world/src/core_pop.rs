@@ -38,6 +38,26 @@ pub struct PopDay {
     pub ended: u64,
 }
 
+/// Where what a person held and owed went at its death: to its household, which goes on; to the estate its household
+/// ended into; or nowhere, its household ending holding nothing, its debts written off their creditors' books.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Destination {
+    Household(PartyKey),
+    Estate(PartyKey),
+    Nothing,
+}
+
+/// A death: its day, the person, its household, the event kind of the process that took it, and where what it held and
+/// owed went.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Death {
+    pub day: Day,
+    pub person: u64,
+    pub household: PartyKey,
+    pub cause: u16,
+    pub to: Destination,
+}
+
 /// A day's events of one kind: how many were recorded and the persons they reached.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct EventCount {
@@ -241,6 +261,7 @@ impl Core {
             date: ctx.calendar.date(day),
             decider: &decider,
         };
+        let mut causes: Vec<Option<u16>> = h.persons.iter().map(|_| None).collect();
         for (_, process, reached) in hits {
             let Some(b) = ctx.processes.get(*process) else { continue };
             let places: Vec<usize> =
@@ -251,6 +272,11 @@ impl Core {
             let mut d =
                 ctx.streams.open(&b.stream, Subject::new(SubjectTag::Party, id.get()), day, SubStep::S3e.ordinal());
             b.process.outcome(ctx.register, &view, &mut h, &places, &mut d);
+            for (p, cause) in h.persons.iter().zip(causes.iter_mut()) {
+                if p.gone && cause.is_none() {
+                    *cause = Some(b.event);
+                }
+            }
         }
         if h.persons.len() < before {
             violation!(
@@ -272,6 +298,7 @@ impl Core {
             }
         }
         // The gone leave from the last, so each earlier place still reads the person the outcome marked.
+        let mut died = Vec::new();
         for at in (0..before).rev() {
             if h.persons.get(at).is_some_and(|p| p.gone) {
                 let Some(Some(persons)) = self.persons.get_mut(place) else { continue };
@@ -281,6 +308,10 @@ impl Core {
                 persons.remove(&mut self.space, slot, at);
                 self.person_left(key, person);
                 record.gone += 1;
+                let Some(cause) = causes.get(at).copied().flatten() else {
+                    violation!(clause = "POP.15", "a person gone by no process", party = id.get());
+                };
+                died.push(Death { day, person, household: key, cause, to: Destination::Household(key) });
             }
         }
         for p in h.persons.iter().skip(before).filter(|p| !p.gone) {
@@ -302,10 +333,12 @@ impl Core {
             let Some(country) = country else {
                 violation!(clause = "PTY.5", "an ended household sited in no country", party = id.get());
             };
-            self.end_household(key, (country, day));
+            let to = self.end_household(key, (country, day)).map_or(Destination::Nothing, Destination::Estate);
+            self.deaths.extend(died.into_iter().map(|d| Death { to, ..d }));
             record.ended += 1;
             return;
         }
+        self.deaths.extend(died);
         let rest = Household { attrs: h.attrs, persons: left, positions: h.positions };
         let mut buffers = Buffers::default();
         self.book_all(ctx, (place, decl), slot, (&rest, &mut buffers), day.succ());
@@ -385,7 +418,7 @@ impl Core {
     /// A household no one is left in ends: what its account holds passes to an estate that opens at the same bank,
     /// owing what the household owed, its contracts close, and its slot is released after the day.
     #[clause("PTY.9")]
-    fn end_household(&mut self, key: PartyKey, (country, day): (CountryId, Day)) {
+    fn end_household(&mut self, key: PartyKey, (country, day): (CountryId, Day)) -> Option<PartyKey> {
         let place = usize::from(key.kind());
         let account = self.kinds.get(place).and_then(|k| k.accounts.as_ref()).and_then(|a| {
             let (bank, balance) = (a.bank.get(key.slot())?, a.balance.get(key.slot())?);
@@ -393,13 +426,15 @@ impl Core {
             Some((bank, balance + pending))
         });
         let debts = self.debts_of(key);
+        let mut estate = None;
         if let Some((bank, money)) = account.filter(|(_, m)| *m != 0) {
-            let estate = self.open_estate((bank, money), (country, day));
-            self.insolvency.claims.insert(estate, debts);
+            let e = self.open_estate((bank, money), (country, day));
+            self.insolvency.claims.insert(e, debts);
             if let Some(a) = self.kinds.get_mut(place).and_then(|k| k.accounts.as_mut()) {
                 a.balance.set(key.slot(), 0);
                 a.pending.set(key.slot(), 0);
             }
+            estate = Some(e);
         }
         for family in &mut self.families {
             let Some(side) = family.store.kinds.iter().position(|k| *k == key.kind()) else { continue };
@@ -416,6 +451,7 @@ impl Core {
         {
             k.parties.end(r);
         }
+        estate
     }
 }
 

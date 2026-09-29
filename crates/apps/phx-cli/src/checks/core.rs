@@ -316,7 +316,7 @@ fn turns_whole(w: Inspector<'_>) -> Outcome {
 }
 
 /// The money family found nothing: each bank owes what its customers hold, the parties' money moves only by what
-/// they and the banks paid each other, and the issuer's accounts do not move.
+/// they, the banks and the issuers paid each other, and the issuers' money is what their record says.
 fn money_clean(w: Inspector<'_>) -> Outcome {
     family_clean(w, "money")
 }
@@ -995,4 +995,63 @@ pub const LC_1_52: Check = live_check! {
     title: "Every decision the world declares is taken through the decision core, by a named decider",
     from_step: "S1.26",
     check: decisions_taken,
+};
+
+/// The money family's reads of the issuers' own record are clean with the facilities in use, and every business day's
+/// fund stage is reported.
+fn facilities_clean(w: Inspector<'_>) -> Outcome {
+    let days = &w.core().central.days;
+    if !days.iter().any(|d| d.placed > 0 || d.borrowed > 0) {
+        return Outcome::NotYet("no bank used the central bank's facilities in the run");
+    }
+    if let Some(f) = w.findings().iter().find(|f| f.family == "money" && (f.clause == "MON.7" || f.clause == "MON.9")) {
+        return Outcome::Fail(format!("day {}: {} {}", f.day.get(), f.clause, f.detail));
+    }
+    match w.core().days.iter().find(|d| w.any_business(d.day) && !days.iter().any(|f| f.day == d.day.get())) {
+        Some(d) => Outcome::Fail(format!("business day {} has no fund stage reported", d.day.get())),
+        None => Outcome::Pass,
+    }
+}
+
+pub const LC_1_27: Check = live_check! {
+    id: "LC-1-27",
+    title: "MON.7 and MON.9 clean with the central bank's facilities in use; facility quantities are reported daily",
+    from_step: "S1.10",
+    check: facilities_clean,
+};
+
+/// Every death has the process that took the person and a destination for what it held and owed — its household, its
+/// household's estate, or nothing held — and every estate still standing waits for a reason named, or for its
+/// country's first business day since it opened.
+fn deaths_destined(w: Inspector<'_>) -> Outcome {
+    let core = w.core();
+    if core.deaths.is_empty() {
+        return Outcome::NotYet("no one died in the run");
+    }
+    let kinds = w.event_kinds();
+    if let Some(d) = core.deaths.iter().find(|d| kinds.get(usize::from(d.cause)).is_none()) {
+        return Outcome::Fail(format!("person {} died of no declared event ({})", d.person, d.cause));
+    }
+    let today = w.today();
+    for (estate, country, opened) in &core.estates {
+        if core.waiting.contains_key(estate) {
+            continue;
+        }
+        let paid_by_now = (opened.get() + 1..=today.get()).any(|d| w.is_business(*country, phx_id::Day::new(d)));
+        if paid_by_now {
+            return Outcome::Fail(format!(
+                "estate {} opened on day {} stands unsettled with no reason named",
+                estate.word(),
+                opened.get()
+            ));
+        }
+    }
+    Outcome::Pass
+}
+
+pub const LC_0_53: Check = live_check! {
+    id: "LC-0-53",
+    title: "Every death has a cause and a destination for everything held and owed; every estate settles or waits, named",
+    from_step: "S0.25",
+    check: deaths_destined,
 };

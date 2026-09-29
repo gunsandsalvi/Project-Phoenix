@@ -1013,6 +1013,14 @@ world switches to the core.
     household; the person — and counts it; the firms' memory and switching types, stance and required return moved
     from their record to their founding preferences, the banks' required return likewise. LC-1-52 reads the counts, the
     run report publishes them as `decisions`; not yet run.
+  - f: the central bank's facilities on the core (CB.7, CB.10, MON.3, MON.7, MON.9; `core_central`, ARCHITECTURE
+    §7.14), not yet run: the two facilities as overnight contracts, the fund stage after settlement on business days,
+    each bank's request through the decision core, intraday credit, the opening's central-bank loans as positions, the
+    central bank's income remitted monthly, overdue claims counted; the money family now holds the issuers' own record
+    of their money by class to the accounts. LC-1-27 reads it.
+  - f: every death is recorded with the process that took the person and where what it held and owed went — its
+    household, its household's estate, or nothing held — and each estate standing after it paid names why (its goods
+    wait for their liquidation, S2.04). LC-0-53 reads them. Not yet run.
   - The live checks on the core (120 days, 150,000 persons, seed 1): 47 pass — the turns (LC-0-02), the map (LC-0-11,
     LC-0-12), the audit families (LC-0-09, LC-0-18, LC-0-20, LC-0-27, LC-0-52, LC-1-13, LC-1-35), settlement and its
     records (LC-0-22, LC-0-26, LC-0-55, LC-0-62, LC-0-64, LC-0-65), day one (LC-0-23, LC-0-51, LC-1-40), liveness and
