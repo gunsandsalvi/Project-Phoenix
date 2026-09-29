@@ -671,7 +671,7 @@ pub fn phx_core::goods::UnitIds::held(&self, u16) -> core::option::Option<phx_co
 pub fn phx_core::goods::UnitIds::is_empty(&self) -> bool
 pub fn phx_core::goods::UnitIds::len(&self) -> usize
 pub fn phx_core::goods::UnitIds::unit(&mut self, phx_core::goods::Held) -> u16
-impl phx_store::save::Saved for phx_core::goods::UnitIds where alloc::vec::Vec<phx_core::goods::Held>: phx_store::save::Saved, alloc::vec::Vec<(phx_core::goods::Held, u16)>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::goods::UnitIds where alloc::vec::Vec<phx_core::goods::Held>: phx_store::save::Saved, alloc::vec::Vec<(phx_core::goods::Held, u16)>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<core::option::Option<u16>>>: core::default::Default, usize: core::default::Default
 pub fn phx_core::goods::UnitIds::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::goods::UnitIds::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_core::goods::NATURE: phx_id::ids::PartyKey

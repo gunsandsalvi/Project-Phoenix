@@ -92,6 +92,37 @@ fn by_product_of(wants: &[(u16, Buyer)]) -> (Vec<usize>, Vec<Buyer>) {
     (starts, grouped.into_iter().flatten().collect())
 }
 
+/// Each product's least price a unit at each region, read at its place: by region, then product.
+#[derive(Debug, Default, phx_macros::Saved)]
+pub struct Cheapest {
+    by: Vec<Vec<Option<f64>>>,
+}
+
+impl Cheapest {
+    #[must_use]
+    pub fn get(&self, product: u16, region: u32) -> Option<f64> {
+        self.by.get(usize::try_from(region).ok()?)?.get(usize::from(product)).copied().flatten()
+    }
+
+    /// A price a unit offered for a product at a region, kept where it is the least so far.
+    fn offer(&mut self, product: u16, region: u32, unit: f64) {
+        let (Ok(r), p) = (usize::try_from(region), usize::from(product)) else { return };
+        if self.by.len() <= r {
+            self.by.resize_with(r + 1, Vec::new);
+        }
+        let Some(row) = self.by.get_mut(r) else { return };
+        if row.len() <= p {
+            row.resize(p + 1, None);
+        }
+        if let Some(at) = row.get_mut(p) {
+            *at = Some(match *at {
+                Some(least) if least <= unit => least,
+                _ => unit,
+            });
+        }
+    }
+}
+
 impl GoodsDay {
     /// The goods' day in counts, for the bench's trace.
     pub(crate) fn note(&self) {
@@ -144,9 +175,11 @@ pub struct CoreGoods {
     /// Each product's yearly rate of loss in stock, and the days between two realisations of it.
     pub spoil_rates: Vec<f64>,
     pub spoil_days: u32,
-    /// Each product's lot, the units its price is posted for; and each country's stored inputs a unit of each product.
+    /// Each product's lot, the units its price is posted for; and each country's stored inputs a unit of each product,
+    /// and the services it uses.
     pub lots: Vec<f64>,
     pub recipes: Vec<Vec<Vec<(u16, f64)>>>,
+    pub service_recipes: Vec<Vec<Vec<(u16, f64)>>>,
     /// Each country's GDP, and over it, by country, each product's purchases by the state — its collective consumption
     /// and what public administration's making uses — and its fixed investment.
     pub gdp: Vec<f64>,
@@ -158,7 +191,7 @@ pub struct CoreGoods {
     pub meeting: Meeting,
     pub days: Vec<GoodsDay>,
     /// Each product's least posted price a unit at each region, as the day opened.
-    pub cheapest: BTreeMap<(u16, u32), f64>,
+    pub cheapest: Cheapest,
     /// Each product's sales at each region today, what they paid and their units; and its mark, the price a lot its
     /// last day of sales there paid on average.
     pub traded: BTreeMap<(u16, u32), (i128, i128)>,
@@ -316,17 +349,12 @@ impl Core {
 
     /// The services a unit of a firm's output uses, its own among them, as its country's way gives them: made as they
     /// are sold, they are bought as they are used, never held.
-    fn services(&self, f: &Firm) -> Vec<(u16, f64)> {
-        let Some(ways) = self.goods.inputs.get(f.country) else { return Vec::new() };
-        (0_u16..)
-            .zip(ways)
-            .filter(|(q, _)| !self.is_stored(*q))
-            .filter_map(|(q, row)| row.get(usize::from(f.product)).copied().filter(|a| *a > 0.0).map(|a| (q, a)))
-            .collect()
+    fn services(&self, f: &Firm) -> &[(u16, f64)] {
+        self.goods.service_recipes.get(f.country).and_then(|c| c.get(usize::from(f.product))).map_or(&[], Vec::as_slice)
     }
 
-    /// Each country's stored inputs a unit of each product.
-    fn recipes(&self) -> Vec<Vec<Vec<(u16, f64)>>> {
+    /// Each country's inputs a unit of each product, those stored or the services.
+    fn recipes(&self, stored: bool) -> Vec<Vec<Vec<(u16, f64)>>> {
         self.goods
             .inputs
             .iter()
@@ -336,7 +364,7 @@ impl Core {
                     .map(|p| {
                         (0_u16..)
                             .zip(ways)
-                            .filter(|(q, _)| self.is_stored(*q))
+                            .filter(|(q, _)| self.is_stored(*q) == stored)
                             .filter_map(|(q, row)| row.get(p).copied().filter(|a| *a > 0.0).map(|a| (q, a)))
                             .collect()
                     })
@@ -402,7 +430,8 @@ impl Core {
         }
         goods.region_share = self.region_shares(ctx.regions);
         self.goods = goods;
-        self.goods.recipes = self.recipes();
+        self.goods.recipes = self.recipes(true);
+        self.goods.service_recipes = self.recipes(false);
         self.open_markups(ctx, firm, &prices);
         self.open_expected(ctx, firm, today);
         self.open_stocks(ctx.regions, firm, &prices, today);
@@ -745,9 +774,7 @@ impl Core {
     /// uses of itself; its stock's cost, which mixes units it bought at others' prices, is not its cost of making.
     /// None known while its staff make nothing, or an input it uses is neither held nor sold in its region.
     pub(crate) fn unit_cost(&self, f: &Firm) -> Option<f64> {
-        self.cost_at(f, &|q| {
-            self.average_cost(f.key, q, f.region).or_else(|| self.goods.cheapest.get(&(q, f.region)).copied())
-        })
+        self.cost_at(f, &|q| self.average_cost(f.key, q, f.region).or_else(|| self.goods.cheapest.get(q, f.region)))
     }
 
     /// A firm's cost of making a unit now, by its place.
@@ -766,7 +793,7 @@ impl Core {
                 inputs += a * input_cost(q)?;
             }
         }
-        for (q, a) in self.services(f) {
+        for &(q, a) in self.services(f) {
             if q == f.product {
                 own = a;
             } else if let Some(c) = input_cost(q) {
@@ -1037,16 +1064,14 @@ impl Core {
 
     /// Each product's least price a unit at each region among the sellers that can sell it: those holding it, and
     /// every provider of a service, which is made as it sells. A price no one can buy at is no cost.
-    fn cheapest(&self, ctx: &GoodsCtx<'_>) -> BTreeMap<(u16, u32), f64> {
-        let mut out: BTreeMap<(u16, u32), f64> = BTreeMap::new();
+    fn cheapest(&self, ctx: &GoodsCtx<'_>) -> Cheapest {
+        let mut out = Cheapest::default();
         let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return out };
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
             let offers = !self.is_stored(f.product) || self.free_units(f.key, f.product, f.region) > 0;
             if f.price > 0 && offers {
-                let unit = from_i64(f.price) / self.lot(f.product);
-                let e = out.entry((f.product, f.region)).or_insert(unit);
-                *e = if unit < *e { unit } else { *e };
+                out.offer(f.product, f.region, from_i64(f.price) / self.lot(f.product));
             }
         }
         out
@@ -1080,7 +1105,7 @@ impl Core {
         let free = from_i64(money - self.owed_until(f.key, (day, next), ctx.calendar));
         let mut inputs: Vec<(u16, InputLine)> = Vec::new();
         for (q, a) in self.stored_inputs(&f).into_iter().filter(|(q, _)| *q != f.product) {
-            let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
+            let Some(per_unit) = self.goods.cheapest.get(q, f.region) else { continue };
             let worth = per_unit + margin / a;
             let Some(limit) = floor_to_i64(worth * self.lot(q)) else { continue };
             let held = from_i64(self.free_units(f.key, q, f.region));
@@ -1147,8 +1172,8 @@ impl Core {
             let Some(f) = self.goods_firm(ctx.regions, firm, key.slot()).filter(|f| f.key == key) else { continue };
             let Some(cost) = self.unit_cost(&f) else { continue };
             let margin = from_i64(f.price) / self.lot(f.product) - cost;
-            for (q, a) in self.services(&f).into_iter().filter(|(q, _)| *q != f.product) {
-                let Some(per_unit) = self.goods.cheapest.get(&(q, f.region)).copied() else { continue };
+            for (q, a) in self.services(&f).iter().copied().filter(|(q, _)| *q != f.product) {
+                let Some(per_unit) = self.goods.cheapest.get(q, f.region) else { continue };
                 let Some(limit) = floor_to_i64((per_unit + margin / a) * self.lot(q)) else { continue };
                 let used = whole_units(from_i64(units) * a);
                 if used > 0 && limit > 0 {

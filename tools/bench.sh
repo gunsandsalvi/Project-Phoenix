@@ -103,8 +103,16 @@ wait "$tailer" 2>/dev/null || true
 if [[ -n $watchdog ]]; then kill "$watchdog" 2>/dev/null || true; fi
 trap - INT TERM
 if [[ -n $perf && -f $out/perf.data ]]; then
-    "$perf" report -i "$out/perf.data" --stdio --no-children --sort symbol --percent-limit 0.2 2>/dev/null \
-        | grep -v '^#' | grep -v '^$' > "$out/profile.txt" || true
+    # The days apart from the opening: the sampler's window from where the trace's opening ended.
+    opened=$(awk '/< open [0-9.]+ ms/ { sub("s", "", $1); print $1; exit }' "$out/run.log")
+    window=""
+    if [[ -n $opened ]]; then window="--time $(echo "100 * $opened / $ran" | bc -l | cut -c1-6)%-100%"; fi
+    for part in all days; do
+        span=$([[ $part == days ]] && echo "$window" || echo "")
+        # shellcheck disable=SC2086
+        "$perf" report -i "$out/perf.data" --stdio --no-children --sort symbol --percent-limit 0.2 $span 2>/dev/null \
+            | grep -v '^#' | grep -v '^$' | awk '{ print $1, $3 }' > "$out/profile-$part.txt" || true
+    done
 fi
 
 commit="$(git rev-parse --short=12 HEAD)"
@@ -224,11 +232,32 @@ if kinds:
 if r:
     print(f"findings: {r.get('findings')}; checks: " + ", ".join(
         f"{c.get('id', '?')} {c.get('verdict', c.get('status', '?'))}" for c in (r.get("checks") or [])[:40]))
-profile = os.path.join(out, "profile.txt")
-if os.path.exists(profile):
-    print("where the time went, by function (the sampler's share of the whole run):")
-    for text in open(profile).read().splitlines()[:40]:
-        print(f"  {text.strip()}")
+def demangled(symbol):
+    # A Rust symbol's path read from its mangling: each name is its length then its letters; hashes and closures go.
+    if not symbol.startswith("_R"):
+        return symbol
+    names, i = [], 2
+    while i < len(symbol):
+        if symbol[i].isdigit():
+            j = i
+            while j < len(symbol) and symbol[j].isdigit():
+                j += 1
+            n = int(symbol[i:j])
+            name = symbol[j:j + n].lstrip("_")
+            if name and not name.startswith("Cs") and len(name) > 1:
+                names.append(name)
+            i = j + n
+        else:
+            i += 1
+    return "::".join(n for n in names if not n.startswith("llvm"))
+
+for part, what in (("days", "the days apart from the opening"), ("all", "the whole run, the opening with it")):
+    path = os.path.join(out, f"profile-{part}.txt")
+    if os.path.exists(path):
+        print(f"where the time went, by function ({what}, the sampler's share):")
+        for text in open(path).read().splitlines()[:45]:
+            share, _, symbol = text.partition(" ")
+            print(f"  {share:>7} {demangled(symbol)}")
 print("the log's last lines:")
 for text in log[-12:]:
     print(f"  {text}")

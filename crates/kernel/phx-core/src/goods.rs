@@ -43,11 +43,54 @@ pub enum Held {
 pub struct UnitIds {
     named: Vec<Held>,
     sorted: Vec<(Held, u16)>,
+    /// The units of the goods of the first grade, by zone then product: the lookup the day makes most, read at a
+    /// place rather than searched for; kept as units are issued, and made again from `named` after a load.
+    #[saved(skip)]
+    plain: Vec<Vec<Option<u16>>>,
+    #[saved(skip)]
+    plain_upto: usize,
 }
 
 impl UnitIds {
+    /// A good of the first grade's unit, where it has been named and indexed.
+    fn plain_of(&self, held: Held) -> Option<u16> {
+        match held {
+            Held::Good(Good { product, grade: 0, zone }) => {
+                self.plain.get(usize::try_from(zone).ok()?)?.get(usize::from(product)).copied().flatten()
+            }
+            _ => None,
+        }
+    }
+
+    /// The units named since the index was last kept, indexed.
+    fn index_plain(&mut self) {
+        while let Some(held) = self.named.get(self.plain_upto).copied() {
+            if let (Held::Good(Good { product, grade: 0, zone }), Ok(unit)) = (held, u16::try_from(self.plain_upto))
+                && let Ok(z) = usize::try_from(zone)
+            {
+                if self.plain.len() <= z {
+                    self.plain.resize_with(z + 1, Vec::new);
+                }
+                if let Some(by_product) = self.plain.get_mut(z) {
+                    let p = usize::from(product);
+                    if by_product.len() <= p {
+                        by_product.resize(p + 1, None);
+                    }
+                    if let Some(at) = by_product.get_mut(p) {
+                        *at = Some(unit);
+                    }
+                }
+            }
+            self.plain_upto += 1;
+        }
+    }
+
     /// The unit of what is held, issued now if it has none.
     pub fn unit(&mut self, held: Held) -> u16 {
+        self.index_plain();
+        if let Some(unit) = self.plain_of(held) {
+            return unit;
+        }
         match self.sorted.binary_search_by_key(&held, |(h, _)| *h) {
             Ok(at) => {
                 self.sorted.get(at).map_or_else(|| violation!(clause = "GDS.1", "a unit found and gone"), |x| x.1)
@@ -68,6 +111,9 @@ impl UnitIds {
     /// The unit of what is held, if it has been named.
     #[must_use]
     pub fn find(&self, held: Held) -> Option<u16> {
+        if let Some(unit) = self.plain_of(held) {
+            return Some(unit);
+        }
         let at = self.sorted.binary_search_by_key(&held, |(h, _)| *h).ok()?;
         self.sorted.get(at).map(|x| x.1)
     }
