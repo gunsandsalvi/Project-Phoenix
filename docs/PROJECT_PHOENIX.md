@@ -2822,7 +2822,8 @@ through costs to prices.
 
 - **ENE.8 PROCESS** — **The wholesale market** meets **every day**, for delivery the next day, as one call auction
   (MKT.3) across all regions of a grid, in declared **blocks** (peak and off-peak are two products delivered on the
-  same day), finding a price per region subject to the lines' capacities: where no line binds, regions share a
+  same day), finding a price per region subject to the lines' capacities, each line carrying up to its capacity between the two
+  regions it joins (a transport model): where no line binds, regions share a
   price, and a congested line leaves two regions with two prices. The order in which plants run is an outcome of
   their offers; the price is negative when output that cannot stop exceeds demand. Trades made on non-business days
   settle on the next business day.
