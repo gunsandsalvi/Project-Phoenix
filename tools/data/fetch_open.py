@@ -126,7 +126,7 @@ def ember(cache: Path, iso3: set) -> tuple:
                 "title": f"Electricity by economy and year {FIRST}-{LAST}: capacity (GW), generation (TWh) and "
                          "power-sector emissions (MtCO2) by fuel, with total generation, emissions, demand (TWh) and "
                          "net imports (TWh) in the total column; WLD is the world; Ember yearly electricity data",
-                "rows": n, "for": ["S2.09"]}})
+                "rows": n, "for": ["S2.203", "S2.216"]}})
 
 
 def gppd(cache: Path, iso3: set) -> tuple:
@@ -147,7 +147,7 @@ def gppd(cache: Path, iso3: set) -> tuple:
                 "title": "Power plants of 1 MW and more by economy: primary and first other fuel, capacity (MW), "
                          "commissioning year (capacity-weighted mean year of the units, fractional), year of the "
                          "capacity data, reported 2019 generation (GWh, where published); WRI Global Power Plant "
-                         "Database v1.3", "rows": n, "for": ["S2.09"]}})
+                         "Database v1.3", "rows": n, "for": ["S2.203"]}})
 
 
 def atb(cache: Path, iso3: set) -> tuple:
@@ -170,7 +170,7 @@ def atb(cache: Path, iso3: set) -> tuple:
                          "$/kW), fixed O&M ($/kW-yr), variable O&M ($/MWh), heat rate (MMBtu/MWh), capacity factor, "
                          "fuel cost ($/MWh); the 2020 edition's 2019 values (2018 dollars) and the 2023 edition's "
                          "2021 values (2021 dollars), moderate scenario, market case, 30-year cost recovery; NREL ATB",
-                "rows": n, "for": ["S2.09"]}})
+                "rows": n, "for": ["S2.202", "S2.212"]}})
 
 
 def typed_energy(cache: Path, iso3: set) -> tuple:
@@ -195,7 +195,7 @@ def typed_energy(cache: Path, iso3: set) -> tuple:
         with path.open() as f:
             n = sum(1 for _ in f) - 1
         series[f"open/{name}"] = {
-            "title": title, "rows": n, "for": ["S2.09"],
+            "title": title, "rows": n, "for": ["S2.202", "S2.212"],
             "note": "typed: the tables were read from the report's PDF (downloaded "
                     f"{TODAY}) with a table extractor and checked by eye against the page; values as printed, "
                     "footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' "
@@ -218,7 +218,7 @@ def wb_series(cache: Path, iso3: set) -> tuple:
         path = RAW / "wb" / f"{code}.csv"
         n = table(path, ["iso3", "year", "value"], rows)
         series[f"wb/{code}"] = {"title": f"{title}, World Bank WDI", "rows": n,
-                                "for": ["S2.09"] if code.startswith("EG.") else ["S5.05"]}
+                                "for": ["S2.206", "S2.210"] if code.startswith("EG.") else ["S5.174"]}
     return ({"wb_open": {"title": "World Bank API, WDI (source 2): electricity and tariff series",
                          "url": WB_API.format(code="<series>", first=FIRST, last=LAST), "fetched": TODAY}}, series)
 
@@ -245,7 +245,7 @@ def wits(cache: Path, iso3: set) -> tuple:
                          "of processing SoP1 raw, SoP2 intermediate, SoP3 consumer, SoP4 capital goods, WITS "
                          f"groups and Total), %, {WITS_YEARS[0]}-{WITS_YEARS[-1]}: effectively applied, weighted and "
                          "simple means, and MFN weighted mean, against the world; WITS/TRAINS",
-                "rows": n, "for": ["S5.05"]}})
+                "rows": n, "for": ["S5.174"]}})
 
 
 def icio(cache: Path, iso3: set) -> tuple:
@@ -300,11 +300,11 @@ def icio(cache: Path, iso3: set) -> tuple:
                 "title": f"Imports by economy, product industry (ICIO's 45) and origin's development level, "
                          f"{SNAPSHOT}, millions of US dollars, by use: intermediate (all industries), households "
                          "(with purchases abroad), NPISH, government, fixed investment, inventories; OECD ICIO",
-                "rows": n_imports, "for": ["S5.05"], "note": note},
+                "rows": n_imports, "for": ["S5.100", "S5.186"], "note": note},
              "open/icio_exports_by_level": {
                  "title": f"Exports by economy, product industry and destination's development level, {SNAPSHOT}, "
                           "millions of US dollars, intermediate and final use; OECD ICIO",
-                 "rows": n_exports, "for": ["S5.05"], "note": note}})
+                 "rows": n_exports, "for": ["S5.100", "S5.186"], "note": note}})
 
 
 def fkrsu(cache: Path, iso3: set) -> tuple:
@@ -330,7 +330,7 @@ def fkrsu(cache: Path, iso3: set) -> tuple:
                          "and transaction (plbn purchase locally by non-residents, siln sale or issue locally by "
                          "non-residents, pabr purchase abroad by residents, siar sale or issue abroad by residents); "
                          "Fernández et al. (2016), IMF Economic Review 64(3), 2021 update",
-                "rows": n, "for": ["S5.05"]}})
+                "rows": n, "for": ["S5.174"]}})
 
 
 def stata(data: bytes) -> list:
@@ -380,7 +380,7 @@ def boz(cache: Path, iso3: set) -> tuple:
             {"open/invoicing_currency": {
                 "title": "Shares of exports and imports invoiced in US dollars, euros, the home currency, other "
                          "currencies and unclassified (%), by economy and year 2010-2019; Boz et al. (2022)",
-                "rows": n, "for": ["S5.05"]}})
+                "rows": n, "for": ["S5.100", "S5.186"]}})
 
 
 def oecd_sti(cache: Path, name: str, flow: str, key: str, first: int, last: int) -> list:
@@ -416,7 +416,7 @@ def mining(cache: Path, iso3: set) -> tuple:
                          "US dollars (TiVA 2025), employment (EMPN, persons) and labour compensation (LABR, US "
                          "dollars, and PT_VA as a percentage of value added) (TiM 2025); value times 10^unit_mult; "
                          "OECD",
-                "rows": n, "for": ["S1.02", "S2.09"]}})
+                "rows": n, "for": ["S1.02", "S1.436"]}})
 
 
 def seven_zip(data: bytes) -> dict:
@@ -571,7 +571,7 @@ def maritime(cache: Path, iso3: set) -> tuple:
         "open/port_calls": {"title": "Port calls by economy and market segment, 2018-2021: number of calls, median "
                                      "time in port (days), average vessel age (years), size (GT), cargo capacity "
                                      "(dwt), container capacity (TEU); UNCTADstat (from AIS)",
-                            "rows": n_port, "for": ["S1.07", "S5.05"]},
+                            "rows": n_port, "for": ["S1.07", "S5.174"]},
         "open/merchant_fleet": {"title": f"Merchant fleet by flag of registration and ship type, {SNAPSHOT - 1}-"
                                          f"{SNAPSHOT + 1}: ships, deadweight and gross tonnage (thousands), average "
                                          "age (years); WLD the world; UNCTADstat",
@@ -589,7 +589,7 @@ def maritime(cache: Path, iso3: set) -> tuple:
                      "match type, average deadweight, main engine power (kW), design speed, days at sea, days on "
                      "international voyages, days in SECAs, speed at sea (kn), distance (nm), median AER, fuel "
                      "(kt: main, auxiliary, boiler), GHG and CO2 (Mt); Fourth IMO GHG Study 2020, Table 35",
-            "rows": sum(1 for _ in (OUT / "typed_imo4ghg_fleet_2018.csv").open()) - 1, "for": ["S1.07", "S5.05"],
+            "rows": sum(1 for _ in (OUT / "typed_imo4ghg_fleet_2018.csv").open()) - 1, "for": ["S1.07", "S1.465"],
             "note": "typed: Table 35 (pp. 99-101 of the report, PDF pp. 127-129) read with a table extractor from the "
                     "full report and annexes PDF downloaded from GreenVoyage2050 and checked by eye; IMO (2020), "
                     "Fourth IMO Greenhouse Gas Study 2020, London"},

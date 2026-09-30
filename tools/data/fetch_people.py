@@ -142,7 +142,7 @@ def ilo(cache: Path, iso3: set) -> tuple:
         "advanced, not stated, total), local currency, both sexes, 2015-2025 (DF_EAR_EMTA_SEX_EDU_NB), ILOSTAT",
         ["iso3", "year", "education", "value", "source"],
         [(r["iso3"], r["year"], r["EDU"][len("EDU_AGGREGATE_"):], r["OBS_VALUE"], r["source"])
-         for r in rows if r["EDU"].startswith("EDU_AGGREGATE_")], ["S6.02"])
+         for r in rows if r["EDU"].startswith("EDU_AGGREGATE_")], ["S6.114"])
 
     union = []
     for flow, measure in (("DF_ILR_CBCT_NOC_RT", "coverage"), ("DF_ILR_TUMT_NOC_RT", "density")):
@@ -150,14 +150,14 @@ def ilo(cache: Path, iso3: set) -> tuple:
                   for r in ilo_rows(cache, flow, "all", iso3)]
     put("unions", "Collective bargaining coverage rate and trade union density rate, % of employees, 2015-2025 "
         "(DF_ILR_CBCT_NOC_RT, DF_ILR_TUMT_NOC_RT), ILOSTAT", ["iso3", "year", "measure", "value", "source"], union,
-        ["S1.15", "S2.10"])
+        ["S2.214"])
 
     rows = ilo_rows(cache, "DF_EMP_TEMP_SEX_INS_NB", ".A..SEX_T.", iso3)
     put("employment_by_sector",
         "Employment by institutional sector (PUB public, PRI private, TOTAL), thousands, both sexes, 2015-2025 "
         "(DF_EMP_TEMP_SEX_INS_NB), ILOSTAT", ["iso3", "year", "sector", "employed", "source"],
         [(r["iso3"], r["year"], r["INS"][len("INS_SECTOR_"):], r["OBS_VALUE"], r["source"]) for r in rows],
-        ["S1.15", "S5.02"])
+        ["S5.122"])
 
     rows = snapshot([r for r in ilo_rows(cache, "DF_EMP_TEMP_SEX_ECO_INS_NB", ".A..SEX_T..", iso3)
                      if r["ECO"].startswith("ECO_ISIC4_")])
@@ -166,7 +166,7 @@ def ilo(cache: Path, iso3: set) -> tuple:
         "survey per economy nearest 2019 (DF_EMP_TEMP_SEX_ECO_INS_NB), ILOSTAT",
         ["iso3", "year", "activity", "sector", "employed", "source"],
         [(r["iso3"], r["year"], r["ECO"][len("ECO_ISIC4_"):], r["INS"][len("INS_SECTOR_"):], r["OBS_VALUE"],
-          r["source"]) for r in rows], ["S1.15", "S5.02"])
+          r["source"]) for r in rows], ["S5.122"])
 
     rows = snapshot([r for r in ilo_rows(cache, "DF_EMP_TEMP_SEX_EC2_NB", ".A..SEX_T.", iso3)
                      if r["EC2"].startswith("EC2_ISIC4_")])
@@ -185,7 +185,7 @@ def ilo(cache: Path, iso3: set) -> tuple:
     put("injuries", "Occupational injuries per 100 000 workers in the reference group, fatal and non-fatal, by ISIC "
         "Rev. 4 section (TOTAL all activities), 2015-2025, one source per economy-year (DF_INJ_FATL_ECO_RT, "
         "DF_INJ_NFTL_ECO_RT), ILOSTAT",
-        ["iso3", "year", "measure", "activity", "rate", "source"], injuries, ["S4.03"])
+        ["iso3", "year", "measure", "activity", "rate", "source"], injuries, ["S4.134"])
 
     cases = {(r["iso3"], r["year"], r["source"]): r["OBS_VALUE"]
              for r in ilo_rows(cache, "DF_INJ_NFTL_ECO_NB", "all", iso3) if r["ECO"] == "ECO_ISIC4_TOTAL"}
@@ -195,7 +195,7 @@ def ilo(cache: Path, iso3: set) -> tuple:
                                  if r["ECO"] == "ECO_ISIC4_TOTAL" and (r["iso3"], r["year"], r["source"]) in cases])]
     put("injury_days", "Cases of non-fatal occupational injury and days lost to those with temporary incapacity, all "
         "activities, 2015-2025 (DF_INJ_NFTL_ECO_NB, DF_INJ_DAYS_ECO_NB), ILOSTAT",
-        ["iso3", "year", "cases", "days_lost", "source"], days, ["S4.03"])
+        ["iso3", "year", "cases", "days_lost", "source"], days, ["S4.134"])
 
     rows = one_source(ilo_rows(cache, "DF_UNE_TUNE_SEX_AGE_DUR_NB", ".A..SEX_T.AGE_YTHADULT_YGE15.", iso3))
     put("unemployment_by_duration",
@@ -231,7 +231,7 @@ def oecd(cache: Path, iso3: set) -> tuple:
         "title": "Employment in general government, % of total employment, all years published, Government at a "
                  "Glance 2025 (DSD_GOV@DF_GOV_EMPPS_REP_2025, EMPG), OECD",
         "rows": table(RAW / "oecd" / "government_employment.csv", ["iso3", "year", "share"], rows),
-        "for": ["S1.15", "S5.02"]}
+        "for": ["S5.122"]}
     union = []
     for flow in ("DF_TUD", "DF_CBC"):
         union += [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["MEASURE"], r["OBS_VALUE"])
@@ -257,26 +257,26 @@ def oecd(cache: Path, iso3: set) -> tuple:
 # World Bank -----------------------------------------------------------------------------------------------------
 
 WDI = {
-    "SE.PRE.ENRR": (["S6.02"], "School enrolment, pre-primary, % gross"),
+    "SE.PRE.ENRR": (["S6.127"], "School enrolment, pre-primary, % gross"),
     "SE.PRM.ENRR": (["S6.02"], "School enrolment, primary, % gross"),
     "SE.SEC.ENRR": (["S6.02"], "School enrolment, secondary, % gross"),
     "SE.TER.ENRR": (["S6.02"], "School enrolment, tertiary, % gross"),
     "SE.COM.DURS": (["S6.02"], "Compulsory education, duration, years"),
-    "SE.PRE.DURS": (["S6.02"], "Pre-primary education, duration, years"),
+    "SE.PRE.DURS": (["S6.114"], "Pre-primary education, duration, years"),
     "SE.PRM.DURS": (["S6.02"], "Primary education, duration, years"),
     "SE.SEC.DURS": (["S6.02"], "Secondary education, duration, years"),
     "SE.PRM.AGES": (["S6.02"], "Primary school starting age, years"),
     "SE.SEC.AGES": (["S6.02"], "Lower secondary school starting age, years"),
-    "SE.PRE.ENRL.TC.ZS": (["S5.02", "S6.02"], "Pupil-teacher ratio, pre-primary"),
-    "SE.PRM.ENRL.TC.ZS": (["S5.02", "S6.02"], "Pupil-teacher ratio, primary"),
-    "SE.SEC.ENRL.TC.ZS": (["S5.02", "S6.02"], "Pupil-teacher ratio, secondary"),
-    "SE.TER.ENRL.TC.ZS": (["S5.02", "S6.02"], "Pupil-teacher ratio, tertiary"),
-    "HD.HCI.HLOS": (["S6.02"], "Harmonized test scores (Human Capital Index), 300 minimal to 625 advanced"),
-    "BX.TRF.PWKR.DT.GD.ZS": (["S5.05"], "Personal remittances, received, % of GDP"),
-    "BX.TRF.PWKR.CD.DT": (["S5.05"], "Personal remittances, received, current US$"),
-    "BM.TRF.PWKR.CD.DT": (["S5.05"], "Personal remittances, paid, current US$"),
-    "SM.POP.TOTL.ZS": (["S5.05"], "International migrant stock, % of population"),
-    "SM.POP.NETM": (["S5.05", "S6.02"], "Net migration, persons"),
+    "SE.PRE.ENRL.TC.ZS": (["S5.122"], "Pupil-teacher ratio, pre-primary"),
+    "SE.PRM.ENRL.TC.ZS": (["S5.122"], "Pupil-teacher ratio, primary"),
+    "SE.SEC.ENRL.TC.ZS": (["S5.122"], "Pupil-teacher ratio, secondary"),
+    "SE.TER.ENRL.TC.ZS": (["S5.122"], "Pupil-teacher ratio, tertiary"),
+    "HD.HCI.HLOS": (["S6.114"], "Harmonized test scores (Human Capital Index), 300 minimal to 625 advanced"),
+    "BX.TRF.PWKR.DT.GD.ZS": (["S5.100"], "Personal remittances, received, % of GDP"),
+    "BX.TRF.PWKR.CD.DT": (["S5.100"], "Personal remittances, received, current US$"),
+    "BM.TRF.PWKR.CD.DT": (["S5.100"], "Personal remittances, paid, current US$"),
+    "SM.POP.TOTL.ZS": (["S5.100"], "International migrant stock, % of population"),
+    "SM.POP.NETM": (["S5.100", "S6.100"], "Net migration, persons"),
 }
 
 
@@ -476,7 +476,7 @@ def expectations(cache: Path, iso3: set) -> tuple:
                  "years ahead, the one-year density's median and interquartile range, probabilities of higher US "
                  "unemployment and of losing one's job (%), survey weight, age, household income and education "
                  "groups (gzip CSV)",
-        "rows": len(micro), "for": ["S1.15", "S1.24"]}
+        "rows": len(micro), "for": ["S1.455"]}
     series["people/ces_expectations"] = {
         "title": "ECB Consumer Expectations Survey, monthly from 2020-04: inflation expectations 12 months (C1120) and "
                  "3 years ahead (C1220), probabilistic 12-month mean and uncertainty (C1150_EXP, C1150_UNCERT), "
@@ -516,7 +516,7 @@ def expectations(cache: Path, iso3: set) -> tuple:
                 "economy's 2015-2019 mean CPI inflation (wdi/FP.CPI.TOTL.ZG, economies with all five years) less the "
                 "US's; mean, median, p25 and p75 are shifted by it, the standard deviation is kept",
         "rows": table(people / "expectations_by_level.csv", ["level", "group", "stat", "value", "us_value", "shift"],
-                      derived), "for": ["S1.15"]}
+                      derived), "for": ["S1.456"]}
     sources = {
         "people_sca": {"title": "University of Michigan, Surveys of Consumers, demographic subgroups subset", "url": SCA,
                        "fetched": TODAY},
@@ -571,13 +571,13 @@ def migration(cache: Path, iso3: set) -> tuple:
             "title": "International migrant stock by country of destination and origin (WLD = all), persons, mid-2015, "
                      "2020 and 2024, UN DESA International Migrant Stock 2024, via Our World in Data's catalogue",
             "rows": table(RAW / "people" / "migrant_stock_bilateral.csv", ["destination", "origin", "year", "migrants"],
-                          rows), "for": ["S5.05", "S6.02"]},
+                          rows), "for": ["S5.100", "S5.174"]},
         "people/remittances_bilateral": {
             "title": "Bilateral remittance flows, sending economy to receiving economy (WLD = all), current US$, 2021, "
                      "World Bank/KNOMAD bilateral remittance matrix (estimated from migrant stocks and incomes), via "
                      "Our World in Data's catalogue",
             "rows": table(RAW / "people" / "remittances_bilateral.csv", ["sender", "receiver", "year", "usd"], rrows),
-            "for": ["S5.05"]},
+            "for": ["S5.100", "S5.174"]},
     }
     sources = {"people_owid": {"title": "Our World in Data ETL catalogue (garden tables: UN DESA migrant stock 2024, "
                                         "KNOMAD bilateral remittances, OECD Family Database, regions)",
@@ -622,7 +622,7 @@ def demography(cache: Path, iso3: set) -> tuple:
         "title": "Crude marriage and divorce rates, per 1 000 people, 2015-2025, OECD Family Database (SF3.1), via Our "
                  "World in Data's catalogue",
         "rows": table(RAW / "people" / "marriage_divorce.csv", ["iso3", "year", "indicator", "per_1000"], rows),
-        "for": ["S6.02"]}
+        "for": ["S6.114"]}
 
     dhs_iso = {c["DHS_CountryCode"]: c["ISO3_CountryCode"] for c in json.loads(cached(
         cache, "dhs_countries.json", DHS + "countries?f=json").read_text())["Data"]}
@@ -640,7 +640,7 @@ def demography(cache: Path, iso3: set) -> tuple:
                  "arrangements), current marital status of women and men 15-49, ideal number of children; "
                  "indicators: " + "; ".join(f"{k} {v}" for k, v in DHS_INDICATORS.items()) + "; DHS Program API",
         "rows": table(RAW / "people" / "dhs_indicators.csv", ["iso3", "year", "survey", "indicator", "value"], rows),
-        "for": ["S6.02", "S1.23"]}
+        "for": ["S1.23", "S1.403"]}
 
     piaac = []
     of2 = {**iso3_of_iso2(), "BE-VLG": "BEL", "GB-ENG": "GBR"}
@@ -656,7 +656,7 @@ def demography(cache: Path, iso3: set) -> tuple:
                  "Flanders, the United Kingdom England), OECD results republished by the Irish CSO (PxStat PIAAC01, "
                  "PIAAC02)",
         "rows": table(RAW / "people" / "piaac_2023.csv", ["iso3", "area", "statistic", "unit", "value"], piaac),
-        "for": ["S6.02"]}
+        "for": ["S6.114"]}
 
     tenure = []
     for r in csv.DictReader(io.StringIO(cached(cache, "dls_tenure.tab", DLS).read_text()), delimiter="\t"):
@@ -670,7 +670,7 @@ def demography(cache: Path, iso3: set) -> tuple:
                  "rotating-panel labour force surveys, Donovan, Lu and Schoellman (2023, QJE), replication data "
                  "doi:10.7910/DVN/RXWKTV (Tenure_Transitions)",
         "rows": table(RAW / "people" / "tenure_dls.csv", ["iso3", "year", "tenure_band", "to_state", "share", "rate"],
-                      tenure), "for": ["S6.05", "S1.24"]}
+                      tenure), "for": ["S1.411"]}
     sources = {
         "people_dhs": {"title": "DHS Program API", "url": DHS + "data?indicatorIds=<ids>", "fetched": TODAY},
         "people_piaac": {"title": "CSO Ireland PxStat, PIAAC 2023 international comparison tables",
@@ -794,7 +794,7 @@ def typed(cache: Path, iso3: set) -> tuple:
                     "left missing",
             "rows": table(RAW / "people" / "typed_returns_to_schooling.csv",
                           ["iso3", "year", "return_per_year", "primary", "secondary", "tertiary"], returns),
-            "for": ["S6.02"]},
+            "for": ["S6.114"]},
         "people/typed_internal_migration": {
             "title": "Five-year crude internal migration intensity, % of the population aged 15 and over who changed "
                      "major (or minor) administrative region over five years, in total and by education (less than "
@@ -806,7 +806,7 @@ def typed(cache: Path, iso3: set) -> tuple:
             "rows": table(RAW / "people" / "typed_internal_migration.csv",
                           ["iso3", "census_year", "regions", "total", "less_than_primary", "primary", "secondary",
                            "university"], internal),
-            "for": ["S6.02"]},
+            "for": ["S6.100"]},
     }
     sources = {"people_typed": {"title": "World Bank Documents (WPS7020); arXiv (1812.08913)",
                                 "url": f"{RETURNS}; {INTERNAL}", "fetched": TODAY}}

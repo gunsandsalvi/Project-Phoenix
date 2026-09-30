@@ -160,7 +160,7 @@ def bis_credit_gap(cache: Path, sources: dict, series: dict, iso3: set) -> None:
         "title": "Credit to the private non-financial sector from all sectors, % of GDP, end of year (Q4): the ratio, "
                  "its one-sided HP-filter trend and the gap (ratio less trend), BIS credit-to-GDP gaps (WS_CREDIT_GAP)",
         "rows": wide(OUT / "bis_credit_gap.csv", ["iso3", "year"], ["ratio", "trend", "gap"], cells),
-        "for": ["S2.08", "S7.01"],
+        "for": ["S2.201"],
     }
     sources["bank/bis_credit_gap"] = {"title": "BIS credit-to-GDP gaps, bulk CSV",
                                       "url": BIS_BULK.format(flow="WS_CREDIT_GAP"), "fetched": TODAY}
@@ -239,7 +239,7 @@ def bis_debt_securities(cache: Path, sources: dict, series: dict, iso3: set) -> 
         "rows": table(OUT / "bis_debt_securities.csv",
                       ["iso3", "year", "entry", "sector", "counterpart_sector", "market", "instrument", "maturity",
                        "currency", "valuation", "unit", "value_bn"], rows),
-        "for": ["S1.22", "S3.03", "S3.04"],
+        "for": ["S1.22", "S1.433", "S3.142", "S3.143"],
     }
     sources["bank/bis_dss"] = {"title": "BIS debt securities statistics, bulk CSV",
                                "url": BIS_BULK.format(flow="WS_NA_SEC_DSS"), "fetched": TODAY}
@@ -280,7 +280,7 @@ def bis_international_debt(cache: Path, sources: dict, series: dict, iso3: set) 
                  "nfc non-financial corporations; cut all, fx foreign currencies, dc domestic currency, short and "
                  "long original maturity, due1y remaining maturity up to one year",
         "rows": wide(OUT / "bis_international_debt.csv", ["iso3", "year"], sorted(columns), cells),
-        "for": ["S3.03", "S3.04", "S5.04"],
+        "for": ["S3.142", "S5.160"],
     }
     sources["bank/bis_ids"] = {"title": "BIS international debt securities, bulk CSV",
                                "url": BIS_BULK.format(flow="WS_DEBT_SEC2_PUB"), "fetched": TODAY}
@@ -376,7 +376,7 @@ def imf_mfs(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                      f"members; USD where the dollar is the currency), IMF Monetary and Financial Statistics "
                      f"({flow}); columns are the survey's lines: " + ", ".join(f"{v} = {k}" for k, v in lines.items()),
             "rows": wide(OUT / f"{name}.csv", ["iso3", "year", "currency"], list(lines.values()), cells),
-            "for": ["S1.22", "S2.06", "S3.01", "S3.02"],
+            "for": ["S1.22", "S2.178", "S3.143", "S3.144"],
         }
         sources[f"bank/{name}"] = {"title": f"IMF SDMX 2.1 API, {flow}",
                                    "url": IMF_SDMX.format(flow=f"IMF.STA,{flow}", key="<lines>.XDC+EUR+USD.A",
@@ -407,7 +407,7 @@ def imf_rates(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                  "yield, government bond yield, deposit, savings and lending rates, and deposit and lending rates in "
                  "foreign currency",
         "rows": wide(OUT / "imf_mfs_ir.csv", ["iso3", "year"], list(IR.values()), cells),
-        "for": ["S2.06", "S3.01", "S3.02", "S3.03"],
+        "for": ["S2.178", "S3.100", "S3.142", "S3.144"],
     }
     sources["bank/imf_mfs_ir"] = {"title": "IMF SDMX 2.1 API, MFS_IR",
                                   "url": IMF_SDMX.format(flow="IMF.STA,MFS_IR", key="<rates>.A", first=FIRST,
@@ -482,7 +482,7 @@ def imf_fsi(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                 "(T1KTA_TA_XDC); rwa_to_assets = 100 x risk-weighted assets (FSI688_RWA_XDC) / total assets. The "
                 "interbank share stands for the supervisory exposure data no public source gives.",
         "rows": wide(OUT / "imf_fsi.csv", ["iso3", "year"], columns, cells),
-        "for": ["S1.15", "S2.01", "S2.06", "S2.07", "S3.01", "S5.04"],
+        "for": ["S2.180", "S2.187", "S5.160"],
     }
     sources["bank/imf_fsi"] = {"title": "IMF SDMX 2.1 API, FSIC",
                                "url": IMF_SDMX.format(flow="IMF.STA,FSIC", key="*.S12CFSI+REM.<indicators>.Q+M+A",
@@ -545,7 +545,7 @@ def wb_gfdd(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                  " (1 = systemic banking crisis, Laeven-Valencia dating); npl_wdi = bank non-performing loans to "
                  "total gross loans, WDI FB.AST.NPER.ZS",
         "rows": wide(OUT / "gfdd.csv", ["iso3", "year"], columns, cells),
-        "for": ["S1.15", "S1.22", "S2.01", "S2.07", "S3.02", "S7.01"],
+        "for": ["S1.22", "S2.187"],
     }
     sources["bank/wb_gfdd"] = {"title": "World Bank API, GFDD (source 32) and WDI (source 2)",
                                "url": WB_API.format(code="<series>", first=FIRST, last=LAST, source="32"),
@@ -580,7 +580,7 @@ def wb_qpsd(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                  "original maturity, long-term, long-term with payment due within one year and after one year, and "
                  "securities at market value",
         "rows": wide(OUT / "qpsd.csv", ["iso3", "year"], columns, cells),
-        "for": ["S1.15", "S3.03", "S3.04", "S5.04"],
+        "for": ["S1.433", "S3.100", "S3.142", "S5.160"],
     }
     sources["bank/wb_qpsd"] = {"title": "World Bank API, Quarterly Public Sector Debt (source 20)",
                                "url": WB_API.format(code="DP.DOD.<series>.Z1", first=f"{FIRST}Q4", last=f"{LAST}Q4",
@@ -617,7 +617,7 @@ def oecd_counterparts(cache: Path, sources: dict, series: dict, iso3: set) -> No
         "rows": table(OUT / "oecd_counterparts.csv",
                       ["iso3", "year", "holder", "counterpart", "instrument", "maturity", "value", "unit_mult"],
                       sorted(set(rows))),
-        "for": ["S1.22", "S2.06", "S3.01", "S3.03"],
+        "for": ["S1.22", "S2.178", "S3.144"],
     }
     sources["bank/oecd_t725"] = {"title": "OECD Data Explorer, SDMX API, financial balance sheets with counterpart "
                                           "information (DF_T725R_A)",
@@ -709,7 +709,7 @@ def laeven_valencia(cache: Path, sources: dict, series: dict, iso3: set) -> None
                       ["iso3", "start", "end", "output_loss", "fiscal_cost", "fiscal_cost_net",
                        "fiscal_cost_pct_fin_assets", "peak_liquidity", "liquidity_support", "peak_npl",
                        "public_debt_increase", "flags"], out),
-        "for": ["S2.08", "S3.02", "S7.01"],
+        "for": ["S2.216"],
     }
     detail = list(wb["Additional Details-Bk Crises"].iter_rows(values_only=True))
     labels = []
@@ -734,7 +734,7 @@ def laeven_valencia(cache: Path, sources: dict, series: dict, iso3: set) -> None
                  "programme, peak NPLs and fiscal cost (shares as fractions), Laeven and Valencia (2020), sheet "
                  "'Additional Details-Bk Crises'",
         "rows": table(OUT / "crisis_details.csv", header, crises),
-        "for": ["S2.08", "S3.02", "S7.01"],
+        "for": ["S2.216"],
     }
     sources["bank/laeven_valencia"] = {"title": "Laeven and Valencia (2020), Systemic Banking Crises Database II, "
                                                 "electronic supplementary material of IMF Economic Review 68",
@@ -761,7 +761,7 @@ def deposit_insurance(cache: Path, sources: dict, series: dict, iso3: set) -> No
                  "crisis-time guarantees), World Bank Deposit Insurance Database (Demirguc-Kunt, Kane and Laeven, "
                  "2014, Policy Research Working Paper 6934), sheet 'Data as of end 2013'",
         "rows": table(OUT / "deposit_insurance_2013.csv", header, out),
-        "for": ["S2.06", "S2.08"],
+        "for": ["S2.193", "S2.194"],
     }
     sources["bank/deposit_insurance"] = {"title": "World Bank Data Catalog, Deposit Insurance Database (0040209)",
                                          "url": DIS_URL, "release": "2015-07", "fetched": TODAY}
@@ -807,7 +807,7 @@ def premiums(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                 "gives premium rates by country (the IADI survey is for members only).",
         "rows": table(OUT / "typed_deposit_insurance_premiums_2003.csv",
                       ["iso3", "country", "funded", "base", "annual_premium", "risk_adjusted"], out),
-        "for": ["S2.08"],
+        "for": ["S2.193"],
     }
     sources["bank/dkkl_2005"] = {"title": "Demirguc-Kunt, Karacaovali and Laeven (2005), World Bank PRWP 3628",
                                  "url": DKKL_URL, "fetched": TODAY}
@@ -858,17 +858,17 @@ def brss(cache: Path, sources: dict, series: dict, iso3: set) -> None:
                  "brss_2019_currency; free-text answers and the 'not applicable', 'do not know' and 'none of the above' boxes are "
                  "left out. World Bank",
         "rows": table(OUT / "brss_2019.csv", ["iso3", "question", "answer"], answers),
-        "for": ["S2.01", "S2.06", "S2.07", "S2.08", "S3.02"],
+        "for": ["S2.180", "S2.186", "S2.192", "S2.193", "S2.194", "S2.200", "S3.144"],
     }
     series["bank/brss_2019_questions"] = {
         "title": "The questions of bank/brss_2019: identifier, survey section and text (parent question | option)",
         "rows": table(OUT / "brss_2019_questions.csv", ["question", "section", "text"], questions),
-        "for": ["S2.01", "S2.06", "S2.07", "S2.08", "S3.02"],
+        "for": ["S2.180", "S2.186", "S2.192"],
     }
     series["bank/brss_2019_currency"] = {
         "title": "The currency and currency unit each economy answered bank/brss_2019's money questions in",
         "rows": table(OUT / "brss_2019_currency.csv", ["iso3", "currency", "unit"], currency),
-        "for": ["S2.08"],
+        "for": ["S2.192"],
     }
     sources["bank/brss_2019"] = {"title": "World Bank Data Catalog, Bank Regulation and Supervision Survey (0038632), "
                                           "2019 database", "url": BRSS_URL, "release": "2019-11-04", "fetched": TODAY}
@@ -919,7 +919,7 @@ def sovereign_investor_base(cache: Path, sources: dict, series: dict, iso3: set)
                  "publishes openly)",
         "rows": wide(OUT / "sovereign_investor_base.csv", ["iso3", "period", "block"], list(SIB_TABLES.values()),
                      cells),
-        "for": ["S3.03", "S5.04"],
+        "for": ["S1.433", "S3.142", "S5.160"],
     }
     sources["bank/sovereign_investor_base"] = {"title": "IMF Sovereign Investor Base datasets (WP/12/284, WP/14/39)",
                                                "url": " ".join(SIB_URL.values()), "release": "2016-10",

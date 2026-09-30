@@ -148,7 +148,7 @@ status = "profiled; the developing group's rests mostly on the DHS proxy, which 
 id = "GEN.trade"
 what = "exports plus imports of goods and services to GDP"
 owner = "GEN"
-first_read = "S5.05"
+first_read = "S1.221"
 source = "World Bank WDI NE.TRD.GNFS.ZS"
 status = "profiled"
 
@@ -156,9 +156,9 @@ status = "profiled"
 id = "GEN.risk_aversion_location"
 what = "where risk appetite places the distribution of risk aversion (a PREFERENCE)"
 owner = "HH"
-first_read = "S2.05"
+first_read = "S2.137"
 source = "the Global Preferences Survey (Falk et al. 2018), country means of risk taking and patience"
-status = "in hand: people/gps_country (76 economies, 30/26/20 by level); mapped at S2.05 with the preference types"
+status = "in hand: people/gps_country (76 economies, 30/26/20 by level); mapped at S2.137 with the preference types"
 
 # The declared distributions (spec GEN.2), their shapes from published work and their parameters from the derived
 # values by declared mappings.
@@ -217,7 +217,7 @@ what = "the housing stock, its tenure and its mortgages"
 owner = "HSG"
 first_read = "S0.25"
 source = "OECD Affordable Housing Database HM1.3 and HC1.2, Eurostat ilc_lvho02: owners with a mortgage, subsidised tenants and the median mortgage and rent burdens, for the groups that lack them the median of the ten reporting economies nearest in GDP per head (the owner's decision)"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder until S2.05 draws them from the Survey of Consumer Finances"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/HSG.toml; a mortgage's rate and remaining term take S0.16's placeholder until S2.142 draws them from the Survey of Consumer Finances"
 
 [[row]]
 id = "GEN.dist.health"
@@ -249,7 +249,7 @@ what = "defined-benefit pensions in payment and pension funds' assets"
 owner = "PEN"
 first_read = "S0.25"
 source = "OECD Pensions at a Glance (occupational transfers' share of the over-65s' income), for the groups that lack it the median of the ten reporting economies nearest in GDP per head; World Bank GFDD pension fund assets to GDP"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S4.04; amounts' spread, indexation and survivors' shares have no source"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S1.484; amounts' spread, indexation and survivors' shares have no source"
 
 [[row]]
 id = "GEN.dist.banks"
@@ -265,15 +265,15 @@ what = "the sovereign's debt and its maturities"
 owner = "SOV"
 first_read = "S1.11"
 source = "IMF World Economic Outlook (level); OECD Sovereign Borrowing Outlook and World Bank Quarterly Public Sector Debt (maturities)"
-status = "in hand: imf/GGXWDG_NGDP (level); bank/qpsd (maturity, currency and creditors), bank/bis_debt_securities (original maturity and holders), bank/sovereign_investor_base (holders); mapped at S1.15"
+status = "in hand: imf/GGXWDG_NGDP (level); bank/qpsd (maturity, currency and creditors), bank/bis_debt_securities (original maturity and holders), bank/sovereign_investor_base (holders); mapped at S1.433"
 
 [[row]]
 id = "GEN.dist.funds_pensions_insurance"
 what = "households' holdings of funds, pensions and insurance"
 owner = "FND"
-first_read = "S3.07"
+first_read = "S1.484"
 source = "OECD Pension Markets in Focus; OECD Institutional Investors Statistics"
-status = "in hand: markets/GFDD.DI.07 (funds), markets/institutional_investors, markets/pension_main_2019, pension_structure and pension_participation (pensions by plan type, assets and coverage by age), markets/insurance_indicators, insurance_classes and GFDD.DI.09 to DI.11 (insurance), markets/hfcs_2021 and households/scf2019 (households' holdings); mapped at S3.07 and S4.03-S4.04"
+status = "in hand: markets/GFDD.DI.07 (funds), markets/institutional_investors, markets/pension_main_2019, pension_structure and pension_participation (pensions by plan type, assets and coverage by age), markets/insurance_indicators, insurance_classes and GFDD.DI.09 to DI.11 (insurance), markets/hfcs_2021 and households/scf2019 (households' holdings); mapped at S3.183 and S4.126-S4.146"
 
 [[row]]
 id = "GEN.dist.vintages"
@@ -387,9 +387,9 @@ status = "mapped: the derived values as the statistics office publishes them, at
 id = "GEN.present.ratings"
 what = "each rated issuer's rating"
 owner = "RAT"
-first_read = "S3.10"
+first_read = "S3.207"
 source = "the agencies' published methods applied to the drawn books"
-status = "mapped: each issuer's rating is the agencies' published method applied to its drawn books at S3.10, graded against the default and recovery statistics by class already in data/shared/BNK.toml; no series of its own"
+status = "mapped: each issuer's rating is the agencies' published method applied to its drawn books at S3.207, graded against the default and recovery statistics by class already in data/shared/BNK.toml; no series of its own"
 
 [[row]]
 id = "GEN.present.expectations"
@@ -397,7 +397,7 @@ what = "households' expectations of the variables they forecast, by age and inco
 owner = "VAL"
 first_read = "S1.01"
 source = "University of Michigan Surveys of Consumers; NY Fed Survey of Consumer Expectations (microdata); ECB Consumer Expectations Survey"
-status = "in hand: people/sca_expectations, sce_expectations, sce_microdata, ces_expectations, and people/expectations_by_level (the US pattern by age and income shifted to each level's inflation); mapped at S1.15"
+status = "in hand: people/sca_expectations, sce_expectations, sce_microdata, ces_expectations, and people/expectations_by_level (the US pattern by age and income shifted to each level's inflation); mapped at S1.456"
 
 [[row]]
 id = "TEC.products"
@@ -413,13 +413,13 @@ what = "each group's opening way per product: inputs, hours by occupation group,
 owner = "TEC"
 first_read = "S1.02"
 source = "OECD ICIO 2019; ILOSTAT employment and hours by activity and occupation; OECD Tables 9A and 6; ICP 2021 price levels; World Bank agricultural land, Pink Sheet and USGS prices"
-status = "sourced: the emerging and developing groups' plant the developed ratios scaled by their Penn World Table stocks, each mining industry's output shared between its two resources by their users, until S1.24 sets the divisions apart from open/mining_divisions, lead times assumed"
+status = "sourced: the emerging and developing groups' plant the developed ratios scaled by their Penn World Table stocks, each mining industry's output shared between its two resources by their users, until S1.436 sets the divisions apart from open/mining_divisions, lead times assumed"
 
 [[row]]
 id = "GDS.price_level"
 what = "each group's products' price levels over GDP's: a product's opening price over its world price"
 owner = "GDS"
-first_read = "S1.15"
+first_read = "S1.237"
 source = "World Bank ICP 2021 price level indices by expenditure heading"
 status = "sourced: energy carriers at world prices, the ICP publishing no heading for energy alone"
 
@@ -445,7 +445,7 @@ status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<l
 id = "GEN.productivity_spread"
 what = "the spread of firms' log physical productivity within an industry"
 owner = "GEN"
-first_read = "S1.24"
+first_read = "S1.482"
 source = "Hsieh and Klenow (2007), NBER WP 13290, Table 1: the United States, China and India standing for the three groups"
 status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml"
 
@@ -453,6 +453,6 @@ status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<l
 id = "GEN.occupation_pay"
 what = "each occupation's mean earnings over all employees'"
 owner = "GEN"
-first_read = "S1.24"
+first_read = "S1.412"
 source = "ILOSTAT mean monthly earnings by ISCO-08 major group (DF_EAR_EMTA_SEX_OCU_CUR_NB)"
 status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml"

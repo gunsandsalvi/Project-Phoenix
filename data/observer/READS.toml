@@ -99,7 +99,7 @@ title = "part of the closing ring's payments its receipts paid, over every curre
 unit = "smallest currency units"
 measure = "settlement.ring_value"
 
-# Stage 1's macro reads (S1.01), frozen before S1.16's gate run: each read with the relationship real economies show
+# Stage 1's macro reads (S1.400), frozen before S1.498's gate run: each read with the relationship real economies show
 # that it is read against and where that is published, and the N3 fact it is, where it is one. A read over a system
 # not yet built records nothing until the step that brings it.
 

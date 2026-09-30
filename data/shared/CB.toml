@@ -1,5 +1,5 @@
 # The central bank's corridor (CB.6, CB.7): its standing facilities' spreads around the policy rate and the haircut
-# its lending facility applies to eligible loans, placeholders until its committee and operations are built (S3.02).
+# its lending facility applies to eligible loans, placeholders until its committee and operations are built (S3.112).
 
 [[primitive]]
 id = "CB.deposit_spread"
@@ -24,6 +24,6 @@ id = "CB.loan_haircut"
 kind = "SHAPE"
 owner = "CB"
 source = "assumed"
-source_ref = "The share of an eligible loan's balance the lending facility does not lend against: 30%, assumed within the range central banks apply to non-marketable credit claims, until the central bank declares its collateral framework (S3.02)."
+source_ref = "The share of an eligible loan's balance the lending facility does not lend against: 30%, assumed within the range central banks apply to non-marketable credit claims, until the central bank declares its collateral framework (S3.112)."
 shape = "placeholder:CB"
 value = "0.30"

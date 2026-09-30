@@ -185,21 +185,21 @@ TYPED = {
                              "weighted). Cusolito and Maloney (2018, Productivity Revisited) and the Enterprise "
                              "Surveys' TFP note (Francis et al. 2020) were read: they give these moments only as "
                              "figures. OECD MultiProd and CompNet publish no downloadable tables."),
-    "typed_capital_budgeting_methods": (["S2.03"],
+    "typed_capital_budgeting_methods": (["S2.131"],
                                         "Share of CFOs always or almost always using each capital budgeting "
                                         "technique (%) and mean score (0 never to 4 always), all, small and large "
                                         "firms, 392 US and Canadian CFOs, 1999",
                                         "Typed from Graham and Harvey (2001), Journal of Financial Economics 60, "
                                         "Table 2."),
-    "typed_hurdle_rates": (["S2.03"],
+    "typed_hurdle_rates": (["S2.131", "S8.138"],
                            "Mean hurdle rate, weighted average cost of capital and their difference (% a year) by "
                            "company characteristic, 220 US firms, Duke CFO Survey March 2019",
                            "Typed from Graham (2022), NBER Working Paper 29841, Table II."),
-    "typed_planning_horizon": (["S2.03"],
+    "typed_planning_horizon": (["S2.131"],
                                "Years over which US CFOs judge their plans reliable, 2018 and 2013",
                                "Typed from the text of Graham (2022), NBER Working Paper 29841, p. 20; the paper's "
                                "Figure 7 has the distribution only as bars."),
-    "typed_winfrey_s3": (["S2.03"],
+    "typed_winfrey_s3": (["S2.129"],
                          "Cumulative percent of a vintage's expenditure discarded by age, as percent of the mean "
                          "service life: the BEA's modified Winfrey S-3 retirement pattern (retirements from 45% to "
                          "155% of the mean life)",
@@ -208,24 +208,24 @@ TYPED = {
                          "retirement hazard by age; the BEA applies it explicitly only to missiles and nuclear fuel, "
                          "other assets' retirements being implied by their geometric rates, and no source measures "
                          "failures of plant as such."),
-    "typed_adoption_lags": (["S6.01"],
+    "typed_adoption_lags": (["S6.100", "S6.101"],
                             "Estimated adoption lags (years from invention to a country's adoption): mean, standard "
                             "deviation and percentiles over countries, 15 technologies, with invention years",
                             "Typed from Comin and Hobijn, An Exploration of Technology Diffusion (HBS Working Paper "
                             "08-093; AER 2010), Table 2. The CHAT data the lags are estimated from "
                             "(data.nber.org/data-appendix/w15319) were not kept: 6 MB of raw usage series."),
-    "typed_learning_curves": (["S6.01"],
+    "typed_learning_curves": (["S6.101"],
                               "Learning curves of 62 technologies: Wright's exponent w (cost against cumulative "
                               "production), the progress ratio 2^-w, production growth and cost decline exponents, "
                               "periods",
                               "Typed from Nagy, Farmer, Bui and Trancik, PLoS ONE 8(2) e52669 (2013), File S1, Table "
                               "1 (the Santa Fe Performance Curve Database)."),
-    "typed_late_payment_terms": (["S2.02"],
+    "typed_late_payment_terms": (["S2.111"],
                                  "EU late payment rules: default and maximum payment periods between undertakings and "
                                  "for public authorities (days), the statutory interest margin (percentage points "
                                  "over the reference rate) and the fixed recovery compensation (EUR)",
                                  "Typed from Directive 2011/7/EU, Articles 2, 3, 4 and 6 (OJ L 48, 23.2.2011)."),
-    "typed_patents_in_force": (["S6.01"],
+    "typed_patents_in_force": (["S6.101", "S6.113"],
                                "Patent grants by office (total, resident, non-resident), equivalent grants by origin, "
                                "and patents in force by office, 2019, national and regional offices",
                                "Typed from WIPO, World Intellectual Property Indicators 2020, Table A59, read from "
@@ -278,7 +278,7 @@ def doing_business(cache: Path, iso3: set) -> tuple:
                  "import, documentary and border), enforcing contracts (days, % of claim), resolving insolvency "
                  "(recovery cents on the dollar, years, % of estate), World Bank",
         "rows": table(OUT / "doing_business.csv", ["iso3", "topic", "indicator", "value"], out),
-        "for": ["S2.01", "S2.03", "S2.04", "S2.10", "S5.01", "S5.05", "S2.05"],
+        "for": ["S2.132", "S5.102", "S5.174"],
         "note": "Economies measured in two cities take the national (population-weighted) figure the file gives.",
     }}
     return {"state/doing_business": {"title": "World Bank, Doing Business historical data (DB2020 complete dataset "
@@ -313,7 +313,7 @@ def enterprise_surveys(cache: Path, iso3: set) -> tuple:
                      "sales, employment and labour productivity growth, capacity use), job flows and jobs share, "
                      "innovation and R&D, World Bank; titles in state/enterprise_surveys_indicators",
             "rows": table(OUT / "enterprise_surveys.csv", ["iso3", "year", "indicator", "size", "value"], out),
-            "for": ["S1.22", "S1.24", "S2.02", "S2.03", "S6.01"],
+            "for": ["S1.22", "S1.480", "S1.481", "S2.111", "S6.113"],
             "note": "The shares of sales and purchases on credit (fin17, fin18) and of working capital from supplier "
                     "credit (fin8, fin22) are not published by the portal; investment financed by supplier credit "
                     "(fin3) is.",
@@ -322,7 +322,7 @@ def enterprise_surveys(cache: Path, iso3: set) -> tuple:
             "title": "Enterprise Surveys indicator codes and titles",
             "rows": table(OUT / "enterprise_surveys_indicators.csv", ["indicator", "title"],
                           [(k, titles.get(k, "")) for k in used]),
-            "for": ["S1.22", "S1.24", "S2.02", "S2.03", "S6.01"],
+            "for": ["S1.22", "S6.113"],
         },
     }
     return {"state/enterprise_surveys": {"title": "World Bank Enterprise Surveys, indicators portal API",
@@ -343,8 +343,8 @@ def oecd(cache: Path, iso3: set) -> tuple:
         series[f"state/{name}"] = {
             "title": title,
             "rows": table(OUT / f"{name}.csv", ["iso3"] + [d.lower() for d in dims] + ["year", "value"], out),
-            "for": ["S6.01"] if name in ("msti", "anberd") else ["S5.02"] if name == "net_replacement_rates"
-            else ["S5.01"],
+            "for": ["S6.101", "S6.113"] if name in ("msti", "anberd") else ["S5.122"] if name == "net_replacement_rates"
+            else ["S5.100", "S5.102", "S5.103"],
         }
         sources[f"state/oecd_{name}"] = {"title": f"OECD Data Explorer, SDMX API, {agency} {flow}", "url": url,
                                          "fetched": TODAY}
@@ -358,7 +358,7 @@ def imf_cofog(cache: Path, iso3: set) -> tuple:
         text = get(url, timeout=600, accept="application/vnd.sdmx.data+csv;version=1.0.0").decode("utf-8-sig")
         rows = [(r["COUNTRY"], int(r["TIME_PERIOD"]), r["OBS_VALUE"]) for r in csv.DictReader(io.StringIO(text))
                 if r["COUNTRY"] in iso3 and r["OBS_VALUE"] and FIRST <= int(r["TIME_PERIOD"]) <= LAST]
-        series[f"imf_sdmx/{name}"] = {"title": title, "for": ["S5.02"],
+        series[f"imf_sdmx/{name}"] = {"title": title, "for": ["S5.122"],
                                       "rows": table(RAW / "imf_sdmx" / f"{name}.csv", ["iso3", "year", "value"], rows)}
     return {"state/imf_cofog": {"title": "IMF SDMX 2.1 API, GFS_COFOG", "url": IMF_SDMX, "fetched": TODAY}}, series
 
@@ -398,14 +398,14 @@ def wipo(cache: Path, iso3: set) -> tuple:
         "title": "Patent grants by technology field (WIPO 35-field concordance of IPC), by granting office (iso3) and "
                  "by applicant's origin (summed over the offices granting), count, WIPO IP Statistics",
         "rows": table(OUT / "wipo_grants_by_field.csv", ["iso3", "by", "year", "field", "grants"], rows),
-        "for": ["S6.01"],
+        "for": ["S6.101", "S6.113"],
         "note": "By origin sums one origin's grants over every office, so a family granted at several offices counts "
                 "at each. Field names in state/wipo_fields.",
     }, "state/wipo_fields": {
         "title": "WIPO technology fields: number and name",
         "rows": table(OUT / "wipo_fields.csv", ["field", "field_name"],
                       [(k, v) for k, v in fields.items() if k.isdigit()]),
-        "for": ["S6.01"],
+        "for": ["S6.101"],
     }}
     return {"state/wipo": {"title": "WIPO IP Statistics, patent indicators by technology (bulk zip)", "url": WIPO_URL,
                            "fetched": TODAY}}, series
@@ -423,7 +423,7 @@ def vparty(cache: Path, iso3: set) -> tuple:
                  "cultural, religious positions, populism and anti-elitism (expert-coded latent scales), V-Dem "
                  "V-Party v2",
         "rows": table(OUT / "vparty.csv", ["iso3", "year"] + VPARTY_COLUMNS, rows),
-        "for": ["S5.03"],
+        "for": ["S5.134"],
     }}
     return {"state/vparty": {"title": "V-Dem Institute, V-Party dataset version 2 (country-party-date, CSV)",
                              "url": VPARTY_URL, "release": "2022-02", "fetched": TODAY}}, series
@@ -451,20 +451,20 @@ def parlgov(cache: Path, iso3: set) -> tuple:
                      "chamber's seats, with its left-right position (0-10), ParlGov",
             "rows": table(OUT / "parlgov_elections.csv", ["iso3", "date", "party_id", "party", "vote_share", "seats",
                                                          "seats_total", "left_right"], elections),
-            "for": ["S5.03"]},
+            "for": ["S5.100", "S5.134"]},
         "state/parlgov_cabinets": {
             "title": f"Cabinets since {PARLGOV_FIRST}: every party in parliament, whether in the cabinet and holding "
                      "the prime minister, its seats, ParlGov",
             "rows": table(OUT / "parlgov_cabinets.csv", ["iso3", "start", "cabinet_id", "cabinet", "caretaker",
                                                         "party_id", "party", "in_cabinet", "prime_minister", "seats",
                                                         "seats_total", "left_right"], cabinets),
-            "for": ["S5.03"]},
+            "for": ["S5.100"]},
         "state/parlgov_parties": {
             "title": "Parties' family and positions: left-right, state-market, liberty-authority, EU (0-10 expert "
                      "means), ParlGov",
             "rows": table(OUT / "parlgov_parties.csv", ["iso3", "party_id", "party", "family", "left_right",
                                                        "state_market", "liberty_authority", "eu_anti_pro"], parties),
-            "for": ["S5.03"]},
+            "for": ["S5.134"]},
     }
     return {"state/parlgov": {"title": "ParlGov development version, CSV views",
                               "url": PARLGOV.format(view="<view>"), "fetched": TODAY}}, series
@@ -512,7 +512,7 @@ def idea(cache: Path, iso3: set) -> tuple:
             "rows": table(OUT / "idea_turnout.csv", ["iso3", "election", "date", "turnout_pct", "total_vote",
                                                     "registered", "vap_turnout_pct", "invalid_pct", "compulsory"],
                           turnout),
-            "for": ["S5.03"]},
+            "for": ["S5.100"]},
         "state/idea_electoral_systems": {
             "title": "Electoral system family and system for the national legislature, tiers, legislature size "
                      "(directly elected and voting members), system for the president, by year of change, "
@@ -520,20 +520,20 @@ def idea(cache: Path, iso3: set) -> tuple:
             "rows": table(OUT / "idea_electoral_systems.csv", ["iso3", "year", "family", "legislature_system",
                                                               "tiers", "seats_elected", "seats_voting",
                                                               "president_system"], systems),
-            "for": ["S5.03"]},
+            "for": ["S5.134"]},
         "state/idea_political_finance": {
             "title": "Political finance rules: direct public funding of parties, its eligibility and allocation, "
                      "earmarking, free media access, and limits on parties' and candidates' spending (questions "
                      "28-37, 39-42), International IDEA Political Finance Database",
             "rows": table(OUT / "idea_political_finance.csv", ["iso3", "question", "text", "answer"], finance),
-            "for": ["S5.03"],
+            "for": ["S5.134"],
             "note": "The database records the rules, not their amounts: no public funding per vote is published."},
         "state/election_cycle": {
             "title": f"Years between consecutive parliamentary elections since {IDEA_FIRST}: median, minimum and "
                      "maximum, and the number of elections",
             "rows": table(OUT / "election_cycle.csv", ["iso3", "elections", "median_years", "min_years", "max_years"],
                           cycle),
-            "for": ["S5.03"],
+            "for": ["S5.134"],
             "note": "Derived from state/idea_turnout's parliamentary election dates."},
     }
     return {"state/idea": {"title": "International IDEA data tools, xlsx exports (voter turnout, electoral system "

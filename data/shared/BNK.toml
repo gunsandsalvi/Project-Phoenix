@@ -136,5 +136,5 @@ id = "BNK.refinance_lead_days"
 kind = "PREFERENCE"
 owner = "BNK"
 source = "assumed"
-source_ref = "The days before a loan's maturity its borrower seeks to refinance it: 30, assumed until firms' funding decisions are built (S2.03)."
+source_ref = "The days before a loan's maturity its borrower seeks to refinance it: 30, assumed until firms' funding decisions are built (S2.118)."
 value = 30

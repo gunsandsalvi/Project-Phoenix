@@ -255,7 +255,7 @@ def prices(cache: Path, manifest: dict, iso3: set) -> None:
                  "long-term (ten-year government) rates (OECD Financial market statistics)",
         "rows": table(OUT / "prices_rates_q.csv", ["iso3", "series", "quarter", "value"],
                       [r for r in out if r[2][:4] >= str(RATES_FIRST)]),
-        "for": ["S1.16", "S7.01"],
+        "for": ["S1.455"],
     }
     manifest["sources"]["macro/imf_cpi_ir"] = {"title": "IMF SDMX 2.1 API, CPI and MFS_IR dataflows",
                                                "url": IMF.format(flow="<CPI|MFS_IR>", key="<key>"), "fetched": TODAY}
@@ -350,7 +350,7 @@ def xru(cache: Path, manifest: dict, iso3: set) -> None:
         "title": f"US-dollar exchange rates, national currency per dollar, monthly, end of period, {XRU_FIRST} on "
                  "(BIS WS_XRU); the economy's currency as the BIS publishes it (euro-area members in euro)",
         "rows": table(OUT / "xru_monthly.csv", ["iso3", "month", "value"], out),
-        "for": ["S5.04", "S7.01"],
+        "for": ["S5.100", "S5.160"],
     }
     manifest["sources"]["macro/bis_xru"] = {"title": "BIS, US dollar exchange rates (WS_XRU), bulk CSV", "url": XRU_URL,
                                             "fetched": TODAY, "release": datetime.date(*release[:3]).isoformat()}
@@ -1201,7 +1201,7 @@ class Ranges:
                  "real GDP falling that year or the next; 'pooled' is the level's stops over its country-years",
                  "macro/annual (WDI)", pooled={lvl: n / years for lvl, (n, years) in pool.items()})
 
-    # S1.16's macro reads ---------------------------------------------------------------------------------------
+    # S1.498's macro reads ---------------------------------------------------------------------------------------
     def reads(self):
         def pwt_mean(col):
             out = {}
@@ -1211,12 +1211,12 @@ class Ranges:
                     out[iso] = statistics.fmean(xs)
             return out
         src = "macro/pwt"
-        self.add("S1.16", "labour share of GDP", pwt_mean("labsh"), "annual", "mean of 2010-2019", "PWT labsh", src)
-        self.add("S1.16", "investment share of GDP (current PPPs)", pwt_mean("csh_i"), "annual", "mean of 2010-2019",
+        self.add("S1.498", "labour share of GDP", pwt_mean("labsh"), "annual", "mean of 2010-2019", "PWT labsh", src)
+        self.add("S1.498", "investment share of GDP (current PPPs)", pwt_mean("csh_i"), "annual", "mean of 2010-2019",
                  "PWT csh_i", src)
-        self.add("S1.16", "household consumption share of GDP (current PPPs)", pwt_mean("csh_c"), "annual",
+        self.add("S1.498", "household consumption share of GDP (current PPPs)", pwt_mean("csh_c"), "annual",
                  "mean of 2010-2019", "PWT csh_c", src)
-        self.add("S1.16", "average annual hours per person engaged", pwt_mean("avh"), "annual", "mean of 2010-2019",
+        self.add("S1.498", "average annual hours per person engaged", pwt_mean("avh"), "annual", "mean of 2010-2019",
                  "PWT avh", src)
         u = {}
         for iso, years in self.d.ann.items():
@@ -1224,7 +1224,7 @@ class Ranges:
                   if y in years and years[y]["unemployment_survey"]]
             if len(xs) >= 5:
                 u[iso] = statistics.fmean(xs)
-        self.add("S1.16", "unemployment rate, per cent", u, "annual", "mean of 2010-2019",
+        self.add("S1.498", "unemployment rate, per cent", u, "annual", "mean of 2010-2019",
                  "ILO national survey estimates", "macro/annual")
         mean_inf, persistence = {}, {}
         for iso in self.d.level:
@@ -1238,9 +1238,9 @@ class Ranges:
             inf = [400 * (b - a) for a, b in zip(lp, lp[1:])]
             mean_inf[iso] = statistics.fmean(inf)
             persistence[iso] = ols(inf[:-1], inf[1:])[0]
-        self.add("S1.16", "CPI inflation, per cent a year", mean_inf, "quarterly", "2000Q1-2019Q4",
+        self.add("S1.498", "CPI inflation, per cent a year", mean_inf, "quarterly", "2000Q1-2019Q4",
                  "mean of 400 x quarterly log change of the CPI, deseasonalised", "macro/prices_rates_q")
-        self.add("S1.16", "persistence of CPI inflation (AR(1) coefficient)", persistence, "quarterly",
+        self.add("S1.498", "persistence of CPI inflation (AR(1) coefficient)", persistence, "quarterly",
                  "2000Q1-2019Q4", "OLS of quarterly annualised inflation on its lag", "macro/prices_rates_q")
         sd, ac = {}, {}
         for iso in self.d.level:
@@ -1252,9 +1252,9 @@ class Ranges:
             sd[iso] = 100 * statistics.pstdev(cy.values())
             g = [y[k] - y[k - 1] for k in keys[1:]]
             ac[iso] = corr(g[:-1], g[1:])
-        self.add("S1.16", "sd of cyclical output, per cent", sd, "quarterly", "to 2019Q4, 40 or more quarters",
+        self.add("S1.498", "sd of cyclical output, per cent", sd, "quarterly", "to 2019Q4, 40 or more quarters",
                  "HP 1600 on log real GDP", "macro/qna")
-        self.add("S1.16", "first-order autocorrelation of quarterly output growth", ac, "quarterly",
+        self.add("S1.498", "first-order autocorrelation of quarterly output growth", ac, "quarterly",
                  "to 2019Q4, 40 or more quarters", "quarterly log growth of real GDP", "macro/qna")
 
 

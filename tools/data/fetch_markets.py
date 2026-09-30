@@ -69,8 +69,8 @@ IDS_URL = ("https://api.worldbank.org/v2/sources/6/country/all/series/{code}/cou
 IDS = ["DT.CUR.USDL.ZS", "DT.CUR.EURO.ZS", "DT.CUR.JYEN.ZS", "DT.CUR.UKPS.ZS", "DT.CUR.SWFR.ZS", "DT.CUR.SDRW.ZS",
        "DT.CUR.MULC.ZS", "DT.CUR.OTHC.ZS"]
 WB_FOR = {"GFDD.DM": ["S3.04", "S3.05", "S5.04"], "GFDD.AM": ["S3.04"], "GFDD.EM": ["S3.05"], "GFDD.OM": ["S3.05"],
-          "GFDD.DI.03": ["S3.08"], "GFDD.DI.07": ["S3.07"], "GFDD.DI.09": ["S4.03"], "GFDD.DI.10": ["S4.03"],
-          "GFDD.DI.11": ["S4.03"], "CM.": ["S3.05"], "FI.": ["S5.04"], "PA.": ["S5.04"], "DT.": ["S5.04"]}
+          "GFDD.DI.03": ["S3.08"], "GFDD.DI.07": ["S3.183"], "GFDD.DI.09": ["S4.127"], "GFDD.DI.10": ["S4.127"],
+          "GFDD.DI.11": ["S4.126"], "CM.": ["S4.126"], "FI.": ["S4.126"], "PA.": ["S4.126"], "DT.": ["S4.126"]}
 
 IMF_URL = "https://api.imf.org/external/sdmx/2.1/data/IMF.STA,{flow}/{key}?startPeriod={first}&endPeriod={last}"
 IIP_ITEMS = ["IIP", "D", "D_F5", "D_FL", "P_MV", "P_F3_MV", "P_F5_MV", "O", "O_F4_NV", "O_F2_NV", "O_F81", "F_F7_T",
@@ -183,7 +183,7 @@ def imf(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "allocated (AFXRA), unallocated (UFXRA) and total (TFXRA) reserves, in US dollars (NV_USD) or share "
                   "of allocated (SHRO_PT); area G001 is the world (per-country COFER is confidential), IMF COFER",
                   table(OUT / "imf_cofer.csv", ["area", "year", "indicator", "currency", "unit", "value"], rows),
-                  ["S5.04"])
+                  ["S5.160"])
     # Sector splits are kept for the opening year only; the totals for every year.
     rows = [(r["COUNTRY"], int(r["TIME_PERIOD"]), r["BOP_ACCOUNTING_ENTRY"], r["INDICATOR"], millions(r["OBS_VALUE"]))
             for r in imf_rows(cache, "iip", "IIP", f"..{'+'.join(IIP_ITEMS)}.USD.A") if r["COUNTRY"] in iso3
@@ -196,7 +196,7 @@ def imf(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "deposit-taking "
                   "corporations, S13 general government, S12R other financial corporations, S1Z other sectors; "
                   "sector splits for 2019 only), IMF IIP (BPM6)",
-                  table(OUT / "imf_iip.csv", ["iso3", "year", "entry", "indicator", "value"], rows), ["S5.04"])
+                  table(OUT / "imf_iip.csv", ["iso3", "year", "entry", "indicator", "value"], rows), ["S5.160"])
     rows = [(r["COUNTRY"], int(r["TIME_PERIOD"]), r["BOP_ACCOUNTING_ENTRY"], r["INDICATOR"], r["CURRENCY"],
              millions(r["OBS_VALUE"]))
             for r in imf_rows(cache, "iipcc", "IIPCC", f"..{'+'.join(IIPCC_ITEMS)}..USD.A") if r["COUNTRY"] in iso3]
@@ -207,7 +207,7 @@ def imf(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "corporations) and currency (XDC domestic, FC foreign, USD, EUR, JPY, OTHC, UALLC unallocated), "
                   "IMF IIPCC; about 20 reporting economies",
                   table(OUT / "imf_iipcc.csv", ["iso3", "year", "entry", "indicator", "currency", "value"], rows),
-                  ["S5.04"])
+                  ["S5.160"])
     totals = "+".join(CPIS_TOTALS)
     rows = [(r["COUNTRY"], int(r["TIME_PERIOD"]), r["ACCOUNTING_ENTRY"], r["SECTOR"], r["INDICATOR"],
              millions(r["OBS_VALUE"]))
@@ -221,7 +221,7 @@ def imf(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "S1V other than deposit-taking and government) and derived liabilities (L), total (P_TOTINV), "
                   "equity and fund shares (P_F51) and debt securities (P_F3), IMF CPIS (PIP)",
                   table(OUT / "cpis_holders.csv", ["iso3", "year", "entry", "sector", "indicator", "value"], rows),
-                  ["S5.04", "S3.07"])
+                  ["S5.160"])
     currency = "+".join(f"P_{i}_DIC_{c}_P_USD" for i in ("F3", "F51") for c in CPIS_CURRENCIES)
     rows = [(r["COUNTRY"], int(r["TIME_PERIOD"]), r["INDICATOR"], millions(r["OBS_VALUE"]))
             for r in imf_rows(cache, "cpis_currency", "PIP", f".A.{currency}.S1.S1.G001.A")
@@ -229,7 +229,7 @@ def imf(cache: Path, iso3: set, iso2: dict) -> tuple:
     out |= series("cpis_currency", "Portfolio investment assets with the world by currency of denomination, all "
                   "resident sectors, end of year, millions of US dollars: debt securities (P_F3_DIC_<cur>) and "
                   "equity (P_F51_DIC_<cur>), IMF CPIS (PIP)",
-                  table(OUT / "cpis_currency.csv", ["iso3", "year", "indicator", "value"], rows), ["S5.04"])
+                  table(OUT / "cpis_currency.csv", ["iso3", "year", "indicator", "value"], rows), ["S5.160"])
     rows = [(r["COUNTRY"], r["COUNTERPART_COUNTRY"], r["INDICATOR"], millions(r["OBS_VALUE"]))
             for r in imf_rows(cache, "cpis_bilateral", "PIP", f".A.{totals}.S1.S1..A", 2019, 2019)
             if r["COUNTRY"] in iso3 and r["FREQUENCY"] == "A"
@@ -239,7 +239,7 @@ def imf(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "(P_F3), "
                   "IMF CPIS (PIP)",
                   table(OUT / "cpis_bilateral_2019.csv", ["iso3", "counterpart", "indicator", "value"], rows),
-                  ["S5.04", "S5.05"])
+                  ["S5.160"])
     return {"markets/imf": {"title": "IMF SDMX 2.1 API: COFER, IIP, IIPCC, PIP (CPIS)", "url": IMF_URL,
                             "fetched": TODAY}}, out
 
@@ -270,7 +270,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "Pension Statistics (DSD_FP@DF_SPS)",
                   table(OUT / "pension_structure.csv",
                         ["iso3", "year", "measure", "unit", "plan", "definition", "vehicle", "value"], rows),
-                  ["S4.04", "S3.07"])
+                  ["S1.484", "S4.146"])
     rows = [(r["REF_AREA"], r["MEASURE"], r["UNIT_MEASURE"], r["PLAN_TYPE"], r["DEFINITION_TYPE"], r["VEHICLE_TYPE"],
              r["UNIT_MULT"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "pension_main_2019", cm, "DSD_FP@DF_FPS",
@@ -286,7 +286,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "by vehicle for investment, liabilities and members, OECD Global Pension Statistics (DSD_FP@DF_FPS)",
                   table(OUT / "pension_main_2019.csv",
                         ["iso3", "measure", "unit", "plan", "definition", "vehicle", "unit_mult", "value"], rows),
-                  ["S4.04"])
+                  ["S1.484", "S4.146"])
     rows = [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["MEASURE"], r["UNIT_MEASURE"], r["PREMIUMS"],
              r["INSURANCE_TYPE"], r["UNIT_MULT"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "ins_ind", cm, "DSD_INS@DF_IND", "all")
@@ -299,7 +299,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "Insurance Statistics (DSD_INS@DF_IND)",
                   table(OUT / "insurance_indicators.csv",
                         ["iso3", "year", "measure", "unit", "premiums", "insurance_type", "unit_mult", "value"], rows),
-                  ["S4.03"])
+                  ["S4.127"])
     rows = [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["MEASURE"], r["INSURANCE_TYPE"], r["INSURER_TYPE"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "ins_alloc", cm, "DSD_INS@DF_ASSET_ALLOC", "all")
             if r["REF_AREA"] in iso3 and r["UNIT_MEASURE"] == "USD" and r["OWNERSHIP"] == "UND_T"
@@ -312,7 +312,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "US dollars, 2018-2020 around the opening year, OECD Global Insurance Statistics "
                   "(DSD_INS@DF_ASSET_ALLOC)",
                   table(OUT / "insurance_assets.csv",
-                        ["iso3", "year", "measure", "insurance_type", "insurer", "value"], rows), ["S4.03"])
+                        ["iso3", "year", "measure", "insurance_type", "insurer", "value"], rows), ["S4.126"])
     rows = [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["INSURANCE_CLASS"], r["INSURANCE_BUSINESS"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "ins_classes", cm, "DSD_INS@DF_CLASSES", "all")
             if r["REF_AREA"] in iso3 and r["UNIT_MEASURE"] == "USD" and r["MEASURE"] == "GRS"]
@@ -322,7 +322,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "HLTH health, ONL other; TREINS treaty reinsurance) and business (_T, DINS direct, RINS reinsurance "
                   "accepted), millions of US dollars, OECD Global Insurance Statistics (DSD_INS@DF_CLASSES)",
                   table(OUT / "insurance_classes.csv", ["iso3", "year", "class", "business", "value"], rows),
-                  ["S4.03"])
+                  ["S4.126"])
     rows = [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["MEASURE"], r["OWNERSHIP"], r["INSURANCE_TYPE"],
              r["EMPLOYER_TYPE"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "ins_companies", cm, "DSD_INS@DF_NB_COMP", "all") if r["REF_AREA"] in iso3]
@@ -333,7 +333,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "Statistics (DSD_INS@DF_NB_COMP)",
                   table(OUT / "insurance_companies.csv",
                         ["iso3", "year", "measure", "ownership", "insurance_type", "employer", "value"], rows),
-                  ["S4.03"])
+                  ["S4.126"])
     rows = [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["MEASURE"], r["UNIT_MEASURE"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "inst_investors", "OECD.SDD.NAD", "DSD_FIN_DASH@DF_7II_INDIC", "all")
             if r["REF_AREA"] in iso3 and r["FREQ"] == "A" and r["UNIT_MEASURE"] in ("PT_B1GQ", "PT_FAS", "PT_FAS_S12L")]
@@ -344,7 +344,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "debt securities, F4 loans, F5 equity and fund shares, F6 insurance and pension, F7 derivatives, F8 "
                   "other) and fund types' shares of all funds' assets (PT_FAS_S12L), OECD (DSD_FIN_DASH@DF_7II_INDIC)",
                   table(OUT / "institutional_investors.csv", ["iso3", "year", "measure", "unit", "value"], rows),
-                  ["S3.07", "S4.03", "S4.04"])
+                  ["S3.183", "S4.126"])
     wbk = openpyxl.load_workbook(cached(cache, "pag2023_t91.xlsx", PAG_T91), read_only=True, data_only=True)
     sheet = list(wbk["t9-1"].iter_rows(values_only=True))
     years = [int(y) for y in sheet[4] if str(y).isdigit()]
@@ -361,7 +361,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
     out |= series("pension_participation", "Participation rate in pension plans by type (mandatory or quasi-mandatory, "
                   "auto-enrolment, voluntary occupational, voluntary personal, voluntary total), % of the working-age "
                   "population 15-64, OECD Pensions at a Glance 2023, Table 9.1 (StatLink https://stat.link/64gd3b)",
-                  table(OUT / "pension_participation.csv", ["iso3", "year", "plan", "value"], rows), ["S4.04"],
+                  table(OUT / "pension_participation.csv", ["iso3", "year", "plan", "value"], rows), ["S4.146"],
                   "Private pension coverage by age is not published in a downloadable table (Pensions at a Glance "
                   "2023 has participation by plan type only); coverage is by type of plan, working-age population.")
     return {"markets/oecd": {"title": "OECD SDMX API (Global Pension Statistics, Global Insurance Statistics, "
@@ -386,7 +386,7 @@ def fsb(cache: Path, iso3: set, iso2: dict) -> tuple:
                  "trillions, % of GDP and % of the topic's total, 29 jurisdictions (iso3; EA euro area, AEs, EMEs, "
                  "FSB, G21, G29 aggregates), FSB Global Monitoring Report on NBFI 2024, monitoring dataset",
                  table(OUT / "fsb_nbfi.csv", ["area", "year", "topic", "entity", "usd_tn", "pct_gdp", "pct_topic"],
-                       rows), ["S3.08", "S3.07"])
+                       rows), ["S3.183"])
     rows = [(r[2], r[0], r[1], r[3]) for r in list(wbk["OFIs breakdown"].iter_rows(values_only=True))[1:]
             if r[0] and r[0] >= FIRST]
     out |= series("fsb_ofi", "Other financial intermediaries by entity type (MMFs, hedge funds HFs, other investment "
@@ -394,7 +394,7 @@ def fsb(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "finance "
                   "vehicles SFVs, CCPs, captive financial institutions and money lenders CFIMLs, others), USD "
                   "trillions, group aggregate, FSB Global Monitoring Report on NBFI 2024",
-                  table(OUT / "fsb_ofi.csv", ["entity", "year", "area", "usd_tn"], rows), ["S3.08", "S3.07"])
+                  table(OUT / "fsb_ofi.csv", ["entity", "year", "area", "usd_tn"], rows), ["S3.202"])
     return {"markets/fsb": {"title": "FSB Global Monitoring Report on Non-Bank Financial Intermediation 2024, "
                                      "monitoring dataset (data to end-2023)", "url": FSB_URL, "fetched": TODAY,
                             "release": "2024-12-16"}}, out
@@ -412,7 +412,8 @@ def gz(cache: Path, iso3: set, iso2: dict) -> tuple:
     out = series("gz_ebp", "Gilchrist-Zakrajsek credit spread and excess bond premium, percentage points, and the "
                  "estimated probability of a recession in the next 12 months, monthly 1973 on, US, Federal Reserve "
                  "Board (FEDS Notes update)",
-                 table(OUT / "gz_ebp.csv", ["month", "gz_spread", "ebp", "est_prob"], rows), ["S7.01", "S3.04"],
+                 table(OUT / "gz_ebp.csv", ["month", "gz_spread", "ebp", "est_prob"], rows),
+                 ["S3.100", "S3.143", "S3.219"],
                  "Kept whole from 1973: the realism reads relate it to the cycle over long spans.")
     return {"markets/gz": {"title": "Federal Reserve Board, updated Gilchrist-Zakrajsek excess bond premium",
                            "url": EBP_URL, "fetched": TODAY}}, out
@@ -475,7 +476,7 @@ def sec(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "multifamily and commercial mortgages, home equity, trade receivables, private credit and other "
                   "loans, consumer leases, agency securities, Treasuries) and liability (debt securities, commercial "
                   "paper, bonds, repo), millions of US dollars, Federal Reserve Financial Accounts of the US (Z.1)",
-                  table(OUT / "us_abs_issuers.csv", ["series", "description", "year", "value"], rows), ["S4.05"],
+                  table(OUT / "us_abs_issuers.csv", ["series", "description", "year", "value"], rows), ["S4.163"],
                   "The agency pools sector holds only the pools off the GSEs' balance sheets (Fannie Mae and Freddie "
                   "Mac pools are on them since 2010); agency MBS outstanding in total is in "
                   "markets/afme_securitisation.")
@@ -504,7 +505,7 @@ def sec(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "Eurozone, EU Total, European Total), billions (the sheets state euro billions; the US table is "
                   "sourced from SIFMA), AFME Securitisation Data Report Q1 2026, tables 3.1, 3.3, 3.4 and 3.5",
                   table(OUT / "afme_securitisation.csv", ["region", "area", "collateral", "year", "value"], rows),
-                  ["S4.05"],
+                  ["S4.163"],
                   "SIFMA's own US statistics are behind a registration form; the US outstanding by collateral is "
                   "taken from AFME's table 3.3 (SIFMA-sourced) and the Fed's Z.1. European CLO/CDO outstanding is "
                   "unavailable from 2019Q4 to 2022Q1 per AFME's footnote; AFME changed its European source in 2020 "
@@ -531,7 +532,7 @@ def sec(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "and originator (00 all, E0 euro area, E1 euro area MFIs, E2 government, E3 OFIs/funds/ICPFs, E4 "
                   "NFCs, R0 non-euro area, ZZ not applicable), ECB FVC statistics",
                   table(OUT / "ecb_fvc.csv", ["area", "year", "fvc_sector", "item", "counterpart_area",
-                                              "counterpart_sector", "originator", "value"], rows), ["S4.05"])
+                                              "counterpart_sector", "originator", "value"], rows), ["S4.163"])
     return {"markets/securitisation": {"title": "Federal Reserve Z.1 CSV release; AFME Securitisation Data Report Q1 "
                                                 "2026 (xlsx); ECB Data Portal FVC dataset",
                                        "url": f"{Z1_URL}; {AFME_SEC_URL}; {FVC_URL}", "fetched": TODAY}}, out
@@ -593,7 +594,7 @@ def hfcs(cache: Path, iso3: set, iso2: dict) -> tuple:
                  "over total assets by the same breakdowns): euro area (EA) and each country, value and standard "
                  "error, ECB (June 2026 release, version 4.1)",
                  table(OUT / "hfcs_2021.csv", ["table", "unit", "breakdown", "category", "area", "value", "se"],
-                       [tuple(r) for r in rows]), ["S3.05", "S3.07", "S6.03"],
+                       [tuple(r) for r in rows]), ["S3.159", "S6.100"],
                  "Cells marked M (missing), N (too few observations) or given as a bound ('< 0.1') are left out.")
     return {"markets/hfcs": {"title": "ECB, HFCS statistical tables, wave 2021 (June 2026)", "url": HFCS_URL,
                              "fetched": TODAY}}, out
@@ -641,7 +642,7 @@ def irr(cache: Path, iso3: set, iso2: dict) -> tuple:
                  "facto peg, 5-8 crawling pegs and narrow crawling bands, 9-11 wider or moving bands, 12 managed "
                  "floating, 13 freely floating, 14 freely falling, 15 dual market without parallel data), coarse code "
                  "1-6, and the anchor currency, Ilzetzki, Reinhart and Rogoff (2019, 2021), data to 2019",
-                 table(OUT / "irr_regimes.csv", ["iso3", "year", "fine", "coarse", "anchor"], rows), ["S5.04"],
+                 table(OUT / "irr_regimes.csv", ["iso3", "year", "fine", "coarse", "anchor"], rows), ["S5.166"],
                  "The coarse code is derived from the fine one by the authors' Table 1 grouping (the coarse sheet "
                  "ends in 2016); country names are matched to iso3 through the anchor file's ISO codes.")
     return {"markets/irr": {"title": "Ilzetzki-Reinhart-Rogoff exchange rate arrangement classification (monthly, "
@@ -806,7 +807,8 @@ def dealers(cache: Path, iso3: set, iso2: dict) -> tuple:
                  "by country and market: the US from the New York Fed's list (current, and at end-2019 by reversing "
                  "later additions and removals), European sovereigns typed from the AFME European Primary Dealers "
                  "Handbook (updated 2024)",
-                 table(OUT / "primary_dealers.csv", ["iso3", "market", "count", "as_of", "source"], rows), ["S3.06"],
+                 table(OUT / "primary_dealers.csv", ["iso3", "market", "count", "as_of", "source"], rows),
+                 ["S3.164", "S3.173"],
                  "Typed: AFME, European Primary Dealers Handbook, updated 2024 (afmeprimarydealers202403012updated111"
                  ".pdf), each country's section 'A. List of Primary Dealers' (section numbers in the source column), "
                  "the count its printed total; as_of is the list's date as the handbook states it. No obtainable "
@@ -817,7 +819,7 @@ def dealers(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "and composition of collateral held for initial margin (im_) and default funds (df_), 42 CCPs of "
                   "CCP12 members (13 Americas, 16 APAC, 13 EMEA)",
                   table(OUT / "typed_ccp12_pqd.csv", ["period", "item", "unit", "value", "disclosure"], rows),
-                  ["S4.01"],
+                  ["S4.104", "S4.108"],
                   "Typed from CCP12, Public Quantitative Disclosure Newsflash Q4 2019 (April 2020), pages 2-3 "
                   "(CCP12-PQD-Newsflash-Q4-2019-April.pdf); the disclosure column gives the CPMI-IOSCO PQD reference. "
                   "Per-house default funds are not typed: the houses' own disclosures are separate files per house.")

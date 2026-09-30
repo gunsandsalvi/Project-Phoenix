@@ -363,7 +363,7 @@ def scf(cache: Path, manifest: dict, iso3: set) -> None:
                  "a percent (X816, -1 no interest) and adjustable rate (X820: 1 yes, 5 no), 0 where inapplicable; "
                  "Federal Reserve Board",
         "rows": table(OUT / "scf2019.csv", header, rows),
-        "for": ["S2.05", "S2.11", "S3.05", "S6.03", "S6.05"],
+        "for": ["S2.140", "S2.142", "S3.159", "S6.100", "S7.100"],
         "note": "summary extract variables as published (SCFP2019.csv); full-file variables read from p19i6.dta by "
                 "Y1; summary values rounded to five significant figures",
     }
@@ -416,14 +416,14 @@ def hfcs(cache: Path, manifest: dict, iso3: set) -> None:
                  "net wealth quantile, age of the reference person, household size, housing status and more, per "
                  "country and the euro area (EMU), in each table's unit (EUR thousands, %, ratios); ECB",
         "rows": table(OUT / "hfcs2017_tables.csv", ["table", "unit", "row", "item", "iso3", "value"], rows),
-        "for": ["S3.05", "S6.03", "S6.05"],
+        "for": ["S3.159", "S6.100", "S7.100"],
         "note": "point values only; standard errors, 'M' (missing) and 'N' (too few observations) left out; each "
                 "table's title in hfcs2017_titles.csv",
     }
     manifest["series"]["households/hfcs2017_titles"] = {
         "title": "Titles of the HFCS wave 2017 statistical tables, by table code; ECB",
         "rows": table(OUT / "hfcs2017_titles.csv", ["table", "title"], sorted(titles.items())),
-        "for": ["S3.05", "S6.03", "S6.05"],
+        "for": ["S6.100"],
     }
     manifest["sources"]["households/hfcs"] = {"title": "ECB, HFCS statistical tables, wave 2017 (June 2026 release)",
                                               "url": HFCS, "fetched": TODAY}
@@ -441,7 +441,7 @@ def prices(cache: Path, manifest: dict, iso3: set) -> None:
                  "(RPI), price-to-rent (HPI_RPI) and price-to-income (HPI_YDH) ratios as indices (2015 = 100), and "
                  "the two ratios against their long-term average (_AVG); OECD",
         "rows": table(OUT / "oecd_house_prices.csv", ["iso3", "year", "measure", "unit", "value"], rows),
-        "for": ["S2.05"],
+        "for": ["S2.141"],
     }
     text = cached(cache, "oecd_rhpi.csv", OECD_RHPI.format(first=FIRST)).read_text(encoding="utf-8-sig")
     codes = two_letter()
@@ -460,7 +460,7 @@ def prices(cache: Path, manifest: dict, iso3: set) -> None:
                  "(RHPI) and nominal (OHPI); OECD",
         "rows": table(OUT / "oecd_regional_house_prices.csv",
                       ["iso3", "region", "region_type", "dwellings", "vintage", "year", "measure", "value"], rows),
-        "for": ["S2.05"],
+        "for": ["S2.141"],
     }
     z = zipfile.ZipFile(cached(cache, "bis_spp.zip", BIS_SPP))
     code = lambda text: text.split(":", 1)[0].strip()
@@ -480,7 +480,7 @@ def prices(cache: Path, manifest: dict, iso3: set) -> None:
         "title": "Residential property prices, quarterly, index 2010 = 100, nominal (N) and real (R); BIS selected "
                  "residential property price series (WS_SPP)",
         "rows": table(OUT / "bis_property_prices.csv", ["iso3", "quarter", "value_type", "index"], rows),
-        "for": ["S2.05"],
+        "for": ["S2.141"],
     }
     manifest["sources"]["households/oecd_house_prices"] = {
         "title": "OECD Data Explorer, analytical house price indicators and regional house price indices",
@@ -539,7 +539,7 @@ def housing(cache: Path, manifest: dict, iso3: set) -> None:
                  "the stock (latest year, around 2022); OECD Affordable Housing Database HM1.1 (tables A1, A2 and "
                  "figure 1.1.2's data)",
         "rows": table(OUT / "ahd_stock.csv", ["iso3", "year", "measure", "value"], sorted(set(rows))),
-        "for": ["S2.05"],
+        "for": ["S2.140"],
     }
     book = openpyxl.load_workbook(cached(cache, "ahd_hc21.xlsx", AHD + "HC2-1-Living-space.xlsx"), read_only=True,
                                   data_only=True)
@@ -558,7 +558,7 @@ def housing(cache: Path, manifest: dict, iso3: set) -> None:
                  "private, rent subsidised), by year; OECD Affordable Housing Database HC2.1.A1",
         "rows": table(OUT / "ahd_rooms.csv", ["iso3", "year", "tenure", "rooms_per_member"],
                       rooms),
-        "for": ["S2.05"],
+        "for": ["S2.140"],
     }
     if unmatched:
         log(f"AHD names not matched: {sorted(unmatched)}")
@@ -571,7 +571,7 @@ def housing(cache: Path, manifest: dict, iso3: set) -> None:
                  "Eurostat EU-SILC ad hoc module (ilc_hcmp05)",
         "rows": table(OUT / "eurostat_moved_5y.csv", ["iso3", "year", "tenure", "urbanisation", "pct"],
                       [r for r in moved if r[0] in iso3]),
-        "for": ["S2.05"],
+        "for": ["S2.140"],
     }
     book = openpyxl.load_workbook(cached(cache, "cps_hst_mig_a_1.xlsx", CPS_MOBILITY), read_only=True,
                                   data_only=True)
@@ -590,7 +590,7 @@ def housing(cache: Path, manifest: dict, iso3: set) -> None:
                  "county; different county, same state; different state) and from abroad; US Census Bureau, CPS "
                  "ASEC, historical table A-1",
         "rows": table(OUT / "us_mobility.csv", ["survey_year", "unit", "measure", "value"], rows),
-        "for": ["S2.05"],
+        "for": ["S2.148"],
         "note": "survey years 2020 and 2021 appear twice, with 2010 and 2020 population controls, as published",
     }
     import xlrd
@@ -609,7 +609,7 @@ def housing(cache: Path, manifest: dict, iso3: set) -> None:
                  "purpose: built for sale, contractor-built, owner-built) and with two or more units (by units in "
                  "the building); US Census Bureau, Survey of Construction",
         "rows": table(OUT / "us_residential_construction_months.csv", ["region", "year", "kind", "months"], rows),
-        "for": ["S2.05"],
+        "for": ["S2.156"],
     }
     book = openpyxl.load_workbook(cached(cache, "db2020.xlsx", DOING_BUSINESS), read_only=True, data_only=True)
     lines = book[book.sheetnames[0]].iter_rows(values_only=True)
@@ -652,7 +652,7 @@ def housing(cache: Path, manifest: dict, iso3: set) -> None:
                  "the warehouse's value), by Doing Business year 2016-2020 (data of the year before); World Bank "
                  "Doing Business, DB2020 historical data",
         "rows": table(OUT / "doing_business_property.csv", ["iso3", "db_year", "measure", "value"], rows),
-        "for": ["S2.05"],
+        "for": ["S2.152", "S2.155"],
         "note": "the case studied is a commercial property transfer between two firms and a warehouse's permit, "
                 "the nearest cross-country measure of a dwelling sale's legal costs and a builder's permission lead "
                 "time; economy-level rows only (the city rows of the eleven two-city economies are left out)",
@@ -682,7 +682,7 @@ def hazards(cache: Path, manifest: dict, iso3: set) -> None:
                  "continent, with the standard deviation across the curves averaged; JRC global flood depth-damage "
                  "functions (Huizinga, de Moel and Szewczyk 2017, EUR 28552 EN)",
         "rows": table(OUT / "jrc_flood_damage.csv", ["class", "region", "depth_m", "damage_share", "sd"], rows),
-        "for": ["S2.05", "S4.03"],
+        "for": ["S1.462"],
     }
     data = list(book["MaxDamage-Data"].iter_rows(values_only=True))[2:]
     iso_of = {str(r[0]).strip(): r[1] for r in data if r[0] and r[1]}
@@ -703,7 +703,7 @@ def hazards(cache: Path, manifest: dict, iso3: set) -> None:
         "rows": table(OUT / "jrc_max_damage.csv",
                       ["iso3", "class", "construction_cost_eur_m2", "max_damage_structure_eur_m2",
                        "max_damage_content_eur_m2"], rows),
-        "for": ["S2.05", "S4.03"],
+        "for": ["S2.156"],
     }
     occupancy = {r["Occupancy"]: r for r in csv.DictReader(
         cached(cache, "hazus_haz_fl_occ.csv", HAZUS.format(name="haz_fl_occ.csv")).open(encoding="utf-8-sig"))}
@@ -746,7 +746,7 @@ def hazards(cache: Path, manifest: dict, iso3: set) -> None:
                  "the temperature above which yields fall, yield-maximising growing-season precipitation and the "
                  "effect on corn of a day at 40 C instead of 29 C",
         "rows": table(OUT / "typed_crop_temperature.csv", ["crop", "measure", "value", "unit"], CROPS),
-        "for": ["S2.05"],
+        "for": ["S1.463"],
         "note": "typed from " + SCHLENKER + "; the slopes below and above the threshold are shown only in the "
                 "paper's Figure 2, not tabulated",
     }
@@ -767,7 +767,7 @@ def accidents(cache: Path, manifest: dict, iso3: set) -> None:
     manifest["series"]["wdi/SH.STA.TRAF.P5"] = {
         "title": "Mortality caused by road traffic injury (per 100,000 population), WHO via World Bank WDI",
         "rows": table(RAW / "wdi" / "SH.STA.TRAF.P5.csv", ["iso3", "year", "value"], rows),
-        "for": ["S4.03"],
+        "for": ["S4.134"],
     }
     data = json.loads(get(WHO_FIRE))["value"]
     rows = [(r["SpatialDim"], r["TimeDim"], r["NumericValue"]) for r in data
@@ -776,7 +776,7 @@ def accidents(cache: Path, manifest: dict, iso3: set) -> None:
         "title": "Age-standardised death rate from fires, both sexes (per 100,000), 2004; WHO Global Health "
                  "Observatory (SA_0000001443)",
         "rows": table(OUT / "who_fire_death_rate.csv", ["iso3", "year", "value"], rows),
-        "for": ["S4.03"],
+        "for": ["S4.134"],
     }
     manifest["series"]["households/typed_ctif_fires"] = {
         "title": "Fire service calls and fires per 1000 inhabitants, fire deaths and injuries per 100,000 "
@@ -785,7 +785,7 @@ def accidents(cache: Path, manifest: dict, iso3: set) -> None:
                       ["iso3", "calls_per_1000", "fires_per_1000", "deaths_per_100k", "deaths_per_100_fires",
                        "injuries_per_100k", "injuries_per_100_fires", "residential_share_pct"],
                       [r for r in FIRES if r[0] in iso3]),
-        "for": ["S4.03"],
+        "for": ["S4.134"],
         "note": "typed from " + CTIF + "; the report's first row (population 328 240 thousand) carries no name and "
                 "is the United States (Table 1.4's first row, same population); residential shares only where "
                 "Table 1.4's row reads unambiguously",
@@ -813,7 +813,7 @@ def energy(cache: Path, manifest: dict, iso3: set) -> None:
                  "and electric cooling use (thousand Btu), total use and total spending (USD), and the final weight "
                  "NWEIGHT (replicate weights left out); US EIA",
         "rows": table(OUT / "recs2020.csv", RECS_COLUMNS, rows),
-        "for": ["S2.09"],
+        "for": ["S2.171", "S2.207"],
         "note": "numbers rounded to five significant figures",
     }
     manifest["sources"]["households/recs"] = {"title": "US EIA, Residential Energy Consumption Survey 2020, public "
@@ -851,7 +851,7 @@ def insolvency(cache: Path, manifest: dict, iso3: set) -> None:
                  "predominant nature of debt (all, business, nonbusiness), whole country; Administrative Office of "
                  "the US Courts, Table F-2 (12 months ending 31 December)",
         "rows": table(OUT / "us_bankruptcy_filings.csv", ["year", "nature", "chapter", "cases"], rows),
-        "for": ["S2.11"],
+        "for": ["S2.166"],
     }
     collection = get(UK_INSOLVENCY).decode("utf-8", "replace")
     releases = sorted(set(re.findall(r'/government/statistics/individual-insolvency-statistics-october-to-december-'
@@ -880,7 +880,7 @@ def insolvency(cache: Path, manifest: dict, iso3: set) -> None:
                  "long-run series",
         "rows": table(OUT / "uk_individual_insolvency.csv",
                       ["year", "total", "bankruptcy", "debt_relief_orders", "iva", "rate_per_10000_adults"], rows),
-        "for": ["S2.11"],
+        "for": ["S2.166"],
         "note": "England and Wales only (Scotland and Northern Ireland have their own procedures); sums of the four "
                 "quarters of each complete year, a procedure not yet existing in a quarter ('[z]') counting none",
     }
@@ -896,7 +896,7 @@ def mpc(cache: Path, manifest: dict, iso3: set) -> None:
                  "income, financial assets, deposits, debt and windfall size, and the rest of the windfall's use, "
                  "from two papers (Italy, survey; Norway, lottery prizes)",
         "rows": table(OUT / "typed_mpc.csv", ["source", "table", "group", "measure", "value", "se"], MPC),
-        "for": ["S6.03"],
+        "for": ["S6.100"],
         "note": "typed from the two papers' working-paper versions downloaded on the fetch date; each row names "
                 "its paper and table",
     }
@@ -929,7 +929,7 @@ def coal(cache: Path, manifest: dict, iso3: set) -> None:
         "rows": table(OUT / "coal_mines.csv",
                       ["msha_id", "state", "county", "status", "mine_type", "supply_region", "production_short_tons",
                        "employees", "labour_hours"], rows),
-        "for": ["S2.05", "S0.13"],
+        "for": ["S0.13", "S2.05"],
     }
     z = zipfile.ZipFile(cached(cache, f"f923_{COAL_YEAR}.zip", EIA_923.format(year=COAL_YEAR)))
     name = next(n for n in z.namelist() if "Schedules_2_3_4_5" in n)
@@ -969,7 +969,7 @@ def coal(cache: Path, manifest: dict, iso3: set) -> None:
         "rows": table(OUT / "coal_mine_quality.csv",
                       ["msha_id", "state", "county", "mine_type", "rank", "tons", "mmbtu_per_ton", "sulfur_pct",
                        "ash_pct"], rows),
-        "for": ["S2.05", "S0.13"],
+        "for": ["S0.13", "S2.05"],
         "note": "summed from the plant-month receipts; each average is weighted by the tons of the receipts that "
                 "report it, and is blank where none does",
     }
@@ -988,7 +988,7 @@ def coal(cache: Path, manifest: dict, iso3: set) -> None:
                  "producing mines, estimated recoverable reserves, demonstrated reserve base); US EIA Annual Coal "
                  "Report Table 15",
         "rows": table(OUT / "coal_reserves.csv", ["state", "measure", "million_short_tons"], rows),
-        "for": ["S2.05", "S0.13"],
+        "for": ["S0.13", "S2.05"],
     }
     manifest["sources"]["households/coal"] = {
         "title": "US EIA: historical coal production data (mine level), EIA-923 fuel receipts, Annual Coal Report "
@@ -1017,7 +1017,7 @@ def farms(cache: Path, manifest: dict, iso3: set) -> None:
                  "year; Eurostat farm structure survey and integrated farm statistics (ef_m_farmleg, ef_lf_leg)",
         "rows": table(OUT / "eurostat_farms_by_size.csv",
                       ["iso3", "year", "so_class", "work_status", "unit", "value"], rows),
-        "for": ["S1.24", "S1.03"],
+        "for": ["S1.03", "S1.481", "S2.140"],
     }
     rows = []
     with gzip.open(cached(cache, "qs.census2017.txt.gz", NASS), "rt", encoding="utf-8", errors="replace") as f:
@@ -1040,7 +1040,7 @@ def farms(cache: Path, manifest: dict, iso3: set) -> None:
                  "Stats bulk file)",
         "rows": table(OUT / "us_farms_hired_workers.csv", ["item", "domain", "class", "value"],
                       [r for r in rows if r[3]]),
-        "for": ["S1.24", "S1.03"],
+        "for": ["S1.03", "S1.481"],
         "note": "values withheld for disclosure ('(D)') are left out",
     }
     manifest["sources"]["households/farms"] = {

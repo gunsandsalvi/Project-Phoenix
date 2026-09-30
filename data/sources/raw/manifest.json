@@ -11,8 +11,7 @@
   },
   "bank/bis_credit_gap": {
    "for": [
-    "S2.08",
-    "S7.01"
+    "S2.201"
    ],
    "rows": 473,
    "title": "Credit to the private non-financial sector from all sectors, % of GDP, end of year (Q4): the ratio, its one-sided HP-filter trend and the gap (ratio less trend), BIS credit-to-GDP gaps (WS_CREDIT_GAP)"
@@ -20,17 +19,17 @@
   "bank/bis_debt_securities": {
    "for": [
     "S1.22",
-    "S3.03",
-    "S3.04"
+    "S1.433",
+    "S3.142",
+    "S3.143"
    ],
    "rows": 42684,
    "title": "Debt securities outstanding, end of year (Q4), billions of the unit named (national currency where reported, else US dollars), BIS debt securities statistics from national sources (WS_NA_SEC_DSS): entry L issued by sector (S1 all, S11 non-financial corporations, S12 financial corporations, S121 central bank, S122 deposit takers, S13 general government, S1311 central government, S1M households), entry A held by sector with counterpart sector the issuer; market XW all, 1E residents/local, 5Z non-residents/cross-border; instrument F3, and fixed (F3FR) and variable (F3VR, F3VRA inflation-linked, F3VRB rate-linked, F3VRC asset-price-linked) rate for government; maturity T all, S short-term original, L long-term original, LS long-term original due within a year, Y12/Y25/Y5A/YA_ original 1-2/2-5/5-10/over 10 years; currency _T all, XDC domestic, X1 foreign; valuation N nominal, F face, M market (nominal preferred)"
   },
   "bank/bis_international_debt": {
    "for": [
-    "S3.03",
-    "S3.04",
-    "S5.04"
+    "S3.142",
+    "S5.160"
    ],
    "rows": 1441,
    "title": "International debt securities outstanding by residence of issuer, end of year (Q4), millions of US dollars, BIS international debt securities (WS_DEBT_SEC2_PUB): column <issuer>_<cut>, issuer all, gov general government, fin financial corporations, privbank and pubbank private and public banks, nfc non-financial corporations; cut all, fx foreign currencies, dc domestic currency, short and long original maturity, due1y remaining maturity up to one year"
@@ -46,47 +45,43 @@
   },
   "bank/brss_2019": {
    "for": [
-    "S2.01",
-    "S2.06",
-    "S2.07",
-    "S2.08",
-    "S3.02"
+    "S2.180",
+    "S2.186",
+    "S2.192",
+    "S2.193",
+    "S2.194",
+    "S2.200",
+    "S3.144"
    ],
    "rows": 41595,
    "title": "Bank Regulation and Supervision Survey, 2019 release (answers as of end 2016, some questions by year, of which 2015 and 2016 are kept), one row per economy and question: minimum entry capital and licensing, capital requirements and actual ratios, buffers, large exposures and liquidity requirements, deposit protection (coverage limit, coinsurance, share of deposits and depositors covered, fund ratio, premium basis, payout days, backstops), asset classification, provisioning and write-offs, problem bank powers and resolutions, macroprudential limits (LTV, DTI), supervisory staff and budget, and number and structure of banks; 'X' marks a ticked option; money answers are in the unit of brss_2019_currency; free-text answers and the 'not applicable', 'do not know' and 'none of the above' boxes are left out. World Bank"
   },
   "bank/brss_2019_currency": {
    "for": [
-    "S2.08"
+    "S2.192"
    ],
    "rows": 153,
    "title": "The currency and currency unit each economy answered bank/brss_2019's money questions in"
   },
   "bank/brss_2019_questions": {
    "for": [
-    "S2.01",
-    "S2.06",
-    "S2.07",
-    "S2.08",
-    "S3.02"
+    "S2.180",
+    "S2.186",
+    "S2.192"
    ],
    "rows": 495,
    "title": "The questions of bank/brss_2019: identifier, survey section and text (parent question | option)"
   },
   "bank/crisis_details": {
    "for": [
-    "S2.08",
-    "S3.02",
-    "S7.01"
+    "S2.216"
    ],
    "rows": 68,
    "title": "Policy responses and outcomes per systemic banking crisis (one row per crisis): deposit insurance and its coverage, deposit freezes and bank holidays, guarantees, liquidity support, restructuring, nationalisation, asset purchases, recapitalisation and its cost, losses imposed on depositors, IMF programme, peak NPLs and fiscal cost (shares as fractions), Laeven and Valencia (2020), sheet 'Additional Details-Bk Crises'"
   },
   "bank/crisis_outcomes": {
    "for": [
-    "S2.08",
-    "S3.02",
-    "S7.01"
+    "S2.216"
    ],
    "rows": 151,
    "title": "Systemic banking crises 1970-2017: start and end year, output loss (% of trend GDP, cumulative over T..T+3), fiscal cost gross and net (% of GDP) and gross (% of financial system assets), peak liquidity support and liquidity support (% of deposits and foreign liabilities), peak NPLs (% of loans), increase in public debt (% of GDP); flags are the sheet's footnotes (6/ end dated from GDP only, 7/ duration truncated at 5 years, 8/ borderline case), Laeven and Valencia (2020), sheet 'Crisis Resolution and Outcomes'"
@@ -100,32 +95,25 @@
   },
   "bank/deposit_insurance_2013": {
    "for": [
-    "S2.06",
-    "S2.08"
+    "S2.193",
+    "S2.194"
    ],
    "rows": 185,
    "title": "Deposit insurance design as of end 2013 (explicit scheme, inception, administration, membership, coverage of foreign-currency and interbank deposits, statutory coverage limits 2003/2010/2013 in reported currency and US dollars and over GDP per head, coinsurance, ex-ante fund, funding source, government backstop, risk-adjusted premiums, assessment base, payout basis, losses imposed, crisis-time guarantees), World Bank Deposit Insurance Database (Demirguc-Kunt, Kane and Laeven, 2014, Policy Research Working Paper 6934), sheet 'Data as of end 2013'"
   },
   "bank/gfdd": {
    "for": [
-    "S1.15",
     "S1.22",
-    "S2.01",
-    "S2.07",
-    "S3.02",
-    "S7.01"
+    "S2.187"
    ],
    "rows": 1873,
    "title": "Bank stability and depth, % unless stated, annual, World Bank Global Financial Development Database (source 32): bank_z_score = GFDD.SI.01, npl_to_gross_loans = GFDD.SI.02, capital_to_assets = GFDD.SI.03, credit_to_deposits = GFDD.SI.04, reg_capital_to_rwa = GFDD.SI.05, liquid_to_deposits_short_funding = GFDD.SI.06, provisions_to_npl = GFDD.SI.07, private_credit_by_banks_to_gdp = GFDD.DI.01, nonbank_assets_to_gdp = GFDD.DI.03, bank_to_bank_plus_cb_assets = GFDD.DI.04, liquid_liabilities_to_gdp = GFDD.DI.05, banking_crisis = GFDD.OI.19 (1 = systemic banking crisis, Laeven-Valencia dating); npl_wdi = bank non-performing loans to total gross loans, WDI FB.AST.NPER.ZS"
   },
   "bank/imf_fsi": {
    "for": [
-    "S1.15",
-    "S2.01",
-    "S2.06",
-    "S2.07",
-    "S3.01",
-    "S5.04"
+    "S2.180",
+    "S2.187",
+    "S5.160"
    ],
    "note": "Three columns are derived from the FSI reporting's own levels in domestic currency: interbank_to_loans = 100 x (1 - noninterbank loans (FSI55_TNINTBKF4_XDC) / total gross loans (FSI303_TGF4_XDC)); interbank_to_assets = 100 x (gross loans - noninterbank loans) / total assets (T1KTA_TA_XDC); rwa_to_assets = 100 x risk-weighted assets (FSI688_RWA_XDC) / total assets. The interbank share stands for the supervisory exposure data no public source gives.",
    "rows": 1520,
@@ -141,19 +129,18 @@
   "bank/imf_mfs_cbs": {
    "for": [
     "S1.22",
-    "S2.06",
-    "S3.01",
-    "S3.02"
+    "S3.142",
+    "S3.144"
    ],
    "rows": 1725,
    "title": "Central bank survey, end of year, millions of the currency named (the economy's own; EUR for euro area members; USD where the dollar is the currency), IMF Monetary and Financial Statistics (MFS_CBS); columns are the survey's lines: total_assets = S121_A_TA_ASEC_CB1SR, claims_nonresidents = S121_A_ACO_NRES_CBS, claims_banks = S121_A_ACO_ODCORP_CBS, claims_other_financial = S121_A_ACO_S12R_CBS, claims_central_gov = S121_A_ACO_S1311MIXED_CBS, claims_local_gov = S121_A_ACO_S13M1_CBS, claims_public_firms = S121_A_ACO_S11001_CBS, claims_private = S121_A_ACO_PS_CBS, claims_other_sectors = S121_A_ACO_S1_Z_CBS, monetary_base = S121_L_MB_CBS, currency_in_circulation = S121_L_CIC_IMB_CBS, base_liab_banks = S121_L_IMB_LT_ODCORP_CBS, other_liab_banks = S121_L_OLT_ODCORP_CBS, base_liab_other_sectors = S121_L_IMB_LT_S1_Z_CBS, deposits_broad_money = S121_L_F2M_XMBIBM_CBS, securities_broad_money = S121_L_F3_XMBIBM_CBS, deposits_excluded = S121_L_F2M_XMBXBM_CBS, securities_excluded = S121_L_F3_XMBXBM_CBS, loans = S121_L_F4_CBS, derivatives = S121_L_F71_CBS, shares_equity = S121_L_F51KOE_CBS, liab_central_gov = S121_L_LT_S1311MIXED_CBS, liab_nonresidents = S121_L_LT_NRES_CBS, net_foreign_assets = S121_N_NFRA_CBS, net_claims_central_gov = S121_N_NCO_S1311MIXED_CBS, other_items_net = S121_N_OIN_CBS"
   },
   "bank/imf_mfs_ir": {
    "for": [
-    "S2.06",
-    "S3.01",
-    "S3.02",
-    "S3.03"
+    "S2.178",
+    "S3.100",
+    "S3.142",
+    "S3.144"
    ],
    "rows": 1395,
    "title": "Interest rates, % a year, annual (the IMF's annual figure, an average over the year), IMF Monetary and Financial Statistics (MFS_IR): money market, repurchase agreement, discount, treasury bill yield, government bond yield, deposit, savings and lending rates, and deposit and lending rates in foreign currency"
@@ -161,9 +148,9 @@
   "bank/imf_mfs_odc": {
    "for": [
     "S1.22",
-    "S2.06",
-    "S3.01",
-    "S3.02"
+    "S2.178",
+    "S3.143",
+    "S3.144"
    ],
    "rows": 1719,
    "title": "Other depository corporations survey, end of year, millions of the currency named (the economy's own; EUR for euro area members; USD where the dollar is the currency), IMF Monetary and Financial Statistics (MFS_ODC); columns are the survey's lines: total_assets = ODCORP_A_T_ASEC_ODC2SR, claims_nonresidents = ODCORP_A_ACO_NRES_ODCS, claims_central_bank = ODCORP_A_ACO_S121_ODCS, currency_held = ODCORP_A_F21_ACO_S121_ODCS, reserve_deposits = ODCORP_A_F2MSOTS_RR_ACO_S121_ODCS, other_claims_central_bank = ODCORP_A_OCO_S121_ODCS, claims_central_gov = ODCORP_A_ACO_S1311MIXED_ODCS, claims_local_gov = ODCORP_A_ACO_S13M1_ODCS, claims_public_firms = ODCORP_A_ACO_S11001_ODCS, claims_private = ODCORP_A_ACO_PS_ODCS, claims_other_financial = ODCORP_A_ACO_S12R_ODCS, claims_other_sectors = ODCORP_A_ACO_S1_Z_ODCS, transferable_deposits = ODCORP_L_F22_IBM_ODCS, other_deposits = ODCORP_L_F29_IBM_ODCS, deposits_excluded = ODCORP_L_F2M_XBM_ODCS, securities_broad_money = ODCORP_L_F3_IBM_ODCS, securities_excluded = ODCORP_L_F3_XBM_ODCS, loans = ODCORP_L_F4_ODCS, insurance_reserves = ODCORP_L_F6_ODCS, derivatives = ODCORP_L_F71_ODCS, shares_equity = ODCORP_L_F51KOE_ODCS, liab_central_bank = ODCORP_L_LT_S121_ODCS, liab_central_gov = ODCORP_L_LT_S1311MIXED_ODCS, liab_nonresidents = ODCORP_L_LT_NRES_ODCS, net_foreign_assets = ODCORP_NETAL_NFRA_ODCS, other_items_net = ODCORP_NETAL_OIN_ASEC_ODCS"
@@ -171,9 +158,8 @@
   "bank/oecd_counterparts": {
    "for": [
     "S1.22",
-    "S2.06",
-    "S3.01",
-    "S3.03"
+    "S2.178",
+    "S3.144"
    ],
    "note": "Deposit takers are not reported apart from other financial corporations here, so interbank positions appear only inside S12 on S12; the interbank share by economy is derived in bank/imf_fsi.",
    "rows": 15334,
@@ -181,25 +167,26 @@
   },
   "bank/qpsd": {
    "for": [
-    "S1.15",
-    "S3.03",
-    "S3.04",
-    "S5.04"
+    "S1.433",
+    "S3.100",
+    "S3.142",
+    "S5.160"
    ],
    "rows": 829,
    "title": "Gross public sector debt of central (cg_) and general (gg_) government, % of GDP, nominal value unless stated, end of year (Q4), World Bank Quarterly Public Sector Debt (source 20): total, by creditor residence, by currency, by instrument (securities, loans, currency and deposits), short-term original maturity, long-term, long-term with payment due within one year and after one year, and securities at market value"
   },
   "bank/sovereign_investor_base": {
    "for": [
-    "S3.03",
-    "S5.04"
+    "S1.433",
+    "S3.142",
+    "S5.160"
    ],
    "rows": 1200,
    "title": "Holders of general government gross debt (block debt), of its securities (securities) and of central government local-currency securities (lc_cg_securities, emerging only), billions of national currency, quarterly 2014Q1-2016Q2: total, foreign (official, banks, nonbanks), domestic (central bank, banks, nonbanks), IMF Sovereign Investor Base datasets for 24 advanced and 24 emerging economies (Arslanalp and Tsuda, 2014a,b; October 2016 vintages, the latest the IMF publishes openly)"
   },
   "bank/typed_deposit_insurance_premiums_2003": {
    "for": [
-    "S2.08"
+    "S2.193"
    ],
    "note": "Typed from Demirguc-Kunt, A., B. Karacaovali and L. Laeven (2005), 'Deposit Insurance around the World: A Comprehensive Database', World Bank Policy Research Working Paper 3628, Table A.1.4 'Type of fund and premium information', pp. 36-38 of the PDF downloaded from documents1.worldbank.org; read from the PDF's text by column position, the printed text kept verbatim. No later public source gives premium rates by country (the IADI survey is for members only).",
    "rows": 88,
@@ -259,29 +246,30 @@
   },
   "households/ahd_rooms": {
    "for": [
-    "S2.05"
+    "S2.137",
+    "S2.140"
    ],
    "rows": 1751,
    "title": "Average number of rooms per household member by tenure (own outright, owner with mortgage, rent private, rent subsidised), by year; OECD Affordable Housing Database HC2.1.A1"
   },
   "households/ahd_stock": {
    "for": [
-    "S2.05"
+    "S2.140"
    ],
    "rows": 354,
    "title": "Dwelling stock (number and per 1000 inhabitants), dwellings completed in the year, around 2011, around 2018 and the latest year, and vacant dwellings excluding seasonal homes as a percentage of the stock (latest year, around 2022); OECD Affordable Housing Database HM1.1 (tables A1, A2 and figure 1.1.2's data)"
   },
   "households/bis_property_prices": {
    "for": [
-    "S2.05"
+    "S2.141"
    ],
    "rows": 5016,
    "title": "Residential property prices, quarterly, index 2010 = 100, nominal (N) and real (R); BIS selected residential property price series (WS_SPP)"
   },
   "households/coal_mine_quality": {
    "for": [
-    "S2.05",
-    "S0.13"
+    "S0.13",
+    "S2.05"
    ],
    "note": "summed from the plant-month receipts; each average is weighted by the tons of the receipts that report it, and is blank where none does",
    "rows": 341,
@@ -289,23 +277,24 @@
   },
   "households/coal_mines": {
    "for": [
-    "S2.05",
-    "S0.13"
+    "S0.13",
+    "S1.437"
    ],
    "rows": 934,
    "title": "US coal mines in 2019: MSHA identifier, state, county, status, surface or underground, coal supply region, production (short tons), average employees and labour hours; US EIA and MSHA, historical coal production data"
   },
   "households/coal_reserves": {
    "for": [
-    "S2.05",
-    "S0.13"
+    "S0.13",
+    "S2.05"
    ],
    "rows": 270,
    "title": "Table 15.  Recoverable Coal Reserves at Producing Mines, Estimated Recoverable Reserves, and Demonstrated Reserve Base by Mining Method, 2024: million short tons by coal-resource state and mining method (recoverable reserves at producing mines, estimated recoverable reserves, demonstrated reserve base); US EIA Annual Coal Report Table 15"
   },
   "households/doing_business_property": {
    "for": [
-    "S2.05"
+    "S2.152",
+    "S2.155"
    ],
    "note": "the case studied is a commercial property transfer between two firms and a warehouse's permit, the nearest cross-country measure of a dwelling sale's legal costs and a builder's permission lead time; economy-level rows only (the city rows of the eleven two-city economies are left out)",
    "rows": 6474,
@@ -313,15 +302,17 @@
   },
   "households/eurostat_farms_by_size": {
    "for": [
-    "S1.24",
-    "S1.03"
+    "S1.03",
+    "S1.481",
+    "S2.140"
    ],
    "rows": 14130,
    "title": "Agricultural holdings (HLD), their standard output (EUR) and annual work units (AWU), and their labour force in persons (PER) and AWU by work status (sole holders, family members, regular non-family workers, non-regular, not directly employed, managers), by economic size class of standard output (EUR 0-2k, 2-8k, 8-25k, 25-100k, 100k+), all legal forms, by country and survey year; Eurostat farm structure survey and integrated farm statistics (ef_m_farmleg, ef_lf_leg)"
   },
   "households/eurostat_moved_5y": {
    "for": [
-    "S2.05"
+    "S2.137",
+    "S2.148"
    ],
    "rows": 611,
    "title": "Share of population having moved to another dwelling within the last five years (%), by tenure (owner with and without loan, tenant at market and reduced rent) and degree of urbanisation, 2012; Eurostat EU-SILC ad hoc module (ilc_hcmp05)"
@@ -336,9 +327,9 @@
   },
   "households/hfcs2017_tables": {
    "for": [
-    "S3.05",
-    "S6.03",
-    "S6.05"
+    "S3.159",
+    "S6.100",
+    "S7.100"
    ],
    "note": "point values only; standard errors, 'M' (missing) and 'N' (too few observations) left out; each table's title in hfcs2017_titles.csv",
    "rows": 14028,
@@ -346,46 +337,43 @@
   },
   "households/hfcs2017_titles": {
    "for": [
-    "S3.05",
-    "S6.03",
-    "S6.05"
+    "S6.100"
    ],
    "rows": 45,
    "title": "Titles of the HFCS wave 2017 statistical tables, by table code; ECB"
   },
   "households/jrc_flood_damage": {
    "for": [
-    "S2.05",
-    "S4.03"
+    "S1.462"
    ],
    "rows": 270,
    "title": "Flood depth-damage functions: share of the maximum damage destroyed at each flood depth (m), by damage class (residential, commercial and industrial buildings, transport, roads, agriculture) and continent, with the standard deviation across the curves averaged; JRC global flood depth-damage functions (Huizinga, de Moel and Szewczyk 2017, EUR 28552 EN)"
   },
   "households/jrc_max_damage": {
    "for": [
-    "S2.05",
-    "S4.03"
+    "S2.156"
    ],
    "rows": 579,
    "title": "Construction cost per square metre of building (EUR of 2010) by country and building class, and the maximum flood damage to structure and to content per square metre (EUR of 2010, building based); JRC global flood depth-damage functions database"
   },
   "households/oecd_house_prices": {
    "for": [
-    "S2.05"
+    "S2.141"
    ],
    "rows": 2884,
    "title": "Analytical house price indicators, annual: nominal (HPI) and real (RHP) house prices, rent prices (RPI), price-to-rent (HPI_RPI) and price-to-income (HPI_YDH) ratios as indices (2015 = 100), and the two ratios against their long-term average (_AVG); OECD"
   },
   "households/oecd_regional_house_prices": {
    "for": [
-    "S2.05"
+    "S2.141"
    ],
    "rows": 3785,
    "title": "Regional house price indices, annual, not seasonally adjusted, index (base per series), by region (large and small territorial regions, cities, whole country), dwelling type and vintage, real (RHPI) and nominal (OHPI); OECD"
   },
   "households/recs2020": {
    "for": [
-    "S2.09"
+    "S2.171",
+    "S2.207"
    ],
    "note": "numbers rounded to five significant figures",
    "rows": 18496,
@@ -393,11 +381,11 @@
   },
   "households/scf2019": {
    "for": [
-    "S2.05",
-    "S2.11",
-    "S3.05",
-    "S6.03",
-    "S6.05"
+    "S2.140",
+    "S2.142",
+    "S3.159",
+    "S6.100",
+    "S7.100"
    ],
    "note": "summary extract variables as published (SCFP2019.csv); full-file variables read from p19i6.dta by Y1; summary values rounded to five significant figures",
    "rows": 28885,
@@ -405,7 +393,7 @@
   },
   "households/typed_crop_temperature": {
    "for": [
-    "S2.05"
+    "S1.463"
    ],
    "note": "typed from Schlenker and Roberts, Estimating the Impact of Climate Change on Crop Yields: The Importance of Nonlinear Temperature Effects, NBER Working Paper 13799 (February 2008; published PNAS 106(37), 2009), https://www.nber.org/papers/w13799, abstract and section on results (text p. 14); the slopes below and above the threshold are shown only in the paper's Figure 2, not tabulated",
    "rows": 6,
@@ -413,7 +401,7 @@
   },
   "households/typed_ctif_fires": {
    "for": [
-    "S4.03"
+    "S4.134"
    ],
    "note": "typed from CTIF Center of Fire Statistics, World Fire Statistics Report No. 26 (2021), Table 1.2 (common indicators of fire statistics in the countries of the world in 2019) and Table 1.4 (distribution of fires by type), https://www.ctif.org/sites/default/files/2021-06/CTIF_Report26_0.pdf; the report's first row (population 328 240 thousand) carries no name and is the United States (Table 1.4's first row, same population); residential shares only where Table 1.4's row reads unambiguously",
    "rows": 34,
@@ -421,7 +409,7 @@
   },
   "households/typed_mpc": {
    "for": [
-    "S6.03"
+    "S6.100"
    ],
    "note": "typed from the two papers' working-paper versions downloaded on the fetch date; each row names its paper and table",
    "rows": 46,
@@ -432,13 +420,13 @@
     "S2.05",
     "S4.03"
    ],
-   "note": "typed from Eberenz, L\u00fcthi and Bresch, Regional tropical cyclone impact functions for globally consistent risk assessments, Natural Hazards and Earth System Sciences 21, 393-415, 2021, Table A1 (regions) and Table A2 (Vhalf), section 2.2.3 (Vthresh 25.7 m/s, default Vhalf 74.7 m/s, Emanuel 2011's form); https://nhess.copernicus.org/articles/21/393/2021/nhess-21-393-2021.pdf",
+   "note": "typed from Eberenz, Lüthi and Bresch, Regional tropical cyclone impact functions for globally consistent risk assessments, Natural Hazards and Earth System Sciences 21, 393-415, 2021, Table A1 (regions) and Table A2 (Vhalf), section 2.2.3 (Vthresh 25.7 m/s, default Vhalf 74.7 m/s, Emanuel 2011's form); https://nhess.copernicus.org/articles/21/393/2021/nhess-21-393-2021.pdf",
    "rows": 10,
    "title": "Tropical cyclone wind damage: share destroyed f = v^3 / (1 + v^3), v = max(V - Vthresh, 0) / (Vhalf - Vthresh), V the maximum sustained wind (m/s); Vthresh and Vhalf per calibration region, calibrated on the spread of event damage ratios (vhalf_rmsf) and on total damage (vhalf_tdr), with the region's economies"
   },
   "households/uk_individual_insolvency": {
    "for": [
-    "S2.11"
+    "S2.166"
    ],
    "note": "England and Wales only (Scotland and Northern Ireland have their own procedures); sums of the four quarters of each complete year, a procedure not yet existing in a quarter ('[z]') counting none",
    "rows": 9,
@@ -446,15 +434,15 @@
   },
   "households/us_bankruptcy_filings": {
    "for": [
-    "S2.11"
+    "S2.166"
    ],
    "rows": 140,
    "title": "US bankruptcy cases commenced in the calendar year, by chapter (7, 11, 13, other) and predominant nature of debt (all, business, nonbusiness), whole country; Administrative Office of the US Courts, Table F-2 (12 months ending 31 December)"
   },
   "households/us_farms_hired_workers": {
    "for": [
-    "S1.24",
-    "S1.03"
+    "S1.03",
+    "S1.481"
    ],
    "note": "values withheld for disclosure ('(D)') are left out",
    "rows": 1057,
@@ -462,7 +450,7 @@
   },
   "households/us_mobility": {
    "for": [
-    "S2.05"
+    "S2.148"
    ],
    "note": "survey years 2020 and 2021 appear twice, with 2010 and 2020 population controls, as published",
    "rows": 198,
@@ -470,14 +458,14 @@
   },
   "households/us_residential_construction_months": {
    "for": [
-    "S2.05"
+    "S2.156"
    ],
    "rows": 360,
    "title": "Average number of months from start to completion of new privately owned residential buildings started in permit-issuing places, by year of completion, region, buildings with one unit (by purpose: built for sale, contractor-built, owner-built) and with two or more units (by units in the building); US Census Bureau, Survey of Construction"
   },
   "households/who_fire_death_rate": {
    "for": [
-    "S4.03"
+    "S4.134"
    ],
    "rows": 184,
    "title": "Age-standardised death rate from fires, both sexes (per 100,000), 2004; WHO Global Health Observatory (SA_0000001443)"
@@ -504,7 +492,7 @@
   },
   "ilo/earnings_by_education": {
    "for": [
-    "S6.02"
+    "S6.114"
    ],
    "rows": 4393,
    "title": "Mean monthly earnings of employees by education (aggregate levels: less than basic, basic, intermediate, advanced, not stated, total), local currency, both sexes, 2015-2025 (DF_EAR_EMTA_SEX_EDU_NB), ILOSTAT"
@@ -512,7 +500,7 @@
   "ilo/earnings_by_occupation": {
    "for": [
     "S1.22",
-    "S6.02"
+    "S6.114"
    ],
    "rows": 9503,
    "title": "Mean monthly earnings of employees by ISCO-08 major group (0-9, X not elsewhere classified, TOTAL), local currency, both sexes, 2015-2025 (DF_EAR_EMTA_SEX_OCU_CUR_NB), ILOSTAT"
@@ -523,8 +511,7 @@
   },
   "ilo/employment_by_activity_sector": {
    "for": [
-    "S1.15",
-    "S5.02"
+    "S5.122"
    ],
    "rows": 7391,
    "title": "Employment by ISIC Rev. 4 section and institutional sector (PUB, PRI, TOTAL), thousands, both sexes, one survey per economy nearest 2019 (DF_EMP_TEMP_SEX_ECO_INS_NB), ILOSTAT"
@@ -539,8 +526,7 @@
   },
   "ilo/employment_by_sector": {
    "for": [
-    "S1.15",
-    "S5.02"
+    "S5.122"
    ],
    "rows": 2955,
    "title": "Employment by institutional sector (PUB public, PRI private, TOTAL), thousands, both sexes, 2015-2025 (DF_EMP_TEMP_SEX_INS_NB), ILOSTAT"
@@ -555,14 +541,14 @@
   },
   "ilo/injuries": {
    "for": [
-    "S4.03"
+    "S4.134"
    ],
    "rows": 16016,
    "title": "Occupational injuries per 100 000 workers in the reference group, fatal and non-fatal, by ISIC Rev. 4 section (TOTAL all activities), 2015-2025, one source per economy-year (DF_INJ_FATL_ECO_RT, DF_INJ_NFTL_ECO_RT), ILOSTAT"
   },
   "ilo/injury_days": {
    "for": [
-    "S4.03"
+    "S4.134"
    ],
    "rows": 410,
    "title": "Cases of non-fatal occupational injury and days lost to those with temporary incapacity, all activities, 2015-2025 (DF_INJ_NFTL_ECO_NB, DF_INJ_DAYS_ECO_NB), ILOSTAT"
@@ -597,8 +583,7 @@
   },
   "ilo/unions": {
    "for": [
-    "S1.15",
-    "S2.10"
+    "S2.214"
    ],
    "rows": 674,
    "title": "Collective bargaining coverage rate and trade union density rate, % of employees, 2015-2025 (DF_ILR_CBCT_NOC_RT, DF_ILR_TUMT_NOC_RT), ILOSTAT"
@@ -621,14 +606,14 @@
   },
   "imf_sdmx/GF07_S13": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 658,
    "title": "General government expense on health (% of GDP), IMF Government Finance Statistics (COFOG 07)"
   },
   "imf_sdmx/GF09_S13": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 658,
    "title": "General government expense on education (% of GDP), IMF Government Finance Statistics (COFOG 09)"
@@ -654,7 +639,7 @@
     "S7.01"
    ],
    "rows": 2718,
-   "title": "Jord\u00e0-Schularick-Taylor Macrohistory Database R6, 18 developed economies, 1870-2020: population, real GDP per capita (Maddison; Barro index), real consumption per capita (index), nominal GDP, investment to GDP, CPI, current account, money, short and long rates, unemployment, wages, dollar exchange rate, total loans to the non-financial private sector and their mortgage, household and business parts (national currency), public debt to GDP, nominal house prices, systemic crisis dummy (crisisJST), peg dummy"
+   "title": "Jordà-Schularick-Taylor Macrohistory Database R6, 18 developed economies, 1870-2020: population, real GDP per capita (Maddison; Barro index), real consumption per capita (index), nominal GDP, investment to GDP, CPI, current account, money, short and long rates, unemployment, wages, dollar exchange rate, total loans to the non-financial private sector and their mortgage, household and business parts (national currency), public debt to GDP, nominal house prices, systemic crisis dummy (crisisJST), peg dummy"
   },
   "macro/labour_q": {
    "for": [
@@ -675,8 +660,7 @@
   },
   "macro/prices_rates_q": {
    "for": [
-    "S1.16",
-    "S7.01"
+    "S1.455"
    ],
    "rows": 70160,
    "title": "Quarterly, 1970 on: consumer price index, all items (IMF CPI, index), and interest rates in per cent a year, quarterly averages: the monetary-policy rate, banks' lending rate and the Treasury-bill yield (IMF Monetary and Financial Statistics, MFS_IR), and the three-month and long-term (ten-year government) rates (OECD Financial market statistics)"
@@ -714,7 +698,7 @@
    ],
    "note": "Typed by hand from the paper's table in the PDF downloaded on 2026-09-28 from https://documents.worldbank.org/curated/en/524811468325165721/pdf/WPS5343.pdf; the group is the paper's own classification.",
    "rows": 23,
-   "title": "Business-cycle moments per economy, typed: Calder\u00f3n and Fuentes, 'Characterizing the Business Cycles of Emerging Economies', World Bank Policy Research Working Paper 5343 (June 2010), Table 1, p. 11: classical cycles by Harding and Pagan's quarterly algorithm, GDP 1980Q1-2006Q2; mean durations in quarters, amplitudes in per cent; '.' left empty"
+   "title": "Business-cycle moments per economy, typed: Calderón and Fuentes, 'Characterizing the Business Cycles of Emerging Economies', World Bank Policy Research Working Paper 5343 (June 2010), Table 1, p. 11: classical cycles by Harding and Pagan's quarterly algorithm, GDP 1980Q1-2006Q2; mean durations in quarters, amplitudes in per cent; '.' left empty"
   },
   "macro/typed_neumeyer_perri": {
    "for": [
@@ -727,8 +711,8 @@
   },
   "macro/xru_monthly": {
    "for": [
-    "S5.04",
-    "S7.01"
+    "S5.100",
+    "S5.160"
    ],
    "rows": 57984,
    "title": "US-dollar exchange rates, national currency per dollar, monthly, end of period, 2000 on (BIS WS_XRU); the economy's currency as the BIS publishes it (euro-area members in euro)"
@@ -742,14 +726,14 @@
   },
   "markets/CM.MKT.LCAP.GD.ZS": {
    "for": [
-    "S3.05"
+    "S3.146"
    ],
    "rows": 803,
    "title": "Market capitalization of listed domestic companies (% of GDP) (CM.MKT.LCAP.GD.ZS), World Bank API source 2, 2015-2025"
   },
   "markets/CM.MKT.LDOM.NO": {
    "for": [
-    "S3.05"
+    "S3.146"
    ],
    "rows": 802,
    "title": "Listed domestic companies, total (CM.MKT.LDOM.NO), World Bank API source 2, 2015-2025"
@@ -763,7 +747,9 @@
   },
   "markets/CM.MKT.TRNR": {
    "for": [
-    "S3.05"
+    "S3.100",
+    "S3.146",
+    "S3.219"
    ],
    "rows": 684,
    "title": "Stocks traded, turnover ratio of domestic shares (%) (CM.MKT.TRNR), World Bank API source 2, 2015-2025"
@@ -826,49 +812,49 @@
   },
   "markets/DT.DOD.DECT.CD": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 1205,
    "title": "External debt stocks, total (DOD, current US$) (DT.DOD.DECT.CD), World Bank API source 2, 2015-2025"
   },
   "markets/DT.DOD.DPNG.CD": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 911,
    "title": "External debt stocks, private nonguaranteed (PNG) (DOD, current US$) (DT.DOD.DPNG.CD), World Bank API source 2, 2015-2025"
   },
   "markets/DT.DOD.DPPG.CD": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 1205,
    "title": "External debt stocks, public and publicly guaranteed (PPG) (DOD, current US$) (DT.DOD.DPPG.CD), World Bank API source 2, 2015-2025"
   },
   "markets/DT.DOD.DSTC.CD": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 1205,
    "title": "External debt stocks, short-term (DOD, current US$) (DT.DOD.DSTC.CD), World Bank API source 2, 2015-2025"
   },
   "markets/FI.RES.TOTL.CD": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 1846,
    "title": "Total reserves (includes gold, current US$) (FI.RES.TOTL.CD), World Bank API source 2, 2015-2025"
   },
   "markets/FI.RES.TOTL.MO": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 1716,
    "title": "Total reserves in months of imports (FI.RES.TOTL.MO), World Bank API source 2, 2015-2025"
   },
   "markets/GFDD.AM.03": {
    "for": [
-    "S3.04"
+    "S3.143"
    ],
    "rows": 161,
    "title": "Nonfinancial corporate bonds to total bonds and notes outstanding (%) (GFDD.AM.03), World Bank API source 32, 2015-2025"
@@ -878,32 +864,32 @@
     "S3.08"
    ],
    "rows": 416,
-   "title": "Nonbank financial institutions\u2019 assets to GDP (%) (GFDD.DI.03), World Bank API source 32, 2015-2025"
+   "title": "Nonbank financial institutions’ assets to GDP (%) (GFDD.DI.03), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DI.07": {
    "for": [
-    "S3.07"
+    "S3.183"
    ],
    "rows": 432,
    "title": "Mutual fund assets to GDP (%) (GFDD.DI.07), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DI.09": {
    "for": [
-    "S4.03"
+    "S4.127"
    ],
    "rows": 805,
    "title": "Life insurance premium volume to GDP (%) (GFDD.DI.09), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DI.10": {
    "for": [
-    "S4.03"
+    "S4.127"
    ],
    "rows": 846,
    "title": "Non-life insurance premium volume to GDP (%) (GFDD.DI.10), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DI.11": {
    "for": [
-    "S4.03"
+    "S4.126"
    ],
    "rows": 712,
    "title": "Insurance company assets to GDP (%) (GFDD.DI.11), World Bank API source 32, 2015-2025"
@@ -928,9 +914,7 @@
   },
   "markets/GFDD.DM.03": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S3.143"
    ],
    "rows": 150,
    "title": "Outstanding domestic private debt securities to GDP (%) (GFDD.DM.03), World Bank API source 32, 2015-2025"
@@ -946,9 +930,7 @@
   },
   "markets/GFDD.DM.05": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S5.160"
    ],
    "rows": 507,
    "title": "Outstanding international private debt securities to GDP (%) (GFDD.DM.05), World Bank API source 32, 2015-2025"
@@ -1000,45 +982,35 @@
   },
   "markets/GFDD.DM.11": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S5.160"
    ],
    "rows": 714,
    "title": "Gross portfolio debt assets to GDP (%) (GFDD.DM.11), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DM.12": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S3.143"
    ],
    "rows": 740,
    "title": "Syndicated loan issuance volume to GDP (%) (GFDD.DM.12), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DM.13": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S3.143"
    ],
    "rows": 484,
    "title": "Corporate bond issuance volume to GDP (%) (GFDD.DM.13), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DM.14": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S3.143"
    ],
    "rows": 455,
    "title": "Syndicated loan average maturity (years) (GFDD.DM.14), World Bank API source 32, 2015-2025"
   },
   "markets/GFDD.DM.15": {
    "for": [
-    "S3.04",
-    "S3.05",
-    "S5.04"
+    "S3.143"
    ],
    "rows": 447,
    "title": "Corporate bond average maturity (years) (GFDD.DM.15), World Bank API source 32, 2015-2025"
@@ -1066,21 +1038,21 @@
   },
   "markets/PA.NUS.FCRF": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 2257,
    "title": "Official exchange rate (LCU per US$, period average) (PA.NUS.FCRF), World Bank API source 2, 2015-2025"
   },
   "markets/PA.NUS.PPP": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 2181,
    "title": "PPP conversion factor, GDP (LCU per international $) (PA.NUS.PPP), World Bank API source 2, 2015-2025"
   },
   "markets/afme_securitisation": {
    "for": [
-    "S4.05"
+    "S4.163"
    ],
    "note": "SIFMA's own US statistics are behind a registration form; the US outstanding by collateral is taken from AFME's table 3.3 (SIFMA-sourced) and the Fed's Z.1. European CLO/CDO outstanding is unavailable from 2019Q4 to 2022Q1 per AFME's footnote; AFME changed its European source in 2020 and the US non-agency CMBS series jumps in 2022 (a change of coverage, not of market). Year-end values: the fourth quarter where printed, else the bare year column.",
    "rows": 1228,
@@ -1088,54 +1060,51 @@
   },
   "markets/cpis_bilateral_2019": {
    "for": [
-    "S5.04",
-    "S5.05"
+    "S5.160"
    ],
    "rows": 33210,
    "title": "Portfolio investment assets by counterpart economy (G001 world), all resident sectors, end 2019, millions of US dollars: total, equity (P_F51) and debt securities (P_F3), IMF CPIS (PIP)"
   },
   "markets/cpis_currency": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 8021,
    "title": "Portfolio investment assets with the world by currency of denomination, all resident sectors, end of year, millions of US dollars: debt securities (P_F3_DIC_<cur>) and equity (P_F51_DIC_<cur>), IMF CPIS (PIP)"
   },
   "markets/cpis_holders": {
    "for": [
-    "S5.04",
-    "S3.07"
+    "S5.160"
    ],
    "rows": 20374,
    "title": "Portfolio investment positions with the world, end of year, millions of US dollars: assets (A) by resident holder sector (S1 total, S121 central bank, S122 deposit-taking corporations, S123 money market funds, S12P insurance and pension funds, S12QU other financial, S12R other financial corporations, S13 government, S11 non-financial corporations, S14 households, S15 non-profits, S1V other than deposit-taking and government) and derived liabilities (L), total (P_TOTINV), equity and fund shares (P_F51) and debt securities (P_F3), IMF CPIS (PIP)"
   },
   "markets/ecb_fvc": {
    "for": [
-    "S4.05"
+    "S4.163"
    ],
    "rows": 14045,
    "title": "Financial vehicle corporations (securitisation vehicles), euro area countries and the euro area (EA), outstanding at the end of each year, millions of euros: reporting sector (F all, T traditional, S synthetic securitisation), item (A10 deposits and loan claims, A20 securitised loans, A30 debt securities held, A40 other securitised assets, A50 equity, AT1 other assets, L20 loans received, L40 debt securities issued, L60 capital, LT1 other liabilities, T00 total), counterpart area (A1 world, U2 euro area, U4 extra-euro area, U5 other euro members, U6 domestic), counterpart (borrower) sector (0000 all, 1000 MFIs, 2000 non-MFIs, 2100 government, 2200 non-MFIs excluding government, 2210 OFIs, 2220 insurers and pension funds, 2240 non-financial corporations, 2250 households and NPISH, 2260 non-MMF funds, 2270 OFIs incl. auxiliaries and captives, 2271 FVCs) and originator (00 all, E0 euro area, E1 euro area MFIs, E2 government, E3 OFIs/funds/ICPFs, E4 NFCs, R0 non-euro area, ZZ not applicable), ECB FVC statistics"
   },
   "markets/fsb_nbfi": {
    "for": [
-    "S3.08",
-    "S3.07"
+    "S3.183"
    ],
    "rows": 4213,
    "title": "Financial assets by sector (banks, central bank, public financial institutions, insurance corporations, pension funds, other financial intermediaries OFIs, financial auxiliaries, NBFI, total) and the narrow measure of NBFI by economic function (EF1 collective investment vehicles with run features, EF2 lending dependent on short-term funding, EF3 market intermediation dependent on short-term funding, EF4 facilitation of credit creation, EF5 securitisation-based credit), USD trillions, % of GDP and % of the topic's total, 29 jurisdictions (iso3; EA euro area, AEs, EMEs, FSB, G21, G29 aggregates), FSB Global Monitoring Report on NBFI 2024, monitoring dataset"
   },
   "markets/fsb_ofi": {
    "for": [
-    "S3.08",
-    "S3.07"
+    "S3.202"
    ],
    "rows": 216,
    "title": "Other financial intermediaries by entity type (MMFs, hedge funds HFs, other investment funds OIFs, REITs, trust companies TCs, finance companies FinCos, broker-dealers BDs, structured finance vehicles SFVs, CCPs, captive financial institutions and money lenders CFIMLs, others), USD trillions, group aggregate, FSB Global Monitoring Report on NBFI 2024"
   },
   "markets/gz_ebp": {
    "for": [
-    "S7.01",
-    "S3.04"
+    "S3.100",
+    "S3.143",
+    "S3.219"
    ],
    "note": "Kept whole from 1973: the realism reads relate it to the cycle over long spans.",
    "rows": 643,
@@ -1143,9 +1112,8 @@
   },
   "markets/hfcs_2021": {
    "for": [
-    "S3.05",
-    "S3.07",
-    "S6.03"
+    "S3.159",
+    "S6.100"
    ],
    "note": "Cells marked M (missing), N (too few observations) or given as a bound ('< 0.1') are left out.",
    "rows": 2733,
@@ -1153,65 +1121,64 @@
   },
   "markets/imf_cofer": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 252,
    "title": "Currency composition of official foreign exchange reserves, end of year, by currency: allocated (AFXRA), unallocated (UFXRA) and total (TFXRA) reserves, in US dollars (NV_USD) or share of allocated (SHRO_PT); area G001 is the world (per-country COFER is confidential), IMF COFER"
   },
   "markets/imf_iip": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 45444,
    "title": "International investment position, end of year, millions of US dollars: assets (A_P), liabilities (L_P) and net (NETAL_P) by functional category and instrument (D direct investment, P portfolio: F3 debt securities, F5 equity; O other investment: F4 loans, F2 currency and deposits, F81 trade credit; F_F7 derivatives; R reserves) and by resident sector (S121 central bank, S122 deposit-taking corporations, S13 general government, S12R other financial corporations, S1Z other sectors; sector splits for 2019 only), IMF IIP (BPM6)"
   },
   "markets/imf_iipcc": {
    "for": [
-    "S5.04"
+    "S5.160"
    ],
    "rows": 16786,
    "title": "Currency composition of the international investment position, end of year, millions of US dollars: debt liabilities to (DLNRES) and claims on (DCNRES) non-residents by resident sector suffix (none total, S121 central bank, S122 deposit-taking corporations, S12R other financial corporations, S13 general government, S1Z other sectors, S1ZOTH other sectors excluding corporations) and currency (XDC domestic, FC foreign, USD, EUR, JPY, OTHC, UALLC unallocated), IMF IIPCC; about 20 reporting economies"
   },
   "markets/institutional_investors": {
    "for": [
-    "S3.07",
-    "S4.03",
-    "S4.04"
+    "S3.183",
+    "S4.126"
    ],
    "rows": 11237,
    "title": "Institutional investors' indicators, annual: financial assets and liabilities of pension funds (S129), insurers (S128) and investment funds (S12L: MMF S123, non-MMF S124, open-end S12LO, closed-end S124B, equity S12L2, bond S12L3, mixed S12L4, hedge S12L5, real estate S12L1, other S12L9) as % of GDP, instrument shares of their assets (PT_FAS: F2 deposits, F3 debt securities, F4 loans, F5 equity and fund shares, F6 insurance and pension, F7 derivatives, F8 other) and fund types' shares of all funds' assets (PT_FAS_S12L), OECD (DSD_FIN_DASH@DF_7II_INDIC)"
   },
   "markets/insurance_assets": {
    "for": [
-    "S4.03"
+    "S4.126"
    ],
    "rows": 9405,
    "title": "Insurers' investment by asset (INV total; CASH, BOND with PUBB public and PRIB private, LOAN, SHARE with PUBS listed and UNLISTED, REST land and buildings, CIS mutual funds by kind, PEQUF, HEDGE, STRPRDT, UNITLINK, INV_O other), all undertakings, domestic and foreign destination, by type (_T, LIFE, NLIFE, COMP) and insurer (DIR direct, REI reinsurer), millions of US dollars, 2018-2020 around the opening year, OECD Global Insurance Statistics (DSD_INS@DF_ASSET_ALLOC)"
   },
   "markets/insurance_classes": {
    "for": [
-    "S4.03"
+    "S4.126"
    ],
    "rows": 18014,
    "title": "Gross written premiums by class of insurance (LI life: ANN annuities, UL unit linked, OL other, PC pension contracts; NLI non-life: MV motor, MAOT marine-aviation-transport, FRT freight, FOPD fire and property, PL pecuniary loss, GL general liability, AH accident and health, HLTH health, ONL other; TREINS treaty reinsurance) and business (_T, DINS direct, RINS reinsurance accepted), millions of US dollars, OECD Global Insurance Statistics (DSD_INS@DF_CLASSES)"
   },
   "markets/insurance_companies": {
    "for": [
-    "S4.03"
+    "S4.126"
    ],
    "rows": 8668,
    "title": "Insurance undertakings (UND, number) by ownership (UND_T all, DOM domestic, FOR foreign-controlled, BRN branches) and type (_T, LIFE, NLIFE, COMP composite, REINS), and insurance employees (EMP, persons) by employer (INS insurers, INT intermediaries), OECD Global Insurance Statistics (DSD_INS@DF_NB_COMP)"
   },
   "markets/insurance_indicators": {
    "for": [
-    "S4.03"
+    "S4.127"
    ],
    "rows": 11138,
    "title": "Insurance indicators by year and type (LIFE, NLIFE, _T): penetration (PEN, % of GDP), density (DST, US dollars per person), gross premiums (TGP, US dollars, unit_mult 6), retention ratio (RET), reinsurance share (REINS), life/non-life shares (LIS/NLIS), shares of domestic premiums by foreign-controlled undertakings and branches (FN_BRA/FNC/BRA), OECD Global Insurance Statistics (DSD_INS@DF_IND)"
   },
   "markets/irr_regimes": {
    "for": [
-    "S5.04"
+    "S5.166"
    ],
    "note": "The coarse code is derived from the fine one by the authors' Table 1 grouping (the coarse sheet ends in 2016); country names are matched to iso3 through the anchor file's ISO codes.",
    "rows": 941,
@@ -1219,14 +1186,15 @@
   },
   "markets/pension_main_2019": {
    "for": [
-    "S4.04"
+    "S1.484",
+    "S4.146"
    ],
    "rows": 14153,
    "title": "Asset-backed pensions, 2019: investment (1000) and its allocation (1110-1290: cash and deposits, bills and bonds public and private, loans, equity listed and unlisted, land and buildings, mutual funds by kind, unallocated insurance contracts, hedge and private equity funds, structured products, other; 1121/1122 abroad and in foreign currency), liabilities (2000-2300), income and contributions (3000-3400), benefits (4000-4500) and members (5000 total, 5100 active, 5200 deferred, 5300 passive, 5400 other beneficiaries, 5010/5020 by sex), in US dollars (unit_mult 6: millions), % of GDP or persons (PS, unit_mult 3: thousands), by plan type and definition, and by vehicle for investment, liabilities and members, OECD Global Pension Statistics (DSD_FP@DF_FPS)"
   },
   "markets/pension_participation": {
    "for": [
-    "S4.04"
+    "S4.146"
    ],
    "note": "Private pension coverage by age is not published in a downloadable table (Pensions at a Glance 2023 has participation by plan type only); coverage is by type of plan, working-age population.",
    "rows": 459,
@@ -1234,15 +1202,16 @@
   },
   "markets/pension_structure": {
    "for": [
-    "S4.04",
-    "S3.07"
+    "S1.484",
+    "S4.146"
    ],
    "rows": 6978,
    "title": "Structure of asset-backed pensions: assets by plan type (OCC occupational, PER personal), definition (DB defined benefit, DBH hybrid, DCP protected and DCU unprotected defined contribution) and financing vehicle (PF autonomous pension fund, BR book reserve, PIC pension insurance contract, INV/BANK managed funds, OTH), as % of total pension assets (PT_AS), of occupational assets (PT_AS_PENS_OCC) or of GDP (PT_B1GQ); measures DBA/DCA/OA/PA/AFV, OECD Global Pension Statistics (DSD_FP@DF_SPS)"
   },
   "markets/primary_dealers": {
    "for": [
-    "S3.06"
+    "S3.164",
+    "S3.173"
    ],
    "note": "Typed: AFME, European Primary Dealers Handbook, updated 2024 (afmeprimarydealers202403012updated111.pdf), each country's section 'A. List of Primary Dealers' (section numbers in the source column), the count its printed total; as_of is the list's date as the handbook states it. No obtainable table was found for emerging or developing economies' debt offices.",
    "rows": 29,
@@ -1250,7 +1219,8 @@
   },
   "markets/typed_ccp12_pqd": {
    "for": [
-    "S4.01"
+    "S4.104",
+    "S4.108"
    ],
    "note": "Typed from CCP12, Public Quantitative Disclosure Newsflash Q4 2019 (April 2020), pages 2-3 (CCP12-PQD-Newsflash-Q4-2019-April.pdf); the disclosure column gives the CPMI-IOSCO PQD reference. Per-house default funds are not typed: the houses' own disclosures are separate files per house.",
    "rows": 28,
@@ -1258,7 +1228,7 @@
   },
   "markets/us_abs_issuers": {
    "for": [
-    "S4.05"
+    "S4.163"
    ],
    "note": "The agency pools sector holds only the pools off the GSEs' balance sheets (Fannie Mae and Freddie Mac pools are on them since 2010); agency MBS outstanding in total is in markets/afme_securitisation.",
    "rows": 297,
@@ -1282,8 +1252,7 @@
   },
   "oecd/government_employment": {
    "for": [
-    "S1.15",
-    "S5.02"
+    "S5.122"
    ],
    "rows": 589,
    "title": "Employment in general government, % of total employment, all years published, Government at a Glance 2025 (DSD_GOV@DF_GOV_EMPPS_REP_2025, EMPG), OECD"
@@ -1320,35 +1289,38 @@
   },
   "open/atb_electricity": {
    "for": [
-    "S2.09"
+    "S2.202",
+    "S2.212"
    ],
    "rows": 933,
    "title": "Electricity generation technologies, United States: capital cost (CAPEX, overnight OCC, $/kW), fixed O&M ($/kW-yr), variable O&M ($/MWh), heat rate (MMBtu/MWh), capacity factor, fuel cost ($/MWh); the 2020 edition's 2019 values (2018 dollars) and the 2023 edition's 2021 values (2021 dollars), moderate scenario, market case, 30-year cost recovery; NREL ATB"
   },
   "open/capital_controls": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 495,
-   "title": "Capital control measures, 0 (none) to 1 (restricted), by economy and year: overall (ka), inflows (kai), outflows (kao) and by asset category - equity (eq), bonds (bo), money market (mm), collective investment (ci), derivatives (de), commercial credit (cc), financial credit (fc), guarantees (gs), direct investment (di, ldi liquidation), real estate (re) - and transaction (plbn purchase locally by non-residents, siln sale or issue locally by non-residents, pabr purchase abroad by residents, siar sale or issue abroad by residents); Fern\u00e1ndez et al. (2016), IMF Economic Review 64(3), 2021 update"
+   "title": "Capital control measures, 0 (none) to 1 (restricted), by economy and year: overall (ka), inflows (kai), outflows (kao) and by asset category - equity (eq), bonds (bo), money market (mm), collective investment (ci), derivatives (de), commercial credit (cc), financial credit (fc), guarantees (gs), direct investment (di, ldi liquidation), real estate (re) - and transaction (plbn purchase locally by non-residents, siln sale or issue locally by non-residents, pabr purchase abroad by residents, siar sale or issue abroad by residents); Fernández et al. (2016), IMF Economic Review 64(3), 2021 update"
   },
   "open/ember_electricity": {
    "for": [
-    "S2.09"
+    "S2.203",
+    "S2.216"
    ],
    "rows": 10534,
    "title": "Electricity by economy and year 2015-2025: capacity (GW), generation (TWh) and power-sector emissions (MtCO2) by fuel, with total generation, emissions, demand (TWh) and net imports (TWh) in the total column; WLD is the world; Ember yearly electricity data"
   },
   "open/gppd_plants": {
    "for": [
-    "S2.09"
+    "S2.203"
    ],
    "rows": 34886,
    "title": "Power plants of 1 MW and more by economy: primary and first other fuel, capacity (MW), commissioning year (capacity-weighted mean year of the units, fractional), year of the capacity data, reported 2019 generation (GWh, where published); WRI Global Power Plant Database v1.3"
   },
   "open/icio_exports_by_level": {
    "for": [
-    "S5.05"
+    "S5.100",
+    "S5.186"
    ],
    "note": "derived: the OECD ICIO 2023 edition's 2019 table (millions of US dollars, basic prices) with the rows' origins kept and grouped by the World Bank income group of the origin or destination (high: developed; upper middle: emerging; lower middle and low: developing; the rest of the world and Chinese Taipei, which has no group in wb/countries.csv: unclassified), the groups being wb/countries.csv's current ones, not those of 2019; flows within an economy are left out, so domestic use is icio/flows less these imports",
    "rows": 12773,
@@ -1356,7 +1328,8 @@
   },
   "open/icio_imports_by_level": {
    "for": [
-    "S5.05"
+    "S5.100",
+    "S5.186"
    ],
    "note": "derived: the OECD ICIO 2023 edition's 2019 table (millions of US dollars, basic prices) with the rows' origins kept and grouped by the World Bank income group of the origin or destination (high: developed; upper middle: emerging; lower middle and low: developing; the rest of the world and Chinese Taipei, which has no group in wb/countries.csv: unclassified), the groups being wb/countries.csv's current ones, not those of 2019; flows within an economy are left out, so domestic use is icio/flows less these imports",
    "rows": 13200,
@@ -1364,7 +1337,8 @@
   },
   "open/invoicing_currency": {
    "for": [
-    "S5.05"
+    "S5.100",
+    "S5.186"
    ],
    "rows": 796,
    "title": "Shares of exports and imports invoiced in US dollars, euros, the home currency, other currencies and unclassified (%), by economy and year 2010-2019; Boz et al. (2022)"
@@ -1380,7 +1354,7 @@
   "open/mining_divisions": {
    "for": [
     "S1.02",
-    "S2.09"
+    "S1.436"
    ],
    "rows": 8115,
    "title": "Mining divisions B05 (coal and lignite), B06 (crude petroleum and natural gas), B07 (metal ores), B08 (other mining and quarrying), B09 (support services), 2018-2020: output (PROD), value added (VALU), gross exports (EXGR) and imports (IMGR), US dollars (TiVA 2025), employment (EMPN, persons) and labour compensation (LABR, US dollars, and PT_VA as a percentage of value added) (TiM 2025); value times 10^unit_mult; OECD"
@@ -1388,7 +1362,7 @@
   "open/port_calls": {
    "for": [
     "S1.07",
-    "S5.05"
+    "S5.174"
    ],
    "rows": 759,
    "title": "Port calls by economy and market segment, 2018-2021: number of calls, median time in port (days), average vessel age (years), size (GT), cargo capacity (dwt), container capacity (TEU); UNCTADstat (from AIS)"
@@ -1403,7 +1377,8 @@
   },
   "open/typed_ene_assumptions": {
    "for": [
-    "S2.09"
+    "S2.202",
+    "S2.212"
    ],
    "note": "typed: the tables were read from the report's PDF (downloaded 2026-09-28) with a table extractor and checked by eye against the page; values as printed, footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' cells left out. IEA/NEA (2020), Projected Costs of Generating Electricity 2020 Edition, OECD Publishing, Paris; EIA, Today in Energy, 12 February 2021, 'Utility-scale batteries and pumped storage return about 80% of the electricity they store'",
    "rows": 39,
@@ -1412,7 +1387,7 @@
   "open/typed_imo4ghg_fleet_2018": {
    "for": [
     "S1.07",
-    "S5.05"
+    "S1.465"
    ],
    "note": "typed: Table 35 (pp. 99-101 of the report, PDF pp. 127-129) read with a table extractor from the full report and annexes PDF downloaded from GreenVoyage2050 and checked by eye; IMO (2020), Fourth IMO Greenhouse Gas Study 2020, London",
    "rows": 70,
@@ -1429,7 +1404,7 @@
   },
   "open/typed_pcge2020_lcoe": {
    "for": [
-    "S2.09"
+    "S2.212"
    ],
    "note": "typed: the tables were read from the report's PDF (downloaded 2026-09-28) with a table extractor and checked by eye against the page; values as printed, footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' cells left out. IEA/NEA (2020), Projected Costs of Generating Electricity 2020 Edition, OECD Publishing, Paris; EIA, Today in Energy, 12 February 2021, 'Utility-scale batteries and pumped storage return about 80% of the electricity they store'",
    "rows": 3093,
@@ -1437,7 +1412,7 @@
   },
   "open/typed_pcge2020_plants": {
    "for": [
-    "S2.09"
+    "S2.202"
    ],
    "note": "typed: the tables were read from the report's PDF (downloaded 2026-09-28) with a table extractor and checked by eye against the page; values as printed, footnote marks dropped from country names, the report's 'Autralia' read as Australia, 'na' cells left out. IEA/NEA (2020), Projected Costs of Generating Electricity 2020 Edition, OECD Publishing, Paris; EIA, Today in Energy, 12 February 2021, 'Utility-scale batteries and pumped storage return about 80% of the electricity they store'",
    "rows": 1795,
@@ -1445,7 +1420,7 @@
   },
   "open/wits_tariffs": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 20964,
    "title": "Tariff rates by product group (HS sections 01-05_Animal ... 90-99_Miscellan, UNCTAD stages of processing SoP1 raw, SoP2 intermediate, SoP3 consumer, SoP4 capital goods, WITS groups and Total), %, 2017-2021: effectively applied, weighted and simple means, and MFN weighted mean, against the world; WITS/TRAINS"
@@ -1463,15 +1438,15 @@
   },
   "people/dhs_indicators": {
    "for": [
-    "S6.02",
-    "S1.23"
+    "S1.23",
+    "S1.403"
    ],
    "rows": 7455,
    "title": "DHS survey aggregates, national, surveys from 2005: household size distribution and composition (members 65+, three generations, non-nuclear families, female head, children's living arrangements), current marital status of women and men 15-49, ideal number of children; indicators: HC_MEMB_H_MNM mean household members; HC_MEMB_H_1MM households of 1 member, %; HC_MEMB_H_2MM households of 2, %; HC_MEMB_H_3MM households of 3, %; HC_MEMB_H_4MM households of 4, %; HC_MEMB_H_5MM households of 5, %; HC_MEMB_H_6MM households of 6, %; HC_MEMB_H_7MM households of 7, %; HC_MEMB_H_8MM households of 8, %; HC_MEMB_H_9MM households of 9+, %; HC_OLDR_H_W65 households with members 65+, %; HC_OLDR_H_O65 households of members 65+ only, %; HC_OLDR_H_3GN households of 3 generations, %; HC_OLDR_P_NNC population in non-nuclear families, %; HC_HHHD_H_FEM female-headed households, %; HC_LVAR_C_BTH children under 18 living with both parents, %; HC_LVAR_C_NBP children under 18 living with no biological parent, %; HC_ORPH_H_FOS households with children not living with a biological parent, %; MA_MSTA_W_NMA women 15-49 never married, %; MA_MSTA_W_MAR women 15-49 married, %; MA_MSTA_W_LTG women 15-49 living together, %; MA_MSTA_W_DIV women 15-49 divorced, %; MA_MSTA_W_SEP women 15-49 separated, %; MA_MSTA_W_WID women 15-49 widowed, %; MA_MSTA_M_NMA men 15-49 never married, %; MA_MSTA_M_MAR men 15-49 married, %; MA_MSTA_M_LTG men 15-49 living together, %; MA_MSTA_M_DIV men 15-49 divorced, %; MA_MSTA_M_SEP men 15-49 separated, %; MA_MSTA_M_WID men 15-49 widowed, %; PR_IDLC_W_MNA mean ideal number of children, all women; PR_IDLC_M_MNA mean ideal number of children, all men; PR_IDLC_W_ID0 women whose ideal number of children is 0, %; PR_IDLC_W_ID1 women whose ideal number of children is 1, %; PR_IDLC_W_ID2 women whose ideal number of children is 2, %; PR_IDLC_W_ID3 women whose ideal number of children is 3, %; PR_IDLC_W_ID4 women whose ideal number of children is 4, %; PR_IDLC_W_ID5 women whose ideal number of children is 5, %; PR_IDLC_W_ID6 women whose ideal number of children is 6+, %; PR_IDLC_W_IDN women giving a non-numeric ideal number of children, %; DHS Program API"
   },
   "people/expectations_by_level": {
    "for": [
-    "S1.15"
+    "S1.456"
    ],
    "note": "Derived: the US pattern shifted to each level's inflation. For each Surveys of Consumers group (sca_expectations: px1, age 18-34..65+, income quintiles, all) the 2015-2019 mean of each yearly statistic is the US value; the level's shift is the median over its economies (World Bank income groups: High = developed, Upper middle = emerging, Lower middle and Low = developing) of each economy's 2015-2019 mean CPI inflation (wdi/FP.CPI.TOTL.ZG, economies with all five years) less the US's; mean, median, p25 and p75 are shifted by it, the standard deviation is kept",
    "rows": 165,
@@ -1480,37 +1455,39 @@
   "people/gps_country": {
    "for": [
     "S1.12",
-    "S2.05",
-    "VAL.22"
+    "VAL.22",
+    "S2.137",
+    "S8.101"
    ],
    "rows": 76,
    "title": "Global Preferences Survey country means of patience, risk taking, positive and negative reciprocity, altruism and trust, in standard deviations of the world's individual-level distribution (mean 0), surveyed 2012, Falk et al. (2018, QJE 133(4)), from the survey site's rankings service"
   },
   "people/marriage_divorce": {
    "for": [
-    "S6.02"
+    "S6.114"
    ],
    "rows": 642,
    "title": "Crude marriage and divorce rates, per 1 000 people, 2015-2025, OECD Family Database (SF3.1), via Our World in Data's catalogue"
   },
   "people/migrant_stock_bilateral": {
    "for": [
-    "S5.05",
-    "S6.02"
+    "S5.100",
+    "S5.174"
    ],
    "rows": 26339,
    "title": "International migrant stock by country of destination and origin (WLD = all), persons, mid-2015, 2020 and 2024, UN DESA International Migrant Stock 2024, via Our World in Data's catalogue"
   },
   "people/piaac_2023": {
    "for": [
-    "S6.02"
+    "S6.114"
    ],
    "rows": 713,
    "title": "Survey of Adult Skills (PIAAC Cycle 2, 2023), adults 16-65: mean literacy, numeracy and adaptive problem-solving scores (0-500) and shares at proficiency levels, by participating economy (Belgium is Flanders, the United Kingdom England), OECD results republished by the Irish CSO (PxStat PIAAC01, PIAAC02)"
   },
   "people/remittances_bilateral": {
    "for": [
-    "S5.05"
+    "S5.100",
+    "S5.174"
    ],
    "rows": 6036,
    "title": "Bilateral remittance flows, sending economy to receiving economy (WLD = all), current US$, 2021, World Bank/KNOMAD bilateral remittance matrix (estimated from migrant stocks and incomes), via Our World in Data's catalogue"
@@ -1520,7 +1497,7 @@
     "S1.15"
    ],
    "rows": 7260,
-   "title": "University of Michigan Surveys of Consumers, yearly 2015-2025, by group (all households; age 18-34, 35-44, 45-54, 55-64, 65+; income quintiles y15..y55): expected price change next year (px1) and in 5 years (px5), % \u2014 shares by band, mean, median, p25, p75, std, variance; expected unemployment change (umex); expected income change next year (inex); probability of losing a job in 5 years (pjob)"
+   "title": "University of Michigan Surveys of Consumers, yearly 2015-2025, by group (all households; age 18-34, 35-44, 45-54, 55-64, 65+; income quintiles y15..y55): expected price change next year (px1) and in 5 years (px5), % — shares by band, mean, median, p25, p75, std, variance; expected unemployment change (umex); expected income change next year (inex); probability of losing a job in 5 years (pjob)"
   },
   "people/sce_expectations": {
    "for": [
@@ -1538,23 +1515,21 @@
   },
   "people/sce_microdata": {
    "for": [
-    "S1.15",
-    "S1.24"
+    "S1.455"
    ],
    "rows": 78136,
    "title": "New York Fed Survey of Consumer Expectations public microdata, 2015-2019, one row per respondent and month (a rotating panel of up to 12 months, userid): point forecasts of inflation one and three years ahead, the one-year density's median and interquartile range, probabilities of higher US unemployment and of losing one's job (%), survey weight, age, household income and education groups (gzip CSV)"
   },
   "people/tenure_dls": {
    "for": [
-    "S6.05",
-    "S1.24"
+    "S1.411"
    ],
    "rows": 5868,
    "title": "Wage workers by job tenure band (1 under 6 months, 2 6-12 months, 3 1-5 years, 4 over 5 years): the band's share of wage workers (share) and the quarterly rate of moving to state to_state (W wage work in the same job, B and M the replication's other states), by economy and survey year, harmonised rotating-panel labour force surveys, Donovan, Lu and Schoellman (2023, QJE), replication data doi:10.7910/DVN/RXWKTV (Tenure_Transitions)"
   },
   "people/typed_internal_migration": {
    "for": [
-    "S6.02"
+    "S6.100"
    ],
    "note": "Typed from Bernard, A., M. Bell and J. Cooper (2018), 'Internal migration and education: a cross-national comparison', background paper for the 2019 Global Education Monitoring Report (UNESCO), arXiv:1812.08913, Tables A4.1 and A4.2 (pp. 53-54) with the census years of Table A1 (p. 49); the IMAGE repository and Bell et al. (2015) are unreachable",
    "rows": 92,
@@ -1562,7 +1537,7 @@
   },
   "people/typed_returns_to_schooling": {
    "for": [
-    "S6.02"
+    "S6.114"
    ],
    "note": "Typed from Montenegro, C.E. and H.A. Patrinos (2014), 'Comparable Estimates of Returns to Schooling Around the World', World Bank Policy Research Working Paper 7020, Annex Table 1, pp. 20-36 (columns A, C, D, E); read from the downloaded PDF by column position, a blank cell left missing",
    "rows": 819,
@@ -1594,20 +1569,17 @@
   },
   "state/anberd": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "rows": 23717,
    "title": "Business enterprise R&D expenditure by main activity, ISIC Rev. 4 industry, current prices, US dollars PPP, OECD ANBERD"
   },
   "state/doing_business": {
    "for": [
-    "S2.01",
-    "S2.03",
-    "S2.04",
-    "S2.10",
-    "S5.01",
-    "S5.05",
-    "S2.05"
+    "S2.132",
+    "S5.102",
+    "S5.174"
    ],
    "note": "Economies measured in two cities take the national (population-weighted) figure the file gives.",
    "rows": 12924,
@@ -1615,7 +1587,7 @@
   },
   "state/election_cycle": {
    "for": [
-    "S5.03"
+    "S5.134"
    ],
    "note": "Derived from state/idea_turnout's parliamentary election dates.",
    "rows": 191,
@@ -1624,10 +1596,10 @@
   "state/enterprise_surveys": {
    "for": [
     "S1.22",
-    "S1.24",
-    "S2.02",
-    "S2.03",
-    "S6.01"
+    "S1.480",
+    "S1.481",
+    "S2.111",
+    "S6.113"
    ],
    "note": "The shares of sales and purchases on credit (fin17, fin18) and of working capital from supplier credit (fin8, fin22) are not published by the portal; investment financed by supplier credit (fin3) is.",
    "rows": 54339,
@@ -1636,24 +1608,21 @@
   "state/enterprise_surveys_indicators": {
    "for": [
     "S1.22",
-    "S1.24",
-    "S2.02",
-    "S2.03",
-    "S6.01"
+    "S6.113"
    ],
    "rows": 53,
    "title": "Enterprise Surveys indicator codes and titles"
   },
   "state/idea_electoral_systems": {
    "for": [
-    "S5.03"
+    "S5.134"
    ],
    "rows": 1512,
    "title": "Electoral system family and system for the national legislature, tiers, legislature size (directly elected and voting members), system for the president, by year of change, International IDEA Electoral System Design Database"
   },
   "state/idea_political_finance": {
    "for": [
-    "S5.03"
+    "S5.134"
    ],
    "note": "The database records the rules, not their amounts: no public funding per vote is published.",
    "rows": 2506,
@@ -1661,98 +1630,102 @@
   },
   "state/idea_turnout": {
    "for": [
-    "S5.03"
+    "S5.100"
    ],
    "rows": 2568,
    "title": "Parliamentary and presidential elections since 1990: date, turnout of registered voters (%), total vote, registered voters, turnout of the voting-age population (%), invalid votes (%), compulsory voting, International IDEA Voter Turnout Database"
   },
   "state/msti": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "rows": 24345,
    "title": "Main Science and Technology Indicators: R&D expenditure by performing sector and source of funds (% of GDP, % of GERD or BERD), researchers and R&D personnel (full-time equivalent), triadic and PCT patent counts, OECD MSTI"
   },
   "state/net_replacement_rates": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 18720,
    "title": "Net replacement rates in unemployment, % of disposable household income before job loss, 2019, singles without children and with two, previous earnings 67% and 100% of the average wage, by month of unemployment (1-60), with and without social assistance, no housing benefit, OECD TaxBEN"
   },
   "state/parlgov_cabinets": {
    "for": [
-    "S5.03"
+    "S5.100"
    ],
    "rows": 4021,
    "title": "Cabinets since 2000: every party in parliament, whether in the cabinet and holding the prime minister, its seats, ParlGov"
   },
   "state/parlgov_elections": {
    "for": [
-    "S5.03"
+    "S5.100",
+    "S5.134"
    ],
    "rows": 2511,
    "title": "Parliamentary elections since 2000: each party's vote share (%), seats and the chamber's seats, with its left-right position (0-10), ParlGov"
   },
   "state/parlgov_parties": {
    "for": [
-    "S5.03"
+    "S5.134"
    ],
    "rows": 854,
    "title": "Parties' family and positions: left-right, state-market, liberty-authority, EU (0-10 expert means), ParlGov"
   },
   "state/revenue_by_tax": {
    "for": [
-    "S5.01"
+    "S5.100",
+    "S5.102"
    ],
    "rows": 62667,
    "title": "Tax revenue of general government by tax category (OECD classification: income and profits, social security, payroll, property incl. recurrent immovable property and estate, inheritance and gift, goods and services), % of GDP, OECD Global Revenue Statistics"
   },
   "state/ssc_employee": {
    "for": [
-    "S5.01"
+    "S5.102"
    ],
    "rows": 2038,
    "title": "Employee social security contribution schedules: rates by band (% of earnings), lower and upper thresholds and maxima (national currency), OECD Tax Database"
   },
   "state/ssc_employer": {
    "for": [
-    "S5.01"
+    "S5.102"
    ],
    "rows": 2024,
    "title": "Employer social security contribution schedules: rates by band (% of earnings), thresholds and maxima (national currency), OECD Tax Database"
   },
   "state/ssc_self": {
    "for": [
-    "S5.01"
+    "S5.102"
    ],
    "rows": 3403,
    "title": "Self-employed social security contribution schedules: rates by band (% of earnings), thresholds and maxima (national currency), OECD Tax Database"
   },
   "state/tax_cit": {
    "for": [
-    "S5.01"
+    "S5.102"
    ],
    "rows": 5481,
    "title": "Corporate income tax rates, statutory and targeted at small business: central, sub-central and combined, % of taxable income, OECD Corporate Tax Statistics"
   },
   "state/tax_pit_central": {
    "for": [
-    "S5.01"
+    "S5.102"
    ],
    "rows": 4263,
    "title": "Personal income tax, central government: marginal rates (% of taxable income) and income thresholds, allowances and credits (national currency) by band, single person, OECD Tax Database"
   },
   "state/tax_pit_top": {
    "for": [
-    "S5.01"
+    "S5.102"
    ],
    "rows": 2508,
    "title": "Top statutory personal income tax rate and its earnings threshold (national currency, multiple of the average wage), and the average wage, OECD Tax Database"
   },
   "state/typed_adoption_lags": {
    "for": [
-    "S6.01"
+    "S6.100",
+    "S6.101"
    ],
    "note": "Typed from Comin and Hobijn, An Exploration of Technology Diffusion (HBS Working Paper 08-093; AER 2010), Table 2. The CHAT data the lags are estimated from (data.nber.org/data-appendix/w15319) were not kept: 6 MB of raw usage series.",
    "rows": 16,
@@ -1760,7 +1733,7 @@
   },
   "state/typed_capital_budgeting_methods": {
    "for": [
-    "S2.03"
+    "S2.131"
    ],
    "note": "Typed from Graham and Harvey (2001), Journal of Financial Economics 60, Table 2.",
    "rows": 7,
@@ -1768,7 +1741,8 @@
   },
   "state/typed_hurdle_rates": {
    "for": [
-    "S2.03"
+    "S2.131",
+    "S8.138"
    ],
    "note": "Typed from Graham (2022), NBER Working Paper 29841, Table II.",
    "rows": 15,
@@ -1776,7 +1750,7 @@
   },
   "state/typed_late_payment_terms": {
    "for": [
-    "S2.02"
+    "S2.111"
    ],
    "note": "Typed from Directive 2011/7/EU, Articles 2, 3, 4 and 6 (OJ L 48, 23.2.2011).",
    "rows": 7,
@@ -1784,7 +1758,7 @@
   },
   "state/typed_learning_curves": {
    "for": [
-    "S6.01"
+    "S6.101"
    ],
    "note": "Typed from Nagy, Farmer, Bui and Trancik, PLoS ONE 8(2) e52669 (2013), File S1, Table 1 (the Santa Fe Performance Curve Database).",
    "rows": 62,
@@ -1792,7 +1766,8 @@
   },
   "state/typed_patents_in_force": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "note": "Typed from WIPO, World Intellectual Property Indicators 2020, Table A59, read from the report's text; office names matched to iso3, regional offices kept under their own codes (EPO, OAPI, ARIPO, EAPO, GCCPO, WORLD for the total). The WIPO data center has no open download of patents in force.",
    "rows": 182,
@@ -1800,7 +1775,7 @@
   },
   "state/typed_planning_horizon": {
    "for": [
-    "S2.03"
+    "S2.131"
    ],
    "note": "Typed from the text of Graham (2022), NBER Working Paper 29841, p. 20; the paper's Figure 7 has the distribution only as bars.",
    "rows": 2,
@@ -1817,7 +1792,7 @@
   },
   "state/typed_winfrey_s3": {
    "for": [
-    "S2.03"
+    "S2.129"
    ],
    "note": "Typed from BEA, Fixed Assets and Consumer Durable Goods in the United States, 1925-97, Table D. With each kind's mean service life (cap/, derive_cap.py) it gives the annual retirement hazard by age; the BEA applies it explicitly only to missiles and nuclear fuel, other assets' retirements being implied by their geometric rates, and no source measures failures of plant as such.",
    "rows": 24,
@@ -1825,21 +1800,22 @@
   },
   "state/vparty": {
    "for": [
-    "S5.03"
+    "S5.134"
    ],
    "rows": 3901,
    "title": "Parties at each national legislative election 2000-2019: seat share (%), seats, total seats, vote share (%), government support, left-right economic position, welfare, immigration, cultural, religious positions, populism and anti-elitism (expert-coded latent scales), V-Dem V-Party v2"
   },
   "state/wipo_fields": {
    "for": [
-    "S6.01"
+    "S6.101"
    ],
    "rows": 36,
    "title": "WIPO technology fields: number and name"
   },
   "state/wipo_grants_by_field": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "note": "By origin sums one origin's grants over every office, so a family granted at several offices counts at each. Field names in state/wipo_fields.",
    "rows": 33238,
@@ -1859,14 +1835,16 @@
   },
   "wb/EG.ELC.ACCS.ZS": {
    "for": [
-    "S2.09"
+    "S2.206",
+    "S2.210"
    ],
    "rows": 2150,
    "title": "Access to electricity (% of population), World Bank WDI"
   },
   "wb/EG.ELC.LOSS.ZS": {
    "for": [
-    "S2.09"
+    "S2.206",
+    "S2.210"
    ],
    "rows": 1379,
    "title": "Electric power transmission and distribution losses (% of output), World Bank WDI"
@@ -1909,56 +1887,56 @@
   },
   "wb/TM.TAX.MANF.SM.AR.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1163,
    "title": "Tariff rate, applied, simple mean, manufactured products (%), World Bank WDI"
   },
   "wb/TM.TAX.MANF.WM.AR.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1163,
    "title": "Tariff rate, applied, weighted mean, manufactured products (%), World Bank WDI"
   },
   "wb/TM.TAX.MRCH.SM.AR.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1163,
    "title": "Tariff rate, applied, simple mean, all products (%), World Bank WDI"
   },
   "wb/TM.TAX.MRCH.SM.FN.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1177,
    "title": "Tariff rate, most favored nation, simple mean, all products (%), World Bank WDI"
   },
   "wb/TM.TAX.MRCH.WM.AR.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1163,
    "title": "Tariff rate, applied, weighted mean, all products (%), World Bank WDI"
   },
   "wb/TM.TAX.MRCH.WM.FN.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1165,
    "title": "Tariff rate, most favored nation, weighted mean, all products (%), World Bank WDI"
   },
   "wb/TM.TAX.TCOM.SM.AR.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1163,
    "title": "Tariff rate, applied, simple mean, primary products (%), World Bank WDI"
   },
   "wb/TM.TAX.TCOM.WM.AR.ZS": {
    "for": [
-    "S5.05"
+    "S5.174"
    ],
    "rows": 1163,
    "title": "Tariff rate, applied, weighted mean, primary products (%), World Bank WDI"
@@ -1969,21 +1947,21 @@
   },
   "wdi/BM.TRF.PWKR.CD.DT": {
    "for": [
-    "S5.05"
+    "S5.100"
    ],
    "rows": 1866,
    "title": "Personal remittances, paid, current US$, 2015-2025 (BM.TRF.PWKR.CD.DT), World Bank WDI"
   },
   "wdi/BX.TRF.PWKR.CD.DT": {
    "for": [
-    "S5.05"
+    "S5.100"
    ],
    "rows": 1849,
    "title": "Personal remittances, received, current US$, 2015-2025 (BX.TRF.PWKR.CD.DT), World Bank WDI"
   },
   "wdi/BX.TRF.PWKR.DT.GD.ZS": {
    "for": [
-    "S5.05"
+    "S5.100"
    ],
    "rows": 1841,
    "title": "Personal remittances, received, % of GDP, 2015-2025 (BX.TRF.PWKR.DT.GD.ZS), World Bank WDI"
@@ -2006,7 +1984,8 @@
   },
   "wdi/GB.XPD.RSDV.GD.ZS": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "rows": 853,
    "title": "Research and development expenditure (% of GDP), World Bank WDI"
@@ -2017,21 +1996,23 @@
   },
   "wdi/HD.HCI.HLOS": {
    "for": [
-    "S6.02"
+    "S6.114"
    ],
    "rows": 494,
    "title": "Harmonized test scores (Human Capital Index), 300 minimal to 625 advanced, 2015-2025 (HD.HCI.HLOS), World Bank WDI"
   },
   "wdi/IP.PAT.NRES": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "rows": 894,
    "title": "Patent applications, nonresidents, World Bank WDI"
   },
   "wdi/IP.PAT.RESD": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "rows": 831,
    "title": "Patent applications, residents, World Bank WDI"
@@ -2073,22 +2054,21 @@
   },
   "wdi/SE.PRE.DURS": {
    "for": [
-    "S6.02"
+    "S6.114"
    ],
    "rows": 2203,
    "title": "Pre-primary education, duration, years, 2015-2025 (SE.PRE.DURS), World Bank WDI"
   },
   "wdi/SE.PRE.ENRL.TC.ZS": {
    "for": [
-    "S5.02",
-    "S6.02"
+    "S5.122"
    ],
    "rows": 404,
    "title": "Pupil-teacher ratio, pre-primary, 2015-2025 (SE.PRE.ENRL.TC.ZS), World Bank WDI"
   },
   "wdi/SE.PRE.ENRR": {
    "for": [
-    "S6.02"
+    "S6.127"
    ],
    "rows": 997,
    "title": "School enrolment, pre-primary, % gross, 2015-2025 (SE.PRE.ENRR), World Bank WDI"
@@ -2109,8 +2089,7 @@
   },
   "wdi/SE.PRM.ENRL.TC.ZS": {
    "for": [
-    "S5.02",
-    "S6.02"
+    "S5.122"
    ],
    "rows": 513,
    "title": "Pupil-teacher ratio, primary, 2015-2025 (SE.PRM.ENRL.TC.ZS), World Bank WDI"
@@ -2138,8 +2117,7 @@
   },
   "wdi/SE.SEC.ENRL.TC.ZS": {
    "for": [
-    "S5.02",
-    "S6.02"
+    "S5.122"
    ],
    "rows": 420,
    "title": "Pupil-teacher ratio, secondary, 2015-2025 (SE.SEC.ENRL.TC.ZS), World Bank WDI"
@@ -2153,8 +2131,7 @@
   },
   "wdi/SE.TER.ENRL.TC.ZS": {
    "for": [
-    "S5.02",
-    "S6.02"
+    "S5.122"
    ],
    "rows": 348,
    "title": "Pupil-teacher ratio, tertiary, 2015-2025 (SE.TER.ENRL.TC.ZS), World Bank WDI"
@@ -2168,49 +2145,49 @@
   },
   "wdi/SE.XPD.TOTL.GD.ZS": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 1496,
    "title": "Government expenditure on education, total (% of GDP), World Bank WDI"
   },
   "wdi/SH.MED.BEDS.ZS": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 1139,
    "title": "Hospital beds (per 1,000 people), World Bank WDI"
   },
   "wdi/SH.MED.NUMW.P3": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 1192,
    "title": "Nurses and midwives (per 1,000 people), World Bank WDI"
   },
   "wdi/SH.MED.PHYS.ZS": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 1126,
    "title": "Physicians (per 1,000 people), World Bank WDI"
   },
   "wdi/SH.STA.TRAF.P5": {
    "for": [
-    "S4.03"
+    "S4.134"
    ],
    "rows": 918,
    "title": "Mortality caused by road traffic injury (per 100,000 population), WHO via World Bank WDI"
   },
   "wdi/SH.XPD.CHEX.GD.ZS": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 1752,
    "title": "Current health expenditure (% of GDP), World Bank WDI"
   },
   "wdi/SH.XPD.GHED.GD.ZS": {
    "for": [
-    "S5.02"
+    "S5.122"
    ],
    "rows": 1737,
    "title": "Domestic general government health expenditure (% of GDP), World Bank WDI"
@@ -2229,15 +2206,15 @@
   },
   "wdi/SM.POP.NETM": {
    "for": [
-    "S5.05",
-    "S6.02"
+    "S5.100",
+    "S6.100"
    ],
    "rows": 2387,
    "title": "Net migration, persons, 2015-2025 (SM.POP.NETM), World Bank WDI"
   },
   "wdi/SM.POP.TOTL.ZS": {
    "for": [
-    "S5.05"
+    "S5.100"
    ],
    "rows": 648,
    "title": "International migrant stock, % of population, 2015-2025 (SM.POP.TOTL.ZS), World Bank WDI"
@@ -2260,7 +2237,8 @@
   },
   "wdi/SP.POP.SCIE.RD.P6": {
    "for": [
-    "S6.01"
+    "S6.101",
+    "S6.113"
    ],
    "rows": 763,
    "title": "Researchers in R&D (per million people), World Bank WDI"
@@ -2535,7 +2513,7 @@
   },
   "macro/calderon_fuentes": {
    "fetched": "2026-09-28",
-   "title": "Calder\u00f3n and Fuentes, 'Characterizing the Business Cycles of Emerging Economies', World Bank Policy Research Working Paper 5343 (June 2010), Table 1, p. 11: classical cycles by Harding and Pagan's quarterly algorithm, GDP 1980Q1-2006Q2; mean durations in quarters, amplitudes in per cent; '.' left empty",
+   "title": "Calderón and Fuentes, 'Characterizing the Business Cycles of Emerging Economies', World Bank Policy Research Working Paper 5343 (June 2010), Table 1, p. 11: classical cycles by Harding and Pagan's quarterly algorithm, GDP 1980Q1-2006Q2; mean durations in quarters, amplitudes in per cent; '.' left empty",
    "url": "https://documents.worldbank.org/curated/en/524811468325165721/pdf/WPS5343.pdf"
   },
   "macro/ilo_sdmx": {
@@ -2556,7 +2534,7 @@
   "macro/jst": {
    "fetched": "2026-09-28",
    "release": "R6",
-   "title": "Jord\u00e0, Schularick and Taylor, Macrohistory Database, release 6",
+   "title": "Jordà, Schularick and Taylor, Macrohistory Database, release 6",
    "url": "https://www.macrohistory.net/app/download/9834512569/JSTdatasetR6.xlsx"
   },
   "macro/neumeyer_perri": {
@@ -2688,7 +2666,7 @@
   },
   "open/fkrsu": {
    "fetched": "2026-09-28",
-   "title": "Fern\u00e1ndez, Klein, Rebucci, Schindler and Uribe, Capital Control Measures, 2021 update (12 August 2021)",
+   "title": "Fernández, Klein, Rebucci, Schindler and Uribe, Capital Control Measures, 2021 update (12 August 2021)",
    "url": "https://www.columbia.edu/~mu2166/fkrsu/2021-FKRSU-Update-12-08-2021.xlsx"
   },
   "open/gppd": {
