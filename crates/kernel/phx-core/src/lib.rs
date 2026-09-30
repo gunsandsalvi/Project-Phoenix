@@ -44,8 +44,8 @@ pub use contribution::{
     OpeningCtx, PARTIES, PHASES, PHYSICAL_STOCK, PRESENT_VALUES, ReportSink, WriteRecord, apportion, opening_subject,
 };
 pub use decisions::{
-    DECISIONS, Decider, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Player, PlayerQueue, Prefs, QueuedIntent,
-    QueuedPayload, Say, Standing, TakenIn, dispatch,
+    DECISIONS, DecisionKind, DecisionKinds, DecisionPointDecl, Mode, Prefs, QueuedIntent, QueuedPayload, Say, Standing,
+    TakenIn,
 };
 pub use events::{Event, EventIntent, EventKindDecl, EventStore, NewEvent};
 pub use events_rule::{EventsRule, NewsEntry, Notice, PUBLIC_EVENTS};

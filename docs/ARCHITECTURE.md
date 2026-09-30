@@ -714,9 +714,11 @@ decision and an effective day before the next business day of the policy's count
   decision core (§7.16), never stored per decision.
 
   A decision point's rule is one pure function and is its own evaluation form, so REP.15's estimates evaluate the
-  function that decides. A point needs a schedule or wakes. `Ctx::decide` takes the player's queued intent for the
-  point when one is queued; otherwise the rule decides only if the player's decider delegates, and else the decision
-  is not taken that day. The rule table's check refuses a rule signature with no implementer or two, one implemented by
+  function that decides. A point needs a schedule or wakes. The decision runtime exists once: the decision core in
+  `phx-world` (`core_decide.rs`: `decide`, `decide_own`, the decider's standing; `core_player.rs`: the player's queue)
+  says how each decision is taken as a `phx-core` `Say`, and `Say::take` takes it — the player's queued intent when one
+  is queued (one that does not decode stops the run), else the rule on the decider's preferences, or nothing that day
+  when the player keeps the decision and queued nothing. The rule table's check refuses a rule signature with no implementer or two, one implemented by
   another system than its declared one, and an implementation of no declared signature. Each point the day takes is bound once to
   its place among the declared decisions (`core_decide::Points`: the systems' points and those the labour market's,
   the bills' and the benefit's kinds name), after the decisions and those kinds open and again at load; a day reads

@@ -321,10 +321,6 @@ pub fn phx_core::contribution::ReportSink::write(&mut self, &phx_core::contribut
 pub fn phx_core::contribution::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>  // used by: phx-cli, phx-geo, phx-world, sys-dem
 pub fn phx_core::contribution::opening_subject(u32, u32) -> phx_rand::key::Subject  // used by: phx-world, sys-bnk, sys-cb, sys-dem
 pub mod phx_core::decisions  // used by: if-credit, if-labour, if-state, phx-cli, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
-pub enum phx_core::decisions::Decider
-pub phx_core::decisions::Decider::Player  // used by: phx-world
-pub phx_core::decisions::Decider::Player::delegate_when_unqueued: bool
-pub phx_core::decisions::Decider::Rule  // used by: phx-check, phx-cli, phx-world, sys-lab
 pub enum phx_core::decisions::Mode
 pub phx_core::decisions::Mode::Best
 pub phx_core::decisions::Mode::Satisfice
@@ -375,27 +371,6 @@ pub phx_core::decisions::DecisionPointDecl::system: &'static str  // used by: ph
 pub phx_core::decisions::DecisionPointDecl::wakes: &'static [phx_core::schedule::WakeKind]  // used by: phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 impl<I, O> phx_core::decisions::DecisionPointDecl<I, O>
 pub fn phx_core::decisions::DecisionPointDecl<I, O>::validate(&self) -> core::result::Result<(), alloc::string::String>  // used by: if-labour, if-state, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
-pub struct phx_core::decisions::Player  // used by: phx-world
-pub phx_core::decisions::Player::delegate: bool  // used by: phx-cli, phx-world
-pub phx_core::decisions::Player::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::decisions::Player where phx_id::ids::PartyId: phx_store::save::Saved, bool: phx_store::save::Saved
-pub fn phx_core::decisions::Player::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::Player::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::Player::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
-pub struct phx_core::decisions::PlayerQueue
-impl phx_core::decisions::PlayerQueue
-pub fn phx_core::decisions::PlayerQueue::decider(&self, phx_id::ids::PartyId) -> phx_core::decisions::Decider  // used by: phx-world
-pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
-pub fn phx_core::decisions::PlayerQueue::player(&self) -> phx_num::missing::Missing<phx_core::decisions::Player>  // used by: phx-cli, phx-world
-pub fn phx_core::decisions::PlayerQueue::push(&mut self, phx_core::decisions::QueuedIntent)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn phx_core::decisions::PlayerQueue::queued(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_  // used by: phx-cli, phx-world
-pub fn phx_core::decisions::PlayerQueue::seat(&mut self, phx_core::decisions::Player)
-pub fn phx_core::decisions::PlayerQueue::take(&mut self, phx_id::ids::PartyId, &str) -> core::option::Option<alloc::vec::Vec<i64>>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
-pub fn phx_core::decisions::PlayerQueue::unseated() -> phx_core::decisions::PlayerQueue
-impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where phx_num::missing::Missing<phx_core::decisions::Player>: phx_store::save::Saved, alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
-pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::PlayerQueue::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::decisions::Prefs  // used by: phx-world
 pub phx_core::decisions::Prefs::management: phx_num::missing::Missing<u16>  // used by: phx-cli, phx-world, sys-frm
 pub phx_core::decisions::Prefs::memory: phx_num::missing::Missing<u16>  // used by: phx-val, phx-world
@@ -430,7 +405,6 @@ impl phx_core::decisions::QueuedPayload for i64
 pub fn i64::decode(&[i64]) -> core::option::Option<i64>
 impl phx_core::decisions::QueuedPayload for usize
 pub fn usize::decode(&[i64]) -> core::option::Option<usize>
-pub fn phx_core::decisions::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>  // used by: phx-check
 pub mod phx_core::events  // used by: phx-cli, phx-obs, phx-world, sys-sta
 pub struct phx_core::events::Event  // used by: phx-cli, phx-ledger
 pub phx_core::events::Event::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
@@ -619,7 +593,7 @@ pub fn phx_core::flows::FlowBufs::group(&mut self, core::option::Option<&phx_exe
 pub fn phx_core::flows::FlowBufs::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_core::flows::FlowBufs::len(&self) -> usize  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_core::flows::FlowBufs::reset(&mut self, usize)  // used by: phx-exec, phx-fin, phx-ledger, phx-world
-pub fn phx_core::flows::FlowBufs::slices(&self) -> impl core::iter::traits::iterator::Iterator<Item = &[phx_core::flows::Flow]>
+pub fn phx_core::flows::FlowBufs::slices(&self) -> impl core::iter::traits::iterator::Iterator<Item = &[phx_core::flows::Flow]>  // used by: phx-world
 pub struct phx_core::flows::Grouped<'a>  // used by: phx-fin, phx-world
 impl<'a> phx_core::flows::Grouped<'a>
 pub fn phx_core::flows::Grouped<'a>::credit_slices(&self, usize) -> impl core::iter::traits::iterator::Iterator<Item = &'a [phx_core::flows::Credit]> + '_  // used by: phx-fin, phx-world
@@ -1755,10 +1729,6 @@ pub phx_core::DayCount::Thirty360E
 impl phx_store::save::Saved for phx_core::calendar::daycount::DayCount
 pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
-pub enum phx_core::Decider
-pub phx_core::Decider::Player  // used by: phx-world
-pub phx_core::Decider::Player::delegate_when_unqueued: bool
-pub phx_core::Decider::Rule  // used by: phx-check, phx-cli, phx-world, sys-lab
 pub enum phx_core::Discretisation
 pub phx_core::Discretisation::EqualShares
 pub enum phx_core::DrawScheme  // used by: phx-geo, phx-macros
@@ -2528,27 +2498,6 @@ pub struct phx_core::PhysicalToken(_)
 pub struct phx_core::Pinned  // used by: phx-world
 pub phx_core::Pinned::index: usize  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 pub phx_core::Pinned::part: u8  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-world, sys-lab
-pub struct phx_core::Player  // used by: phx-world
-pub phx_core::Player::delegate: bool  // used by: phx-cli, phx-world
-pub phx_core::Player::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::decisions::Player where phx_id::ids::PartyId: phx_store::save::Saved, bool: phx_store::save::Saved
-pub fn phx_core::decisions::Player::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::Player::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::Player::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
-pub struct phx_core::PlayerQueue
-impl phx_core::decisions::PlayerQueue
-pub fn phx_core::decisions::PlayerQueue::decider(&self, phx_id::ids::PartyId) -> phx_core::decisions::Decider  // used by: phx-world
-pub fn phx_core::decisions::PlayerQueue::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
-pub fn phx_core::decisions::PlayerQueue::player(&self) -> phx_num::missing::Missing<phx_core::decisions::Player>  // used by: phx-cli, phx-world
-pub fn phx_core::decisions::PlayerQueue::push(&mut self, phx_core::decisions::QueuedIntent)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn phx_core::decisions::PlayerQueue::queued(&self) -> impl core::iter::traits::iterator::Iterator<Item = &'static str> + '_  // used by: phx-cli, phx-world
-pub fn phx_core::decisions::PlayerQueue::seat(&mut self, phx_core::decisions::Player)
-pub fn phx_core::decisions::PlayerQueue::take(&mut self, phx_id::ids::PartyId, &str) -> core::option::Option<alloc::vec::Vec<i64>>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
-pub fn phx_core::decisions::PlayerQueue::unseated() -> phx_core::decisions::PlayerQueue
-impl phx_store::save::Saved for phx_core::decisions::PlayerQueue where phx_num::missing::Missing<phx_core::decisions::Player>: phx_store::save::Saved, alloc::vec::Vec<phx_core::decisions::QueuedIntent>: phx_store::save::Saved
-pub fn phx_core::decisions::PlayerQueue::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::PlayerQueue::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::PlayerQueue::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::PolicyValue<T>
 impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
 pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
@@ -2921,7 +2870,6 @@ pub fn phx_core::check_claims(&[phx_core::facts::ItemDecl], &[phx_core::facts::C
 pub fn phx_core::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction  // used by: phx-ledger
 pub fn phx_core::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations)  // used by: phx-world
 pub fn phx_core::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations)
-pub fn phx_core::dispatch<I, O: phx_core::decisions::QueuedPayload>(&phx_core::decisions::DecisionPointDecl<I, O>, phx_core::decisions::Decider, core::option::Option<&[i64]>, &I) -> core::option::Option<O>  // used by: phx-check
 pub fn phx_core::draw_profile(&phx_core::register::profile::JointProfile, &[phx_core::register::profile::Pinned], u8, &mut phx_rand::draws::Draws) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>  // used by: phx-world
 pub fn phx_core::draw_type(&phx_core::register::values::TypeSet, &mut phx_rand::draws::Draws) -> phx_core::register::values::TypeId  // used by: phx-world, sys-dem
 pub fn phx_core::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
