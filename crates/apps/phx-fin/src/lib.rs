@@ -7,6 +7,7 @@ pub mod compose;
 pub mod counters;
 pub mod daybuf;
 pub mod design;
+pub mod epoch;
 pub mod fill;
 pub mod index;
 pub mod kept;
@@ -137,6 +138,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(save::Save::default()),
     || Box::new(stalls::Stalls::default()),
     || Box::new(index::Indexes::default()),
+    || Box::new(epoch::Epoch::default()),
 ];
 
 /// What a run fills, runs and reads.
@@ -201,7 +203,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
     }
     let mut per_op: BTreeMap<String, f64> = measures
         .iter()
-        .filter_map(|((base, op), m)| Some((format!("fin.{base}.{op}_ns"), m.ns_per_op()?.to_string().parse().ok()?)))
+        .filter_map(|((base, op), m)| Some((format!("fin.{base}.{op}_ns"), m.ns_per_op_exact()?)))
         .collect();
     for (base, _, mb) in &sizes {
         if let Ok(mb) = mb.to_string().parse() {
@@ -228,7 +230,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
         bases: chosen.iter().map(|d| d.name().to_owned()).collect(),
         ops: measures
             .iter()
-            .map(|((b, o), m): (&(String, String), &Measure)| (b.clone(), o.clone(), m.items, m.ns_per_op()))
+            .map(|((b, o), m): (&(String, String), &Measure)| (b.clone(), o.clone(), m.items, m.ns_per_op_exact()))
             .collect(),
         sizes,
         figures,

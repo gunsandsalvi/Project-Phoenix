@@ -1,7 +1,7 @@
 pub mod phx_val  // used by: phx-world, sys-frm, sys-hh
 pub mod phx_val::attention  // used by: sys-frm
 pub struct phx_val::attention::Span  // used by: phx-check, phx-cli, phx-macros
-pub phx_val::attention::Span::days: u32  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-obs, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_val::attention::Span::days: u32  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub phx_val::attention::Span::var_public: f64  // used by: sys-frm
 pub fn phx_val::attention::exposure(f64, f64, &[phx_val::attention::Span]) -> f64  // used by: phx-cli, phx-geo, sys-sta
 pub fn phx_val::attention::gain(f64, f64) -> f64  // used by: phx-world, sys-frm, sys-hh

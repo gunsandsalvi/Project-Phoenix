@@ -134,7 +134,7 @@ fn warm_day_is_not_counted() {
     let report = run(&args, &[|| Box::new(Counting::default())], &Ticks).unwrap();
     assert_eq!(
         report.ops,
-        [("counting".to_owned(), "op".to_owned(), 100, Some(7))],
+        [("counting".to_owned(), "op".to_owned(), 100, Some(7.0))],
         "one day measured, its warm-up not"
     );
     let unknown = Args { bases: Some(vec!["stalls".to_owned()]), ..args };

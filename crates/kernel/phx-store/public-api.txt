@@ -186,7 +186,7 @@ pub fn phx_store::block_list::BlockPool<B>::push(&mut self, &mut phx_store::bloc
 pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub mod phx_store::column  // used by: phx-check, phx-core, phx-geo, phx-world, sys-dem, sys-sta, sys-tec
 pub struct phx_store::column::ChunkMut<'a, T>
-pub phx_store::column::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
+pub phx_store::column::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-fin, phx-market, phx-pop, phx-world
 pub phx_store::column::ChunkMut::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
 pub phx_store::column::ChunkMut::rows: &'a mut [T]  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub struct phx_store::column::Column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-core, phx-pop
@@ -395,6 +395,35 @@ pub fn phx_store::encode::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descr
 pub fn phx_store::encode::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::encode::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>  // used by: phx-fin
 pub fn phx_store::encode::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
+pub mod phx_store::epoch  // used by: phx-core, phx-exec, phx-fin, phx-id, phx-world
+pub struct phx_store::epoch::DayStamps<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::bytes_committed(&self) -> usize
+pub fn phx_store::epoch::DayStamps<B>::is_today(&self, phx_id::ids::Slot, u32) -> bool
+pub fn phx_store::epoch::DayStamps<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::stamp(&mut self, phx_id::ids::Slot, u32)
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::bytes(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_ever(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_live(&self) -> u64
+pub struct phx_store::epoch::EpochBits<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::epoch::EpochBits<B>
+pub fn phx_store::epoch::EpochBits<B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::epoch::EpochChunk<'_>>  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::for_each_marked(&self, u32, impl core::ops::function::FnMut(phx_id::ids::Slot))  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::for_each_marked_word(&self, u32, impl core::ops::function::FnMut(phx_id::ids::Slot, u64))  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::is_marked(&self, phx_id::ids::Slot, u32) -> bool  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::mark(&mut self, phx_id::ids::Slot, u32)  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::epoch::EpochBits<B>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::EpochBits<B>
+pub fn phx_store::epoch::EpochBits<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_store::epoch::EpochChunk<'a>
+impl phx_store::epoch::EpochChunk<'_>
+pub fn phx_store::epoch::EpochChunk<'_>::first(&self) -> u32
+pub fn phx_store::epoch::EpochChunk<'_>::mark(&mut self, phx_id::ids::Slot, u32)
+pub const phx_store::epoch::EPOCH_CHUNK_ROWS: u32  // used by: phx-fin
 pub mod phx_store::genref
 #[repr(C)] pub struct phx_store::genref::GenRef<T>
 impl<T> phx_store::genref::GenRef<T>
@@ -939,6 +968,14 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::bytes(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_ever(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_live(&self) -> u64
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::EpochBits<B>
+pub fn phx_store::epoch::EpochBits<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::index::Index<B>
 pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
@@ -1020,7 +1057,7 @@ pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_store::table::Table<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-core, phx-fin, phx-market
 pub struct phx_store::table::TableChunk<R>
-pub phx_store::table::TableChunk::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
+pub phx_store::table::TableChunk::chunk: u32  // used by: phx-core, phx-exec, phx-fin, phx-market, phx-pop, phx-world
 pub phx_store::table::TableChunk::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
 pub phx_store::table::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub trait phx_store::table::TableChunks
@@ -1176,7 +1213,7 @@ pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -
 pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 pub struct phx_store::ChunkMut<'a, T>
-pub phx_store::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
+pub phx_store::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-fin, phx-market, phx-pop, phx-world
 pub phx_store::ChunkMut::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
 pub phx_store::ChunkMut::rows: &'a mut [T]  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub struct phx_store::Column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-core, phx-pop
@@ -1254,6 +1291,16 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_store::DayStamps<B: phx_store::backing::Backing>
+impl<B: phx_store::backing::Backing> phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::bytes_committed(&self) -> usize
+pub fn phx_store::epoch::DayStamps<B>::is_today(&self, phx_id::ids::Slot, u32) -> bool
+pub fn phx_store::epoch::DayStamps<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::stamp(&mut self, phx_id::ids::Slot, u32)
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::bytes(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_ever(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_live(&self) -> u64
 pub struct phx_store::EdgeTable<R: phx_store::edges::Row, B: phx_store::backing::Backing>  // used by: phx-core
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])  // used by: phx-core
@@ -1274,6 +1321,23 @@ impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+pub struct phx_store::EpochBits<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::epoch::EpochBits<B>
+pub fn phx_store::epoch::EpochBits<B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::epoch::EpochChunk<'_>>  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::for_each_marked(&self, u32, impl core::ops::function::FnMut(phx_id::ids::Slot))  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::for_each_marked_word(&self, u32, impl core::ops::function::FnMut(phx_id::ids::Slot, u64))  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::is_marked(&self, phx_id::ids::Slot, u32) -> bool  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::mark(&mut self, phx_id::ids::Slot, u32)  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::epoch::EpochBits<B>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::EpochBits<B>
+pub fn phx_store::epoch::EpochBits<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_store::EpochChunk<'a>
+impl phx_store::epoch::EpochChunk<'_>
+pub fn phx_store::epoch::EpochChunk<'_>::first(&self) -> u32
+pub fn phx_store::epoch::EpochChunk<'_>::mark(&mut self, phx_id::ids::Slot, u32)
 pub struct phx_store::FieldDescriptor
 pub phx_store::FieldDescriptor::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_store::FieldDescriptor::offset: u16  // used by: phx-check, phx-core, phx-fin, phx-geo, sys-dem
@@ -1546,7 +1610,7 @@ pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_store::table::Table<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-core, phx-fin, phx-market
 pub struct phx_store::TableChunk<R>
-pub phx_store::TableChunk::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
+pub phx_store::TableChunk::chunk: u32  // used by: phx-core, phx-exec, phx-fin, phx-market, phx-pop, phx-world
 pub phx_store::TableChunk::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
 pub phx_store::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub struct phx_store::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
@@ -1560,6 +1624,7 @@ pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> c
 pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl core::fmt::Debug for phx_store::save::Writer<'_>
 pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub const phx_store::EPOCH_CHUNK_ROWS: u32  // used by: phx-fin
 pub trait phx_store::ArenaLists
 pub fn phx_store::ArenaLists::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
 pub fn phx_store::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
@@ -1873,6 +1938,14 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::DayStamps<B>
+pub fn phx_store::epoch::DayStamps<B>::bytes(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_ever(&self) -> u64
+pub fn phx_store::epoch::DayStamps<B>::rows_live(&self) -> u64
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::epoch::EpochBits<B>
+pub fn phx_store::epoch::EpochBits<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::epoch::EpochBits<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::index::Index<B>
 pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros

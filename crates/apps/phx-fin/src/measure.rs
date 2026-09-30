@@ -29,6 +29,13 @@ impl Measure {
         self.cpu_ns?.checked_div(self.items)
     }
 
+    /// Nanoseconds an item exactly, for kernels whose cost is below a whole nanosecond.
+    #[must_use]
+    pub fn ns_per_op_exact(&self) -> Option<f64> {
+        let (cpu, items) = (self.cpu_ns?.to_string().parse::<f64>().ok()?, self.items.to_string().parse::<f64>().ok()?);
+        (self.items > 0).then(|| cpu / items)
+    }
+
     fn add(&mut self, m: &Measure) {
         self.items += m.items;
         self.cpu_ns = sum(self.cpu_ns, m.cpu_ns);

@@ -16,7 +16,7 @@ pub struct phx_pop::kind::Declared<T>  // used by: phx-fin, phx-world
 pub phx_pop::kind::Declared::item: T  // used by: phx-check, phx-core, phx-exec, phx-macros, phx-world, sys-dem
 pub phx_pop::kind::Declared::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_pop::kind::PersonField
-pub phx_pop::kind::PersonField::bits: u32  // used by: phx-core, phx-num, phx-rand, phx-store, phx-world
+pub phx_pop::kind::PersonField::bits: u32  // used by: phx-core, phx-fin, phx-num, phx-rand, phx-store, phx-world
 pub phx_pop::kind::PersonField::decl: phx_core::pop::PersonAttrDecl  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
 pub phx_pop::kind::PersonField::shift: u32  // used by: phx-exec, phx-market, phx-num, phx-rand, phx-store, phx-world
 pub phx_pop::kind::PersonField::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov

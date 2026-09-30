@@ -10,7 +10,7 @@ pub struct Report {
     /// The bases filled and measured.
     pub bases: Vec<String>,
     /// Each operation measured: base, name, items and nanoseconds an item.
-    pub ops: Vec<(String, String, u64, Option<u64>)>,
+    pub ops: Vec<(String, String, u64, Option<f64>)>,
     /// Each base's rows and the MiB it holds once filled.
     pub sizes: Vec<(String, u64, u64)>,
     /// The bases' own figures, each by its key.
@@ -53,7 +53,7 @@ impl Report {
             let _ = writeln!(out, "  {key}: {v}");
         }
         for (base, op, items, ns) in &self.ops {
-            let ns = ns.map_or_else(|| "no".to_owned(), |n| n.to_string());
+            let ns = ns.map_or_else(|| "no".to_owned(), |n| format!("{n:.2}"));
             let _ = writeln!(out, "  {base}.{op}: {items} items, {ns} ns an item");
         }
         for m in &self.misses {

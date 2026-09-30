@@ -240,6 +240,21 @@ counter = "fin.units.draw_ns"
 value = 38
 direction = "down"
 
+# Epoch flags (S1.166, 2026-10-01; `tools/bench.sh -F epoch`): the design point's 8.8 M party slots, each day's touched
+# parties marked three times through the applies' chunks in slot order, 2.8–2.9 ns a mark, standing a quarter above
+# (the step's 0.8 counts a bit set into a word already in the writer's cache); the day's set read a word at a time,
+# 0.18–0.22 ns a set row, within the step's 0.4. A figure below a nanosecond is read exactly, CPU over items.
+
+[[ratchet]]
+counter = "fin.epoch.mark_ns"
+value = 3.7
+direction = "down"
+
+[[ratchet]]
+counter = "fin.epoch.iter_ns"
+value = 0.4
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

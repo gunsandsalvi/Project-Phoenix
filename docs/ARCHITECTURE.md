@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02, K-03, K-05, K-06 and K-10 built (S1.159–S1.165); the rest planned (S1.166–S1.168)
+Status: K-02, K-03, K-05–K-07 and K-10 built (S1.159–S1.166); the rest planned (S1.167, S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1284,8 +1284,40 @@ lazy instance (S1.167); the declared instances maintained on writes (S1.196); th
 
 #### K-07 Epoch flags and change sets
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.166).
+Every store can say what the day changed — which rows, which parties — with no clearing pass.
+
+**Layout** (`epoch.rs`): `EpochBits` holds a bit a row under a day stamp a word of 64 rows, and a summary bit a word
+under a day stamp a summary word of 64 words (4 096 rows): 1.53 bits a row with its stamps. `DayStamps` holds a row's
+last day, 4 bytes a row, for readers that ask whether a row was touched today — a per-day cache's stamp (K-35), a
+perishable capacity's day of use (K-85). A word or row no day has marked holds a stamp no run reaches, only ever
+compared with today.
+
+**API**: `mark(slot, today)`: a word whose stamp is not today is cleared and stamped, and its summary bit set, once a
+word a day; then the row's bit set — one compare and one bit set once the word is today's. `chunks_mut` hands each
+writer its 4 096-row chunks (their words and summary word together), so the applies partitioned by range (K-12) mark
+with no atomics. `for_each_marked_word(today, …)` yields each word marked today, its first row and its bits, in slot
+order, visiting only the words their summaries mark: a reader handles a word's rows in its own loop.
+`for_each_marked` yields rows; `is_marked`; `DayStamps::stamp`, `is_today`.
+
+**Algorithms and bounds**: marking is O(1); a day's iteration is O(summary words + words marked), a payday's dense
+day O(rows / 64), always in slot order and the same for any workers. Two marks of a row a day are one.
+
+**Change sets**: each base declares which of its columns the daily audit recounts and which parties' identities it
+rechecks, and marks them where it writes; the audit (K-103) iterates the day's set and reads the rows, never a
+writer's maintained aggregate (N1, R4).
+
+**Save and load**: not saved; a load starts a clean day, the save being taken at a close after the audit read the day's
+set. Stamps that are state (a deposit's last change) are their owning base's saved columns.
+
+**Volumes and ratchets** (`tools/bench.sh -F epoch`): the design point's 8.8 M party slots, each day's touched parties
+(`[day.*] touched`) marked three times by three applies through their chunks in slot order, then the day's set read a
+word at a time: 2.8–2.9 ns a mark (`[fin.epoch] mark_ns` 3.7; the step's 0.8 counts a mark as one bit set into a word
+already in the writer's cache, where the kernel alone also checks its bounds and its word's day), 0.18–0.22 ns a set
+row over whole words (`iter_ns` 0.4).
+
+**Extension points**: segment loads stamped by day (S1.188); epoch stamps and the day's touched parties (S1.197,
+S1.219); units touched today (S1.273); a capacity's use today (S1.324); the parties, owned parties and estates the day
+touched (S1.330, S1.331, S1.342); what the day changed, for the audit (S1.353); holdings' change set (S4.172).
 
 #### K-08 Horizon rings
 

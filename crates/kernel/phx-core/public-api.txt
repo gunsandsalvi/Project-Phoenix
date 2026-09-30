@@ -52,7 +52,7 @@ pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save:
 pub struct phx_core::calendar::period::Period  // used by: phx-cli, phx-ledger, phx-val, phx-world
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16  // used by: phx-ledger
-pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub fn phx_core::calendar::period::Period::month_count(self) -> u16  // used by: phx-ledger
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-world, sys-lab, sys-soc
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-world, sys-sov
@@ -67,7 +67,7 @@ pub phx_core::calendar::period::ScheduleDates::country: phx_id::ids::CountryId  
 pub phx_core::calendar::period::ScheduleDates::eom: phx_core::calendar::period::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::calendar::period::ScheduleDates::period: phx_core::calendar::period::Period  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 impl phx_core::calendar::period::ScheduleDates
-pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
 pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
@@ -81,7 +81,7 @@ pub const phx_core::calendar::prims::EPOCH: phx_core::register::PrimDecl  // use
 pub mod phx_core::calendar::rules  // used by: phx-check, phx-fin, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov
 pub enum phx_core::calendar::rules::HolidayRule
 pub phx_core::calendar::rules::HolidayRule::EasterOffset
-pub phx_core::calendar::rules::HolidayRule::EasterOffset::days: i32  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::calendar::rules::HolidayRule::EasterOffset::days: i32  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub phx_core::calendar::rules::HolidayRule::EasterOffset::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::calendar::rules::HolidayRule::Fixed  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_core::calendar::rules::HolidayRule::Fixed::day: u8  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
@@ -110,7 +110,7 @@ pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calen
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::calendar::rules::WeekendRule  // used by: phx-fin
-pub phx_core::calendar::rules::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::calendar::rules::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub const phx_core::calendar::rules::WEEK: [phx_id::day::Weekday; 7]  // used by: phx-id
 pub fn phx_core::calendar::rules::easter_sunday(i32) -> core::option::Option<phx_id::day::Date>
 pub struct phx_core::calendar::Calendar  // used by: phx-fin, phx-ledger, phx-world
@@ -123,7 +123,7 @@ pub fn phx_core::calendar::Calendar::date(&self, phx_id::day::Day) -> phx_id::da
 pub fn phx_core::calendar::Calendar::day(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Day>  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub fn phx_core::calendar::Calendar::days_before(&self, phx_id::day::Day, u32) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::days_between(&self, phx_id::day::Day, phx_id::day::Day) -> core::option::Option<u32>  // used by: phx-cli, phx-world
-pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date  // used by: phx-exec, phx-fin, phx-id, phx-world
+pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date  // used by: phx-exec, phx-fin, phx-id, phx-store, phx-world
 pub fn phx_core::calendar::Calendar::is_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> bool  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)  // used by: phx-world
 pub fn phx_core::calendar::Calendar::new(phx_id::day::Date, alloc::vec::Vec<(phx_id::ids::CountryId, phx_core::calendar::rules::CountryRules)>, i32) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -1809,7 +1809,7 @@ pub phx_core::HeldFor::Trade
 pub phx_core::HeldFor::Use  // used by: phx-check
 pub enum phx_core::HolidayRule
 pub phx_core::HolidayRule::EasterOffset
-pub phx_core::HolidayRule::EasterOffset::days: i32  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::HolidayRule::EasterOffset::days: i32  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub phx_core::HolidayRule::EasterOffset::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::HolidayRule::Fixed  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_core::HolidayRule::Fixed::day: u8  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
@@ -2157,7 +2157,7 @@ pub fn phx_core::calendar::Calendar::date(&self, phx_id::day::Day) -> phx_id::da
 pub fn phx_core::calendar::Calendar::day(&self, phx_id::day::Date) -> core::option::Option<phx_id::day::Day>  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub fn phx_core::calendar::Calendar::days_before(&self, phx_id::day::Day, u32) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::days_between(&self, phx_id::day::Day, phx_id::day::Day) -> core::option::Option<u32>  // used by: phx-cli, phx-world
-pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date  // used by: phx-exec, phx-fin, phx-id, phx-world
+pub fn phx_core::calendar::Calendar::epoch(&self) -> phx_id::day::Date  // used by: phx-exec, phx-fin, phx-id, phx-store, phx-world
 pub fn phx_core::calendar::Calendar::is_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> bool  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)  // used by: phx-world
 pub fn phx_core::calendar::Calendar::new(phx_id::day::Date, alloc::vec::Vec<(phx_id::ids::CountryId, phx_core::calendar::rules::CountryRules)>, i32) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -2461,7 +2461,7 @@ pub struct phx_core::OutsideAxes
 pub struct phx_core::Period  // used by: phx-cli, phx-ledger, phx-val, phx-world
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16  // used by: phx-ledger
-pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub fn phx_core::calendar::period::Period::days(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub fn phx_core::calendar::period::Period::month_count(self) -> u16  // used by: phx-ledger
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-world, sys-lab, sys-soc
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-world, sys-sov
@@ -2618,7 +2618,7 @@ pub phx_core::ScheduleDates::country: phx_id::ids::CountryId  // used by: if-sta
 pub phx_core::ScheduleDates::eom: phx_core::calendar::period::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::ScheduleDates::period: phx_core::calendar::period::Period  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 impl phx_core::calendar::period::ScheduleDates
-pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
 pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
@@ -2698,7 +2698,7 @@ pub phx_core::WearSpec::leaving_per_year: f64  // used by: phx-world, sys-cap
 pub phx_core::WearSpec::tag: u32  // used by: phx-cli, phx-rand, phx-store, sys-cap
 pub phx_core::WearSpec::values: alloc::vec::Vec<f64>  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct phx_core::WeekendRule  // used by: phx-fin
-pub phx_core::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub struct phx_core::WriteRecord
 pub phx_core::WriteRecord::amount: i128  // used by: phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
 pub phx_core::WriteRecord::counter: phx_id::ids::PartyId  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-rand
