@@ -3088,8 +3088,20 @@ credited while the world holds it (GEN.10).
    store, per row and at peak; rows and bytes touched per sub-step; agenda rows, draws, occasions, agents changed and
    new agents per day; legs per batch; barriers per day; agents per kind; rows per agent by line kind.
    Declared-but-never-read primitives, streams and hazards are reported. `perf/ratchets.toml` holds `phx-check`'s
-   counts of `allow` and `expect` attributes and of placeholders; the world's run ratchets the budget's block
-   (`perf/budget.toml`, §14.7); the other counters are not built.
+   counts of `allow` and `expect` attributes and of placeholders and each rule's admitted exceptions
+   (`phx_check.exceptions_pcNN`); the world's run ratchets the budget's block (`perf/budget.toml`, §14.7); the other
+   counters are not built.
+9. **The design point's ratchets**, `perf/budget.toml`'s `[fin]` section, seeded from `perf/design.toml` by
+   `phx fin --seed-budget` (`phx-fin::seed`) so the two files cannot disagree, between its marker lines and edited
+   only by it: `fin.day.<b|nb|h|bc>_core_ms` from the day's stage line and `[day.bc]`'s extra; `fin.turn.median_ms`
+   and `worst_ms`, `[phone] turn_ms` less its `turn_headroom`; `fin.mem.peak_mb`, `baseline_mb` (ledger line 1),
+   `bytes_per_person` and one `fin.mem.<line>_mb` for each ledger line; each fixed line's
+   `fin.fixed.<line>.<b|nb|h>_core_ms`; each `[unit]` in VM ns, `fin.unit.<unit>_ns`, at `k_compute` until its base
+   measures its own, and `fin.decide.spend_mind_ns` and `handler_mind_ns`; `fin.contracts.<family>_rows` from
+   `[store.contracts]`; `fin.bytes.<row>` from `[bytes]`. Every key is directed down; a figure the seeder needs and
+   cannot find is refused. A key a measure has put below its seed keeps the measure when the section is written
+   anew, and `phx fin` fails, once the section stands, on a key looser than its seed or missing. A base step adds its figure to the design
+   point, then seeds its keys; the frame's measured keys (`fin.counters`, `fin.kept`) stand beside the section.
 
 10. **The realism reads' rules** (the plan's PC-90 to PC-93, §14.8): pre-registration by ancestry, with append-only
     reports; no tuning, by a register diff by id with `Primitive-Change`, `Primitive-Rename` and `Resolution-Change`

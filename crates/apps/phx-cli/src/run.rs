@@ -33,7 +33,8 @@ const BUILD_KEY: [u64; 2] = [0x5048_5820_4255_494c, 0x4420_4944_2031_3131];
 #[derive(Debug, Deserialize)]
 struct Ratchet {
     counter: String,
-    value: u64,
+    /// A bound in the counter's unit; the design point's keys are fractional core-ms, the run's counts whole.
+    value: f64,
     direction: String,
 }
 
@@ -56,12 +57,14 @@ pub(crate) fn check_ratchets(path: &Path, counters: &[(&str, u64)]) -> Result<Ve
     let ratchets: Ratchets = toml::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
     let mut failures = Vec::new();
     for (name, value) in counters {
+        // A count as the bound reads it; every count the run keeps is far inside a float's exact integers.
+        let Ok(real) = value.to_string().parse::<f64>() else { continue };
         match ratchets.ratchet.iter().find(|r| r.counter == *name) {
             None => failures.push(format!("`{name}` has no ratchet")),
-            Some(r) if r.direction == "down" && *value > r.value => {
+            Some(r) if r.direction == "down" && real > r.value => {
                 failures.push(format!("`{name}` is {value}; its ratchet allows {}", r.value));
             }
-            Some(r) if r.direction == "up" && *value < r.value => {
+            Some(r) if r.direction == "up" && real < r.value => {
                 failures.push(format!("`{name}` is {value}; its ratchet needs {}", r.value));
             }
             Some(_) => {}

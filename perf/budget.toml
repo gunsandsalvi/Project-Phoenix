@@ -98,3 +98,877 @@ direction = "down"
 counter = "fin.kept.mb"
 value = 396
 direction = "down"
+
+# ---- [fin]: seeded from perf/design.toml by `phx fin --seed-budget`; edited only by it ----
+
+[[ratchet]]
+counter = "fin.day.b_core_ms"
+value = 1958.88
+direction = "down"
+
+[[ratchet]]
+counter = "fin.day.nb_core_ms"
+value = 590.68
+direction = "down"
+
+[[ratchet]]
+counter = "fin.day.h_core_ms"
+value = 2738.88
+direction = "down"
+
+[[ratchet]]
+counter = "fin.day.bc_core_ms"
+value = 1996.48
+direction = "down"
+
+[[ratchet]]
+counter = "fin.turn.median_ms"
+value = 900.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.turn.worst_ms"
+value = 1800.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.peak_mb"
+value = 4349.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.baseline_mb"
+value = 300.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.bytes_per_person"
+value = 689.596
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.process_mb"
+value = 300.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.persons_mb"
+value = 402.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.directory_mb"
+value = 50.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.households_mb"
+value = 307.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.firms_mb"
+value = 479.7
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.institutions_mb"
+value = 78.1
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.offices_mb"
+value = 32.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.accounts_and_side_rows_mb"
+value = 228.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.contracts_mb"
+value = 865.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.terms_mb"
+value = 33.1
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.holdings_mb"
+value = 150.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.units_cells_owner_index_mb"
+value = 117.5
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.liens_and_processes_mb"
+value = 58.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.wheel_and_agenda_mb"
+value = 120.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.hazards_mb"
+value = 1.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.small_bases_pool_mb"
+value = 173.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.markets_mb"
+value = 104.1
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.records_mb"
+value = 120.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.map_and_network_mb"
+value = 30.5
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.estates_mb"
+value = 18.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.day_buffers_mb"
+value = 128.1
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.slack_mb"
+value = 45.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.save_buffers_mb"
+value = 13.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.plant_cells_mb"
+value = 77.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.windows_mb"
+value = 9.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.barriers.b_core_ms"
+value = 92.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.barriers.nb_core_ms"
+value = 47.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.barriers.h_core_ms"
+value = 112.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.calls.b_core_ms"
+value = 61.61
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.calls.nb_core_ms"
+value = 10.48
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.calls.h_core_ms"
+value = 67.77
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.close_books.b_core_ms"
+value = 0.48
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.close_books.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.close_books.h_core_ms"
+value = 124.56
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.day_use.b_core_ms"
+value = 6.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.day_use.nb_core_ms"
+value = 1.84
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.day_use.h_core_ms"
+value = 6.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.fixed_point.b_core_ms"
+value = 12.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.fixed_point.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.fixed_point.h_core_ms"
+value = 20.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.fund.b_core_ms"
+value = 19.54
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.fund.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.fund.h_core_ms"
+value = 21.14
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.holder_rows.b_core_ms"
+value = 0.34
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.holder_rows.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.holder_rows.h_core_ms"
+value = 2.74
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.household_reviews.b_core_ms"
+value = 84.18
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.household_reviews.nb_core_ms"
+value = 9.28
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.household_reviews.h_core_ms"
+value = 84.18
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.institutions.b_core_ms"
+value = 197.5
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.institutions.nb_core_ms"
+value = 8.56
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.institutions.h_core_ms"
+value = 229.82
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.kinks.b_core_ms"
+value = 13.16
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.kinks.nb_core_ms"
+value = 5.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.kinks.h_core_ms"
+value = 13.16
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.observer.b_core_ms"
+value = 25.73
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.observer.nb_core_ms"
+value = 14.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.observer.h_core_ms"
+value = 30.85
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.open.b_core_ms"
+value = 1.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.open.nb_core_ms"
+value = 0.88
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.open.h_core_ms"
+value = 1.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.osearch.b_core_ms"
+value = 39.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.osearch.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.osearch.h_core_ms"
+value = 39.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.outlooks.b_core_ms"
+value = 27.02
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.outlooks.nb_core_ms"
+value = 6.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.outlooks.h_core_ms"
+value = 27.02
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.pay_rounds.b_core_ms"
+value = 16.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.pay_rounds.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.pay_rounds.h_core_ms"
+value = 16.48
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.real.b_core_ms"
+value = 35.97
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.real.nb_core_ms"
+value = 5.25
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.real.h_core_ms"
+value = 35.97
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.recount.b_core_ms"
+value = 33.56
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.recount.nb_core_ms"
+value = 16.01
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.recount.h_core_ms"
+value = 57.56
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.resolve.b_core_ms"
+value = 27.5
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.resolve.nb_core_ms"
+value = 5.92
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.resolve.h_core_ms"
+value = 41.82
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.securities.b_core_ms"
+value = 55.92
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.securities.nb_core_ms"
+value = 0.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.securities.h_core_ms"
+value = 68.56
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.stats.b_core_ms"
+value = 18.7
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.stats.nb_core_ms"
+value = 1.61
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.stats.h_core_ms"
+value = 26.94
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.valuation.b_core_ms"
+value = 29.87
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.valuation.nb_core_ms"
+value = 1.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.fixed.valuation.h_core_ms"
+value = 51.66
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.apply_ns"
+value = 10.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.attend_ns"
+value = 120.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.b2b_ns"
+value = 60.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.batch_ns"
+value = 35.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.book_order_ns"
+value = 130.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.claim_ns"
+value = 49.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.dues_ns"
+value = 15.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.entry_ns"
+value = 3.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.flow_ns"
+value = 25.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.handler_ns"
+value = 30.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.hit_ns"
+value = 800.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.ident_ns"
+value = 10.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.nb_pending_ns"
+value = 4.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.order_ns"
+value = 150.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.osearch_ns"
+value = 350.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.post_ns"
+value = 50.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.prod_ns"
+value = 15.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.quote_ns"
+value = 150.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.redraw_ns"
+value = 80.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.retail_ns"
+value = 31.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.review_ns"
+value = 550.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.rowlife_ns"
+value = 40.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.search_ns"
+value = 300.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.select_ns"
+value = 200.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.short_ns"
+value = 50.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.spend_ns"
+value = 215.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.unit.visit_ns"
+value = 800.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.decide.spend_mind_ns"
+value = 215.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.decide.handler_mind_ns"
+value = 30.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.bnk_firm_loan_rows"
+value = 360000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.bnk_household_loan_rows"
+value = 1440000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.dem_kin_rows"
+value = 960000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.dem_schooling_rows"
+value = 1280000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.drv_contract_rows"
+value = 540000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.ene_supply_rows"
+value = 3960000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.ene_wholesale_supply_rows"
+value = 240000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.frm_appointment_rows"
+value = 1120000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.frm_owner_liability_rows"
+value = 40000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.frt_pass_rows"
+value = 1200000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.hsg_land_lease_rows"
+value = 160000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.hsg_tenancy_rows"
+value = 900000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.ins_firm_policy_rows"
+value = 400000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.ins_policy_rows"
+value = 5000000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.lab_employment_rows"
+value = 3040000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.lab_public_employment_rows"
+value = 560000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.pol_membership_rows"
+value = 240000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.soc_benefit_rows"
+value = 600000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.soc_benefit_flat_rows"
+value = 600000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.soc_pension_rows"
+value = 1800000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.srv_storage_rows"
+value = 160000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.tax_arrear_rows"
+value = 160000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.tax_corporate_due_rows"
+value = 368000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.tec_licence_rows"
+value = 240000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.invoices_rows"
+value = 4000000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.pension_rights_rows"
+value = 3600000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.statements_rows"
+value = 400000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.tax_payables_rows"
+value = 720000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.term_deposits_rows"
+value = 240000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.contracts.the_small_families_together_rows"
+value = 240000.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.account"
+value = 20.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.agenda_entry"
+value = 8.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.contract"
+value = 24.9
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.estate"
+value = 256.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.firm"
+value = 520.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.firm_hot"
+value = 192.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.holding"
+value = 33.3
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.household"
+value = 174.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.lot"
+value = 20.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.parcel"
+value = 24.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.person"
+value = 66.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.segment_tile"
+value = 4.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.side_accrual"
+value = 16.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.side_facility"
+value = 12.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.side_held"
+value = 8.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.side_link"
+value = 4.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.side_statement"
+value = 12.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.bytes.wheel_entry"
+value = 4.0
+direction = "down"
+
+# ---- end of the seeded [fin] ----

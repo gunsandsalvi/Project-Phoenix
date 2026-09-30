@@ -17,6 +17,7 @@ k_compute = 1.0
 k_gather = 1.3
 memory_mb = 4_349
 turn_ms = [1_000, 2_000]
+turn_headroom = 0.1   # the day's lines stand this share below turn_ms (ARCHITECTURE §13.2)
 save_s = 5
 load_s = 5
 

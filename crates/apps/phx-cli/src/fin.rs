@@ -12,6 +12,13 @@ use crate::FinArgs;
 /// A file that cannot be read or written, or the harness's refusal.
 pub fn run(a: &FinArgs) -> Result<bool, String> {
     let read = |p: &std::path::Path| fs::read_to_string(p).map_err(|e| format!("{}: {e}", p.display()));
+    if a.seed_budget {
+        let seeded = phx_fin::seed::seed(&read(&a.design)?).map_err(|e| e.0)?;
+        let written = phx_fin::seed::write(&read(&a.budget)?, &seeded).map_err(|e| e.0)?;
+        fs::write(&a.budget, written).map_err(|e| format!("{}: {e}", a.budget.display()))?;
+        println!("{}: {} seeded keys", a.budget.display(), seeded.len());
+        return Ok(true);
+    }
     let days = if a.days == "turn" {
         DayType::ALL.to_vec()
     } else {

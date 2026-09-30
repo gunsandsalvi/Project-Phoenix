@@ -52,6 +52,9 @@ pub struct FinArgs {
     /// Where to write the report.
     #[arg(long)]
     report: Option<PathBuf>,
+    /// Writes the budget's `[fin]` section from the design point instead, and measures nothing.
+    #[arg(long)]
+    seed_budget: bool,
 }
 
 #[derive(Debug, Args)]

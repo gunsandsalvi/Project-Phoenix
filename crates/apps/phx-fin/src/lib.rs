@@ -17,6 +17,9 @@ mod kept_tests;
 pub mod kept_wheel;
 pub mod measure;
 pub mod report;
+pub mod seed;
+#[path = "seed_tests.rs"]
+mod seed_tests;
 #[path = "tests.rs"]
 mod tests;
 
@@ -186,6 +189,10 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
     compose::substitute(&mut lines, &design, (kept::BASE, kept::LEAVES), &|key| per_op.get(key).copied());
     let days = compose::days(&lines, &design);
     let mut misses = capacities_short(&design);
+    // A budget holding the seeded section is held to it: no key looser than its seed, none missing.
+    if args.budget.contains(seed::BEGIN) {
+        misses.extend(seed::within_design(&args.budget, &seed::seed(&args.design)?)?);
+    }
     misses.extend(budget::misses(&ratchets, &|key| per_op.get(key).copied()));
     Ok(Report {
         bases: chosen.iter().map(|d| d.name().to_owned()).collect(),
