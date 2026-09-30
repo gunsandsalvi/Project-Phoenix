@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 813 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 812 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -328,12 +328,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_day.rs"
 item = "Core::run_day"
 what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_day.rs"
-item = "Core::run_day"
-what = "`Vec::new`"
 count = 1
 
 [[site]]

@@ -345,11 +345,11 @@ impl Core {
     pub(crate) fn lend_shortfalls(
         &mut self,
         (day, calendar, streams): (Day, &Calendar, &Streams),
-        buf: &mut Vec<phx_core::flows::Flow>,
+        (dues, buf): (&[Vec<phx_core::flows::Flow>], &mut Vec<phx_core::flows::Flow>),
     ) {
         let Some(firm) = self.bound.kinds.firm.map(kind_number) else { return };
         let mut net: std::collections::BTreeMap<PartyKey, (i128, u8)> = std::collections::BTreeMap::new();
-        for f in buf.iter().filter(|f| f.denomination.is_money()) {
+        for f in dues.iter().flatten().chain(buf.iter()).filter(|f| f.denomination.is_money()) {
             let ccy = f.denomination.ccy();
             if f.payer.kind() == firm {
                 net.entry(f.payer).or_insert((0, ccy)).0 -= i128::from(f.amount);
