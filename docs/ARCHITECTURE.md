@@ -3382,7 +3382,10 @@ hashes read their bytes as little-endian.
     every store, index, traversal and kernel — is designed at the design point and built in the kernel crates of §3.3,
     in the order of §3.1, before any behaviour is put on it; each base is followed by the migration of its current
     users, and every later step activates bases. `phx-world` assembles and routes and, once the core closes, holds no
-    store and no per-party pass; systems hold rules and declarations. Supersedes the kernel's crate list of decision 36.
+    store and no per-party pass; systems hold rules and declarations. PC-01 holds the kernel's order of §3.1 and the
+    applications' (`phx-fin`, `phx-cli`, `phx-play`, `phx-check` apart), `phx-fin` reading the foundation and the
+    kernel only; PC-02 allows `serde`, `toml` and `serde_json` in `phx-fin` (the design point's file, the budget
+    and its report). Supersedes the kernel's crate list of decision 36.
 39. **The design point and the budget frame** (2026-09-30, the owner; spec Appendix E 51, E 41, N8.7): every base is
     designed and measured at the design point, `perf/design.toml`'s one figure set, which the plan and this document
     cite by key and never restate; the time lines are the binding turns with every dated day and a campaign day on
