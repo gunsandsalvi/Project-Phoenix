@@ -1,0 +1,179 @@
+{
+  "bases": [
+    "kept"
+  ],
+  "ops": [
+    [
+      "kept",
+      "civil",
+      22800000,
+      23
+    ],
+    [
+      "kept",
+      "draw",
+      21600000,
+      10
+    ],
+    [
+      "kept",
+      "due",
+      22800000,
+      26
+    ],
+    [
+      "kept",
+      "flow",
+      720000,
+      842
+    ],
+    [
+      "kept",
+      "flow_h",
+      480000,
+      610
+    ],
+    [
+      "kept",
+      "purchase",
+      21600000,
+      1345
+    ],
+    [
+      "kept",
+      "search",
+      216000,
+      15468
+    ]
+  ],
+  "sizes": [
+    [
+      "kept",
+      33600035,
+      360
+    ]
+  ],
+  "lines": [
+    {
+      "name": "1 Open",
+      "core_ms": [
+        57.36000000000002,
+        3.2,
+        397.4400000000001
+      ],
+      "source": "Partly"
+    },
+    {
+      "name": "10 Close",
+      "core_ms": [
+        78.0,
+        32.0,
+        115.36
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "2 Resolve",
+      "core_ms": [
+        63.52,
+        5.92,
+        311.84
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "3 Nature",
+      "core_ms": [
+        48.32,
+        48.32,
+        48.32
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "4 Real work",
+      "core_ms": [
+        60.32,
+        14.08,
+        60.32
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "5 Decide",
+      "core_ms": [
+        1876.176,
+        190.8,
+        1908.496
+      ],
+      "source": "Partly"
+    },
+    {
+      "name": "6 Prices",
+      "core_ms": [
+        9751.46,
+        9492.02,
+        9770.26
+      ],
+      "source": "Partly"
+    },
+    {
+      "name": "7 Settle",
+      "core_ms": [
+        461.456,
+        4.16,
+        568.24
+      ],
+      "source": "Partly"
+    },
+    {
+      "name": "8 Fund",
+      "core_ms": [
+        19.52,
+        0.0,
+        21.12
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "9 Value",
+      "core_ms": [
+        57.68,
+        8.0,
+        206.0
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "Barriers",
+      "core_ms": [
+        92.0,
+        47.0,
+        112.0
+      ],
+      "source": "Declared"
+    },
+    {
+      "name": "additions beyond the unit leaves",
+      "core_ms": [
+        189.84,
+        19.68,
+        293.12
+      ],
+      "source": "Declared"
+    }
+  ],
+  "days": {
+    "core_ms": [
+      12755.652,
+      9865.18,
+      13812.516000000001,
+      12793.252
+    ],
+    "turns_ms": [
+      17417.99066666667,
+      14469.352
+    ]
+  },
+  "misses": []
+}
