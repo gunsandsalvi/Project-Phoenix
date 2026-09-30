@@ -460,6 +460,7 @@ fn core_of(
     let sheets = phx_exec::trace::span("open.sheets", || opening_sheets(p, own, &opening))?;
     let mut core = phx_exec::trace::span("open.core", || open_core(p, (&opening, &sheets), calendar, today))?;
     phx_exec::trace::span("open.decisions", || open_decisions(p, &mut core));
+    core.bind_points(labour);
     let regions: Vec<phx_id::CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
     let ctx = crate::core_pop::Ctx {
         register: &p.c.register,
@@ -547,6 +548,8 @@ fn core_of(
     phx_exec::trace::span("open.accounts", || core.open_accounts(today));
     phx_exec::trace::span("open.credit", || core.open_credit(&p.c.register, &opening, today))
         .map_err(|e| AssemblyErrors(vec![e]))?;
+    // The bills' and the benefit's kinds are known once the state has opened.
+    core.bind_points(labour);
     core.note_parties();
 
     Ok(core)
@@ -644,7 +647,11 @@ fn world_of(parts: Parts, core: crate::core::Core, (today, seed): (phx_id::Day, 
     let event_kinds = p.d.events.iter().map(|(_, e)| e.name).collect();
     let settling_years = p.kernel.opening.settling_years.shared(&p.c.register).get();
     let save_every = p.kernel.save_every.shared(&p.c.register).get();
+    let own_at = crate::world::OwnAt::of(&own);
+    let weights = retail_weights(&p.c.register).ok();
     World {
+        own_at,
+        weights,
         settling_years,
         save_every,
         calendar: p.c.calendar,
@@ -745,6 +752,7 @@ pub(crate) fn assemble_loaded(
     let index = parts.p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::IndexKind>()).copied();
     let declared = declared_kinds(&parts.p)?;
     core.rebind((household, declared), &parts.state, (sta.map(|s| s.rate), index));
+    core.bind_points(parts.labour.as_ref());
     let mut world = world_of(parts, core, (today, config.seed));
     let (start, now) = (world.calendar.date(world.day_zero).year(), world.calendar.date(today).year());
     if now > start {

@@ -6,7 +6,7 @@
 use phx_core::store::{KindStore, Opening};
 use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
 use phx_id::{PartyId, PartyKey, TileId};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::round::{Round, split_total};
 use phx_num::{MaybeI64, violation};
 use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
@@ -280,6 +280,7 @@ impl Core {
     /// # Errors
     /// A primitive the opening reads that the register does not hold, or a product the accounts leave unpriced.
     #[clause("GEN.2", "GEN.13", "FRM.23", "FRM.2", "PTY.5")]
+    #[opening]
     pub fn open_firms(&mut self, o: &FirmsOpening<'_>) -> Result<(), String> {
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let price_weight = o.register.fixed("SRV.price_weight")?;
@@ -342,6 +343,7 @@ impl Core {
     /// its site among its region's own tiles, a region with no land stopping the run, its bank by the banks' deposits,
     /// and its day-zero price posted at the point nearest its own cost's.
     #[clause("FRM.2", "FRM.5", "GEN.13", "PTY.5", "REP.34", "GEO.11")]
+    #[opening]
     fn drafts(
         &self,
         o: &FirmsOpening<'_>,
@@ -406,6 +408,7 @@ impl Core {
     /// weighed by the output their prices win, are the way's, and each one's day-zero price posted at the point
     /// nearest its own cost's.
     #[clause("FRM.2", "FRM.5", "GEN.13", "GEN.4", "REP.34")]
+    #[opening]
     fn price_drafts(
         &self,
         o: &FirmsOpening<'_>,

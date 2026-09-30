@@ -8,7 +8,7 @@ use phx_core::calendar::daycount::DayCount;
 use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
 use phx_id::{Day, PartyKey, Slot};
 use phx_ledger::algebra::{Leg, Reference, Schedule, Terms};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::{Missing, violation};
 use phx_rand::float::{from_i64, len_u64};
 
@@ -171,6 +171,7 @@ impl Core {
     /// # Errors
     /// A primitive the opening reads that the register does not hold.
     #[clause("BNK.17", "GEN.2", "GEN.15")]
+    #[opening]
     pub fn open_loans(&mut self, o: &CreditOpening<'_>) -> Result<(), String> {
         let (Some(household), Some(firm), Some(bank)) =
             (self.bound.kinds.household, self.bound.kinds.firm, self.bank_kind.map(usize::from))
@@ -245,6 +246,7 @@ impl Core {
 
     /// Each firm's share of its country's loans to firms, by its turnover, lent by its bank at the lending rate over
     /// a term drawn between the declared years, repaid in equal parts with interest on what it owes.
+    #[opening]
     fn firm_loans(&mut self, o: &CreditOpening<'_>, firm: usize, bank: usize) -> Result<DatedFamily, String> {
         let mut family = self.loan_family(crate::consts::families::FIRM_LOANS, firm, bank, o.today);
         let (min, max) = (o.register.count("BNK.loan_years_min")?, o.register.count("BNK.loan_years_max")?);

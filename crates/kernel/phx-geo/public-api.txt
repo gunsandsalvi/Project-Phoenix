@@ -68,7 +68,7 @@ pub fn phx_geo::deposits::Opening::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_geo::deposits::Opening::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::deposits::Deposit
 pub phx_geo::deposits::Deposit::grade: phx_num::fixed::Fixed<3>  // used by: phx-core, phx-world, sys-gds
-pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-obs, phx-world, sys-bnk, sys-cb, sys-dem, sys-gds, sys-lab, sys-soc
+pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-obs, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub phx_geo::deposits::Deposit::resource: u16  // used by: phx-world
 pub phx_geo::deposits::Deposit::tile: phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::deposits::Deposit where phx_id::ids::TileId: phx_store::save::Saved, u16: phx_store::save::Saved, phx_num::fixed::Fixed<3>: phx_store::save::Saved, phx_geo::deposits::Opening: phx_store::save::Saved
@@ -440,7 +440,7 @@ pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::reg
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-cli, phx-core, phx-world, sys-dem, sys-lab
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>  // used by: phx-world
-pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
+pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
@@ -573,7 +573,7 @@ pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::reg
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-cli, phx-core, phx-world, sys-dem, sys-lab
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>  // used by: phx-world
-pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>
+pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved

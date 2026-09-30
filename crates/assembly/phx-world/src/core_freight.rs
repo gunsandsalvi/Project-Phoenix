@@ -14,7 +14,7 @@ use phx_core::goods::{Bound, Carriage, Good, Held, Shipment, Shipments};
 use phx_core::{StreamDef, Streams, SubStep};
 use phx_geo::GeoState;
 use phx_id::{CountryId, Day, PartyKey};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_market::carriage::{Carrier, Consignment, FreightTech, carriage, freight, transit_days};
 use phx_num::{Missing, PriceRaw, violation};
 use phx_rand::float::{floor_to_i64, from_i64, from_u64};
@@ -97,6 +97,7 @@ impl Core {
     /// # Errors
     /// Freight's tables unread.
     #[clause("FRT.1", "FRT.4", "GEN.3")]
+    #[opening]
     pub(crate) fn open_freight(
         &mut self,
         (geo, register, streams): (&GeoState, &phx_core::Register, &Streams),
@@ -180,7 +181,7 @@ impl Core {
         if days == 0 {
             return;
         }
-        let deciding = self.bind(&sys_frt::points::SHIP);
+        let deciding = self.point(|p| p.ship, &sys_frt::points::SHIP);
         let offers = self.carriage_offers();
         let mut by_origin: BTreeMap<(u32, u16), Vec<Weighed>> = BTreeMap::new();
         for slot in self.firm_slots(firm) {

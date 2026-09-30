@@ -176,7 +176,7 @@ impl Core {
         state: &crate::state::State,
         (rate, index): (Option<crate::core_stats::Rate>, Option<if_state::stats::IndexKind>),
     ) {
-        self.declared = crate::core_kinds::Declared { household, kinds, heirless };
+        self.declared = crate::core_kinds::Declared { household, kinds, heirless, points: self.declared.points };
         self.state.claim = state.benefit.map(|k| k.claim);
         self.state.included = state.tax.map(|k| k.included);
         if self.bound.kinds.treasury.is_some() && self.bank_kind.is_some() {

@@ -19,6 +19,9 @@ pub struct World {
     pub(crate) register: Register,
     pub(crate) streams: Streams,
     pub(crate) own: Vec<(&'static str, OwnState)>,
+    /// Where the day finds the own states it reads, and the retail meeting's weights, bound at assembly.
+    pub(crate) own_at: OwnAt,
+    pub(crate) weights: Option<phx_market::retail::Weights>,
     pub(crate) countries: Vec<CountryEntry>,
     pub(crate) day_zero: Day,
     /// The years the world settles before the play the run measures.
@@ -50,10 +53,34 @@ pub struct World {
     pub(crate) pool: Option<phx_exec::Pool>,
 }
 
+/// Where the day finds the systems' own states it reads, each found by its system's code once, at assembly.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct OwnAt {
+    pub(crate) geo: Option<usize>,
+    pub(crate) hh: Option<usize>,
+    pub(crate) frm: Option<usize>,
+}
+
+impl OwnAt {
+    #[phx_macros::opening]
+    pub(crate) fn of(own: &[(&'static str, OwnState)]) -> OwnAt {
+        let at = |code: &str| own.iter().position(|(c, _)| *c == code);
+        OwnAt {
+            geo: at(<phx_geo::Geo as phx_core::System>::CODE),
+            hh: at(<sys_hh::Hh as phx_core::System>::CODE),
+            frm: at(<sys_frm::Frm as phx_core::System>::CODE),
+        }
+    }
+}
+
+/// A system's own state at its bound place, as its type; none where the world keeps none.
+pub(crate) fn own_at<'a, T: 'static>(own: &'a [(&'static str, OwnState)], at: Option<usize>) -> Option<&'a T> {
+    own.get(at?).and_then(|(_, s)| s.downcast_ref::<T>())
+}
+
 /// The map as GEO keeps it, shared.
-pub(crate) fn geo_arc<'a>(own: &'a [(&'static str, OwnState)]) -> &'a std::sync::Arc<phx_geo::GeoState> {
-    let found = own.iter().find(|(code, _)| *code == <phx_geo::Geo as phx_core::System>::CODE);
-    let Some(geo) = found.and_then(|(_, s)| s.downcast_ref::<std::sync::Arc<phx_geo::GeoState>>()) else {
+pub(crate) fn geo_arc<'a>(own: &'a [(&'static str, OwnState)], at: OwnAt) -> &'a std::sync::Arc<phx_geo::GeoState> {
+    let Some(geo) = own_at::<std::sync::Arc<phx_geo::GeoState>>(own, at.geo) else {
         phx_num::violation!(clause = "GEO.1", "a world whose map GEO does not keep");
     };
     geo
@@ -62,6 +89,6 @@ pub(crate) fn geo_arc<'a>(own: &'a [(&'static str, OwnState)]) -> &'a std::sync:
 impl World {
     /// The map and what GEO compiled from it, which GEO keeps as its own state.
     pub(crate) fn geo(&self) -> &phx_geo::GeoState {
-        geo_arc(&self.own)
+        geo_arc(&self.own, self.own_at)
     }
 }

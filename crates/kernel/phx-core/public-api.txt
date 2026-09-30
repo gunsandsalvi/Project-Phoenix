@@ -17,7 +17,7 @@ pub phx_core::accounting::HeldFor::Trade
 pub phx_core::accounting::HeldFor::Use  // used by: phx-check
 pub struct phx_core::accounting::Permitted  // used by: phx-acct
 pub phx_core::accounting::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>  // used by: phx-acct, phx-cli, phx-fin, phx-world
-pub phx_core::accounting::Permitted::form: alloc::string::String  // used by: phx-acct, phx-macros
+pub phx_core::accounting::Permitted::form: alloc::string::String  // used by: phx-acct, phx-macros, phx-world
 pub phx_core::accounting::Permitted::held_for: phx_core::accounting::HeldFor  // used by: phx-acct
 pub mod phx_core::calendar  // used by: phx-check, phx-cli, phx-fin, phx-ledger, phx-pop, phx-val, phx-world, sys-dem
 pub mod phx_core::calendar::bizday  // used by: phx-ledger, phx-world
@@ -779,12 +779,12 @@ pub phx_core::hazards::RateFn::changes: &'static [phx_core::hazards::RateChange]
 pub phx_core::hazards::RateFn::table: &'static str  // used by: phx-check, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
 pub fn phx_core::hazards::annual_to_daily(f64, u32) -> f64  // used by: phx-cli, phx-geo, sys-dem
 pub mod phx_core::kinds  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
-pub enum phx_core::kinds::Feature
-pub phx_core::kinds::Feature::HasOwners
-pub phx_core::kinds::Feature::IssuesCurrency
+pub enum phx_core::kinds::Feature  // used by: phx-world
+pub phx_core::kinds::Feature::HasOwners  // used by: phx-world
+pub phx_core::kinds::Feature::IssuesCurrency  // used by: phx-world
 pub phx_core::kinds::Feature::LimitedLiability
 pub phx_core::kinds::Feature::SeparateParty
-pub phx_core::kinds::Feature::TakesDeposits
+pub phx_core::kinds::Feature::TakesDeposits  // used by: phx-world
 pub enum phx_core::kinds::Owners  // used by: phx-world
 pub phx_core::kinds::Owners::HeirsAndCreditors
 pub phx_core::kinds::Owners::Members
@@ -797,13 +797,13 @@ pub phx_core::kinds::Place::Country  // used by: phx-id, phx-rand, phx-world, sy
 pub phx_core::kinds::Place::Country::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
-pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market
+pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::kinds::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Sited  // used by: phx-world
 impl phx_core::kinds::Place
 pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
 pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
-pub struct phx_core::kinds::KindDecl  // used by: phx-macros
+pub struct phx_core::kinds::KindDecl  // used by: phx-macros, phx-world
 pub phx_core::kinds::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::kinds::KindDecl::legal_form: &'static str  // used by: phx-world
 pub phx_core::kinds::KindDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -815,12 +815,12 @@ pub const fn phx_core::kinds::KindId::new(u16) -> phx_core::kinds::KindId  // us
 pub struct phx_core::kinds::LegalForm  // used by: phx-world
 pub phx_core::kinds::LegalForm::endings: alloc::vec::Vec<alloc::string::String>  // used by: phx-cli, phx-world, sys-frm
 pub phx_core::kinds::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
-pub phx_core::kinds::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
+pub phx_core::kinds::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>  // used by: phx-world
 pub phx_core::kinds::LegalForm::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::kinds::LegalForm::offices: alloc::vec::Vec<alloc::string::String>  // used by: phx-world
 pub phx_core::kinds::LegalForm::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-world
 impl phx_core::kinds::LegalForm
-pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool  // used by: sys-dem
+pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool  // used by: phx-world, sys-dem
 pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>  // used by: phx-world
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub const phx_core::kinds::ESTATE_KIND: phx_core::kinds::KindDecl  // used by: phx-world
@@ -873,7 +873,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &
 pub struct phx_core::pop::PositionDecl  // used by: if-pop, phx-pop
 pub phx_core::pop::PositionDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::PositionDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::pop::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-geo, phx-ledger, phx-macros, phx-obs, phx-world, sys-bnk, sys-cb, sys-dem, sys-gds, sys-lab, sys-soc
+pub phx_core::pop::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-geo, phx-ledger, phx-macros, phx-obs, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub struct phx_core::pop::RoleDecl  // used by: if-pop, phx-pop
 pub phx_core::pop::RoleDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::RoleDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -1813,12 +1813,12 @@ pub phx_core::Family::Pareto::x_min: i64  // used by: phx-rand
 pub phx_core::Family::Weibull  // used by: phx-geo
 pub phx_core::Family::Weibull::k: i64  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-lab, sys-tec
 pub phx_core::Family::Weibull::lambda: i64  // used by: phx-cli, phx-rand, phx-val, phx-world
-pub enum phx_core::Feature
-pub phx_core::Feature::HasOwners
-pub phx_core::Feature::IssuesCurrency
+pub enum phx_core::Feature  // used by: phx-world
+pub phx_core::Feature::HasOwners  // used by: phx-world
+pub phx_core::Feature::IssuesCurrency  // used by: phx-world
 pub phx_core::Feature::LimitedLiability
 pub phx_core::Feature::SeparateParty
-pub phx_core::Feature::TakesDeposits
+pub phx_core::Feature::TakesDeposits  // used by: phx-world
 pub enum phx_core::FindingOwner  // used by: phx-world
 pub phx_core::FindingOwner::Country(phx_id::ids::CountryId)  // used by: phx-id, phx-rand, phx-world, sys-dem
 pub phx_core::FindingOwner::Event(u64)  // used by: phx-cli, phx-ledger
@@ -1882,7 +1882,7 @@ pub phx_core::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
 pub phx_core::Place::Country::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
-pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market
+pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Sited  // used by: phx-world
 impl phx_core::kinds::Place
@@ -2420,7 +2420,7 @@ impl phx_core::register::values::PrimType for phx_core::register::profile::Joint
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
-pub struct phx_core::KindDecl  // used by: phx-macros
+pub struct phx_core::KindDecl  // used by: phx-macros, phx-world
 pub phx_core::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::KindDecl::legal_form: &'static str  // used by: phx-world
 pub phx_core::KindDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -2432,12 +2432,12 @@ pub const fn phx_core::kinds::KindId::new(u16) -> phx_core::kinds::KindId  // us
 pub struct phx_core::LegalForm  // used by: phx-world
 pub phx_core::LegalForm::endings: alloc::vec::Vec<alloc::string::String>  // used by: phx-cli, phx-world, sys-frm
 pub phx_core::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
-pub phx_core::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
+pub phx_core::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>  // used by: phx-world
 pub phx_core::LegalForm::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::LegalForm::offices: alloc::vec::Vec<alloc::string::String>  // used by: phx-world
 pub phx_core::LegalForm::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-world
 impl phx_core::kinds::LegalForm
-pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool  // used by: sys-dem
+pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool  // used by: phx-world, sys-dem
 pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>  // used by: phx-world
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::NewEvent<'a>  // used by: phx-world
@@ -2501,7 +2501,7 @@ pub fn phx_core::calendar::period::Period::rebuild_skipped(&mut self)  // used b
 pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::Permitted  // used by: phx-acct
 pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>  // used by: phx-acct, phx-cli, phx-fin, phx-world
-pub phx_core::Permitted::form: alloc::string::String  // used by: phx-acct, phx-macros
+pub phx_core::Permitted::form: alloc::string::String  // used by: phx-acct, phx-macros, phx-world
 pub phx_core::Permitted::held_for: phx_core::accounting::HeldFor  // used by: phx-acct
 pub struct phx_core::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
 pub phx_core::Person::attrs: alloc::vec::Vec<(&'static str, u32)>  // used by: phx-check, phx-macros, phx-pop, phx-world, sys-dem
@@ -2569,7 +2569,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &
 pub struct phx_core::PositionDecl  // used by: if-pop, phx-pop
 pub phx_core::PositionDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::PositionDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-geo, phx-ledger, phx-macros, phx-obs, phx-world, sys-bnk, sys-cb, sys-dem, sys-gds, sys-lab, sys-soc
+pub phx_core::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-geo, phx-ledger, phx-macros, phx-obs, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub struct phx_core::Prefs  // used by: phx-world
 pub phx_core::Prefs::management: phx_num::missing::Missing<u16>  // used by: phx-cli, phx-world, sys-frm
 pub phx_core::Prefs::memory: phx_num::missing::Missing<u16>  // used by: phx-val, phx-world

@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 use phx_core::flows::Flow;
 use phx_id::{CountryId, Day, PartyKey, Slot};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 
 use crate::consts::firm::{PRODUCT, REGION};
 use crate::core::Core;
@@ -54,6 +54,7 @@ impl Core {
     /// # Errors
     /// A grace the register does not hold, or one beyond a day count.
     #[clause("FRM.15")]
+    #[opening]
     pub fn open_insolvency(&mut self, register: &phx_core::Register) -> Result<(), String> {
         let days = register.counts_per_country("FRM.insolvency_grace_days")?;
         self.insolvency.grace = days

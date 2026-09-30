@@ -360,7 +360,7 @@ impl Core {
             }
         }
         let deposits = self.bank_deposits();
-        let requesting = self.bind(&sys_bnk::points::REQUEST);
+        let requesting = self.point(|p| p.request, &sys_bnk::points::REQUEST);
         let mut steps = Vec::new();
         for c in open {
             let (Some(issuer), Some(corridor)) =

@@ -12,7 +12,7 @@ use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Bound, Cost, Held, NATURE};
 use phx_core::units::{Chain, Class};
 use phx_id::{CountryId, Day, PartyKey};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::{Missing, violation};
 use phx_rand::float::{floor_to_i64, from_i64};
 
@@ -118,6 +118,7 @@ impl Core {
     /// # Errors
     /// A kind with no lead, a country's growth or prices unread.
     #[clause("CAP.1", "GEN.2", "GEN.5", "REP.24")]
+    #[opening]
     pub(crate) fn open_plant(
         &mut self,
         (cap, register): (&sys_cap::CapOwn, &phx_core::Register),
@@ -319,7 +320,7 @@ impl Core {
         if period == 0 || !(day.get() - self.plant.began).is_multiple_of(period) {
             return Vec::new();
         }
-        let investing = self.bind(&sys_cap::points::INVEST);
+        let investing = self.point(|p| p.invest, &sys_cap::points::INVEST);
         let mut wants = Vec::new();
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
@@ -376,7 +377,7 @@ impl Core {
         let life = self.plant.lives.get(kind).copied()?;
         let mark = self.goods.marks.get(&(product, f.region)).copied()?;
         let unit_price = mark / self.lot(product);
-        let prefs = self.decider(self.bind(&sys_cap::points::INVEST), f.key).1;
+        let prefs = self.decider(self.point(|p| p.invest, &sys_cap::points::INVEST), f.key).1;
         let Missing::Present(rate) = prefs.required_return else {
             violation!(clause = "CAP.3", "an investor with no required return", firm = f.key.word());
         };

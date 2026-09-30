@@ -12,7 +12,7 @@ pub fn phx_pop::hazard::any_hit(&[f64]) -> f64  // used by: phx-world
 pub fn phx_pop::hazard::next_booking(&mut phx_rand::draws::Draws, f64, phx_id::day::Day, phx_num::missing::Missing<phx_id::day::Day>) -> phx_pop::hazard::Booking  // used by: phx-world
 pub fn phx_pop::hazard::reached(&mut phx_rand::draws::Draws, &[f64], &mut alloc::vec::Vec<usize>)  // used by: phx-core, phx-geo, phx-world, sys-dem, sys-lab
 pub mod phx_pop::kind  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
-pub struct phx_pop::kind::Declared<T>  // used by: phx-fin
+pub struct phx_pop::kind::Declared<T>  // used by: phx-fin, phx-world
 pub phx_pop::kind::Declared::item: T  // used by: phx-check, phx-core, phx-exec, phx-macros, phx-world, sys-dem
 pub phx_pop::kind::Declared::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_pop::kind::PersonField

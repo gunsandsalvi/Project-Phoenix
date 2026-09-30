@@ -19,7 +19,7 @@ use phx_core::calendar::period::Period;
 use phx_core::wheel::DueWheel;
 use phx_core::{OpeningCountry, Register, StreamDef, Streams, SubStep};
 use phx_id::{CountryId, Day, PartyKey, Slot};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_market::hiring::{Application, Seeker, Standing, Vacancy, answer, search, select};
 use phx_num::{Missing, violation};
 use phx_pop::person::{pack, unpack};
@@ -277,6 +277,7 @@ impl Core {
     /// # Errors
     /// A primitive the round reads that the register does not hold, or a law that does not compile.
     #[clause("LAB.4", "LAB.16", "GEN.2")]
+    #[opening]
     pub fn open_labour(&mut self, ctx: &LabourCtx<'_>, countries: &[OpeningCountry], today: Day) -> Result<(), String> {
         let (Some(firm), Some(family)) = (self.bound.kinds.firm, self.employment()) else {
             return Ok(());
@@ -475,7 +476,7 @@ impl Core {
         let means = staff_means(&staff);
         let ways = at_country(&self.labour.ways, c);
         let level = at_country(&self.labour.level, c).clone();
-        let lot = sys_frm::FilingPrims::lot(ctx.register, u16::try_from(f.product).unwrap_or(u16::MAX));
+        let lot = self.lot(u16::try_from(f.product).unwrap_or(u16::MAX));
         let lead = self.goods.lead_of(f.product);
         let financing = at_country(&self.labour.financing, c) * lead / DAYS_A_YEAR;
         let full = f64::from(law.full_time_hours);
@@ -511,14 +512,14 @@ impl Core {
         };
         // What a unit leaves over its cost of making it at the price the head of its line expects.
         if let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) {
-            let (_, prefs) = self.decider(self.bind(ctx.kind.offer), key);
+            let (_, prefs) = self.decider(self.point(|p| p.offer, ctx.kind.offer), key);
             if let Missing::Present(price) = self.price_expected(firm, slot, lot, &prefs) {
                 self.review_wages(ctx, day, (family, key, &law), (price - cost, &needs, &staff, f.region));
             }
         }
         let Some(units_a_day) = self.expected_of(firm, slot) else { return (0, 0, 0) };
         let input = PostIn { price: from_i64(f.price) / lot, units_a_day, financing, minimum_hour, needs };
-        let out = self.decide(self.bind(ctx.kind.post), key, |_| input);
+        let out = self.decide(self.point(|p| p.post, ctx.kind.post), key, |_| input);
         let mut posted = 0;
         for &(occupation, open) in &out.post {
             let Some(skill) = usize::try_from(occupation).ok().and_then(|o| law.occupation_skill.get(o)).copied()
@@ -653,7 +654,7 @@ impl Core {
             .filter_map(|e| Some((e, f.store.edges.row(e)?)))
             .collect();
         let full = f64::from(law.full_time_hours);
-        let offering = self.bind(ctx.kind.offer);
+        let offering = self.point(|p| p.offer, ctx.kind.offer);
         for (edge, row) in contracts {
             let Some([occupation, hours, _]) =
                 self.families.get(family).and_then(|f| f.classes.get(usize::try_from(row.schedule).ok()?)).copied()
@@ -723,7 +724,7 @@ impl Core {
             return;
         }
         let standing = Standing::new(&self.labour.vacancies);
-        let searching = self.bind(ctx.kind.search);
+        let searching = self.point(|p| p.search, ctx.kind.search);
         let mut seen: BTreeMap<(PartyKey, u64), Vec<Application>> = BTreeMap::new();
         for (c, law) in self.labour.laws.iter().enumerate() {
             let mine: Vec<Seeker> = offered.iter().filter(|o| usize::from(o.country) == c).map(|o| o.seeker).collect();
@@ -745,7 +746,7 @@ impl Core {
                 seen.entry((a.seeker.household, a.seeker.person)).or_default().push(a);
             }
         }
-        let answering = self.bind(ctx.kind.answer);
+        let answering = self.point(|p| p.answer, ctx.kind.answer);
         for o in offered {
             let law = at_country(&self.labour.laws, o.country).clone();
             let apps = seen.remove(&(o.seeker.household, o.seeker.person)).unwrap_or_default();
@@ -910,7 +911,7 @@ impl Core {
     fn search_round(&mut self, ctx: &LabourCtx<'_>, day: Day) -> (u64, u64) {
         let seekers = self.seekers(ctx, day);
         let standing = Standing::new(&self.labour.vacancies);
-        let searching = self.bind(ctx.kind.search);
+        let searching = self.point(|p| p.search, ctx.kind.search);
         let mut sent = Vec::new();
         for (c, law) in self.labour.laws.iter().enumerate() {
             let mine: Vec<Seeker> = seekers.iter().filter(|(k, _)| usize::from(*k) == c).map(|(_, s)| *s).collect();
@@ -952,7 +953,7 @@ impl Core {
             let id = postings.get(usize::try_from(v).unwrap_or(usize::MAX)).map_or(0, |p| p.id);
             ctx.draws(ctx.kind.lot_stream, Subject::new(SubjectTag::Market, id), day)
         };
-        let selecting = self.bind(ctx.kind.select);
+        let selecting = self.point(|p| p.select, ctx.kind.select);
         let mut vacancies = std::mem::take(&mut self.labour.vacancies);
         let choose = |v: &Vacancy, applicants: &[phx_market::hiring::Applicant], open: u32| {
             let applicants = applicants
@@ -976,7 +977,7 @@ impl Core {
         let offers = std::mem::take(&mut self.labour.offers);
         let laws = self.labour.laws.clone();
         let postings = self.labour.postings.clone();
-        let accepting = self.bind(ctx.kind.accept);
+        let accepting = self.point(|p| p.accept, ctx.kind.accept);
         let mut vacancies = std::mem::take(&mut self.labour.vacancies);
         let accepts = |o: &Application, v: &Vacancy| {
             let Some(p) = postings.get(usize::try_from(o.vacancy).unwrap_or(usize::MAX)) else { return false };
@@ -1228,7 +1229,7 @@ impl Core {
             claiming_cost: benefit.claim_hours * hour,
         };
         // A claim the player keeps and queued nothing for is not made.
-        if self.decide_own(self.bind(claim), household, |_| input) != Some(true) {
+        if self.decide_own(self.point(|p| p.claim, claim), household, |_| input) != Some(true) {
             return;
         }
         let date = ctx.calendar.date(day);

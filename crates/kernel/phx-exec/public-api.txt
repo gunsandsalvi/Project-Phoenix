@@ -155,7 +155,7 @@ pub fn u64::digit(self, u32) -> usize  // used by: phx-market
 pub fn u64::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub fn phx_exec::radix::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)  // used by: phx-core
 pub mod phx_exec::site  // used by: phx-check, phx-cli, phx-core, phx-world, sys-bnk, sys-cb
-pub struct phx_exec::site::Site  // used by: phx-check, phx-core, phx-market
+pub struct phx_exec::site::Site  // used by: phx-check, phx-core, phx-market, phx-world
 pub phx_exec::site::Site::chunk: u32  // used by: phx-core, phx-market, phx-pop, phx-store, phx-world
 pub phx_exec::site::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_exec::site::Site::handler: u16
@@ -280,7 +280,7 @@ impl phx_exec::spec::PoolSpec
 pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
 pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, phx-fin, phx-world
-pub struct phx_exec::Site  // used by: phx-check, phx-core, phx-market
+pub struct phx_exec::Site  // used by: phx-check, phx-core, phx-market, phx-world
 pub phx_exec::Site::chunk: u32  // used by: phx-core, phx-market, phx-pop, phx-store, phx-world
 pub phx_exec::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_exec::Site::handler: u16

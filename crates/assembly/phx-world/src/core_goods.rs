@@ -398,6 +398,7 @@ impl Core {
     /// # Errors
     /// A primitive the opening reads that the register does not hold, or a spending schedule of no days.
     #[clause("HH.4", "FRM.4", "GDS.5", "GEN.3")]
+    #[opening]
     pub fn open_goods(
         &mut self,
         ctx: &GoodsCtx<'_>,
@@ -606,7 +607,7 @@ impl Core {
     #[clause("SOC.2", "GEN.2")]
     fn public_wants(&self, regions: &[CountryId]) -> Vec<(u16, Buyer)> {
         let mut wants = Vec::new();
-        let consuming = self.bind(&sys_soc::points::CONSUME);
+        let consuming = self.point(|p| p.consume, &sys_soc::points::CONSUME);
         for (r, c) in regions.iter().enumerate() {
             let country = usize::from(c.get());
             let Some(Some(agency)) = self.agencies.get(country).copied() else { continue };
@@ -890,7 +891,7 @@ impl Core {
     fn make(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> i64 {
         let Some(firm) = self.bound.kinds.firm else { return 0 };
         let slots = self.firm_slots(firm);
-        let producing = self.bind(&sys_frm::points::PRODUCE);
+        let producing = self.point(|p| p.produce, &sys_frm::points::PRODUCE);
         let plans: Vec<Option<(Firm, i64)>> = match ctx.pool {
             Some(pool) => pool.map(slots.len(), |i| slots.get(i).and_then(|s| self.making(ctx, (firm, *s), producing))),
             None => slots.iter().map(|s| self.making(ctx, (firm, *s), producing)).collect(),
@@ -1163,7 +1164,7 @@ impl Core {
     fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> u64 {
         let Some(firm) = self.bound.kinds.firm else { return 0 };
         let slots = self.firm_slots(firm);
-        let ordering = self.bind(&sys_frm::points::INPUTS);
+        let ordering = self.point(|p| p.inputs, &sys_frm::points::INPUTS);
         let orders: Vec<Vec<(u16, Buyer)>> = match ctx.pool {
             Some(pool) => pool.map(slots.len(), |i| {
                 slots.get(i).map_or_else(Vec::new, |s| self.input_orders(ctx, (firm, *s), (day, ordering)))
@@ -1240,7 +1241,7 @@ impl Core {
         let month = months(ctx.calendar.date(day));
         let mut wants = Vec::new();
         let mut spenders = 0;
-        let spending = self.bind(&sys_hh::points::SPEND);
+        let spending = self.point(|p| p.spend, &sys_hh::points::SPEND);
         for s in due {
             let slot = Slot::new(s);
             let Some(id) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { continue };
@@ -1383,9 +1384,9 @@ impl Core {
         };
         let mut stances = (0_u64, 0_u64);
         let (reconsidering, reviewing, repricing) = (
-            self.bind(&sys_frm::points::STANCE),
-            self.bind(&sys_frm::points::REVIEW_PRICE),
-            self.bind(&sys_frm::points::REPRICE),
+            self.point(|p| p.firm_stance, &sys_frm::points::STANCE),
+            self.point(|p| p.review_price, &sys_frm::points::REVIEW_PRICE),
+            self.point(|p| p.reprice, &sys_frm::points::REPRICE),
         );
         for s in due {
             let slot = Slot::new(s);
@@ -1616,7 +1617,7 @@ impl Core {
         };
         let slots: Vec<Slot> = self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
         let mut attending = Vec::new();
-        let attends = self.bind(&sys_frm::points::ATTEND);
+        let attends = self.point(|p| p.attend, &sys_frm::points::ATTEND);
         for slot in slots {
             let key = PartyKey::new(kind_number(firm), slot);
             let prefs = self.decider(attends, key).1;
@@ -1661,7 +1662,7 @@ impl Core {
         }
         let Some(firm) = self.bound.kinds.firm else { return };
         let Some(store) = self.kinds.get(firm) else { return };
-        let reads = self.bind(&sys_frm::points::STANCE);
+        let reads = self.point(|p| p.firm_stance, &sys_frm::points::STANCE);
         let mut surprised = Vec::new();
         for slot in store.parties.live_slots() {
             let rec = store.record(slot);
@@ -1696,7 +1697,7 @@ impl Core {
     fn count_stances(&mut self, day: Day) {
         let Some(firm) = self.bound.kinds.firm else { return };
         let Some(store) = self.kinds.get(firm) else { return };
-        let reads = self.bind(&sys_frm::points::STANCE);
+        let reads = self.point(|p| p.firm_stance, &sys_frm::points::STANCE);
         let mut by = [0_u64; crate::core_outlooks::HEURISTICS];
         for slot in store.parties.live_slots() {
             if let Missing::Present(h) = self.decider(reads, PartyKey::new(kind_number(firm), slot)).1.stance

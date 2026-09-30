@@ -240,7 +240,7 @@ impl Core {
         let mut steps = Vec::new();
         let after = self.reserves_moved(before);
         let deposits = self.bank_deposits();
-        let (sizing, bidding) = (self.bind(kind.size), self.bind(kind.bid));
+        let (sizing, bidding) = (self.point(|p| p.size, kind.size), self.point(|p| p.bid, kind.bid));
         for c in open {
             let (Some(Some(law)), Some(Some(treasury)), Some(corridor), Ok(ccy)) = (
                 self.bills.laws.get(*c).copied(),

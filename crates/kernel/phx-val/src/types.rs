@@ -4,7 +4,7 @@
 
 use phx_core::Register;
 use phx_core::register::values::{Distribution, TypeSet};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::Missing;
 use phx_rand::float::from_i64;
 
@@ -25,6 +25,7 @@ pub struct Types {
 }
 
 /// A distribution cut into its types, with each type's value.
+#[opening]
 fn cut(register: &Register, (distribution, count): (&str, &str)) -> Result<(TypeSet, Vec<f64>), String> {
     let types = u16::try_from(register.count(count)?).map_err(|e| e.to_string())?;
     let d: &Distribution = register.distribution(distribution)?;
@@ -37,6 +38,7 @@ fn cut(register: &Register, (distribution, count): (&str, &str)) -> Result<(Type
 impl Types {
     /// # Errors
     /// A primitive the types read that the register does not hold, or a distribution that cuts into no types.
+    #[opening]
     pub fn compile(register: &Register) -> Result<Types, String> {
         let (memory, gains) = cut(register, (crate::prims::ADAPTIVE_GAIN.id, crate::prims::MEMORY_TYPES.id))?;
         let (switching, intensities) =

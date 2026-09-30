@@ -11,7 +11,7 @@ use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_geo::GeoState;
 use phx_geo::deposits::Opening;
 use phx_id::{Day, PartyKey, Slot};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::{Missing, QtyRaw, violation};
 use phx_rand::float::from_i64;
 
@@ -46,6 +46,7 @@ impl Core {
     /// # Errors
     /// Products or tables the register refuses.
     #[clause("GDS.3", "GEO.6", "GEN.2")]
+    #[opening]
     pub(crate) fn open_rights(&mut self, geo: &GeoState, register: &phx_core::Register) -> Result<(), String> {
         let draws: Vec<Option<(u16, i64)>> =
             sys_tec::deposit_draws(register)?.into_iter().map(|d| d.map(|(r, per)| (r, per.raw()))).collect();
@@ -178,7 +179,7 @@ impl Core {
         if days == 0 {
             return;
         }
-        let deciding = self.bind(&sys_gds::points::EXTRACT);
+        let deciding = self.point(|p| p.extract, &sys_gds::points::EXTRACT);
         let years = f64::from(days) / crate::consts::DAYS_A_YEAR;
         let mut decided = Vec::new();
         for slot in self.firm_slots(firm) {

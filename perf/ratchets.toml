@@ -26,7 +26,7 @@ direction = "down"
 # removes its own; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc96"
-value = 78
+value = 70
 direction = "down"
 
 # PC-97's admitted sites (S1.122, 2026-09-30): literal `None` handed to a kernel's pool and work run on a pool
@@ -42,7 +42,7 @@ direction = "down"
 # S1.141–S1.146 and S1.180 (K-21) remove them; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc98"
-value = 21
+value = 0
 direction = "down"
 
 # PC-99's admitted sites (S1.124, 2026-09-30): the syntax of allocation on the day's paths as the code stood when the
@@ -51,7 +51,7 @@ direction = "down"
 # empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 869
+value = 813
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and

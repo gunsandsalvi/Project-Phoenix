@@ -64,7 +64,7 @@ pub fn phx_market::hiring::Application::rebuild_skipped(&mut self)  // used by: 
 pub fn phx_market::hiring::Application::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_market::hiring::Seeker  // used by: phx-fin, phx-world
 pub phx_market::hiring::Seeker::experience: u32  // used by: if-labour, phx-fin, phx-val, phx-world, sys-lab
-pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
+pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub phx_market::hiring::Seeker::occupation: u32  // used by: if-labour, phx-fin, phx-world, sys-lab, sys-soc
 pub phx_market::hiring::Seeker::person: u64  // used by: phx-cli, phx-core, phx-fin, phx-pop, phx-world, sys-dem
 pub phx_market::hiring::Seeker::region: u32  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
@@ -146,7 +146,7 @@ pub struct phx_market::reach::Reach
 impl phx_market::reach::Reach
 pub fn phx_market::reach::Reach::new(&phx_market::reach::MarketPrims, &phx_core::register::Register) -> phx_market::reach::Reach  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
-pub struct phx_market::reach::Site  // used by: phx-check, phx-core, phx-exec
+pub struct phx_market::reach::Site  // used by: phx-check, phx-core, phx-exec, phx-world
 pub phx_market::reach::Site::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-core, phx-geo, phx-ledger, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_market::reach::Site::zone: phx_id::ids::ZoneId  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-world
 pub const phx_market::reach::CLOSED_BORDERS: phx_core::register::PrimDecl

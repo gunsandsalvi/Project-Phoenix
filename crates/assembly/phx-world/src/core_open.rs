@@ -195,6 +195,7 @@ impl Core {
                 household: Some(household.clone()),
                 kinds: declared.0.clone(),
                 heirless: declared.1.clone(),
+                points: crate::core_decide::Points::default(),
             },
             persons_opened: 0,
             treasuries: Vec::new(),

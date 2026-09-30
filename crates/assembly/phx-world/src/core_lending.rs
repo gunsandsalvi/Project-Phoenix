@@ -219,7 +219,7 @@ impl Core {
                 slot.1 += phx_rand::float::from_i64(row.amount);
             }
         }
-        let reviewing = self.bind(&sys_bnk::points::STANDARD);
+        let reviewing = self.point(|p| p.standard, &sys_bnk::points::STANDARD);
         let countries: Vec<(PartyKey, usize)> = self
             .credit
             .lenders
@@ -313,9 +313,9 @@ impl Core {
         let amount = phx_rand::float::from_i64(principal);
         let mut quotes: Vec<(PartyKey, f64)> = Vec::new();
         let (declining, quoting, choosing) = (
-            self.bind(&sys_bnk::points::DECLINE),
-            self.bind(&sys_bnk::points::QUOTE),
-            self.bind(&sys_bnk::points::CHOOSE),
+            self.point(|p| p.decline, &sys_bnk::points::DECLINE),
+            self.point(|p| p.quote, &sys_bnk::points::QUOTE),
+            self.point(|p| p.choose, &sys_bnk::points::CHOOSE),
         );
         for bank in chosen {
             let capital =

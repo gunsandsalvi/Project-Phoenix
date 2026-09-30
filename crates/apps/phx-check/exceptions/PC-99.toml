@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 869 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 813 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -218,24 +218,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_credit.rs"
-item = "Core::firm_loans"
-what = "`.collect()`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_credit.rs"
-item = "Core::firm_loans"
-what = "`Vec::new`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_credit.rs"
-item = "Core::firm_loans"
-what = "`vec!`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_credit.rs"
 item = "Core::household_loans"
 what = "`.collect()`"
 count = 2
@@ -263,12 +245,6 @@ path = "crates/assembly/phx-world/src/core_credit.rs"
 item = "Core::loan_family"
 what = "`Vec::new`"
 count = 5
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_credit.rs"
-item = "Core::open_loans"
-what = "`.collect()`"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_credit.rs"
@@ -434,18 +410,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_default.rs"
-item = "Core::open_insolvency"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_default.rs"
-item = "Core::open_insolvency"
-what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_default.rs"
 item = "shares"
 what = "`.collect()`"
 count = 2
@@ -465,30 +429,6 @@ count = 1
 [[site]]
 path = "crates/assembly/phx-world/src/core_deposits.rs"
 item = "Core::audit_deposits"
-what = "`format!`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_deposits.rs"
-item = "Core::open_rights"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_deposits.rs"
-item = "Core::open_rights"
-what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_deposits.rs"
-item = "Core::open_rights"
-what = "`Vec::new`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_deposits.rs"
-item = "Core::open_rights"
 what = "`format!`"
 count = 1
 
@@ -500,38 +440,8 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_firms.rs"
-item = "Core::drafts"
-what = "`Vec::new`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_firms.rs"
-item = "Core::open_firms"
-what = "`Vec::with_capacity`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_firms.rs"
-item = "Core::open_firms"
-what = "`format!`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_firms.rs"
 item = "Core::persons_by_region"
 what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_firms.rs"
-item = "Core::price_drafts"
-what = "`.collect()`"
-count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_firms.rs"
-item = "Core::price_drafts"
-what = "`format!`"
 count = 1
 
 [[site]]
@@ -623,18 +533,6 @@ path = "crates/assembly/phx-world/src/core_freight.rs"
 item = "Core::meet_carriage"
 what = "`.collect()`"
 count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_freight.rs"
-item = "Core::open_freight"
-what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_freight.rs"
-item = "Core::open_freight"
-what = "`.to_vec()`"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
@@ -773,30 +671,6 @@ path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::open_expected"
 what = "`.collect()`"
 count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::open_goods"
-what = "`.collect()`"
-count = 4
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::open_goods"
-what = "`.to_owned()`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::open_goods"
-what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::open_goods"
-what = "`Vec::new`"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
@@ -1048,30 +922,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::leave_jobs"
 what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::open_labour"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::open_labour"
-what = "`.collect()`"
-count = 4
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::open_labour"
-what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::open_labour"
-what = "`vec!`"
 count = 1
 
 [[site]]
@@ -1340,36 +1190,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_owners.rs"
-item = "Core::open_owners"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_owners.rs"
-item = "Core::open_owners"
-what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_owners.rs"
-item = "Core::open_owners"
-what = "`Vec::with_capacity`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_owners.rs"
-item = "Core::open_owners"
-what = "`format!`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_owners.rs"
-item = "Core::open_owners"
-what = "`vec!`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_owners.rs"
 item = "Core::price_owners"
 what = "`.clone()`"
 count = 1
@@ -1397,36 +1217,6 @@ path = "crates/assembly/phx-world/src/core_plant.rs"
 item = "Core::investment_wants"
 what = "`Vec::new`"
 count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_plant.rs"
-item = "Core::open_plant"
-what = "`.clone()`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_plant.rs"
-item = "Core::open_plant"
-what = "`.collect()`"
-count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_plant.rs"
-item = "Core::open_plant"
-what = "`.to_string()`"
-count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_plant.rs"
-item = "Core::open_plant"
-what = "`Vec::new`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_plant.rs"
-item = "Core::open_plant"
-what = "`format!`"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_plant.rs"
@@ -3262,18 +3052,6 @@ count = 1
 path = "crates/kernel/phx-val/src/prims.rs"
 item = "ValPrims::check"
 what = "`format!`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-val/src/types.rs"
-item = "cut"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-val/src/types.rs"
-item = "cut"
-what = "`.to_string()`"
 count = 1
 
 [[site]]

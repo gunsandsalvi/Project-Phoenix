@@ -72,14 +72,14 @@ impl World {
         };
         let date = self.calendar.date(day);
         if date.month() == 1 && date.day() == 1 {
-            let hh = self.own.iter().find(|(c, _)| *c == <sys_hh::Hh as phx_core::System>::CODE);
-            if let Some(types) = hh.and_then(|(_, s)| s.downcast_ref::<sys_hh::Own>()).map(|h| &h.types) {
+            let hh = crate::world::own_at::<sys_hh::Own>(&self.own, self.own_at.hh);
+            if let Some(types) = hh.map(|h| &h.types) {
                 self.core.refresh_windows(types, date);
             }
         }
         let t = Some(clock);
         phx_exec::trace::note("day", &[("day", i64::from(day.get()))]);
-        let geo = crate::world::geo_arc(&self.own);
+        let geo = crate::world::geo_arc(&self.own, self.own_at);
         self.core.timed(t, "weather", |c| c.weather_day(geo, (&self.streams, &self.calendar), day));
         self.core.timed(t, "rates", |c| c.measure_rates(&ctx, day));
         let pop_day = self.core.timed(t, "hazards", |c| c.run_hazards(&ctx, day));
@@ -98,10 +98,9 @@ impl World {
             };
             let _ = self.core.timed(t, "labour", |c| c.labour_day(&lctx, day));
         }
-        let own_of = |code: &str| self.own.iter().find(|(c, _)| *c == code).map(|(_, s)| s);
-        let hh = own_of(<sys_hh::Hh as phx_core::System>::CODE).and_then(|s| s.downcast_ref::<sys_hh::Own>());
-        let frm = own_of(<sys_frm::Frm as phx_core::System>::CODE).and_then(|s| s.downcast_ref::<sys_frm::Own>());
-        if let (Some(rule), Some(frm), Ok(weights)) = (hh, frm, crate::registry::retail_weights(&self.register)) {
+        let hh = crate::world::own_at::<sys_hh::Own>(&self.own, self.own_at.hh);
+        let frm = crate::world::own_at::<sys_frm::Own>(&self.own, self.own_at.frm);
+        if let (Some(rule), Some(frm), Some(weights)) = (hh, frm, self.weights) {
             let gctx = crate::core_goods::GoodsCtx {
                 register: &self.register,
                 calendar: &self.calendar,

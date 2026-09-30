@@ -18,6 +18,7 @@ pub struct Declared {
     pub household: Option<phx_pop::kind::PopKindDecl>,
     pub kinds: Vec<KindTraits>,
     pub heirless: Vec<u8>,
+    pub(crate) points: crate::core_decide::Points,
 }
 
 /// What the forms say a party may hold that is money.

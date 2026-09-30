@@ -371,7 +371,7 @@ impl crate::core::Core {
         let Some(stream) = streams.named(sys_hh::StanceStream::DECL.name) else {
             violation!(clause = "VAL.7", "the households' stance stream is not declared");
         };
-        let reconsidering = self.bind(&sys_hh::points::STANCE);
+        let reconsidering = self.point(|p| p.household_stance, &sys_hh::points::STANCE);
         let (_, prefs) = self.decider(reconsidering, household);
         let (Some(view), Missing::Present(switching), Missing::Present(stance)) =
             (self.stats.outlooks.view(&prefs), prefs.switching, prefs.stance)

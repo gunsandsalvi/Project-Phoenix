@@ -88,7 +88,7 @@ impl Core {
     #[clause("SOC.8", "LAB.4", "MND.20")]
     pub(crate) fn post_agencies(&mut self, ctx: &LabourCtx<'_>, day: Day) -> u64 {
         let Some(family) = self.bound.families.public_employment else { return 0 };
-        let staffing = self.bind(&sys_soc::points::STAFF);
+        let staffing = self.point(|p| p.staff, &sys_soc::points::STAFF);
         let mut posted = 0;
         for (c, agency) in self.agencies.clone().into_iter().enumerate() {
             let (Some(agency), Ok(ccy)) = (agency, u8::try_from(c)) else { continue };

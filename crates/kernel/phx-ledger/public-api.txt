@@ -253,7 +253,7 @@ pub struct phx_ledger::online::Online  // used by: sys-bnk
 impl phx_ledger::online::Online
 pub fn phx_ledger::online::Online::new(alloc::vec::Vec<u64>) -> phx_ledger::online::Online  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_ledger::online::Online::next(&mut self, &mut phx_rand::draws::Draws) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-lab
-pub mod phx_ledger::opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-world, sys-bnk, sys-cb, sys-dem, sys-gds, sys-lab, sys-soc
+pub mod phx_ledger::opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub fn phx_ledger::opening::currency(phx_id::ids::CountryId) -> phx_num::money::Ccy  // used by: phx-world
 pub fn phx_ledger::opening::derived(&phx_core::contribution::OpeningCountry, &str) -> f64  // used by: phx-check, phx-core, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab
 pub fn phx_ledger::opening::employed(&phx_core::contribution::OpeningCountry) -> f64  // used by: phx-cli, phx-world, sys-hh, sys-lab

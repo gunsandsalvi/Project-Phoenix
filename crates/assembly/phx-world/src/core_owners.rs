@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 
 use phx_core::opening_subject;
 use phx_id::{Day, PartyKey};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::Missing;
 use phx_rand::float::len_u64;
 
@@ -93,6 +93,7 @@ impl Core {
     /// # Errors
     /// A primitive the dealing reads that the register does not hold.
     #[clause("FRM.1", "FRM.23", "PTY.16", "GEN.2")]
+    #[opening]
     pub fn open_owners(&mut self, o: &JobsOpening<'_>, types: &phx_val::types::Types) -> Result<(), String> {
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let firms = self.firm_hours(o, firm)?;

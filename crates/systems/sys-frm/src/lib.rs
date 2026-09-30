@@ -12,6 +12,7 @@ pub mod rules;
 
 use phx_core::register::values::Table2;
 use phx_core::{AttrDecl, Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
+use phx_macros::opening;
 use phx_num::{Count, Fixed};
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", place: Region { word: 1 }, clause: "FRM.1" } }
@@ -43,6 +44,7 @@ pub struct FilingPrims {
 impl FilingPrims {
     /// A product's lot, the units its price is posted for: ten to its unit's price places.
     #[must_use]
+    #[opening]
     pub fn lot(register: &phx_core::Register, product: u16) -> f64 {
         let entry = register.products("TEC.products").ok().and_then(|p| p.get(usize::from(product)).cloned());
         let exp = entry

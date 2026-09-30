@@ -8,7 +8,7 @@ use std::collections::BTreeMap;
 use phx_core::decisions::{DecisionKinds, DecisionPointDecl, Prefs, QueuedPayload, Say, Standing, TakenIn};
 use phx_core::kinds::LegalForm;
 use phx_id::{PartyKey, Slot};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::{MaybeI64, Missing, violation};
 
 use crate::core::Core;
@@ -27,6 +27,85 @@ impl<I, O> Clone for Bound<I, O> {
 }
 
 impl<I, O> Copy for Bound<I, O> {}
+
+/// Each decision point the day takes, bound once to its place among the declared decisions: those the systems
+/// declare, and those the labour market's, the bills' and the benefit's kinds name. Bound once the decisions and those
+/// kinds are known, and again at load.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(crate) struct Points {
+    pub(crate) staff: Option<usize>,
+    pub(crate) extract: Option<usize>,
+    pub(crate) ship: Option<usize>,
+    pub(crate) invest: Option<usize>,
+    pub(crate) request: Option<usize>,
+    pub(crate) household_stance: Option<usize>,
+    pub(crate) standard: Option<usize>,
+    pub(crate) decline: Option<usize>,
+    pub(crate) quote: Option<usize>,
+    pub(crate) choose: Option<usize>,
+    pub(crate) consume: Option<usize>,
+    pub(crate) produce: Option<usize>,
+    pub(crate) inputs: Option<usize>,
+    pub(crate) spend: Option<usize>,
+    pub(crate) firm_stance: Option<usize>,
+    pub(crate) review_price: Option<usize>,
+    pub(crate) reprice: Option<usize>,
+    pub(crate) attend: Option<usize>,
+    pub(crate) offer: Option<usize>,
+    pub(crate) post: Option<usize>,
+    pub(crate) search: Option<usize>,
+    pub(crate) answer: Option<usize>,
+    pub(crate) select: Option<usize>,
+    pub(crate) accept: Option<usize>,
+    pub(crate) size: Option<usize>,
+    pub(crate) bid: Option<usize>,
+    pub(crate) claim: Option<usize>,
+}
+
+/// The markets' and the state's kinds that name decision points of their own.
+pub(crate) type PointKinds<'a> = (
+    Option<&'a if_labour::kind::LabourKind>,
+    Option<&'a if_state::kinds::BillKind>,
+    Option<&'static DecisionPointDecl<if_state::kinds::ClaimIn, bool>>,
+);
+
+impl Points {
+    /// Each point's place among the declared decisions' names; none where the register declares none.
+    #[opening]
+    #[must_use]
+    pub(crate) fn of(names: &[String], (labour, bills, claim): PointKinds<'_>) -> Points {
+        let at = |name: &str| names.iter().position(|n| n == name);
+        Points {
+            staff: at(sys_soc::points::STAFF.name),
+            extract: at(sys_gds::points::EXTRACT.name),
+            ship: at(sys_frt::points::SHIP.name),
+            invest: at(sys_cap::points::INVEST.name),
+            request: at(sys_bnk::points::REQUEST.name),
+            household_stance: at(sys_hh::points::STANCE.name),
+            standard: at(sys_bnk::points::STANDARD.name),
+            decline: at(sys_bnk::points::DECLINE.name),
+            quote: at(sys_bnk::points::QUOTE.name),
+            choose: at(sys_bnk::points::CHOOSE.name),
+            consume: at(sys_soc::points::CONSUME.name),
+            produce: at(sys_frm::points::PRODUCE.name),
+            inputs: at(sys_frm::points::INPUTS.name),
+            spend: at(sys_hh::points::SPEND.name),
+            firm_stance: at(sys_frm::points::STANCE.name),
+            review_price: at(sys_frm::points::REVIEW_PRICE.name),
+            reprice: at(sys_frm::points::REPRICE.name),
+            attend: at(sys_frm::points::ATTEND.name),
+            offer: labour.and_then(|l| at(l.offer.name)),
+            post: labour.and_then(|l| at(l.post.name)),
+            search: labour.and_then(|l| at(l.search.name)),
+            answer: labour.and_then(|l| at(l.answer.name)),
+            select: labour.and_then(|l| at(l.select.name)),
+            accept: labour.and_then(|l| at(l.accept.name)),
+            size: bills.and_then(|b| at(b.size.name)),
+            bid: bills.and_then(|b| at(b.bid.name)),
+            claim: claim.and_then(|c| at(c.name)),
+        }
+    }
+}
 
 /// The decisions the world takes and who takes them: each decision's name and taker, the office it is taken in by
 /// each party kind whose form declares it, each kind's founding preferences by slot, the offices' holders with their
@@ -216,7 +295,28 @@ impl Core {
         }
     }
 
-    /// A decision point bound to its kind for a pass; one the register does not declare stops the run.
+    /// A decision point at the place bound for it; one bound to none, which the register does not declare, stops the
+    /// run.
+    pub(crate) fn point<I, O>(
+        &self,
+        at: fn(&Points) -> Option<usize>,
+        point: &'static DecisionPointDecl<I, O>,
+    ) -> Bound<I, O> {
+        match at(&self.declared.points) {
+            Some(at) => Bound { at, point },
+            None => violation!(clause = "MND.20", "a decision taken that the register does not declare"),
+        }
+    }
+
+    /// The day's decision points bound among the declared decisions, with the kinds that name some of them.
+    #[opening]
+    pub(crate) fn bind_points(&mut self, labour: Option<&if_labour::kind::LabourKind>) {
+        let kinds = (labour, self.bills.kind.as_ref(), self.state.claim);
+        self.declared.points = Points::of(&self.decisions.names, kinds);
+    }
+
+    /// A decision point bound to its kind by its name, at the opening; the day reads the bound points.
+    #[opening]
     pub(crate) fn bind<I, O>(&self, point: &'static DecisionPointDecl<I, O>) -> Bound<I, O> {
         let Some(at) = self.decisions.names.iter().position(|n| n == point.name) else {
             violation!(clause = "MND.20", "a decision taken that the register does not declare");
@@ -402,5 +502,52 @@ mod tests {
         d.vacate(firm, Some(42));
         assert_eq!(d.in_office(0, firm).map(|x| x.0), Some(Standing::Founding), "empty, the founding preferences");
         assert_eq!(d.held(), 0, "no office held");
+    }
+
+    /// Every decision the systems declare, as the register lists them, and the labour market's kind.
+    fn declared() -> (Vec<String>, if_labour::kind::LabourKind) {
+        let labour = sys_lab::LABOUR;
+        let mut names: Vec<String> = [
+            sys_soc::points::STAFF.name,
+            sys_frm::points::PRODUCE.name,
+            sys_hh::points::SPEND.name,
+            labour.post.name,
+            labour.offer.name,
+        ]
+        .iter()
+        .map(|n| (*n).to_owned())
+        .collect();
+        names.reverse();
+        (names, labour)
+    }
+
+    #[test]
+    fn points_bound_once_by_declaration() {
+        let (names, labour) = declared();
+        let p = super::Points::of(&names, (Some(&labour), None, None));
+        let at = |name: &str| names.iter().position(|n| n == name);
+        assert_eq!(p.produce, at(sys_frm::points::PRODUCE.name));
+        assert_eq!(p.spend, at(sys_hh::points::SPEND.name));
+        assert_eq!(p.post, at(labour.post.name));
+        assert_eq!(p.offer, at(labour.offer.name));
+        assert_eq!((p.invest, p.size, p.claim), (None, None, None), "points the register lists none of bind none");
+    }
+
+    #[test]
+    fn points_rebuilt_equal() {
+        let (names, labour) = declared();
+        let kinds = (Some(&labour), None, None);
+        assert_eq!(super::Points::of(&names, kinds), super::Points::of(&names, kinds));
+    }
+
+    #[test]
+    fn undeclared_point_refused_at_assembly() {
+        let p = super::Points::of(&[], (None, None, None));
+        assert_eq!(p.produce, None, "bound to none at assembly");
+        let bound = |at: Option<usize>| match at {
+            Some(at) => at,
+            None => phx_num::violation!(clause = "MND.20", "a decision taken that the register does not declare"),
+        };
+        assert!(std::panic::catch_unwind(|| bound(p.produce)).is_err());
     }
 }

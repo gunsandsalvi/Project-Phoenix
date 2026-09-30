@@ -717,7 +717,13 @@ decision and an effective day before the next business day of the policy's count
   function that decides. A point needs a schedule or wakes. `Ctx::decide` takes the player's queued intent for the
   point when one is queued; otherwise the rule decides only if the player's decider delegates, and else the decision
   is not taken that day. The rule table's check refuses a rule signature with no implementer or two, one implemented by
-  another system than its declared one, and an implementation of no declared signature.
+  another system than its declared one, and an implementation of no declared signature. Each point the day takes is bound once to
+  its place among the declared decisions (`core_decide::Points`: the systems' points and those the labour market's,
+  the bills' and the benefit's kinds name), after the decisions and those kinds open and again at load; a day reads
+  the bound place (`Core::point`), and a point bound to none stops the run. The primitives a day path reads are
+  compiled at the opening (a product's lot and lead time, the retail meeting's weights), and the systems' own states
+  the day reads are found by their codes once (`world::OwnAt`); the register is read by name only in `#[opening]`
+  functions.
 - A **rule handle** is a pure function declared in an interface crate and implemented by its owning system — the tax
   on a given income, a benefit entitlement, a lender's cap, a clearing house's margin for a trade, a platform's effect
   on a household — callable by any system with inputs it may read. It reads only its inputs and policy values. Market
