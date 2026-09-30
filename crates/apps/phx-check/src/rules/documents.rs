@@ -36,6 +36,10 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches.extend(extension_points(&steps));
+    match edge_cases(ws, &steps) {
+        Ok(found) => breaches.extend(found),
+        Err(error) => breaches.push(Breach::new(RULE, PLAN, 1, error)),
+    }
     match docs::clauses(&ws.spec) {
         Ok(clauses) => breaches.extend(clause_forms(&steps, &clauses)),
         Err(error) => breaches.push(Breach::new(RULE, SPEC, 1, error)),
@@ -71,6 +75,72 @@ fn clause_forms(steps: &[Step], clauses: &[docs::Clause]) -> Vec<Breach> {
         }
     }
     breaches
+}
+
+/// What an edge case may cite as its evidence: the workspace's tests already written and the live checks its code
+/// already runs or a step lists.
+struct Evidence {
+    functions: std::collections::BTreeSet<String>,
+    live_checks: std::collections::BTreeSet<String>,
+}
+
+/// Every edge case of a standing step names its evidence: a test its unit tests list (or, where they say they hold the
+/// edge cases' tests, any test it names), a test another step it names lists, a test the workspace already holds, a
+/// live check, a `-F` case its budget names, or `n/a:` with the reason.
+fn edge_cases(ws: &Workspace, steps: &[Step]) -> Result<Vec<Breach>, String> {
+    let re = |p: &str| regex::Regex::new(p).map_err(|e| e.to_string());
+    let (name, check, function, reason, step_id, by_edge) = (
+        re(r"`([a-z][a-z0-9_]*)`")?,
+        re(r"LC-\d+-\d+")?,
+        re(r"#\[test\]\s*(?:#\[[^\]]*\]\s*)*fn ([a-z][a-z0-9_]*)")?,
+        re(r"\bn/a(?: here)?:\s*\S")?,
+        re(r"\bS\d+\.\d{2,3}\b")?,
+        re(r"(?i)edge[ -]cases?'? tests|edge cases:")?,
+    );
+    let mut evidence = Evidence {
+        functions: std::collections::BTreeSet::default(),
+        live_checks: std::collections::BTreeSet::default(),
+    };
+    for text in ws.crates.iter().flat_map(|c| c.sources.iter().map(|s| s.text.as_str())) {
+        evidence.functions.extend(function.captures_iter(text).filter_map(|c| c.get(1)).map(|m| m.as_str().to_owned()));
+        evidence.live_checks.extend(check.find_iter(text).map(|m| m.as_str().to_owned()));
+    }
+    for step in steps {
+        evidence.live_checks.extend(check.find_iter(&step.live_checks).map(|m| m.as_str().to_owned()));
+    }
+    let names = |text: &str| -> Vec<String> {
+        name.captures_iter(text).filter_map(|c| c.get(1)).map(|m| m.as_str().to_owned()).collect()
+    };
+    let lists = |step: &Step, test: &str| {
+        names(&step.unit_tests).iter().any(|n| n == test)
+            || (by_edge.is_match(&step.unit_tests)
+                && step.edge_items.iter().any(|i| names(i).iter().any(|n| n == test)))
+    };
+    let mut breaches = Vec::new();
+    for step in steps.iter().filter(|s| s.status.as_deref() != Some("retired")) {
+        for item in &step.edge_items {
+            if item.trim().is_empty() || reason.is_match(item) {
+                continue;
+            }
+            let tests = names(item);
+            let checks: Vec<&str> = check.find_iter(item).map(|m| m.as_str()).collect();
+            let others: Vec<&Step> =
+                step_id.find_iter(item).filter_map(|m| steps.iter().find(|s| s.id == m.as_str())).collect();
+            let shown = tests.iter().any(|t| {
+                lists(step, t)
+                    || evidence.functions.contains(t)
+                    || others.iter().any(|o| lists(o, t))
+                    || (item.contains("-F") && names(&step.budget).contains(t))
+            }) || checks.iter().any(|c| evidence.live_checks.contains(*c));
+            if !shown {
+                let quoted: String = item.chars().take(60).collect();
+                let message =
+                    format!("{}'s edge case `{quoted}` names no test, live check or `n/a:` reason it has", step.id);
+                breaches.push(Breach::new(RULE, PLAN, step.line, message));
+            }
+        }
+    }
+    Ok(breaches)
 }
 
 /// The kinds of step whose Extension points are the index of the later steps that depend on them.
@@ -217,7 +287,7 @@ mod tests {
 
     use super::run;
     use crate::docs::SECTIONS;
-    use crate::workspace::fixture::krate;
+    use crate::workspace::fixture::{krate, with_source};
     use crate::workspace::{Layer, Workspace};
 
     const ARCH: &str = "## 3. Layers and crates\n`phx-check` `phx-core` `phx-cli` `sys-abc` `sys-def`\n## 4. Next\n`phx-cli`\n\
@@ -479,5 +549,70 @@ mod tests {
     fn none_is_a_form() {
         assert!(form("**Clauses**: none").is_empty());
         assert_eq!(form("**Clauses**: none; ABC.1 STATE").len(), 1, "none stands alone");
+    }
+
+    fn edged(id: &str, edge: &str, tests: &str, checks: &str) -> String {
+        step(id, "planned", "", "x")
+            .replace("**Edge cases**", &format!("**Edge cases**:\n{edge}"))
+            .replace("**Unit tests**", &format!("**Unit tests**: {tests}"))
+            .replace("**Live checks**", &format!("**Live checks**: {checks}"))
+    }
+
+    fn edge_breaches(w: &Workspace) -> Vec<String> {
+        messages(w).into_iter().filter(|m| m.contains("edge case")).collect()
+    }
+
+    #[test]
+    fn edge_items_need_evidence() {
+        let plan = edged(
+            "S1.140",
+            "- E1: many at once — `many_at_once`.\n- E2: none at all, and\n  nothing more.",
+            "`many_at_once`",
+            "none",
+        );
+        assert_eq!(
+            edge_breaches(&ws(plan, &[])),
+            [
+                "S1.140's edge case `E2: none at all, and nothing more.` names no test, live check or `n/a:` reason it has"
+            ]
+        );
+        let unlisted = edged("S1.140", "- E1: many — `many_at_once`.", "`other`", "none");
+        assert_eq!(edge_breaches(&ws(unlisted, &[])).len(), 1, "a named test its unit tests lack");
+        let by_edge = edged("S1.140", "- E1: many — `many_at_once`.", "the edge cases' tests, and `other`", "none");
+        assert!(edge_breaches(&ws(by_edge, &[])).is_empty(), "unit tests that hold the edge cases' tests");
+    }
+
+    #[test]
+    fn n_a_needs_a_reason() {
+        let bare = edged("S1.140", "- E5: a heavy day — n/a:", "none", "none");
+        assert_eq!(edge_breaches(&ws(bare, &[])).len(), 1);
+        let reasoned = edged("S1.140", "- E5: a heavy day — n/a: a gate reads its run.", "none", "none");
+        assert!(edge_breaches(&ws(reasoned, &[])).is_empty());
+    }
+
+    #[test]
+    fn edge_tests_are_the_steps_own() {
+        let owner = edged("S1.130", "- E6: n/a: none.", "`saves_round_trip`", "none");
+        let silent = edged("S1.140", "- E6: round-trips — `saves_round_trip`.", "none", "none");
+        assert_eq!(edge_breaches(&ws(owner.clone() + &silent, &[])).len(), 1, "another step's test, that step unnamed");
+        let named = edged("S1.140", "- E6: round-trips — `saves_round_trip` (S1.130).", "none", "none");
+        assert!(edge_breaches(&ws(owner + &named, &[])).is_empty(), "the step named lists it");
+        let mut kept = ws(edged("S1.140", "- E8: stops — `stops_the_caller` (kept).", "none", "none"), &[]);
+        kept.crates.push(with_source(
+            krate("phx-exec", Layer::Kernel),
+            "src/pool.rs",
+            "#[test]\nfn stops_the_caller() {}",
+        ));
+        assert!(edge_breaches(&kept).is_empty(), "a test the workspace holds");
+    }
+
+    #[test]
+    fn live_check_ids_count() {
+        let plan =
+            edged("S1.140", "- E6: a save mid-run — LC-0-35.\n- E9: growth — LC-1-99.", "none", "`LC-0-35`: saves");
+        assert_eq!(
+            edge_breaches(&ws(plan, &[])),
+            ["S1.140's edge case `E9: growth — LC-1-99.` names no test, live check or `n/a:` reason it has"]
+        );
     }
 }

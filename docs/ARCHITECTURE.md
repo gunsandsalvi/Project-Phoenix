@@ -2976,7 +2976,10 @@ credited while the world holds it (GEN.10).
    register id naming it in its own text; and a base, kernel or index step's Extension points naming exactly the later
    steps whose Depends on names it (the reverse index), each after it; and every standing step's Clauses line in one
    form — `none`, or items split at `;`, each `SYS.n TYPE` with the type the spec's bullet declares, `Law n *(part)*`
-   or a bare chain or measurement item, each with at most one `*(part …)*`.
+   or a bare chain or measurement item, each with at most one `*(part …)*`; and every edge case of a standing step
+   naming its evidence — a test its unit tests list (all it names, where the unit tests say they hold the edge cases'
+   tests), a test of another step it names that lists it, a test the workspace holds, a live check a step lists or the
+   code runs, a `-F` case its budget names — or `n/a:` with the reason.
 7. **Process**: live-check identifiers never disappear; a primitive's value in `data/` changes only with its `source`
    in the same diff; the placeholder count only falls except by placeholders a stage introduces, and no system is done
    while a placeholder naming it remains; public-API snapshots of kernel and interface crates change only with the

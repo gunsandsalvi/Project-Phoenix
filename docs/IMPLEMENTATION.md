@@ -246,7 +246,7 @@ activates bases.
 | --- | --- | --- |
 | **0 Foundations** | S0.01–S0.28 | done: the workspace, the foundation and kernel crates, the map, the setup and the persistence |
 | **1 The circular flow**, done | S1.01–S1.14, S1.17–S1.23, S1.26 | done: the Stage 1 systems' declarations and rules, the meter, one representation, the core and the bench, money and settlement, markets and goods on the core, one opening dataset per profile, Stage 0's world on the core, the decision core |
-| **1 The core: frame and tools** | S1.110–S1.133 (S1.100–S1.109 done) | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
+| **1 The core: frame and tools** | S1.111–S1.133 (S1.100–S1.110 done) | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
 | **1 The core: repairs** | S1.134–S1.158 | defects that stand apart from any base |
 | **1 The core: bases** | S1.159–S1.360 | every store, kernel and index the finished world needs, each designed for its last user and measured at the design point, each followed by the migration of its current users |
 | **1 Stage 1 on the core** | S1.400–S1.499 | Stage 0's and Stage 1's mechanisms as rules over the bases, Stage 1's remaining clauses, the opening's derivations, and the Stage 1 gate |
@@ -272,8 +272,8 @@ The steps of each stage, in build order:
   S1.104 the cost rule and the design rules · S1.105 the clause map's L
   and N rows machine-read · S1.106 coverage in build order · S1.107 no
   scratch document cited · S1.108 Extension points as the reverse index
-  · S1.109 Clauses lines in one form.
-- **Stage 1, the core: frame and tools**: S1.110 Every edge case names its test or live check · S1.111 Every code step's Done when reads the bench · S1.112 The layering order of the new crate map · S1.113 `perf/design.toml`: the design point's one figure set · S1.114 The capacity table (K-24) · S1.115 `phx-world`'s literal capacities read the declared table · S1.116 `phx-fin` and `tools/bench.sh -F` · S1.117 The measurement counters (K-15) · S1.118 The counters in the run's report and the bench's summary · S1.119 `-F` baseline of the kept kernels · S1.120 No map, list, dynamic dispatch or wide optional on day paths (R1) · S1.121 Whole-table traversal only through kernel traversals or declared sweeps (R2) · S1.122 Dispatch only through kernel traversals; no absent pool (R3, R8) · S1.123 No register, kind or family read by name on day paths · S1.124 No allocation on day paths (R5) · S1.125 No map keyed by a bare slot in saved state · S1.126 No absent value read as zero · S1.127 No literal capacity · S1.128 Maintained aggregates declared and never read by the audit (R4) · S1.129 Per-day values only through the day-stamped cache (R7) · S1.130 Every index left out of a save names its rebuild (R9) · S1.131 Architecture names exist; unused kernel API reported · S1.132 The design point's ratchets in `perf/budget.toml` · S1.133 The world run's counters for the core's rules
+  · S1.109 Clauses lines in one form · S1.110 every edge case's evidence.
+- **Stage 1, the core: frame and tools**: S1.111 Every code step's Done when reads the bench · S1.112 The layering order of the new crate map · S1.113 `perf/design.toml`: the design point's one figure set · S1.114 The capacity table (K-24) · S1.115 `phx-world`'s literal capacities read the declared table · S1.116 `phx-fin` and `tools/bench.sh -F` · S1.117 The measurement counters (K-15) · S1.118 The counters in the run's report and the bench's summary · S1.119 `-F` baseline of the kept kernels · S1.120 No map, list, dynamic dispatch or wide optional on day paths (R1) · S1.121 Whole-table traversal only through kernel traversals or declared sweeps (R2) · S1.122 Dispatch only through kernel traversals; no absent pool (R3, R8) · S1.123 No register, kind or family read by name on day paths · S1.124 No allocation on day paths (R5) · S1.125 No map keyed by a bare slot in saved state · S1.126 No absent value read as zero · S1.127 No literal capacity · S1.128 Maintained aggregates declared and never read by the audit (R4) · S1.129 Per-day values only through the day-stamped cache (R7) · S1.130 Every index left out of a save names its rebuild (R9) · S1.131 Architecture names exist; unused kernel API reported · S1.132 The design point's ratchets in `perf/budget.toml` · S1.133 The world run's counters for the core's rules
 - **Stage 1, the core: repairs**: S1.134 An agency's withheld tax opens in its collector's family · S1.135 A firm estate's project completes at its own site · S1.136 A failed goods move stops the run or fails whole, never a zero cost · S1.137 Missing technology, law or price refused, never zero · S1.138 Impossible values stop the run at the conversion · S1.139 Absent preferences, standings, standards and accounts matched · S1.140 Balances written at endings become flows · S1.141 Legal forms declare whether they have owners and who owns them · S1.142 Kinds declare their place · S1.143 The heirless destination declared by each country's law · S1.144 Kinds' features read as declared · S1.145 Families and kinds bound to handles at assembly · S1.146 The register read by handles on day paths · S1.147 The activity the state's agencies produce declared · S1.148 Numeric literals in mechanisms declared · S1.149 An employment's notice cleared on every close · S1.150 Measurement histories held by declared horizons · S1.151 Dates placed by the calendar, not counted · S1.152 Settlement and the day's flows on the pool · S1.153 Wheel takes, hiring's search and hazards' follow on the pool · S1.154 Production, orders and the opening's needs return actions, not floors · S1.155 The bill offer returns an action; no floor by comparison · S1.156 The duplicated decision runtime deleted · S1.157 Stale comments corrected · S1.158 Vacuous `phx-check` rules re-aimed
 - **Stage 1, the core: bases**: S1.159 Generation references for every table · S1.160 Day buffers · S1.161 The day plan: buffers' lives and shared pages · S1.162 The save contract: the rebuild pass and the round-trip harness · S1.163 The world hash as a tree of frame hashes · S1.164 The sum-tree · S1.165 Keyed indexes maintained by events · S1.166 Epoch flags and change sets · S1.167 Horizon rings · S1.168 The interner with reference counts · S1.169 Chunk plans and bounded spin · S1.170 Partitioned apply with its sweep hooks · S1.171 Declared sweeps and rolling cursors · S1.172 Apportionment with a named residue · S1.173 The four money viewpoints · S1.174 Typed references and the contract link's widths · S1.175 24-bit unit ids · S1.176 Stream families in the key, slot ordinals in the counter · S1.177 Stream declarations by family, and the families' draw types · S1.178 The calendar's day facts · S1.179 Dated policy schedules and rule handles · S1.180 The kind catalogue · S1.181 The family codes of the finished world · S1.182 Kinds, families and capacities read from the catalogue · S1.183 The units registry · S1.184 Goods and capital classes issued by the registry · S1.185 The stage table · S1.186 The day runner walks the stage table · S1.187 Networks and routes · S1.188 The day's use of the network as pair flows · S1.189 Freight's routes onto the route table · S1.190 Cells and the ground things stand on · S1.191 The deposits register · S1.192 Weather history and catastrophe footprints · S1.193 The weather's stores onto the ring and the footprint · S1.194 The party directory: generations, tombstones and successors · S1.195 The world's parties onto the directory · S1.196 Kind stores with typed columns at fixed byte maps · S1.197 Windowed groups: columns that exist only within a dated window · S1.198 Firms' record words to typed columns · S1.199 Households' record words to typed columns · S1.200 Equity and income lines onto kind columns · S1.201 Banks onto the bank kind: lending records and loan books · S1.202 Banks' reserve targets onto the bank kind · S1.203 The extraction flag as a firm flag bit · S1.204 Carriers' modes read from their ways · S1.205 Agencies onto the agency kind: staff targets and budgets · S1.206 The remaining kinds onto phx-pop; phx-core's KindStore deleted · S1.207 Persons as parties in their households · S1.208 Persons onto the person kind · S1.209 Offices and founding preferences · S1.210 Office holders and founding preferences onto offices · S1.211 The per-day party cache · S1.212 The stored log: immutable day segments on storage · S1.213 The event log: public events resident, occurrences stored · S1.214 Hazard events, weather records and deaths onto the event log · S1.215 The records store: series records by vintage, as published · S1.216 Filed accounts encoded per block · S1.217 The credit bureau's records: sparse summaries and adverse events · S1.218 Releases, filed earnings, auction history and the opening's present values onto records · S1.219 The day ledger: the representation reported every day · S1.220 The per-day records onto the day ledger · S1.221 Statistics accumulators · S1.222 Sample frames and saved samples · S1.223 Life records on storage within their horizon · S1.224 Tallies and votes · S1.225 The due wheel in phx-agenda with due-day runs · S1.226 Dated families' takes onto the phx-agenda wheel · S1.227 The decision agenda: one entry a party, a next day a reason · S1.228 Firms' production visits onto the decision agenda · S1.229 Extraction reviews onto the decision agenda · S1.230 Shipping onto the decision agenda · S1.231 Investment reviews onto the decision agenda · S1.232 Employers' postings onto the decision agenda · S1.233 Households' spending onto the decision agenda · S1.234 Employers' pay rounds onto the decision agenda · S1.235 Hazards drawn ahead on the agenda · S1.236 Today's hazards onto the agenda · S1.237 Messages and notices · S1.238 Notices, applications and offers onto messages · S1.239 The trigger index · S1.240 Money accounts: one 20-byte row, no owner column, banknotes · S1.241 Account side slots: facilities, held amounts, links and statements · S1.242 Exact interest on accounts by Abel summation · S1.243 Money totals maintained in the settlement sweep · S1.244 Accounts and money passes moved onto the ledger · S1.245 Flow batches: 16-byte items, 24-bit denominations, link groups, the chains' entry points · S1.246 Card authorization and reason gates · S1.247 Flows moved from `phx-core` with their producers · S1.248 Settlement in `phx-ledger`: the `pending` sweep, short payers re-derived, outcome by place · S1.249 Settlement routed onto the ledger; failure maps onto the outcome by place · S1.250 Linked legs across currencies and correspondent settlement · S1.251 Dated commitments on both books · S1.252 Pending flows moved onto commitments and accounts' `pending` · S1.253 The levy engine: declared levy sets fused at emission, accrued by collector · S1.254 Settlement tallies by reason, fused in the sweeps · S1.255 Per-flow passes moved onto tallies and the declared payment order · S1.256 The agency's statistics passes moved onto accumulators · S1.257 The contract store: declared families, compact rows, codes and runs · S1.258 Chains and lazy block lists: the walked sides · S1.259 Column sweeps and book sides · S1.260 Dated families moved onto the contract store · S1.261 Side aggregates maintained on row events · S1.262 Staff, wage bills, owed balances and collateral moved onto side aggregates · S1.263 Terms, shapes and the day's due plans · S1.264 Reckoning and schedules moved onto shared plans · S1.265 Status, arrears and the day's transitions · S1.266 Arrears, grace, closes and default moved onto status · S1.267 Books, bulk side moves and the rows of a book · S1.268 Participations: sides held in shares · S1.269 Accruing statement contracts: invoice pairs, open and closed periods, carving · S1.270 Taxes moved onto the levy engine and collectors' payables · S1.271 Holdings of goods and physical units by holder · S1.272 Stocks' users moved onto holdings · S1.273 Unit totals and nature's net, maintained · S1.274 The place index · S1.275 The goods identity read from maintained totals · S1.276 Lots and cost flows, with realised gains · S1.277 Bounds and liens: committed, pledged, received under title · S1.278 Sales' covers and carriers' pledges moved onto bounds · S1.279 The instruments register · S1.280 Instrument holdings and holders by instrument · S1.281 The instrument events engine · S1.282 Bills moved onto instruments and their events · S1.283 Owners moved onto equity holdings · S1.284 Named units and what stands on a tile · S1.285 Capital classes: wear and maintained capacity · S1.286 Plant's wear and capacity moved onto capital classes · S1.287 Processes in progress: shipments, projects, production in flight, spells · S1.288 Shipments moved onto processes · S1.289 Standing rates realised lazily · S1.290 Cumulative output per way and its thresholds · S1.291 Production and spoilage moved onto standing rates · S1.292 Projects moved onto processes · S1.293 Deposits and extraction rights moved onto the register and holdings · S1.294 Catastrophes' losses found by place · S1.295 A firm's unit cost read once a day from the bases · S1.296 Standing offers and market instances · S1.297 Price points and ladders · S1.298 The shared admission hook · S1.299 The stall family in good-major blocks · S1.300 Posted prices onto standing offers · S1.301 The stall book: a sum-tree per good at its zone · S1.302 Closed borders read as a declared scope · S1.303 Stalls and the cheapest price onto the stall book · S1.304 The vacancy book and searchers · S1.305 Vacancies and searchers onto the vacancy book · S1.306 The posted-price meeting on the stall book's sum-trees · S1.307 The between-firm meeting on price levels from the stall book · S1.308 The world's purchases onto the meetings · S1.309 The sale as its payment: seller-range sweep and the (seller, good) batch · S1.310 Failed between-firm sales reversed before the close · S1.311 Booking and delivery onto the sales batch · S1.312 The call auction · S1.313 The bill auction onto the call auction · S1.314 The network call: a transport model over lines · S1.315 The continuous book with its closing call · S1.316 The dealer market · S1.317 The bilateral protocol · S1.318 The lending round onto the bilateral protocol · S1.319 The administered form · S1.320 The central bank's facilities onto the administered form · S1.321 Search and match · S1.322 Labour's rounds onto search and match · S1.323 Rationed queues · S1.324 Perishable daily capacity · S1.325 Services' capacity onto perishable capacity · S1.326 Prints, marks, fixings and market measures · S1.327 Traded sums and marks onto prints and marks · S1.328 Account lines (K-87) · S1.329 Income recognition onto lines · S1.330 Equity accounts and maintained net assets (K-88) · S1.331 The accounts audit onto recounts · S1.332 Carrying values, provisions and unrealised differences (K-89) · S1.333 Statements (K-90) · S1.334 Consolidation (K-90) · S1.335 Valuations and curves (K-91) · S1.336 Public series and methods (K-92) · S1.337 Public series onto the store · S1.338 Books and declared limits (K-93) · S1.339 Loan books and lenders' classes onto books · S1.340 Netting sets, margin and collateral (K-94) · S1.341 Exact linear aggregates (K-95) · S1.342 Estates' lifecycle (K-96) · S1.343 The ending kernel (K-97) · S1.344 Endings onto the ending kernel and estates' lifecycle · S1.345 Claims and the priority waterfall (K-98) · S1.346 Estates' payments onto the waterfall · S1.347 The resolution engine (K-99) · S1.348 The decision core (K-100) · S1.349 Decisions onto the decision core · S1.350 The attention kernel (K-101) · S1.351 Attention onto the kernel and the agenda · S1.352 Minds (K-102) · S1.353 The audit engine (K-103) · S1.354 Audit families onto the engine · S1.355 `phx-world` refuses stores and per-party passes · S1.356 Snapshots of every base (K-104) · S1.357 The investor schedule and position rule (K-105) · S1.358 The measurement recorder (K-106) · S1.359 The recorder routed at the day's close · S1.360 The core's close
 - **Stage 1 on the core**: S1.400 Stage 1's macro reads frozen · S1.401 Hazards' chances and their following in sys-dem · S1.402 Outcomes on persons and households in sys-dem · S1.403 Extended households' members from the DHS · S1.404 Households and persons drawn by sys-dem · S1.405 Persons own their accounts and debts at the opening · S1.406 A household's payments drawn from its persons · S1.407 Banks opened by sys-bnk · S1.408 The central bank opened by sys-cb · S1.409 The treasury opened by sys-trs · S1.410 Agencies and the state pensions in payment opened by sys-soc · S1.411 The developing group's job tenure · S1.412 Jobs and working owners dealt by sys-lab at the opening · S1.413 Vacancies posted from the employer's own state · S1.414 Searchers apply from their own reservation · S1.415 Selection, offers and hires · S1.416 Pay rounds at contracts' review dates · S1.417 Layoffs, notice and separations · S1.418 SOC.3 pays the named person · S1.419 Retirement closes jobs · S1.420 The state pension claimed at retirement · S1.421 The benefit claimed on a lost job · S1.422 Working owners' hours, pay and leaving · S1.423 Public agencies' appropriation, funding and staff · S1.424 The state's purchases through its agencies · S1.425 The lending round · S1.426 A firm's rate for new debt as its own position · S1.427 A firm's shortfall borrowed from its own bank · S1.428 Default after grace · S1.429 The central bank's facilities and remittance · S1.430 A bank's request of the facilities · S1.431 The treasury's position and cash buffer · S1.432 Bills at auction · S1.433 Sovereign debt's maturities and holders at the opening · S1.434 A bill's discount accrued over its life · S1.435 Income and consumption tax rules in sys-tax · S1.436 Mining divisions apart · S1.437 Coal deposits' sizes and grades · S1.438 A way's graded inputs declared in content · S1.439 Graded inputs used and valued by content · S1.440 A firm's unit cost as a sys-frm rule · S1.441 Which way to run · S1.442 Capacity's check declared in the Units family · S1.443 Production on the firm's schedule · S1.444 Input orders against the stall book · S1.445 Services bought for what was made · S1.446 Spoilage on standing rates · S1.447 Extraction on its schedule · S1.448 Household spending on its schedule · S1.449 Posted-price marks by units sold · S1.450 Price reviews · S1.451 Firms' attention, and reviews paid in hours · S1.452 Households' attention to their stances · S1.453 Firms' outlooks and stances · S1.454 Households' outlooks and experience weights · S1.455 Management types' spread from the SCE panel · S1.456 Surveyed expectations at the snapshot · S1.457 Wear by use and age, on its kinks · S1.458 Investment on its occasion · S1.459 Projects bought from named producers, paid in stages · S1.460 How an investment is funded · S1.461 A firm enters a line by investing · S1.462 Hazards' damage from the damage functions · S1.463 Crops' yield response to weather · S1.464 Weather and catastrophes destroy crops and stocks at named places · S1.465 Coastal vessels from the IMO, MARAD and shipbuilding · S1.466 Carriers' room and empty repositioning · S1.467 Sellers ship when the gap pays · S1.468 Buyers ship when origin plus freight beats home · S1.469 Freight, basis and supply-shock reads · S1.470 The trade ways declared · S1.471 The trade firms' products at the opening · S1.472 Stockists and merchants · S1.473 Distributors between makers and households · S1.474 The price indices' accumulators and records declared · S1.475 Price indices chained and released · S1.476 Labour force, life table and money released · S1.477 National accounts by three measures · S1.478 Labour's reads · S1.479 Capital's reads · S1.480 Realised rates on the observer's panel · S1.481 Firms' ages at the opening · S1.482 Farms over the size classes · S1.483 Firms drawn at the opening by sys-frm · S1.484 The opening's plant on the steady path · S1.485 Defined-benefit pensions in payment at the opening · S1.486 Each firm's latest filed accounts at the opening · S1.487 The dwelling capital kind declared · S1.488 The opening dwellings held without a housing market · S1.489 Founding reviewed at the adults' attention · S1.490 Firm births · S1.491 Day zero: each party's opening decisions once · S1.492 `phx-world` holds routing only · S1.493 PC-107: rules live in their systems · S1.494 Estimators I: filters, dating, tails · S1.495 Estimators II: survival, regressions, spells, forecasts · S1.496 Credit, verdicts and fact reports · S1.497 Chain relationships computed and reported · S1.498 Stage 1's liveness checks and live reads · S1.499 The Stage 1 gate
@@ -858,54 +858,6 @@ unchanged.
 | Exceptions files of PC-92, PC-96–PC-101 listing today's sites | S1.120–S1.130 | retired by S1.492, which empties every exception file; until then each migration step removes its sites, and the listed `core_*.rs` modules are admitted by S1.355 (PC-102), each entry carrying its retiring step |
 | `#[saved(skip)]` sites without `rebuild =` in PC-101's exceptions | S1.130 | S1.184 (`UnitIds::plain`), S1.225 (the wheel's scratch), S1.248 (settlement's `Work`), S1.264 (`DatedFamily::alike`), S1.306 (the meeting's scratch), each giving its site a rebuild |
 | §7 subsections' "Today" paragraphs describing the code as it stands | S1.100 | each base step's section; S1.360 requires none |
-
----
-
-### S1.110 — Every edge case names its test or live check
-
-**Status**: planned
-**Kind**: tool
-**Clauses**: none
-**Architecture**: §16 (PC-09, written)
-**Depends on**: S1.105 (the plan's documents parser)
-**Goal**: no edge case is claimed without its evidence: each item of a step's **Edge cases** names a unit test the
-step lists, a live check `LC-…`, or says `n/a:` with its reason.
-
-**Files**:
-| path | purpose |
-| --- | --- |
-| `crates/apps/phx-check/src/docs.rs` | `Step` gains `edge_items` and `unit_tests` (the names in backticks of the two sections) |
-| `crates/apps/phx-check/src/rules/documents.rs` | PC-09's edge-case check |
-
-**Design**:
-- An item is a line of **Edge cases** starting `- ` (with its continuation lines), or the section's one line. It
-  passes when it holds a backticked `snake_case` name that the step's **Unit tests** also names, or an `LC-<stage>-<n>`
-  id that its **Live checks** also names, or begins `n/a:` with text after it.
-- A test named in an edge case but absent from **Unit tests** is refused ("E6 names `round_trip`, which the step's
-  unit tests lack").
-
-**Edge cases**:
-- `n/a:` with nothing after it is refused — `n_a_needs_a_reason`.
-- A test named in another step does not count — `edge_tests_are_the_steps_own`.
-
-**Extension points**: none added.
-
-**Unit tests**: `edge_items_need_evidence`, `n_a_needs_a_reason`, `edge_tests_are_the_steps_own`,
-`live_check_ids_count`.
-
-**Live checks**: none.
-
-**Budget**: none (a check).
-
-**Guards**: PC-09 extended.
-
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a test name listed only to pass the check, with no assertion of the case.
-
-**Done when**:
-- [ ] The parser, the check and its tests written; `phx-check all` clean on the committed plan.
-- [ ] Fast checks pass; the bench at the committed resolution within `perf/budget.toml`.
-- [ ] The two reviews done; status `done` and the section removed.
 
 ---
 
@@ -4862,7 +4814,7 @@ allocation per day; a second path from a player's intent to a decision.
 - `follow`'s comment (`pop_rules.rs`) is made true by S1.153 and is left as it is.
 - Comments say why, in a sentence or two, and name no document, clause, step or system (PC-07 for clause identifiers).
 
-**Edge cases**: none apply; no behaviour changes, and PC-07 runs over the comments.
+**Edge cases**: n/a: no behaviour changes, and PC-07 runs over the comments.
 **Extension points**: none.
 **Unit tests**: none (comments only; PC-07 runs over them).
 **Live checks**: none.
@@ -11401,7 +11353,7 @@ K-47 — where it writes K-47's columns and calls `MoneyTotals::fold`; the world
 - Removes its sites from `exceptions/PC-96.toml` (eight account passes).
 
 **Edge cases**:
-- E6: a save of the previous build is refused (E 36) — `old_save_refused` (S1.162's test).
+- E6: a save of the previous build is refused (E 36) — `other_build_refused` (S1.162's test).
 - E10: an ended party's account closes after its estate's flows settle (SET.7) — `estate_account_closes_after`.
 - E13: a kind with no accounts reads no rows — `no_account_kind_empty`.
 
@@ -11608,7 +11560,7 @@ branching on a kind's name.
 
 **Edge cases**:
 - E7: flows chunked by the making traversal, not one chunk — `flows_chunked_by_maker`.
-- E6: a save of the previous build is refused (E 36) — `old_save_refused` (S1.162's test).
+- E6: a save of the previous build is refused (E 36) — `other_build_refused` (S1.162's test).
 
 **Extension points**: none.
 
@@ -12545,7 +12497,7 @@ and bills — and `DatedFamily`, `Family`, the 48-byte `Due` and `EdgeTable` are
   `starts_with("LAB.")`) and `PC-100.toml` (slot-keyed state).
 
 **Edge cases**:
-- E6: a previous build's save is refused (E 36) — `old_save_refused` (S1.162's test).
+- E6: a previous build's save is refused (E 36) — `other_build_refused` (S1.162's test).
 - E10: stale references to closed rows (`labour.noticed`) read `None` — `stale_ref_none` (S1.257); S1.266 removes them.
 - E13: a country with no benefit family has no rows — `every_family_declared`.
 
@@ -15091,7 +15043,8 @@ S1.342, S1.343, S1.466, S2.130, S2.133, S2.145, S2.153, S2.204, S2.205, S2.208, 
 S3.175, S8.132, S4.105, S4.129, S5.162. A new family is a declaration of its columns and lapse rule, never a new store.
 **Unit tests**: `point_word_packs_point_and_generation`, `stale_ref_refused`, `instance_interned_once`,
 `lapse_filed_and_taken`, `second_intent_same_day_stops`, `apply_same_for_any_chunking`,
-`positions_beyond_capacity_stop`, `day_zero_rows_stand`, `round_trip_keeps_rows_and_rebuilds_instances`.
+`positions_beyond_capacity_stop`, `day_zero_rows_stand`, `round_trip_keeps_rows_and_rebuilds_instances`,
+`empty_instance_reads_empty`, `sell_side_needs_cover`.
 **Live checks**: none (a base; its users' checks read it).
 **Budget**: volumes `[store]` vacancies 200 k, standing orders 200 k, dealer quotes 50 k, listings 45 k, posted rates 5
 k, market instances 58 k. Posts, reprices and withdrawals 0.2 M / 0.1 M / 0.2 M (B / NB / H) at ≤ 60 ns VM
@@ -15946,7 +15899,7 @@ rounded once, delivery; a retail purchase is authorised at the till before deliv
 - E14: one seller's retail and between-firm sales of one good close in one batch — `one_batch_per_seller_good`.
 
 **Extension points**: S1.310, S1.311, S1.351, S1.424, S1.453, S2.111, S5.105, S5.108.
-**Unit tests**: `paid_rounded_once_per_sale`, `tax_fused_per_sale`, `cost_rounded_once_per_batch`,
+**Unit tests**: `mass_short_reversal_by_range`, `paid_rounded_once_per_sale`, `tax_fused_per_sale`, `cost_rounded_once_per_batch`,
 `on_account_accrues_no_flow`, `spend_debited_once_per_household`, `want_beyond_available_refused`,
 `retail_never_short_at_7b`, `same_books_any_workers`, `no_sale_no_batch`, `payday_items_at_unit`,
 `revenue_beyond_i64_stops`, `one_batch_per_seller_good`, `tallies_posted_once_in_k52`, `hooks_post_lines`.
@@ -17418,6 +17371,7 @@ at O(1) each; a household's net worth is a read.
 `checks_take_no_maintained_field` (compile-fail).
 **Live checks**: none (S1.331's family).
 **Budget**:
+- `-F` cases: `mass_crossing`.
 - adds ≤ 2.6 phone-ns (2 VM) to `fin.decide.batch_ns` at 1.2 M / 0.9 M / 1.2 M items (retail sellers' batches; no
   delta per retail item) (`fin.valuation.delta_ns`, added).
 - adds ≤ 2.6 phone-ns to `fin.b2b.all_in_ns` at 1.0 M / 0.1 M / 1.0 M items (b2b purchases' apply).
@@ -18699,6 +18653,8 @@ kernel over handed values and base APIs, used alike for banks, insurers, clearin
   `largest_bank_transfer`.
 - E10 a depositor ending during the resolution: its claim re-points to its estate before the split —
   `depositor_ending_before_split`.
+- E6 a resolution open between D and D+2 across a save: the closed fact, held legs, bids and the reserve are live
+  state, restored equal — `resolution_roundtrip`.
 - E13 claims in two currencies: split per currency, limit in its declared currency — `split_per_currency`.
 - E14 a customer's payment held and the transfer the same day: settles through the receiving bank the day after —
   `held_leg_settles_after_transfer`.
@@ -18706,7 +18662,7 @@ kernel over handed values and base APIs, used alike for banks, insurers, clearin
 **Extension points**: the resolution state machine, `split_at_limit` (also for protection schemes and guarantee funds without a resolution) and `identity`; a new resolution kind declares its steps' parameters. Steps that depend on it: S2.196, S2.198, S2.199, S8.179, S4.114, S4.140, S4.158.
 **Unit tests**: `closed_party_legs_held`, `write_down_by_layer`, `least_cost_selects_highest_above_reserve`,
 `no_bid_payout_path`, `split_at_limit_per_person`, `split_per_currency`, `failed_transfer_retries`,
-`identity_sums_to_hole`, `depositor_ending_before_split`, `held_leg_settles_after_transfer`, `largest_bank_transfer`.
+`identity_sums_to_hole`, `depositor_ending_before_split`, `held_leg_settles_after_transfer`, `largest_bank_transfer`, `resolution_roundtrip`.
 **Live checks**: none (first users S2.196).
 **Budget**:
 - on fin.calendar.resolution (event: a bank, insurer or house resolved; D+1): ≤ 70 core-ms — a 3.5 M-row book ≤ 20
@@ -19414,6 +19370,7 @@ two retained saves and the history they share fit the 4 GB storage budget.
 **Live checks**: LC-0-35 (every save reads back to its close's world hash), LC-0-36 (save sizes and write times
 recorded), LC-0-05 (the hash the same whatever the worker count).
 **Budget**:
+- `-F` cases: `heavy_day_round_trip`, `retention_within_budget`.
 - save ≤ 3 000 ms VM on three workers (`fin.save.save_ms`; ≈ 3.45 s phone of the 5 s line, the 512 KiB frames'
   ≈ 40 ms counted); load ≤ 2 000 ms VM (`load_ms`; ≈ 2.05 s phone of the 5 s line).
 - raw 2 950 MB, the sum of the ledger's saved lines at the design point (`raw_mb`); state columns compressed to 0.46
@@ -19573,7 +19530,7 @@ estimators; no world crate can read them.
 **Unit tests**: `undeclared_series_refused`, `panel_row_only_on_change`, `cross_section_bins_exact_top`,
 `no_publication_no_row`, `resume_after_load`, `day_zero_rows`, `cross_section_same_for_any_chunking`,
 `stamps_carry_definition_hashes`, `recorder_opens_no_stream` (compile-fail),
-`december_slices_cover_every_party_once`.
+`december_slices_cover_every_party_once`, `storage_growth_reported`.
 **Live checks**: LC-7-01 (the recorder changes nothing: no stream, no mutable accessor) applicable from this step.
 **Budget**:
 - its share of fin.fixed.observer: 0.3 / 0.3 / 0.3 core-ms (B / NB / H) — ≈ 2 k appends a day ≤ 5 VM-ns
@@ -25654,8 +25611,8 @@ chose after seeing the run.
 - **Streams**: none.
 
 **Edge cases**:
-- E12: a read whose source series is absent in `data/sources/raw/` — refused at this step, never reported against a
-  stand-in (`reads_name_a_source`, the `phx-check` rule of S1.498).
+- E12: a read whose source series is absent in `data/sources/raw/` — n/a: the list is data; the `phx-check` rule of
+  S1.498 refuses such a read, never reporting it against a stand-in.
 
 **Extension points**: S2.216 reads the list.
 
@@ -26291,7 +26248,7 @@ firm's year and its choice of day are its own.
 
 **Edge cases**:
 - E5: a filing window where many fiscal years end on one date — decisions are woken by the K-43 agenda over only the
-  firms whose statement is ready or whose review falls that day; `deadline_cluster` fixture: 50 k firms deciding on one
+  firms whose statement is ready or whose review falls that day; the `-F` case `deadline_cluster`: 50 k firms deciding on one
   day at 1 µs each.
 - E9: records kept for the filings' horizon (`horizon_filings_years`, RESOLUTION, never below the registry's POLICY
   floor): ≈ 0.46 M a year, each filer's latest annual statement kept however old; pruned by K-37's block
@@ -26314,6 +26271,7 @@ valve (E 41).
   and spread across the calendar.
 
 **Budget**:
+- `-F` cases: `deadline_cluster`.
 - Filing decisions B / NB / H ≈ 1.8 k / 0 / 1.8 k (0.46 M a year over the business days) × 1 µs; appends 50 ns
   (S1.216's `published_ns`) → ≈ 2 / 0 / 2 core-ms.
 - adds 1.8 k / 0 / 1.8 k items to fin.decide.attend_ns
@@ -33433,7 +33391,7 @@ solvency and is resolved; towns grow where building concentrates.
 - E1, E5: the heavy days above, measured and named in the report: `LC-2-50` and the gate's report.
 - E6: a save and load mid-run restores every base, including open resolutions between D and D+2, pending bids, open
   bargaining rounds, pending NB power trades and invoices' open periods, with every index rebuilt and the hash equal:
-  §2.24's mid-run save.
+  §2.24's mid-run save, LC-0-35 and LC-0-36.
 - E9: every store's growth over the two years within its declared capacity (SET.12–SET.16), estates open counted
   (E4): `LC-2-50`.
 
@@ -41434,7 +41392,7 @@ rates, asset prices and investment through markets; a margin spiral and a fund r
 - E1, E5: the heavy days above, measured and named in the report: `LC-3-47` and the gate's report.
 - E6: a save and load mid-run restores every base, including T+n trades pending, open recalls and margin calls, gate
   queues and deferred redemptions, capital calls due, announced index changes, pending conversions and dividends
-  between record and payment days, with every index rebuilt and the hash equal: §2.24's mid-run save.
+  between record and payment days, with every index rebuilt and the hash equal: §2.24's mid-run save, LC-0-35 and LC-0-36.
 - E9: every store's growth over the two years within its declared capacity (SET.12–SET.16): the instruments register
   with paper rolled every few weeks (issues against retirements), ratings, reports, fixings and estimates within their
   horizons, fund estates open (E4) counted: `LC-3-47`.
@@ -49840,7 +49798,7 @@ lots, its collateral appropriated under the lien. The close-out is valued from t
 - E1: two members defaulting on one day: separate lots, one waterfall run serving both (`two_defaulters_separate_lots`).
 - E2: no bid on a lot: it stays between the house and the estate, valued at the settlement price, and is re-offered
   (`unsold_lot_valued_at_settlement_trued_up_at_sale`, `LC-4-10`).
-- E6: lots, their re-offers and open calls are live state across a save (`messages_roundtrip`, S1.237).
+- E6: lots, their re-offers and open calls are live state across a save (`save_round_trip_messages`, S1.237).
 - E10: a bank member resolved the same day: its lots are the house's to sell; the bank's estate holds the claim
   (`bank_member_resolved_same_day`).
 - E14: a client whose backup member also defaults: its port lot falls into the lots
@@ -50009,7 +49967,7 @@ On §9.2's days:
 - E1: a house failing on the day a large bank member is resolved: two resolutions on one K-99 timetable, each its own
   closed fact (`two_resolutions_one_timetable`).
 - E6: a resolution between D and D+2 across a save: the closed fact, pending legs, bids and the reserve are live
-  state (`resolution_state_roundtrip`, S1.347).
+  state (`resolution_roundtrip`, S1.347).
 - E14: a haircut and a settled payment on one day: only pending legs are cut (`haircut_acts_on_pending_only`).
 
 **Extension points**: S4.181 (supervision of houses; SUP.14's completion); S4.183 (SUP.7's identity over every
@@ -54335,7 +54293,8 @@ what it expects the tranches to fetch. The tranche rating method is declared as 
 
 **Unit tests**: `waterfall_sequential_pay`; `oc_ic_failure_diverts_junior_interest`; `prepayment_passes_through`;
 `cash_out_equals_cash_in` (allocations sum to collections plus reserve drawn);
-`structure_consequences_from_ratings_and_prints`.
+`structure_consequences_from_ratings_and_prints`;
+`no_method_rating_missing`; `two_ratings_both_published`; `originator_end_lapses_mandate`.
 
 **Live checks**: `LC-4-86` registered (read at the gate): every deal's terms name their arranger, and every tranche's
 rating names the agency's method run that gave it.
@@ -56159,11 +56118,11 @@ resources is resolved through named parties.
 - **Streams**: none.
 
 **Edge cases**:
-- E1, E5: the heavy days above, measured and named in the report. Test: none (read from the run).
-- E6: the mid-run save and load with the open protocols above, every index rebuilt and the hash equal. Test: none (read
-  from the run).
+- E1, E5: the heavy days above — n/a: a gate reads its run; measured and named in the gate run's report.
+- E6: the mid-run save and load with the open protocols above, every index rebuilt and the hash equal: LC-0-35 and
+  LC-0-36 on the gate run.
 - E9: every store's growth over two years within its declared capacity (SET.12–SET.16): pension rights and pots,
-  tranches, offers and tenders, resolution records. Test: none (read from the run).
+  tranches, offers and tenders, resolution records — n/a: a gate reads its run; from the gate run's report.
 
 **Extension points**: none.
 
@@ -62380,7 +62339,7 @@ read live and the gate (S6.142) reads the file, never writes it.
   live at S6.129; HH.17's file, made live at S6.130.
 - A read is never changed after it is committed; a defective one gets a new version beside it (`Measure-Change`).
 
-**Edge cases**: none (a data file; PC-90 refuses a read committed after code that reads it).
+**Edge cases**: n/a: a data file; PC-90 refuses a read committed after code that reads it.
 
 **Extension points**: none.
 
@@ -65627,9 +65586,10 @@ complete and clean on day one, every audit family lights alone, REP.18 is comple
   protocols, patent queues).
 
 **Edge cases**:
-- E5: the heavy days above (read from the run).
-- E6: a save and a load mid-run on a heavy day, with the stage's open protocols (read from the run).
-- E9: every store's growth over the two years within its declared capacity, reported per store (read from the run).
+- E5: the heavy days above — n/a: a gate reads its run; from the gate run's report.
+- E6: a save and a load mid-run on a heavy day, with the stage's open protocols: LC-0-35 and LC-0-36 on the gate run.
+- E9: every store's growth over the two years within its declared capacity, reported per store — n/a: a gate reads its
+  run; from the gate run's report.
 
 **Extension points**: none.
 
@@ -65728,7 +65688,7 @@ read live and the gate (S7.106) reads the file, never writes it.
   country.
 - A read is never changed after it is committed; a defective one gets a new version beside it (`Measure-Change`).
 
-**Edge cases**: none (a data file; PC-90 refuses a read committed after code that reads it).
+**Edge cases**: n/a: a data file; PC-90 refuses a read committed after code that reads it.
 
 **Extension points**: none.
 
@@ -66122,9 +66082,9 @@ against a mechanism, and the final build within the budget with the recorder run
   budget does (N8.8).
 
 **Edge cases**:
-- E5: the heavy days above (read from the gate run).
-- E6: a save and a load mid-run with the recorder's unexported series (read from the gate run).
-- E9: every store and record within its horizon over the run (read from the gate run).
+- E5: the heavy days above — n/a: a gate reads its run; from the gate run's report.
+- E6: a save and a load mid-run with the recorder's unexported series: LC-0-35 and LC-0-36 on the gate run.
+- E9: every store and record within its horizon over the run — n/a: a gate reads its run; from the gate run's report.
 
 **Extension points**: none.
 

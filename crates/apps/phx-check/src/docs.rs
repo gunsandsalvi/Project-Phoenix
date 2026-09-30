@@ -31,6 +31,12 @@ pub struct Step {
     pub depends: Vec<String>,
     /// The step ids its **Extension points** names.
     pub extends: Vec<String>,
+    /// The items of its **Edge cases**: each bullet with its continuation lines, or the section's one line.
+    pub edge_items: Vec<String>,
+    /// The text of its **Unit tests**, **Live checks** and **Budget** sections.
+    pub unit_tests: String,
+    pub live_checks: String,
+    pub budget: String,
 }
 
 /// A row of the clause map: the step that completes the listed clauses of one system.
@@ -166,6 +172,10 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
                 crates: Vec::new(),
                 depends: Vec::new(),
                 extends: Vec::new(),
+                edge_items: Vec::new(),
+                unit_tests: String::new(),
+                live_checks: String::new(),
+                budget: String::new(),
             });
             open = true;
             current = "";
@@ -192,6 +202,29 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
             "Clauses" => {
                 step.clauses.push_str(line);
                 step.clauses.push('\n');
+            }
+            "Edge cases" => {
+                let text = line.trim_start_matches("**Edge cases**").trim_start_matches(':').trim();
+                match text.strip_prefix("- ") {
+                    Some(item) => step.edge_items.push(item.to_owned()),
+                    None if text.is_empty() => {}
+                    None => match step.edge_items.last_mut() {
+                        Some(last) => {
+                            last.push(' ');
+                            last.push_str(text);
+                        }
+                        None => step.edge_items.push(text.to_owned()),
+                    },
+                }
+            }
+            "Unit tests" | "Live checks" | "Budget" => {
+                let text = match current {
+                    "Unit tests" => &mut step.unit_tests,
+                    "Live checks" => &mut step.live_checks,
+                    _ => &mut step.budget,
+                };
+                text.push_str(line);
+                text.push('\n');
             }
             "Depends on" | "Extension points" => {
                 let ids = if current == "Depends on" { &mut step.depends } else { &mut step.extends };
