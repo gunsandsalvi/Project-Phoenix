@@ -1,6 +1,6 @@
 use std::collections::BTreeSet;
 
-use crate::docs::{self, Clause, MapRow, Step};
+use crate::docs::{self, Clause, MapRow, Step, clause_id};
 use crate::rules::Breach;
 use crate::workspace::{PLAN, SPEC, Workspace};
 
@@ -33,16 +33,25 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
 }
 
 /// Every clause the code or data names as carried: in a `#[clause(..)]` attribute, a declaration's `clause` field, a
-/// data file's `clause` key, or a contract's `violation!(clause = ..)`.
+/// data file's `clause` key, or a contract's `violation!(clause = ..)`. An attribute naming a chain or measurement
+/// item, or one of its numbered sub-items, carries the item.
 pub fn carriers<'a>(texts: impl Iterator<Item = &'a str>) -> Result<std::collections::BTreeSet<String>, String> {
     let re = |p: &str| regex::Regex::new(p).map_err(|e| e.to_string());
     let (attribute, field, id) =
         (re(r"#\[clause\(([^)]*)\)\]")?, re(r#"clause\s*[:=]\s*"([A-Z]{2,4}\.\d+)""#)?, re(r"[A-Z]{2,4}\.\d+")?);
+    let item = re(r"\b([LN])(\d+)(?:\.\d+)?\b")?;
     let mut carried = std::collections::BTreeSet::new();
     for text in texts {
         for caps in attribute.captures_iter(text) {
             if let Some(list) = caps.get(1) {
                 carried.extend(id.find_iter(list.as_str()).map(|m| m.as_str().to_owned()));
+                for caps in item.captures_iter(list.as_str()) {
+                    if let (Some(system), Some(n)) =
+                        (caps.get(1), caps.get(2).and_then(|m| m.as_str().parse::<u32>().ok()))
+                    {
+                        carried.insert(clause_id(system.as_str(), n));
+                    }
+                }
             }
         }
         carried.extend(field.captures_iter(text).filter_map(|c| c.get(1)).map(|m| m.as_str().to_owned()));
@@ -55,7 +64,7 @@ pub fn uncarried(map: &[MapRow], done: &[&str], carried: &std::collections::BTre
     let mut breaches = Vec::new();
     for row in map.iter().filter(|r| done.contains(&r.step.as_str())) {
         for n in &row.numbers {
-            let id = format!("{}.{n}", row.system);
+            let id = clause_id(&row.system, *n);
             if !carried.contains(&id) {
                 let message = format!("{id} is completed by {}, which is done, and nothing carries it", row.step);
                 breaches.push(Breach::new(RULE, PLAN, row.line, message));
@@ -79,7 +88,7 @@ pub fn listed(steps: &[Step], map: &[MapRow]) -> Vec<Breach> {
         let mapped: BTreeSet<String> = map
             .iter()
             .filter(|r| r.step == step.id)
-            .flat_map(|r| r.numbers.iter().map(|n| format!("{}.{n}", r.system)))
+            .flat_map(|r| r.numbers.iter().map(|n| clause_id(&r.system, *n)))
             .collect();
         for id in completed.difference(&mapped) {
             let message =
@@ -101,7 +110,7 @@ pub fn check(clauses: &[Clause], map: &[MapRow]) -> Vec<Breach> {
     for row in map {
         for n in &row.numbers {
             let key = (row.system.as_str(), *n);
-            let id = format!("{}.{n}", row.system);
+            let id = clause_id(&row.system, *n);
             match clauses.iter().find(|c| (c.system.as_str(), c.number) == key) {
                 None => breaches.push(Breach::new(RULE, PLAN, row.line, format!("{id} is not a clause"))),
                 Some(c) if c.retired => {
@@ -116,7 +125,7 @@ pub fn check(clauses: &[Clause], map: &[MapRow]) -> Vec<Breach> {
     }
     for c in clauses.iter().filter(|c| !c.retired) {
         if !seen.contains(&(c.system.as_str(), c.number)) {
-            let message = format!("{}.{} is in no row of the clause map", c.system, c.number);
+            let message = format!("{} is in no row of the clause map", clause_id(&c.system, c.number));
             breaches.push(Breach::new(RULE, SPEC, c.line, message));
         }
     }
@@ -157,6 +166,35 @@ mod tests {
         let breaches = uncarried(&map(plan).unwrap(), &["S0.01"], &carried);
         let messages: Vec<&str> = breaches.iter().map(|b| b.message.as_str()).collect();
         assert_eq!(messages, vec!["ABC.4 is completed by S0.01, which is done, and nothing carries it"]);
+    }
+
+    fn l_and_n_breaches(plan: &str) -> Vec<String> {
+        let spec = "# PART L — T\n## L1. a\n## L2. b\n# PART N — M\n## N6. c\n\n_Retired_: d.\n## N7. e\n# PART O";
+        check(&clauses(spec).unwrap(), &map(plan).unwrap()).into_iter().map(|b| b.message).collect()
+    }
+
+    #[test]
+    fn l_and_n_items_need_a_row() {
+        let plan = "## 13. The clause map\n| L | S7.103 | 1 |\n| N | S7.105 | 7 |";
+        assert_eq!(l_and_n_breaches(plan), vec!["L2 is in no row of the clause map"]);
+    }
+
+    #[test]
+    fn a_retired_item_is_not_mapped() {
+        let plan = "## 13. The clause map\n| L | S7.103 | 1–2 |\n| N | S7.105 | 6–7 |";
+        assert_eq!(l_and_n_breaches(plan), vec!["N6 is retired and mapped"]);
+    }
+
+    #[test]
+    fn an_item_completed_twice_is_refused() {
+        let plan = "## 13. The clause map\n| L | S7.103 | 1–2 |\n| L | S7.104 | 2 |\n| N | S7.105 | 7 |";
+        assert_eq!(l_and_n_breaches(plan), vec!["L2 is completed by two steps"]);
+    }
+
+    #[test]
+    fn carriers_read_n_sub_items() {
+        let carried = carriers([r#"#[clause("N8.2", "L3", "Law 6")] fn a() {}"#].into_iter()).unwrap();
+        assert_eq!(carried.into_iter().collect::<Vec<_>>(), ["L3", "N8"], "a sub-item carries its item; a law is none");
     }
 
     #[test]

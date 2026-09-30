@@ -1,7 +1,8 @@
 use regex::Regex;
 
 /// A clause of the world's document: a bullet whose bold opening is a system code, a number and a type, or a code
-/// and a number followed by `_Retired_`.
+/// and a number followed by `_Retired_`; or an item of the transmission chains (system `L`) or of measurement
+/// (system `N`), a heading of its part.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Clause {
     pub system: String,
@@ -64,6 +65,14 @@ pub const STATUSES: &[&str] = &["planned", "building", "awaiting", "held", "done
 pub const KINDS: &[&str] =
     &["base", "kernel", "index", "migration", "mechanism", "data", "tool", "repair", "docs", "gate"];
 
+/// The parts whose headings are items, by their heading and their items' system.
+const ITEM_PARTS: &[(&str, &str)] = &[("# PART L", "L"), ("# PART N", "N")];
+
+/// How a clause is named: `SYS.n` for a system's clause, `Ln` or `Nn` for a chain or a measurement item.
+pub fn clause_id(system: &str, number: u32) -> String {
+    if system.len() == 1 { format!("{system}{number}") } else { format!("{system}.{number}") }
+}
+
 fn regex(pattern: &str) -> Result<Regex, String> {
     Regex::new(pattern).map_err(|e| e.to_string())
 }
@@ -86,6 +95,39 @@ pub fn clauses(text: &str) -> Result<Vec<Clause>, String> {
             system: system.as_str().to_owned(),
             number: n,
             retired: caps.get(3).is_some(),
+            line: index + 1,
+        });
+    }
+    found.extend(part_items(text)?);
+    Ok(found)
+}
+
+/// The items of the parts whose headings are items: `## L<n>. <title>` within Part L and `## N<n>. <title>` within
+/// Part N, each retired when the first line after its heading that is not blank opens with `_Retired_`.
+fn part_items(text: &str) -> Result<Vec<Clause>, String> {
+    let heading = regex(r"^## ([LN])(\d+)\. ")?;
+    let lines: Vec<&str> = text.lines().collect();
+    let mut found = Vec::new();
+    let mut part: Option<&str> = None;
+    for (index, line) in lines.iter().enumerate() {
+        if line.starts_with("# ") {
+            part = ITEM_PARTS.iter().find(|(h, _)| line.starts_with(h)).map(|(_, system)| *system);
+            continue;
+        }
+        let Some(caps) = heading.captures(line) else {
+            continue;
+        };
+        let (Some(system), Some(n)) = (caps.get(1).map(|m| m.as_str()), number(caps.get(2))) else {
+            continue;
+        };
+        if part != Some(system) {
+            continue;
+        }
+        let next = lines.iter().skip(index + 1).find(|l| !l.trim().is_empty());
+        found.push(Clause {
+            system: system.to_owned(),
+            number: n,
+            retired: next.is_some_and(|l| l.starts_with("_Retired_")),
             line: index + 1,
         });
     }
@@ -211,9 +253,13 @@ fn items(text: &str) -> Vec<Item> {
 }
 
 /// The clause ids a step's **Clauses** text completes: every id an item lists outside its parentheses, unless the
-/// item is marked as only starting them. A range of two ids lists every id between.
+/// item is marked as only starting them. A range of two ids lists every id between. A chain or measurement item is
+/// listed bare, a letter and its number; a sub-item, the item's number and a point and another, is text, never
+/// the item.
 pub fn completed_clauses(text: &str) -> Result<std::collections::BTreeSet<String>, String> {
     let id = regex(r"\b([A-Z]{2,4})\.(\d+)\b(?:\s*[–-]\s*([A-Z]{2,4})\.(\d+)\b)?")?;
+    // A chain or measurement item is a letter and its number; one followed by a point and a number is a sub-item.
+    let chain = regex(r"\b([LN])(\d+)(\.\d+)?\b(?:\s*[–-]\s*([LN])(\d+)\b)?")?;
     let part = regex(r"\(part\b")?;
     let mut found = std::collections::BTreeSet::new();
     for item in items(text).iter().filter(|i| !part.is_match(&i.whole)) {
@@ -231,13 +277,26 @@ pub fn completed_clauses(text: &str) -> Result<std::collections::BTreeSet<String
                 found.insert(format!("{other}.{to}"));
             }
         }
+        for caps in chain.captures_iter(&item.listed).filter(|c| c.get(3).is_none()) {
+            let (Some(system), Some(from)) = (caps.get(1).map(|m| m.as_str()), number::<u32>(caps.get(2))) else {
+                continue;
+            };
+            found.insert(clause_id(system, from));
+            let (Some(other), Some(to)) = (caps.get(4).map(|m| m.as_str()), number::<u32>(caps.get(5))) else {
+                continue;
+            };
+            if other == system {
+                found.extend((from..=to).map(|n| clause_id(system, n)));
+            } else {
+                found.insert(clause_id(other, to));
+            }
+        }
     }
     Ok(found)
 }
 
 pub fn map(plan: &str) -> Result<Vec<MapRow>, String> {
-    let row = regex(r"^\| ([A-Z]{2,4}) \| (S(\d+)\.\d{2,3}) \| ([^|]*) \|")?;
-    let digits = regex(r"\d+")?;
+    let row = regex(r"^\| ([A-Z]{2,4}|[LN]) \| (S(\d+)\.\d{2,3}) \| ([^|]*) \|")?;
     let mut rows = Vec::new();
     let mut inside = false;
     for (index, line) in plan.lines().enumerate() {
@@ -256,7 +315,7 @@ pub fn map(plan: &str) -> Result<Vec<MapRow>, String> {
         else {
             continue;
         };
-        let numbers = digits.find_iter(list.as_str()).filter_map(|m| m.as_str().parse().ok()).collect();
+        let numbers = numbers(list.as_str()).map_err(|e| format!("the clause map's row at line {}: {e}", index + 1))?;
         rows.push(MapRow {
             system: system.as_str().to_owned(),
             step: step.as_str().to_owned(),
@@ -266,6 +325,28 @@ pub fn map(plan: &str) -> Result<Vec<MapRow>, String> {
         });
     }
     Ok(rows)
+}
+
+/// The numbers a row's cell lists: each number, or a range `a–b` (an en dash or a hyphen) standing for a to b.
+///
+/// # Errors
+/// When a range's end is below its start, or an entry is not a number.
+fn numbers(cell: &str) -> Result<Vec<u32>, String> {
+    let mut found = Vec::new();
+    for entry in cell.split(',').map(str::trim).filter(|e| !e.is_empty()) {
+        let parse = |t: &str| t.trim().parse::<u32>().map_err(|_| format!("`{entry}` is not a number or a range"));
+        match entry.split_once(['–', '-']) {
+            Some((from, to)) => {
+                let (from, to) = (parse(from)?, parse(to)?);
+                if to < from {
+                    return Err(format!("the range `{entry}` runs backwards"));
+                }
+                found.extend(from..=to);
+            }
+            None => found.push(parse(entry)?),
+        }
+    }
+    Ok(found)
 }
 
 /// The text of the section headed `## <number>.`, up to the next top-level heading.
@@ -293,7 +374,7 @@ pub fn architecture_crates(architecture: &str) -> Result<Vec<String>, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Clause, clauses, completed_clauses, map, steps};
+    use super::{Clause, clauses, completed_clauses, map, numbers, steps};
 
     #[test]
     fn documents_read_three_digit_steps_and_their_kind() {
@@ -315,9 +396,46 @@ mod tests {
         let found: Vec<String> = completed_clauses(text).unwrap().into_iter().collect();
         assert_eq!(
             found,
-            ["ACC.10", "ACC.11", "ACC.12", "BNK.9", "FRM.17", "GEN.3", "HH.13", "POP.16", "TCR.1"],
-            "parts, ids in parentheses, laws and N-items are not completed"
+            ["ACC.10", "ACC.11", "ACC.12", "BNK.9", "FRM.17", "GEN.3", "HH.13", "N8", "POP.16", "TCR.1"],
+            "parts, ids in parentheses and laws are not completed"
         );
+    }
+
+    #[test]
+    fn documents_read_l_and_n_items() {
+        let spec = "# PART L — TRANSMISSION\n\n## L1. A loss\n\ntext\n## L2. The seller\n# PART N — MEASUREMENT\n\n\
+                    ## N6. Experiments\n\n_Retired_: gone.\n## N7. Calibration\n# PART O — STAGES\n## N9. Not an item\n\
+                    ## L3. Nor this";
+        let found: Vec<(String, u32, bool)> =
+            clauses(spec).unwrap().into_iter().map(|c| (c.system, c.number, c.retired)).collect();
+        assert_eq!(
+            found,
+            vec![
+                ("L".to_owned(), 1, false),
+                ("L".to_owned(), 2, false),
+                ("N".to_owned(), 6, true),
+                ("N".to_owned(), 7, false)
+            ],
+            "items only within their own part, N6 retired"
+        );
+    }
+
+    #[test]
+    fn ranges_are_read_and_bounded() {
+        assert_eq!(numbers("1–12").unwrap(), (1..=12).collect::<Vec<u32>>());
+        assert_eq!(numbers("2, 8, 4-5").unwrap(), vec![2, 8, 4, 5]);
+        assert!(numbers("4–2").unwrap_err().contains("runs backwards"));
+        let plan = "## 13. The clause map\n| L | S7.103 | 1–12 |\n| N | S0.26 | 12–2 |";
+        assert!(map(plan).unwrap_err().contains("line 3"), "a backward range names its row");
+    }
+
+    #[test]
+    fn completed_clauses_read_l_and_n() {
+        let found: Vec<String> = completed_clauses("**Clauses**: L1–L3, N4; N8.8 *(part)*; the sub-item N7.2; Law 3")
+            .unwrap()
+            .into_iter()
+            .collect();
+        assert_eq!(found, ["L1", "L2", "L3", "N4"], "a sub-item and a law are not items");
     }
 
     #[test]

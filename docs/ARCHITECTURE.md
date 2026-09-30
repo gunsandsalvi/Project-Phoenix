@@ -2958,7 +2958,11 @@ credited while the world holds it (GEN.10).
 4. **Types that refuse**: `Money`, `Qty`, `Missing` without `Default` or clamping; kind identifiers without equality
    outside the kernel; private-constructed handles; zero-sized systems.
 5. **The clause map**: every spec clause is assigned to a step in `IMPLEMENTATION.md`, and `phx-check clauses` refuses a
-   live clause the map omits, one two rows complete, and a mapped clause that is retired or unknown. For a step marked
+   live clause the map omits, one two rows complete, and a mapped clause that is retired or unknown. The transmission
+   chains (Part L's headings, `L1`–`L12`) and the measurement items (Part N's, `N1`–`N8`, a heading retired when its
+   first line opens `_Retired_`) are clauses like a system's: a map row's system is `L` or `N`, its numbers may be a
+   range (`1–12`, refused when it runs backwards), a step completes one by listing it bare (`N8`; `N8.8` is its text),
+   and a `#[clause(..)]` naming an item or a sub-item (`N8.2`) carries it. For a step marked
    done, each clause it completes must have a **carrier** in the code or data: a `#[clause(..)]` attribute, a
    declaration's `clause` field, a data file's `clause` key, or a contract's `violation!(clause = ..)`
    (`crates/apps/phx-check/src/clauses.rs`). The carrier's shape — STATE → store, fact or type; DECISION → decision
