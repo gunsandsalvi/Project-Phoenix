@@ -2503,7 +2503,11 @@ again at load and never saved (`Core::declared`, `core_kinds`): whether it keeps
 (an account of a state-owned form at the issuer is the state's account), the money stock's class its deposits count in
 (reserves of the deposit-taking forms, then the holder forms `if-state` publishes, all others in one), its place (a
 party's country read from its site's tile through the map, its region word, its population declaration's region or
-its country word, which an estate's record holds), and each country's heirless destination's kind. Each
+its country word, which an estate's record holds), and each country's heirless destination's kind. The kinds and
+families the day routes by are bound to handles (`bound.rs`, `Core::bound`): each kind its system declares, found by
+that declaration's name, and each family the core opens, bound as it is opened (`Core::add_family`) and rebuilt after
+a load; whether a family's contracts are jobs is declared (`families::JOBS`), and a party's debts are its contracts in
+every other family. No day path finds a kind or a family by its name. Each
 country's central bank and treasury share a site drawn by CB's; its banks are as many as the Zipf law fitted to their
 concentration gives (`sys_bnk::bank_weights`), each sited by BNK's draw. Its households are drawn region by region by
 DEM (`sys_dem::draw_country`), and each household's adults' labour (`sys_lab::Rule::draw`), its banking

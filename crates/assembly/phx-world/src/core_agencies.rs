@@ -42,8 +42,8 @@ impl Core {
     /// or one's.
     fn posts_held(&self, only: Option<PartyKey>) -> Vec<(PartyKey, u32, u32, i64)> {
         let (Some(family), Some(place), Some(Missing::Present(region_at))) = (
-            self.families.iter().find(|f| f.name == PUBLIC),
-            self.names.iter().position(|n| *n == "household"),
+            self.bound.families.public_employment.and_then(|i| self.families.get(i)),
+            self.bound.kinds.household,
             self.declared.household.as_ref().map(|d| d.sited_by),
         ) else {
             return Vec::new();
@@ -87,7 +87,7 @@ impl Core {
     /// employer's. Returns the jobs posted.
     #[clause("SOC.8", "LAB.4", "MND.20")]
     pub(crate) fn post_agencies(&mut self, ctx: &LabourCtx<'_>, day: Day) -> u64 {
-        let Some(family) = self.families.iter().position(|f| f.name == PUBLIC) else { return 0 };
+        let Some(family) = self.bound.families.public_employment else { return 0 };
         let staffing = self.bind(&sys_soc::points::STAFF);
         let mut posted = 0;
         for (c, agency) in self.agencies.clone().into_iter().enumerate() {
@@ -178,17 +178,17 @@ impl Core {
 
     /// The contracts' family an employer's jobs are in: a firm's, or the state's agency's.
     pub(crate) fn employer_family(&self, employer: PartyKey) -> Option<usize> {
-        self.families.iter().position(|f| {
-            (f.name == crate::consts::families::EMPLOYMENT || f.name == PUBLIC)
-                && f.store.kinds.first() == Some(&employer.kind())
-        })
+        self.families
+            .iter()
+            .enumerate()
+            .position(|(i, f)| self.bound.is_jobs(i) && f.store.kinds.first() == Some(&employer.kind()))
     }
 
     /// Every job a person holds, in any employer's family, closed: it takes another.
     pub(crate) fn quit_jobs(&mut self, household: PartyKey, person: u64) -> u64 {
         let mut n = 0;
-        for f in self.families.iter_mut().filter(|f| f.name == crate::consts::families::EMPLOYMENT || f.name == PUBLIC)
-        {
+        let jobs = &self.bound;
+        for (_, f) in self.families.iter_mut().enumerate().filter(|(i, _)| jobs.is_jobs(*i)) {
             let held: Vec<Slot> = f
                 .store
                 .of(1, household.slot())

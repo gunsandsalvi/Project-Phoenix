@@ -140,7 +140,7 @@ impl Core {
         (countries, sheets): (&[OpeningCountry], &[crate::opening::sheet::Sheet]),
         (calendar, today): (&Calendar, Day),
     ) -> Result<(), String> {
-        let (Some(cb), Some(bank)) = (self.names.iter().position(|n| *n == "central_bank"), self.bank_kind) else {
+        let (Some(cb), Some(bank)) = (self.bound.kinds.central_bank, self.bank_kind) else {
             return Ok(());
         };
         let corridors =
@@ -155,8 +155,8 @@ impl Core {
         };
         let deposit = self.facility_family(DEPOSIT_FACILITY, [kind_number(cb), bank], today);
         let lending = self.facility_family(LENDING_FACILITY, [bank, kind_number(cb)], today);
-        self.families.push(deposit);
-        self.families.push(lending);
+        self.add_family(deposit);
+        self.add_family(lending);
         for (c, (country, sheet)) in countries.iter().zip(sheets).enumerate() {
             let banks = self.banks_of.get(c).cloned().unwrap_or_default();
             let reserves: i64 = banks
@@ -236,10 +236,9 @@ impl Core {
         (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
         ranges: &Ranges,
     ) -> (Vec<Flow>, Vec<Flow>) {
-        let (Some(deposit), Some(lending)) = (
-            self.families.iter().position(|f| f.name == DEPOSIT_FACILITY),
-            self.families.iter().position(|f| f.name == LENDING_FACILITY),
-        ) else {
+        let (Some(deposit), Some(lending)) =
+            (self.bound.families.deposit_facility, self.bound.families.lending_facility)
+        else {
             return (Vec::new(), Vec::new());
         };
         let open: Vec<usize> = (0..self.issuers.len())
@@ -353,7 +352,7 @@ impl Core {
         let Some(bank) = self.bank_kind else { return Vec::new() };
         let after = self.reserves_moved(before);
         let mut collateral: BTreeMap<PartyKey, i128> = BTreeMap::new();
-        if let Some(f) = self.families.iter().find(|f| f.name == crate::consts::families::FIRM_LOANS) {
+        if let Some(f) = self.bound.families.firm_loans.and_then(|i| self.families.get(i)) {
             for edge in f.store.edges.open_slots() {
                 if let Some(row) = f.store.edges.row(edge) {
                     *collateral.entry(row.ends[1]).or_insert(0) += i128::from(row.amount);

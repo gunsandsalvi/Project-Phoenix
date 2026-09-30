@@ -94,7 +94,7 @@ impl Core {
     /// The firms whose arrears have outlasted their country's grace today, each ended into an estate.
     #[clause("FRM.15", "L3", "PTY.9", "TIME.7")]
     pub(crate) fn end_defaulted(&mut self, ctx: &LabourCtx<'_>, day: Day) -> u64 {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let Some(firm) = self.bound.kinds.firm else { return 0 };
         let firm_kind = crate::core::kind_number(firm);
         let mut due: Vec<(PartyKey, u8)> = Vec::new();
         for ((i, edge), since) in &self.insolvency.since {
@@ -245,11 +245,8 @@ impl Core {
         let (mut claims, mut staff) = (Vec::new(), Vec::new());
         let year = ctx.calendar.date(day).year();
         let law = self.labour.laws.get(usize::from(country));
-        for family in &self.families {
-            if family.store.kinds.first() != Some(&key.kind()) {
-                continue;
-            }
-            if family.name != crate::consts::families::EMPLOYMENT {
+        for (at, family) in self.families.iter().enumerate() {
+            if family.store.kinds.first() != Some(&key.kind()) || !self.bound.is_jobs(at) {
                 continue;
             }
             for edge in family.store.of(0, key.slot()) {
@@ -292,7 +289,7 @@ impl Core {
     /// than a job, its arrears, and, on one reckoned from its terms, the balance it still has to repay.
     pub(crate) fn debts_of(&self, key: PartyKey) -> Vec<Claim> {
         let mut claims = Vec::new();
-        for family in self.families.iter().filter(|f| f.name != crate::consts::families::EMPLOYMENT) {
+        for (_, family) in self.families.iter().enumerate().filter(|(at, _)| !self.bound.is_jobs(*at)) {
             if family.store.kinds.first() != Some(&key.kind()) {
                 continue;
             }

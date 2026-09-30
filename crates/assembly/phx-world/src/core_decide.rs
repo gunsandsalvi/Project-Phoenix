@@ -169,7 +169,7 @@ impl Core {
                     .collect()
             })
             .collect();
-        let household = self.names.iter().position(|n| *n == "household").and_then(|place| {
+        let household = self.bound.kinds.household.and_then(|place| {
             let decl = self.declared.household.as_ref()?;
             let at = |name: &str| decl.attrs.iter().position(|a| a.item.name == name);
             Some((

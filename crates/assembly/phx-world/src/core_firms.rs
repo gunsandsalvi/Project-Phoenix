@@ -281,7 +281,7 @@ impl Core {
     /// A primitive the opening reads that the register does not hold, or a product the accounts leave unpriced.
     #[clause("GEN.2", "GEN.13", "FRM.23", "FRM.2", "PTY.5")]
     pub fn open_firms(&mut self, o: &FirmsOpening<'_>) -> Result<(), String> {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
+        let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let price_weight = o.register.fixed("SRV.price_weight")?;
         let mut store: KindStore<SystemBacking> =
             KindStore::new(&mut self.space, crate::core::kind_number(firm), AGENT_ROWS, AGENT_ROWS_PER_CHUNK, RECORD)
@@ -456,7 +456,7 @@ impl Core {
     /// The persons the core's households of a country hold, by region, in the country's regions' order.
     fn persons_by_region(&self, c: &OpeningCountry) -> Vec<(u32, u64)> {
         let mut out: Vec<(u32, u64)> = c.regions.iter().map(|(r, _)| (*r, 0)).collect();
-        let Some(place) = self.names.iter().position(|n| *n == "household") else { return out };
+        let Some(place) = self.bound.kinds.household else { return out };
         let (Some(store), Some(Some(persons)), Some(decl)) =
             (self.kinds.get(place), self.persons.get(place), self.declared.household.as_ref())
         else {

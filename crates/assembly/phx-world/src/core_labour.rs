@@ -231,7 +231,7 @@ pub(crate) fn staff_means(staff: &[(u32, u32, i64)]) -> StaffMeans {
 impl Core {
     /// The employment family's place among the core's families.
     fn employment(&self) -> Option<usize> {
-        self.families.iter().position(|f| f.name == crate::consts::families::EMPLOYMENT)
+        self.bound.families.employment
     }
 
     fn firm_record(&self, firm: usize, slot: Slot) -> Option<Firm> {
@@ -278,7 +278,7 @@ impl Core {
     /// A primitive the round reads that the register does not hold, or a law that does not compile.
     #[clause("LAB.4", "LAB.16", "GEN.2")]
     pub fn open_labour(&mut self, ctx: &LabourCtx<'_>, countries: &[OpeningCountry], today: Day) -> Result<(), String> {
-        let (Some(firm), Some(family)) = (self.names.iter().position(|n| *n == "firm"), self.employment()) else {
+        let (Some(firm), Some(family)) = (self.bound.kinds.firm, self.employment()) else {
             return Ok(());
         };
         let mut labour = CoreLabour::default();
@@ -340,9 +340,7 @@ impl Core {
     /// Every person whose labour state is searching.
     fn searching_persons(&self, ctx: &LabourCtx<'_>) -> BTreeSet<(PartyKey, u64)> {
         let mut out = BTreeSet::new();
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
         let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
@@ -391,7 +389,7 @@ impl Core {
 
     /// The employers whose schedule came due decide and are booked again a production period on.
     fn post(&mut self, ctx: &LabourCtx<'_>, day: Day) -> (u64, u64, u64, u64) {
-        let (Some(firm), Some(family)) = (self.names.iter().position(|n| *n == "firm"), self.employment()) else {
+        let (Some(firm), Some(family)) = (self.bound.kinds.firm, self.employment()) else {
             return (0, 0, 0, 0);
         };
         let mut due = Vec::new();
@@ -622,7 +620,7 @@ impl Core {
 
     /// A person's whole years on a day, where its household still holds it.
     pub(crate) fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
-        let place = self.names.iter().position(|n| *n == "household")?;
+        let place = self.bound.kinds.household?;
         let decl = self.declared.household.as_ref()?;
         let ps = self.persons.get(place)?.as_ref()?;
         let at = ps.place_of(household.slot(), person)?;
@@ -810,9 +808,7 @@ impl Core {
 
     /// A person's last wage point, as its pay round set it.
     fn set_last_point(&mut self, ctx: &LabourCtx<'_>, (household, person): (PartyKey, u64), point: i64) {
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
             return;
         };
         let Some(Some(ps)) = self.persons.get_mut(place) else { return };
@@ -840,9 +836,7 @@ impl Core {
     /// Today's searchers, each with what the round reads of it: a searching person of a live household not waiting on
     /// an offer; one no longer searching or no longer held leaves the searchers.
     fn seekers(&mut self, ctx: &LabourCtx<'_>, day: Day) -> Vec<(u8, Seeker)> {
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
             return Vec::new();
         };
         let date = ctx.calendar.date(day);
@@ -1011,9 +1005,7 @@ impl Core {
 
     /// A hire made a contract, and its person's state, occupation and last point written.
     fn hire(&mut self, ctx: &LabourCtx<'_>, day: Day, hired: &Application) -> bool {
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
             return false;
         };
         let (Some(v), Some(p)) = (
@@ -1189,9 +1181,7 @@ impl Core {
         amount: Option<i64>,
         law: &Law,
     ) {
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
             return;
         };
         let Some(Some(ps)) = self.persons.get_mut(place) else { return };
@@ -1227,7 +1217,7 @@ impl Core {
             return;
         };
         let Some(Some(treasury)) = self.treasuries.get(usize::from(country)).copied() else { return };
-        let Some(family) = self.families.iter().position(|f| f.name == crate::consts::families::BENEFIT) else {
+        let Some(family) = self.bound.families.benefit else {
             return;
         };
         let monthly = benefit.replacement * from_i64(wage);
@@ -1282,7 +1272,7 @@ impl Core {
         if from_i64(person.age_on(calendar.date(day))) < *age || phx_rand::open_unit(&mut d) >= *share {
             return false;
         }
-        let Some(f) = self.families.iter_mut().find(|f| f.name == crate::consts::families::PENSION) else {
+        let Some(f) = self.bound.families.pension.and_then(|i| self.families.get_mut(i)) else {
             return false;
         };
         let schedule = f
@@ -1306,7 +1296,8 @@ impl Core {
 
     /// A person hired leaves the benefit.
     fn end_benefit(&mut self, household: PartyKey, person: u64) {
-        for family in self.families.iter_mut().filter(|f| f.name == crate::consts::families::BENEFIT) {
+        let benefit = self.bound.families.benefit;
+        for (_, family) in self.families.iter_mut().enumerate().filter(|(i, _)| Some(*i) == benefit) {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
             for e in mine {
@@ -1321,7 +1312,8 @@ impl Core {
     #[clause("LAB.1", "LAB.6")]
     pub(crate) fn leave_jobs(&mut self, household: PartyKey, person: u64) {
         self.stop_working(household, person);
-        for family in self.families.iter_mut().filter(|f| f.name.starts_with("LAB.")) {
+        let jobs = &self.bound;
+        for (_, family) in self.families.iter_mut().enumerate().filter(|(i, _)| jobs.is_jobs(*i)) {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();
             for e in mine {

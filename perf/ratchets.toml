@@ -42,7 +42,7 @@ direction = "down"
 # S1.141–S1.146 and S1.180 (K-21) remove them; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc98"
-value = 79
+value = 21
 direction = "down"
 
 # PC-99's admitted sites (S1.124, 2026-09-30): the syntax of allocation on the day's paths as the code stood when the

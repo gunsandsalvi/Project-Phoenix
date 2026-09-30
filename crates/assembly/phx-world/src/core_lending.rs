@@ -90,7 +90,7 @@ impl Core {
     ) -> Result<(), String> {
         let laws = countries.iter().map(|c| sys_bnk::credit::law(register, c)).collect::<Result<Vec<Law>, String>>()?;
         let mut filed = BTreeMap::new();
-        if let Some(firm) = self.names.iter().position(|n| *n == "firm")
+        if let Some(firm) = self.bound.kinds.firm
             && let Some(store) = self.kinds.get(firm)
         {
             for slot in store.parties.live_slots() {
@@ -146,7 +146,7 @@ impl Core {
 
     /// Each firm loan the opening holds classed as its bank reads its borrower at the opening.
     fn class_opening_loans(&mut self, today: Day) {
-        let Some(i) = self.families.iter().position(|f| f.name == crate::consts::families::FIRM_LOANS) else { return };
+        let Some(i) = self.bound.families.firm_loans else { return };
         let Some(family) = self.families.get(i) else { return };
         let loans: Vec<(u32, PartyKey, u8)> = family
             .store

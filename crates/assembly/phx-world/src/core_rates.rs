@@ -68,7 +68,7 @@ impl Core {
     /// Each sampled household's expected hits today by every process on its persons, as the day finds them.
     #[clause("CHN.7")]
     pub(crate) fn measure_rates(&mut self, ctx: &Ctx<'_>, day: Day) {
-        let Some(place) = self.names.iter().position(|n| *n == "household") else { return };
+        let Some(place) = self.bound.kinds.household else { return };
         let Some(decl) = self.declared.household.clone() else { return };
         let Some(store) = self.kinds.get(place) else { return };
         // The sample is found in one sweep the first day, then read alone; a household that ended leaves it.

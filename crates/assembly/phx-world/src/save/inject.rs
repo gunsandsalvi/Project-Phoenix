@@ -77,7 +77,7 @@ impl Core {
                 let _ = self.goods.stocks.apply(&made, Bound::Free, Cost::At(0), day);
             }
             "contracts" => {
-                let place = self.names.iter().position(|n| *n == "household").ok_or_else(refused)?;
+                let place = self.bound.kinds.household.ok_or_else(refused)?;
                 let never = Slot::new(self.kinds.get(place).ok_or_else(refused)?.parties.high_water());
                 let jobs = self
                     .families

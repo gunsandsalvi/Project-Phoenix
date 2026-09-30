@@ -114,7 +114,7 @@ impl Core {
         (countries, sheets): (&[OpeningCountry], &[crate::opening::sheet::Sheet]),
         (calendar, today): (&Calendar, Day),
     ) -> Result<(), String> {
-        let (Some(treasury), Some(bank)) = (self.names.iter().position(|n| *n == "treasury"), self.bank_kind) else {
+        let (Some(treasury), Some(bank)) = (self.bound.kinds.treasury, self.bank_kind) else {
             return Ok(());
         };
         let laws: Vec<Option<BillLaw>> = state
@@ -146,7 +146,7 @@ impl Core {
             moves: crate::core_day::LoanMoves::default(),
             lost: 0,
         };
-        self.families.push(family);
+        self.add_family(family);
         for (c, (country, sheet)) in countries.iter().zip(sheets).enumerate() {
             let total = phx_ledger::opening::whole(
                 sheet.at(crate::consts::sheet::GOVERNMENT_PAPER, crate::consts::sheet::BANKS) * country.gdp,
@@ -184,7 +184,7 @@ impl Core {
         (weeks, country, day): (u16, usize, Day),
         calendar: &Calendar,
     ) {
-        let Some(family) = self.families.iter().position(|f| f.name == BILLS) else { return };
+        let Some(family) = self.bound.families.bills else { return };
         let (Ok(ccy), Some(period)) = (u8::try_from(country), phx_core::calendar::period::Period::weeks(weeks)) else {
             violation!(clause = "SOV.1", "a bill's weeks that are no period", weeks = weeks);
         };
@@ -373,7 +373,7 @@ impl Core {
     /// debt outstanding held to what was issued less what was redeemed and written off, a difference a finding.
     #[clause("TRS.6", "N1", "II.5")]
     pub(crate) fn audit_debt(&mut self, day: Day) {
-        let Some(f) = self.families.iter().find(|f| f.name == BILLS) else { return };
+        let Some(f) = self.bound.families.bills.and_then(|i| self.families.get(i)) else { return };
         self.bills.redeemed += f.moves.repaid.iter().map(|(_, _, a)| i128::from(*a)).sum::<i128>();
         self.bills.written += f.moves.written_off.iter().map(|(_, a, _)| i128::from(*a)).sum::<i128>();
         let outstanding: i128 =
@@ -399,7 +399,7 @@ impl Core {
     #[must_use]
     pub fn issue_held(&self) -> BTreeMap<u32, i128> {
         let mut held = BTreeMap::new();
-        if let Some(f) = self.families.iter().find(|f| f.name == BILLS) {
+        if let Some(f) = self.bound.families.bills.and_then(|i| self.families.get(i)) {
             for row in f.store.edges.open_slots().filter_map(|e| f.store.edges.row(e)) {
                 *held.entry(row.schedule).or_insert(0) += i128::from(row.amount);
             }

@@ -162,7 +162,7 @@ impl Core {
             prices.push(crate::core_firms::snapshot(register, c)?.price);
             growth.push(c.derived("GEN.growth").ok_or("no drawn `GEN.growth`")? / PERCENT);
         }
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
+        let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let conditions = u8::try_from(classes).map_err(|e| e.to_string())?;
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
@@ -315,7 +315,7 @@ impl Core {
         day: Day,
     ) -> Vec<(u16, phx_market::meet::Buyer)> {
         let period = self.plant.review_days;
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Vec::new() };
+        let Some(firm) = self.bound.kinds.firm else { return Vec::new() };
         if period == 0 || !(day.get() - self.plant.began).is_multiple_of(period) {
             return Vec::new();
         }

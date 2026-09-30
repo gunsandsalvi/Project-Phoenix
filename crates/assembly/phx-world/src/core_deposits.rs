@@ -50,7 +50,7 @@ impl Core {
         let draws: Vec<Option<(u16, i64)>> =
             sys_tec::deposit_draws(register)?.into_iter().map(|d| d.map(|(r, per)| (r, per.raw()))).collect();
         let days = u32::try_from(register.count(sys_gds::EXTRACTION_DAYS.id)?).map_err(|e| e.to_string())?;
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
+        let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let word = |store: &phx_core::store::KindStore<_>, s: Slot, at: usize| match store.record(s).get(at) {
             Some(w) => match w.get() {
                 Missing::Present(v) => u32::try_from(v).ok(),
@@ -173,7 +173,7 @@ impl Core {
     /// discounted at the return it requires.
     #[clause("GDS.4", "MND.20")]
     pub(crate) fn review_extraction(&mut self, regions: &[phx_id::CountryId], day: Day) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(firm) = self.bound.kinds.firm else { return };
         let days = self.deposits.days;
         if days == 0 {
             return;

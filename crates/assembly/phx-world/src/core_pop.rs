@@ -135,7 +135,7 @@ impl Core {
 
     /// The household kind's place on the core and among the population's kinds.
     fn household(&self) -> Option<(usize, usize)> {
-        let place = self.names.iter().position(|n| *n == "household")?;
+        let place = self.bound.kinds.household?;
         Some((place, self.household_pop))
     }
 

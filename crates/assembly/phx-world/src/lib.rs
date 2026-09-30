@@ -1,3 +1,4 @@
+pub mod bound;
 pub mod compile;
 pub mod consts;
 pub mod core;

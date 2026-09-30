@@ -126,7 +126,7 @@ impl Core {
             }
         }
         let mut modes = BTreeMap::new();
-        if let Some(firm) = self.names.iter().position(|n| *n == "firm")
+        if let Some(firm) = self.bound.kinds.firm
             && whole > 0
         {
             for slot in self.firm_slots(firm) {
@@ -176,7 +176,7 @@ impl Core {
     #[clause("FRT.5", "FRT.6", "FRT.7", "FRT.9", "GEO.13", "MND.20")]
     pub(crate) fn ship(&mut self, ctx: &crate::core_goods::GoodsCtx<'_>, geo: &GeoState, day: Day) {
         let days = self.freight.shipping_days;
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(firm) = self.bound.kinds.firm else { return };
         if days == 0 {
             return;
         }
@@ -448,7 +448,7 @@ impl Core {
     #[must_use]
     pub fn cover_by_place(&self, regions: &[CountryId]) -> BTreeMap<(u16, u32), f64> {
         let mut held: BTreeMap<(u16, u32), (f64, f64)> = BTreeMap::new();
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return BTreeMap::new() };
+        let Some(firm) = self.bound.kinds.firm else { return BTreeMap::new() };
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
             if !self.is_stored(f.product) {

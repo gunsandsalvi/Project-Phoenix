@@ -178,6 +178,7 @@ impl Core {
             space,
             household_pop,
             names: KINDS.iter().map(|k| k.name).collect(),
+            bound: crate::bound::Bound::of(&KINDS.map(|k| k.name), &[]),
 
             kinds,
             persons,
@@ -319,7 +320,7 @@ impl Core {
             core.open_deposits(c, &money, (at(DEPOSITS, HOUSEHOLDS), at(CURRENCY, HOUSEHOLDS)), &banks)?;
             core.drawn.loans.extend(loans);
         }
-        core.families.push(pensions);
+        core.add_family(pensions);
         core.persons_opened = core.persons_held();
         Ok(core)
     }

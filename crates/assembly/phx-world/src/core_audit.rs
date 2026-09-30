@@ -86,10 +86,9 @@ impl Core {
             }
         }
         // A household is its persons: one with none left must have ended.
-        if let (Some(place), Some(persons)) = (
-            self.names.iter().position(|n| *n == "household"),
-            self.names.iter().position(|n| *n == "household").and_then(|p| self.persons.get(p)?.as_ref()),
-        ) && let Some(store) = self.kinds.get(place)
+        if let (Some(place), Some(persons)) =
+            (self.bound.kinds.household, self.bound.kinds.household.and_then(|p| self.persons.get(p)?.as_ref()))
+            && let Some(store) = self.kinds.get(place)
         {
             let empty = store.parties.live_slots().filter(|s| persons.count(*s) == 0).count();
             if empty > 0 {

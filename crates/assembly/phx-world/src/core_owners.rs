@@ -94,7 +94,7 @@ impl Core {
     /// A primitive the dealing reads that the register does not hold.
     #[clause("FRM.1", "FRM.23", "PTY.16", "GEN.2")]
     pub fn open_owners(&mut self, o: &JobsOpening<'_>, types: &phx_val::types::Types) -> Result<(), String> {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
+        let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let firms = self.firm_hours(o, firm)?;
         let mut owned: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
         for c in o.countries {
@@ -175,7 +175,7 @@ impl Core {
     /// its compensation, so its self-employed would earn nothing.
     #[clause("GEN.4", "GEN.15", "FRM.14")]
     pub fn price_owners(&mut self, o: &JobsOpening<'_>) -> Result<(), String> {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return Ok(()) };
+        let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let working: Vec<(PartyKey, Vec<Worker>)> = self.owners.working.iter().map(|(k, w)| (*k, w.clone())).collect();
         for c in o.countries {
             let id = c.id.get();

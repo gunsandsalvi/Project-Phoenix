@@ -404,9 +404,7 @@ impl Core {
         (countries, (cover, adjustment)): (&[OpeningCountry], (f64, f64)),
         today: Day,
     ) -> Result<(), String> {
-        let (Some(place), Some(firm)) =
-            (self.names.iter().position(|n| *n == "household"), self.names.iter().position(|n| *n == "firm"))
-        else {
+        let (Some(place), Some(firm)) = (self.bound.kinds.household, self.bound.kinds.firm) else {
             return Ok(());
         };
         let days = floor_to_i64((ctx.rule.period * DAYS_A_YEAR).round()).and_then(|d| u32::try_from(d).ok());
@@ -485,9 +483,7 @@ impl Core {
     #[opening]
     fn opening_spending(&self, ctx: &GoodsCtx<'_>, today: Day) -> Vec<f64> {
         let mut out = vec![0.0; self.goods.gdp.len()];
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
         let income_name = <if_pop::facts::Income as phx_core::FactDef>::ITEM.name;
@@ -582,7 +578,7 @@ impl Core {
     /// Each region's share of its country's persons, by region.
     fn region_shares(&self, regions: &[CountryId]) -> Vec<f64> {
         let mut persons = vec![0.0; regions.len()];
-        let Some(place) = self.names.iter().position(|n| *n == "household") else { return persons };
+        let Some(place) = self.bound.kinds.household else { return persons };
         let Some(decl) = self.declared.household.as_ref() else { return persons };
         let Missing::Present(at) = decl.sited_by else { return persons };
         if let (Some(store), Some(Some(ps))) = (self.kinds.get(place), self.persons.get(place)) {
@@ -827,10 +823,9 @@ impl Core {
             }
             // A service no one sells in its region it goes without, and so pays nothing for.
         }
-        let wage_bill: f64 =
-            self.families.iter().find(|x| x.name == crate::consts::families::EMPLOYMENT).map_or(0.0, |fam| {
-                fam.store.of(0, f.key.slot()).filter_map(|e| fam.store.edges.row(e)).map(|r| from_i64(r.amount)).sum()
-            });
+        let wage_bill: f64 = self.bound.families.employment.and_then(|i| self.families.get(i)).map_or(0.0, |fam| {
+            fam.store.of(0, f.key.slot()).filter_map(|e| fam.store.edges.row(e)).map(|r| from_i64(r.amount)).sum()
+        });
         let made = from_i64(self.staff_capacity(f)?);
         if made <= 0.0 {
             return None;
@@ -893,7 +888,7 @@ impl Core {
     /// output made, carrying their cost.
     #[clause("FRM.4", "FRM.14", "GDS.4", "TEC.9")]
     fn make(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) -> i64 {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let Some(firm) = self.bound.kinds.firm else { return 0 };
         let slots = self.firm_slots(firm);
         let producing = self.bind(&sys_frm::points::PRODUCE);
         let plans: Vec<Option<(Firm, i64)>> = match ctx.pool {
@@ -1005,7 +1000,7 @@ impl Core {
     /// Each provider's day closed: the inputs its sales used, and the capacity no sale took lost.
     #[clause("SRV.1", "SRV.8", "GDS.4")]
     fn close_services(&mut self, ctx: &GoodsCtx<'_>, day: Day, moved: &mut Vec<Flow>) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(firm) = self.bound.kinds.firm else { return };
         let mut made_by: BTreeMap<u32, i64> = BTreeMap::new();
         for x in moved.iter().filter(|x| x.payer == NATURE && x.reason == MADE) {
             *made_by.entry(x.payee.word()).or_insert(0) += x.amount;
@@ -1070,7 +1065,7 @@ impl Core {
     /// The whole units the hours a day of a firm's staff and working owners make at its hours a unit; none known where it
     /// has no hours a unit.
     pub(crate) fn staff_capacity(&self, f: &Firm) -> Option<i64> {
-        let family = self.families.iter().position(|x| x.name == crate::consts::families::EMPLOYMENT)?;
+        let family = self.bound.families.employment?;
         let (level, ways) = (self.labour.level.get(f.country)?, self.labour.ways.get(f.country)?);
         let p = usize::from(f.product);
         let a_unit: f64 = level
@@ -1092,7 +1087,7 @@ impl Core {
     /// every provider of a service, which is made as it sells. A price no one can buy at is no cost.
     fn cheapest(&self, ctx: &GoodsCtx<'_>) -> Cheapest {
         let mut out = Cheapest::default();
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return out };
+        let Some(firm) = self.bound.kinds.firm else { return out };
         for slot in self.firm_slots(firm) {
             let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
             let offers = !self.is_stored(f.product) || self.free_units(f.key, f.product, f.region) > 0;
@@ -1166,7 +1161,7 @@ impl Core {
     /// purchase a flow of money and one of goods to the buyer.
     #[clause("FRM.7", "GDS.5", "MKT.6")]
     fn buy_inputs(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> u64 {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let Some(firm) = self.bound.kinds.firm else { return 0 };
         let slots = self.firm_slots(firm);
         let ordering = self.bind(&sys_frm::points::INPUTS);
         let orders: Vec<Vec<(u16, Buyer)>> = match ctx.pool {
@@ -1189,7 +1184,7 @@ impl Core {
     /// that worth it goes without.
     #[clause("FRM.7", "SRV.5", "MKT.6")]
     fn buy_services(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> u64 {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let Some(firm) = self.bound.kinds.firm else { return 0 };
         let kind = kind_number(firm);
         let due: Vec<PartyKey> = self.labour.due_today.iter().map(|s| PartyKey::new(kind, Slot::new(*s))).collect();
         let mut wants: Vec<(u16, Buyer)> = Vec::new();
@@ -1224,9 +1219,7 @@ impl Core {
     /// and asks its country's budget shares of that of each product at retail.
     #[clause("HH.1", "HH.2", "HH.4", "HH.5", "HH.18", "HH.19")]
     fn decide_spending(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
             return (0, 0);
         };
         let position =
@@ -1381,7 +1374,7 @@ impl Core {
     /// that pressure; and the move made only where it gains more than changing the price costs their staff's hours.
     #[clause("FRM.5", "FRM.14", "REP.34", "VAL.6", "VAL.7")]
     fn review_prices(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
+        let Some(firm) = self.bound.kinds.firm else { return (0, 0) };
         let m = ctx.management;
         let due = self.reviewing_today();
         let (mut reviews, mut repriced) = (0, 0);
@@ -1510,7 +1503,7 @@ impl Core {
             menu_cost: m.menu_hours * hour,
         });
         let Some(p) = moved else { return false };
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return false };
+        let Some(firm) = self.bound.kinds.firm else { return false };
         self.set_record_word(firm, slot, PRICE, p);
         self.note_repriced((slot.get(), f.product), (f.price, p), day);
         true
@@ -1554,7 +1547,7 @@ impl Core {
     /// The firms reviewing their price today: those whose attention drew a review, and, where a firm has no surprise
     /// at its sales to weigh its attention by or expects to sell nothing, its production schedule.
     fn reviewing_today(&mut self) -> Vec<u32> {
-        let firm = self.names.iter().position(|n| *n == "firm");
+        let firm = self.bound.kinds.firm;
         let scheduled = std::mem::take(&mut self.labour.due_today);
         let unweighed = |s: &u32| {
             firm.is_some_and(|k| {
@@ -1617,7 +1610,7 @@ impl Core {
     /// reviews its price today.
     #[clause("REP.38", "REP.21", "REP.35")]
     fn attend(&mut self, ctx: &GoodsCtx<'_>, day: Day) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(firm) = self.bound.kinds.firm else { return };
         let Some(stream) = ctx.streams.named(sys_frm::VisitStream::DECL.name) else {
             violation!(clause = "REP.21", "the firms' visit stream is not declared");
         };
@@ -1666,7 +1659,7 @@ impl Core {
                 *e = size;
             }
         }
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(firm) = self.bound.kinds.firm else { return };
         let Some(store) = self.kinds.get(firm) else { return };
         let reads = self.bind(&sys_frm::points::STANCE);
         let mut surprised = Vec::new();
@@ -1701,7 +1694,7 @@ impl Core {
 
     /// The day's stances counted over every firm, after its reviews.
     fn count_stances(&mut self, day: Day) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return };
+        let Some(firm) = self.bound.kinds.firm else { return };
         let Some(store) = self.kinds.get(firm) else { return };
         let reads = self.bind(&sys_frm::points::STANCE);
         let mut by = [0_u64; crate::core_outlooks::HEURISTICS];
@@ -1753,7 +1746,7 @@ impl Core {
         (wants, purpose, taxed): (&[(u16, Buyer)], crate::core_stats::Purchase, Option<usize>),
         leg: &dyn Fn(u16, u16) -> GoodsLeg,
     ) -> (u64, i64) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return (0, 0) };
+        let Some(firm) = self.bound.kinds.firm else { return (0, 0) };
         if wants.is_empty() {
             return (0, 0);
         }

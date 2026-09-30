@@ -156,7 +156,7 @@ impl Core {
         (buyer_kind, purpose): (u8, Purchase),
         (product, paid, units): (u16, i64, i64),
     ) {
-        let household = self.names.iter().position(|n| *n == "household").and_then(|k| u8::try_from(k).ok());
+        let household = self.bound.kinds.household.and_then(|k| u8::try_from(k).ok());
         let Some(m) = self.stats.months.get_mut(usize::from(ccy)) else { return };
         let (paid, units) = (i128::from(paid), i128::from(units));
         let add = |map: &mut BTreeMap<u16, (i128, i128)>| {
@@ -321,9 +321,7 @@ impl Core {
     /// month's days.
     fn exposed(&self, regions: &[phx_id::CountryId], period: u32) -> Vec<BTreeMap<(u32, u32), u64>> {
         let mut out = vec![BTreeMap::new(); self.stats.laws.len()];
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
         let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
@@ -357,9 +355,7 @@ impl Core {
     /// adults out of the labour force.
     fn labour_force(&self, regions: &[phx_id::CountryId]) -> Vec<[i64; if_state::stats::LABOUR_STATES]> {
         let mut out = vec![[0_i64; if_state::stats::LABOUR_STATES]; self.stats.laws.len()];
-        let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
-        else {
+        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
         let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };

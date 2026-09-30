@@ -109,9 +109,7 @@ impl Core {
             });
         }
         self.state = s;
-        let (Some(treasury), Some(household)) =
-            (self.names.iter().position(|n| *n == "treasury"), self.names.iter().position(|n| *n == "household"))
-        else {
+        let (Some(treasury), Some(household)) = (self.bound.kinds.treasury, self.bound.kinds.household) else {
             return Ok(());
         };
         let family = DatedFamily {
@@ -134,7 +132,7 @@ impl Core {
             moves: crate::core_day::LoanMoves::default(),
             lost: 0,
         };
-        self.families.push(family);
+        self.add_family(family);
         Ok(())
     }
 
@@ -174,11 +172,9 @@ impl Core {
     /// A primitive the opening reads that the register does not hold.
     #[clause("BNK.17", "GEN.2", "GEN.15")]
     pub fn open_loans(&mut self, o: &CreditOpening<'_>) -> Result<(), String> {
-        let (Some(household), Some(firm), Some(bank)) = (
-            self.names.iter().position(|n| *n == "household"),
-            self.names.iter().position(|n| *n == "firm"),
-            self.bank_kind.map(usize::from),
-        ) else {
+        let (Some(household), Some(firm), Some(bank)) =
+            (self.bound.kinds.household, self.bound.kinds.firm, self.bank_kind.map(usize::from))
+        else {
             return Ok(());
         };
         let households = self.household_loans(o, household, bank)?;
@@ -189,8 +185,8 @@ impl Core {
             .iter()
             .map(|c| Ok((sys_bnk::rate(c.derived("GEN.lending_rate").ok_or("no lending rate")?), least)))
             .collect::<Result<Vec<_>, String>>()?;
-        self.families.push(households);
-        self.families.push(firms);
+        self.add_family(households);
+        self.add_family(firms);
         Ok(())
     }
 
@@ -349,7 +345,7 @@ impl Core {
         (day, calendar, streams): (Day, &Calendar, &Streams),
         buf: &mut Vec<phx_core::flows::Flow>,
     ) {
-        let Some(firm) = self.names.iter().position(|n| *n == "firm").map(kind_number) else { return };
+        let Some(firm) = self.bound.kinds.firm.map(kind_number) else { return };
         let mut net: std::collections::BTreeMap<PartyKey, (i128, u8)> = std::collections::BTreeMap::new();
         for f in buf.iter().filter(|f| f.denomination.is_money()) {
             let ccy = f.denomination.ccy();
@@ -361,7 +357,7 @@ impl Core {
             }
         }
         let date = calendar.date(day);
-        let Some(family) = self.families.iter().position(|f| f.name == crate::consts::families::FIRM_LOANS) else {
+        let Some(family) = self.bound.families.firm_loans else {
             return;
         };
         for (key, (flow, ccy)) in net {

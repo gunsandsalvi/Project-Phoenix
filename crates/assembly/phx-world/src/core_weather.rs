@@ -130,7 +130,7 @@ impl Core {
     #[clause("GEO.8", "GDS.9", "GDS.10")]
     pub(crate) fn destroy(&mut self, day: Day, moved: &mut Vec<Flow>) -> i64 {
         let struck = std::mem::take(&mut self.weather.struck);
-        let Some(firm) = self.names.iter().position(|n| *n == "firm") else { return 0 };
+        let Some(firm) = self.bound.kinds.firm else { return 0 };
         if struck.is_empty() {
             return 0;
         }

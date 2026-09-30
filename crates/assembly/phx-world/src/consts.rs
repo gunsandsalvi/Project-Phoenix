@@ -75,6 +75,8 @@ pub mod families {
     pub const COLLECTED_PUBLIC: &str = "TAX.collected_public";
     /// Each wage family and the family its payers owe the tax they withhold in: one per payer kind, as the wages are.
     pub const COLLECTORS: [(&str, &str); 2] = [(EMPLOYMENT, COLLECTED), (PUBLIC_EMPLOYMENT, COLLECTED_PUBLIC)];
+    /// The families whose contracts are jobs: an employer's to the household whose person holds each.
+    pub const JOBS: [&str; 2] = [EMPLOYMENT, PUBLIC_EMPLOYMENT];
     pub const ALL: [&str; 11] = [
         EMPLOYMENT,
         PUBLIC_EMPLOYMENT,

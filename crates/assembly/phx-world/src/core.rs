@@ -45,6 +45,9 @@ pub struct Core {
     pub hazards: Vec<crate::core_pop::Hazard>,
     #[saved(skip)]
     pub declared: crate::core_kinds::Declared,
+    /// The kinds and families the day routes by, bound as they are opened and rebuilt after a load.
+    #[saved(skip, rebuild = Core::bind_routes)]
+    pub(crate) bound: crate::bound::Bound,
     /// The persons the households held when the core opened.
     pub persons_opened: u64,
     /// Each country's treasury, and the estates waiting to settle: each with its country and the day it opened.
@@ -149,6 +152,17 @@ pub struct Apportioned {
 }
 
 impl Core {
+    /// The kinds and families bound to their places among the core's.
+    fn bind_routes(&mut self) {
+        self.bound = crate::bound::Bound::of(&self.names, &self.families);
+    }
+
+    /// A family opened on the core, and bound among the families the day routes by.
+    pub(crate) fn add_family(&mut self, family: crate::core_day::DatedFamily) {
+        self.families.push(family);
+        self.bind_routes();
+    }
+
     /// A core read back has counted nothing of the run yet.
     fn uncounted(&mut self) {
         self.counts = RunCounts::default();
@@ -165,7 +179,7 @@ impl Core {
         self.declared = crate::core_kinds::Declared { household, kinds, heirless };
         self.state.claim = state.benefit.map(|k| k.claim);
         self.state.included = state.tax.map(|k| k.included);
-        if self.names.contains(&"treasury") && self.bank_kind.is_some() {
+        if self.bound.kinds.treasury.is_some() && self.bank_kind.is_some() {
             self.bills.kind = state.bills;
         }
         self.stats.rate = rate;

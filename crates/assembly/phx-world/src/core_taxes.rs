@@ -196,7 +196,7 @@ impl Core {
                 ([AGENT_ROWS, KIND_ROWS], AGENT_ROWS),
                 today,
             );
-            self.families.push(family);
+            self.add_family(family);
         }
         self.index_collectors();
     }
@@ -218,7 +218,7 @@ impl Core {
             *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
         }
         let mut remitted_failed = unpaid.clone();
-        let estate = self.names.iter().position(|n| *n == phx_core::ESTATE_KIND.name).map(kind_number);
+        let estate = self.bound.kinds.estate.map(kind_number);
         for f in flows.iter().filter(|f| f.reason == TAXED && f.denomination.is_money()) {
             if let Some(n) =
                 remitted_failed.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0)

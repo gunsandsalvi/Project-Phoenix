@@ -257,12 +257,10 @@ impl Core {
     /// A primitive the dealing reads that the register does not hold, or a country with no agency to employ.
     #[clause("LAB.1", "REP.40", "GEN.2", "PTY.3", "SOC.2")]
     pub fn open_jobs(&mut self, o: &JobsOpening<'_>) -> Result<u64, String> {
-        let (Some(firm), Some(household)) =
-            (self.names.iter().position(|n| *n == "firm"), self.names.iter().position(|n| *n == "household"))
-        else {
+        let (Some(firm), Some(household)) = (self.bound.kinds.firm, self.bound.kinds.household) else {
             return Ok(0);
         };
-        let Some(agency) = self.names.iter().position(|n| *n == "agency") else {
+        let Some(agency) = self.bound.kinds.agency else {
             return Err("no agency kind to employ the state's staff".to_owned());
         };
         let mut family = self.job_family(crate::consts::families::EMPLOYMENT, firm, household, o.today);
@@ -347,8 +345,8 @@ impl Core {
             }
         }
         self.pay_jobs(o, &jobs, &placed, (&mut family, &mut public))?;
-        self.families.push(family);
-        self.families.push(public);
+        self.add_family(family);
+        self.add_family(public);
         Ok(public_jobs)
     }
 

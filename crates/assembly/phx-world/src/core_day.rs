@@ -480,7 +480,7 @@ impl Core {
     /// An estate begun with a party's money at its bank, to settle on its country's next business day.
     #[clause("PTY.9")]
     pub(crate) fn open_estate(&mut self, (bank, money): (u32, i64), (country, day): (CountryId, Day)) -> PartyKey {
-        let Some(place) = self.names.iter().position(|n| *n == phx_core::ESTATE_KIND.name) else {
+        let Some(place) = self.bound.kinds.estate else {
             violation!(clause = "PTY.9", "an estate with no kind to hold it");
         };
         let id = phx_id::PartyId::new(self.next_id);
