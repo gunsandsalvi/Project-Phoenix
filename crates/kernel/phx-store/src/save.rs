@@ -121,7 +121,15 @@ pub fn compress_frame(raw: &[u8]) -> io::Result<Vec<u8>> {
 }
 
 /// What compresses a framed writer's frames: the frames given, each compressed as `compress_frame` does, in order.
-pub type Frames<'a> = &'a dyn Fn(&[Vec<u8>]) -> Vec<io::Result<Vec<u8>>>;
+pub type Frames<'a> = &'a dyn Fn(&[Vec<u8>]) -> Vec<io::Result<(Vec<u8>, u128)>>;
+
+/// A frame compressed and hashed, by the worker that holds it: its zstd frame and its leaf of the world hash.
+///
+/// # Errors
+/// When the frame cannot be compressed.
+pub fn seal_frame(key: [u64; 2], raw: &[u8]) -> io::Result<(Vec<u8>, u128)> {
+    Ok((compress_frame(raw)?, crate::hash::frame_hash(key, raw)))
+}
 
 /// One store written as a zstd stream: what saves write never fails the world; the first error the sink returns is
 /// kept and reported when the store is finished.
@@ -135,14 +143,21 @@ pub struct Writer<'a> {
 /// caller, who may compress them at once; or a hash of a value's encoding as it stands.
 enum Out<'a> {
     Store(frame::Compress<Counted<'a>>),
-    Framed { sink: Counted<'a>, frames: Vec<Vec<u8>>, compress: Frames<'a>, frame: usize },
+    Framed { sink: Counted<'a>, frames: Vec<Vec<u8>>, compress: Frames<'a>, frame: usize, hashes: Vec<u128> },
     Hash(&'a mut crate::hash::LogicalHasher),
 }
 
-/// A wave of a framed writer's frames compressed and written in order.
-fn flush_frames(sink: &mut Counted<'_>, frames: &mut Vec<Vec<u8>>, compress: Frames<'_>) -> io::Result<()> {
+/// A wave of a framed writer's frames compressed and hashed, written and their hashes kept in order.
+fn flush_frames(
+    sink: &mut Counted<'_>,
+    frames: &mut Vec<Vec<u8>>,
+    compress: Frames<'_>,
+    hashes: &mut Vec<u128>,
+) -> io::Result<()> {
     for out in compress(frames) {
-        sink.write_all(&out?)?;
+        let (bytes, hash) = out?;
+        sink.write_all(&bytes)?;
+        hashes.push(hash);
     }
     frames.clear();
     Ok(())
@@ -174,7 +189,7 @@ impl<'a> Writer<'a> {
     /// A framed writer whose frames are `frame` bytes.
     fn framed_by(sink: &'a mut dyn Write, compress: Frames<'a>, frame: usize) -> Writer<'a> {
         let frames = vec![Vec::with_capacity(frame)];
-        let out = Out::Framed { sink: Counted { inner: sink, bytes: 0 }, frames, compress, frame };
+        let out = Out::Framed { sink: Counted { inner: sink, bytes: 0 }, frames, compress, frame, hashes: Vec::new() };
         Writer { out, failed: None, raw: 0 }
     }
 
@@ -188,7 +203,7 @@ impl<'a> Writer<'a> {
                     self.failed = Some(e);
                 }
             }
-            Out::Framed { sink, frames, compress, frame } => {
+            Out::Framed { sink, frames, compress, frame, hashes } => {
                 let mut rest = b;
                 while !rest.is_empty() {
                     let Some(last) = frames.last_mut() else {
@@ -201,7 +216,7 @@ impl<'a> Writer<'a> {
                     if last.len() == *frame {
                         if frames.len() == SAVE_FRAME_WAVE
                             && self.failed.is_none()
-                            && let Err(e) = flush_frames(sink, frames, *compress)
+                            && let Err(e) = flush_frames(sink, frames, *compress, hashes)
                         {
                             self.failed = Some(e);
                         }
@@ -240,14 +255,33 @@ impl<'a> Writer<'a> {
         }
         match self.out {
             Out::Store(out) => Ok((frame::finish(out)?.bytes, self.raw)),
-            Out::Framed { mut sink, mut frames, compress, .. } => {
+            Out::Framed { mut sink, mut frames, compress, mut hashes, .. } => {
                 frames.retain(|f| !f.is_empty());
-                flush_frames(&mut sink, &mut frames, compress)?;
+                flush_frames(&mut sink, &mut frames, compress, &mut hashes)?;
                 sink.flush()?;
                 Ok((sink.bytes, self.raw))
             }
             Out::Hash(_) => Ok((0, self.raw)),
         }
+    }
+
+    /// A framed store closed: its compressed bytes, the bytes before compression, and the root of its frames' hashes
+    /// under the key they were sealed with.
+    ///
+    /// # Errors
+    /// The first error the sink returned.
+    #[clause("SET.15")]
+    pub fn finish_root(self, key: [u64; 2]) -> io::Result<(u64, u64, u128)> {
+        if let Some(e) = self.failed {
+            return Err(e);
+        }
+        let Out::Framed { mut sink, mut frames, compress, mut hashes, .. } = self.out else {
+            violation!(clause = "SET.15", "the frames' root of a store written unframed");
+        };
+        frames.retain(|f| !f.is_empty());
+        flush_frames(&mut sink, &mut frames, compress, &mut hashes)?;
+        sink.flush()?;
+        Ok((sink.bytes, self.raw, crate::hash::frame_root(key, &hashes)))
     }
 }
 
@@ -263,6 +297,7 @@ pub struct Reader<'a> {
     input: frame::Decompress<'a>,
     space: AddressSpace,
     names: Vec<&'static str>,
+    frames: Option<crate::hash::FrameHasher>,
 }
 
 impl core::fmt::Debug for Reader<'_> {
@@ -277,7 +312,18 @@ impl<'a> Reader<'a> {
     /// # Errors
     /// When no decompression context can be made.
     pub fn new(source: &'a mut dyn Read) -> io::Result<Reader<'a>> {
-        Ok(Reader { input: frame::decompress(source)?, space: AddressSpace::empty(), names: Vec::new() })
+        Ok(Reader { input: frame::decompress(source)?, space: AddressSpace::empty(), names: Vec::new(), frames: None })
+    }
+
+    /// Hashes what the store reads from here on in a save's frames under the key, for its root at the end.
+    pub fn hash_frames(&mut self, key: [u64; 2]) {
+        self.frames = Some(crate::hash::FrameHasher::new(key, SAVE_FRAME_BYTES));
+    }
+
+    /// The root of the frames read since `hash_frames`, none when they were not hashed.
+    #[must_use]
+    pub fn frame_root(&mut self) -> Option<u128> {
+        self.frames.take().map(crate::hash::FrameHasher::finish)
     }
 
     /// Fills a buffer from the store.
@@ -285,7 +331,11 @@ impl<'a> Reader<'a> {
     /// # Errors
     /// When the store ends first.
     pub fn fill(&mut self, buf: &mut [u8]) -> Result<(), LoadError> {
-        self.input.read_exact(buf).map_err(LoadError::Io)
+        self.input.read_exact(buf).map_err(LoadError::Io)?;
+        if let Some(h) = self.frames.as_mut() {
+            h.write(buf);
+        }
+        Ok(())
     }
 
     /// `n` bytes, read a step at a time, so that a damaged count runs out of store before it runs out of memory.
@@ -750,7 +800,7 @@ mod tests {
         let frame = 1 << 12;
         let n = if cfg!(miri) { 20_000_u64 } else { 600_000 };
         let words: Vec<u64> = (0..n).map(|i| i * i).collect();
-        let compress = |frames: &[Vec<u8>]| frames.iter().map(|f| super::compress_frame(f)).collect::<Vec<_>>();
+        let compress = |frames: &[Vec<u8>]| frames.iter().map(|f| super::seal_frame([1, 2], f)).collect::<Vec<_>>();
         let mut file = Vec::new();
         let mut w = Writer::framed_by(&mut file, &compress, frame);
         for chunk in words.chunks(1000) {

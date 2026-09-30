@@ -183,6 +183,24 @@ impl Design {
         Ok(DayPlanDecl { slots, buffers })
     }
 
+    /// The memory ledger's lines by their names, each its MB at the design point.
+    ///
+    /// # Errors
+    /// A ledger the design point lacks or writes otherwise.
+    pub fn ledger(&self) -> Result<BTreeMap<String, f64>, FinError> {
+        let Value::Table(lines) = get(&self.table, "ledger")? else {
+            return Err(refuse("ledger", "is not a table"));
+        };
+        let mut out = BTreeMap::new();
+        for (line, v) in lines.iter().filter(|(_, v)| v.is_table()) {
+            let key = format!("ledger.{line}");
+            let name = v.get("name").and_then(Value::as_str).ok_or_else(|| refuse(&key, "has no name"))?;
+            let mb = real(v.get("mb").ok_or_else(|| refuse(&key, "has no MB"))?, &key)?;
+            out.insert(name.to_owned(), mb);
+        }
+        Ok(out)
+    }
+
     /// A `[resolution]` setting a driver reads, refused where it is absent or still `Missing`.
     ///
     /// # Errors

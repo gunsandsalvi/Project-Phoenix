@@ -487,7 +487,7 @@ pub fn phx_geo::tile::Tile::is_land(&self) -> bool  // used by: phx-cli
 pub fn phx_geo::tile::Tile::new(i16, u8, u8, u8, core::option::Option<phx_id::ids::ZoneId>) -> phx_geo::tile::Tile  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_geo::tile::Tile::zone(&self) -> core::option::Option<phx_id::ids::ZoneId>  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-market, phx-world
 impl phx_store::pod::Pod for phx_geo::tile::Tile
-pub fn phx_geo::tile::Tile::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-store
+pub fn phx_geo::tile::Tile::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
 impl phx_store::pod::__seal::Sealed for phx_geo::tile::Tile
 pub struct phx_geo::tile::Zone  // used by: phx-id, phx-rand
 pub phx_geo::tile::Zone::centroid: phx_id::ids::TileId

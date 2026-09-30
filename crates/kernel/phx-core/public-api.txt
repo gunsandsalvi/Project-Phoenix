@@ -45,7 +45,7 @@ pub fn phx_core::calendar::daycount::day_fraction(phx_id::day::Date, phx_id::day
 pub mod phx_core::calendar::period  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 pub enum phx_core::calendar::period::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::calendar::period::EndOfMonth::Keep  // used by: sys-cap
-pub phx_core::calendar::period::EndOfMonth::Plain  // used by: phx-ledger, phx-store, phx-world
+pub phx_core::calendar::period::EndOfMonth::Plain  // used by: phx-fin, phx-ledger, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
 pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -744,7 +744,7 @@ pub phx_core::hazards::HazardDecl::outcome: &'static str  // used by: phx-check,
 pub phx_core::hazards::HazardDecl::rate: phx_core::hazards::RateFn  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 pub phx_core::hazards::HazardDecl::scheme: phx_core::hazards::DrawScheme  // used by: phx-geo, phx-macros
 pub phx_core::hazards::HazardDecl::source: &'static str  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-store, phx-world
-pub phx_core::hazards::HazardDecl::stream: &'static str  // used by: phx-check, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
+pub phx_core::hazards::HazardDecl::stream: &'static str  // used by: phx-check, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::hazards::RateFn  // used by: phx-geo
@@ -963,7 +963,7 @@ impl phx_core::register::limit::Limited for phx_num::qty::QtyRaw
 pub fn phx_num::qty::QtyRaw::smallest_units(self) -> i128
 pub fn phx_num::qty::QtyRaw::split(phx_num::qty::QtyRaw, phx_num::qty::QtyRaw) -> (phx_num::qty::QtyRaw, phx_num::qty::QtyRaw)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-rand, phx-store, phx-world
 pub mod phx_core::register::profile  // used by: phx-world
-pub enum phx_core::register::profile::Transform  // used by: phx-macros, phx-store
+pub enum phx_core::register::profile::Transform  // used by: phx-fin, phx-macros, phx-store
 pub phx_core::register::profile::Transform::Identity
 pub phx_core::register::profile::Transform::Log
 pub phx_core::register::profile::Transform::LogGrowthPercent
@@ -1623,7 +1623,7 @@ pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>  // used by: phx-acct, phx-geo, phx-macros, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>  // used by: phx-check, phx-world
 pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)  // used by: sys-dem
-pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)  // used by: phx-check, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
+pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)  // used by: phx-check, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-store, phx-val, phx-world
 pub struct phx_core::system::SetupValue  // used by: phx-world, sys-dem
@@ -1736,7 +1736,7 @@ pub phx_core::DrawScheme::Daily  // used by: phx-geo, phx-macros
 pub phx_core::DrawScheme::Scheduled  // used by: phx-macros
 pub enum phx_core::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::EndOfMonth::Keep  // used by: sys-cap
-pub phx_core::EndOfMonth::Plain  // used by: phx-ledger, phx-store, phx-world
+pub phx_core::EndOfMonth::Plain  // used by: phx-fin, phx-ledger, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
 pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -2035,7 +2035,7 @@ pub phx_core::TakenIn::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
 impl phx_store::save::Saved for phx_core::decisions::TakenIn where alloc::string::String: phx_store::save::Saved
 pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
-pub enum phx_core::Transform  // used by: phx-macros, phx-store
+pub enum phx_core::Transform  // used by: phx-fin, phx-macros, phx-store
 pub phx_core::Transform::Identity
 pub phx_core::Transform::Log
 pub phx_core::Transform::LogGrowthPercent
@@ -2249,7 +2249,7 @@ pub fn phx_core::system::Declarations::pop_process(&mut self, alloc::boxed::Box<
 pub fn phx_core::system::Declarations::prim<T: phx_core::register::values::PrimType>(&mut self, &phx_core::register::PrimDecl) -> phx_core::register::Prim<T>  // used by: phx-acct, phx-geo, phx-macros, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::system::Declarations::refusals(&self) -> alloc::vec::Vec<alloc::string::String>  // used by: phx-check, phx-world
 pub fn phx_core::system::Declarations::setup_value(&mut self, phx_core::system::SetupValue)  // used by: sys-dem
-pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)  // used by: phx-check, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
+pub fn phx_core::system::Declarations::stream(&mut self, phx_core::streams::StreamDecl)  // used by: phx-check, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
 impl core::fmt::Debug for phx_core::system::Declarations
 pub fn phx_core::system::Declarations::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-store, phx-val, phx-world
 pub struct phx_core::DeclaredLimit<T>
@@ -2362,7 +2362,7 @@ pub phx_core::HazardDecl::outcome: &'static str  // used by: phx-check, phx-cli,
 pub phx_core::HazardDecl::rate: phx_core::hazards::RateFn  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 pub phx_core::HazardDecl::scheme: phx_core::hazards::DrawScheme  // used by: phx-geo, phx-macros
 pub phx_core::HazardDecl::source: &'static str  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-store, phx-world
-pub phx_core::HazardDecl::stream: &'static str  // used by: phx-check, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
+pub phx_core::HazardDecl::stream: &'static str  // used by: phx-check, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::Household  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc

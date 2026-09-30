@@ -151,6 +151,83 @@ impl LogicalHasher {
     }
 }
 
+/// One frame of a save's encoded bytes hashed under the key: a leaf of the world hash.
+#[must_use]
+pub fn frame_hash(key: [u64; 2], frame: &[u8]) -> u128 {
+    let mut sip = Sip128::new(key);
+    sip.write(frame);
+    sip.finish()
+}
+
+/// The root of a save's frame hashes, in order, combined in a left-balanced binary tree: the left subtree holds the
+/// largest power of two of leaves below their count, and an inner node hashes its two children's roots. Its shape
+/// follows the frames' count alone, so the root is the same whichever workers hashed which frames; a save of no frames
+/// hashes as the empty frame.
+#[must_use]
+pub fn frame_root(key: [u64; 2], leaves: &[u128]) -> u128 {
+    match leaves {
+        [] => frame_hash(key, &[]),
+        [leaf] => *leaf,
+        _ => {
+            let split = leaves.len().next_power_of_two() / 2;
+            let (left, right) = leaves.split_at(split);
+            let mut sip = Sip128::new(key);
+            sip.write(&frame_root(key, left).to_le_bytes());
+            sip.write(&frame_root(key, right).to_le_bytes());
+            sip.finish()
+        }
+    }
+}
+
+/// A stream hashed frame by frame as it is read, cut at the frames a save's writer cut it at, and its root taken at
+/// its end: how a load holds what it read to the root the save wrote.
+#[derive(Clone, Debug)]
+pub struct FrameHasher {
+    key: [u64; 2],
+    frame: usize,
+    open: Sip128,
+    filled: usize,
+    leaves: Vec<u128>,
+}
+
+impl FrameHasher {
+    #[must_use]
+    pub fn new(key: [u64; 2], frame: usize) -> FrameHasher {
+        if frame == 0 {
+            violation!(clause = "SET.15", "frames of no bytes");
+        }
+        FrameHasher { key, frame, open: Sip128::new(key), filled: 0, leaves: Vec::new() }
+    }
+
+    pub fn write(&mut self, mut bytes: &[u8]) {
+        while !bytes.is_empty() {
+            let room = self.frame - self.filled;
+            let (now, later) = bytes.split_at(if bytes.len() < room { bytes.len() } else { room });
+            self.open.write(now);
+            self.filled += now.len();
+            bytes = later;
+            if self.filled == self.frame {
+                let full = core::mem::replace(&mut self.open, Sip128::new(self.key));
+                self.leaves.push(full.finish());
+                self.filled = 0;
+            }
+        }
+    }
+
+    /// The root over every frame, the last one closed however short it is.
+    #[must_use]
+    pub fn finish(mut self) -> u128 {
+        if self.filled > 0 {
+            self.leaves.push(self.open.finish());
+        }
+        frame_root(self.key, &self.leaves)
+    }
+}
+
+#[cfg(test)]
+#[path = "hash_tests.rs"]
+mod frame_tests;
+
 #[cfg(test)]
 mod tests {
     use std::fmt::Write;

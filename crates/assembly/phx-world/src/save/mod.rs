@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 use phx_core::{ItemDecl, SystemEntry};
 use phx_id::Day;
 use phx_macros::clause;
-use phx_store::{LoadError, LogicalHasher, Reader, Saved, Writer, hash_saved};
+use phx_store::{LoadError, Reader, Saved, Writer};
 
 use crate::consts::{HASH_KEY, SAVE_FORMAT};
 use crate::core::Core;
@@ -28,7 +28,7 @@ fn file_of(name: &str) -> String {
     format!("{name}.zst")
 }
 
-/// One store as written: its size compressed and before compression, and its logical hash.
+/// One store as written: its size compressed and before compression, and the root of its frames' hashes.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StoreRecord {
     pub name: &'static str,
@@ -59,43 +59,50 @@ fn io_err(path: &Path, e: &dyn core::fmt::Display) -> String {
 }
 
 /// A store written to its file in fixed frames, each wave of frames compressed at once on the pool where there is one.
+/// A store written in frames, each compressed and hashed by the worker that holds it: its bytes compressed and before
+/// compression, and the root of its frames' hashes.
 fn write_store(
     dir: &Path,
     name: &str,
     pool: Option<&phx_exec::Pool>,
     write: &dyn Fn(&mut Writer<'_>),
-) -> Result<(u64, u64), String> {
+) -> Result<(u64, u64, u128), String> {
     let path = dir.join(file_of(name));
     let file = std::fs::File::create(&path).map_err(|e| io_err(&path, &e))?;
     let mut out = BufWriter::new(file);
     let compress = |frames: &[Vec<u8>]| {
-        phx_exec::pool::map(pool, frames.len(), |i| {
-            frames.get(i).map_or_else(|| Ok(Vec::new()), |f| phx_store::save::compress_frame(f))
+        phx_exec::pool::map(pool, frames.len(), |i| match frames.get(i) {
+            Some(f) => phx_store::save::seal_frame(HASH_KEY, f),
+            None => Err(std::io::Error::other("a frame of the wave that was never cut")),
         })
     };
     let mut w = Writer::framed(&mut out, &compress);
     write(&mut w);
-    let sizes = w.finish().map_err(|e| io_err(&path, &e))?;
+    let written = w.finish_root(HASH_KEY).map_err(|e| io_err(&path, &e))?;
     out.flush().map_err(|e| io_err(&path, &e))?;
-    Ok(sizes)
+    Ok(written)
 }
 
-/// A store's file opened and read by `read`, which must consume it whole.
+/// A store's file opened and read by `read`, which must consume it whole, and the root of the frames it read.
 fn read_store<T>(
     dir: &Path,
     name: &str,
     read: &mut dyn FnMut(&mut Reader<'_>) -> Result<T, LoadError>,
-) -> Result<T, String> {
+) -> Result<(T, u128), String> {
     let path = dir.join(file_of(name));
     let file = std::fs::File::open(&path).map_err(|e| io_err(&path, &e))?;
     let mut input = BufReader::new(file);
     let mut r = Reader::new(&mut input).map_err(|e| io_err(&path, &e))?;
     r.with_names(&names());
+    r.hash_frames(HASH_KEY);
     let value = read(&mut r).map_err(|e| io_err(&path, &e))?;
     if !r.at_end().map_err(|e| io_err(&path, &e))? {
         return Err(format!("{}: bytes past the store's end", path.display()));
     }
-    Ok(value)
+    let Some(root) = r.frame_root() else {
+        return Err(format!("{}: its frames were not hashed", path.display()));
+    };
+    Ok((value, root))
 }
 
 /// The world's day and core read back, the core holding the address space its stores were reserved in.
@@ -106,18 +113,10 @@ fn read_core(r: &mut Reader<'_>) -> Result<(Day, Core), LoadError> {
     Ok((today, core))
 }
 
-/// The world hash of a day and its core: their logical content, in the order the store holds them.
-fn world_hash(today: Day, core: &Core) -> u128 {
-    let mut h = LogicalHasher::new(HASH_KEY);
-    hash_saved(&today, &mut h);
-    hash_saved(core, &mut h);
-    h.finish()
-}
-
 impl World {
     /// A full save at this day's close into `root`: the world's store and the run's record written, each by a task of
-    /// its own beside one hashing the world, then the manifest, then the save made complete and the one before it
-    /// removed. The world is paused while it writes.
+    /// its own whose frames are compressed and hashed on the pool — the world's store's root is the world hash — then
+    /// the manifest, then the save made complete and the one before it removed. The world is paused while it writes.
     ///
     /// # Errors
     /// When a file cannot be written, synced or renamed.
@@ -129,15 +128,11 @@ impl World {
             0 => write_store(&dir, CORE, pool, &|w| {
                 self.today.save(w);
                 self.core.save(w);
-            })
-            .map(|s| (s, 0)),
-            1 => write_store(&dir, RUN, pool, &|w| self.metrics.save(w)).map(|s| (s, 0)),
-            _ => Ok(((0, 0), world_hash(self.today, &self.core))),
+            }),
+            _ => write_store(&dir, RUN, pool, &|w| self.metrics.save(w)),
         });
         let mut done = done.into_iter().collect::<Result<Vec<_>, String>>()?.into_iter();
-        let (Some(((bytes, raw_bytes), _)), Some(((run_bytes, run_raw), _)), Some((_, hash))) =
-            (done.next(), done.next(), done.next())
-        else {
+        let (Some((bytes, raw_bytes, hash)), Some((run_bytes, run_raw, _))) = (done.next(), done.next()) else {
             return Err("a save task that never ran".to_owned());
         };
         let stores = vec![StoreRecord { name: CORE, bytes, raw_bytes, hash }];
@@ -166,16 +161,15 @@ impl World {
         Ok(SaveRecord { dir, day: self.today, stores, run_bytes, world_hash: hash })
     }
 
-    /// The save check: the save's world read from its files alone and hashed, then dropped. The hash it gives must be
-    /// the one written in the manifest, the world hash of the close the save was taken at.
+    /// The save check: the save's world read from its files alone, its frames hashed as they are read, then dropped.
+    /// The root they give must be the one written in the manifest, the world hash of the close the save was taken at.
     ///
     /// # Errors
     /// When the store cannot be read, or the hash its files give is not the manifest's.
     #[clause("SET.15")]
     pub fn check_save(&self, dir: &Path) -> Result<u128, String> {
         let manifest = Manifest::read(dir)?;
-        let (today, core) = read_store(dir, CORE, &mut read_core)?;
-        let got = world_hash(today, &core);
+        let (_, got) = read_store(dir, CORE, &mut read_core)?;
         if hex(got) != manifest.world_hash {
             return Err(format!("the save reads back as {} where the close hashed {}", hex(got), manifest.world_hash));
         }
@@ -242,8 +236,8 @@ pub fn load(
         if hex(register) != manifest.register {
             return Err("a save of other data than this run's".to_owned());
         }
-        let (today, core) = read_store(dir, CORE, &mut read_core)?;
-        if hex(world_hash(today, &core)) != manifest.world_hash {
+        let ((today, core), root) = read_store(dir, CORE, &mut read_core)?;
+        if hex(root) != manifest.world_hash {
             return Err("the save's world does not hash to its close's".to_owned());
         }
         Ok((today, core))
@@ -253,7 +247,7 @@ pub fn load(
     }
     // Every index left out of the save and naming its rebuild is rebuilt now, the world rebound around it.
     phx_store::rebuild(&mut world.core).map_err(|e| e.to_string())?;
-    world.metrics = read_store(dir, RUN, &mut |r| Metrics::load(r))?;
+    world.metrics = read_store(dir, RUN, &mut |r| Metrics::load(r))?.0;
     Ok(world)
 }
 

@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02, K-03 and K-10's save contract built (S1.159–S1.162); the rest planned (S1.163–S1.168)
+Status: K-02, K-03 and K-10 built (S1.159–S1.163); the rest planned (S1.164–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1179,7 +1179,7 @@ planned (S1.168).
 
 #### K-10 The save contract and the world hash
 
-The save contract is written (S1.162); the world hash as a tree of frame hashes is planned (S1.163).
+The save contract (S1.162) and the world hash as a tree of frame hashes (S1.163).
 
 **What is primary, what is derived**: a save holds only primary state — columns, slot allocators (live bits, free
 rings, released lists, generations), arenas' raw words with their dead counts, rings' live chunks, policy schedules,
@@ -1208,7 +1208,22 @@ nothing derived stands in them yet, and the pass takes under a microsecond; `[fi
 whole rebuild at a load — the lists, the wheel, the agenda and the terms index — as their bases add their stores to
 the driver (S1.165, S1.225, S1.227, S1.263).
 
-**Today** (`encode.rs`, `hash.rs`, `save.rs`): the column encoding and the world hash of §11.
+**The world hash** (`hash.rs`): the save's stream of encoded bytes — its per-field transforms and bit-packing
+unchanged — is cut into the 1 MiB frames its zstd frames already are, and each frame's SipHash-2-4 under `HASH_KEY`
+(`frame_hash`) is taken by the worker that compresses it (`save::seal_frame`, a wave of sixteen frames at a time on
+the pool). The frame hashes are combined in a left-balanced binary tree (`frame_root`): the left subtree holds the
+largest power of two of leaves below their count, and an inner node hashes its two children's roots, so the root
+depends on the frames' bytes and order alone, never on the workers that hashed them (`frame_tree_same_for_any_workers`,
+`odd_frame_count_tree`). Only what the save holds enters it, so a derived index never does
+(`hash_covers_primary_only`). A load hashes the decompressed stream in the same frames as it reads it (`FrameHasher`,
+`Reader::hash_frames`) and holds the root to the manifest's (`root_equal_after_load`); a damaged frame is refused by its
+decoder, or reads back to another root (`damaged_frame_refused`). `LogicalHasher` stays for logic-level tests.
+
+**Volumes and ratchets** (`tools/bench.sh -F save`, the hash part): the design point's party rows of primary words,
+encoded a core at 760–810 MB/s (`[fin.save] encode_mb_s_core` 400, only rising), and as many 1 MiB frames of their
+encoding as the ledger's saved lines hold (3 459 MB: every line but the process, the day buffers, slack and the save
+buffers, an upper bound on the encoded bytes) hashed on the pool and combined in 480–570 ms on this machine's four
+workers (`hash_ms` 650, the step's bound on three phone cores).
 
 ### 7.2 phx-exec
 
@@ -2839,10 +2854,11 @@ never read as the world's. CI never runs the world.
   then is every other save in the root, complete or left partial by a save that never finished, removed.
 - **A load** (`phx_world::load`) refuses a save of another format, build, register, seed or number of persons, each
   naming its reason (N5); it assembles the world from the build and the data as the save's was, draws no opening,
-  reads the core and its day, holds them to the manifest's world hash, binds the declarations again, moves the
+  reads the core and its day, holds the root of the frames it read to the manifest's world hash, runs the rebuild
+  pass (K-10), binds the declarations again, moves the
   calendar's window to the save's year and reads the run's measures.
-- **The save check** (LC-0-35): each periodic save of a gate's run is read back from its files alone, hashed and
-  dropped, and its hash held to the manifest's; its sizes and its write and check times are the run's (LC-0-36).
+- **The save check** (LC-0-35): each periodic save of a gate's run is read back from its files alone, its frames
+  hashed as they are read, and dropped, and their root held to the manifest's; its sizes and its write and check times are the run's (LC-0-36).
 - **No copies**: a save is loaded only to continue the one run, or, on the build machine, apart by `phx inject` to be
   audited and discarded, never run on (N1).
 - **Injection** (N1, `save/inject.rs`): a gate's run takes one more save, at the close of the 30th day after
@@ -2855,9 +2871,10 @@ never read as the world's. CI never runs the world.
   day stepped (`Core::audit_close`, which holds money and goods to what they were before the injection); the families
   that found something are recorded with the run's measures, where LC-0-10 reads them. A world not read from a save
   refuses an injection.
-- **The world hash** is `phx-store`'s `LogicalHasher`, SipHash-2-4 with a 128-bit result under a fixed key
-  (`HASH_KEY`), over the day and the core as their save encodes them; a save reads back to exactly the layout it was
-  written from, so its hash is its close's.
+- **The world hash** is the root of the `core` store's frame hashes (K-10): SipHash-2-4 with a 128-bit result under a
+  fixed key (`HASH_KEY`) over each 1 MiB frame of the day and the core as their save encodes them, combined in a
+  left-balanced tree, each frame hashed by the worker that compresses it; a save reads back to exactly the stream it
+  was written as, so its root is its close's. The save's two tasks write the `core` store and the `run` store.
 - **Encoding** (`phx-store`): a column is encoded field by field, each field's transform declared with its type
   (delta modulo 2⁶⁴, zigzag, both, or plain), then bit-packed per block of 1 024 values at the block's widest value.
   Each field's stream is little-endian: magic `PXCL`, format version, field width, transform, element count, then per

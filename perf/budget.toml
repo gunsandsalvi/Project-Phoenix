@@ -160,6 +160,20 @@ counter = "fin.save.rebuild_ms"
 value = 190
 direction = "down"
 
+# The world hash (S1.163): the save's encoding measured a core over the design point's party rows of primary words,
+# 760–810 MB/s, and as many 1 MiB frames of it as the ledger's saved lines hold, 3 459 MB, hashed on the pool and
+# combined in 480–570 ms on this machine's four workers; the ratchets stand at the step's bounds.
+
+[[ratchet]]
+counter = "fin.save.encode_mb_s_core"
+value = 400
+direction = "up"
+
+[[ratchet]]
+counter = "fin.save.hash_ms"
+value = 650
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

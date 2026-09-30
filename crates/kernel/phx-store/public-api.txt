@@ -50,7 +50,7 @@ pub phx_store::arena::CellListRef::off: u32  // used by: phx-cli, phx-geo
 impl phx_store::arena::CellListRef
 pub const phx_store::arena::CellListRef::EMPTY: phx_store::arena::CellListRef  // used by: phx-core, phx-pop
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
-pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 pub struct phx_store::arena::CellLists<'a>
 pub phx_store::arena::CellLists::first_owner: u32
@@ -86,7 +86,7 @@ pub phx_store::arena::ListRef::off: u32  // used by: phx-cli, phx-geo
 impl phx_store::arena::ListRef
 pub const phx_store::arena::ListRef::EMPTY: phx_store::arena::ListRef  // used by: phx-core, phx-pop
 impl phx_store::pod::Pod for phx_store::arena::ListRef
-pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 pub trait phx_store::arena::ArenaLists
 pub fn phx_store::arena::ArenaLists::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
@@ -160,7 +160,7 @@ pub const phx_store::block_list::BlockBag::EMPTY: phx_store::block_list::BlockBa
 pub fn phx_store::block_list::BlockBag::is_empty(self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_store::block_list::BlockBag::len(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
-pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 #[repr(C)] pub struct phx_store::block_list::BlockList
 impl phx_store::block_list::BlockList
@@ -168,7 +168,7 @@ pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockL
 pub fn phx_store::block_list::BlockList::is_empty(self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_store::block_list::BlockList::len(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
-pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 pub struct phx_store::block_list::BlockPool<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
@@ -225,7 +225,7 @@ pub const phx_store::consts::ENCODE_MAGIC: u32
 pub const phx_store::consts::ENCODE_VERSION: u16
 pub const phx_store::consts::FRAME_BYTES: usize
 pub const phx_store::consts::HEAP_PAGE: usize
-pub const phx_store::consts::SAVE_FRAME_BYTES: usize
+pub const phx_store::consts::SAVE_FRAME_BYTES: usize  // used by: phx-fin
 pub const phx_store::consts::SAVE_FRAME_WAVE: usize
 pub const phx_store::consts::SAVE_READ_STEP: usize
 pub const phx_store::consts::SHORT_LINK_SLOT_BITS: u32  // used by: phx-core
@@ -309,20 +309,20 @@ pub phx_store::descriptor::FieldTag::Day  // used by: if-state, phx-cli, phx-cor
 pub phx_store::descriptor::FieldTag::InstrumentRef
 pub phx_store::descriptor::FieldTag::LineRef
 pub phx_store::descriptor::FieldTag::PartyRef  // used by: phx-core, phx-id
-pub phx_store::descriptor::FieldTag::Plain  // used by: phx-core, phx-ledger, phx-world
+pub phx_store::descriptor::FieldTag::Plain  // used by: phx-core, phx-fin, phx-ledger, phx-world
 pub phx_store::descriptor::FieldTag::Qty  // used by: phx-core, phx-ledger, phx-num
 pub phx_store::descriptor::FieldTag::TileRef
-pub enum phx_store::descriptor::Transform  // used by: phx-core, phx-macros
+pub enum phx_store::descriptor::Transform  // used by: phx-core, phx-fin, phx-macros
 pub phx_store::descriptor::Transform::Delta
 pub phx_store::descriptor::Transform::DeltaZigzag
-pub phx_store::descriptor::Transform::Plain  // used by: phx-core, phx-ledger, phx-world
+pub phx_store::descriptor::Transform::Plain  // used by: phx-core, phx-fin, phx-ledger, phx-world
 pub phx_store::descriptor::Transform::Zigzag
 impl phx_store::descriptor::Transform
 pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-cli, phx-core, phx-exec, phx-val
 pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
 pub struct phx_store::descriptor::ColumnDescriptor  // used by: phx-exec
 pub phx_store::descriptor::ColumnDescriptor::elem_bytes: u16  // used by: phx-exec
-pub phx_store::descriptor::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]  // used by: phx-check, phx-cli, phx-exec, phx-geo, phx-macros
+pub phx_store::descriptor::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros
 pub phx_store::descriptor::ColumnDescriptor::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_store::descriptor::ColumnDescriptor::rows_per_chunk: u32  // used by: phx-core, phx-exec, phx-pop
 impl phx_store::descriptor::ColumnDescriptor
@@ -360,10 +360,10 @@ impl phx_store::edges::Row for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::pod::Pod for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 pub const phx_store::edges::NONE: u32  // used by: phx-core, phx-world
-pub trait phx_store::edges::Row: phx_store::pod::Pod  // used by: phx-core, phx-world
+pub trait phx_store::edges::Row: phx_store::pod::Pod  // used by: phx-core, phx-fin, phx-world
 pub fn phx_store::edges::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
 pub fn phx_store::edges::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::edges::Row for phx_store::edges::Pair
@@ -382,7 +382,7 @@ pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_s
 pub fn phx_store::encode::decode_column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&phx_store::descriptor::ColumnDescriptor, &[u8], &mut phx_store::column::Column<T, B>) -> core::result::Result<(), phx_store::encode::DecodeError>
 pub fn phx_store::encode::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[u8], &mut [T]) -> core::result::Result<(), phx_store::encode::DecodeError>
 pub fn phx_store::encode::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
-pub fn phx_store::encode::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
+pub fn phx_store::encode::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>  // used by: phx-fin
 pub fn phx_store::encode::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
 pub mod phx_store::genref
 #[repr(C)] pub struct phx_store::genref::GenRef<T>
@@ -434,7 +434,12 @@ pub fn phx_store::genref::ShortRefs<T, H, B>::put(&mut self, phx_id::ids::Slot, 
 pub trait phx_store::genref::Recheck
 pub const phx_store::genref::Recheck::DAYS: u8  // used by: phx-fin
 pub fn phx_store::genref::next(u32, u32) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-rand, phx-val, phx-world, sys-bnk, sys-dem, sys-lab
-pub mod phx_store::hash  // used by: phx-check, phx-world
+pub mod phx_store::hash  // used by: phx-check, phx-fin, phx-world
+pub struct phx_store::hash::FrameHasher
+impl phx_store::hash::FrameHasher
+pub fn phx_store::hash::FrameHasher::finish(self) -> u128  // used by: phx-cli, phx-core, phx-fin, phx-world
+pub fn phx_store::hash::FrameHasher::new([u64; 2], usize) -> phx_store::hash::FrameHasher  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_store::hash::FrameHasher::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
 pub struct phx_store::hash::LogicalHasher  // used by: phx-core, phx-world
 impl phx_store::hash::LogicalHasher
 pub fn phx_store::hash::LogicalHasher::block_list<B: phx_store::backing::Backing>(&mut self, &phx_store::block_list::BlockPool<B>, phx_store::block_list::BlockList)
@@ -450,6 +455,8 @@ impl phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
+pub fn phx_store::hash::frame_hash([u64; 2], &[u8]) -> u128  // used by: phx-fin
+pub fn phx_store::hash::frame_root([u64; 2], &[u128]) -> u128  // used by: phx-fin, phx-world
 pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world
 pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
@@ -516,84 +523,84 @@ impl phx_store::pod::__seal::Sealed for u8
 impl<T: 'static> phx_store::pod::__seal::Sealed for phx_store::genref::GenRef<T>
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::__seal::Sealed for [T; N]
 impl<const E: u8> phx_store::pod::__seal::Sealed for phx_num::fixed::Fixed<E>
-pub unsafe trait phx_store::pod::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static  // used by: phx-core, phx-geo, phx-macros
-pub fn phx_store::pod::Pod::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub unsafe trait phx_store::pod::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static  // used by: phx-core, phx-fin, phx-geo, phx-macros
+pub fn phx_store::pod::Pod::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i16
-pub fn i16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i32
-pub fn i32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i64
-pub fn i64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i8
-pub fn i8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::day::Day
-pub fn phx_id::day::Day::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::day::Day::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::CountryId
-pub fn phx_id::ids::CountryId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::CountryId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::DayLocalId
-pub fn phx_id::ids::DayLocalId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::DayLocalId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::InstrumentId
-pub fn phx_id::ids::InstrumentId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::InstrumentId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::LineId
-pub fn phx_id::ids::LineId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::LineId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::MarketId
-pub fn phx_id::ids::MarketId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::MarketId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::MsgId
-pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyKey
-pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyRef
-pub fn phx_id::ids::PartyRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::PartyRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::RegionId
-pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::SeriesId
-pub fn phx_id::ids::SeriesId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::SeriesId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::Slot
-pub fn phx_id::ids::Slot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::Slot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::StreamId
-pub fn phx_id::ids::StreamId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::StreamId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::TableId
-pub fn phx_id::ids::TableId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::TableId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::TileId
-pub fn phx_id::ids::TileId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::TileId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::ZoneId
-pub fn phx_id::ids::ZoneId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::ZoneId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::missing::MaybeI64
-pub fn phx_num::missing::MaybeI64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::missing::MaybeI64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::money::Amount
-pub fn phx_num::money::Amount::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::money::Amount::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::money::Ccy
-pub fn phx_num::money::Ccy::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::money::Ccy::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::points::PointIdx
-pub fn phx_num::points::PointIdx::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::points::PointIdx::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::price::PriceRaw
-pub fn phx_num::price::PriceRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::price::PriceRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::qty::Count
-pub fn phx_num::qty::Count::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::qty::Count::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::qty::QtyRaw
-pub fn phx_num::qty::QtyRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::qty::QtyRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::qty::UnitId
-pub fn phx_num::qty::UnitId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::qty::UnitId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
-pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::arena::ListRef
-pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
-pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
-pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u16
-pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u32
-pub fn u32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u64
-pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u8
-pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl<T: 'static> phx_store::pod::Pod for phx_store::genref::GenRef<T>
 pub fn phx_store::genref::GenRef<T>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
@@ -655,6 +662,8 @@ pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bo
 pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::frame_root(&mut self) -> core::option::Option<u128>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::hash_frames(&mut self, [u64; 2])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
@@ -669,6 +678,7 @@ impl<'a> phx_store::save::Writer<'a>
 pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::count(&mut self, usize)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::finish_root(self, [u64; 2]) -> core::io::error::Result<(u64, u64, u128)>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
@@ -842,10 +852,11 @@ impl<const N: usize> phx_store::save::Saved for [usize; N]
 pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
 pub fn [usize; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_store::save::compress_frame(&[u8]) -> core::io::error::Result<alloc::vec::Vec<u8>>  // used by: phx-world
-pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)  // used by: phx-world
+pub fn phx_store::save::compress_frame(&[u8]) -> core::io::error::Result<alloc::vec::Vec<u8>>
+pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>  // used by: sys-tec
-pub type phx_store::save::Frames<'a> = &'a dyn core::ops::function::Fn(&[alloc::vec::Vec<u8>]) -> alloc::vec::Vec<core::io::error::Result<alloc::vec::Vec<u8>>>
+pub fn phx_store::save::seal_frame([u64; 2], &[u8]) -> core::io::error::Result<(alloc::vec::Vec<u8>, u128)>  // used by: phx-world
+pub type phx_store::save::Frames<'a> = &'a dyn core::ops::function::Fn(&[alloc::vec::Vec<u8>]) -> alloc::vec::Vec<core::io::error::Result<(alloc::vec::Vec<u8>, u128)>>
 pub mod phx_store::stats  // used by: if-state, phx-cli, phx-exec, phx-world, sys-idx, sys-sta
 pub trait phx_store::stats::StoreStats  // used by: phx-cli, phx-core, phx-exec, phx-fin
 pub fn phx_store::stats::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
@@ -946,7 +957,7 @@ pub phx_store::FieldTag::Day  // used by: if-state, phx-cli, phx-core, phx-fin, 
 pub phx_store::FieldTag::InstrumentRef
 pub phx_store::FieldTag::LineRef
 pub phx_store::FieldTag::PartyRef  // used by: phx-core, phx-id
-pub phx_store::FieldTag::Plain  // used by: phx-core, phx-ledger, phx-world
+pub phx_store::FieldTag::Plain  // used by: phx-core, phx-fin, phx-ledger, phx-world
 pub phx_store::FieldTag::Qty  // used by: phx-core, phx-ledger, phx-num
 pub phx_store::FieldTag::TileRef
 pub enum phx_store::LoadError  // used by: phx-core, phx-exec, phx-ledger, phx-world
@@ -962,10 +973,10 @@ pub fn phx_store::save::LoadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> 
 pub enum phx_store::Size  // used by: phx-fin
 pub phx_store::Size::Bytes(u64)  // used by: phx-fin
 pub phx_store::Size::Rest  // used by: phx-fin
-pub enum phx_store::Transform  // used by: phx-core, phx-macros
+pub enum phx_store::Transform  // used by: phx-core, phx-fin, phx-macros
 pub phx_store::Transform::Delta
 pub phx_store::Transform::DeltaZigzag
-pub phx_store::Transform::Plain  // used by: phx-core, phx-ledger, phx-world
+pub phx_store::Transform::Plain  // used by: phx-core, phx-fin, phx-ledger, phx-world
 pub phx_store::Transform::Zigzag
 impl phx_store::descriptor::Transform
 pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-cli, phx-core, phx-exec, phx-val
@@ -982,7 +993,7 @@ pub const phx_store::block_list::BlockBag::EMPTY: phx_store::block_list::BlockBa
 pub fn phx_store::block_list::BlockBag::is_empty(self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_store::block_list::BlockBag::len(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
-pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 #[repr(C)] pub struct phx_store::BlockList
 impl phx_store::block_list::BlockList
@@ -990,7 +1001,7 @@ pub const phx_store::block_list::BlockList::EMPTY: phx_store::block_list::BlockL
 pub fn phx_store::block_list::BlockList::is_empty(self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_store::block_list::BlockList::len(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
-pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 pub struct phx_store::BlockPool<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
@@ -1014,7 +1025,7 @@ pub phx_store::CellListRef::off: u32  // used by: phx-cli, phx-geo
 impl phx_store::arena::CellListRef
 pub const phx_store::arena::CellListRef::EMPTY: phx_store::arena::CellListRef  // used by: phx-core, phx-pop
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
-pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 pub struct phx_store::CellLists<'a>
 pub phx_store::CellLists::first_owner: u32
@@ -1072,7 +1083,7 @@ pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_stor
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 pub struct phx_store::ColumnDescriptor  // used by: phx-exec
 pub phx_store::ColumnDescriptor::elem_bytes: u16  // used by: phx-exec
-pub phx_store::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]  // used by: phx-check, phx-cli, phx-exec, phx-geo, phx-macros
+pub phx_store::ColumnDescriptor::fields: &'static [phx_store::descriptor::FieldDescriptor]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros
 pub phx_store::ColumnDescriptor::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_store::ColumnDescriptor::rows_per_chunk: u32  // used by: phx-core, phx-exec, phx-pop
 impl phx_store::descriptor::ColumnDescriptor
@@ -1198,7 +1209,7 @@ pub phx_store::ListRef::off: u32  // used by: phx-cli, phx-geo
 impl phx_store::arena::ListRef
 pub const phx_store::arena::ListRef::EMPTY: phx_store::arena::ListRef  // used by: phx-core, phx-pop
 impl phx_store::pod::Pod for phx_store::arena::ListRef
-pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 pub struct phx_store::LogicalHasher  // used by: phx-core, phx-world
 impl phx_store::hash::LogicalHasher
@@ -1228,7 +1239,7 @@ impl phx_store::edges::Row for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::pod::Pod for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 pub struct phx_store::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
@@ -1261,6 +1272,8 @@ pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bo
 pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::frame_root(&mut self) -> core::option::Option<u128>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::hash_frames(&mut self, [u64; 2])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
@@ -1358,6 +1371,7 @@ impl<'a> phx_store::save::Writer<'a>
 pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::count(&mut self, usize)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::finish_root(self, [u64; 2]) -> core::io::error::Result<(u64, u64, u128)>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
@@ -1396,84 +1410,84 @@ pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::ran
 pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
 pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
-pub unsafe trait phx_store::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static  // used by: phx-core, phx-geo, phx-macros
-pub fn phx_store::Pod::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub unsafe trait phx_store::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static  // used by: phx-core, phx-fin, phx-geo, phx-macros
+pub fn phx_store::Pod::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i16
-pub fn i16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i32
-pub fn i32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i64
-pub fn i64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for i8
-pub fn i8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn i8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::day::Day
-pub fn phx_id::day::Day::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::day::Day::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::CountryId
-pub fn phx_id::ids::CountryId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::CountryId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::DayLocalId
-pub fn phx_id::ids::DayLocalId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::DayLocalId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::InstrumentId
-pub fn phx_id::ids::InstrumentId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::InstrumentId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::LineId
-pub fn phx_id::ids::LineId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::LineId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::MarketId
-pub fn phx_id::ids::MarketId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::MarketId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::MsgId
-pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyKey
-pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyRef
-pub fn phx_id::ids::PartyRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::PartyRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::RegionId
-pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::RegionId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::SeriesId
-pub fn phx_id::ids::SeriesId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::SeriesId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::Slot
-pub fn phx_id::ids::Slot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::Slot::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::StreamId
-pub fn phx_id::ids::StreamId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::StreamId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::TableId
-pub fn phx_id::ids::TableId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::TableId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::TileId
-pub fn phx_id::ids::TileId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::TileId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::ZoneId
-pub fn phx_id::ids::ZoneId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_id::ids::ZoneId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::missing::MaybeI64
-pub fn phx_num::missing::MaybeI64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::missing::MaybeI64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::money::Amount
-pub fn phx_num::money::Amount::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::money::Amount::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::money::Ccy
-pub fn phx_num::money::Ccy::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::money::Ccy::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::points::PointIdx
-pub fn phx_num::points::PointIdx::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::points::PointIdx::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::price::PriceRaw
-pub fn phx_num::price::PriceRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::price::PriceRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::qty::Count
-pub fn phx_num::qty::Count::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::qty::Count::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::qty::QtyRaw
-pub fn phx_num::qty::QtyRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::qty::QtyRaw::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_num::qty::UnitId
-pub fn phx_num::qty::UnitId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_num::qty::UnitId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::arena::CellListRef
-pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::arena::ListRef
-pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::block_list::BlockBag
-pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockBag::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::block_list::BlockList
-pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u16
-pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u16::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u32
-pub fn u32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u32::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u64
-pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u8
-pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl<T: 'static> phx_store::pod::Pod for phx_store::genref::GenRef<T>
 pub fn phx_store::genref::GenRef<T>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
@@ -1488,7 +1502,7 @@ impl phx_store::rebuild::RebuildRows for u64
 pub fn u64::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub trait phx_store::Recheck
 pub const phx_store::Recheck::DAYS: u8  // used by: phx-fin
-pub trait phx_store::Row: phx_store::pod::Pod  // used by: phx-core, phx-world
+pub trait phx_store::Row: phx_store::pod::Pod  // used by: phx-core, phx-fin, phx-world
 pub fn phx_store::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
 pub fn phx_store::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::edges::Row for phx_store::edges::Pair
@@ -1712,9 +1726,9 @@ pub fn phx_store::as_bytes_mut<T: phx_store::pod::Pod>(&mut [T]) -> &mut [u8]
 pub fn phx_store::decode_column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&phx_store::descriptor::ColumnDescriptor, &[u8], &mut phx_store::column::Column<T, B>) -> core::result::Result<(), phx_store::encode::DecodeError>
 pub fn phx_store::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[u8], &mut [T]) -> core::result::Result<(), phx_store::encode::DecodeError>
 pub fn phx_store::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
-pub fn phx_store::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
+pub fn phx_store::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>  // used by: phx-fin
 pub fn phx_store::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
-pub fn phx_store::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)  // used by: phx-world
+pub fn phx_store::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>  // used by: sys-tec
 pub fn phx_store::rebuild<T: phx_store::save::Saved>(&mut T) -> core::result::Result<phx_store::rebuild::Rebuilt, phx_store::rebuild::RebuildError>  // used by: phx-check, phx-fin, phx-macros, phx-rand, phx-world
 pub fn phx_store::roundtrip<T: phx_store::save::Saved + core::cmp::PartialEq + core::fmt::Debug>(&T) -> core::result::Result<(T, phx_store::rebuild::Rebuilt), alloc::string::String>
