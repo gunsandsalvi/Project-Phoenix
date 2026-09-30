@@ -17,9 +17,9 @@ use phx_num::{Count, Fixed};
 
 declare_kind! { pub FIRM = "firm" { legal_form: "company", place: Region { word: 1 }, clause: "FRM.1" } }
 
-declare_stream! { pub OpeningStream = "FRM.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub VisitStream = "FRM.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
-declare_stream! { pub StanceStream = "FRM.stance" { purpose: Occasion, keyed: false, clause: "VAL.7" } }
+declare_stream! { pub OpeningStream = "FRM.opening" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub VisitStream = "FRM.visits" { family: World, purpose: Occasion, keyed: false, clause: "REP.21" } }
+declare_stream! { pub StanceStream = "FRM.stance" { family: World, purpose: Occasion, keyed: false, clause: "VAL.7" } }
 
 declare_prim! {
     /// The return a firm's management requires of what it holds and does, a year, drawn for each firm.

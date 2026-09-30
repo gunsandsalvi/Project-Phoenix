@@ -24,7 +24,7 @@ use phx_rand::{Draws, open_unit};
 
 use crate::consts::SHARE_PARTS;
 
-declare_stream! { pub JobsStream = "LAB.opening_jobs" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub JobsStream = "LAB.opening_jobs" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 /// Where the hours an occupation is asked for as employees' are, among its asked hours.
 pub const AS_EMPLOYEE: usize = 0;

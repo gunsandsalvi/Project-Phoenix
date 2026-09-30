@@ -9,8 +9,8 @@ use phx_core::register::values::{Table1, Table2};
 use phx_core::{Declarations, Register, StreamDef, System, declare_prim, declare_stream};
 use phx_num::Count;
 
-declare_stream! { pub VisitStream = "GDS.visits" { purpose: Occasion, keyed: false, clause: "REP.21" } }
-declare_stream! { pub OpeningStream = "GDS.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub VisitStream = "GDS.visits" { family: World, purpose: Occasion, keyed: false, clause: "REP.21" } }
+declare_stream! { pub OpeningStream = "GDS.opening" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 declare_prim! {
     /// Each product's world price at the opening, a unit's in a currency's smallest units, by the product's place: what a

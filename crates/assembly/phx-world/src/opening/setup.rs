@@ -246,17 +246,22 @@ pub fn resolve(setup: &Setup, g: Guardrails, split_draws: &mut Draws, country_dr
 
 #[cfg(test)]
 mod tests {
-    use phx_core::{Purpose, StreamDecl, Streams};
+    use phx_core::{Purpose, StreamDecl, WorldStreams};
     use phx_id::Day;
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
     use super::{Guardrails, Split, read, refusals, resolve, splits};
 
-    const SETUP: StreamDecl =
-        StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.14" };
+    const SETUP: StreamDecl = StreamDecl {
+        name: "GEN.setup",
+        family: phx_core::StreamFamily::World,
+        purpose: Purpose::Opening,
+        keyed: false,
+        clause: "GEN.14",
+    };
 
     fn draws(subject: u64) -> Draws {
-        let streams = Streams::new(Seed::new(1), &[SETUP]).unwrap();
+        let streams = WorldStreams::new(Seed::new(1), &[SETUP]).unwrap();
         streams.open(&SETUP, Subject::new(SubjectTag::Country, subject), Day::new(0), 0)
     }
 

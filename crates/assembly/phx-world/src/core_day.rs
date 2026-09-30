@@ -10,7 +10,7 @@ use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
 use phx_core::settle::{Cause, Outcome, Settle};
 use phx_core::store::{Family, books, deposits_of};
-use phx_core::{StreamDecl, Streams, SubStep};
+use phx_core::{StreamDecl, SubStep, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
@@ -650,7 +650,7 @@ impl Core {
         &mut self,
         work: &mut Work,
         failed: &[Flow],
-        (at, pool): ((Day, &Calendar, &Streams, &StreamDecl), Option<&phx_exec::Pool>),
+        (at, pool): ((Day, &Calendar, &WorldStreams, &StreamDecl), Option<&phx_exec::Pool>),
         ranges: &Ranges,
     ) -> (i128, [i128; 3]) {
         let flows = &work.flows;
@@ -679,7 +679,7 @@ impl Core {
     /// and gross counted. Returns the estates paying out today.
     fn gather(
         &mut self,
-        (day, calendar, streams): (Day, &Calendar, &Streams),
+        (day, calendar, streams): (Day, &Calendar, &WorldStreams),
         (flows, families): (&mut FlowBufs, usize),
         record: &mut CoreDay,
     ) -> Vec<PartyKey> {
@@ -885,7 +885,7 @@ impl Core {
         &mut self,
         (work, pool): (&mut Work, Option<&phx_exec::Pool>),
         (ranges, deposits, closed): (&Ranges, &mut [i64], &[bool]),
-        (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
+        (day, calendar, streams, order): (Day, &Calendar, &WorldStreams, &StreamDecl),
         record: &mut CoreDay,
     ) -> Vec<Flow> {
         let mut failed: Vec<Flow> = Vec::new();
@@ -970,7 +970,7 @@ impl Core {
     #[clause("SET.4", "SET.6", "MON.5")]
     pub fn run_day(
         &mut self,
-        (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
+        (day, calendar, streams, order): (Day, &Calendar, &WorldStreams, &StreamDecl),
         (clock, pool): (Option<&dyn phx_exec::Clock>, Option<&phx_exec::Pool>),
     ) -> CoreDay {
         let mut work = std::mem::take(&mut self.work);

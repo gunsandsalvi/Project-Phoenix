@@ -3,7 +3,7 @@
 
 use std::any::Any;
 
-use phx_core::{Calendar, CountryEntry, Findings, Register, Streams};
+use phx_core::{Calendar, CountryEntry, Findings, Register, WorldStreams};
 use phx_id::{CountryId, Day};
 
 use crate::metrics::Metrics;
@@ -17,7 +17,7 @@ pub type OwnState = Box<dyn Any + Send + Sync>;
 pub struct World {
     pub(crate) calendar: Calendar,
     pub(crate) register: Register,
-    pub(crate) streams: Streams,
+    pub(crate) streams: WorldStreams,
     pub(crate) own: Vec<(&'static str, OwnState)>,
     /// Where the day finds the own states it reads, and the retail meeting's weights, bound at assembly.
     pub(crate) own_at: OwnAt,

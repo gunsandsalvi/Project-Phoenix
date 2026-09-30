@@ -126,20 +126,40 @@ declare_prim! {
 }
 
 /// The stream a payer's ties among its flows of one payment order are drawn from at settlement.
-pub const SETTLE_ORDER: StreamDecl =
-    StreamDecl { name: "SET.order", purpose: Purpose::Lot, keyed: false, clause: "SET.6" };
+pub const SETTLE_ORDER: StreamDecl = StreamDecl {
+    name: "SET.order",
+    family: phx_core::StreamFamily::World,
+    purpose: Purpose::Lot,
+    keyed: false,
+    clause: "SET.6",
+};
 
 /// The stream a new game's open choices, the regions' lot and the derived values are drawn from.
-pub const SETUP_STREAM: StreamDecl =
-    StreamDecl { name: "GEN.setup", purpose: Purpose::Opening, keyed: false, clause: "GEN.15" };
+pub const SETUP_STREAM: StreamDecl = StreamDecl {
+    name: "GEN.setup",
+    family: phx_core::StreamFamily::World,
+    purpose: Purpose::Opening,
+    keyed: false,
+    clause: "GEN.15",
+};
 
 /// The stream the player's household is drawn from, and its members split out by.
-pub const PLAYER_STREAM: StreamDecl =
-    StreamDecl { name: "GEN.player", purpose: Purpose::Opening, keyed: false, clause: "OBS.4" };
+pub const PLAYER_STREAM: StreamDecl = StreamDecl {
+    name: "GEN.player",
+    family: phx_core::StreamFamily::Advice,
+    purpose: Purpose::Opening,
+    keyed: false,
+    clause: "OBS.4",
+};
 
 /// The stream generated names are drawn from.
-pub const NAMES_STREAM: StreamDecl =
-    StreamDecl { name: "GEN.names", purpose: Purpose::Opening, keyed: false, clause: "GEN.14" };
+pub const NAMES_STREAM: StreamDecl = StreamDecl {
+    name: "GEN.names",
+    family: phx_core::StreamFamily::World,
+    purpose: Purpose::Opening,
+    keyed: false,
+    clause: "GEN.14",
+};
 
 /// The generator's constants, declared with the kernel's before any system's.
 #[derive(Debug)]

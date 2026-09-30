@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Bound, Carriage, Good, Held, Shipment, Shipments};
-use phx_core::{StreamDef, Streams, SubStep};
+use phx_core::{StreamDef, SubStep, WorldStreams};
 use phx_geo::GeoState;
 use phx_id::{CountryId, Day, PartyKey};
 use phx_macros::{clause, opening};
@@ -100,7 +100,7 @@ impl Core {
     #[opening]
     pub(crate) fn open_freight(
         &mut self,
-        (geo, register, streams): (&GeoState, &phx_core::Register, &Streams),
+        (geo, register, streams): (&GeoState, &phx_core::Register, &WorldStreams),
         regions: &[CountryId],
         today: Day,
     ) -> Result<(), String> {
@@ -289,7 +289,7 @@ impl Core {
     /// each booked with the cheapest carrier with room, its freight owed and its goods committed.
     fn meet_carriage(
         &mut self,
-        (streams, geo): (&Streams, &GeoState),
+        (streams, geo): (&WorldStreams, &GeoState),
         (origin, mode, ccy): (u32, u16, u8),
         (carriers, weighed): (&[(PartyKey, i64, i64)], &[Weighed]),
         day: Day,

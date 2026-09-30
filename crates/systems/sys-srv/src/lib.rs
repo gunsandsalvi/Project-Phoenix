@@ -5,8 +5,8 @@ use phx_core::{Declarations, StreamDef, System, declare_prim, declare_stream};
 use phx_macros::clause;
 use phx_num::{Count, Fixed};
 
-declare_stream! { pub TasteStream = "SRV.taste" { purpose: Meeting, keyed: false, clause: "REP.22" } }
-declare_stream! { pub LotStream = "SRV.capacity_lot" { purpose: Meeting, keyed: false, clause: "REP.22" } }
+declare_stream! { pub TasteStream = "SRV.taste" { family: World, purpose: Meeting, keyed: false, clause: "REP.22" } }
+declare_stream! { pub LotStream = "SRV.capacity_lot" { family: World, purpose: Meeting, keyed: false, clause: "REP.22" } }
 
 declare_prim! {
     /// How much a buyer weighs a seller's price in choosing among sellers: its value falls by this for each unit of the

@@ -17,7 +17,7 @@ use if_labour::law::Law;
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::Period;
 use phx_core::wheel::DueWheel;
-use phx_core::{OpeningCountry, Register, StreamDef, Streams, SubStep};
+use phx_core::{OpeningCountry, Register, StreamDef, SubStep, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
 use phx_market::hiring::{Application, Seeker, Standing, Vacancy, answer, search, select};
@@ -147,7 +147,7 @@ pub struct CoreLabour {
 pub struct LabourCtx<'a> {
     pub register: &'a Register,
     pub calendar: &'a Calendar,
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub kind: &'a LabourKind,
     /// Each region's country, by region.
     pub regions: &'a [CountryId],
@@ -1255,7 +1255,7 @@ impl Core {
     #[clause("SOC.3", "LAB.6")]
     pub(crate) fn claim_pension(
         &mut self,
-        (calendar, streams, day): (&Calendar, &Streams, Day),
+        (calendar, streams, day): (&Calendar, &WorldStreams, Day),
         (household, person): (PartyKey, &phx_core::Person),
         (id, country): (u64, u8),
     ) -> bool {

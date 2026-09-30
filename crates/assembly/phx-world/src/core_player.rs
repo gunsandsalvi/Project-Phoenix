@@ -3,7 +3,7 @@
 //! only where its setup delegates. An intent is taken on the first day its decision comes for the household.
 
 use phx_core::decisions::{Prefs, Say, Standing};
-use phx_core::{QueuedIntent, Streams};
+use phx_core::{QueuedIntent, WorldStreams};
 use phx_id::{Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
@@ -58,7 +58,7 @@ impl Core {
     #[clause("OBS.4", "REP.1")]
     pub(crate) fn seat_player(
         &mut self,
-        (streams, today): (&Streams, Day),
+        (streams, today): (&WorldStreams, Day),
         (country, delegate): (u8, bool),
         regions: &[phx_id::CountryId],
     ) -> Result<(), String> {
@@ -82,8 +82,12 @@ impl Core {
         if n == 0 {
             return Err(format!("no household in the player's country {country}"));
         }
-        let mut draws =
-            streams.open(&crate::opening::prims::PLAYER_STREAM, Subject::new(SubjectTag::World, 0), today, 0);
+        // Which household the player takes is the advice's draw, not the world's: it changes nothing the world draws.
+        let advice = phx_core::AdviceDraws::new(streams);
+        let player = &crate::opening::prims::PLAYER_STREAM;
+        let mut draws = advice
+            .open(player, Subject::new(SubjectTag::World, 0), today, 0)
+            .map_err(|_| "the player's stream is not the advice's")?;
         let at = phx_rand::float::index(phx_rand::uniform::below_u64(&mut draws, n));
         let slot = of_country.get(at).copied().ok_or("a draw beyond the households")?;
         let came = self.decisions.len();

@@ -14,9 +14,9 @@ use phx_num::{Count, Fixed};
 
 use crate::consts::DAYS_A_YEAR;
 
-declare_stream! { pub VisitStream = "HH.visits" { purpose: SchedulePhase, keyed: false, clause: "HH.4" } }
-declare_stream! { pub TypesStream = "HH.outlook_types" { purpose: Opening, keyed: false, clause: "VAL.22" } }
-declare_stream! { pub StanceStream = "HH.stance" { purpose: Occasion, keyed: false, clause: "VAL.7" } }
+declare_stream! { pub VisitStream = "HH.visits" { family: World, purpose: SchedulePhase, keyed: false, clause: "HH.4" } }
+declare_stream! { pub TypesStream = "HH.outlook_types" { family: World, purpose: Opening, keyed: false, clause: "VAL.22" } }
+declare_stream! { pub StanceStream = "HH.stance" { family: World, purpose: Occasion, keyed: false, clause: "VAL.7" } }
 
 /// A household's memory type, at which its outlooks of public series correct.
 pub const MEMORY_ATTR: AttrDecl = AttrDecl { name: "HH.memory", values: crate::consts::MOST_TYPES, clause: "VAL.22" };

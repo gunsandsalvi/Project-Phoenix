@@ -287,7 +287,7 @@ impl Outlooks {
     pub fn stance_in(
         &self,
         (key, view, beta): ((u16, u32), usize, f64),
-        (streams, stream): (&phx_core::Streams, &phx_core::StreamDecl),
+        (streams, stream): (&phx_core::WorldStreams, &phx_core::StreamDecl),
         (party, day): (PartyId, Day),
     ) -> phx_val::switching::StanceIn {
         let performance = self
@@ -364,7 +364,7 @@ impl crate::core::Core {
     #[clause("VAL.7", "MND.20")]
     pub(crate) fn reconsider_household(
         &mut self,
-        (streams, types): (&phx_core::Streams, &Types),
+        (streams, types): (&phx_core::WorldStreams, &Types),
         (household, id): (phx_id::PartyKey, PartyId),
         (country, day): (u8, Day),
     ) {

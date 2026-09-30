@@ -20,7 +20,7 @@ const ALLOWED: &[Allowed] = &[
         why: "draws are made only by the run's streams",
     },
     Allowed {
-        name: "Streams",
+        name: "WorldStreams",
         places: &[("phx-core", &["/src/streams.rs", "/src/contribution.rs", "/src/lib.rs"]), ("phx-world", &[])],
         why: "streams are opened only by the core, the opening's context and the observer's draws",
     },
@@ -37,6 +37,11 @@ const ALLOWED: &[Allowed] = &[
             ("phx-obs", &[]),
         ],
         why: "only the observer opens the observer's streams, handed them by the inspector",
+    },
+    Allowed {
+        name: "AdviceDraws",
+        places: &[("phx-core", &["/src/streams.rs", "/src/lib.rs"]), ("phx-world", &["/src/core_player.rs"])],
+        why: "only the player's desk opens the advice's streams, for the player's draw and advice",
     },
 ];
 
@@ -124,7 +129,7 @@ mod tests {
     #[test]
     fn draws_are_made_only_by_the_streams() {
         let text = "fn a(k: StreamKey) { let _ = phx_rand::Draws::new(k, s, 0, 0); }\n\
-                    fn b(s: &Streams) {}\n\
+                    fn b(s: &WorldStreams) {}\n\
                     fn c(o: ObserverDraws) {}\n\
                     #[cfg(test)]\nmod tests { fn t() { let _ = Draws::new(k, s, 0, 0); } }";
         let lines = |name: &str, layer, path: &str| -> Vec<usize> {

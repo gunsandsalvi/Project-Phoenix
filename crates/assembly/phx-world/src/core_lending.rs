@@ -289,7 +289,7 @@ impl Core {
         &mut self,
         (key, country): (PartyKey, u8),
         (principal, years): (i64, u64),
-        (day, streams): (Day, &phx_core::Streams),
+        (day, streams): (Day, &phx_core::WorldStreams),
     ) -> Option<(PartyKey, phx_num::Rate, u32)> {
         let law = self.credit.laws.get(usize::from(country))?.clone();
         let own = self.bank_of(key)?;

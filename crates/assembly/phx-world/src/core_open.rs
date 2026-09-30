@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use phx_core::calendar::Calendar;
 use phx_core::settle::AT_ISSUER;
 use phx_core::store::{KindStore, Opening};
-use phx_core::{Household, OpeningCountry, OpeningCtx, Register, StreamDef, Streams};
+use phx_core::{Household, OpeningCountry, OpeningCtx, Register, StreamDef, WorldStreams};
 use phx_id::{Day, PartyId, PartyKey};
 use phx_macros::{clause, opening};
 use phx_num::{MaybeI64, Missing, violation};
@@ -90,7 +90,7 @@ pub struct CoreOpening<'a> {
     pub register: &'a Register,
     pub countries: &'a [OpeningCountry],
     pub sheets: &'a [Sheet],
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub calendar: &'a Calendar,
     pub today: Day,
     /// The household kind and its place among the population's kinds.

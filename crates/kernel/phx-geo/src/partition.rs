@@ -371,17 +371,23 @@ fn rank(work: &mut Work<'_>, tiles: &[usize], largest: u32, draws: &mut Draws) -
 
 #[cfg(test)]
 mod tests {
-    use phx_core::{Purpose, StreamDecl, Streams};
+    use phx_core::{Purpose, StreamDecl, WorldStreams};
     use phx_id::{Day, TileId};
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
     use super::{apportion, components, split, winds};
     use crate::grid::Grid;
 
-    const MAP: StreamDecl = StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
+    const MAP: StreamDecl = StreamDecl {
+        name: "GEO.map",
+        family: phx_core::StreamFamily::World,
+        purpose: Purpose::Opening,
+        keyed: false,
+        clause: "GEO.10",
+    };
 
     fn draws(seed: u64) -> Draws {
-        let streams = Streams::new(Seed::new(seed), &[MAP]).unwrap();
+        let streams = WorldStreams::new(Seed::new(seed), &[MAP]).unwrap();
         streams.open(&MAP, Subject::new(SubjectTag::World, 0), Day::new(0), 0)
     }
 

@@ -11,11 +11,11 @@ use phx_rand::open_unit;
 
 use crate::consts::{AGE_PARTS, SHARE_PARTS};
 
-declare_stream! { pub PensionStream = "SOC.opening_pensions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub PensionStream = "SOC.opening_pensions" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 declare_stream! {
     /// Whether a person who retires is among those its country's state pension covers, drawn once for each person.
-    pub CoveredStream = "SOC.pension_covered" { purpose: Occasion, keyed: true, clause: "SOC.3" }
+    pub CoveredStream = "SOC.pension_covered" { family: World, purpose: Occasion, keyed: true, clause: "SOC.3" }
 }
 
 /// A country's state pension as a person who retires claims it.

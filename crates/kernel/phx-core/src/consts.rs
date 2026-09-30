@@ -76,6 +76,8 @@ pub const MONTHS_PER_QUARTER: u16 = 3;
 /// The draw address's ordinal of an opening phase: beyond every sub-step of a day, so opening draws share no address
 /// with a day's.
 pub const OPENING_ORDINAL_BASE: u8 = 64;
+/// The day's slots the stage table documents: its thirty-three lettered slots, the six of funding, and the save.
+pub const DAY_SLOTS: usize = 40;
 /// The opening's first phase after the setup (0) and the map (1): the parties begin.
 pub const OPENING_PARTIES: u8 = 2;
 /// The parties' plant and stocks.

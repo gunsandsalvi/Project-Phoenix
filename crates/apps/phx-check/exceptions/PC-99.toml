@@ -1903,24 +1903,6 @@ what = "`vec!`"
 count = 1
 
 [[site]]
-path = "crates/kernel/phx-core/src/streams.rs"
-item = "Streams::new"
-what = "`.collect()`"
-count = 2
-
-[[site]]
-path = "crates/kernel/phx-core/src/streams.rs"
-item = "Streams::new"
-what = "`Vec::new`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-core/src/streams.rs"
-item = "Streams::new"
-what = "`format!`"
-count = 2
-
-[[site]]
 path = "crates/kernel/phx-core/src/system.rs"
 item = "Declarations::claims"
 what = "`.collect()`"

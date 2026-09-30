@@ -28,17 +28,17 @@ pub use school::LeavingSchool;
 
 declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", place: Sited, clause: "POP.2" } }
 
-declare_stream! { pub RegionsStream = "DEM.opening_regions" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub PersonsStream = "DEM.opening_persons" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub CompositionStream = "DEM.opening_composition" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub HealthStream = "DEM.opening_health" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub EducationStream = "DEM.opening_education" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub MeansStream = "DEM.opening_means" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub MortalityStream = "DEM.mortality" { purpose: Mortality, keyed: false, clause: "CHN.3" } }
-declare_stream! { pub IllnessStream = "DEM.illness" { purpose: Illness, keyed: false, clause: "CHN.3" } }
-declare_stream! { pub BirthdayStream = "DEM.birthdays" { purpose: Birthday, keyed: false, clause: "CHN.3" } }
-declare_stream! { pub OccasionStream = "DEM.fertility_taste" { purpose: Taste, keyed: false, clause: "POP.10" } }
-declare_stream! { pub ConceptionStream = "DEM.conception" { purpose: Conception, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub RegionsStream = "DEM.opening_regions" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub PersonsStream = "DEM.opening_persons" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub CompositionStream = "DEM.opening_composition" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub HealthStream = "DEM.opening_health" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub EducationStream = "DEM.opening_education" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub MeansStream = "DEM.opening_means" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub MortalityStream = "DEM.mortality" { family: World, purpose: Mortality, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub IllnessStream = "DEM.illness" { family: World, purpose: Illness, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub BirthdayStream = "DEM.birthdays" { family: World, purpose: Birthday, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub OccasionStream = "DEM.fertility_taste" { family: World, purpose: Taste, keyed: false, clause: "POP.10" } }
+declare_stream! { pub ConceptionStream = "DEM.conception" { family: World, purpose: Conception, keyed: false, clause: "CHN.3" } }
 
 declare_hazard! {
     pub DEATH = "DEM.death" {

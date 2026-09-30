@@ -14,7 +14,7 @@ use phx_rand::{Draws, open_unit};
 
 use crate::consts::{MOST_BANKS, SHARE_PARTS, WEALTH_PARTS};
 
-declare_stream! { pub HouseholdsStream = "BNK.opening_households" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub HouseholdsStream = "BNK.opening_households" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 /// The bank a household banks with, counted from one; nought, none.
 pub const BANK_ATTR: AttrDecl = AttrDecl { name: "BNK.bank", values: MOST_BANKS + 1, clause: "REP.41" };

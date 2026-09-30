@@ -5,7 +5,7 @@
 
 use phx_core::calendar::Calendar;
 use phx_core::calendar::daycount::DayCount;
-use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
+use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams, opening_subject};
 use phx_id::{Day, PartyKey, Slot};
 use phx_ledger::algebra::{Leg, Reference, Schedule, Terms};
 use phx_macros::{clause, opening};
@@ -27,7 +27,7 @@ pub struct CreditOpening<'a> {
     pub sheets: &'a [crate::opening::sheet::Sheet],
     pub calendar: &'a Calendar,
     pub today: Day,
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub stream: &'a StreamDecl,
 }
 
@@ -344,7 +344,7 @@ impl Core {
     #[clause("BNK.17", "FRM.15")]
     pub(crate) fn lend_shortfalls(
         &mut self,
-        (day, calendar, streams): (Day, &Calendar, &Streams),
+        (day, calendar, streams): (Day, &Calendar, &WorldStreams),
         (dues, buf): (&[Vec<phx_core::flows::Flow>], &mut Vec<phx_core::flows::Flow>),
     ) {
         let Some(firm) = self.bound.kinds.firm.map(kind_number) else { return };

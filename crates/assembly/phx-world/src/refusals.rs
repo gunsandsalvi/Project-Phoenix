@@ -82,8 +82,20 @@ mod tests {
     use super::refusals;
 
     fn declare(d: &mut Declarations) {
-        d.stream(StreamDecl { name: "HH.taste", purpose: Purpose::Taste, keyed: false, clause: "CHN.3" });
-        d.stream(StreamDecl { name: "HH.taste", purpose: Purpose::Taste, keyed: false, clause: "CHN.3" });
+        d.stream(StreamDecl {
+            name: "HH.taste",
+            family: phx_core::StreamFamily::World,
+            purpose: Purpose::Taste,
+            keyed: false,
+            clause: "CHN.3",
+        });
+        d.stream(StreamDecl {
+            name: "HH.taste",
+            family: phx_core::StreamFamily::World,
+            purpose: Purpose::Taste,
+            keyed: false,
+            clause: "CHN.3",
+        });
     }
 
     #[test]

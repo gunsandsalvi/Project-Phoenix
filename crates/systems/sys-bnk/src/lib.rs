@@ -16,9 +16,9 @@ use phx_num::{Count, Fixed};
 
 declare_kind! { pub BANK = "bank" { legal_form: "bank", place: Site { word: 0 }, clause: "BNK.1" } }
 
-declare_stream! { pub OpeningStream = "BNK.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub AskedStream = "BNK.lenders_asked" { purpose: Meeting, keyed: false, clause: "BNK.6" } }
-declare_stream! { pub TasteStream = "BNK.lender_taste" { purpose: Taste, keyed: false, clause: "REP.22" } }
+declare_stream! { pub OpeningStream = "BNK.opening" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub AskedStream = "BNK.lenders_asked" { family: World, purpose: Meeting, keyed: false, clause: "BNK.6" } }
+declare_stream! { pub TasteStream = "BNK.lender_taste" { family: World, purpose: Taste, keyed: false, clause: "REP.22" } }
 
 declare_prim! {
     /// The shortest term, in years, of a firm's term loan at the opening.

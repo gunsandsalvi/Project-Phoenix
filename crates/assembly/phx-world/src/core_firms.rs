@@ -4,7 +4,7 @@
 //! shared by the demand its price wins, and its staff, plant and stocks follow from that output.
 
 use phx_core::store::{KindStore, Opening};
-use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
+use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams, opening_subject};
 use phx_id::{PartyId, PartyKey, TileId};
 use phx_macros::{clause, opening};
 use phx_num::round::{Round, split_total};
@@ -197,7 +197,7 @@ pub struct FirmsOpening<'a> {
     pub register: &'a Register,
     pub countries: &'a [OpeningCountry],
     pub sheets: &'a [crate::opening::sheet::Sheet],
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub stream: &'a StreamDecl,
     pub management: &'a sys_frm::decide::Management,
     pub today: phx_id::Day,

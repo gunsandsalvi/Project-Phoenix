@@ -1,5 +1,5 @@
 use phx_core::calendar::rules::CountryRules;
-use phx_core::{Calendar, CountryEntry, DataFile, Declarations, Prim, Register, Streams};
+use phx_core::{Calendar, CountryEntry, DataFile, Declarations, Prim, Register, WorldStreams};
 use phx_id::{CountryId, Date, Day};
 use phx_rand::Seed;
 
@@ -55,7 +55,7 @@ pub struct Compiled {
     pub register: Register,
     pub calendar: Calendar,
     pub day_zero: Day,
-    pub streams: Streams,
+    pub streams: WorldStreams,
 }
 
 /// Compiles the declarations against the data.
@@ -84,6 +84,6 @@ pub fn compile(
     let day_zero =
         calendar.day(day_zero_date).ok_or_else(|| vec![format!("day zero {day_zero_date:?} before the epoch")])?;
     let decls: Vec<_> = d.streams.iter().map(|(_, s)| *s).collect();
-    let streams = Streams::new(seed, &decls)?;
+    let streams = WorldStreams::new(seed, &decls)?;
     Ok(Compiled { register, calendar, day_zero, streams })
 }

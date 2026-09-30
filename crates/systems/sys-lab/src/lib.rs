@@ -18,12 +18,12 @@ use phx_num::{Count, Fixed, Missing};
 
 pub use jobs::{AS_EMPLOYEE, AS_OWNER, Drawn, Jobs, JobsStream, Rule};
 
-declare_stream! { pub TasteStream = "LAB.match_taste" { purpose: Meeting, keyed: false, clause: "REP.22" } }
-declare_stream! { pub MeetingStream = "LAB.meeting" { purpose: Meeting, keyed: false, clause: "LAB.8" } }
-declare_stream! { pub LotStream = "LAB.select_lot" { purpose: Meeting, keyed: false, clause: "LAB.7" } }
-declare_stream! { pub LayoffStream = "LAB.layoff" { purpose: Meeting, keyed: false, clause: "REP.23" } }
-declare_stream! { pub RetirementStream = "LAB.retirement" { purpose: Birthday, keyed: false, clause: "LAB.6" } }
-declare_stream! { pub ReviewStream = "LAB.review_phase" { purpose: SchedulePhase, keyed: false, clause: "LAB.17" } }
+declare_stream! { pub TasteStream = "LAB.match_taste" { family: World, purpose: Meeting, keyed: false, clause: "REP.22" } }
+declare_stream! { pub MeetingStream = "LAB.meeting" { family: World, purpose: Meeting, keyed: false, clause: "LAB.8" } }
+declare_stream! { pub LotStream = "LAB.select_lot" { family: World, purpose: Meeting, keyed: false, clause: "LAB.7" } }
+declare_stream! { pub LayoffStream = "LAB.layoff" { family: World, purpose: Meeting, keyed: false, clause: "REP.23" } }
+declare_stream! { pub RetirementStream = "LAB.retirement" { family: World, purpose: Birthday, keyed: false, clause: "LAB.6" } }
+declare_stream! { pub ReviewStream = "LAB.review_phase" { family: World, purpose: SchedulePhase, keyed: false, clause: "LAB.17" } }
 
 /// A person's labour state: not searching, searching or retired.
 pub const STATE: PersonAttrDecl = PersonAttrDecl {

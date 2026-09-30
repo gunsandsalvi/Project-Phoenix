@@ -100,16 +100,22 @@ pub fn fractal(layers: &[Lattice], roughness: f64, u: f64, v: f64) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use phx_core::{Purpose, StreamDecl, Streams};
+    use phx_core::{Purpose, StreamDecl, WorldStreams};
     use phx_id::Day;
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
     use super::{Lattice, fractal, octaves};
 
-    const MAP: StreamDecl = StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
+    const MAP: StreamDecl = StreamDecl {
+        name: "GEO.map",
+        family: phx_core::StreamFamily::World,
+        purpose: Purpose::Opening,
+        keyed: false,
+        clause: "GEO.10",
+    };
 
     fn draws(seed: u64, attempt: u64) -> Draws {
-        let streams = Streams::new(Seed::new(seed), &[MAP]).unwrap();
+        let streams = WorldStreams::new(Seed::new(seed), &[MAP]).unwrap();
         streams.open(&MAP, Subject::new(SubjectTag::World, attempt), Day::new(0), 0)
     }
 

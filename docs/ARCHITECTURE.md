@@ -811,7 +811,7 @@ compile and assembly time from declarations; `read-trace`, a run-time flag of re
 
 The sample is the first chunk of each (handler, table) in the run and every chunk whose index is congruent to the day
 modulo 64. A traced chunk's writes are stamped with their (sub-step, handler), and each read is checked
-against the reader's declaration and against a later stamp; every `Streams::open` is recorded unsampled, and at the
+against the reader's declaration and against a later stamp; every `WorldStreams::open` is recorded unsampled, and at the
 close the day's opens are sorted and each repeated (stream, subject, sub-step) counted. What the trace
 finds is reported through the audit's Time family (§15); the stamps live for a day and the log is kept outside the
 world hash.
@@ -880,14 +880,15 @@ regularised incomplete functions by bisection. `DeclaredLimit::bind` returns a `
 is read only through `Ctx::bound`, which writes a binding record, audience the bound party, whenever the excess is
 positive (Law 6). `Register::placeholders()` and `standing_shapes()` feed NUM.7's report.
 
-**Streams.** Each stream is declared with one `Purpose`, a closed list mirroring CHN.3's (mortality, illness,
-birthday, conception, accident, damage, third-party harm, catastrophe, equipment failure, discovery, meeting, weather,
-type at birth, schedule phase, occasion, taste, pairing, sample, lot, the opening, the observer); none is an outcome
-(CHN.5). Assembly refuses two streams of one name and two names whose FNV-1a collide. `Streams::open(stream,
-subject, day, ordinal)` is the one constructor of `Draws` beyond `phx-rand`: handlers reach it through `Ctx::draws`
-with their day and sub-step, the map's generation and the opening through contexts that carry opening ordinals beyond
-the day's sub-steps, and the observer through `ObserverDraws`, which opens only `Observer` streams, as no other
-context may (Law 17). A **keyed** stream draws from (stream, subject) alone at an ordinal of its own (`open_keyed`), a
+**Streams.** Each stream is declared with its family (§7.3) and one `Purpose`, a closed list mirroring CHN.3's
+(mortality, illness, birthday, conception, accident, damage, third-party harm, catastrophe, equipment failure,
+discovery, meeting, weather, type at birth, schedule phase, occasion, taste, pairing, sample, lot, the opening, the
+observer); none is an outcome (CHN.5). Assembly refuses two streams of one name, in one family or two, and two names
+whose FNV-1a collide. `WorldStreams::open(stream, subject, day, ordinal)` and `open_at(…, slot)` are the constructors of
+the world's `Draws` beyond `phx-rand`: handlers reach them through `Ctx::draws` with their day and sub-step, the map's
+generation and the opening through contexts that carry opening ordinals beyond the day's, the observer through
+`ObserverDraws` and the player's draw and advice through `AdviceDraws`, each opening only its own family's streams
+(Law 17, REP.16). A **keyed** stream draws from (stream, subject) alone at an ordinal of its own (`open_keyed`), a
 pure function of identity recomputed whenever read, such as a schedule's phase; it is exempt from the duplicate-open
 check. PC-19 holds these call sites.
 
@@ -1751,14 +1752,26 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: planned (S1.114, S1.177–S1.185)
+Status: building (streams built, S1.177; K-19–K-24 planned, S1.114, S1.178–S1.185)
 
 #### Streams
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.177).
+Every declared stream names its family — `StreamFamily::World`, `Observer` or `Advice` — which `declare_stream!`
+requires, and each family's code holds its own type of draws, so a world rule cannot be handed another's draws
+(compile-fail `observer_draws_in_world`) and no family opens another's stream (REP.16). `WorldStreams` (`streams.rs`),
+made at assembly, keys every declared stream by its family, its name and the seed (§3.2), refuses a name declared
+twice in one family or two, and refuses the observer's purpose outside the observer's family or that family for
+another purpose. The world's code holds `WorldStreams`, whose `open`, `open_at`, `open_keyed`, `open_keyed_at` and
+`key` stop the run on another family's declaration; `phx-obs` holds `ObserverDraws`, the player's desk `AdviceDraws`
+— which household the player takes (`GEN.player`) and the player's advice — each refusing (`NotObserver`) any stream
+not of its family. PC-19 lets no world crate name `ObserverDraws` or `AdviceDraws` outside those places.
 
-**Today** (`streams.rs`): the streams of §5.3.
+A draw's slot is a `SlotOrdinal`: `slots.rs` lists the stage table's forty slots as §6.1 documents them (`DaySlot`,
+1a … 10e with 8a–8f, and the save), their ordinals 0–39 in its order, below the opening phases' from 64 and the keyed
+ordinal 255; `open_at` addresses a world draw by one. Today's callers still open by their sub-step's ordinal
+(`open`) until the day runner walks the stage table (S1.186), which moves them to `open_at` and retires `open`; the
+stage table (S1.185) takes over the slots' list. A stream costs nothing of its own beyond its draws (S1.176's
+`[fin.streams]`).
 
 #### K-19 Calendar and day facts
 
@@ -3786,7 +3799,7 @@ credited while the world holds it (GEN.10).
     | PC-16 | a per-crate `clippy.toml` other than the root file minus that crate's declared exemptions |
     | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day |
     | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
-    | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `Streams`, `open_keyed` and `ObserverDraws` named outside their listed files (§5.3) |
+    | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `WorldStreams`, `open_keyed`, `ObserverDraws` and `AdviceDraws` named outside their listed files (§5.3) |
     | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
     | PC-96 | in a hot module of `phx-world` or a system (PC-92's hot set; the kernel's crates implement the traversals and are not read), a whole-table walk: a call of `live_slots`, `live_every`, `open_slots`, `firm_slots`, `deposits_of`, `money_totals` or `issuer_held`, or of `all`, `totals` or `money` with no argument, or a range `0..x.len()`, `0..x.count()` or `0..x.rows()`; admitted inside what is handed to `for_chunks`, `for_agenda` or `apply_by_range`, in a function carrying `#[sweep(store, cycle = …)]` or `#[opening]`; a `#[sweep]` without its cycle is refused; its exceptions file admits today's sites (S1.121) |
     | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs` (planned, S1.160), `IntentBuf`, `OptionSet` (planned, S1.154)); tests are not read; its exceptions file admits no site since S1.169 |

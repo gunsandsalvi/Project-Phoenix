@@ -328,7 +328,7 @@ mod tests {
 
     #[test]
     fn zone_distances_stay_within_countries() {
-        use phx_core::{Purpose, StreamDecl, Streams};
+        use phx_core::{Purpose, StreamDecl, WorldStreams};
         use phx_id::{Day, ZoneId};
         use phx_rand::{Seed, Subject, SubjectTag};
 
@@ -336,10 +336,15 @@ mod tests {
         use crate::generate::generate;
         use crate::generate::tests::small;
 
-        const MAP: StreamDecl =
-            StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
+        const MAP: StreamDecl = StreamDecl {
+            name: "GEO.map",
+            family: phx_core::StreamFamily::World,
+            purpose: Purpose::Opening,
+            keyed: false,
+            clause: "GEO.10",
+        };
         let p = small(400, vec![60, 40], vec![3, 3], 20);
-        let streams = Streams::new(Seed::new(3), &[MAP]).unwrap();
+        let streams = WorldStreams::new(Seed::new(3), &[MAP]).unwrap();
         let map = generate(&p, &|_| 0, &|a| streams.open(&MAP, Subject::new(SubjectTag::World, a), Day::new(0), 0));
         let d = ZoneDistances::measure(&map);
         let country = |z: usize| map.regions[usize::from(map.zones[z].region.get())].country;

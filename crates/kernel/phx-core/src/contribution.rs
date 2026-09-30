@@ -9,7 +9,7 @@ use crate::consts::{
     OPENING_PRESENT_VALUES,
 };
 use crate::register::Register;
-use crate::streams::{OpeningPhase, Purpose, StreamDecl, Streams};
+use crate::streams::{OpeningPhase, Purpose, StreamDecl, WorldStreams};
 
 /// The opening's phases in which systems contribute, in the order they run.
 pub const DECLARATIONS: OpeningPhase = OpeningPhase(OPENING_DECLARATIONS);
@@ -24,13 +24,13 @@ pub const PHASES: [OpeningPhase; 6] = [DECLARATIONS, PARTIES, PHYSICAL_STOCK, CO
 /// The opening's context: its phase, and draws at the phase's own ordinal.
 #[derive(Debug)]
 pub struct OpeningCtx<'a> {
-    streams: &'a Streams,
+    streams: &'a WorldStreams,
     phase: OpeningPhase,
 }
 
 impl<'a> OpeningCtx<'a> {
     #[must_use]
-    pub fn new(streams: &'a Streams, phase: OpeningPhase) -> OpeningCtx<'a> {
+    pub fn new(streams: &'a WorldStreams, phase: OpeningPhase) -> OpeningCtx<'a> {
         OpeningCtx { streams, phase }
     }
 

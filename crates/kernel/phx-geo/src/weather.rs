@@ -8,7 +8,7 @@ use core::f64::consts::SQRT_2;
 
 use crate::consts::HALF;
 
-declare_stream! { pub WeatherStream = "GEO.weather" { purpose: Weather, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub WeatherStream = "GEO.weather" { family: World, purpose: Weather, keyed: false, clause: "CHN.3" } }
 
 /// A weather variable: the event its day's value is recorded as, and how many of the event's units make one of the
 /// marginal's.
@@ -82,7 +82,7 @@ pub fn region_day(climate: &crate::climate::RegionClimate, month: u8, latents: &
 
 #[cfg(test)]
 mod tests {
-    use phx_core::{StreamDef, Streams};
+    use phx_core::{StreamDef, WorldStreams};
     use phx_id::Day;
     use phx_num::Missing;
     use phx_rand::{Seed, Subject, SubjectTag};
@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn weather_marginals_and_persistence() {
-        let streams = Streams::new(Seed::new(3), &[WeatherStream::DECL]).unwrap();
+        let streams = WorldStreams::new(Seed::new(3), &[WeatherStream::DECL]).unwrap();
         let mut d = streams.open(&WeatherStream::DECL, Subject::new(SubjectTag::Region, 0), Day::new(1), 0);
         let (phi, n) = (0.7, 100_000_u32);
         let count = f64::from(n);

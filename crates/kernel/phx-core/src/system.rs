@@ -236,7 +236,13 @@ mod tests {
     impl System for Dem {
         const CODE: &'static str = "DEM";
         fn declare(d: &mut Declarations) {
-            d.stream(StreamDecl { name: "DEM.mortality", purpose: Purpose::Mortality, keyed: false, clause: "CHN.3" });
+            d.stream(StreamDecl {
+                name: "DEM.mortality",
+                family: crate::streams::StreamFamily::World,
+                purpose: Purpose::Mortality,
+                keyed: false,
+                clause: "CHN.3",
+            });
             d.hazard(HazardDecl {
                 name: "DEM.death",
                 acts_on: ActsOn::Role { kind: "household", role: "person" },

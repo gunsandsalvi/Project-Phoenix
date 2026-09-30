@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 use phx_core::calendar::Calendar;
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Cost, NATURE};
-use phx_core::{NewEvent, StreamDef, Streams, SubStep};
+use phx_core::{NewEvent, StreamDef, SubStep, WorldStreams};
 use phx_geo::weather::{Latents, VARIABLES};
 use phx_geo::{GeoState, catastrophe};
 use phx_id::{Day, PartyKey};
@@ -57,7 +57,7 @@ fn struck_tiles(struck: &[(u32, i64)]) -> BTreeMap<u32, Vec<PartyKey>> {
 impl Core {
     /// The day's weather in every region and catastrophes in every country, recorded as events.
     #[clause("CHN.3", "GEO.8")]
-    pub(crate) fn weather_day(&mut self, geo: &GeoState, (streams, calendar): (&Streams, &Calendar), day: Day) {
+    pub(crate) fn weather_day(&mut self, geo: &GeoState, (streams, calendar): (&WorldStreams, &Calendar), day: Day) {
         let date = calendar.date(day);
         let at = SubStep::S3a.ordinal();
         if self.weather.latents.len() < geo.regions.len() {

@@ -10,8 +10,13 @@ use crate::generate::Map;
 use crate::prims::{DEPOSIT_DENSITY, GRADE_MU, GRADE_SIGMA, GeoPrims, QUANTITY_MU, QUANTITY_SIGMA};
 
 /// The stream deposits are drawn from, one opening per land tile.
-pub const DEPOSITS_STREAM: StreamDecl =
-    StreamDecl { name: "GEO.deposits", purpose: Purpose::Opening, keyed: false, clause: "GEO.6" };
+pub const DEPOSITS_STREAM: StreamDecl = StreamDecl {
+    name: "GEO.deposits",
+    family: phx_core::StreamFamily::World,
+    purpose: Purpose::Opening,
+    keyed: false,
+    clause: "GEO.6",
+};
 
 /// How much a deposit held when the world opened.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]

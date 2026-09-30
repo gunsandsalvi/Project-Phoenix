@@ -23,6 +23,7 @@ pub mod products;
 pub mod register;
 pub mod schedule;
 pub mod settle;
+pub mod slots;
 pub mod spoilage;
 pub mod store;
 pub mod streams;
@@ -73,7 +74,9 @@ pub use register::{
 };
 pub use schedule::{DecisionSchedule, Phase, RunsOn, WakeKind, next_due};
 pub use spoilage::SpoilageDecl;
-pub use streams::{NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, Streams};
+pub use streams::{
+    AdviceDraws, NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, StreamFamily, WorldStreams,
+};
 pub use substep::{SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
 pub use system::{DecisionMeta, Declarations, SetupValue, System, SystemEntry, declare_entry, declare_system};
 pub use wear::{WearDecl, WearSpec};

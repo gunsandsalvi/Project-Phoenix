@@ -10,7 +10,7 @@ use crate::consts::PER_MILLE_F64;
 use crate::grid::Grid;
 use crate::state::{GeoState, HazardState};
 
-declare_stream! { pub CatastropheStream = "GEO.catastrophe" { purpose: Catastrophe, keyed: false, clause: "CHN.3" } }
+declare_stream! { pub CatastropheStream = "GEO.catastrophe" { family: World, purpose: Catastrophe, keyed: false, clause: "CHN.3" } }
 
 /// `k` distinct places among `n`, uniformly, by Floyd's method: each draw from a range one wider than the last, a
 /// place already taken giving way to the range's new top.
@@ -98,7 +98,7 @@ pub fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d:
 
 #[cfg(test)]
 mod tests {
-    use phx_core::{StreamDef, Streams};
+    use phx_core::{StreamDef, WorldStreams};
     use phx_id::{Day, TileId};
     use phx_rand::{Seed, Subject, SubjectTag, binomial};
 
@@ -107,7 +107,7 @@ mod tests {
     use crate::partition::components;
 
     fn draws(i: u64) -> phx_rand::Draws {
-        let streams = Streams::new(Seed::new(9), &[CatastropheStream::DECL]).unwrap();
+        let streams = WorldStreams::new(Seed::new(9), &[CatastropheStream::DECL]).unwrap();
         streams.open(&CatastropheStream::DECL, Subject::new(SubjectTag::Country, i), Day::new(1), 0)
     }
 

@@ -15,8 +15,13 @@ use crate::prims::GeoPrims;
 use crate::relief::ReliefParams;
 
 /// The stream each map attempt draws from, subject the attempt's number.
-pub const MAP_STREAM: StreamDecl =
-    StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
+pub const MAP_STREAM: StreamDecl = StreamDecl {
+    name: "GEO.map",
+    family: phx_core::StreamFamily::World,
+    purpose: Purpose::Opening,
+    keyed: false,
+    clause: "GEO.10",
+};
 
 /// The map's step of the opening, after the setup's.
 pub const MAP_PHASE: OpeningPhase = OpeningPhase(1);

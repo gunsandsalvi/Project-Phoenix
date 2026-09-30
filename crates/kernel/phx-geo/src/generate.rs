@@ -499,7 +499,7 @@ pub fn generate(p: &MapParams, climate: &dyn Fn(ClimateInput) -> u8, draws: &dyn
 
 #[cfg(test)]
 pub(crate) mod tests {
-    use phx_core::{Purpose, StreamDecl, Streams};
+    use phx_core::{Purpose, StreamDecl, WorldStreams};
     use phx_id::Day;
     use phx_rand::{Draws, Seed, Subject, SubjectTag};
 
@@ -507,7 +507,13 @@ pub(crate) mod tests {
     use crate::partition::components;
     use crate::relief::ReliefParams;
 
-    const MAP: StreamDecl = StreamDecl { name: "GEO.map", purpose: Purpose::Opening, keyed: false, clause: "GEO.10" };
+    const MAP: StreamDecl = StreamDecl {
+        name: "GEO.map",
+        family: phx_core::StreamFamily::World,
+        purpose: Purpose::Opening,
+        keyed: false,
+        clause: "GEO.10",
+    };
 
     /// A small map's parameters, for tests of what the generator guarantees on any map.
     pub(crate) fn small(land_tiles: u64, split: Vec<u64>, regions: Vec<u64>, zones: u64) -> MapParams {
@@ -563,7 +569,7 @@ pub(crate) mod tests {
     #[test]
     fn a_small_map_meets_its_conditions() {
         let p = small(900, vec![50, 30, 20], vec![5, 3, 3], 45);
-        let streams = Streams::new(Seed::new(7), &[MAP]).unwrap();
+        let streams = WorldStreams::new(Seed::new(7), &[MAP]).unwrap();
         let draws = |a: u64| -> Draws { streams.open(&MAP, Subject::new(SubjectTag::World, a), Day::new(0), 0) };
         let map = generate(&p, &|c| u8::from(c.elevation_m > 1_000), &draws);
         let land = map.tiles.iter().filter(|t| t.is_land()).count();

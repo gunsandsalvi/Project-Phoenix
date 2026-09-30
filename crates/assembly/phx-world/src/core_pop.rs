@@ -6,7 +6,7 @@
 
 use phx_core::pop_process::{Household, Person};
 use phx_core::wheel::DueWheel;
-use phx_core::{Register, Streams, SubStep};
+use phx_core::{Register, SubStep, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
@@ -96,7 +96,7 @@ type Hit = (Slot, usize, Vec<usize>);
 pub(crate) struct Ctx<'a> {
     pub register: &'a Register,
     pub calendar: &'a phx_core::Calendar,
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub processes: &'a [Bound],
     pub regions: &'a [CountryId],
     /// The world's pool the hazards' wheels are taken on; none at the opening, before the world has one.

@@ -13,7 +13,7 @@ use phx_core::calendar::Calendar;
 use phx_core::calendar::daycount::DayCount;
 use phx_core::flows::{Denom, Flow, Grouped, Ranges};
 use phx_core::store::{books, deposits_of};
-use phx_core::{OpeningCountry, Register, StreamDecl, Streams, SubStep};
+use phx_core::{OpeningCountry, Register, StreamDecl, SubStep, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_ledger::algebra::{Leg, Reference, Schedule};
 use phx_macros::clause;
@@ -233,7 +233,10 @@ impl Core {
     pub(crate) fn fund_stage(
         &mut self,
         work: &mut crate::core_day::Work,
-        ((day, calendar, streams, order), pool): ((Day, &Calendar, &Streams, &StreamDecl), Option<&phx_exec::Pool>),
+        ((day, calendar, streams, order), pool): (
+            (Day, &Calendar, &WorldStreams, &StreamDecl),
+            Option<&phx_exec::Pool>,
+        ),
         ranges: &Ranges,
     ) -> (Vec<Flow>, Vec<Flow>) {
         let (Some(deposit), Some(lending)) =

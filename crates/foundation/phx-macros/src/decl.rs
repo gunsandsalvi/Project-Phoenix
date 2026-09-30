@@ -403,8 +403,9 @@ fn flag(fields: &[(String, &Expr)], key: &str, span: Span) -> syn::Result<bool> 
 
 fn stream(d: &Decl) -> syn::Result<TokenStream> {
     let span = d.name.span();
-    let fields = d.fields(&["purpose", "keyed", "clause"])?;
+    let fields = d.fields(&["family", "purpose", "keyed", "clause"])?;
     qualified(&d.id)?;
+    let family = variant(required(&fields, "family", span)?, &["World", "Observer", "Advice"])?;
     let purpose = variant(required(&fields, "purpose", span)?, &PURPOSES)?;
     let keyed = flag(&fields, "keyed", span)?;
     let clause = clause_of(&fields, span)?;
@@ -416,6 +417,7 @@ fn stream(d: &Decl) -> syn::Result<TokenStream> {
         impl ::phx_core::streams::StreamDef for #name {
             const DECL: ::phx_core::streams::StreamDecl = ::phx_core::streams::StreamDecl {
                 name: #id,
+                family: ::phx_core::streams::StreamFamily::#family,
                 purpose: ::phx_core::streams::Purpose::#purpose,
                 keyed: #keyed,
                 clause: #clause,

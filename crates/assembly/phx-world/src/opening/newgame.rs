@@ -1,7 +1,9 @@
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 
-use phx_core::{DataFile, Declarations, JointProfile, Level, OpeningCtx, OpeningPhase, Pinned, Streams, draw_profile};
+use phx_core::{
+    DataFile, Declarations, JointProfile, Level, OpeningCtx, OpeningPhase, Pinned, WorldStreams, draw_profile,
+};
 use phx_id::CountryId;
 use phx_macros::clause;
 use phx_num::Missing;
@@ -157,7 +159,7 @@ pub fn new_game(data: &Path, setup_path: &Path, seed: Seed) -> Result<NewGame, V
     if !refused.is_empty() {
         return Err(refused);
     }
-    let streams = Streams::new(seed, &[SETUP_STREAM, NAMES_STREAM])?;
+    let streams = WorldStreams::new(seed, &[SETUP_STREAM, NAMES_STREAM])?;
     let ctx = OpeningCtx::new(&streams, SETUP_PHASE);
     let mut world = ctx.draws(&SETUP_STREAM, Subject::new(SubjectTag::World, 0));
     let mut per_country: Vec<Draws> = (0..setup.country.len())

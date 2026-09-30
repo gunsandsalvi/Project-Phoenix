@@ -11,7 +11,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::calendar::Calendar;
-use phx_core::{OpeningCountry, Register, StreamDecl, Streams, opening_subject};
+use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams, opening_subject};
 use phx_id::{Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
@@ -137,7 +137,7 @@ pub struct JobsOpening<'a> {
     pub countries: &'a [OpeningCountry],
     pub calendar: &'a Calendar,
     pub today: Day,
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub stream: &'a StreamDecl,
 }
 

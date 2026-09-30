@@ -1,8 +1,9 @@
 use phx_id::Day;
 use phx_macros::clause;
 use phx_num::violation;
+pub use phx_rand::StreamFamily;
 use phx_rand::key::fnv1a64;
-use phx_rand::{Draws, Seed, StreamKey, Subject, stream_key};
+use phx_rand::{Draws, Seed, SlotOrdinal, StreamKey, Subject, family_key};
 
 use crate::consts::{KEYED_ORDINAL, OPENING_ORDINAL_BASE};
 use crate::substep::SubStep;
@@ -38,11 +39,13 @@ pub enum Purpose {
     Lot,
 }
 
-/// A named stream: one process's draws.
-#[clause("CHN.1")]
+/// A named stream: one process's draws, of one family — the world's, the observer's or the player's advice's — whose
+/// code alone opens it.
+#[clause("CHN.1", "REP.16")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct StreamDecl {
     pub name: &'static str,
+    pub family: StreamFamily,
     pub purpose: Purpose,
     /// Drawn from its name and subject alone, recomputed whenever read, as a schedule's phase is.
     pub keyed: bool,
@@ -77,24 +80,40 @@ struct Entry {
 /// The run's streams, each keyed by its name and the one seed.
 #[clause("CHN.1", "CHN.6", "CHN.8")]
 #[derive(Debug)]
-pub struct Streams {
+pub struct WorldStreams {
     entries: Vec<Entry>,
 }
 
-impl Streams {
-    /// The streams of a run.
+impl WorldStreams {
+    /// The streams of a run, made as the world is assembled, each keyed by its family, its name and the seed.
     ///
     /// # Errors
-    /// A name declared twice, or two names whose FNV-1a hashes collide.
-    pub fn new(seed: Seed, decls: &[StreamDecl]) -> Result<Streams, Vec<String>> {
-        let mut entries: Vec<Entry> = decls.iter().map(|d| Entry { decl: *d, key: stream_key(seed, d.name) }).collect();
+    /// A name declared twice, in one family or two; two names whose FNV-1a hashes collide; or the observer's purpose
+    /// outside the observer's family, or its family for another purpose.
+    #[phx_macros::opening]
+    pub fn new(seed: Seed, decls: &[StreamDecl]) -> Result<WorldStreams, Vec<String>> {
+        let mut entries: Vec<Entry> =
+            decls.iter().map(|d| Entry { decl: *d, key: family_key(seed, d.family, d.name) }).collect();
         entries.sort_unstable_by_key(|e| e.decl.name);
         let mut errors = Vec::new();
         for pair in entries.windows(2) {
             if let [a, b] = pair
                 && a.decl.name == b.decl.name
             {
-                errors.push(format!("stream `{}` declared twice", a.decl.name));
+                if a.decl.family == b.decl.family {
+                    errors.push(format!("stream `{}` declared twice", a.decl.name));
+                } else {
+                    errors.push(format!("stream `{}` declared in two families", a.decl.name));
+                }
+            }
+        }
+        // The observer's purpose is the observer's family's, and only its.
+        for e in &entries {
+            if (e.decl.purpose == Purpose::Observer) != (e.decl.family == StreamFamily::Observer) {
+                errors.push(format!(
+                    "stream `{}` of the observer's purpose outside its family, or of its family for another purpose",
+                    e.decl.name
+                ));
             }
         }
         let mut hashes: Vec<(u64, &str)> =
@@ -108,7 +127,7 @@ impl Streams {
                 errors.push(format!("streams `{a}` and `{b}` share a hash"));
             }
         }
-        if errors.is_empty() { Ok(Streams { entries }) } else { Err(errors) }
+        if errors.is_empty() { Ok(WorldStreams { entries }) } else { Err(errors) }
     }
 
     #[must_use]
@@ -127,6 +146,14 @@ impl Streams {
         self.entries.binary_search_by_key(&name, |e| e.decl.name).ok().and_then(|i| self.entries.get(i)).map(|e| e.decl)
     }
 
+    /// A world stream's entry; another family's declaration stops the run, since the world never draws from it.
+    fn world(&self, decl: &StreamDecl) -> Entry {
+        if decl.family != StreamFamily::World {
+            violation!(clause = "REP.16", "the world opening a stream of another family");
+        }
+        self.entry(decl)
+    }
+
     fn entry(&self, decl: &StreamDecl) -> Entry {
         let found =
             self.entries.binary_search_by_key(&decl.name, |e| e.decl.name).ok().and_then(|i| self.entries.get(i));
@@ -138,7 +165,7 @@ impl Streams {
 
     /// A day stream's key, which a meeting draws each round's tastes from by its buyers' subjects.
     pub fn key(&self, decl: &StreamDecl) -> StreamKey {
-        let e = self.entry(decl);
+        let e = self.world(decl);
         if e.decl.keyed {
             violation!(clause = "CHN.6", "a keyed stream drawn by day");
         }
@@ -150,7 +177,18 @@ impl Streams {
     #[clause("CHN.1")]
     #[must_use]
     pub fn open(&self, decl: &StreamDecl, subject: Subject, day: Day, ordinal: u8) -> Draws {
-        let e = self.entry(decl);
+        let e = self.world(decl);
+        Self::by_day(e, subject, day, ordinal)
+    }
+
+    /// The draws of a world stream for a subject in a slot of the day.
+    #[clause("CHN.1", "CHN.6")]
+    #[must_use]
+    pub fn open_at(&self, decl: &StreamDecl, subject: Subject, day: Day, slot: SlotOrdinal) -> Draws {
+        Self::by_day(self.world(decl), subject, day, slot.get())
+    }
+
+    fn by_day(e: Entry, subject: Subject, day: Day, ordinal: u8) -> Draws {
         if e.decl.keyed {
             violation!(clause = "CHN.6", "a keyed stream opened by day");
         }
@@ -160,7 +198,7 @@ impl Streams {
     /// A keyed stream's draws for a subject, the same whenever they are read.
     #[must_use]
     pub fn open_keyed(&self, decl: &StreamDecl, subject: Subject) -> Draws {
-        let e = self.entry(decl);
+        let e = self.world(decl);
         if !e.decl.keyed {
             violation!(clause = "CHN.6", "a stream drawn by day opened as keyed");
         }
@@ -171,7 +209,7 @@ impl Streams {
     /// phase in each of its schedules is its own, and the same whenever read.
     #[must_use]
     pub fn open_keyed_at(&self, decl: &StreamDecl, subject: Subject, place: u32) -> Draws {
-        let e = self.entry(decl);
+        let e = self.world(decl);
         if !e.decl.keyed {
             violation!(clause = "CHN.6", "a stream drawn by day opened as keyed");
         }
@@ -179,93 +217,57 @@ impl Streams {
     }
 }
 
-/// A stream opened for the observer that is not the observer's.
+/// A stream opened for the observer, or the player's advice, that is not of its family.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct NotObserver;
 
-/// The observer's draws: only streams of the observer's purpose, so looking draws nothing the world draws.
-#[clause("Law 17")]
+/// The observer's draws: only streams of the observer's family, so looking draws nothing the world draws.
+#[clause("Law 17", "REP.16")]
 #[derive(Debug)]
 pub struct ObserverDraws<'a> {
-    streams: &'a Streams,
+    streams: &'a WorldStreams,
 }
 
 impl<'a> ObserverDraws<'a> {
     #[must_use]
-    pub fn new(streams: &'a Streams) -> ObserverDraws<'a> {
+    pub fn new(streams: &'a WorldStreams) -> ObserverDraws<'a> {
         ObserverDraws { streams }
     }
 
     /// # Errors
     /// When the stream is not the observer's.
     pub fn open(&self, decl: &StreamDecl, subject: Subject, day: Day) -> Result<Draws, NotObserver> {
-        if decl.purpose != Purpose::Observer {
+        if decl.family != StreamFamily::Observer {
             return Err(NotObserver);
         }
-        Ok(self.streams.open(decl, subject, day, SubStep::S10e.ordinal()))
+        Ok(WorldStreams::by_day(self.streams.entry(decl), subject, day, SubStep::S10e.ordinal()))
+    }
+}
+
+/// The player's advice's draws, and the player's own — which household the player takes: only streams of the
+/// advice's family, so advising or choosing the player draws nothing the world draws and the world nothing of theirs.
+#[clause("REP.16")]
+#[derive(Debug)]
+pub struct AdviceDraws<'a> {
+    streams: &'a WorldStreams,
+}
+
+impl<'a> AdviceDraws<'a> {
+    #[must_use]
+    pub fn new(streams: &'a WorldStreams) -> AdviceDraws<'a> {
+        AdviceDraws { streams }
+    }
+
+    /// # Errors
+    /// When the stream is not the advice's.
+    pub fn open(&self, decl: &StreamDecl, subject: Subject, day: Day, ordinal: u8) -> Result<Draws, NotObserver> {
+        if decl.family != StreamFamily::Advice {
+            return Err(NotObserver);
+        }
+        Ok(WorldStreams::by_day(self.streams.entry(decl), subject, day, ordinal))
     }
 }
 
 #[cfg(test)]
-mod tests {
-    use phx_id::Day;
-    use phx_rand::{Seed, Subject, SubjectTag, open_unit, stream_key};
-
-    use super::{NotObserver, ObserverDraws, Purpose, StreamDecl, Streams};
-
-    const fn stream(name: &'static str, purpose: Purpose) -> StreamDecl {
-        StreamDecl { name, purpose, keyed: false, clause: "CHN.3" }
-    }
-
-    #[test]
-    fn stream_names_unique_and_fnv_distinct() {
-        let seed = Seed::new(1);
-        assert!(
-            Streams::new(seed, &[stream("DEM.mortality", Purpose::Mortality), stream("DEM.illness", Purpose::Illness)])
-                .is_ok()
-        );
-        let twice = [stream("DEM.mortality", Purpose::Mortality), stream("DEM.mortality", Purpose::Mortality)];
-        assert!(Streams::new(seed, &twice).is_err());
-    }
-
-    #[test]
-    fn adding_a_stream_changes_no_other_key() {
-        let seed = Seed::new(7);
-        let names = ["DEM.mortality", "DEM.illness", "GEO.weather"];
-        let before: Vec<_> = names.iter().map(|n| stream_key(seed, n)).collect();
-        let decls: Vec<StreamDecl> =
-            names.iter().chain(&["TEC.discovery"]).map(|n| stream(n, Purpose::Discovery)).collect();
-        let with_one_more = Streams::new(seed, &decls).unwrap();
-        let subject = Subject::new(SubjectTag::Party, 5);
-        for (d, key) in decls.iter().zip(before) {
-            let mut a = with_one_more.open(d, subject, Day::new(3), 4);
-            let mut b = phx_rand::Draws::new(key, subject, 3, 4);
-            assert_eq!(open_unit(&mut a).to_bits(), open_unit(&mut b).to_bits(), "{}", d.name);
-        }
-    }
-
-    #[test]
-    fn observer_draws_refuse_world_streams() {
-        let tracer = stream("OBS.tracer", Purpose::Observer);
-        let mortality = stream("DEM.mortality", Purpose::Mortality);
-        let streams = Streams::new(Seed::new(1), &[tracer, mortality]).unwrap();
-        let observer = ObserverDraws::new(&streams);
-        let subject = Subject::new(SubjectTag::Party, 1);
-        assert!(observer.open(&tracer, subject, Day::new(1)).is_ok());
-        assert_eq!(observer.open(&mortality, subject, Day::new(1)).err(), Some(NotObserver));
-    }
-
-    #[test]
-    fn keyed_streams_are_the_same_whenever_read() {
-        let phase =
-            StreamDecl { name: "TIME.schedule_phase", purpose: Purpose::SchedulePhase, keyed: true, clause: "TIME.5" };
-        let streams = Streams::new(Seed::new(2), &[phase]).unwrap();
-        let subject = Subject::new(SubjectTag::Party, 9);
-        let (mut a, mut b) = (streams.open_keyed(&phase, subject), streams.open_keyed(&phase, subject));
-        assert_eq!(open_unit(&mut a).to_bits(), open_unit(&mut b).to_bits());
-        let third = open_unit(&mut streams.open_keyed_at(&phase, subject, 3)).to_bits();
-        assert_eq!(third, open_unit(&mut streams.open_keyed_at(&phase, subject, 3)).to_bits());
-        assert_ne!(third, open_unit(&mut streams.open_keyed_at(&phase, subject, 4)).to_bits(), "each place its own");
-        assert!(std::panic::catch_unwind(|| streams.open(&phase, subject, Day::new(1), 0)).is_err());
-    }
-}
+#[path = "streams_tests.rs"]
+mod tests;

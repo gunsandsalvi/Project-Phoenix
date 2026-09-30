@@ -9,9 +9,9 @@ use phx_macros::clause;
 use phx_market::carriage::FreightTech;
 use phx_num::Count;
 
-declare_stream! { pub LotStream = "FRT.capacity_lot" { purpose: Meeting, keyed: false, clause: "FRT.7" } }
-declare_stream! { pub OpeningStream = "FRT.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
-declare_stream! { pub VisitStream = "FRT.visits" { purpose: Occasion, keyed: false, clause: "FRT.5" } }
+declare_stream! { pub LotStream = "FRT.capacity_lot" { family: World, purpose: Meeting, keyed: false, clause: "FRT.7" } }
+declare_stream! { pub OpeningStream = "FRT.opening" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub VisitStream = "FRT.visits" { family: World, purpose: Occasion, keyed: false, clause: "FRT.5" } }
 
 declare_prim! {
     /// Each mode's share of the people carriage employs, by the mode's place, which the carriers' modes are drawn by.

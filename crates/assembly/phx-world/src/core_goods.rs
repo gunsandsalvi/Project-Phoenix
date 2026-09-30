@@ -15,7 +15,7 @@ use phx_core::calendar::Calendar;
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Bound, Cost, Good, Held, Holding, NATURE, UnitIds, breaks, nature_net};
 use phx_core::wheel::DueWheel;
-use phx_core::{OpeningCountry, Register, StreamDef, Streams, SubStep};
+use phx_core::{OpeningCountry, Register, StreamDef, SubStep, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
 use phx_market::meet::{Buyer, GoodsLeg, Meeting, Place, Sale, Stall, Tastes, meet};
@@ -228,7 +228,7 @@ pub struct Delivery {
 pub struct GoodsCtx<'a> {
     pub register: &'a Register,
     pub calendar: &'a Calendar,
-    pub streams: &'a Streams,
+    pub streams: &'a WorldStreams,
     pub rule: &'a sys_hh::Own,
     pub management: &'a sys_frm::decide::Management,
     pub regions: &'a [CountryId],

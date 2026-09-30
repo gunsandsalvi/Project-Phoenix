@@ -12,8 +12,8 @@ use phx_core::register::values::Table1;
 use phx_core::{Declarations, StreamDef, System, declare_prim, declare_stream};
 use phx_num::Count;
 
-declare_stream! { pub VisitStream = "CAP.visits" { purpose: Occasion, keyed: false, clause: "CAP.4" } }
-declare_stream! { pub OpeningStream = "CAP.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub VisitStream = "CAP.visits" { family: World, purpose: Occasion, keyed: false, clause: "CAP.4" } }
+declare_stream! { pub OpeningStream = "CAP.opening" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 
 declare_prim! {
     /// Each kind's geometric rate of depreciation a year.
