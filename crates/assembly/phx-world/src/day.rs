@@ -123,7 +123,7 @@ impl World {
             .timed(t, "settle", |c| c.run_day((day, calendar, streams, &crate::opening::prims::SETTLE_ORDER), t));
         settled.note();
         self.core.timed(t, "audit", |c| c.audit(day));
-        self.core.timed(t, "statistics", |c| c.stats_day(day, (calendar, &regions), hh.map(|h| &h.types)));
+        self.core.timed(t, "statistics", |c| c.stats_day(day, (calendar, (&regions, geo)), hh.map(|h| &h.types)));
         let _ = self.core.happened.publish(day, &self.news);
         self.core.timed(t, "player", |c| c.player_day(day));
         let stages = std::mem::take(&mut self.core.stage_ns);

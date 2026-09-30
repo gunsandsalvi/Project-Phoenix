@@ -1,10 +1,4 @@
-# The sites PC-98 admits for now, 85 in all, held to `phx_check.exceptions_pc98`. Each migration removes its own; a site is never added.
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_accounts.rs"
-item = "Core::owned"
-what = "a comparison with a name"
-count = 2
+# The sites PC-98 admits for now, 79 in all, held to `phx_check.exceptions_pc98`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_agencies.rs"
@@ -23,18 +17,6 @@ path = "crates/assembly/phx-world/src/core_bills.rs"
 item = "Core::open_bills"
 what = "a comparison with a name"
 count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_central.rs"
-item = "Core::issuer_held"
-what = "a comparison with a name"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_central.rs"
-item = "Core::money_class"
-what = "a comparison with a name"
-count = 2
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_central.rs"

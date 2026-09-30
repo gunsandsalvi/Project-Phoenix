@@ -22,7 +22,7 @@ fn player_decides(w: Inspector<'_>) -> Outcome {
     if store.parties.at(key.slot()).is_none() {
         return Outcome::Fail(format!("the player's household {} is not live", key.word()));
     }
-    let region = core.household_decl.as_ref().and_then(|d| match d.sited_by {
+    let region = core.declared.household.as_ref().and_then(|d| match d.sited_by {
         Missing::Present(at) => store.record(key.slot()).get(at).map(|v| v.get()),
         Missing::Absent => None,
     });

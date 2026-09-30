@@ -431,7 +431,7 @@ impl Core {
 
     /// Where a household's record holds its income a year, as its kind's position.
     fn income_word(&self) -> Option<usize> {
-        let decl = self.household_decl.as_ref()?;
+        let decl = self.declared.household.as_ref()?;
         let income_name = <if_pop::facts::Income as phx_core::FactDef>::ITEM.name;
         Some(decl.attrs.len() + decl.positions.iter().position(|p| p.item.name == income_name)?)
     }
@@ -451,7 +451,7 @@ impl Core {
 
     /// A person's last wage point written to it.
     pub(crate) fn put_last_point(&mut self, (household, person): (PartyKey, u64), point: i64) {
-        let Some(decl) = self.household_decl.clone() else { return };
+        let Some(decl) = self.declared.household.clone() else { return };
         let Some(Some(ps)) = self.persons.get_mut(usize::from(household.kind())) else { return };
         let Some(at) = ps.place_of(household.slot(), person) else { return };
         let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };

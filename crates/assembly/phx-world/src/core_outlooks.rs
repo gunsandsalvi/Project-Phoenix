@@ -307,7 +307,7 @@ impl crate::core::Core {
     #[clause("VAL.23")]
     pub(crate) fn refresh_windows(&mut self, types: &Types, date: phx_id::Date) {
         let mut ages = vec![(0_u64, 0_u64); types.windows.len()];
-        if let (Some((place, [_, _, _, w])), Some(decl)) = (self.decisions.household, self.household_decl.clone()) {
+        if let (Some((place, [_, _, _, w])), Some(decl)) = (self.decisions.household, self.declared.household.clone()) {
             let slots: Vec<phx_id::Slot> =
                 self.kinds.get(place).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
             for slot in slots {

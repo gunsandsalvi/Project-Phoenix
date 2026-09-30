@@ -557,16 +557,16 @@ impl Core {
     #[must_use]
     pub fn issuer_held(&self) -> [i128; 3] {
         let mut held = [0_i128; 3];
-        let state = |k: usize| self.names.get(k).is_some_and(|n| *n == "treasury" || *n == "agency");
         for (k, store) in self.kinds.iter().enumerate() {
             let Some(a) = store.accounts.as_ref() else { continue };
-            let bank = self.bank_kind.is_some_and(|b| usize::from(b) == k);
+            let traits = crate::core_kinds::of(&self.declared.kinds, k);
+            let bank = traits.takes_deposits;
             for ((b, m), p) in a.bank.slice().iter().zip(a.balance.slice()).zip(a.pending.slice()) {
                 let class = if bank {
                     RESERVES
                 } else if *b != phx_core::settle::AT_ISSUER {
                     continue;
-                } else if state(k) {
+                } else if traits.owners == phx_core::kinds::Owners::State {
                     TREASURY_ACCOUNT
                 } else {
                     NOTES
@@ -585,13 +585,14 @@ impl Core {
         if self.issuers.contains(&p) {
             return None;
         }
-        if self.bank_kind == Some(p.kind()) {
+        let traits = crate::core_kinds::of(&self.declared.kinds, usize::from(p.kind()));
+        if traits.takes_deposits {
             return Some(RESERVES);
         }
         let b = self.kinds.get(usize::from(p.kind()))?.accounts.as_ref()?.bank.get(p.slot())?;
         if b != phx_core::settle::AT_ISSUER {
             Some(RESERVES)
-        } else if self.names.get(usize::from(p.kind())).is_some_and(|n| *n == "treasury" || *n == "agency") {
+        } else if traits.owners == phx_core::kinds::Owners::State {
             Some(TREASURY_ACCOUNT)
         } else {
             Some(NOTES)

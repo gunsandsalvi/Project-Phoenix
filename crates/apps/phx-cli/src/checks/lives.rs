@@ -183,7 +183,8 @@ fn life_table_traced(w: Inspector<'_>) -> Outcome {
 /// as the events of the process that takes them from school.
 fn cohorts_leave(w: Inspector<'_>) -> Outcome {
     let core = w.core();
-    let (Some(place), Some(decl)) = (core.names.iter().position(|n| *n == "household"), core.household_decl.as_ref())
+    let (Some(place), Some(decl)) =
+        (core.names.iter().position(|n| *n == "household"), core.declared.household.as_ref())
     else {
         return Outcome::NotYet("no households on the core");
     };
@@ -264,7 +265,7 @@ impl Structure {
 pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let core = w.core();
     let place = core.names.iter().position(|n| *n == "household")?;
-    let decl = core.household_decl.as_ref()?;
+    let decl = core.declared.household.as_ref()?;
     let (store, persons) = (core.kinds.get(place)?, core.persons.get(place)?.as_ref()?);
     let bounds = w.register().partition("DEM.age_classes").ok()?.bounds.to_vec();
     let mut classes: Vec<(i64, [u64; 2])> = bounds.iter().map(|b| (*b, [0, 0])).collect();

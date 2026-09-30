@@ -30,10 +30,7 @@ use crate::opening::asked::Asked;
 use crate::opening::sheet::Sheet;
 use phx_core::capacity::{AGENT_ROWS, KIND_ROWS, WHEEL_DAYS};
 
-use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, KINDS, TREASURY};
-
-/// The kinds that hold an account.
-const HOLDS_MONEY: [usize; 6] = [TREASURY, BANK, FIRM, ESTATE, HOUSEHOLD, AGENCY];
+use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, HOUSEHOLD, KINDS, TREASURY};
 
 /// A job drawn at the opening, before its employer is dealt: its household, its person, its country, its class —
 /// occupation, hours and the band its tenure began in — and its region.
@@ -98,6 +95,8 @@ pub struct CoreOpening<'a> {
     pub today: Day,
     /// The household kind and its place among the population's kinds.
     pub household: (&'a PopKindDecl, usize),
+    /// The kinds' declared traits and each country's heirless destination's kind.
+    pub declared: &'a crate::core_kinds::Bound,
 }
 
 /// A country's households' banking: each banked household with its bank's place and deposit's weight, and each
@@ -151,7 +150,7 @@ impl Rules {
 impl Core {
     /// The core with no party yet: each kind's store, the households' with their persons.
     #[opening]
-    fn empty(household: &PopKindDecl, household_pop: usize) -> Core {
+    fn empty(household: &PopKindDecl, household_pop: usize, declared: &crate::core_kinds::Bound) -> Core {
         let mut space = AddressSpace::empty();
         let mut kinds = Vec::new();
         let mut persons = Vec::new();
@@ -163,7 +162,7 @@ impl Core {
                 (KIND_ROWS, KIND_ROWS_PER_CHUNK, 1)
             };
             let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, kind, rows, chunk, stride);
-            if HOLDS_MONEY.contains(&place) {
+            if crate::core_kinds::of(&declared.0, place).holds_money {
                 store = store.with_accounts(&mut space, rows, chunk);
             }
             kinds.push(store);
@@ -178,7 +177,8 @@ impl Core {
         Core {
             space,
             household_pop,
-            names: KINDS.to_vec(),
+            names: KINDS.iter().map(|k| k.name).collect(),
+
             kinds,
             persons,
             keys: Vec::new(),
@@ -190,7 +190,11 @@ impl Core {
             counts: crate::core::RunCounts::default(),
             days: Vec::new(),
             hazards: Vec::new(),
-            household_decl: Some(household.clone()),
+            declared: crate::core_kinds::Declared {
+                household: Some(household.clone()),
+                kinds: declared.0.clone(),
+                heirless: declared.1.clone(),
+            },
             persons_opened: 0,
             treasuries: Vec::new(),
             agencies: Vec::new(),
@@ -256,7 +260,7 @@ impl Core {
     #[clause("GEN.2", "GEN.3", "GEN.4", "PTY.1", "PTY.3", "PTY.9", "REP.26", "BNK.1", "SOC.3", "MON.1")]
     pub fn open(o: &CoreOpening<'_>) -> Result<Core, String> {
         let (decl, household_pop) = o.household;
-        let mut core = Core::empty(decl, household_pop);
+        let mut core = Core::empty(decl, household_pop, o.declared);
         let rules = Rules::of(o.register)?;
         let ctx = OpeningCtx::new(o.streams, phx_core::CONTRACTS);
         let date = o.calendar.date(o.today);

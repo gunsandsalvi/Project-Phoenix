@@ -23,13 +23,6 @@ pub const SAVE_PARTIAL: &str = ".partial";
 /// error to be small against the rates' own, few enough to cost a small share of 3b.
 pub const RATE_SAMPLE: u64 = 64;
 
-/// The kind of party the law names to take what an estate leaves where no heir is drawn: the treasury, in every
-/// opening country, until the inheritance law's destinations are declared per country.
-pub const HEIRLESS_DESTINATION: &str = "treasury";
-
-/// The population kind the player's party is drawn from at the opening: its household.
-pub const PLAYER_KIND: &str = "household";
-
 /// Ten, the base a unit's price exponent counts powers of.
 pub const DECADE: i64 = 10;
 
@@ -97,10 +90,17 @@ pub mod families {
     ];
 }
 
-/// The kinds of party on the core, in their order, and each one's place: those sited by a tile, then the households.
+/// The kinds of party on the core, the systems' declarations in the core's order, and each one's place among them.
 pub mod kinds {
-    pub const KINDS: [&str; 7] =
-        ["central_bank", "treasury", "bank", "firm", phx_core::ESTATE_KIND.name, "household", "agency"];
+    pub const KINDS: [phx_core::KindDecl; 7] = [
+        sys_cb::CENTRAL_BANK,
+        sys_cb::TREASURY,
+        sys_bnk::BANK,
+        sys_frm::FIRM,
+        phx_core::ESTATE_KIND,
+        sys_dem::HOUSEHOLD_KIND,
+        sys_soc::AGENCY,
+    ];
     pub const CENTRAL_BANK: usize = 0;
     pub const TREASURY: usize = 1;
     pub const BANK: usize = 2;

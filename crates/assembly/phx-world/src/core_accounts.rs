@@ -84,10 +84,9 @@ impl Accounts {
 }
 
 impl Core {
-    /// Whether a party keeps an equity account: a firm or a bank, whose owners it has.
+    /// Whether a party keeps an equity account: its kind's legal form has owners who hold its equity.
     fn owned(&self, party: PartyKey) -> bool {
-        let kind = usize::from(party.kind());
-        self.names.get(kind).is_some_and(|n| *n == "firm" || *n == "bank")
+        crate::core_kinds::of(&self.declared.kinds, usize::from(party.kind())).has_owners
     }
 
     /// An event of a party's income entered on its line, where the party keeps an equity account.

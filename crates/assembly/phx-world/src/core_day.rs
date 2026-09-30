@@ -488,7 +488,9 @@ impl Core {
         let Some(store) = self.kinds.get_mut(place) else {
             violation!(clause = "PTY.9", "an estate kind with no store");
         };
-        let party = store.begin(id, &[], Some(phx_core::store::Opening { bank, balance: money }));
+        // The estate's one record word is its country, where its kind declares its place.
+        let record = [phx_num::MaybeI64::present(i64::from(country.get()))];
+        let party = store.begin(id, &record, Some(phx_core::store::Opening { bank, balance: money }));
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), party.slot());
         let at = self.keys.partition_point(|(i, _)| *i < id);
         self.keys.insert(at, (id, key));
@@ -498,24 +500,25 @@ impl Core {
 
     /// Each estate opened before today, on its country's business day, pays its claims by rank, each rank in proportion
     /// to what it is owed as far as the money goes, and the rest to its owners, a share each — a firm's estate's are the
-    /// firm's — or, where it has none, to the party the law names where no heir is drawn, its country's treasury, to
-    /// which what it owns passes too; it is ended after the day's settlement once it holds nothing.
+    /// firm's — or, where it has none, to the institution its country's inheritance law names, to which what it owns
+    /// passes too; it is ended after the day's settlement once it holds nothing.
     #[clause("PTY.9", "POP.15", "L3", "TIME.7")]
     fn estates_pay(&mut self, day: Day, calendar: &Calendar, out: &mut Vec<Flow>) -> Vec<PartyKey> {
         let mut settling = Vec::new();
         let mut heirless = Vec::new();
-        let treasury = self.names.iter().position(|n| *n == crate::consts::HEIRLESS_DESTINATION);
         for (estate, country, opened) in &self.estates {
             if *opened >= day || !calendar.is_business(*country, day) {
                 continue;
             }
-            let Some(to) = treasury.and_then(|t| {
-                self.treasuries
-                    .get(usize::from(country.get()))
-                    .copied()
-                    .flatten()
-                    .filter(|k| usize::from(k.kind()) == t)
-            }) else {
+            let c = usize::from(country.get());
+            let institutions = [
+                self.issuers.get(c).copied(),
+                self.treasuries.get(c).copied().flatten(),
+                self.agencies.get(c).copied().flatten(),
+            ];
+            let Some(to) =
+                self.declared.heirless.get(c).and_then(|kind| crate::core_kinds::heirless_party(&institutions, *kind))
+            else {
                 violation!(
                     clause = "POP.15",
                     "an estate's country with no heirless destination",

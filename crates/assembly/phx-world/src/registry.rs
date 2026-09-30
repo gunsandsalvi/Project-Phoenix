@@ -94,7 +94,7 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
 /// country — or a kind sited by a population declaration that sites it by none.
 #[opening]
 fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]) -> Vec<String> {
-    let firm = crate::consts::kinds::KINDS.get(crate::consts::kinds::FIRM);
+    let firm = crate::consts::kinds::KINDS.get(crate::consts::kinds::FIRM).map(|k| &k.name);
     d.kinds
         .iter()
         .filter_map(|(_, k)| {
@@ -366,6 +366,29 @@ fn open_stats(
     Ok(())
 }
 
+/// The core's kinds' declared traits, from their legal forms, and each country's heirless destination's kind, from
+/// its inheritance law.
+///
+/// # Errors
+/// A kind whose form the law does not declare, or a destination no kind of the core's is.
+#[opening]
+fn declared_kinds(p: &Prepared) -> Result<crate::core_kinds::Bound, String> {
+    use crate::consts::kinds::KINDS;
+    let forms = p.kernel.legal_forms.shared(&p.c.register);
+    let traits = crate::core_kinds::traits(&KINDS, forms, &if_state::stats::HOLDER_CLASSES)?;
+    let prim = p.c.register.handle::<phx_core::register::values::KindName>(&sys_dem::HEIRLESS_TO)?;
+    let heirless = (0..p.levels.len())
+        .map(|c| {
+            let country = phx_id::CountryId::new(u8::try_from(c).map_err(|e| e.to_string())?);
+            let name = &prim.get(&p.c.register, country).0;
+            KINDS.iter().position(|k| k.name == name).map(crate::core::kind_number).ok_or_else(|| {
+                format!("country {c}: its law passes an estate with no heir to `{name}`, no kind the core keeps")
+            })
+        })
+        .collect::<Result<Vec<u8>, String>>()?;
+    Ok((traits, heirless))
+}
+
 /// The core's own opening over the population's household kind.
 fn open_core(
     p: &Prepared,
@@ -377,6 +400,7 @@ fn open_core(
     let Some((household_pop, (household, _))) = found else {
         return Err(AssemblyErrors(vec!["no household kind among the population's".to_owned()]));
     };
+    let declared = declared_kinds(p).map_err(|e| AssemblyErrors(vec![e]))?;
     crate::core::Core::open(&crate::core_open::CoreOpening {
         register: &p.c.register,
         countries,
@@ -385,6 +409,7 @@ fn open_core(
         calendar,
         today,
         household: (household, household_pop),
+        declared: &declared,
     })
     .map_err(|e| AssemblyErrors(vec![e]))
 }
@@ -718,7 +743,8 @@ pub(crate) fn assemble_loaded(
     let household = parts.p.pop.iter().find(|(d, _)| d.kind == if_pop::HOUSEHOLD).map(|(d, _)| d.clone());
     let sta = parts.p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::StaKind>()).copied();
     let index = parts.p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::IndexKind>()).copied();
-    core.rebind(household, &parts.state, (sta.map(|s| s.rate), index));
+    let declared = declared_kinds(&parts.p)?;
+    core.rebind((household, declared), &parts.state, (sta.map(|s| s.rate), index));
     let mut world = world_of(parts, core, (today, config.seed));
     let (start, now) = (world.calendar.date(world.day_zero).year(), world.calendar.date(today).year());
     if now > start {

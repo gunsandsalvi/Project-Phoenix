@@ -44,7 +44,7 @@ impl Core {
         let (Some(family), Some(place), Some(Missing::Present(region_at))) = (
             self.families.iter().find(|f| f.name == PUBLIC),
             self.names.iter().position(|n| *n == "household"),
-            self.household_decl.as_ref().map(|d| d.sited_by),
+            self.declared.household.as_ref().map(|d| d.sited_by),
         ) else {
             return Vec::new();
         };

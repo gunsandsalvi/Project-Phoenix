@@ -62,8 +62,8 @@ impl Core {
         (country, delegate): (u8, bool),
         regions: &[phx_id::CountryId],
     ) -> Result<(), String> {
-        let place = self.names.iter().position(|n| *n == crate::consts::PLAYER_KIND).ok_or("no household kind")?;
-        let Some(Missing::Present(sited)) = self.household_decl.as_ref().map(|d| d.sited_by) else {
+        let place = self.names.iter().position(|n| *n == sys_dem::HOUSEHOLD_KIND.name).ok_or("no household kind")?;
+        let Some(Missing::Present(sited)) = self.declared.household.as_ref().map(|d| d.sited_by) else {
             return Err("households sited by no region".to_owned());
         };
         let store = self.kinds.get(place).ok_or("no household kind")?;

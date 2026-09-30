@@ -3,7 +3,7 @@
 [[site]]
 path = "crates/assembly/phx-world/src/core.rs"
 item = "Core"
-what = "skip `household_decl`"
+what = "skip `declared`"
 count = 1
 
 [[site]]

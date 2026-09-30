@@ -1,4 +1,4 @@
-# The sites PC-92 admits for now, 246 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
+# The sites PC-92 admits for now, 244 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -578,12 +578,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_stats.rs"
-item = "Core::country_of_party"
-what = "BTreeMap"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_stats.rs"
 item = "Core::exposed"
 what = "BTreeMap"
 count = 1
@@ -593,12 +587,6 @@ path = "crates/assembly/phx-world/src/core_stats.rs"
 item = "Core::life_table"
 what = "BTreeMap"
 count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_stats.rs"
-item = "Core::money_stock"
-what = "BTreeMap"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_stats.rs"

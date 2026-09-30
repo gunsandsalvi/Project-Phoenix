@@ -458,7 +458,7 @@ impl Core {
         let mut out: Vec<(u32, u64)> = c.regions.iter().map(|(r, _)| (*r, 0)).collect();
         let Some(place) = self.names.iter().position(|n| *n == "household") else { return out };
         let (Some(store), Some(Some(persons)), Some(decl)) =
-            (self.kinds.get(place), self.persons.get(place), self.household_decl.as_ref())
+            (self.kinds.get(place), self.persons.get(place), self.declared.household.as_ref())
         else {
             return out;
         };

@@ -486,7 +486,7 @@ impl Core {
     fn opening_spending(&self, ctx: &GoodsCtx<'_>, today: Day) -> Vec<f64> {
         let mut out = vec![0.0; self.goods.gdp.len()];
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.as_ref())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
         else {
             return out;
         };
@@ -583,7 +583,7 @@ impl Core {
     fn region_shares(&self, regions: &[CountryId]) -> Vec<f64> {
         let mut persons = vec![0.0; regions.len()];
         let Some(place) = self.names.iter().position(|n| *n == "household") else { return persons };
-        let Some(decl) = self.household_decl.as_ref() else { return persons };
+        let Some(decl) = self.declared.household.as_ref() else { return persons };
         let Missing::Present(at) = decl.sited_by else { return persons };
         if let (Some(store), Some(Some(ps))) = (self.kinds.get(place), self.persons.get(place)) {
             for slot in store.parties.live_slots() {
@@ -1225,7 +1225,7 @@ impl Core {
     #[clause("HH.1", "HH.2", "HH.4", "HH.5", "HH.18", "HH.19")]
     fn decide_spending(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
         else {
             return (0, 0);
         };

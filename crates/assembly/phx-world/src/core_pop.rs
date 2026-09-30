@@ -172,7 +172,7 @@ impl Core {
     pub(crate) fn open_hazards(&mut self, ctx: &Ctx<'_>, pop: &[(PopKindDecl, usize)], from: Day) {
         let Some((place, pop_at)) = self.household() else { return };
         let Some((decl, _)) = pop.get(pop_at) else { return };
-        self.household_decl = Some(decl.clone());
+        self.declared.household = Some(decl.clone());
         let high = self.kinds.get(place).map_or(0, |k| k.parties.high_water());
         self.hazards = ctx
             .processes
@@ -221,7 +221,7 @@ impl Core {
     #[clause("REP.7", "REP.12", "REP.26", "PTY.9")]
     pub(crate) fn run_hazards(&mut self, ctx: &Ctx<'_>, day: Day) -> PopDay {
         let mut record = PopDay::default();
-        let (Some((place, _)), Some(decl)) = (self.household(), self.household_decl.take()) else { return record };
+        let (Some((place, _)), Some(decl)) = (self.household(), self.declared.household.take()) else { return record };
         let decl = &decl;
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let reading = Reading { register: ctx.register, calendar: ctx.calendar, country_of: &country_of };
@@ -277,7 +277,7 @@ impl Core {
             self.outcomes(ctx, (place, decl), slot, (hits.get(i..end).unwrap_or(&[]), day), &mut record);
             i = end;
         }
-        self.household_decl = Some(decl.clone());
+        self.declared.household = Some(decl.clone());
         record
     }
 

@@ -63,7 +63,7 @@ impl Views {
             let Some(kind) = core.names.iter().position(|n| *n == d.kind) else {
                 return Err(format!("histogram `{}` is of `{}`, a kind the world does not keep", d.id, d.kind));
             };
-            let decl = core.household_decl.as_ref().filter(|h| h.kind == d.kind);
+            let decl = core.declared.household.as_ref().filter(|h| h.kind == d.kind);
             let of = match (d.of.as_str(), d.of.strip_prefix("attr.")) {
                 ("persons", _) => Of::Persons,
                 (of, None) if of.starts_with("contracts.") => {

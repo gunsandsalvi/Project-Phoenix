@@ -44,7 +44,7 @@ pub struct Core {
     pub days: Vec<crate::core_day::CoreDay>,
     pub hazards: Vec<crate::core_pop::Hazard>,
     #[saved(skip)]
-    pub household_decl: Option<phx_pop::kind::PopKindDecl>,
+    pub declared: crate::core_kinds::Declared,
     /// The persons the households held when the core opened.
     pub persons_opened: u64,
     /// Each country's treasury, and the estates waiting to settle: each with its country and the day it opened.
@@ -158,11 +158,11 @@ impl Core {
     /// them: they are code, which a save never holds.
     pub(crate) fn rebind(
         &mut self,
-        household: Option<phx_pop::kind::PopKindDecl>,
+        (household, (kinds, heirless)): (Option<phx_pop::kind::PopKindDecl>, crate::core_kinds::Bound),
         state: &crate::state::State,
         (rate, index): (Option<crate::core_stats::Rate>, Option<if_state::stats::IndexKind>),
     ) {
-        self.household_decl = household;
+        self.declared = crate::core_kinds::Declared { household, kinds, heirless };
         self.state.claim = state.benefit.map(|k| k.claim);
         self.state.included = state.tax.map(|k| k.included);
         if self.names.contains(&"treasury") && self.bank_kind.is_some() {

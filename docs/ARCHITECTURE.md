@@ -2316,9 +2316,9 @@ is left in ends into one (`Core::end_household`), taking its money and the share
 it was party to closing into a claim on the estate (`close_contracts`: an employee's wages owed and severance for its
 years served at the employees' rank, what else it owes at the creditors'), its owners owning the estate in its place.
 From its country's next business day the estate pays its claims by rank, each rank in proportion to what it is owed as
-far as the money goes, and the rest to its owners, a share each, or where it has none to the party the law names where
-no heir is drawn, its country's treasury (`HEIRLESS_DESTINATION`), since no heir is drawn before the kinship lines
-exist (S2.04), to which what it owns passes too; it ends after the day's settlement once it holds nothing. The
+far as the money goes, and the rest to its owners, a share each, or where it has none to the institution of the kind
+its country's inheritance law names (`DEM.heirless_to`, the treasury in every profile), since no heir is drawn before
+the kinship lines exist (S2.04), to which what it owns passes too; it ends after the day's settlement once it holds nothing. The
 insolvency law's order of classes and the secured claims' collateral are S2.03's.
 
 Firms end in **default of payment** (FRM.15): each country's insolvency law names the grace
@@ -2495,8 +2495,15 @@ rounding of the stored places over the terms summed (Law 7).
 
 ### 10.3 Canonical drawing
 
-**The core's opening** (`phx_world::core_open`) draws its own world, no copy of anything. Its kinds are declared in
-their order (`consts::kinds`: central bank, treasury, bank, firm, estate, household), a kind's number its place. Each
+**The core's opening** (`phx_world::core_open`) draws its own world, no copy of anything. Its kinds are the systems'
+declarations in the core's order (`consts::kinds::KINDS`: central bank, treasury, bank, firm, estate, household,
+agency), a kind's number its place. What the core reads of a kind is read from its declarations, bound at assembly and
+again at load and never saved (`Core::declared`, `core_kinds`): whether it keeps an equity account (its form's
+`HasOwners`), whether it holds money (its form may and issues no currency), whether it takes deposits, who owns it
+(an account of a state-owned form at the issuer is the state's account), the money stock's class its deposits count in
+(reserves of the deposit-taking forms, then the holder forms `if-state` publishes, all others in one), its place (a
+party's country read from its site's tile through the map, its region word, its population declaration's region or
+its country word, which an estate's record holds), and each country's heirless destination's kind. Each
 country's central bank and treasury share a site drawn by CB's; its banks are as many as the Zipf law fitted to their
 concentration gives (`sys_bnk::bank_weights`), each sited by BNK's draw. Its households are drawn region by region by
 DEM (`sys_dem::draw_country`), and each household's adults' labour (`sys_lab::Rule::draw`), its banking

@@ -72,7 +72,7 @@ impl Core {
     /// What a firm's working owners' hours earn a month: each one's last wage point; none where an owner holds none.
     pub(crate) fn owners_pay(&self, firm: PartyKey, country: usize) -> Option<f64> {
         let law = self.labour.laws.get(country)?;
-        let decl = self.household_decl.as_ref()?;
+        let decl = self.declared.household.as_ref()?;
         let mut pay = 0.0;
         for w in self.owners.working.get(&firm).into_iter().flatten() {
             let ps = self.persons.get(usize::from(w.household.kind()))?.as_ref()?;

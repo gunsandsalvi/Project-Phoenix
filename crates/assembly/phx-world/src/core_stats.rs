@@ -202,14 +202,14 @@ impl Core {
     pub(crate) fn stats_day(
         &mut self,
         day: Day,
-        (calendar, regions): (&Calendar, &[phx_id::CountryId]),
+        (calendar, places): (&Calendar, Places<'_>),
         types: Option<&phx_val::types::Types>,
     ) {
         let period = period_of(calendar, day);
         match self.stats.period {
             None => self.stats.period = Some(period),
             Some(p) if p != period => {
-                self.close_month(p, calendar, regions);
+                self.close_month(p, calendar, places);
                 self.stats.period = Some(period);
             }
             Some(_) => {}
@@ -234,9 +234,9 @@ impl Core {
     }
 
     /// A month closed: each country's series computed from its records and queued for publication.
-    fn close_month(&mut self, period: u32, calendar: &Calendar, regions: &[phx_id::CountryId]) {
+    fn close_month(&mut self, period: u32, calendar: &Calendar, (regions, geo): Places<'_>) {
         let labour = self.labour_force(regions);
-        let money = self.money_stock(regions);
+        let money = self.money_stock((regions, geo));
         let exposed = self.exposed(regions, period);
         let months = std::mem::take(&mut self.stats.months);
         let n = months.len();
@@ -322,7 +322,7 @@ impl Core {
     fn exposed(&self, regions: &[phx_id::CountryId], period: u32) -> Vec<BTreeMap<(u32, u32), u64>> {
         let mut out = vec![BTreeMap::new(); self.stats.laws.len()];
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.as_ref())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
         else {
             return out;
         };
@@ -358,7 +358,7 @@ impl Core {
     fn labour_force(&self, regions: &[phx_id::CountryId]) -> Vec<[i64; if_state::stats::LABOUR_STATES]> {
         let mut out = vec![[0_i64; if_state::stats::LABOUR_STATES]; self.stats.laws.len()];
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.as_ref())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
         else {
             return out;
         };
@@ -410,25 +410,14 @@ impl Core {
 
     /// Each country's money stock at the day: the banks' reserves, and deposits held by households, by firms and by
     /// every other holder.
-    fn money_stock(&self, regions: &[phx_id::CountryId]) -> Vec<Vec<i64>> {
+    fn money_stock(&self, (regions, geo): (&[phx_id::CountryId], &phx_geo::GeoState)) -> Vec<Vec<i64>> {
         let mut out = vec![vec![0_i64; crate::consts::stats::MONEY_CLASSES]; self.stats.laws.len()];
-        let at = |name: &str| self.names.iter().position(|n| *n == name);
-        let estates: BTreeMap<PartyKey, usize> =
-            self.estates.iter().map(|(e, c, _)| (*e, usize::from(c.get()))).rev().collect();
         for (k, store) in self.kinds.iter().enumerate() {
             let Some(a) = store.accounts.as_ref() else { continue };
-            let class = if Some(k) == self.bank_kind.map(usize::from) {
-                0
-            } else if Some(k) == at("household") {
-                1
-            } else if Some(k) == at("firm") {
-                2
-            } else {
-                crate::consts::stats::MONEY_CLASSES - 1
-            };
+            let class = crate::core_kinds::of(&self.declared.kinds, k).money_class;
             for slot in store.parties.live_slots() {
                 let party = PartyKey::new(crate::core::kind_number(k), slot);
-                let Some(country) = self.country_of_party(party, (regions, &estates)) else {
+                let Some(country) = self.country_of_party(party, (regions, geo)) else {
                     continue;
                 };
                 let (Some(b), Some(p)) = (a.balance.get(slot), a.pending.get(slot)) else { continue };
@@ -440,32 +429,29 @@ impl Core {
         out
     }
 
-    /// The country a party is of: a household or a firm by its region, a bank, a treasury or an estate by the country
-    /// that holds it.
+    /// The country a party is of, read from where its kind declares its place.
     fn country_of_party(
         &self,
         party: PartyKey,
-        (regions, estates): (&[phx_id::CountryId], &BTreeMap<PartyKey, usize>),
+        (regions, geo): (&[phx_id::CountryId], &phx_geo::GeoState),
     ) -> Option<usize> {
         let k = usize::from(party.kind());
-        let name = *self.names.get(k)?;
-        let region = |at: usize| match self.kinds.get(k)?.record(party.slot()).get(at)?.get() {
-            phx_num::Missing::Present(v) => regions.get(usize::try_from(v).ok()?).map(|c| usize::from(c.get())),
-            phx_num::Missing::Absent => None,
-        };
-        match name {
-            "household" => match self.household_decl.as_ref()?.sited_by {
-                phx_num::Missing::Present(i) => region(i),
+        let record = self.kinds.get(k)?.record(party.slot());
+        let sited_by = self.declared.household.as_ref().map_or(phx_num::Missing::Absent, |d| d.sited_by);
+        let tile_country = |tile: u32| match geo.zone_of(phx_id::TileId::new(tile)) {
+            phx_num::Missing::Present(zone) => match geo.zone_country(zone) {
+                phx_num::Missing::Present(c) => Some(usize::from(c.get())),
                 phx_num::Missing::Absent => None,
             },
-            "firm" => region(crate::consts::firm::REGION),
-            "bank" => self.banks_of.iter().position(|b| b.iter().any(|(s, _)| *s == party.slot().get())),
-            "treasury" => self.treasuries.iter().position(|t| *t == Some(party)),
-            "agency" => self.agencies.iter().position(|t| *t == Some(party)),
-            _ => estates.get(&party).copied(),
-        }
+            phx_num::Missing::Absent => None,
+        };
+        let place = crate::core_kinds::of(&self.declared.kinds, k).place;
+        crate::core_kinds::country_by_place(place, record, (sited_by, regions), tile_country)
     }
 }
+
+/// Where the core's parties are: each region's country, and the map their sites' tiles lie on.
+pub(crate) type Places<'a> = (&'a [phx_id::CountryId], &'a phx_geo::GeoState);
 
 /// A period's year and month.
 #[must_use]

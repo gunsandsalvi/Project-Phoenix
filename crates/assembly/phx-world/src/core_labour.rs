@@ -341,7 +341,7 @@ impl Core {
     fn searching_persons(&self, ctx: &LabourCtx<'_>) -> BTreeSet<(PartyKey, u64)> {
         let mut out = BTreeSet::new();
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.as_ref())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.as_ref())
         else {
             return out;
         };
@@ -623,7 +623,7 @@ impl Core {
     /// A person's whole years on a day, where its household still holds it.
     pub(crate) fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
         let place = self.names.iter().position(|n| *n == "household")?;
-        let decl = self.household_decl.as_ref()?;
+        let decl = self.declared.household.as_ref()?;
         let ps = self.persons.get(place)?.as_ref()?;
         let at = ps.place_of(household.slot(), person)?;
         let word = ps.of(household.slot()).nth(at)?.word;
@@ -811,7 +811,7 @@ impl Core {
     /// A person's last wage point, as its pay round set it.
     fn set_last_point(&mut self, ctx: &LabourCtx<'_>, (household, person): (PartyKey, u64), point: i64) {
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
         else {
             return;
         };
@@ -841,7 +841,7 @@ impl Core {
     /// an offer; one no longer searching or no longer held leaves the searchers.
     fn seekers(&mut self, ctx: &LabourCtx<'_>, day: Day) -> Vec<(u8, Seeker)> {
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
         else {
             return Vec::new();
         };
@@ -1012,7 +1012,7 @@ impl Core {
     /// A hire made a contract, and its person's state, occupation and last point written.
     fn hire(&mut self, ctx: &LabourCtx<'_>, day: Day, hired: &Application) -> bool {
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
         else {
             return false;
         };
@@ -1190,7 +1190,7 @@ impl Core {
         law: &Law,
     ) {
         let (Some(place), Some(decl)) =
-            (self.names.iter().position(|n| *n == "household"), self.household_decl.clone())
+            (self.names.iter().position(|n| *n == "household"), self.declared.household.clone())
         else {
             return;
         };

@@ -49,7 +49,7 @@ pub struct SaveRecord {
 
 /// Every name the build declares that a core's save holds: its kinds' and its families'.
 fn names() -> Vec<&'static str> {
-    let mut n = crate::consts::kinds::KINDS.to_vec();
+    let mut n: Vec<&'static str> = crate::consts::kinds::KINDS.iter().map(|k| k.name).collect();
     n.extend(crate::consts::families::ALL);
     n
 }
