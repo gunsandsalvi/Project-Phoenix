@@ -1,5 +1,7 @@
 //! No tuning: from this rule's registration on, every primitive, opening distribution or rule form a commit adds,
-//! changes or removes is cited by a trailer saying where its value comes from, and no citation names a result.
+//! changes or removes is cited by a trailer saying where its value comes from, and no citation names a result. A
+//! citation that named one stands corrected once a later commit cites the same entry by its sources alone: history
+//! cannot be rewritten, but the entry's standing citation can.
 
 use std::collections::BTreeMap;
 
@@ -59,15 +61,23 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         Err(e) => return fail(e),
     };
     let mut later: Vec<(String, String)> = Vec::new();
+    // Each commit's clean citations, by the ids they cite, in the order the commits came.
+    let mut clean: Vec<Vec<String>> = Vec::new();
     for commit in &commits {
-        let Ok(message) = git.message(commit) else { continue };
+        let Ok(message) = git.message(commit) else {
+            clean.push(Vec::new());
+            continue;
+        };
         for cited in trailers(&message, CITED_FOR) {
             later.push((cited.to_owned(), message.clone()));
         }
+        clean.push(clean_ids(&message));
     }
     let mut breaches = Vec::new();
-    for commit in commits {
-        match commit_breaches(&git, &commit, &later) {
+    for (at, commit) in commits.into_iter().enumerate() {
+        let recited: Vec<&String> = clean.iter().skip(at + 1).flatten().collect();
+        let corrected = |id: &str| recited.iter().any(|r| r.as_str() == id);
+        match commit_breaches(&git, &commit, &later, &corrected) {
             Ok(found) => breaches.extend(found.into_iter().map(|m| Breach::new(RULE, DATA, 1, m))),
             Err(e) => breaches.extend(fail(e)),
         }
@@ -75,7 +85,12 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
     breaches
 }
 
-fn commit_breaches(git: &Git, commit: &str, later: &[(String, String)]) -> Result<Vec<String>, String> {
+fn commit_breaches(
+    git: &Git,
+    commit: &str,
+    later: &[(String, String)],
+    corrected: &dyn Fn(&str) -> bool,
+) -> Result<Vec<String>, String> {
     let touched: Vec<String> =
         git.changed(commit, DATA)?.into_iter().map(|t| t.path).filter(|p| is_register_file(p)).collect();
     if touched.is_empty() {
@@ -107,7 +122,8 @@ fn commit_breaches(git: &Git, commit: &str, later: &[(String, String)]) -> Resul
         Some(decision) => plan.lines().any(|l| l.starts_with(&format!("| {decision}"))),
         None => git.show(commit, report).is_some(),
     };
-    Ok(judge(&before, &after, &message, &exists).into_iter().map(|m| format!("{short}: {m}")).collect())
+    let found = judge_corrected(&before, &after, &message, &exists, corrected);
+    Ok(found.into_iter().map(|m| format!("{short}: {m}")).collect())
 }
 
 /// The data files the register reads: the world's, the shared ones, and the levels' templates and openings.
@@ -173,7 +189,35 @@ pub fn diff<'a>(before: &'a Dump, after: &'a Dump) -> Vec<Change<'a>> {
 }
 
 /// Every refusal of one commit's changes under its message's trailers.
+#[cfg(test)]
 pub fn judge(before: &Dump, after: &Dump, message: &str, exists: &dyn Fn(&str) -> bool) -> Vec<String> {
+    judge_corrected(before, after, message, exists, &|_| false)
+}
+
+/// Whether a citation names a result, a finding or a measure.
+fn names_result(t: &str) -> bool {
+    let finding = Regex::new(r"\bF-\d{3}\b").ok();
+    RESULTS.iter().any(|r| t.contains(r)) || finding.as_ref().is_some_and(|f| f.is_match(t))
+}
+
+/// The ids a message cites by their sources alone.
+fn clean_ids(message: &str) -> Vec<String> {
+    ["Primitive-Change", "Transcription-Fix"]
+        .iter()
+        .flat_map(|k| trailers(message, k))
+        .filter(|t| !names_result(t))
+        .filter_map(|t| t.split_once(" — ").map(|(id, _)| id.trim().to_owned()))
+        .collect()
+}
+
+/// `judge`, where a citation naming a result is corrected when a later commit cites its entry by its sources alone.
+pub fn judge_corrected(
+    before: &Dump,
+    after: &Dump,
+    message: &str,
+    exists: &dyn Fn(&str) -> bool,
+    corrected: &dyn Fn(&str) -> bool,
+) -> Vec<String> {
     let mut refusals = Vec::new();
     let changes = trailers(message, "Primitive-Change");
     let fixes = trailers(message, "Transcription-Fix");
@@ -183,11 +227,11 @@ pub fn judge(before: &Dump, after: &Dump, message: &str, exists: &dyn Fn(&str) -
         .filter_map(|t| t.split_once(" → "))
         .map(|(a, b)| (a.trim(), b.trim()))
         .collect();
-    let finding = Regex::new(r"\bF-\d{3}\b").ok();
     // A retired entry's citation only names what goes, so what its old source cited justifies nothing.
     let remains = |t: &str| t.split_once(" — ").is_none_or(|(id, _)| after.keys().any(|(_, i)| i == id.trim()));
-    for t in changes.iter().chain(&fixes).chain(&resolutions).filter(|t| remains(t)) {
-        if RESULTS.iter().any(|r| t.contains(r)) || finding.as_ref().is_some_and(|f| f.is_match(t)) {
+    let standing = |t: &str| t.split_once(" — ").is_none_or(|(id, _)| !corrected(id.trim()));
+    for t in changes.iter().chain(&fixes).chain(&resolutions).filter(|t| remains(t) && standing(t)) {
+        if names_result(t) {
             refusals.push(format!("a citation names a result, a finding or a measure: `{t}`"));
         }
     }
@@ -313,6 +357,18 @@ mod tests {
         let decided = |p: &str| p == "plan §12, The factor";
         assert!(judge(&before, &after, "Resolution-Change: X.r — plan §12, The factor", &decided).is_empty());
         assert_eq!(judge(&before, &after, "Resolution-Change: X.r — plan §12, No such row", &decided).len(), 1);
+        let corrected = |id: &str| id == "X.a";
+        let after = file(&[("X.a", "TECHNOLOGY", "2", "as F-012 showed")]);
+        let message = "Primitive-Change: X.a — as F-012 showed";
+        assert!(
+            super::judge_corrected(&file(&[("X.a", "TECHNOLOGY", "1", "s")]), &after, message, NONE, &corrected)
+                .is_empty(),
+            "a later clean citation corrects it"
+        );
+        assert_eq!(
+            super::clean_ids("Primitive-Change: X.a — table 2\nPrimitive-Change: X.b — as F-012 showed"),
+            ["X.a"]
+        );
         let retiring = file(&[("X.a", "TECHNOLOGY", "1", "as F-012 showed")]);
         let refused = judge(&retiring, &Dump::new(), "Primitive-Change: X.a — as F-012 showed", NONE);
         assert!(refused.is_empty(), "a retirement cites the source it goes with: {refused:?}");

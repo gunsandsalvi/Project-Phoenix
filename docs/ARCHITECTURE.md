@@ -3111,7 +3111,8 @@ credited while the world holds it (GEN.10).
 
 10. **The realism reads' rules** (the plan's PC-90 to PC-93, §14.8): pre-registration by ancestry, with append-only
     reports; no tuning, by a register diff by id with `Primitive-Change`, `Primitive-Rename` and `Resolution-Change`
-    trailers, read from `main`'s first-parent history so squash merges keep them; measurement code reaching the world
+    trailers, read from `main`'s first-parent history so squash merges keep them, a citation that named a result or a
+    finding standing corrected once a later commit cites the same entry by its sources alone; measurement code reaching the world
     only through the `Inspector`; every silent break of Part L mapped to what refuses it.
 
     `coverage` derives §19's rows whose System is a spec code, and those whose Spec cell lists chain or measurement
