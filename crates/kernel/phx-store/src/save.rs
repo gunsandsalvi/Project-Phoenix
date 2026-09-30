@@ -404,6 +404,9 @@ pub trait Saved: Sized {
     /// # Errors
     /// When the store is damaged or does not hold this value.
     fn load(r: &mut Reader<'_>) -> Result<Self, LoadError>;
+    /// Rebuilds, after a load, every index left out of the save, each by the function its field names, in field order
+    /// and through the fields saved; a value that leaves nothing out has nothing to rebuild.
+    fn rebuild_skipped(&mut self) {}
 }
 
 impl<T: Pod> Saved for T {
@@ -767,6 +770,36 @@ mod tests {
         shapes: Vec<Shape>,
         #[saved(skip)]
         index: Vec<u32>,
+    }
+
+    /// Rows and the index of their positive ones, rebuilt after a load.
+    #[derive(Debug, PartialEq, phx_macros::Saved)]
+    struct Indexed {
+        rows: Vec<i64>,
+        #[saved(skip, rebuild = Self::reindex)]
+        positive: Vec<u32>,
+    }
+
+    impl Indexed {
+        fn reindex(&mut self) {
+            self.positive = (0_u32..).zip(&self.rows).filter(|(_, v)| **v > 0).map(|(i, _)| i).collect();
+        }
+    }
+
+    #[derive(Debug, PartialEq, phx_macros::Saved)]
+    struct Outer {
+        inner: Indexed,
+    }
+
+    #[test]
+    fn skip_calls_rebuild_after_load() {
+        let mut inner = Indexed { rows: vec![3, -1, 0, 7], positive: Vec::new() };
+        inner.reindex();
+        let outer = Outer { inner };
+        let mut back: Outer = read(&write(|w| outer.save(w)), Saved::load);
+        assert!(back.inner.positive.is_empty(), "left out of the save");
+        back.rebuild_skipped();
+        assert_eq!(back, outer, "rebuilt through the saved field that holds it, equal to what was saved");
     }
 
     #[test]

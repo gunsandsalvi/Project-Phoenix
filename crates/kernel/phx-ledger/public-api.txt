@@ -113,12 +113,14 @@ pub phx_ledger::algebra::Collateral::kind: u16
 pub phx_ledger::algebra::Collateral::zone: phx_num::missing::Missing<phx_id::ids::ZoneId>
 impl phx_store::save::Saved for phx_ledger::algebra::Collateral where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::ZoneId>: phx_store::save::Saved
 pub fn phx_ledger::algebra::Collateral::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Collateral::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Collateral::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::DefaultDefinition
 pub phx_ledger::algebra::DefaultDefinition::grace_days: u16
 pub phx_ledger::algebra::DefaultDefinition::missed_payments: u16
 impl phx_store::save::Saved for phx_ledger::algebra::DefaultDefinition where u16: phx_store::save::Saved
 pub fn phx_ledger::algebra::DefaultDefinition::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::DefaultDefinition::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::DefaultDefinition::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Due
 pub phx_ledger::algebra::Due::amount: phx_ledger::algebra::Amount
@@ -146,6 +148,7 @@ pub phx_ledger::algebra::EventRef::kind: u16
 pub phx_ledger::algebra::EventRef::party: phx_num::missing::Missing<phx_id::ids::PartyId>
 impl phx_store::save::Saved for phx_ledger::algebra::EventRef where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::PartyId>: phx_store::save::Saved
 pub fn phx_ledger::algebra::EventRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::EventRef::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::EventRef::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Facility
 pub phx_ledger::algebra::Facility::day_count: phx_core::calendar::daycount::DayCount
@@ -153,12 +156,14 @@ pub phx_ledger::algebra::Facility::limit: phx_num::money::Money
 pub phx_ledger::algebra::Facility::rate: phx_num::rate::Rate
 impl phx_store::save::Saved for phx_ledger::algebra::Facility where phx_num::money::Money: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved, phx_core::calendar::daycount::DayCount: phx_store::save::Saved
 pub fn phx_ledger::algebra::Facility::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Facility::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Facility::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Fixing
 pub phx_ledger::algebra::Fixing::on: phx_id::day::Day
 pub phx_ledger::algebra::Fixing::rate: phx_num::rate::Rate
 impl phx_store::save::Saved for phx_ledger::algebra::Fixing where phx_num::rate::Rate: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved
 pub fn phx_ledger::algebra::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Fixing::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Fixing::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Floating
 pub phx_ledger::algebra::Floating::fixing: phx_ledger::algebra::Fixing
@@ -167,10 +172,12 @@ pub phx_ledger::algebra::Floating::series: phx_id::ids::SeriesId
 pub phx_ledger::algebra::Floating::spread: phx_num::rate::Rate
 impl phx_store::save::Saved for phx_ledger::algebra::Floating where phx_id::ids::SeriesId: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_ledger::algebra::Fixing: phx_store::save::Saved
 pub fn phx_ledger::algebra::Floating::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Floating::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Floating::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::PaymentOrder(pub u8)
 impl phx_store::save::Saved for phx_ledger::algebra::PaymentOrder where u8: phx_store::save::Saved
 pub fn phx_ledger::algebra::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::PaymentOrder::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Schedule
 pub phx_ledger::algebra::Schedule::count: phx_num::missing::Missing<u32>
@@ -181,10 +188,12 @@ pub fn phx_ledger::algebra::Schedule::day(&self, &phx_core::calendar::Calendar, 
 pub fn phx_ledger::algebra::Schedule::stated(&self, u32) -> phx_id::day::Date
 impl phx_store::save::Saved for phx_ledger::algebra::Schedule where phx_core::calendar::period::ScheduleDates: phx_store::save::Saved, phx_num::missing::Missing<u32>: phx_store::save::Saved
 pub fn phx_ledger::algebra::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Schedule::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Schedule::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::Seniority(pub u8)
 impl phx_store::save::Saved for phx_ledger::algebra::Seniority where u8: phx_store::save::Saved
 pub fn phx_ledger::algebra::Seniority::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Seniority::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Seniority::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::algebra::ShapePlan
 pub phx_ledger::algebra::ShapePlan::general: bool
@@ -206,6 +215,7 @@ impl phx_ledger::algebra::Terms
 pub fn phx_ledger::algebra::Terms::account(phx_num::money::Ccy, phx_core::calendar::period::ScheduleDates) -> phx_ledger::algebra::Terms
 impl phx_store::save::Saved for phx_ledger::algebra::Terms where phx_num::money::Ccy: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::algebra::Leg>: phx_store::save::Saved, phx_ledger::algebra::Schedule: phx_store::save::Saved, phx_ledger::algebra::Seniority: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Collateral>: phx_store::save::Saved, phx_ledger::algebra::PaymentOrder: phx_store::save::Saved, phx_ledger::algebra::Termination: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Conversion>: phx_store::save::Saved, phx_ledger::algebra::DefaultDefinition: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Underlying>: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Facility>: phx_store::save::Saved, phx_num::missing::Missing<u16>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved
 pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::algebra::Terms::rebuild_skipped(&mut self)
 pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_ledger::algebra::due_at(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_by_plan(&phx_ledger::algebra::DuePlan, phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)
@@ -224,6 +234,7 @@ pub phx_ledger::levy::Band::from: i64
 pub phx_ledger::levy::Band::share: i64
 impl phx_store::save::Saved for phx_ledger::levy::Band where i64: phx_store::save::Saved
 pub fn phx_ledger::levy::Band::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::levy::Band::rebuild_skipped(&mut self)
 pub fn phx_ledger::levy::Band::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_ledger::levy::Withholding
 pub phx_ledger::levy::Withholding::bands: alloc::vec::Vec<phx_ledger::levy::Band>
@@ -235,6 +246,7 @@ impl phx_ledger::levy::Withholding
 pub fn phx_ledger::levy::Withholding::on_payment(&self, i64) -> i64
 impl phx_store::save::Saved for phx_ledger::levy::Withholding where u16: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::levy::Band>: phx_store::save::Saved, i64: phx_store::save::Saved
 pub fn phx_ledger::levy::Withholding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_ledger::levy::Withholding::rebuild_skipped(&mut self)
 pub fn phx_ledger::levy::Withholding::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_ledger::online
 pub struct phx_ledger::online::Online

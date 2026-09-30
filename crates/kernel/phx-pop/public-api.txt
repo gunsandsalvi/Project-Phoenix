@@ -58,6 +58,7 @@ pub fn phx_pop::persons::Persons<B>::set(&mut self, &mut phx_store::backing::Add
 pub fn phx_pop::persons::Persons<B>::set_word(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize, u64)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::persons::Persons<B> where phx_store::column::Column<phx_store::arena::CellListRef, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u32: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_pop::persons::Persons<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_pop::persons::Persons<B>::rebuild_skipped(&mut self)
 pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_pop::prims
 pub struct phx_pop::prims::RepPrims
@@ -71,5 +72,6 @@ pub fn phx_pop::prims::Representation::name(self) -> alloc::string::String
 pub fn phx_pop::prims::Representation::of(&phx_pop::prims::RepPrims, &phx_core::register::Register) -> phx_pop::prims::Representation
 impl phx_store::save::Saved for phx_pop::prims::Representation where u64: phx_store::save::Saved
 pub fn phx_pop::prims::Representation::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_pop::prims::Representation::rebuild_skipped(&mut self)
 pub fn phx_pop::prims::Representation::save(&self, &mut phx_store::save::Writer<'_>)
 pub const phx_pop::prims::PERSONS: phx_core::register::PrimDecl

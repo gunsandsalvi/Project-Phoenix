@@ -25,6 +25,7 @@ pub if_state::kinds::BenefitLaw::months: u32
 pub if_state::kinds::BenefitLaw::replacement: f64
 impl phx_store::save::Saved for if_state::kinds::BenefitLaw where f64: phx_store::save::Saved, u32: phx_store::save::Saved
 pub fn if_state::kinds::BenefitLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::kinds::BenefitLaw::rebuild_skipped(&mut self)
 pub fn if_state::kinds::BenefitLaw::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::kinds::Bid
 pub if_state::kinds::Bid::bidder: u32
@@ -45,6 +46,7 @@ pub if_state::kinds::BillLaw::weekday: u32
 pub if_state::kinds::BillLaw::weeks: u16
 impl phx_store::save::Saved for if_state::kinds::BillLaw where i64: phx_store::save::Saved, u16: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved
 pub fn if_state::kinds::BillLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::kinds::BillLaw::rebuild_skipped(&mut self)
 pub fn if_state::kinds::BillLaw::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::kinds::ClaimIn
 pub if_state::kinds::ClaimIn::claiming_cost: f64
@@ -58,6 +60,7 @@ pub if_state::kinds::PaymentOrder::purchases: u8
 pub if_state::kinds::PaymentOrder::wages: u8
 impl phx_store::save::Saved for if_state::kinds::PaymentOrder where u8: phx_store::save::Saved
 pub fn if_state::kinds::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::kinds::PaymentOrder::rebuild_skipped(&mut self)
 pub fn if_state::kinds::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::kinds::PensionKind
 pub if_state::kinds::PensionKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PensionLaw, alloc::string::String>
@@ -95,6 +98,7 @@ pub if_state::stats::Release::values: alloc::vec::Vec<i64>
 pub if_state::stats::Release::vintage: u8
 impl phx_store::save::Saved for if_state::stats::Release where u8: phx_store::save::Saved, u32: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn if_state::stats::Release::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::stats::Release::rebuild_skipped(&mut self)
 pub fn if_state::stats::Release::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::stats::Schedule
 pub if_state::stats::Schedule::day: u32
@@ -102,6 +106,7 @@ pub if_state::stats::Schedule::lag: u32
 pub if_state::stats::Schedule::sample: f64
 impl phx_store::save::Saved for if_state::stats::Schedule where u32: phx_store::save::Saved, f64: phx_store::save::Saved
 pub fn if_state::stats::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::stats::Schedule::rebuild_skipped(&mut self)
 pub fn if_state::stats::Schedule::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_state::stats::StaKind
 pub if_state::stats::StaKind::classes: &'static str
@@ -118,6 +123,7 @@ pub if_state::stats::StaLaw::revision: u32
 pub if_state::stats::StaLaw::series: alloc::vec::Vec<if_state::stats::Schedule>
 impl phx_store::save::Saved for if_state::stats::StaLaw where alloc::vec::Vec<if_state::stats::Schedule>: phx_store::save::Saved, f64: phx_store::save::Saved, u32: phx_store::save::Saved
 pub fn if_state::stats::StaLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_state::stats::StaLaw::rebuild_skipped(&mut self)
 pub fn if_state::stats::StaLaw::save(&self, &mut phx_store::save::Writer<'_>)
 pub const if_state::stats::ACCOUNTS: usize
 pub const if_state::stats::CPI: usize

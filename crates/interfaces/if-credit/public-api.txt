@@ -6,6 +6,7 @@ pub if_credit::central::Corridor::haircut: f64
 pub if_credit::central::Corridor::lending_rate: f64
 impl phx_store::save::Saved for if_credit::central::Corridor where f64: phx_store::save::Saved
 pub fn if_credit::central::Corridor::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_credit::central::Corridor::rebuild_skipped(&mut self)
 pub fn if_credit::central::Corridor::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct if_credit::central::Request
 pub if_credit::central::Request::borrow: i64
@@ -59,4 +60,5 @@ pub if_credit::law::Law::required_return: f64
 pub if_credit::law::Law::risk_weight: f64
 impl phx_store::save::Saved for if_credit::law::Law where f64: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved, u32: phx_store::save::Saved
 pub fn if_credit::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn if_credit::law::Law::rebuild_skipped(&mut self)
 pub fn if_credit::law::Law::save(&self, &mut phx_store::save::Writer<'_>)

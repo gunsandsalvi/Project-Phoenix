@@ -11,7 +11,7 @@ mod borders;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
-mod declared;
+pub mod declared;
 mod dependencies;
 mod design;
 pub mod dispatch;

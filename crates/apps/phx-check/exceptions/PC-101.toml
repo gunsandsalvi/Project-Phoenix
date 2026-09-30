@@ -1,0 +1,157 @@
+# The sites PC-101 admits for now, 26 in all, held to `phx_check.exceptions_pc101`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "skip `household_decl`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "skip `space`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "skip `stage_ns`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "skip `timings`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "skip `work`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Bills"
+what = "skip `kind`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "CoreState"
+what = "skip `claim`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "CoreState"
+what = "skip `included`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "DatedFamily"
+what = "skip `alike_upto`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "DatedFamily"
+what = "skip `alike`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "CoreStats"
+what = "skip `index`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "CoreStats"
+what = "skip `rate`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/contribution.rs"
+item = "GenReport"
+what = "skip `named`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/contribution.rs"
+item = "GenReport"
+what = "skip `sink`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "UnitIds"
+what = "skip `plain_upto`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "UnitIds"
+what = "skip `plain`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel"
+what = "skip `far_scratch`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel"
+what = "skip `merged`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel"
+what = "skip `pairs`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel"
+what = "skip `scratch`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "skip `again`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "skip `choosing`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "skip `left`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "skip `log_prices`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "skip `sales`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "skip `scratch`"
+count = 1

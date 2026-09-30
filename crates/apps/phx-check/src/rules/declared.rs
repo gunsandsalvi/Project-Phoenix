@@ -2,7 +2,8 @@
 //! `#[maintained(writer = path)]`, is an integer, so a sum rebuilt from its rows equals it, and is never read by the
 //! audit, which recounts from the source rows so a maintained sum cannot hide the fault the audit is there to find.
 //! And a value computed once a day per party, its function marked `#[per_day]`, is reached only through the day's
-//! cache: the function is passed to it as a path and never called, so no path computes it twice in a day.
+//! cache: the function is passed to it as a path and never called, so no path computes it twice in a day. And every
+//! index left out of a save names the function that rebuilds it after a load: `#[saved(skip, rebuild = path)]`.
 
 use std::collections::BTreeSet;
 
@@ -10,6 +11,7 @@ use syn::visit::{self, Visit};
 use syn::{Expr, ExprCall, ExprField, ExprMethodCall, ImplItemFn, ItemFn, ItemMod, ItemStruct, Member, Type};
 
 use super::{Breach, attrs, unparsed};
+use crate::exceptions::{Exceptions, Found};
 use crate::workspace::Workspace;
 
 pub const RULE: &str = "PC-101";
@@ -50,6 +52,12 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches.extend(per_day(ws));
+    let (skips, unread) = found(ws);
+    breaches.extend(unread);
+    match Exceptions::load(ws, RULE) {
+        Ok(ex) => breaches.extend(ex.judge(&ws.ratchets, skips)),
+        Err(b) => breaches.push(b),
+    }
     if let Some(audit) = ws.crates.iter().find(|c| c.name == AUDIT) {
         for source in audit.sources.iter().filter(|s| !s.is_test_or_bench()) {
             let Ok(file) = &source.file else { continue };
@@ -62,6 +70,78 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches
+}
+
+/// Every field left out of a save without naming its rebuild, and a breach for each source that does not parse.
+#[must_use]
+pub fn found(ws: &Workspace) -> (Vec<Found>, Vec<Breach>) {
+    let (mut sites, mut breaches) = (Vec::new(), Vec::new());
+    for c in ws.world_crates() {
+        for source in c.sources.iter().filter(|s| !s.is_test_or_bench()) {
+            let file = match &source.file {
+                Ok(file) => file,
+                Err(error) => {
+                    breaches.push(unparsed(RULE, &source.path, error));
+                    continue;
+                }
+            };
+            if attrs::is_test(&file.attrs) {
+                continue;
+            }
+            let mut skips = Skips::default();
+            skips.visit_file(file);
+            sites.extend(skips.found.into_iter().map(|(line, item, field)| Found {
+                path: source.path.clone(),
+                message: format!("`{field}` left out of the save without naming its rebuild: `skip, rebuild = path`"),
+                what: format!("skip `{field}`"),
+                item,
+                line,
+            }));
+        }
+    }
+    (sites, breaches)
+}
+
+/// Fields marked `#[saved(skip)]` with no `rebuild =`, by struct.
+#[derive(Debug, Default)]
+struct Skips {
+    found: Vec<(usize, String, String)>,
+}
+
+impl<'ast> Visit<'ast> for Skips {
+    fn visit_item_mod(&mut self, item: &'ast ItemMod) {
+        if !attrs::is_test(&item.attrs) {
+            visit::visit_item_mod(self, item);
+        }
+    }
+
+    fn visit_item_struct(&mut self, item: &'ast ItemStruct) {
+        if attrs::is_test(&item.attrs) {
+            return;
+        }
+        for (i, field) in item.fields.iter().enumerate() {
+            let bare = field.attrs.iter().filter(|a| a.path().is_ident("saved")).any(|a| {
+                let (mut skip, mut rebuild) = (false, false);
+                let _ = a.parse_nested_meta(|m| {
+                    skip |= m.path.is_ident("skip");
+                    if m.path.is_ident("rebuild") {
+                        rebuild = true;
+                        let _ = m.value().and_then(syn::parse::ParseBuffer::parse::<syn::Path>);
+                    }
+                    Ok(())
+                });
+                skip && !rebuild
+            });
+            if bare {
+                let (line, name) = match &field.ident {
+                    Some(ident) => (attrs::line(ident.span()), ident.to_string()),
+                    None => (attrs::line(item.ident.span()), i.to_string()),
+                };
+                self.found.push((line, item.ident.to_string(), name));
+            }
+        }
+        visit::visit_item_struct(self, item);
+    }
 }
 
 /// Every call of a function marked `#[per_day]` in a world crate: the function is named only as a path handed to the
@@ -249,6 +329,19 @@ mod tests {
             "{UNIT_COST}fn price(c: &mut DayCached<Money>, d: Day) -> Money {{ c.get_or(d, Firm::unit_cost) }}"
         );
         assert!(per_day_breaches(&text).is_empty());
+    }
+
+    #[test]
+    fn skip_must_name_rebuild() {
+        let text = "#[derive(Saved)] struct Core { rows: Vec<u8>, #[saved(skip)] space: Space, \
+                    #[saved(skip, rebuild = Self::reindex)] index: Vec<u32> }";
+        let found: Vec<String> =
+            super::found(&Workspace::new(vec![with_source(krate("phx-world", Layer::Assembly), "src/core.rs", text)]))
+                .0
+                .into_iter()
+                .map(|f| f.what)
+                .collect();
+        assert_eq!(found, ["skip `space`"]);
     }
 
     #[test]

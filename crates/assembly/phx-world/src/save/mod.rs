@@ -241,6 +241,8 @@ pub fn load(
     if world.persons != manifest.persons {
         return Err(format!("a save of {} persons where the run opens {}", manifest.persons, world.persons));
     }
+    // Every index left out of the save and naming its rebuild is rebuilt now, the world rebound around it.
+    phx_store::Saved::rebuild_skipped(&mut world.core);
     world.metrics = read_store(dir, RUN, &mut |r| Metrics::load(r))?;
     Ok(world)
 }

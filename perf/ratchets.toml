@@ -63,6 +63,14 @@ counter = "phx_check.exceptions_pc100"
 value = 266
 direction = "down"
 
+# PC-101's admitted sites (S1.130, 2026-09-30): fields left out of a save without naming their rebuild, which today's
+# load path rebinds by hand, 26 in all. Each base's migration gives its site `rebuild =` and removes it; the count
+# only falls, and S1.492 empties it.
+[[ratchet]]
+counter = "phx_check.exceptions_pc101"
+value = 26
+direction = "down"
+
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
 # the placeholders a stage brings for later systems. BNK's two loan terms and XB's closed borders (S0.18); a
 # searcher's reservation and an employee's price outlook (HH, S1.08) until households weigh their own; a firm loan's
