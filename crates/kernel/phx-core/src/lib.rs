@@ -3,6 +3,7 @@ extern crate self as phx_core;
 
 pub mod accounting;
 pub mod calendar;
+pub mod capacity;
 pub mod consts;
 pub mod contribution;
 pub mod decisions;
