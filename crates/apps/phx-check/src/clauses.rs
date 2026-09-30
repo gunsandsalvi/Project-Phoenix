@@ -1,4 +1,6 @@
-use crate::docs::{self, Clause, MapRow};
+use std::collections::BTreeSet;
+
+use crate::docs::{self, Clause, MapRow, Step};
 use crate::rules::Breach;
 use crate::workspace::{PLAN, SPEC, Workspace};
 
@@ -8,6 +10,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
     match (docs::clauses(&ws.spec), docs::map(&ws.plan), docs::steps(&ws.plan)) {
         (Ok(clauses), Ok(map), Ok(steps)) => {
             let mut breaches = check(&clauses, &map);
+            breaches.extend(listed(&steps, &map));
             // A done step leaves the plan, so a step the map names that the plan no longer holds is done.
             let done: Vec<&str> = map
                 .iter()
@@ -62,6 +65,35 @@ pub fn uncarried(map: &[MapRow], done: &[&str], carried: &std::collections::BTre
     breaches
 }
 
+/// Each step still standing lists as complete exactly the clauses the map gives it.
+pub fn listed(steps: &[Step], map: &[MapRow]) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    for step in steps.iter().filter(|s| s.status.as_deref() != Some("retired")) {
+        let completed = match docs::completed_clauses(&step.clauses) {
+            Ok(c) => c,
+            Err(error) => {
+                breaches.push(Breach::new(RULE, PLAN, step.line, error));
+                continue;
+            }
+        };
+        let mapped: BTreeSet<String> = map
+            .iter()
+            .filter(|r| r.step == step.id)
+            .flat_map(|r| r.numbers.iter().map(|n| format!("{}.{n}", r.system)))
+            .collect();
+        for id in completed.difference(&mapped) {
+            let message =
+                format!("{} lists {id} as complete, and the clause map does not give it to the step", step.id);
+            breaches.push(Breach::new(RULE, PLAN, step.line, message));
+        }
+        for id in mapped.difference(&completed) {
+            let message = format!("the clause map gives {id} to {}, which does not list it as complete", step.id);
+            breaches.push(Breach::new(RULE, PLAN, step.line, message));
+        }
+    }
+    breaches
+}
+
 /// Every live clause is completed by exactly one row of the map, and no row names a retired or unknown clause.
 pub fn check(clauses: &[Clause], map: &[MapRow]) -> Vec<Breach> {
     let mut breaches = Vec::new();
@@ -93,8 +125,25 @@ pub fn check(clauses: &[Clause], map: &[MapRow]) -> Vec<Breach> {
 
 #[cfg(test)]
 mod tests {
-    use super::{carriers, check, uncarried};
-    use crate::docs::{clauses, map};
+    use super::{carriers, check, listed, uncarried};
+    use crate::docs::{clauses, map, steps};
+
+    #[test]
+    fn a_steps_complete_clauses_match_its_map_rows() {
+        let plan = "## 4. Stage 1\n### S1.140 — a\n**Status**: planned\n**Clauses**:\n- STATE: ABC.1, ABC.2 *(part)*.\n\
+                    - PROCESS: DEF.3.\n### S1.141 — b\n**Status**: retired. Dealt out.\n**Clauses**: ABC.9.\n\
+                    ## 13. The clause map\n| ABC | S1.140 | 1, 4 |\n| ABC | S1.141 | 5 |";
+        let breaches = listed(&steps(plan).unwrap(), &map(plan).unwrap());
+        let found: Vec<(usize, &str)> = breaches.iter().map(|b| (b.line, b.message.as_str())).collect();
+        assert_eq!(
+            found,
+            vec![
+                (2, "S1.140 lists DEF.3 as complete, and the clause map does not give it to the step"),
+                (2, "the clause map gives ABC.4 to S1.140, which does not list it as complete"),
+            ],
+            "a part is not complete, and a retired step is not read"
+        );
+    }
 
     #[test]
     fn a_done_steps_clauses_need_a_carrier() {

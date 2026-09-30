@@ -1,5 +1,5 @@
 use super::Breach;
-use crate::docs::{self, SECTIONS, STATUSES, Step};
+use crate::docs::{self, KINDS, SECTIONS, STATUSES, Step};
 use crate::workspace::{ARCHITECTURE, PLAN, Workspace};
 
 const RULE: &str = "PC-09";
@@ -53,11 +53,14 @@ fn begun(architecture: &str, name: &str) -> Option<bool> {
     })
 }
 
-/// A step has a known status and, unless retired, every section in order.
+/// A step has a known status and, unless retired, a known kind and every section in order.
 fn shape(step: &Step) -> Option<Breach> {
     let status = step.status.as_deref().unwrap_or("");
     if !STATUSES.contains(&status) {
         return Some(Breach::new(RULE, PLAN, step.line, format!("{} has no valid status", step.id)));
+    }
+    if status != "retired" && step.kind.as_deref().is_none_or(|k| !KINDS.contains(&k)) {
+        return Some(Breach::new(RULE, PLAN, step.line, format!("{} has no valid kind", step.id)));
     }
     if status == "retired" || step.sections.iter().map(String::as_str).eq(SECTIONS.iter().copied()) {
         return None;
@@ -89,6 +92,8 @@ mod tests {
         for s in SECTIONS.iter().filter(|s| **s != skip) {
             if *s == "Status" {
                 let _ = writeln!(text, "**Status**: {status}");
+            } else if *s == "Kind" {
+                let _ = writeln!(text, "**Kind**: mechanism");
             } else {
                 let _ = writeln!(text, "**{s}**");
             }
@@ -127,6 +132,15 @@ mod tests {
         let plan = step("S0.01", "planned", "Budget", "x");
         let breaches = run(&ws(plan, &[]));
         assert_eq!(breaches.first().map(|b| b.message.as_str()), Some("S0.01 lacks Budget"));
+    }
+
+    #[test]
+    fn docs_refuse_a_missing_or_unknown_kind() {
+        let missing = step("S1.140", "planned", "Kind", "x");
+        let unknown = step("S1.141", "planned", "", "x").replace("**Kind**: mechanism", "**Kind**: widget");
+        let breaches = run(&ws(missing + &unknown, &[]));
+        let messages: Vec<&str> = breaches.iter().map(|b| b.message.as_str()).collect();
+        assert_eq!(messages, ["S1.140 has no valid kind", "S1.141 has no valid kind"]);
     }
 
     #[test]

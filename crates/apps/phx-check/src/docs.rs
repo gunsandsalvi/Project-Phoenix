@@ -17,6 +17,8 @@ pub struct Step {
     pub stage: u32,
     pub line: usize,
     pub status: Option<String>,
+    /// The first word of its **Kind** section.
+    pub kind: Option<String>,
     pub sections: Vec<String>,
     /// The text of its **Clauses** section.
     pub clauses: String,
@@ -37,12 +39,15 @@ pub struct MapRow {
 /// The sections every step has, in this order.
 pub const SECTIONS: &[&str] = &[
     "Status",
+    "Kind",
     "Clauses",
     "Architecture",
     "Depends on",
     "Goal",
     "Files",
     "Design",
+    "Edge cases",
+    "Extension points",
     "Unit tests",
     "Live checks",
     "Budget",
@@ -54,6 +59,10 @@ pub const SECTIONS: &[&str] = &[
 /// A step's statuses; `awaiting` (written `awaiting owner`) is a step whose remaining items are the owner's alone, and
 /// `held` a step begun and set aside while an earlier one, reopened, is building.
 pub const STATUSES: &[&str] = &["planned", "building", "awaiting", "held", "done", "retired"];
+
+/// What a step builds; every step but a retired one names one.
+pub const KINDS: &[&str] =
+    &["base", "kernel", "index", "migration", "mechanism", "data", "tool", "repair", "docs", "gate"];
 
 fn regex(pattern: &str) -> Result<Regex, String> {
     Regex::new(pattern).map_err(|e| e.to_string())
@@ -84,7 +93,7 @@ pub fn clauses(text: &str) -> Result<Vec<Clause>, String> {
 }
 
 pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
-    let heading = regex(r"^### (S(\d+)\.\d{2}) — ")?;
+    let heading = regex(r"^### (S(\d+)\.\d{2,3}) — ")?;
     let section = regex(r"^\*\*([A-Za-z ]+)\*\*")?;
     let crate_path = regex(r"crates/(?:foundation|kernel|interfaces|systems|assembly|apps)/([a-z0-9-]+)/")?;
     let mut steps: Vec<Step> = Vec::new();
@@ -100,6 +109,7 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
                 stage,
                 line: index + 1,
                 status: None,
+                kind: None,
                 sections: Vec::new(),
                 clauses: String::new(),
                 crates: Vec::new(),
@@ -119,10 +129,10 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
         {
             step.sections.push((*known).to_owned());
             current = known;
-            if *known == "Status" {
-                let rest = line.trim_start_matches("**Status**").trim_start_matches([':', ' ']);
-                let word: String = rest.chars().take_while(char::is_ascii_alphabetic).collect();
-                step.status = Some(word);
+            match *known {
+                "Status" => step.status = Some(first_word(line, "**Status**")),
+                "Kind" => step.kind = Some(first_word(line, "**Kind**")),
+                _ => {}
             }
         }
         match current {
@@ -145,8 +155,88 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
     Ok(steps)
 }
 
+fn first_word(line: &str, heading: &str) -> String {
+    let rest = line.trim_start_matches(heading).trim_start_matches([':', ' ']);
+    rest.chars().take_while(char::is_ascii_alphabetic).collect()
+}
+
+/// An item of a **Clauses** list: its whole text, and its text outside parentheses, where the ids it lists stand.
+struct Item {
+    whole: String,
+    listed: String,
+}
+
+/// The items of a **Clauses** text: its bullets, and the inline text before them, each split at the commas and
+/// semicolons that stand outside parentheses.
+fn items(text: &str) -> Vec<Item> {
+    let body = text.trim_start().trim_start_matches("**Clauses**").trim_start_matches(':');
+    let mut units = vec![String::new()];
+    for line in body.lines() {
+        let trimmed = line.trim_start();
+        if let Some(bullet) = trimmed.strip_prefix("- ").or_else(|| trimmed.strip_prefix("* ")) {
+            units.push(bullet.to_owned());
+        } else if let Some(last) = units.last_mut() {
+            last.push(' ');
+            last.push_str(trimmed);
+        }
+    }
+    let mut found = Vec::new();
+    for unit in &units {
+        let mut depth = 0_usize;
+        let mut item = Item { whole: String::new(), listed: String::new() };
+        for c in unit.chars() {
+            match c {
+                '(' => depth += 1,
+                ')' => {
+                    if let Some(less) = depth.checked_sub(1) {
+                        depth = less;
+                    }
+                    item.whole.push(c);
+                    continue;
+                }
+                ',' | ';' if depth == 0 => {
+                    found.push(std::mem::replace(&mut item, Item { whole: String::new(), listed: String::new() }));
+                    continue;
+                }
+                _ => {}
+            }
+            item.whole.push(c);
+            if depth == 0 {
+                item.listed.push(c);
+            }
+        }
+        found.push(item);
+    }
+    found
+}
+
+/// The clause ids a step's **Clauses** text completes: every id an item lists outside its parentheses, unless the
+/// item is marked as only starting them. A range of two ids lists every id between.
+pub fn completed_clauses(text: &str) -> Result<std::collections::BTreeSet<String>, String> {
+    let id = regex(r"\b([A-Z]{2,4})\.(\d+)\b(?:\s*[–-]\s*([A-Z]{2,4})\.(\d+)\b)?")?;
+    let part = regex(r"\(part\b")?;
+    let mut found = std::collections::BTreeSet::new();
+    for item in items(text).iter().filter(|i| !part.is_match(&i.whole)) {
+        for caps in id.captures_iter(&item.listed) {
+            let (Some(system), Some(from)) = (caps.get(1).map(|m| m.as_str()), number::<u32>(caps.get(2))) else {
+                continue;
+            };
+            found.insert(format!("{system}.{from}"));
+            let (Some(other), Some(to)) = (caps.get(3).map(|m| m.as_str()), number::<u32>(caps.get(4))) else {
+                continue;
+            };
+            if other == system {
+                found.extend((from..=to).map(|n| format!("{system}.{n}")));
+            } else {
+                found.insert(format!("{other}.{to}"));
+            }
+        }
+    }
+    Ok(found)
+}
+
 pub fn map(plan: &str) -> Result<Vec<MapRow>, String> {
-    let row = regex(r"^\| ([A-Z]{2,4}) \| (S(\d+)\.\d{2}) \| ([^|]*) \|")?;
+    let row = regex(r"^\| ([A-Z]{2,4}) \| (S(\d+)\.\d{2,3}) \| ([^|]*) \|")?;
     let digits = regex(r"\d+")?;
     let mut rows = Vec::new();
     let mut inside = false;
@@ -203,7 +293,32 @@ pub fn architecture_crates(architecture: &str) -> Result<Vec<String>, String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Clause, clauses, map, steps};
+    use super::{Clause, clauses, completed_clauses, map, steps};
+
+    #[test]
+    fn documents_read_three_digit_steps_and_their_kind() {
+        let plan = "## 4. Stage 1\n\n### S1.140 — Base\n\n**Status**: planned\n**Kind**: base, the ledger\n\
+                    ### S1.1400 — Not a step\n## 13. The clause map\n| ABC | S1.140 | 3 |\n| ABC | S1.1400 | 4 |";
+        let s = steps(plan).unwrap();
+        assert_eq!(s.len(), 1, "a four-digit number is not a step");
+        let first = s.first().unwrap();
+        assert_eq!((first.id.as_str(), first.stage, first.kind.as_deref()), ("S1.140", 1, Some("base")));
+        let rows = map(plan).unwrap();
+        assert_eq!(rows.iter().map(|r| r.step.as_str()).collect::<Vec<_>>(), vec!["S1.140"]);
+    }
+
+    #[test]
+    fn documents_read_the_clauses_a_step_completes() {
+        let text = "**Clauses**: GEN.2 *(part)*, GEN.3; ACC.10–ACC.12 and FRM.17 *(moved from BNK.4)*; N8, Law 3.\n\
+                    - STATE: TCR.1 DECISION.\n- PROCESS: BNK.9; BNK.10 *(part: sales, from HH.2)*; HH.7 *(part,\n  \
+                    moved)*; HH.13\n  *(completes it, with MON.1)*.\n- FORBID: POP.15 *(part)*, POP.16.";
+        let found: Vec<String> = completed_clauses(text).unwrap().into_iter().collect();
+        assert_eq!(
+            found,
+            ["ACC.10", "ACC.11", "ACC.12", "BNK.9", "FRM.17", "GEN.3", "HH.13", "POP.16", "TCR.1"],
+            "parts, ids in parentheses, laws and N-items are not completed"
+        );
+    }
 
     #[test]
     fn documents_read_clauses_steps_and_map() {
