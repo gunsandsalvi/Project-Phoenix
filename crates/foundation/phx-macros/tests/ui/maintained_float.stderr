@@ -1,0 +1,5 @@
+error: a maintained aggregate is an integer: no float, no `i128`, no composite
+ --> tests/ui/maintained_float.rs:8:12
+  |
+8 |     share: f64,
+  |            ^^^

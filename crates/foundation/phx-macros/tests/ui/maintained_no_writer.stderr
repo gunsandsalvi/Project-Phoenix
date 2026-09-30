@@ -1,0 +1,5 @@
+error: name the aggregate's one writer: `#[maintained(writer = path)]`
+ --> tests/ui/maintained_no_writer.rs:5:7
+  |
+5 |     #[maintained]
+  |       ^^^^^^^^^^

@@ -2,6 +2,7 @@ mod absent;
 mod clause;
 mod consts;
 mod decl;
+mod markers;
 mod opening;
 mod pod;
 mod saved;
@@ -26,6 +27,13 @@ pub fn absent_is_zero(args: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn opening(args: TokenStream, item: TokenStream) -> TokenStream {
     opening::expand(args.into(), item.into()).into()
+}
+
+/// Marks the aggregates a struct maintains, each `#[maintained(writer = path)]` on its field, naming its one writer; a
+/// field so marked is an integer, so the audit's recount from source rows equals it. Emits nothing.
+#[proc_macro_derive(Maintained, attributes(maintained))]
+pub fn derive_maintained(input: TokenStream) -> TokenStream {
+    markers::maintained(input.into()).unwrap_or_else(syn::Error::into_compile_error).into()
 }
 
 /// Makes a `#[repr(C)]` struct of storable fields, with no padding and no float, storable itself.
