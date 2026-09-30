@@ -5492,6 +5492,11 @@ Decisions taken in writing this version, and decisions still open.
     2026-09-27): their decisions moved their parties in lock-step and their lumps broke whole-unit trades, while the
     variety a world holds is its number of distinct parties, the same in both.
 
+45. **How a commodity's grade enters use** (GDS.1, GDS.13, TEC.9; owner, 2026-09-29). A grade declares its content
+    per unit and a way states a graded input in content, so a richer grade yields more in use — more metal from a
+    tonne of ore, more heat from a tonne of coal — and one grade's price stands against another's by what each
+    yields.
+
 46. **Every person a party, every office a person's** (PTY.1, PTY.3, PTY.16, PTY.17, REP.26; owner, 2026-09-28).
     Each person the world holds keeps one identity from birth to death, owns its own accounts, holdings and debts,
     and a household is its persons, what it holds their sum; every office an institution decides through is held by
@@ -5539,12 +5544,7 @@ Decisions taken in writing this version, and decisions still open.
       nearness still counts in every choice.
 
 **Open** — a question the text does not settle and the laws do not settle is added here before the stage that needs
-it.
-
-45. **How a commodity's grade enters use** (GDS.1, GDS.13, TEC.9; owner, 2026-09-29). A grade declares its content
-    per unit and a way states a graded input in content, so a richer grade yields more in use — more metal from a
-    tonne of ore, more heat from a tonne of coal — and one grade's price stands against another's by what each
-    yields.
+it. None stands open.
 
 ---
 
