@@ -7,6 +7,8 @@ use regex::Regex;
 pub struct Clause {
     pub system: String,
     pub number: u32,
+    /// The clause's type as its bullet declares it; `None` for a retired clause and a chain or measurement item.
+    pub kind: Option<String>,
     pub retired: bool,
     pub line: usize,
 }
@@ -86,7 +88,7 @@ fn number<T: std::str::FromStr>(text: Option<regex::Match<'_>>) -> Option<T> {
 }
 
 pub fn clauses(text: &str) -> Result<Vec<Clause>, String> {
-    let re = regex(r"^- \*\*([A-Z]{2,4})\.(\d+)(?: [A-Z]+)?\*\* — (_Retired_)?")?;
+    let re = regex(r"^- \*\*([A-Z]{2,4})\.(\d+)(?: ([A-Z]+))?\*\* — (_Retired_)?")?;
     let mut found = Vec::new();
     for (index, line) in text.lines().enumerate() {
         let Some(caps) = re.captures(line) else {
@@ -98,7 +100,8 @@ pub fn clauses(text: &str) -> Result<Vec<Clause>, String> {
         found.push(Clause {
             system: system.as_str().to_owned(),
             number: n,
-            retired: caps.get(3).is_some(),
+            kind: caps.get(3).map(|m| m.as_str().to_owned()),
+            retired: caps.get(4).is_some(),
             line: index + 1,
         });
     }
@@ -131,6 +134,7 @@ fn part_items(text: &str) -> Result<Vec<Clause>, String> {
         found.push(Clause {
             system: system.to_owned(),
             number: n,
+            kind: None,
             retired: next.is_some_and(|l| l.starts_with("_Retired_")),
             line: index + 1,
         });
@@ -265,6 +269,76 @@ fn items(text: &str) -> Vec<Item> {
         found.push(item);
     }
     found
+}
+
+/// An item of a **Clauses** line in its one form: a clause with its type, a law, or a chain or measurement item,
+/// and whether it is marked as only a part.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FormItem {
+    /// `SYS.n`, `Law n`, `Ln` or `Nn`.
+    pub id: String,
+    /// The type a system's clause is listed with.
+    pub kind: Option<String>,
+    pub part: bool,
+}
+
+/// A step's **Clauses** section read in its one form: the single word `none`, or items split at the semicolons outside
+/// parentheses, each `SYS.n TYPE`, `Law n` or a bare chain or measurement item, followed by at most one `*(part …)*`;
+/// a law is only ever a part. A wrapped line reads as one line.
+///
+/// # Errors
+/// The first item not in the form, quoted.
+pub fn clauses_form(text: &str) -> Result<Vec<FormItem>, String> {
+    let body = text.trim_start().trim_start_matches("**Clauses**").trim_start_matches(':');
+    let line = body.split_whitespace().collect::<Vec<_>>().join(" ");
+    if line == "none" {
+        return Ok(Vec::new());
+    }
+    let head = regex(r"^(?:([A-Z]{2,4}\.\d+) ([A-Z]+)|(Law \d+)|([LN]\d+))$")?;
+    let mut found = Vec::new();
+    let mut depth = 0_usize;
+    let mut start = 0_usize;
+    let mut pieces = Vec::new();
+    for (at, c) in line.char_indices() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                if let Some(less) = depth.checked_sub(1) {
+                    depth = less;
+                }
+            }
+            ';' if depth == 0 => {
+                pieces.push(line.get(start..at).unwrap_or_default());
+                start = at + 1;
+            }
+            _ => {}
+        }
+    }
+    pieces.push(line.get(start..).unwrap_or_default());
+    for piece in pieces.into_iter().map(str::trim) {
+        let refuse = || format!("`{piece}` is not a clause item (`SYS.n TYPE`, `Law n *(part)*`, `Ln`, `Nn`)");
+        let (name, part) = match piece.split_once(" *(") {
+            Some((name, rest)) => {
+                let inner = rest.strip_suffix(")*").ok_or_else(refuse)?;
+                if !inner.starts_with("part")
+                    || inner.chars().filter(|c| *c == '(').count() != inner.chars().filter(|c| *c == ')').count()
+                {
+                    return Err(refuse());
+                }
+                (name, true)
+            }
+            None => (piece, false),
+        };
+        let caps = head.captures(name).ok_or_else(refuse)?;
+        let (id, kind) = match (caps.get(1), caps.get(2), caps.get(3), caps.get(4)) {
+            (Some(id), Some(kind), _, _) => (id.as_str(), Some(kind.as_str().to_owned())),
+            (_, _, Some(law), _) if part => (law.as_str(), None),
+            (_, _, _, Some(item)) => (item.as_str(), None),
+            _ => return Err(refuse()),
+        };
+        found.push(FormItem { id: id.to_owned(), kind, part });
+    }
+    Ok(found)
 }
 
 /// The clause ids a step's **Clauses** text completes: every id an item lists outside its parentheses, unless the
@@ -660,7 +734,10 @@ mod tests {
         let spec = "- **TIME.11 FORBID** — No second clock.\n- **REP.6** — _Retired_: gone.\n- **N8.1** — no.";
         let found = clauses(spec).unwrap();
         assert_eq!(found.len(), 2);
-        assert_eq!(found.get(1), Some(&Clause { system: "REP".to_owned(), number: 6, retired: true, line: 2 }));
+        assert_eq!(
+            found.get(1),
+            Some(&Clause { system: "REP".to_owned(), number: 6, kind: None, retired: true, line: 2 })
+        );
 
         let plan = "## 3. Stage 0\n\n### S0.01 — One\n\n**Status**: retired. Gone.\n**Clauses**:\n- REP.1.\n\
                     **Files**\n| `crates/apps/phx-check/src/main.rs` | x |\n## 13. The clause map\n| REP | S0.01 | 1, 2 |";

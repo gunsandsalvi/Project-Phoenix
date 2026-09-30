@@ -36,7 +36,40 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches.extend(extension_points(&steps));
+    match docs::clauses(&ws.spec) {
+        Ok(clauses) => breaches.extend(clause_forms(&steps, &clauses)),
+        Err(error) => breaches.push(Breach::new(RULE, SPEC, 1, error)),
+    }
     breaches.extend(texts(ws));
+    breaches
+}
+
+/// Every standing step's **Clauses** line in its one form, each clause with the type its own bullet declares.
+fn clause_forms(steps: &[Step], clauses: &[docs::Clause]) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    for step in steps.iter().filter(|s| s.status.as_deref() != Some("retired")) {
+        let items = match docs::clauses_form(&step.clauses) {
+            Ok(items) => items,
+            Err(error) => {
+                breaches.push(Breach::new(RULE, PLAN, step.line, format!("{}'s Clauses: {error}", step.id)));
+                continue;
+            }
+        };
+        for item in items.iter().filter(|i| !i.id.starts_with("Law ")) {
+            let spec = clauses.iter().find(|c| docs::clause_id(&c.system, c.number) == item.id);
+            let message = match (spec, &item.kind) {
+                (None, _) => format!("{}'s Clauses name {}, which is not a clause of the spec", step.id, item.id),
+                (Some(c), Some(kind)) if c.kind.as_ref() != Some(kind) => format!(
+                    "{}'s Clauses list {} as {kind}; the spec lists it as {}",
+                    step.id,
+                    item.id,
+                    c.kind.as_deref().unwrap_or("retired")
+                ),
+                _ => continue,
+            };
+            breaches.push(Breach::new(RULE, PLAN, step.line, message));
+        }
+    }
     breaches
 }
 
@@ -198,6 +231,8 @@ mod tests {
                 let _ = writeln!(text, "**Status**: {status}");
             } else if *s == "Kind" {
                 let _ = writeln!(text, "**Kind**: mechanism");
+            } else if *s == "Clauses" {
+                let _ = writeln!(text, "**Clauses**: none");
             } else {
                 let _ = writeln!(text, "**{s}**");
             }
@@ -383,5 +418,66 @@ mod tests {
         let plan = indexed("S1.160", "base", "S1.05 (done)", "S1.170 (x)")
             + &indexed("S1.170", "mechanism", "S1.160, S1.05", "none");
         assert!(reverse_index(plan).is_empty(), "a done step gone from the plan is neither a base nor a dependent");
+    }
+
+    fn form(clauses: &str) -> Vec<String> {
+        let mut w = ws(step("S1.140", "planned", "", "x").replace("**Clauses**: none", clauses), &[]);
+        w.spec = "- **ABC.1 STATE** — a\n- **ABC.2 PROCESS** — b\n- **ABC.3** — _Retired_: c\n".to_owned();
+        messages(&w).into_iter().filter(|m| m.contains("Clauses")).collect()
+    }
+
+    #[test]
+    fn clauses_items_are_read() {
+        let items = crate::docs::clauses_form(
+            "**Clauses**: ABC.1 STATE; ABC.2 PROCESS *(part: sales, from (zone, class))*;\nLaw 3 *(part)*; L3; N8 *(part)*",
+        )
+        .unwrap();
+        let read: Vec<(&str, Option<&str>, bool)> =
+            items.iter().map(|i| (i.id.as_str(), i.kind.as_deref(), i.part)).collect();
+        assert_eq!(
+            read,
+            [
+                ("ABC.1", Some("STATE"), false),
+                ("ABC.2", Some("PROCESS"), true),
+                ("Law 3", None, true),
+                ("L3", None, false),
+                ("N8", None, true)
+            ],
+            "a wrapped line reads as one"
+        );
+    }
+
+    #[test]
+    fn prose_in_clauses_is_refused() {
+        for text in
+            ["**Clauses**: carries ABC.1", "**Clauses**:\n- ABC.1 STATE", "**Clauses**: ABC.1", "**Clauses**: Law 3"]
+        {
+            assert_eq!(form(text).len(), 1, "{text}");
+        }
+    }
+
+    #[test]
+    fn type_must_match_the_spec() {
+        assert_eq!(
+            form("**Clauses**: ABC.1 PROCESS"),
+            ["S1.140's Clauses list ABC.1 as PROCESS; the spec lists it as STATE"]
+        );
+    }
+
+    #[test]
+    fn unknown_clause_is_refused() {
+        assert_eq!(
+            form("**Clauses**: ABC.9 STATE; N4"),
+            [
+                "S1.140's Clauses name ABC.9, which is not a clause of the spec",
+                "S1.140's Clauses name N4, which is not a clause of the spec"
+            ]
+        );
+    }
+
+    #[test]
+    fn none_is_a_form() {
+        assert!(form("**Clauses**: none").is_empty());
+        assert_eq!(form("**Clauses**: none; ABC.1 STATE").len(), 1, "none stands alone");
     }
 }
