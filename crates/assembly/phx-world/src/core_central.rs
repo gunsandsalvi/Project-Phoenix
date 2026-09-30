@@ -233,7 +233,7 @@ impl Core {
     pub(crate) fn fund_stage(
         &mut self,
         work: &mut crate::core_day::Work,
-        (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
+        ((day, calendar, streams, order), pool): ((Day, &Calendar, &Streams, &StreamDecl), Option<&phx_exec::Pool>),
         ranges: &Ranges,
     ) -> (Vec<Flow>, Vec<Flow>) {
         let (Some(deposit), Some(lending)) =
@@ -265,13 +265,13 @@ impl Core {
         let mut failed: Vec<Flow> = Vec::new();
         for c in &open {
             let (Ok(ccy), Some(issuer)) = (u8::try_from(*c), self.issuers.get(*c).copied()) else { continue };
-            work.fund.group(None, ranges, Denom::money(ccy));
+            work.fund.group(pool, ranges, Denom::money(ccy));
             let grouped = Grouped::new(&[&work.fund], ranges);
             let mut b = books(&mut self.kinds, self.bank_kind.unwrap_or(u8::MAX), (&mut deposits, &closed), issuer);
             let lot = |p: PartyKey| {
                 streams.open(order, Subject::new(SubjectTag::Party, u64::from(p.word())), day, SubStep::S8e.ordinal())
             };
-            let out = work.settle.settle(None, &grouped, ranges, &mut b, &lot);
+            let out = work.settle.settle(pool, &grouped, ranges, &mut b, &lot);
             failed.extend(out.failed.iter().map(|(f, _)| *f));
         }
         let unpaid: std::collections::BTreeSet<u32> = failed.iter().map(|f| f.source).collect();

@@ -185,13 +185,13 @@ impl Core {
     /// beyond the principal its dues repay, paid by the borrower and received by the creditor; and the money received
     /// for sales and for freight, against which the revenue recognised at their delivery or departure is held.
     #[clause("ACC.13", "FRM.13", "FRM.17")]
-    pub(crate) fn account_flows(&mut self, flows: &[Flow], failed: &[Flow]) {
+    pub(crate) fn account_flows<'f>(&mut self, flows: impl IntoIterator<Item = &'f Flow>, failed: &[Flow]) {
         let mut unpaid: BTreeMap<(PartyKey, PartyKey, i64, u8, u32), u32> = BTreeMap::new();
         for f in failed {
             *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
         }
         let estate = self.bound.kinds.estate.map(crate::core::kind_number);
-        for f in flows.iter().filter(|f| f.denomination.is_money()) {
+        for f in flows.into_iter().filter(|f| f.denomination.is_money()) {
             if let Some(n) = unpaid.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0) {
                 *n -= 1;
                 continue;

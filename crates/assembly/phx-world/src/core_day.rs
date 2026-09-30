@@ -234,10 +234,8 @@ impl Core {
                 e.1 += sign * f.amount;
             }
         };
-        if let Some(buf) = self.work.flows.chunks_mut().first() {
-            for f in buf.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
-                add(f, 1);
-            }
+        for f in self.work.flows.slices().flatten().filter(|f| f.reason == wage && f.denomination.is_money()) {
+            add(f, 1);
         }
         for f in failed.iter().filter(|f| f.reason == wage && f.denomination.is_money()) {
             add(f, -1);
@@ -382,8 +380,7 @@ impl DatedFamily {
 
     /// The contracts due today made flows, each rescheduled at its next date.
     #[clause("SET.4", "TIME.4")]
-    fn dues(&mut self, day: Day, calendar: &Calendar, due: &mut Vec<u32>, out: &mut Vec<Flow>) -> u64 {
-        self.store.wheel.take(day, due, None);
+    fn dues(&mut self, day: Day, calendar: &Calendar, due: &[u32], out: &mut Vec<Flow>) -> u64 {
         let mut made = 0;
         for edge in due.iter().copied() {
             let slot = Slot::new(edge);
@@ -647,16 +644,18 @@ impl Core {
         &mut self,
         work: &mut Work,
         failed: &[Flow],
-        at: (Day, &Calendar, &Streams, &StreamDecl),
+        (at, pool): ((Day, &Calendar, &Streams, &StreamDecl), Option<&phx_exec::Pool>),
         ranges: &Ranges,
     ) -> (i128, [i128; 3]) {
-        let mut moved = (0_i128, [0_i128; 3]);
-        if let Some(buf) = work.flows.chunks_mut().first() {
-            phx_exec::trace::span("settle.account_flows", || self.account_flows(buf, failed));
-            phx_exec::trace::span("settle.accrue_taxes", || self.accrue_taxes((at.0, at.1), buf, failed));
-            moved = phx_exec::trace::span("settle.money_moves", || self.money_moves(buf, failed));
-        }
-        let (fund, fund_failed) = phx_exec::trace::span("settle.fund_stage", || self.fund_stage(work, at, ranges));
+        let flows = &work.flows;
+        phx_exec::trace::span("settle.account_flows", || self.account_flows(flows.slices().flatten(), failed));
+        phx_exec::trace::span("settle.accrue_taxes", || {
+            self.accrue_taxes((at.0, at.1), flows.slices().flatten(), failed);
+        });
+        let mut moved =
+            phx_exec::trace::span("settle.money_moves", || self.money_moves(flows.slices().flatten(), failed));
+        let (fund, fund_failed) =
+            phx_exec::trace::span("settle.fund_stage", || self.fund_stage(work, (at, pool), ranges));
         phx_exec::trace::note(
             "settle.funding",
             &[("flows", phx_exec::trace::count(fund.len())), ("failed", phx_exec::trace::count(fund_failed.len()))],
@@ -776,14 +775,14 @@ impl Core {
 
     /// What a day's settled money flows moved: into the parties other than banks from the banks and the issuers, and
     /// each class of the issuers' money, a flow taking from its payer's class and adding to its payee's.
-    fn money_moves(&self, flows: &[Flow], failed: &[Flow]) -> (i128, [i128; 3]) {
+    fn money_moves<'f>(&self, flows: impl IntoIterator<Item = &'f Flow>, failed: &[Flow]) -> (i128, [i128; 3]) {
         let mut unpaid: BTreeMap<(PartyKey, PartyKey, i64, u8, u32), u32> = BTreeMap::new();
         for f in failed {
             *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
         }
         let money_maker = |k: PartyKey| self.bank_kind == Some(k.kind()) || self.issuers.contains(&k);
         let (mut net, mut classes) = (0_i128, [0_i128; 3]);
-        for f in flows.iter().filter(|f| f.denomination.is_money()) {
+        for f in flows.into_iter().filter(|f| f.denomination.is_money()) {
             if let Some(n) = unpaid.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0) {
                 *n -= 1;
                 continue;
@@ -868,7 +867,7 @@ impl Core {
     /// flows that failed.
     fn pay_currencies(
         &mut self,
-        work: &mut Work,
+        (work, pool): (&mut Work, Option<&phx_exec::Pool>),
         (ranges, deposits, closed): (&Ranges, &mut [i64], &[bool]),
         (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
         record: &mut CoreDay,
@@ -876,7 +875,7 @@ impl Core {
         let mut failed: Vec<Flow> = Vec::new();
         for (country, issuer) in self.issuers.iter().enumerate() {
             let Ok(ccy) = u8::try_from(country) else { continue };
-            phx_exec::trace::span("settle.group", || work.flows.group(None, ranges, Denom::money(ccy)));
+            phx_exec::trace::span("settle.group", || work.flows.group(pool, ranges, Denom::money(ccy)));
             let grouped = Grouped::new(&[&work.flows], ranges);
             let mut b = books(&mut self.kinds, self.bank_kind.unwrap_or(u8::MAX), (&mut *deposits, closed), *issuer);
             let business = calendar.is_business(CountryId::new(ccy), day);
@@ -895,13 +894,13 @@ impl Core {
                     )
                 };
                 let out = phx_exec::trace::span("settle.fixed_point", || {
-                    work.settle.settle(None, &grouped, ranges, &mut b, &lot)
+                    work.settle.settle(pool, &grouped, ranges, &mut b, &lot)
                 });
                 note_outcome(ccy, &out);
                 record.settled_with(&out);
                 failed.extend(out.failed.iter().map(|(f, _)| *f));
             } else {
-                work.settle.commit(None, &grouped, ranges, &mut b);
+                work.settle.commit(pool, &grouped, ranges, &mut b);
                 record.committed += phx_rand::float::len_u64(grouped.end());
             }
         }
@@ -914,10 +913,13 @@ impl Core {
     pub fn run_day(
         &mut self,
         (day, calendar, streams, order): (Day, &Calendar, &Streams, &StreamDecl),
-        clock: Option<&dyn phx_exec::Clock>,
+        (clock, pool): (Option<&dyn phx_exec::Clock>, Option<&phx_exec::Pool>),
     ) -> CoreDay {
         let mut work = std::mem::take(&mut self.work);
-        work.flows.reset(1);
+        // A chunk for each family's dues, then one for the flows the day's stages made: fixed by the makers, never by
+        // the workers, so a payer's flows keep one order however many run them.
+        let families = self.families.len();
+        work.flows.reset(families + 1);
         let mut record = CoreDay {
             day,
             flows: 0,
@@ -944,22 +946,17 @@ impl Core {
             self.central.recorded = Some(self.issuer_held());
         }
         self.timed(clock, "settle.dues", |c| {
-            for family in &mut c.families {
-                if let Some(buf) = work.flows.chunks_mut().first_mut() {
-                    let n = family.dues(day, calendar, &mut work.due, buf);
-                    phx_exec::trace::note(family.name, &[("dues", i64::try_from(n).unwrap_or(i64::MAX))]);
-                    record.flows += n;
-                }
+            for (family, buf) in c.families.iter_mut().zip(work.flows.chunks_mut().iter_mut()) {
+                family.store.wheel.take(day, &mut work.due, pool);
+                let n = family.dues(day, calendar, &work.due, buf);
+                phx_exec::trace::note(family.name, &[("dues", i64::try_from(n).unwrap_or(i64::MAX))]);
+                record.flows += n;
             }
-            if let Some(buf) = work.flows.chunks_mut().first_mut() {
-                let mut taken = std::mem::take(buf);
-                c.withhold(&mut taken);
-                if let Some(buf) = work.flows.chunks_mut().first_mut() {
-                    *buf = taken;
-                }
+            for buf in work.flows.chunks_mut().iter_mut().take(families) {
+                c.withhold(buf);
             }
         });
-        let settling = self.timed(clock, "settle.gather", |c| match work.flows.chunks_mut().first_mut() {
+        let settling = self.timed(clock, "settle.gather", |c| match work.flows.chunks_mut().get_mut(families) {
             Some(buf) => c.gather((day, calendar, streams), buf, &mut record),
             None => Vec::new(),
         });
@@ -972,14 +969,14 @@ impl Core {
         let closed = vec![false; banks];
         let failed = self.timed(clock, "settle.money", |c| {
             c.pay_currencies(
-                &mut work,
+                (&mut work, pool),
                 (&ranges, deposits.as_mut_slice(), &closed),
                 (day, calendar, streams, order),
                 &mut record,
             )
         });
         let moved = self.timed(clock, "settle.after", |c| {
-            c.after_settle(&mut work, &failed, (day, calendar, streams, order), &ranges)
+            c.after_settle(&mut work, &failed, ((day, calendar, streams, order), pool), &ranges)
         });
         self.work = work;
         for f in &failed {

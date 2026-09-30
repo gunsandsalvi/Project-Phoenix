@@ -117,9 +117,9 @@ impl World {
             self.core.timed(t, "freight", |c| c.ship(&gctx, geo, day));
         }
         let (calendar, streams) = (&self.calendar, &self.streams);
-        let settled = self
-            .core
-            .timed(t, "settle", |c| c.run_day((day, calendar, streams, &crate::opening::prims::SETTLE_ORDER), t));
+        let settled = self.core.timed(t, "settle", |c| {
+            c.run_day((day, calendar, streams, &crate::opening::prims::SETTLE_ORDER), (t, self.pool.as_ref()))
+        });
         settled.note();
         self.core.timed(t, "audit", |c| c.audit(day));
         self.core.timed(t, "statistics", |c| c.stats_day(day, (calendar, (&regions, geo)), hh.map(|h| &h.types)));

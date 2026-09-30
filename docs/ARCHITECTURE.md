@@ -916,6 +916,13 @@ then lot, so no outcome depends on registration or processing order, which a log
 ids a registration list yields are the same for every order of it (§14.3). Nothing is demanded and paid in one stage
 (TIME.7).
 
+Today's settlement runs on the world's pool: its grouping, its passes, a closed day's commitments, the fund stage and
+the families' wheel takes (`Core::run_day`, `pay_currencies`, `fund_stage`). The day's flows are in one chunk for each
+family's dues, in the families' order, then one for what the day's stages made; a payer's flows are ordered by (order,
+lot, chunk, place in its chunk), so the chunks, fixed by their makers and never by the workers, keep the order one
+buffer had and the outcome is the same for any number of workers. The families make their dues in turn until the
+kernel's chunk plans (S1.169) give a traversal to make them on the pool.
+
 ### 6.3 Traversals
 
 A slot traverses one of four ways: **agenda chunks** (K-11's `for_agenda`, the parties due in slot order), **market

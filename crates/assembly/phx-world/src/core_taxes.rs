@@ -212,14 +212,19 @@ impl Core {
     /// on the coming collection day, or a new one, and entered as its collector's tax; and the day's remittances
     /// counted.
     #[clause("TAX.2", "TAX.5", "ACC.13")]
-    pub(crate) fn accrue_taxes(&mut self, (day, calendar): (Day, &Calendar), flows: &[Flow], failed: &[Flow]) {
+    pub(crate) fn accrue_taxes<'f>(
+        &mut self,
+        (day, calendar): (Day, &Calendar),
+        flows: impl IntoIterator<Item = &'f Flow>,
+        failed: &[Flow],
+    ) {
         let mut unpaid: BTreeMap<FlowKey, u32> = BTreeMap::new();
         for f in failed {
             *unpaid.entry((f.payer, f.payee, f.amount, f.reason, f.source)).or_insert(0) += 1;
         }
         let mut remitted_failed = unpaid.clone();
         let estate = self.bound.kinds.estate.map(kind_number);
-        for f in flows.iter().filter(|f| f.reason == TAXED && f.denomination.is_money()) {
+        for f in flows.into_iter().filter(|f| f.reason == TAXED && f.denomination.is_money()) {
             if let Some(n) =
                 remitted_failed.get_mut(&(f.payer, f.payee, f.amount, f.reason, f.source)).filter(|n| **n > 0)
             {

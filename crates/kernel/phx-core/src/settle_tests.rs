@@ -344,3 +344,81 @@ fn settled_flows_post_to_their_lines() {
     assert_eq!(out.failed.len(), 1);
     assert_eq!(amounts, vec![60, 0, 0, 60, 0, 0], "0 paid 60 and 1 received it; the failed 50 is on no line");
 }
+
+/// A day's flows cut into `chunks` in their made order, grouped and settled on `workers`.
+fn settle_chunked(w: &mut Fixture, made: &[Flow], (chunks, workers): (usize, Option<usize>)) -> Outcome {
+    let ranges = Ranges::new(2, &[u32::try_from(w.balance.len()).unwrap(), 2, 1]);
+    let mut bufs = FlowBufs::default();
+    bufs.reset(chunks);
+    let size = made.len().div_ceil(chunks);
+    for (c, part) in made.chunks(size).enumerate() {
+        bufs.chunks_mut()[c].extend_from_slice(part);
+    }
+    let pool = workers.map(|n| phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(n)).unwrap());
+    bufs.group(pool.as_ref(), &ranges, Denom::money(0));
+    let g = Grouped::new(&[&bufs], &ranges);
+    let mut books = w.books();
+    Settle::default().settle(pool.as_ref(), &g, &ranges, &mut books, &lot)
+}
+
+/// A day of many payers short of funds, as settled: balances, reserves, what settled and which flows failed.
+/// What a day settled to: balances, reserves, what settled and each failed flow's source and cause.
+type Settled = (Vec<i64>, Vec<i64>, u64, Vec<(u32, Cause)>);
+
+fn a_day(chunks: usize, workers: Option<usize>) -> Settled {
+    let edges: Vec<(usize, usize, i64)> =
+        (0..300_usize).map(|i| (i * 5 % 19, i * 13 % 19, i64::try_from(i % 29 + 1).unwrap())).collect();
+    let funds: Vec<i64> = (0..19).map(|i| i64::from(i % 4) * 30).collect();
+    let mut w = Fixture::new(&funds, [40, 10]);
+    let out = settle_chunked(&mut w, &flows(&edges), (chunks, workers));
+    (w.balance, w.reserves, out.settled, out.failed.iter().map(|(f, c)| (f.source, *c)).collect())
+}
+
+#[test]
+fn settle_same_for_any_chunk_split() {
+    let one = a_day(1, None);
+    assert!(!one.3.is_empty(), "some payers are short");
+    for chunks in [2, 3, 7] {
+        assert_eq!(a_day(chunks, None), one, "the made order, cut into {chunks} chunks");
+    }
+}
+
+#[test]
+fn group_on_pool_equals_inline() {
+    let ranges = Ranges::new(2, &[19, 2, 1]);
+    let edges: Vec<(usize, usize, i64)> = (0..200_usize).map(|i| (i * 3 % 19, i * 7 % 19, 1)).collect();
+    let grouped = |workers: Option<usize>| {
+        let mut bufs = FlowBufs::default();
+        bufs.reset(4);
+        for (c, part) in flows(&edges).chunks(50).enumerate() {
+            bufs.chunks_mut()[c].extend_from_slice(part);
+        }
+        let pool = workers.map(|n| phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(n)).unwrap());
+        bufs.group(pool.as_ref(), &ranges, Denom::money(0));
+        bufs.slices().map(<[Flow]>::to_vec).collect::<Vec<_>>()
+    };
+    assert_eq!(grouped(Some(3)), grouped(None));
+}
+
+#[test]
+fn wheel_take_on_pool_equals_inline() {
+    let taken = |workers: Option<usize>| {
+        let mut wheel = crate::wheel::DueWheel::new(phx_id::Day::new(1), 8);
+        for e in (0..500_u32).rev() {
+            wheel.schedule(e * 7 % 499, phx_id::Day::new(1));
+        }
+        let pool = workers.map(|n| phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(n)).unwrap());
+        let mut out = Vec::new();
+        wheel.take(phx_id::Day::new(1), &mut out, pool.as_ref());
+        out
+    };
+    let inline = taken(None);
+    assert!(inline.windows(2).all(|w| w[0] <= w[1]), "taken in order");
+    assert_eq!(taken(Some(3)), inline);
+}
+
+#[test]
+fn failures_same_on_pool() {
+    let inline = a_day(3, None);
+    assert_eq!(a_day(3, Some(4)), inline, "the same flows fail for the same causes");
+}

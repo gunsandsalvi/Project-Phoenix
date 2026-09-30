@@ -1,22 +1,4 @@
-# The sites PC-97 admits for now, 24 in all, held to `phx_check.exceptions_pc97`. Each migration removes its own; a site is never added.
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_central.rs"
-item = "Core::fund_stage"
-what = "None pool"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_day.rs"
-item = "Core::pay_currencies"
-what = "None pool"
-count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_day.rs"
-item = "DatedFamily::dues"
-what = "None pool"
-count = 1
+# The sites PC-97 admits for now, 18 in all, held to `phx_check.exceptions_pc97`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
