@@ -2979,7 +2979,9 @@ credited while the world holds it (GEN.10).
    or a bare chain or measurement item, each with at most one `*(part …)*`; and every edge case of a standing step
    naming its evidence — a test its unit tests list (all it names, where the unit tests say they hold the edge cases'
    tests), a test of another step it names that lists it, a test the workspace holds, a live check a step lists or the
-   code runs, a `-F` case its budget names — or `n/a:` with the reason.
+   code runs, a `-F` case its budget names — or `n/a:` with the reason; and every standing step that changes code
+   done on the fast checks and the bench's read by its Kind — a base, kernel or index its `tools/bench.sh -F`
+   measure, a gate the `-g` run (its own or §2.24's), any other the bench's run — a `docs` step exempt.
 7. **Process**: live-check identifiers never disappear; a primitive's value in `data/` changes only with its `source`
    in the same diff; the placeholder count only falls except by placeholders a stage introduces, and no system is done
    while a placeholder naming it remains; public-API snapshots of kernel and interface crates change only with the

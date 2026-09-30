@@ -36,6 +36,10 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches.extend(extension_points(&steps));
+    match bench_reads(&steps) {
+        Ok(found) => breaches.extend(found),
+        Err(error) => breaches.push(Breach::new(RULE, PLAN, 1, error)),
+    }
     match edge_cases(ws, &steps) {
         Ok(found) => breaches.extend(found),
         Err(error) => breaches.push(Breach::new(RULE, PLAN, 1, error)),
@@ -75,6 +79,37 @@ fn clause_forms(steps: &[Step], clauses: &[docs::Clause]) -> Vec<Breach> {
         }
     }
     breaches
+}
+
+/// Every standing step that changes code ends on the fast checks and the bench's read of the budget: a base, kernel
+/// or index its `-F` measure, a gate the gate's `-g` run (its own or the gate template's), any other its bench run; a
+/// `docs` step changes no code and reads nothing.
+fn bench_reads(steps: &[Step]) -> Result<Vec<Breach>, String> {
+    let re = |p: &str| regex::Regex::new(p).map_err(|e| e.to_string());
+    let (fast, measure, gate, bench) =
+        (re(r"(?i)fast checks|fmt`?, `?clippy")?, re(r"-F\b")?, re(r"-g\b|§2\.24's Done when")?, re(r"\bbench\b")?);
+    let mut breaches = Vec::new();
+    for step in steps.iter().filter(|s| s.status.as_deref() != Some("retired")) {
+        let kind = step.kind.as_deref().unwrap_or_default();
+        if kind == "docs" {
+            continue;
+        }
+        let done = step.done_when.split_whitespace().collect::<Vec<_>>().join(" ");
+        let (read, wanted) = match kind {
+            "base" | "kernel" | "index" => (measure.is_match(&done), "its `tools/bench.sh -F` measure"),
+            "gate" => (gate.is_match(&done), "the gate's `tools/bench.sh -g` run"),
+            _ => (bench.is_match(&done), "the bench's run"),
+        };
+        if !read {
+            let message = format!("{} ({kind}) is done without {wanted}", step.id);
+            breaches.push(Breach::new(RULE, PLAN, step.line, message));
+        }
+        if kind != "gate" && !fast.is_match(&done) {
+            let message = format!("{} ({kind}) is done without the fast checks", step.id);
+            breaches.push(Breach::new(RULE, PLAN, step.line, message));
+        }
+    }
+    Ok(breaches)
 }
 
 /// What an edge case may cite as its evidence: the workspace's tests already written and the live checks its code
@@ -303,6 +338,8 @@ mod tests {
                 let _ = writeln!(text, "**Kind**: mechanism");
             } else if *s == "Clauses" {
                 let _ = writeln!(text, "**Clauses**: none");
+            } else if *s == "Done when" {
+                let _ = writeln!(text, "**Done when**: the fast checks pass; the bench's run reads the budget.");
             } else {
                 let _ = writeln!(text, "**{s}**");
             }
@@ -613,6 +650,57 @@ mod tests {
         assert_eq!(
             edge_breaches(&ws(plan, &[])),
             ["S1.140's edge case `E9: growth — LC-1-99.` names no test, live check or `n/a:` reason it has"]
+        );
+    }
+
+    fn bench(kind: &str, done: &str) -> Vec<String> {
+        let plan =
+            step("S1.140", "planned", "", "x").replace("**Kind**: mechanism", &format!("**Kind**: {kind}")).replace(
+                "**Done when**: the fast checks pass; the bench's run reads the budget.",
+                &format!("**Done when**:\n{done}"),
+            );
+        messages(&ws(plan, &[])).into_iter().filter(|m| m.contains("is done without")).collect()
+    }
+
+    #[test]
+    fn bench_read_by_kind() {
+        assert!(
+            bench("mechanism", "- [ ] the fast checks pass.\n- [ ] The bench's run at fewer persons passes.")
+                .is_empty()
+        );
+        assert!(bench("repair", "- [ ] fmt, clippy, tests, `phx-check`; `tools/bench.sh` within budget.").is_empty());
+        assert_eq!(bench("data", "- [ ] the fast\n  checks pass."), ["S1.140 (data) is done without the bench's run"]);
+        assert_eq!(
+            bench("tool", "- [ ] the bench at the committed resolution."),
+            ["S1.140 (tool) is done without the fast checks"]
+        );
+    }
+
+    #[test]
+    fn docs_steps_are_exempt() {
+        assert!(bench("docs", "- [ ] §6 restated; the two reviews done.").is_empty());
+    }
+
+    #[test]
+    fn bases_need_their_f_measure() {
+        assert_eq!(
+            bench("base", "- [ ] the fast checks pass.\n- [ ] the bench at the committed resolution."),
+            ["S1.140 (base) is done without its `tools/bench.sh -F` measure"]
+        );
+        assert!(
+            bench("index", "- [ ] the fast checks pass; `tools/bench.sh -F stalls` within `fin.stalls.*`.").is_empty()
+        );
+    }
+
+    #[test]
+    fn gates_need_g() {
+        assert_eq!(
+            bench("gate", "- [ ] the bench at the committed resolution."),
+            ["S1.140 (gate) is done without the gate's `tools/bench.sh -g` run"]
+        );
+        assert!(
+            bench("gate", "- [ ] §2.24's Done when, with the heavy days measured.").is_empty(),
+            "the gate template's run"
         );
     }
 }

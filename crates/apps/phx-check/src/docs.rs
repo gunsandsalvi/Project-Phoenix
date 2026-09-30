@@ -37,6 +37,8 @@ pub struct Step {
     pub unit_tests: String,
     pub live_checks: String,
     pub budget: String,
+    /// The text of its **Done when**.
+    pub done_when: String,
 }
 
 /// A row of the clause map: the step that completes the listed clauses of one system.
@@ -176,6 +178,7 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
                 unit_tests: String::new(),
                 live_checks: String::new(),
                 budget: String::new(),
+                done_when: String::new(),
             });
             open = true;
             current = "";
@@ -217,11 +220,12 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
                     },
                 }
             }
-            "Unit tests" | "Live checks" | "Budget" => {
+            "Unit tests" | "Live checks" | "Budget" | "Done when" => {
                 let text = match current {
                     "Unit tests" => &mut step.unit_tests,
                     "Live checks" => &mut step.live_checks,
-                    _ => &mut step.budget,
+                    "Budget" => &mut step.budget,
+                    _ => &mut step.done_when,
                 };
                 text.push_str(line);
                 text.push('\n');
