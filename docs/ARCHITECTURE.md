@@ -2750,260 +2750,94 @@ never read as the world's. CI never runs the world.
 
 ## 13. Budgets
 
-Every line below is **count × unit cost**, each with the counter that ratchets it (§16 item 8). Unit costs are the
-third review's **measured** kernels, scaled to a tuned phone core; counts are estimates for the coarsened
-representation (spec Appendix E 31). The **design point** is 0.7 million household agents (about 2.4 million persons), 0.25
-million firm and business agents, and 2,000 zones. The first measurements (§14.6) replace every
-number here; the size and zones are RESOLUTION and are set where both budgets hold (N8.5) with at least 10%
-headroom, this document's margin for the estimates' error.
+Every figure the budget is judged by is a key of `perf/design.toml` (S1.113), written there once; this section says
+what each table means and how the budget is judged, and names the key. A figure in the plan or here that differs from
+the file is a defect. The world never reads the file; `tools/bench.sh -F` (`phx-fin`, §14.7) fills each base at the
+design point and measures it against its `[fin.<base>]` ratchets in `perf/budget.toml`.
 
-**The valve** (N8.5, REP.40). The world holds `REP.persons` of the setup's `GEN.population` (`data/shared/REP.toml`,
-RESOLUTION), which the opening splits among the countries, so everything derived from a country's people — the
-employed, firms, contracts — follows the world's size, and every household drawn is one party; a size above the
-setup's population stops the run. `phx run --persons N` sets it before assembly in place of the register's, for that
-run; the population's store and the save's manifest record it, so a save loads only under its own, and `phx inject`
-reads it from the manifest (§11). The households and firms are an outcome of the persons. The valve is a declared
-setting, never an input the world reads from its own timing: it changes only between runs, by a recorded change citing
-a device or measurement report (§14.8), and its settings are register primitives, which the manifest's register hash
-covers, so a load with a changed valve is refused as other data (§11). The world runs once (spec Appendix E 36): there
-is no run at another resolution or seed to compare with, and the representation is judged by the run's own macro
-results against real economies' (N3, N4).
+### 13.1 The design point
 
-### 13.1 Memory (4.5 GB resident, N8.4), at the worst day's peak, through Stage 2
+The design point (spec Appendix E 51, plan §12) is `[point] persons` with every count per person the finished world
+is expected to hold raised by `[point] per_person_margin`, so the finished world is measured with room above it; it
+measures the code, not the world, and is not the play resolution (N8.5, E 36). `[store]` holds each count with the
+step whose figure it is, `[store.contracts]` the contract families' rows, and `[day.b]`, `[day.nb]`, `[day.h]` and
+`[day.bc]` the daily volumes of an ordinary business day, a non-business day (TIME.8), a quarter-end payday after three
+closed days, and the business day after four closed days. The steps state their figures at the counts of
+`[point] steps_persons`; each total is their statements × `[point] scale`, the parts that do not grow with the persons
+(the process, the map and network, the save buffers, the barriers) excepted.
 
-| Store | Count | Bytes each | Budget |
-| --- | --- | --- | --- |
-| Household agents: attributes, positions (with each deposit row's), rates, review exposures and attention rates per kind, own outlooks, arena references, the due-day run's head (Stage 2's review kinds S2.05, S2.06) | 0.7 M | 576 | 403 MB |
-| Household persons and attachments, a packed word each | 0.7 M × 43 words | 8 | 240 MB |
-| Relationship rows (40 per household agent, 12 per firm agent, 2 M of individuals; Stage 0's pensions in payment, 0.35 M state pension rows at 16 bytes and 0.5 M DB pensioner rows at 24; Stage 2's invoice rows, 10 per firm agent and 0.5 M of individuals, one per (holder, market, terms, statement period)) | 36.85 M | ≈ 23 average | 849 MB |
-| Line holder lists, with block slack (none on the pensions' retail side) | 36 M | 6 | 216 MB |
-| Holdings and instruments' holder lists | 5.25 M | 28 | 147 MB |
-| Firm and business agents: the record (itemised below) | 0.25 M | 500 | 125 MB |
-| Lines (kind, terms id, side counts, next due day, holder list; Stage 2's invoice lines are a few thousand) | 3 M | 32 | 96 MB |
-| Loan lines' balance totals per arrears stage (Stage 2) | 0.3 M × 4 | 8 | 10 MB |
-| Interned terms with their sharded hash (keys retired with cells) | 1.5 M | 72 | 108 MB |
-| Agenda: next days per (agent, reason), one calendar entry per agent | 0.95 M × 16 | 5.5 | 85 MB |
-| Kind tables of individuals and their facets | 0.15 M | 1.5 KB | 225 MB |
-| Estates open, one per ended party: openings × life (§9.1) | 60 k | 512 | 31 MB |
-| Instruments, lots, liens, commitments, messages that live across days (Stage 2's listings, 13 MB) | — | — | 163 MB |
-| Markets, marks and fixings history; public records (Stage 2's filed accounts over two years, 48 MB); events | — | — | 198 MB |
-| Map, network, deposits, stock per (tile, class) and its index | — | — | 80 MB |
-| Directory with bounded tombstones | — | — | 50 MB |
-| Day buffers at the worst day (payee reduction streamed shard by shard; intents; sort scratch), by their room; measured at 889 MB on Stage 0's payday of 2.8 M payments, over this line | — | — | 600 MB |
-| Arena slack and page tails (15% of variable-length stores) | — | — | 214 MB |
-| Save buffers (the renumbering slice retired with cells) | — | — | 94 MB |
-| Views (tracers retired with cells) | — | — | 60 MB |
-| Android process baseline | — | — | 250 MB |
-| **Total** | | | **4 244 MB** |
+### 13.2 Time
 
-Through Stage 1 the design point peaks at about 3.98 GB against 4.5 GB — the run head in every household record from
-Stage 0 adds 6 MB, Stage 0's pensions in payment 20 MB with slack, the persons and attachments as laid out 30 MB more
-than first budgeted, and the landing index (as measured) and group aggregates retired with cells 134 MB less — so 12%
-headroom, if the day buffers are brought under their line. Stage 2 adds about 251 MB — invoice rows with their
-holder-list entries and slack 104 MB, filed accounts 48 MB, household agents 45 MB, estates 31 MB, listings 13 MB, loan
-lines' stage totals 10 MB — to about **4.23 GB**: 6% headroom, short of the required 10% (a peak of at most 4 050 MB).
-Stage 3 adds about 240 MB — institutions' positions and their lots 104 MB, households'
-holding rows 30 MB, individuals' deviations from their methods' outlooks 19 MB, household attributes with participation
-18 MB, registered outlooks 12 MB, household agents 11 MB (592 bytes), money-market lines 10 MB, records and instruments
-10 MB, slack 26 MB — to about **4.47 GB**: 0.7% headroom. Stage 4 adds about 387 MB (the
-plan's S4.07): relationship rows 138 MB — policies 4.9 M and firms' 0.5 M at 16 bytes, DB active and deferred rights 1.3
-M at 24, derivatives 1 M at 16 with no `amount`, claim and compensation lines — household attachments 42 MB (policy
-attachments with their renewal bands, and the pension scheme joint with employment), DC pots with their `pending` word
-38 MB, lines 35 MB, interned terms 25 MB, household agents 22 MB (624 bytes), kind tables 15 MB, records and valuations
-30 MB, holder lists 8 MB (derivative lines and institutional sides only), slack 34 MB — to about **4.86 GB**: 8%
-over the budget itself. Stage 5 adds about 116 MB (the plan's Stage 5 ledger, after its
-reviews' remedies): relationship rows 42 MB — benefit claimants 0.65 M at 16 bytes, earnings-related state-pension
-rights 0.6 M at 24, tax payables and instalments 0.35 M at 24, payroll payables' balances per base, foreign-currency
-deposits and nostros at 38 — lines and terms 15 MB, attachments 13 MB (intentions during a campaign, waits and claims),
-household agents 11 MB (640 bytes), foreign holdings 9 MB (at 32 and 24 bytes), records 8 MB, the `vote` review's side
-column during a campaign 5 MB, messages 2 MB, kind tables 1 MB, slack 10 MB — to about **4.97 GB**: 10% over the budget
-itself. Stage 6 adds (the plan's Stage 6 ledger): firm agents' known ways, about 50 k at
-about 1 KB, 50 MB; household persons' records 28 MB (the education record, schooling, the search band, participation and
-retirement); household agents 22 MB (672 bytes); relationship rows 6 MB (kin rows, licences); firm agents 1 MB (504
-bytes, past this table's 500-byte line by 4) and their cumulative-output lists 7 MB; ways, known-way sets and patents 7
-MB; views 10 MB; imitation pools 4 MB; receipts 1 MB; slack 11 MB — about 147 MB, to about **5.12 GB**: 14% over the
-budget itself. How rows fall with the size is measured (§14.6).
+Wall time is core time ÷ `[phone] cores`; a VM nanosecond is a phone nanosecond ÷ `k_compute` or `k_gather`. A turn
+is the sum of its days; the lines are `fin.turn.median_ms` for the ordinary business day and `fin.turn.worst_ms` for
+the binding turns, 4 NB + B′ and 3 NB + H, each with 10 % headroom below `[phone] turn_ms`; a non-business day
+weighs four times on the worst turn. Four fused chains keep the day's work single-pass: a sale is its payment; a due
+is streamed into both parties' `pending`; nets live in `pending`; production is realised in the (seller, good) batch.
 
-The firm agent's record, counted against 500 bytes: the hot record with its three leading position totals (output
-stock, cash, sales outlook) 64; input stocks, four, and work in progress 40; output and four input use rates 40; unit
-cost, markup, demand and revenue since review 32; the sales outlook's width and last surprise 16; review exposures,
-six lumpy kinds (price, way, entry and exit, closure, investment, vacancies) 48; attention gains, six at 4 bytes, 24;
-standing money rates, six, 48; the kink signature 8; arena references, eight (plant, employment, loan, deposit, supply
-rows, profiles) 64; the due-day run's head 8 — 392, the rest Stage 2–5's (trade credit, tax positions, learning).
-The firm table's agenda has about eight reasons: two hazards, reviews, wakes, schedules, kink days, dues and wear.
+The tables: `[unit]`, each kind of work's cost with its miss budget; `[stage]`, the per-stage lines by day type;
+`[fin.fixed.<line>]`, each fixed line a table of its steps' shares; `[fin.decide]` and `[fin.decide.additions]`, the
+decision units and the work added to them; `[fin.calendar.<event>]`, the dated days, each joining H
+(`joins_h`), B′ (`joins_bprime`) or neither, a campaign day (`campaign`), and the events (`events`: a mass default,
+a bank's run or resolution, a catastrophe). A step states its share as "its share of `fin.fixed.<line>`: x / y / z
+core-ms (B / NB / H)", "adds u phone-ns to `fin.decide.<unit>_ns` at n items" or "on `fin.calendar.<event>`: x core-ms".
 
-### 13.2 Time (1 s median, 2 s worst, N8.2)
+Nothing is counted twice: users carry shares and kernels carry units — a kernel states its unit ratchet and the count
+it is measured at, each step that calls it states its share, and a kernel only the core's own day calls states the
+share itself; `recount` is the whole audit (the touched parties' identities, the recounts, the rolling part);
+`kinks` is stage 4a's realisation of standing rates and wear, and `real` is freight, construction, processes,
+energy dispatch and weather, both every day; work that runs on non-business days states its NB share; a step's items
+added to a unit are costed at that unit. The worst turn is each binding turn with every dated day that can fall on it
+and a campaign day; each event is composed on it one at a time, on its worst day — its own shares plus the tails of
+its cause that fall there — against the same `fin.turn.worst_ms`. The core's close (S1.360) and every gate sum the
+tables so.
 
-Unit costs are **phone core-nanoseconds**; wall time is core time over the phone's **sustained** parallel speed,
-taken as **3 core-seconds per second** (one fast and five medium cores, sustained) until Stage 0 measures
-it per core class (§14.6). A turn's time is the sum of its days: an ordinary business day; a **non-business day**
-(TIME.8: no institutions, settlement, funding or valuation; reviews only for the decisions the day's meetings need);
-or a **heavy business day** (a quarter-end payday after a holiday, with the carried needs).
+### 13.3 Memory
 
-| Work | Count, business day | Unit | Business | Non-business | Heavy |
-| --- | --- | --- | --- | --- | --- |
-| Hazard and need draws per agent, drawn ahead (§7.7) | 1.1 M | 180 ns | 66 ms | 66 ms | 66 ms |
-| Agenda maintenance: redraws when an agent's rates change (§7.7) | 0.24 M | 150 ns | 12 ms | 8 ms | 18 ms |
-| Agent visits: continuous decisions on schedule, kinks | 0.28 M | 500 ns | 47 ms | 17 ms | 55 ms |
-| Group-aggregate updates from changed rates (retired with cells) | 11 M | 20 ns | 73 ms | 27 ms | 85 ms |
-| Occasion evaluations, per (agent, decision) | 2.4 M | 80 ns | 64 ms | 13 ms | 80 ms |
-| Choices of acting agents | 0.25 M | 400 ns | 33 ms | 10 ms | 40 ms |
-| Parts: from decisions, kinks and age (0.15 M) and seller spreads (0.15 M) (retired with cells) | 0.3 M | 2.5 µs | 250 ms | 67 ms | 375 ms |
-| Meetings and re-choice rounds (about 10 sellers in reach; about 6 µs at 100) | 0.2 M buyer-products | 650 ns | 43 ms | 43 ms | 43 ms |
-| Seller spreads on review days (retired with cells) | 0.05 M sellers | 3 µs | 50 ms | — | 50 ms |
-| Labour matching (about 15 vacancies visible per searcher; about 50 ns each) | 0.1 M searching agents | 1 µs | 33 ms | — | 33 ms |
-| Physical flows realised at visits and at kinks (stock at zero, lead times, wear classes) | 0.3 M | 150 ns | 15 ms | 10 ms | 15 ms |
-| Settlement: run heads; the rows of the segments due today, about a fifth of holders' on an ordinary weekday (Stage 0's pensions in payment among them), those not due reading their line's next due; payments applied (§6.5) | 1.1 M heads; 6.2 M rows, 4 M not due; 2 M payments (58 M rows, 3 M not due, 4.4 M payments heavy) | 2 ns; 10 ns, +5 ns; 30 ns | 48 ms | 3 ms | 243 ms |
-| Agenda gather at 1b | 1.5 M entries | 20 ns | 10 ms | 10 ms | 10 ms |
-| Institutions, financial markets, the state | — | — | 83 ms | 10 ms | 133 ms |
-| Valuation, accounts, tests, publications | — | — | 27 ms | — | 67 ms |
-| Audit, statistics, events, views | — | — | 40 ms | 27 ms | 53 ms |
-| Barriers and tails | up to 46 sub-steps | — | 30 ms | 20 ms | 35 ms |
-| **Total** | | | **924 ms** | **331 ms** | **1 401 ms** |
-| Tolerance control (retired with cells) | 0.95 M | 300 ns + joins | +170 ms | +170 ms | +170 ms |
-| A publication with a large surprise: the wake pass, then the woken agents' visits | 0.95 M hot records; up to 0.7 M visits | 5 ns; 500 ns | +120 ms | — | +120 ms |
+The ledger (`[ledger]`, lines 1–25) is the resident memory at the heaviest day, each line with its owner bases and
+their bytes a row (`[bytes]`), against `fin.mem.peak_mb` (`[phone] memory_mb`: 4.5 GiB less 10 %, N8.4). A step states
+its bytes as "ledger line n: +x MB resident", or "+0 B (inside S1.nnn)" where a base's figure holds them; each line is
+the sum of its steps' statements at `[resolution]`'s settings × `[point] scale`. The lines most sensitive to the
+design point are a contract row, a person and a firm.
 
-**Stage 2 adds** (the plan's Stage 2 ledger, with its representation choices, §18 item 23):
+`[resolution]` holds every RESOLUTION setting the design point is measured at: each with its `forced_by` and what it
+frees or costs, and the settings the owner set (plan §12) marked as the owner's. The map's grid and its cells are
+fixed (spec E 29, GEO.19).
 
-| Work | Count, business day | Unit | Business | Non-business | Heavy |
-| --- | --- | --- | --- | --- | --- |
-| Parts: housing transactions, one part each (30 k); bank switches, made at settlement (9 k); credit — arrears and restructuring splits, record-stage re-keys, insolvency entries and discharges, heirs (19 k) (retired with cells: the agent changes in place) | 58 k | 2.5 µs | 48 ms | 5 ms | 72 ms |
-| The same parts at the prototype's measured 9.9 µs (the risk case, outside the totals; retired with cells) | 58 k | 9.9 µs | 191 ms | 20 ms | 285 ms |
-| Housing search (about 20 listings in reach per searcher, about 50 ns each) | 50 k searching agents | 1 µs | 17 ms | — | 17 ms |
-| Occasion evaluations: workouts, terms, financing, distress, housing, vehicles, rents, bank choice, arrears | 0.41 M | 80 ns | 11 ms | 3 ms | 14 ms |
-| Institutions: funding, capital, supervision; the electricity auction and offers; provisions and ratios over per-(line, stage) totals | — | — | 10 ms | 5 ms | 15 ms |
-| Invoices due, in the holders' due-day runs: on a statement's due day, the rows due and their pooled payments | 1.5 M rows and 0.3 M payments | 10 ns and 30 ns | — | — | 8 ms |
-| **Stage 2 total** | | | **86 ms** | **13 ms** | **126 ms** |
-| A resolution's D+1: deposit rows split, banking arrangements rewritten, agents rewritten in place | 0.5 M; 20 k; 0.25 M | 100 ns; 300 ns; 80 ns | +25 ms | — | +25 ms |
-| A bank-run day: the wake pass, the woken agents' visits, the switchers' changes | 0.95 M; up to 0.35 M; up to 50 k | 5 ns; 500 ns; 2.5 µs | +100 ms (+225 ms at 9.9 µs) | — | +100 ms |
+### 13.4 Saves
 
-**Stage 3 adds** (the plan's Stage 3 ledger, with its representation choices, §18 item 24):
+Raw and on-disk bytes, save and load time, and retention (N8.10, N8.4) are the `fin.save.*` keys: two saves retained
+— the latest and the one being written — with history once, within `fin.save.storage_mb`; save and load each within
+`[phone] save_s` and `load_s`. The world hash is a tree of per-frame hashes (K-10), so a save hashes what it writes.
 
-| Work | Count, business day | Unit | Business | Non-business | Heavy |
-| --- | --- | --- | --- | --- | --- |
-| The linked call: the money market and the tenders, one core per country, the countries in parallel (wall time, undivided) | about 20 000 edges per country | — | 3–5 ms | — | 5 ms |
-| Money-market orders | 6 k | 2 µs | 4 ms | — | 6 ms |
-| Orders and meetings of auctions, books, dealer markets and funds' dealing | about 0.13 M orders; 1 500 closing calls; 3 000 dealing meetings | 100–500 ns; 3 µs; 1 µs | 16 ms | — | 27 ms |
-| Institutions' closed-form values; managers' reviews of candidates | 80 k; 30 k | 100 ns; 300 ns | 6 ms | — | 6 ms |
-| Households' holdings: reviews; instrument choices, a multinomial over the reach | 30 k; 10 k | 80 ns; 1 µs | 4 ms | — | 4 ms |
-| Parts: members changing participation or leaving their row's step (retired with cells) | 2 k | 2.5 µs | 2 ms | — | 2 ms |
-| Registered instrument outlooks and values, on new prints; registrations | 0.2 M; 0.1 M | 70 ns; 30 ns | 6 ms | — | 6 ms |
-| Dividends and votes over holder rows | 1.5 M on heavy days | 10 ns | — | — | 5 ms |
-| The central bank, the treasury, non-bank lenders, fixings, indices, ratings and reports | — | — | 3 ms | — | 9 ms |
-| Valuation, margin, repo margin, covenants | 0.9 M; 2 k; 30 k | 10 ns; 4 µs; 200 ns | 8 ms | — | 16 ms |
-| Money funds' daily accruals | about 3 000 funds | — | — | 1 ms | — |
-| **Stage 3 total** | | | **53 ms** | **1 ms** | **86 ms** |
-| A fund-run day: the wake pass, the woken agents' visits, the switchers' changes | 0.95 M; 0.2 M; 30 k | 5 ns; 500 ns; 2.5 µs | +60 ms (+134 ms at 9.9 µs) | — | +60 ms |
+### 13.5 Capacity
 
-**Stage 4 adds** (the plan's Stage 4 ledger, S4.07, with its representation choices, §18 item 25):
+Every width is sized for the design point with two years' growth: a party's slot 27 bits and its kind 5; unit ids 24
+bits; a chain link and a wheel entry's family 8 bits and slot 24, code 255 for holdings; terms 24 bits with an 8-bit
+generation; money `i64` with world totals in `i128`; the wheel 128 days; radix digits 11 bits. `phx-core::capacity`
+(K-24, S1.114) holds the table and refuses a count past it where it arises.
 
-| Work | Count, business day | Unit | Business | Non-business | Heavy |
-| --- | --- | --- | --- | --- | --- |
-| Settlement: Stage 4's dated rows in their holders' runs — policies, annuities and claimants in the segments scanned, derivatives most days; premiums paid | 1.1 M and 1 M rows, 0.8 M not due; 0.25 M payments (4.9 M and 1 M rows, 0.4 M payments heavy) | 10 ns, +5 ns; 30 ns | 11 ms | — | 24 ms |
-| Occasion evaluations: `insure`, `pension`, acceptances | 0.25 M | 80 ns | 7 ms | — | 9 ms |
-| Choices of acting agents: insurer, fund, trust and annuity choices | 20 k | 400 ns | 3 ms | — | 4 ms |
-| Claims, third-party harm included: opened at 3e, adjusted at 5c | 6 × 10⁴ | 300 ns | 6 ms | 2 ms | 6 ms |
-| Derivative marks and margin: valuations per distinct terms, rows into accounts and buckets, initial margin per account | 5 × 10⁴; 1 M; 10⁴ | 400 ns; 25 ns; 3 µs | 25 ms | — | 30 ms |
-| Derivative meetings: book orders, client requests to about four dealers, users' reviews; closing calls, auctions, expiries | 10⁵; 10⁴; 10⁴ | 300 ns; 1 µs a quote; 2 µs | 32 ms | — | 40 ms |
-| Valuation: actuaries per (cover, model point) on valuation dates; roll-forwards per (insurer or scheme, bucket) | — | — | 2 ms | — | 4 ms |
-| Institutions: insurers' pricing, underwriting, reinsurance; trustees, sponsors, employers' scheme offers; SEC and MNA decisions | — | — | 10 ms | 1 ms | 15 ms |
-| Contribution follow-ons at 7e, per (agent, employment row × scheme) on paydays | about 1 M heavy | 30 ns | 2 ms | — | 10 ms |
-| Tenders, annuity purchases, drawdowns, fund switches (parts and promotions retired with cells) | ≤ 5 k | 2.5 µs | ≤ 4 ms | — | ≤ 4 ms |
-| **Stage 4 total** | | | **102 ms** | **3 ms** | **146 ms** |
-| A scheme valuation date: one declared sweep of the household arenas | — | — | +10 ms | — | +10 ms |
-| An insurer's resolution day, D+1: one scan of the arenas, rows split at the protection limit, agents rewritten | 35 M; 0.5 M; 20 k | 2 ns; 100 ns; 300 ns | +45 ms | — | +45 ms |
-| A takeover of a widely held firm, its first answer day: notices, evaluations, tendering agents' changes | 0.3 M; 0.3 M; 50 k | 20 ns; 80 ns; 2.5 µs | +50 ms (+175 ms at 9.9 µs) | — | +50 ms |
+### 13.6 The valve
 
-**Stage 5 adds** (the plan's Stage 5 ledger, after its reviews' re-costing and remedies, §18 item 26):
+The play resolution is set and reset by the budget's measure in the one run (N8.5, E 36). The world holds
+`REP.persons` of the setup's population (`data/shared/REP.toml`, RESOLUTION), which the opening splits among the
+countries, so everything derived from a country's people follows the world's size; `phx run --persons N` sets it for
+that run, the population's store and the save's manifest record it, and a save loads only under its own (§11). The
+valve is a declared setting, never an input the world reads from its own timing: it changes only between runs, by a
+recorded change citing a bench report (`perf/bench/`) or the owner's decision (plan §12), which `phx-check`'s
+no-tuning rule enforces.
 
-| Work | Count, business day | Unit | Business | Non-business | Heavy |
-| --- | --- | --- | --- | --- | --- |
-| Levies: payroll contributions fused with withholding; VAT on cash sales in their instructions and on terms sales per invoice row at its statement; realised gains fed at settlement | 2.4 M levies (6 M heavy); 0.1 M cash sales (1.5 M invoice rows heavy); 0.1 M gains | 7.5 ns; 15 ns a side (3 ns a row); 20 ns | 8 ms | — | 19 ms |
-| Tax dues, returns and assessments: remittances and instalments in due-day runs; corporate returns, inheritance tax, arrears | 0.35 M rows and 0.2 M payments heavy | 10 ns and 30 ns | 2 ms | — | 6 ms |
-| Benefits in due-day runs; the state pension's earnings-related rights, one follow-on leg per agent per payday | 0.15 M rows, 0.1 M payments; 0.1 M legs (0.8 M, 0.5 M; 0.5 M heavy) | 10 ns, 30 ns; 30 ns | 3 ms | — | 13 ms |
-| Claims and service needs; agencies' staffing, purchases and serving draws | 85 k evaluations; 85 k draws | 80 ns; 150 ns | 8 ms | 2 ms | 10 ms |
-| Parties and pollsters outside campaigns | — | — | 1 ms | — | 1 ms |
-| Currencies: individuals' requests to about four desks, interdealer calls, banks' posted quotes, conversions drawn in payments, fixings, translation | 5 k; 3; 0.15 M; 0.1 M | 1 µs a quote; —; 50 ns; 20 ns | 12 ms | — | 15 ms |
-| Currency derivatives: meetings and users' reviews; marks per (pair, maturity) from 6c's forward points, and margin | — | — | 10 ms | — | 13 ms |
-| Registered values of foreign instruments | — | — | 1 ms | — | 1 ms |
-| Across borders: foreign sellers in border groups' reach; crossings and customs; per-category tallies; migration's upper nest over the day's memo; admissions, movers, invoicing | —; 2 × 10⁴; 0.2 M rows; 50 k reviews | —; 500 ns; 10 ns; — | 18 ms | 2 ms | 21 ms |
-| **Stage 5 total** | | | **63 ms** | **4 ms** | **99 ms** |
-| A campaign business day in the largest country: platform values per agent, shared benefit and service values, counts per persons' combination (budgeted as the retired parts) | 25 k × 6; 10 k; 67 k agents | 350 ns; 300 ns; 150 ns | +25 ms | — | +25 ms |
-| An election's eve in the largest country: `vote` for the adults still undecided | up to 0.2 M agents | as above | +60 ms | — | +60 ms |
-| An election day and the next: the tally and the clearing, declared sweeps of the country's agents; a campaign's first day, the opening sweep | 0.34 M agents | 40 ns; 25 ns; 30 ns | +5 ms; +3 ms; +3 ms | the same | +5 ms |
-| A budget's effective day: kink signatures re-read, agents rewritten, kink days rebooked | 0.95 M; 0.1 M; 0.2 M | 5 ns; 300 ns; 100 ns | +18 ms | — | +18 ms |
-| A property-tax instalment day: the holding levy from the (zone, class) index | 1.2 M holdings; 0.8 M legs | 20 ns; 15 ns | +12 ms | — | +12 ms |
-| A property-tax assessment day; the school year's first day | 40 k valuations; 0.2 M agents | 1 µs; 200 ns | +13 ms each | +13 ms (school) | +13 ms each |
-| A peg's break or a sudden stop: the wake pass and the woken agents' visits | 0.95 M; up to 0.7 M | 5 ns; 500 ns | +120 ms | — | +120 ms |
+It is refined in E 41's order — the persons, the preference types, each kind's attribute classes and the zones, the
+horizons and snapshot intervals, the age classes, the audit's cycle, the draw scheme — and coarsened in its reverse. A
+miss is met by representation and traversal first (N8.7), then by the valve; what neither closes is the owner's, put
+with its numbers.
 
-**Stage 6 adds** (the plan's Stage 6 ledger, after its reviews' re-costing and remedies, §18 item 27):
+### 13.7 Risks
 
-| Work | Count, business day | Unit | Business | Non-business | Heavy |
-| --- | --- | --- | --- | --- | --- |
-| Meetings: singles counted per region; meetings drawn, two subjects each; `form`, every day (TIME.8) | 0.7 M agents; 20 k; 40 k | 3 ns; —; 80 ns | 3 ms | 3 ms | 3 ms |
-| Occasion evaluations and choices: `enrol`, `separate`, leaving; courses, acceptances, new households' housing | 20 k; 25 k | 80 ns; 400 ns | 4 ms | — | 4 ms |
-| Housing search for new households | 15 k agents | 1 µs | 5 ms | — | 5 ms |
-| Leaving, formations (two origins each), separations, known ways (`divide`, `combine`; budgeted as the retired parts) | 25 k | 2.5 µs | 21 ms | — | 21 ms |
-| The same at the prototype's measured 9.9 µs a part (the risk case, outside the totals) | 25 k | 9.9 µs | 83 ms | — | 83 ms |
-| Research, imitation, licensing and learning: reviews, candidates, thresholds and powers, pools | 10 k; 5 k; 0.3 M | 300 ns; 180 ns; 5 ns | 4 ms | 1 ms | 5 ms |
-| Firm agents with known ways of their own: their candidates, visits and dated rows | about 50 k agents | 1.5 µs (0.5; 2) | 25 ms | 8 ms | 33 ms |
-| `choose_holdings` over the whole balance sheet | 30 k | 220 ns more | 2 ms | — | 2 ms |
-| Families and measures: POP.11 and POP.12 on the rolling cycle; TEC.10; HH.16 | — | — | 2 ms | 1 ms | 3 ms |
-| Views and pages on a turn's last day (tracers retired with cells) | — | — | 8 ms | 1 ms | 10 ms |
-| **Stage 6 total** | | | **74 ms** | **14 ms** | **86 ms** |
-| A country's school year's date: roles at a stage's end complete and choose | about 75 k | 100 + 80 + 400 ns | +15 ms | — | +15 ms |
-
-| Turn | Days | Budget | Stage 1 | Headroom | Through Stage 2 | Headroom | Through Stage 3 | Headroom | Through Stage 4 | Headroom | Through Stage 5 | Headroom | Through Stage 6 | Headroom |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Ordinary weekday (the median turn) | 1 business | 1 000 ms | 924 ms | 7.6% | 1 010 ms | **misses by 1%** | 1 063 ms | **misses by 6%** | 1 165 ms | **misses by 16.5%** | 1 228 ms | **misses by 23%** | 1 302 ms | **misses by 30%** |
-| Monday after a weekend (with carried needs and pending settlement) | 2 non-business + 1 business | 2 000 ms | 1 586 ms | 21% | 1 698 ms | 15% | 1 753 ms | 12% | 1 861 ms | 7% | 1 932 ms | 3% | 2 034 ms | **misses by 2%** |
-| Heavy Monday (month- or quarter-end payday) | 2 non-business + 1 heavy | 2 000 ms | 2 063 ms | **misses by 3%** | 2 215 ms | **misses by 11%** | 2 303 ms | **misses by 15%** | 2 455 ms | **misses by 23%** | 2 562 ms | **misses by 28%** | 2 676 ms | **misses by 34%** |
-| Heavy Monday with tolerance control (retired with cells) | 2 non-business + 1 heavy | 2 000 ms | 2 233 ms | **misses by 12%** | 2 385 ms | **misses by 19%** | 2 473 ms | **misses by 24%** | 2 625 ms | **misses by 31%** | 2 732 ms | **misses by 37%** | 2 846 ms | **misses by 42%** |
-| The longest closed run: four days ending on an ordinary business day (once in 63 years) | 4 non-business + 1 business | 2 000 ms | 2 248 ms | **misses by 12%** | 2 386 ms | **misses by 19%** | 2 443 ms | **misses by 22%** | 2 557 ms | **misses by 28%** | 2 636 ms | **misses by 32%** | 2 766 ms | **misses by 38%** |
-| Three days closed ending on a quarter-end payday (three times in 63 years) | 3 non-business + 1 heavy | 2 000 ms | 2 394 ms | **misses by 20%** | 2 559 ms | **misses by 28%** | 2 648 ms | **misses by 32%** | 2 803 ms | **misses by 40%** | 2 914 ms | **misses by 46%** | 3 042 ms | **misses by 52%** |
-
-The candidate, redraw and seller-spread units were raised after the population engine's review measured untuned
-prototypes on one x86 core (174 ns, 140 ns, 4.1 µs). The same prototype measured a part at 12.1 µs, of which 2.2 µs were
-redraws that this table budgets in their own line, so **9.9 µs** against the 2.5 µs above, which is recorded as a
-finding; parts are retired with cells, and what an agent's change in place costs is measured (§14.6). The Stage
-1 review added the physical flows' realisations and the publication-day wake. Due-day runs for every dated row kind
-(§6.5) take the ordinary day's settlement from 120 ms (30 M rows read at 10 ns and 2 M payments at 30 ns: 360 core-ms)
-to about 48 ms ((1.1 M × 2 + 6.2 M × 10 + 4 M × 5 + 2 M × 30) ns ≈ 144 core-ms), with a unit for the head's maintenance;
-on a heavy payday almost every holder has a due, so they save little there, and Stage 0's pensions in payment add about
-7 ms. At these estimates the **median fits with 7.6%**, short of the required 10%; **heavy Mondays and the longest
-closed runs miss**. Stage 2 adds about 86 ms to a business day, 13 ms to a non-business day and 126 ms to a heavy day,
-so through Stage 2 the **median misses the budget itself by 1%**, and at the measured part cost Stage 2's parts alone
-would have added about 143 ms more to it. Stage 3 adds about 53 ms to a business day, 1 ms to a
-non-business day and 86 ms to a heavy day, with its representation choices already taken (§18 item 24): through Stage 3
-the median is about **1 063 ms, 6% over the budget**, and a heavy Monday about 2 303 ms. Stage 4 adds
-about 102 ms to a business day, 3 ms to a non-business day and 146 ms to a heavy day, with its own choices taken (§18
-item 25): through Stage 4 the median is about **1 165 ms, 16.5% over the budget**, and a heavy Monday about 2 455 ms.
-Stage 5 adds about 63 ms to a business day, 4 ms to a non-business day and 99 ms to a heavy day
-after its reviews' remedies (77, 4 and 133 before them), with its choices taken (§18 item 26): through Stage 5 the
-median is about **1 228 ms, 23% over the budget**, a heavy Monday about 2 562 ms, and an election's eve adds about 60 ms
-in the largest country. Stage 6 adds about 74 ms to a business day, 14 ms to a non-business day and
-86 ms to a heavy day after its reviews' remedies, with every known way kept (TEC.4) and its choices taken (§18 item 27):
-through Stage 6, the whole world, the median is about **1 302 ms, 30% over the budget**, a Monday after a weekend about
-2 034 ms, 2% over, and a heavy Monday about 2 676 ms. For the worst turn, three closed days before a
-quarter-end payday, to keep 10% headroom the non-business day must cost at most (1 800 − 1 401) ÷ 3 ≈ **133 ms** at
-Stage 1, two-fifths of the estimate, and through Stage 6 the business day must fall by about 400 ms for the median's
-headroom. The closed runs were read from the declared calendars (TIME.2) at S0.11
-(`perf/measure/S0.11-calendar.json`, in the history since S1.24 deleted the command and its reports), the calendars committed with their sources before the first read, so no holiday
-rule was chosen with the budget in view (N8.9): over the 63-year window the longest run is four days, once, ending on an
-ordinary business day; none of four days ends on a payday; three runs of three end on a quarter-end payday. At these
-estimates the worst turn, not the median, binds first, so the worst-turn rows set the play resolution. Stage 0's
-measurements decide: measured unit costs first, then a larger factor (fewer agents) and coarser zones, which are
-RESOLUTION. If no play resolution meets the budget, that is a finding, and the budget is the owner's to decide (N8.7).
-No causal date is moved (N8.9).
-
-### 13.3 Storage (4 GB, N8.4)
-
-A full save of the design point is about 1.5 GB after transforms (about 1.6 GB through Stage 2, about 1.7 GB through
-Stage 3, about 1.85 GB through Stage 4, about 1.9 GB through Stage 5, about 1.95 GB through Stage 6). Every save
-is full (spec Appendix E 22): an increment would have carried about two thirds of a full save, since a month's
-paydays and dues touch nearly every holder's arena and record, which put a full save, its increment and the next full
-save over 4 GB and an increment far past 1 s. The peak (§11), two full saves, is about 3.96 GB at Stage 6, 1%
-headroom, a finding every gate checks on the device (N8.4).
+Each risk with the measure that tells it first: the non-business day, which weighs four times on the worst turn
+(`[day.nb]` against `[stage]`); the retail chain (the sales batch's unit); memory (`[ledger]` against `-F all`); rule
+costs (`[unit]`'s miss budgets); life records (their store on storage within its horizon); heavy dues (`[day.h]`);
+the device's sustained speed (`[phone] cores`, until the device run measures it); 16 KiB pages (the columns' page
+tails); and surprise and wake days (`[fin.calendar.events]`).
 
 ---
 
@@ -3583,6 +3417,12 @@ hashes read their bytes as little-endian.
     in the order of §3.1, before any behaviour is put on it; each base is followed by the migration of its current
     users, and every later step activates bases. `phx-world` assembles and routes and, once the core closes, holds no
     store and no per-party pass; systems hold rules and declarations. Supersedes the kernel's crate list of decision 36.
+39. **The design point and the budget frame** (2026-09-30, the owner; spec Appendix E 51, E 41, N8.7): every base is
+    designed and measured at the design point, `perf/design.toml`'s one figure set, which the plan and this document
+    cite by key and never restate; the time lines are the binding turns with every dated day and a campaign day on
+    them and each event composed in turn; the memory ledger is the steps' own statements summed by line; a miss is
+    met by representation first, then the valve in E 41's reverse order. Supersedes the budget tables of decisions 23
+    to 27.
 
 ---
 
