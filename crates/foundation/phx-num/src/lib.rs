@@ -1,3 +1,4 @@
+pub mod apportion;
 pub mod consts;
 pub mod error;
 pub mod fixed;
@@ -10,6 +11,7 @@ pub mod rate;
 pub mod round;
 pub mod violation;
 
+pub use apportion::{Residue, Ties, apportion};
 pub use error::NumError;
 pub use fixed::Fixed;
 pub use missing::{MaybeI64, Missing};

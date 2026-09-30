@@ -3,6 +3,7 @@
 //! ratchets. A base's driver lives in its own module and joins the registry.
 
 pub mod apply;
+pub mod apportion;
 pub mod budget;
 pub mod compose;
 pub mod counters;
@@ -149,6 +150,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(pool::PoolBase::default()),
     || Box::new(apply::Apply::default()),
     || Box::new(settle::Settle::default()),
+    || Box::new(apportion::Apportion::default()),
 ];
 
 /// What a run fills, runs and reads.

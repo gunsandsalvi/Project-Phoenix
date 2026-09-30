@@ -391,6 +391,25 @@ counter = "fin.settle.cursor_bytes"
 value = 8
 direction = "down"
 
+# Apportionment (S1.172, 2026-10-01; `tools/bench.sh -F apportion`): each of the design point's 72 000 estates' ranks
+# of one to sixty-four claims of up to 2⁴⁰ units paid pro rata by the largest remainders, and a dividend over 100 000
+# holders, ties by drawn keys. A share costs 13.3–15.9 ns against the step's 7.7: its floor and remainder by a reciprocal
+# of the whole found once a split (three wide products, each checked for overflow, and a correction; a wide division
+# per share would cost 3.5 ns more), the units left by one count of the remainders' leading bits and a branch-free
+# pass, and a split's fixed cost, the reciprocal's one wide division, spread over its few claimants. A dividend's share
+# is 14.9–20.7 ns, its remainders held in the shares' places while a few byte passes find the cut. Each ratchet stands
+# a quarter above the highest.
+
+[[ratchet]]
+counter = "fin.apportion.share_ns"
+value = 19.9
+direction = "down"
+
+[[ratchet]]
+counter = "fin.apportion.dividend_ns"
+value = 25.9
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

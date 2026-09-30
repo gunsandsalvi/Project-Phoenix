@@ -116,7 +116,7 @@ L0 foundation      phx-macros phx-num phx-rand phx-id
 
 | Crate | Carries | Owns |
 | --- | --- | --- |
-| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, checked `i64`/`i128` arithmetic, `violation!` and its payload, **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. It has no named comparisons: `min` and `max` are refused (§16) and callers compare inline. |
+| `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, apportionment with a named residue, checked `i64`/`i128` arithmetic, `violation!` and its payload, **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. It has no named comparisons: `min` and `max` are refused (§16) and callers compare inline. |
 | `phx-rand` | CHN.1, CHN.6, CHN.7 | Philox; stream keys; batch samplers: binomial (inversion, BTPE) and **zero-truncated** binomial, multinomial (conditional binomials; alias tables when draws are fewer than categories), hypergeometric (inversion when small, Stadlober's ratio of uniforms otherwise) and multivariate hypergeometric, weighted picks over prefix sums, geometric (for next-candidate days), normal, log-normal, Pareto, Gumbel; rejection thinning. |
 | `phx-id` | TIME.1, TIME.2 (the day and civil dates), PTY.1 (identities) | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
 | `phx-macros` | — | `#[clause]` (which checks each name is a clause identifier), `#[derive(Pod)]`, `#[derive(Saved)]`, `declare_prim!`, `declare_fact!`, `declare_kind!`, `declare_stream!`, `declare_hazard!`. |
@@ -143,6 +143,24 @@ of the same period, or violates. `Fixed<E>` is a decimal of exponent `E` for pos
 `f64` only through `from_f64`, which refuses non-finite and out-of-range values. Rounding is `Round` (`HalfEven`,
 `HalfAwayFromZero`, `TowardZero`, `Floor`, `Ceil`, `InFavourOf(Payer | Payee)`), applied by `div_round`;
 `split_total(total, k, w)` gives `round(k·total/w)` and the rest, so a split conserves by construction.
+
+**Apportionment** (`apportion.rs`). Every split of a whole among claimants — an estate's rank, a dividend or coupon
+over holders, a household's payment over its members, a syndicate's shares, a batch failure's losses — is
+`apportion(total, weights, rule, out)`, exact: every share whole units, the shares summing to the total. The rule is
+`Residue::LargestRemainder { ties }` — each share floored and the units left, fewer than the claimants, one each to
+the largest remainders, compared exactly, equal remainders by `Ties::Order` (the lower index) or `Ties::Keys` (keys the
+caller drew from its named stream, the lower first, then the order) — or `Residue::To { index, round }`, each share
+rounded by the governing convention and the whole residue on the named claimant. A negative total is split as its size
+and negated. No claimant or no weight is no split, and stops the run (MON.16): the caller's rule names where the whole
+goes. Nothing is allocated and nothing drawn. A floor and its remainder come from a reciprocal of the whole found once a
+split — `part / whole` as a 64-bit binary fraction, the estimate short by at most one and corrected by multiplying
+back — so a share takes no division. Up to 64 claimants hold their remainders on the stack; one count of the
+remainders' leading bits, a bucket a claimant, finds the bucket the cut falls in, and only its few are ranked exactly,
+the rest taking a unit without a branch. More claimants hold their remainders in the shares' places while a byte at a
+time finds the cut (`kth_largest`), and each floor is found again as its share is written. The same inputs give the
+same shares on any machine. `[fin.apportion] share_ns` 19.9 (13.3–15.9 measured over estates' ranks of one to 64
+claims) and `dividend_ns` 25.9 (14.9–20.7 over 100 000 holders) against the step's 7.7: the reciprocal's three wide
+products, each checked for overflow, and a split's fixed cost over few claimants are most of it on this machine.
 `Missing<T>` has no `Default`, `unwrap_or`, `map_or` or `Option` conversions: a reader matches. A point table is a
 strictly increasing `i64` array in the registry, searched by `at_or_below` and `at_or_above`. `NumError` (overflow,
 non-finite, out of range, zero divisor) is only for pure functions whose inputs meet it in a legal world.
