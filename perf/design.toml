@@ -183,7 +183,8 @@ life_records = 1_280_000
 touched = 4_000_000
 barriers = 48
 
-[day.bc]   # the business day after four closed days: [day.b] with these (+37.6 core-ms; +47 at the steps' counts)
+[day.bc]   # the business day after four closed days: [day.b] with these
+extra_core_ms = 37.6   # its work beyond [day.b]'s at the design point (47 at the steps' counts)
 applies = 6_000_000
 short = 48_000
 pending_settled = 1_000_000

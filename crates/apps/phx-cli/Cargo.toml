@@ -15,6 +15,7 @@ clap.workspace = true
 if-pop = { path = "../../interfaces/if-pop" }
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
+phx-fin = { path = "../phx-fin" }
 phx-geo = { path = "../../kernel/phx-geo" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-num = { path = "../../foundation/phx-num" }

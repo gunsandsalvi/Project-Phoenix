@@ -3,7 +3,7 @@
 # (N8), a step's cost and a stage gate's run. Its numbers are costs, never the world's.
 #
 #   tools/bench.sh [-p persons] [-d days] [-s seed] [-w workers] [-c checks] [-g] [-o dir] [-k] [-B] [-t seconds]
-#                  [-P] [-- run arguments]
+#                  [-P] [-F bases [-D days]] [-- run arguments]
 #
 #   -p  persons the world holds (default: the setup's, the committed resolution, where the budget is judged)
 #   -d  days run from day zero, settling cut short (default 20, the span the budget's ratchets are measured over)
@@ -16,6 +16,10 @@
 #   -B  run the last build, not building first
 #   -t  stop the world after this many seconds; the summary is still read from its log
 #   -P  profile the run by sampling it (perf): every function ranked by the time spent in it, into <dir>/profile.txt
+#   -F  the finished-volume measure instead of the world: each base named (comma-separated, or all) filled at the
+#       design point (perf/design.toml) and run through its kernels, the day and turn lines composed and held to the
+#       budget's fin. ratchets; the world never runs
+#   -D  with -F, the day types run: B, NB, H, BC comma-separated, or turn for every one (default turn)
 #
 # The run's trace is printed and written to <dir>/run.log as it happens: every span of the opening and of each day —
 # stages, sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time, and notes
@@ -26,8 +30,8 @@
 # heaviest meetings; settlement's and the day's notes; the parties opened; the findings and checks.
 set -euo pipefail
 
-persons="" days=20 gate=0 seed=1 workers="" checks="" out="target/bench" build=1 keep=0 limit="" profile=0
-while getopts "p:d:gs:w:c:o:kBt:P" opt; do
+persons="" days=20 gate=0 seed=1 workers="" checks="" out="target/bench" build=1 keep=0 limit="" profile=0 fin="" findays="turn"
+while getopts "p:d:gs:w:c:o:kBt:PF:D:" opt; do
     case $opt in
         p) persons=$OPTARG ;;
         d) days=$OPTARG ;;
@@ -40,6 +44,8 @@ while getopts "p:d:gs:w:c:o:kBt:P" opt; do
         B) build=0 ;;
         t) limit=$OPTARG ;;
         P) profile=1 ;;
+        F) fin=$OPTARG ;;
+        D) findays=$OPTARG ;;
         *) sed -n '2,/^set -euo/p' "$0" | sed '$d'; exit 2 ;;
     esac
 done
@@ -54,6 +60,18 @@ if [[ $build == 1 ]]; then
     start=$(date +%s)
     cargo build --release -q -p phx-cli
     built=$(( $(date +%s) - start ))
+fi
+
+if [[ -n $fin ]]; then
+    mkdir -p "$out"
+    status=0
+    ./target/release/phx fin --design perf/design.toml --budget perf/budget.toml --bases "$fin" --days "$findays" \
+        --report "$out/fin.json" || status=$?
+    if [[ $keep == 1 && -f $out/fin.json ]]; then
+        mkdir -p perf/bench
+        cp "$out/fin.json" "perf/bench/$(git rev-parse --short=12 HEAD)-fin-${fin//,/_}.json"
+    fi
+    exit $status
 fi
 
 args=(--seed "$seed" --data data --setup data/setup/default.toml --ratchets perf/ratchets.toml

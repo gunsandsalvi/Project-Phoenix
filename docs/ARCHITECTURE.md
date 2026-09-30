@@ -2922,6 +2922,19 @@ Its numbers are the code's, never the world's. A gate's run is **clean** when th
 live check is recorded where it is settled, and no ratchet moves the wrong way. A step is done on its fast checks, the budget read by the bench, and the world's long
 run is at the gates; a stage gate's settled two-year run is also the device run's, on the phone.
 
+**The finished-volume measure** (`tools/bench.sh -F <bases|all>`, `phx fin`, the crate `phx-fin`) measures the code at
+the design point, never a world (N8.8). Each base's driver (`FinBase`, `src/<base>.rs`, one registry line) fills its
+base from `perf/design.toml` with draws of its own stream `fin.<base>` at the design point's seed, then runs it through
+its own kernels a day of each type — `-D` picks among B, NB, H and BC, `turn` every one — the first day of each type
+warming the day buffers and never counted. Per base and operation it reports items, CPU summed over threads, wall, ns
+an item (CPU over items, the same for any number of workers), faults and allocations. It composes the phone's lines —
+a line's core-ms its VM ns × the phone's factor × its day's count; a line no driver measures yet the steps' declared
+`[stage]` figure, reported as declared — each day type's sum, the business day after closed days with its declared
+extra, and the binding turns (4 NB + B′ and 3 NB + H over `[phone] cores`). It fails on a store of
+`phx_core::capacity` short of its `[store]` count and on any `fin.<base>.<measure>` ratchet of `perf/budget.toml` a
+measure misses; `-k` keeps the report as `perf/bench/<commit>-fin-<bases>.json`. `phx-fin` reads the foundation and the
+kernel only (PC-01).
+
 ### 14.8 The realism reads
 
 Stage 7 measures the world's one run (N3, N4, N7; spec Appendix E 36): the normal world run at the play resolution,
@@ -3405,6 +3418,10 @@ hashes read their bytes as little-endian.
     applications' (`phx-fin`, `phx-cli`, `phx-play`, `phx-check` apart), `phx-fin` reading the foundation and the
     kernel only; PC-02 allows `serde`, `toml` and `serde_json` in `phx-fin` (the design point's file, the budget
     and its report). Supersedes the kernel's crate list of decision 36.
+40. **The finished-volume measure** (2026-09-30; spec N8.8, Appendix E 51): the one bench measures the code at the design
+    point as well as the world at the committed resolution: `-F` fills each base through its driver and composes the
+    day and the turns from measured lines where a driver exists and the steps' declared figures where none does yet,
+    each base's step adding its driver; its numbers are the code's, never the world's (§14.7).
 39. **The design point and the budget frame** (2026-09-30, the owner; spec Appendix E 51, E 41, N8.7): every base is
     designed and measured at the design point, `perf/design.toml`'s one figure set, which the plan and this document
     cite by key and never restate; the time lines are the binding turns with every dated day and a campaign day on

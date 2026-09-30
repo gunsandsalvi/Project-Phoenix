@@ -1,6 +1,7 @@
 mod budget;
 mod checks;
 mod clock;
+mod fin;
 mod inject;
 mod panic_hook;
 mod run;
@@ -25,6 +26,27 @@ enum Command {
     Run(RunArgs),
     /// Injects a family's discrepancy into a save loaded apart, audits it and discards it.
     Inject(InjectArgs),
+    /// Measures the finished world's volumes: each base filled at the design point and run through its kernels.
+    Fin(FinArgs),
+}
+
+#[derive(Debug, Args)]
+pub struct FinArgs {
+    /// The design point's figure set.
+    #[arg(long)]
+    design: PathBuf,
+    /// The budget, whose `fin.` ratchets the measures are held to.
+    #[arg(long)]
+    budget: PathBuf,
+    /// The bases to fill and measure, comma-separated, or `all`.
+    #[arg(long, default_value = "all")]
+    bases: String,
+    /// The day types to run, comma-separated among `B`, `NB`, `H` and `BC`, or `turn` for every one.
+    #[arg(long, default_value = "turn")]
+    days: String,
+    /// Where to write the report.
+    #[arg(long)]
+    report: Option<PathBuf>,
 }
 
 #[derive(Debug, Args)]
@@ -96,6 +118,7 @@ fn main() -> ExitCode {
     let cli = Cli::parse();
     let outcome = match cli.command {
         Command::Run(args) => run::run(&args),
+        Command::Fin(a) => fin::run(&a),
         Command::Inject(a) => {
             inject::run(&a.from, &a.data, &a.setup, &a.run_dir, a.family.as_deref(), a.report.as_deref())
         }
