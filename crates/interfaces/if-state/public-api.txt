@@ -1,5 +1,5 @@
 pub mod if_state  // used by: phx-cli, phx-world, sys-idx, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
-pub mod if_state::consts  // used by: if-base, if-labour, if-pop, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod if_state::consts  // used by: if-base, if-labour, if-pop, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const if_state::consts::ACCOUNTS: usize  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-bnk
 pub const if_state::consts::CPI: usize  // used by: phx-cli, phx-world
 pub const if_state::consts::HOLDER_CLASSES: [&str; 2]  // used by: phx-world
@@ -84,7 +84,7 @@ pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx
 pub mod if_state::stats  // used by: phx-cli, phx-exec, phx-store, phx-world, sys-idx, sys-sta
 pub struct if_state::stats::IndexKind  // used by: phx-world, sys-idx
 pub if_state::stats::IndexKind::base: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-pop, phx-rand, phx-store, phx-world, sys-idx
-pub if_state::stats::IndexKind::link: fn(&[if_state::stats::Priced]) -> core::option::Option<f64>  // used by: phx-world, sys-idx
+pub if_state::stats::IndexKind::link: fn(&[if_state::stats::Priced]) -> core::option::Option<f64>  // used by: phx-store, phx-world, sys-idx
 pub struct if_state::stats::Priced  // used by: phx-world, sys-idx
 pub if_state::stats::Priced::before: f64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-idx
 pub if_state::stats::Priced::now: f64  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-store, phx-val, phx-world, sys-frm, sys-gds, sys-hh, sys-idx

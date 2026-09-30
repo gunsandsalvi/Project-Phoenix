@@ -2,7 +2,7 @@ pub mod phx_exec  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world
 pub mod phx_exec::clock  // used by: phx-cli, phx-fin, phx-world
 pub trait phx_exec::clock::Clock: core::marker::Sync  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::clock::Clock::now_ns(&self) -> u64  // used by: phx-cli, phx-fin, phx-world
-pub mod phx_exec::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_exec::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_exec::consts::CAPACITY_PATH: [&str; 2]
 pub const phx_exec::consts::CHUNK_COST: u64
 pub const phx_exec::consts::GATHER_SERIAL_BELOW: usize
@@ -180,7 +180,7 @@ pub phx_exec::stats::Sample::bytes: u64  // used by: phx-check, phx-cli, phx-cor
 pub phx_exec::stats::Sample::rows_ever: u64  // used by: phx-core, phx-store
 pub phx_exec::stats::Sample::rows_live: u64  // used by: phx-cli, phx-core, phx-store
 impl phx_exec::stats::Sample
-pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample  // used by: phx-check, phx-cli, phx-core, phx-id, phx-market, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample  // used by: phx-check, phx-cli, phx-core, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_exec::stats::growth_per_year(&[u64]) -> core::option::Option<i128>  // used by: phx-cli, phx-core
 pub mod phx_exec::tally  // used by: phx-world
 pub struct phx_exec::tally::Tally(_)  // used by: phx-world

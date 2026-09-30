@@ -1,0 +1,31 @@
+error[E0308]: mismatched types
+  --> tests/ui/genref_wrong_table.rs:11:14
+   |
+11 |         firm(h);
+   |         ---- ^ expected `GenRef<Firms>`, found `GenRef<Households>`
+   |         |
+   |         arguments to this function are incorrect
+   |
+   = note: expected struct `GenRef<Firms>`
+              found struct `GenRef<Households>`
+note: function defined here
+  --> tests/ui/genref_wrong_table.rs:6:4
+   |
+ 6 | fn firm(_: GenRef<Firms>) {}
+   |    ^^^^ ----------------
+
+error[E0308]: mismatched types
+  --> tests/ui/genref_wrong_table.rs:13:10
+   |
+13 |     firm(phx_id::Slot::new(0));
+   |     ---- ^^^^^^^^^^^^^^^^^^^^ expected `GenRef<Firms>`, found `Slot`
+   |     |
+   |     arguments to this function are incorrect
+   |
+   = note: expected struct `GenRef<Firms>`
+              found struct `Slot`
+note: function defined here
+  --> tests/ui/genref_wrong_table.rs:6:4
+   |
+ 6 | fn firm(_: GenRef<Firms>) {}
+   |    ^^^^ ----------------

@@ -74,3 +74,7 @@ pub const SIP_TWEAK_SECOND: u64 = 0xdd;
 pub const SIP_ROT: [u32; 6] = [13, 32, 16, 21, 17, 32];
 /// The final word carries the message length in its top byte.
 pub const SIP_LEN_SHIFT: u32 = 56;
+
+/// A short reference's link holds its family in the top byte and the row's slot in the 24 bits below, the most rows a
+/// contract family holds.
+pub const SHORT_LINK_SLOT_BITS: u32 = 24;

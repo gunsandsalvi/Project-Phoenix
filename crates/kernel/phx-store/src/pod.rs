@@ -82,6 +82,16 @@ unsafe impl<T: Pod, const N: usize> Pod for [T; N] {
 }
 impl<T: Pod, const N: usize> __seal::Sealed for [T; N] {}
 
+// SAFETY: `GenRef` is `repr(C)` over two `u32`s and a zero-sized marker, so it has no padding and accepts every bit
+// pattern.
+unsafe impl<T: 'static> Pod for crate::genref::GenRef<T> {
+    fn layout(at: u16, transform: Transform, out: &mut Vec<FieldDescriptor>) {
+        leaf::<u32>(at, transform, out);
+        leaf::<u32>(field_at(at, size_of::<u32>()), transform, out);
+    }
+}
+impl<T: 'static> __seal::Sealed for crate::genref::GenRef<T> {}
+
 /// The bytes of stored values, in the order saves and hashes read them.
 #[must_use]
 pub fn as_bytes<T: Pod>(values: &[T]) -> &[u8] {

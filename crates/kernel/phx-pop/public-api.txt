@@ -1,5 +1,5 @@
 pub mod phx_pop  // used by: phx-cli, phx-world, sys-dem
-pub mod phx_pop::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_pop::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_pop::consts::BIRTH_BITS: u32
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
 pub const phx_pop::consts::ROLE_BITS: u32
@@ -69,7 +69,7 @@ pub struct phx_pop::prims::Representation  // used by: phx-cli, phx-world
 pub phx_pop::prims::Representation::persons: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 impl phx_pop::prims::Representation
 pub fn phx_pop::prims::Representation::name(self) -> alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn phx_pop::prims::Representation::of(&phx_pop::prims::RepPrims, &phx_core::register::Register) -> phx_pop::prims::Representation  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-market, phx-obs, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_pop::prims::Representation::of(&phx_pop::prims::RepPrims, &phx_core::register::Register) -> phx_pop::prims::Representation  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 impl phx_store::save::Saved for phx_pop::prims::Representation where u64: phx_store::save::Saved
 pub fn phx_pop::prims::Representation::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_pop::prims::Representation::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world

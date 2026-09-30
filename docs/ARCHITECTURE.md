@@ -1011,11 +1011,11 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: planned (S1.159–S1.168)
+Status: K-02 built (S1.159); the rest planned (S1.160–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
-counters sample (K-15) and the world never reads. A kind's `Parties` report their live and ever-handed slots and the
-bytes of their slots, generations and identities; `phx-core`'s `KindStore` adds its records, accounts and cash lines. The rows a walk visits are counted by the traversal that walks it, in
+counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
+ever-handed slots and the bytes of their slots, generations and identities; `phx-core`'s `KindStore` adds its records, accounts and cash lines. The rows a walk visits are counted by the traversal that walks it, in
 `phx-exec`, since no `phx-store` code may share a counter across workers.
 
 #### K-01 Columns in reserved address space
@@ -1033,16 +1033,53 @@ heap-owning type.
 
 #### K-02 Slots and generations
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.159).
+**Layout** (`table.rs`, `genref.rs`, `parties.rs`): a table's `SlotAlloc` holds its live bits (a bit a slot), its
+free slots as a ring over a reserved `Region<u32>` (a power of two at or above the table's slots, of which only the
+ring's places are committed: the ring doubles when a close needs more, moving its part before the old end to the new
+end, so its pages follow the most slots ever free at once, never the capacity), and the day's released slots.
+`Generations<T>` is a `Column<u32>` by slot for the table the marker `T` names, with the widest generation its
+references carry: 24 bits for a party (`PartyRef`, `phx-id`), the full word for every other table. `GenRef<T>`
+(`slot`, `generation`: 8 B, `Pod`) is the reference that outlives a day; `PartyRef` stays the party's one-word form.
+`ShortRef<T>` is a contract family's link (family in the top byte, slot in the 24 bits below, the width
+`phx-core`'s `SLOT_BITS` reads) and the low byte of the row's generation.
 
-**Today** (`parties.rs`, `phx-id`): `Parties` holds a kind's slots, allocated lowest first and released at the close
-(`SlotAlloc`: a slot released during a day returns to use only after the close, so the slot a row receives depends
-only on the order of allocations), and each slot's generation, raised as the slot takes a new party; `resolve` refuses
-a stale reference. `PartyRef` (`phx-id`) is a party's kind, its slot's generation (24 bits) and its slot, one word, for
-what outlives a day (records, messages); `PartyKey` is kind (5 bits) and slot (27 bits) in 32 bits, for what lives
-within a day or moves with its party — the day's flows and a contract's two sides — since a contract's side moves when
-its party ends and a slot is reused only after the close.
+**API**: `SlotAlloc::alloc` takes the ring's head, else a new slot at the high water; `release` marks a live slot
+free and appends it to the day's released list; `close_day` sorts the day's released slots ascending and appends them
+to the ring's tail. `Generations::alloc(&mut SlotAlloc)` takes a slot and raises its generation (a slot's first row is
+generation zero) and returns the `GenRef`; `resolve(&SlotAlloc, GenRef<T>)` is the live bit and one generation
+compare, branch-free, and refuses a reference of another table at compile time. `ShortRef::resolve(live, generation)`
+compares the byte, modulo 256. `Parties::begin` and `resolve` stand on these.
+
+**Algorithms and bounds**: which slot a row gets depends only on the order of allocations and releases (CHN.6); a slot
+released today is not handed out before the close (SET.7), and the free slot that has waited longest is handed out
+first, so a busy table's low slots do not race their generations. A generation raised past its width stops the run
+(`capacity_exceeded!`), never wraps. The **reference-life rule**: a slot turns at most once a day, so a short
+reference's byte tells a stale row from a live one while its holder re-reads it within 255 days; a `ShortRef` is not
+`Pod` and is held only in a `ShortRefs<T, H>` column, whose holder `H: Recheck` declares its re-read in a byte, so no
+holder can declare longer (the due wheel's 128 days meets it; records and messages that outlive it hold the parties
+and the facts copied at writing, SET.16). Both are compile-level: `genref_wrong_table`, `short_ref_outside_wheel`,
+`short_ref_holder_too_seldom`.
+
+**Traversal**: event-driven; the close walks the day's releases only, `O(k log k)` for `k` releases. Resolves are
+fused into their callers' gathers.
+
+**Save and load**: the live bits, the ring as it lies (its head, its count and its places), the day's released list
+and the generations are primary state and saved; a restored table turns the ring from the same head, hands out the
+same slots at the same generations and saves the same bytes (SET.15). Nothing is rebuilt.
+
+**Capacity**: every table's slots are the capacity table's (K-24); a table past them stops with `capacity_exceeded!`.
+A contract family holds fewer than 2²⁴ rows.
+
+**Volumes and ratchets**: `tools/bench.sh -F refs` fills the design point's 8.8 M party slots in one table and, on
+each day type, ends and begins up to half its `row_life` rows at drawn slots and resolves its `applies` references in
+slot order. Over the turn: 12–13 ns a row begun or ended and 1–2 a resolve, `[fin.refs]` `alloc_ns` 15.4,
+`resolve_ns` 2.3, `gen_bytes` 4. A row's cost follows the day's density: 10 ns on a heavy day, 22–25 on a business
+day and 48 on a non-business day, whose few ended rows each meet a cold line of the live bits and the generations; in
+the world the row's own columns are written in the same pass, and its lines are warm.
+
+**Extension points**: the directory's generation column and FIFO reuse (S1.194), the keyed indexes' and the
+interner's members (S1.165, S1.168), typed references (S1.174), messages' and records' references (S1.237, S1.240),
+contract rows' 8-bit generation in their terms word (S1.257), and every later table named by `GenRef`.
 
 #### K-03 Day buffers and the day plan
 

@@ -45,7 +45,7 @@ pub fn phx_geo::climate::RegionClimate::save(&self, &mut phx_store::save::Writer
 pub fn phx_geo::climate::exp_of(&phx_core::register::PrimDecl) -> u32
 pub fn phx_geo::climate::regions(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map) -> alloc::vec::Vec<phx_geo::climate::RegionClimate>  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
 pub fn phx_geo::climate::scaled(i64, u32) -> f64  // used by: phx-core, phx-ledger, phx-num, phx-rand, sys-dem
-pub mod phx_geo::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_geo::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_geo::consts::FADE_CUBIC: f64
 pub const phx_geo::consts::FADE_QUARTIC: f64
 pub const phx_geo::consts::FADE_QUINTIC: f64

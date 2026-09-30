@@ -225,7 +225,7 @@ pub fn phx_ledger::algebra::due_plan(&phx_ledger::algebra::Terms, core::option::
 pub fn phx_ledger::algebra::shape_of(&phx_ledger::algebra::Terms) -> (phx_ledger::algebra::Terms, alloc::vec::Vec<phx_num::money::Money>)  // used by: phx-world
 pub fn phx_ledger::algebra::shape_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::ShapePlan  // used by: phx-world
 pub fn phx_ledger::algebra::terms_of(&phx_ledger::algebra::Terms, &[phx_num::money::Money]) -> phx_ledger::algebra::Terms  // used by: phx-world
-pub mod phx_ledger::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_ledger::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_ledger::consts::DUES_PER_DAY: usize
 pub const phx_ledger::consts::MONTHS_A_YEAR: u8  // used by: phx-exec, phx-world, sys-lab
 pub mod phx_ledger::levy  // used by: phx-world

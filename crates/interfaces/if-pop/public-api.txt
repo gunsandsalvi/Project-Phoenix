@@ -1,5 +1,5 @@
 pub mod if_pop  // used by: phx-cli, phx-world, sys-bnk, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc
-pub mod if_pop::consts  // used by: if-base, if-labour, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod if_pop::consts  // used by: if-base, if-labour, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const if_pop::consts::EDUCATION_VALUES: u32
 pub const if_pop::consts::IDEAL_VALUES: u32
 pub const if_pop::consts::REGIONS: u32  // used by: phx-world, sys-frm

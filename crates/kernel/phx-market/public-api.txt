@@ -25,7 +25,7 @@ pub phx_market::carriage::Carrier::price: phx_num::price::PriceRaw  // used by: 
 pub phx_market::carriage::Carrier::room: i64  // used by: phx-store, phx-world, sys-lab
 pub struct phx_market::carriage::Consignment  // used by: phx-world
 pub phx_market::carriage::Consignment::load: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
-pub phx_market::carriage::Consignment::need: i64  // used by: phx-world, sys-sov
+pub phx_market::carriage::Consignment::need: i64  // used by: phx-store, phx-world, sys-sov
 pub phx_market::carriage::Consignment::segments: alloc::vec::Vec<usize>  // used by: phx-check, phx-geo, phx-macros, phx-world
 pub phx_market::carriage::Consignment::shipper: phx_id::ids::PartyId  // used by: phx-world
 pub struct phx_market::carriage::FreightTech  // used by: phx-world, sys-frt
@@ -43,7 +43,7 @@ pub fn phx_market::carriage::FreightTech::save(&self, &mut phx_store::save::Writ
 pub fn phx_market::carriage::carriage(&[phx_market::carriage::Carrier], &[phx_market::carriage::Consignment], &mut [i64], &mut phx_rand::draws::Draws) -> phx_market::carriage::CarriageDay  // used by: phx-world, sys-frt
 pub fn phx_market::carriage::freight(&phx_market::carriage::FreightTech, (u16, i64), (u16, u64), (i64, f64)) -> core::option::Option<f64>  // used by: phx-cli, phx-world, sys-frt, sys-srv
 pub fn phx_market::carriage::transit_days(u64, u64, u32) -> u32  // used by: phx-world
-pub mod phx_market::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_market::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_market::consts::CHOICE_CHUNK: usize
 pub const phx_market::consts::METRES_A_KM: f64  // used by: phx-world
 pub const phx_market::consts::ROUND_BLOCKS: u32
@@ -145,7 +145,7 @@ pub fn phx_market::reach::MarketPrims::declare(&mut phx_core::system::Declaratio
 pub struct phx_market::reach::Reach
 impl phx_market::reach::Reach
 pub fn phx_market::reach::Reach::new(&phx_market::reach::MarketPrims, &phx_core::register::Register) -> phx_market::reach::Reach  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
-pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub struct phx_market::reach::Site  // used by: phx-check, phx-core, phx-exec, phx-world
 pub phx_market::reach::Site::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-core, phx-geo, phx-ledger, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_market::reach::Site::zone: phx_id::ids::ZoneId  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-world

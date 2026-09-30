@@ -1,4 +1,4 @@
-pub mod phx_store  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-pop, phx-world
+pub mod phx_store  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-pop, phx-world
 pub mod phx_store::__seal  // used by: phx-macros
 pub trait phx_store::__seal::Sealed  // used by: phx-macros
 impl phx_store::pod::__seal::Sealed for i16
@@ -39,6 +39,7 @@ impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
 impl phx_store::pod::__seal::Sealed for u64
 impl phx_store::pod::__seal::Sealed for u8
+impl<T: 'static> phx_store::pod::__seal::Sealed for phx_store::genref::GenRef<T>
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::__seal::Sealed for [T; N]
 impl<const E: u8> phx_store::pod::__seal::Sealed for phx_num::fixed::Fixed<E>
 pub mod phx_store::arena  // used by: phx-core, phx-pop
@@ -53,7 +54,7 @@ pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transfo
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 pub struct phx_store::arena::CellLists<'a>
 pub phx_store::arena::CellLists::first_owner: u32
-pub phx_store::arena::CellLists::refs: &'a mut [phx_store::arena::CellListRef]  // used by: phx-pop
+pub phx_store::arena::CellLists::refs: &'a mut [phx_store::arena::CellListRef]  // used by: phx-fin, phx-pop
 impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
 pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
@@ -100,9 +101,9 @@ pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
 pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
 pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
 pub mod phx_store::backing  // used by: phx-core, phx-pop
-pub struct phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-pop, phx-world
+pub struct phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-pop, phx-world
 impl phx_store::backing::AddressSpace
-pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace  // used by: phx-exec, phx-world
+pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace  // used by: phx-exec, phx-fin, phx-world
 pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-sta
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B  // used by: phx-exec, phx-pop, phx-rand
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
@@ -208,7 +209,7 @@ impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Sa
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
-pub mod phx_store::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_store::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_store::consts::ARENA_DEAD_DEN: u64
 pub const phx_store::consts::ARENA_DEAD_NUM: u64
 pub const phx_store::consts::ARENA_GROWTH_DEN: u64
@@ -226,6 +227,7 @@ pub const phx_store::consts::HEAP_PAGE: usize
 pub const phx_store::consts::SAVE_FRAME_BYTES: usize
 pub const phx_store::consts::SAVE_FRAME_WAVE: usize
 pub const phx_store::consts::SAVE_READ_STEP: usize
+pub const phx_store::consts::SHORT_LINK_SLOT_BITS: u32  // used by: phx-core
 pub const phx_store::consts::SIP_C_ROUNDS: usize
 pub const phx_store::consts::SIP_D_ROUNDS: usize
 pub const phx_store::consts::SIP_INIT: [u64; 4]
@@ -317,6 +319,56 @@ pub fn phx_store::encode::decode_rows<T: phx_store::pod::Pod>(&[phx_store::descr
 pub fn phx_store::encode::encode_column<T: phx_store::pod::Pod>(&phx_store::descriptor::ColumnDescriptor, &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::encode::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::FieldDescriptor], &[T]) -> alloc::vec::Vec<u8>
 pub fn phx_store::encode::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
+pub mod phx_store::genref
+#[repr(C)] pub struct phx_store::genref::GenRef<T>
+impl<T> phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::generation(self) -> u32  // used by: phx-fin
+pub fn phx_store::genref::GenRef<T>::slot(self) -> phx_id::ids::Slot  // used by: phx-fin
+impl<T: 'static> phx_store::pod::Pod for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-fin
+impl<T: 'static> phx_store::pod::__seal::Sealed for phx_store::genref::GenRef<T>
+impl<T> core::clone::Clone for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::clone(&self) -> phx_store::genref::GenRef<T>  // used by: phx-fin
+impl<T> core::cmp::Eq for phx_store::genref::GenRef<T>
+impl<T> core::cmp::PartialEq for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::eq(&self, &phx_store::genref::GenRef<T>) -> bool  // used by: phx-fin
+impl<T> core::marker::Copy for phx_store::genref::GenRef<T>
+pub struct phx_store::genref::Generations<T, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T, B: phx_store::backing::Backing> phx_store::genref::Generations<T, B>
+pub fn phx_store::genref::Generations<T, B>::alloc(&mut self, &mut phx_store::table::SlotAlloc<B>) -> phx_store::genref::GenRef<T>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_store::genref::GenRef<T>>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::get(&self, phx_id::ids::Slot) -> core::option::Option<u32>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_store::genref::Generations<T, B>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::resolve(&self, &phx_store::table::SlotAlloc<B>, phx_store::genref::GenRef<T>) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::short(&self, phx_id::ids::Slot) -> core::option::Option<u8>  // used by: phx-fin
+impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
+pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+pub struct phx_store::genref::ShortRef<T>
+impl<T> phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::family(self) -> u8
+pub fn phx_store::genref::ShortRef<T>::generation(self) -> u8
+pub fn phx_store::genref::ShortRef<T>::new(u8, phx_id::ids::Slot, u8) -> phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::resolve(self, &[u64], impl core::ops::function::Fn(phx_id::ids::Slot) -> core::option::Option<u8>) -> core::option::Option<phx_id::ids::Slot>
+pub fn phx_store::genref::ShortRef<T>::slot(self) -> phx_id::ids::Slot
+impl<T> core::clone::Clone for phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::clone(&self) -> phx_store::genref::ShortRef<T>
+impl<T> core::cmp::Eq for phx_store::genref::ShortRef<T>
+impl<T> core::cmp::PartialEq for phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::eq(&self, &phx_store::genref::ShortRef<T>) -> bool
+impl<T> core::marker::Copy for phx_store::genref::ShortRef<T>
+pub struct phx_store::genref::ShortRefs<T, H: phx_store::genref::Recheck, B: phx_store::backing::Backing>
+impl<T, H: phx_store::genref::Recheck, B: phx_store::backing::Backing> phx_store::genref::ShortRefs<T, H, B>
+pub fn phx_store::genref::ShortRefs<T, H, B>::get(&self, phx_id::ids::Slot) -> core::option::Option<phx_store::genref::ShortRef<T>>
+pub fn phx_store::genref::ShortRefs<T, H, B>::is_empty(&self) -> bool
+pub fn phx_store::genref::ShortRefs<T, H, B>::len(&self) -> usize
+pub fn phx_store::genref::ShortRefs<T, H, B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_store::genref::ShortRefs<T, H, B>
+pub fn phx_store::genref::ShortRefs<T, H, B>::put(&mut self, phx_id::ids::Slot, phx_store::genref::ShortRef<T>)
+pub trait phx_store::genref::Recheck
+pub const phx_store::genref::Recheck::DAYS: u8  // used by: phx-fin
+pub fn phx_store::genref::next(u32, u32) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-rand, phx-val, phx-world, sys-bnk, sys-dem, sys-lab
 pub mod phx_store::hash  // used by: phx-check, phx-world
 pub struct phx_store::hash::LogicalHasher  // used by: phx-core, phx-world
 impl phx_store::hash::LogicalHasher
@@ -346,7 +398,7 @@ pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
@@ -354,6 +406,7 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+pub struct phx_store::parties::PartyRows
 pub mod phx_store::pod  // used by: phx-check, phx-core, phx-macros
 pub mod phx_store::pod::__seal  // used by: phx-macros
 pub trait phx_store::pod::__seal::Sealed  // used by: phx-macros
@@ -395,6 +448,7 @@ impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
 impl phx_store::pod::__seal::Sealed for u64
 impl phx_store::pod::__seal::Sealed for u8
+impl<T: 'static> phx_store::pod::__seal::Sealed for phx_store::genref::GenRef<T>
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::__seal::Sealed for [T; N]
 impl<const E: u8> phx_store::pod::__seal::Sealed for phx_num::fixed::Fixed<E>
 pub unsafe trait phx_store::pod::Pod: core::marker::Copy + phx_store::pod::__seal::Sealed + 'static  // used by: phx-core, phx-geo, phx-macros
@@ -475,6 +529,8 @@ impl phx_store::pod::Pod for u64
 pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
 impl phx_store::pod::Pod for u8
 pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+impl<T: 'static> phx_store::pod::Pod for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
 pub fn [T; N]::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
@@ -617,14 +673,14 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)
-pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::rebuild_skipped(&mut self)  // used by: phx-check, phx-core, phx-fin, phx-market
@@ -637,6 +693,10 @@ impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::rebuild_skipped(&mut self)  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
+pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
@@ -706,23 +766,31 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub mod phx_store::table  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
-pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
+pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
-pub fn phx_store::table::SlotAlloc<B>::bytes_committed(&self) -> usize
-pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)
-pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32
-pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
-pub fn phx_store::table::SlotAlloc<B>::live_count(&self) -> u64
-pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_store::table::SlotAlloc<B>::live_words(&self) -> &[u64]
-pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)
+pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::live_count(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::live_words(&self) -> &[u64]  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)
-pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::table::Table<B: phx_store::backing::Backing>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub phx_store::table::Table::id: phx_id::ids::TableId  // used by: if-base, phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_store::table::Table::slots: phx_store::table::SlotAlloc<B>  // used by: phx-fin, phx-id, phx-pop, phx-world
@@ -739,7 +807,7 @@ pub phx_store::table::TableChunk::chunk: u32  // used by: phx-core, phx-exec, ph
 pub phx_store::table::TableChunk::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
 pub phx_store::table::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub trait phx_store::table::TableChunks
-pub type phx_store::table::TableChunks::Rows
+pub type phx_store::table::TableChunks::Rows  // used by: phx-fin
 pub fn phx_store::table::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market
 impl<'a, A: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>)
 pub type (&'a mut phx_store::column::Column<A, B>)::Rows = (&'a mut [A])
@@ -798,9 +866,9 @@ pub phx_store::Transform::Zigzag
 impl phx_store::descriptor::Transform
 pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-cli, phx-core, phx-exec, phx-val
 pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
-pub struct phx_store::AddressSpace  // used by: phx-core, phx-exec, phx-pop, phx-world
+pub struct phx_store::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-pop, phx-world
 impl phx_store::backing::AddressSpace
-pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace  // used by: phx-exec, phx-world
+pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace  // used by: phx-exec, phx-fin, phx-world
 pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-sta
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B  // used by: phx-exec, phx-pop, phx-rand
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
@@ -842,7 +910,7 @@ pub fn phx_store::arena::CellListRef::layout(u16, phx_store::descriptor::Transfo
 impl phx_store::pod::__seal::Sealed for phx_store::arena::CellListRef
 pub struct phx_store::CellLists<'a>
 pub phx_store::CellLists::first_owner: u32
-pub phx_store::CellLists::refs: &'a mut [phx_store::arena::CellListRef]  // used by: phx-pop
+pub phx_store::CellLists::refs: &'a mut [phx_store::arena::CellListRef]  // used by: phx-fin, phx-pop
 impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
 pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
@@ -927,6 +995,32 @@ pub phx_store::FieldDescriptor::offset: u16  // used by: phx-check, phx-core, ph
 pub phx_store::FieldDescriptor::tag: phx_store::descriptor::FieldTag  // used by: phx-cli, phx-core, phx-rand, sys-cap
 pub phx_store::FieldDescriptor::transform: phx_store::descriptor::Transform  // used by: phx-core, phx-macros
 pub phx_store::FieldDescriptor::width: u8  // used by: phx-core, phx-fin, phx-geo, phx-val, phx-world
+#[repr(C)] pub struct phx_store::GenRef<T>
+impl<T> phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::generation(self) -> u32  // used by: phx-fin
+pub fn phx_store::genref::GenRef<T>::slot(self) -> phx_id::ids::Slot  // used by: phx-fin
+impl<T: 'static> phx_store::pod::Pod for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-fin
+impl<T: 'static> phx_store::pod::__seal::Sealed for phx_store::genref::GenRef<T>
+impl<T> core::clone::Clone for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::clone(&self) -> phx_store::genref::GenRef<T>  // used by: phx-fin
+impl<T> core::cmp::Eq for phx_store::genref::GenRef<T>
+impl<T> core::cmp::PartialEq for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::eq(&self, &phx_store::genref::GenRef<T>) -> bool  // used by: phx-fin
+impl<T> core::marker::Copy for phx_store::genref::GenRef<T>
+pub struct phx_store::Generations<T, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T, B: phx_store::backing::Backing> phx_store::genref::Generations<T, B>
+pub fn phx_store::genref::Generations<T, B>::alloc(&mut self, &mut phx_store::table::SlotAlloc<B>) -> phx_store::genref::GenRef<T>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_store::genref::GenRef<T>>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::get(&self, phx_id::ids::Slot) -> core::option::Option<u32>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::new(&mut phx_store::backing::AddressSpace, u32, u32, u32) -> phx_store::genref::Generations<T, B>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::resolve(&self, &phx_store::table::SlotAlloc<B>, phx_store::genref::GenRef<T>) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::short(&self, phx_id::ids::Slot) -> core::option::Option<u8>  // used by: phx-fin
+impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
+pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 pub struct phx_store::HeapBacking<const PAGE: usize>
 impl<const PAGE: usize> core::marker::Send for phx_store::backing::HeapBacking<PAGE>
 impl<const PAGE: usize> core::marker::Sync for phx_store::backing::HeapBacking<PAGE>
@@ -990,7 +1084,7 @@ pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
@@ -1023,27 +1117,51 @@ pub fn phx_store::region::Region<T, B>::release_above(&mut self, usize)  // used
 pub fn phx_store::region::Region<T, B>::reserve(&mut phx_store::backing::AddressSpace, usize) -> phx_store::region::Region<T, B>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 pub fn phx_store::region::Region<T, B>::slice(&self, usize) -> &[T]  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 pub fn phx_store::region::Region<T, B>::slice_mut(&mut self, usize) -> &mut [T]  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
+pub struct phx_store::ShortRef<T>
+impl<T> phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::family(self) -> u8
+pub fn phx_store::genref::ShortRef<T>::generation(self) -> u8
+pub fn phx_store::genref::ShortRef<T>::new(u8, phx_id::ids::Slot, u8) -> phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::resolve(self, &[u64], impl core::ops::function::Fn(phx_id::ids::Slot) -> core::option::Option<u8>) -> core::option::Option<phx_id::ids::Slot>
+pub fn phx_store::genref::ShortRef<T>::slot(self) -> phx_id::ids::Slot
+impl<T> core::clone::Clone for phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::clone(&self) -> phx_store::genref::ShortRef<T>
+impl<T> core::cmp::Eq for phx_store::genref::ShortRef<T>
+impl<T> core::cmp::PartialEq for phx_store::genref::ShortRef<T>
+pub fn phx_store::genref::ShortRef<T>::eq(&self, &phx_store::genref::ShortRef<T>) -> bool
+impl<T> core::marker::Copy for phx_store::genref::ShortRef<T>
+pub struct phx_store::ShortRefs<T, H: phx_store::genref::Recheck, B: phx_store::backing::Backing>
+impl<T, H: phx_store::genref::Recheck, B: phx_store::backing::Backing> phx_store::genref::ShortRefs<T, H, B>
+pub fn phx_store::genref::ShortRefs<T, H, B>::get(&self, phx_id::ids::Slot) -> core::option::Option<phx_store::genref::ShortRef<T>>
+pub fn phx_store::genref::ShortRefs<T, H, B>::is_empty(&self) -> bool
+pub fn phx_store::genref::ShortRefs<T, H, B>::len(&self) -> usize
+pub fn phx_store::genref::ShortRefs<T, H, B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_store::genref::ShortRefs<T, H, B>
+pub fn phx_store::genref::ShortRefs<T, H, B>::put(&mut self, phx_id::ids::Slot, phx_store::genref::ShortRef<T>)
 pub struct phx_store::Sip128  // used by: phx-cli
 impl phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
-pub struct phx_store::SlotAlloc<B: phx_store::backing::Backing>
+pub struct phx_store::SlotAlloc<B: phx_store::backing::Backing>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
-pub fn phx_store::table::SlotAlloc<B>::bytes_committed(&self) -> usize
-pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)
-pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32
-pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
-pub fn phx_store::table::SlotAlloc<B>::live_count(&self) -> u64
-pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
-pub fn phx_store::table::SlotAlloc<B>::live_words(&self) -> &[u64]
-pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)
+pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::live_count(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::live_words(&self) -> &[u64]  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)
-pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::Table<B: phx_store::backing::Backing>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub phx_store::Table::id: phx_id::ids::TableId  // used by: if-base, phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_store::Table::slots: phx_store::table::SlotAlloc<B>  // used by: phx-fin, phx-id, phx-pop, phx-world
@@ -1180,10 +1298,14 @@ impl phx_store::pod::Pod for u64
 pub fn u64::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
 impl phx_store::pod::Pod for u8
 pub fn u8::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
+impl<T: 'static> phx_store::pod::Pod for phx_store::genref::GenRef<T>
+pub fn phx_store::genref::GenRef<T>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
 pub fn [T; N]::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
 pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: if-base, phx-core, phx-geo, phx-ledger, phx-num, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
+pub trait phx_store::Recheck
+pub const phx_store::Recheck::DAYS: u8  // used by: phx-fin
 pub trait phx_store::Row: phx_store::pod::Pod  // used by: phx-core, phx-world
 pub fn phx_store::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
 pub fn phx_store::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
@@ -1278,14 +1400,14 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
-pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)
-pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::rebuild_skipped(&mut self)  // used by: phx-check, phx-core, phx-fin, phx-market
@@ -1298,6 +1420,10 @@ impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::rebuild_skipped(&mut self)  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
+pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
@@ -1362,8 +1488,12 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
+pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub trait phx_store::TableChunks
-pub type phx_store::TableChunks::Rows
+pub type phx_store::TableChunks::Rows  // used by: phx-fin
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market
 impl<'a, A: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::table::TableChunks for (&'a mut phx_store::column::Column<A, B>)
 pub type (&'a mut phx_store::column::Column<A, B>)::Rows = (&'a mut [A])

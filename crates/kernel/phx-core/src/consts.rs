@@ -132,8 +132,8 @@ pub const WHEEL_DAYS: u32 = 128;
 pub const LONGEST_QUARTER_DAYS: u32 = 92;
 /// A chain link's and a wheel entry's family code, and its slot, in bits.
 pub const FAMILY_BITS: u32 = 8;
-/// See `FAMILY_BITS`.
-pub const SLOT_BITS: u32 = 24;
+/// See `FAMILY_BITS`; a short reference's link is this same link.
+pub const SLOT_BITS: u32 = phx_store::consts::SHORT_LINK_SLOT_BITS;
 /// The family code reserved for holdings, the highest the code holds.
 pub const HOLDINGS_CODE: u8 = 255;
 

@@ -13,6 +13,8 @@ pub struct Report {
     pub ops: Vec<(String, String, u64, Option<u64>)>,
     /// Each base's rows and the MiB it holds once filled.
     pub sizes: Vec<(String, u64, u64)>,
+    /// The bases' own figures, each by its key.
+    pub figures: Vec<(String, f64)>,
     pub lines: Vec<Line>,
     pub days: Days,
     /// Every refusal: a capacity short of the design point, a ratchet missed.
@@ -46,6 +48,9 @@ impl Report {
         let _ = writeln!(out, "turns: 4 NB + B' {first:.0} ms, 3 NB + H {second:.0} ms");
         for (base, rows, mb) in &self.sizes {
             let _ = writeln!(out, "  {base}: {rows} rows filled, {mb} MiB");
+        }
+        for (key, v) in &self.figures {
+            let _ = writeln!(out, "  {key}: {v}");
         }
         for (base, op, items, ns) in &self.ops {
             let ns = ns.map_or_else(|| "no".to_owned(), |n| n.to_string());

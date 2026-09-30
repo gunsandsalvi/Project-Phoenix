@@ -1,0 +1,68 @@
+error[E0277]: the trait bound `ShortRef<Contracts>: Pod` is not satisfied
+ --> tests/ui/short_ref_outside_wheel.rs:7:19
+  |
+7 |     let _outside: Column<ShortRef<Contracts>> = Column::new(&mut space, 16, 16);
+  |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Pod` is not implemented for `ShortRef<Contracts>`
+  |
+  = help: the following other types implement trait `Pod`:
+            BlockBag
+            BlockList
+            CellListRef
+            GenRef<T>
+            ListRef
+            Pair
+            [T; N]
+            i16
+          and $N others
+note: required by a bound in `Column`
+ --> src/column.rs
+  |
+  | pub struct Column<T: Pod, B: Backing = SystemBacking> {
+  |                      ^^^ required by this bound in `Column`
+
+error[E0277]: the trait bound `ShortRef<Contracts>: Pod` is not satisfied
+ --> tests/ui/short_ref_outside_wheel.rs:7:49
+  |
+7 |     let _outside: Column<ShortRef<Contracts>> = Column::new(&mut space, 16, 16);
+  |                                                 ^^^^^^ the trait `Pod` is not implemented for `ShortRef<Contracts>`
+  |
+  = help: the following other types implement trait `Pod`:
+            BlockBag
+            BlockList
+            CellListRef
+            GenRef<T>
+            ListRef
+            Pair
+            [T; N]
+            i16
+          and $N others
+note: required by a bound in `Column`
+ --> src/column.rs
+  |
+  | pub struct Column<T: Pod, B: Backing = SystemBacking> {
+  |                      ^^^ required by this bound in `Column`
+
+error[E0277]: the trait bound `ShortRef<Contracts>: Pod` is not satisfied
+ --> tests/ui/short_ref_outside_wheel.rs:7:49
+  |
+7 |     let _outside: Column<ShortRef<Contracts>> = Column::new(&mut space, 16, 16);
+  |                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `Pod` is not implemented for `ShortRef<Contracts>`
+  |
+  = help: the following other types implement trait `Pod`:
+            BlockBag
+            BlockList
+            CellListRef
+            GenRef<T>
+            ListRef
+            Pair
+            [T; N]
+            i16
+          and $N others
+note: required by a bound in `Column::<T, B>::new`
+ --> src/column.rs
+  |
+  | impl<T: Pod, B: Backing> Column<T, B> {
+  |         ^^^ required by this bound in `Column::<T, B>::new`
+  |     /// A column of at most `max_rows`, chunked by `rows_per_chunk`, a power of two.
+  |     pub fn new(space: &mut AddressSpace, max_rows: u32, rows_per_chunk: u32) -> Column<T, B> {
+  |            --- required by a bound in this associated function

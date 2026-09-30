@@ -16,6 +16,7 @@ pub mod kept_search;
 mod kept_tests;
 pub mod kept_wheel;
 pub mod measure;
+pub mod refs;
 pub mod report;
 pub mod seed;
 #[path = "seed_tests.rs"]
@@ -117,11 +118,18 @@ pub trait FinBase {
         measures: &mut Measures<'_>,
     ) -> Result<(), FinError>;
     fn bytes(&self) -> Bytes;
+    /// The base's own figures beyond its operations' times and its bytes, each read as `fin.<base>.<key>`.
+    fn figures(&self) -> Vec<(&'static str, f64)> {
+        Vec::new()
+    }
 }
 
 /// Every driver, in the order the bases depend on one another; each base's step adds its own.
-pub const REGISTRY: &[fn() -> Box<dyn FinBase>] =
-    &[|| Box::new(counters::Counters::default()), || Box::new(kept::Kept::default())];
+pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
+    || Box::new(counters::Counters::default()),
+    || Box::new(kept::Kept::default()),
+    || Box::new(refs::Refs::default()),
+];
 
 /// What a run fills, runs and reads.
 #[derive(Debug, Clone)]
@@ -165,6 +173,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
     }
     let mut measures = Measures::new(clock);
     let mut sizes = Vec::new();
+    let mut figures = Vec::new();
     for driver in &mut chosen {
         let filled = driver.fill(&design, &streams)?;
         let bytes = driver.bytes();
@@ -175,6 +184,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
             driver.day(*day, counts, &mut Measures::new(clock))?;
             driver.day(*day, counts, &mut measures)?;
         }
+        figures.extend(driver.figures().into_iter().map(|(key, v)| (format!("fin.{}.{key}", driver.name()), v)));
     }
     let mut per_op: BTreeMap<String, f64> = measures
         .iter()
@@ -185,6 +195,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
             per_op.insert(format!("fin.{base}.mb"), mb);
         }
     }
+    per_op.extend(figures.iter().cloned());
     let mut lines = compose::declared(&design);
     compose::substitute(&mut lines, &design, (kept::BASE, kept::LEAVES), &|key| per_op.get(key).copied());
     let days = compose::days(&lines, &design);
@@ -201,6 +212,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
             .map(|((b, o), m): (&(String, String), &Measure)| (b.clone(), o.clone(), m.items, m.ns_per_op()))
             .collect(),
         sizes,
+        figures,
         lines,
         days,
         misses,

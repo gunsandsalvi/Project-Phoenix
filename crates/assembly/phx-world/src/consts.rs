@@ -12,7 +12,7 @@ pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
 pub const AGENT_ROWS_PER_CHUNK: u32 = 1 << 12;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 23;
+pub const SAVE_FORMAT: u32 = 24;
 /// A save's tasks on the pool: the core's store, the run's record and the world's hash.
 pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.

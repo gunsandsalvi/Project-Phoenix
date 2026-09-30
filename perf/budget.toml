@@ -99,6 +99,26 @@ counter = "fin.kept.mb"
 value = 396
 direction = "down"
 
+# Generation references (S1.159, 2026-09-30; `tools/bench.sh -F refs`): the design point's 8.8 M party slots in one
+# table, a day's rows ended and begun first in first out with the close, and a day's references resolved in slot order:
+# 13 ns a row begun or ended and 2 a resolve over two measures, within the step's unit targets, which stand as the
+# ratchets; a slot's generation is 4 bytes.
+
+[[ratchet]]
+counter = "fin.refs.resolve_ns"
+value = 2.3
+direction = "down"
+
+[[ratchet]]
+counter = "fin.refs.alloc_ns"
+value = 15.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.refs.gen_bytes"
+value = 4
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

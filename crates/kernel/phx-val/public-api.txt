@@ -7,7 +7,7 @@ pub fn phx_val::attention::exposure(f64, f64, &[phx_val::attention::Span]) -> f6
 pub fn phx_val::attention::gain(f64, f64) -> f64  // used by: phx-world, sys-frm, sys-hh
 pub fn phx_val::attention::intensity(f64, f64, f64) -> f64  // used by: phx-world, sys-frm
 pub fn phx_val::attention::probability(f64) -> f64  // used by: sys-frm
-pub mod phx_val::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod phx_val::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_val::consts::DECADE: f64  // used by: phx-world, sys-frm
 pub mod phx_val::experience  // used by: if-labour, phx-fin, phx-market, phx-world, sys-lab
 pub fn phx_val::experience::long_mean(&[f64], u32, f64) -> phx_num::missing::Missing<f64>  // used by: phx-world
@@ -166,7 +166,7 @@ pub phx_val::value::Flow::amount: f64  // used by: phx-core, phx-fin, phx-ledger
 pub phx_val::value::Flow::years: f64  // used by: if-credit, phx-cli, phx-exec, phx-world, sys-bnk, sys-dem, sys-gds, sys-lab
 pub struct phx_val::value::Value  // used by: phx-check, phx-cli, phx-core, phx-fin
 impl phx_val::value::Value
-pub fn phx_val::value::Value::of(phx_num::money::Ccy, f64) -> phx_val::value::Value  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-market, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_val::value::Value::of(phx_num::money::Ccy, f64) -> phx_val::value::Value  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_val::value::Value::worth(self) -> phx_num::money::Money  // used by: phx-world, sys-cap, sys-frm, sys-lab
 pub fn phx_val::value::annuity(f64, u32, f64) -> f64  // used by: phx-world, sys-cap
 pub fn phx_val::value::claim_value(&[phx_val::value::Flow], f64) -> f64

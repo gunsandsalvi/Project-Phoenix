@@ -1,5 +1,5 @@
 pub mod if_base  // used by: phx-world, sys-cap, sys-tec
-pub mod if_base::consts  // used by: if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub mod if_base::consts  // used by: if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const if_base::consts::PER_UNIT_EXP: u8  // used by: sys-cap, sys-tec
 pub mod if_base::products  // used by: phx-core, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub struct if_base::products::IndustryId(_)  // used by: sys-tec

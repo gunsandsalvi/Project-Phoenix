@@ -7,14 +7,18 @@ use crate::convert::to_usize;
 use crate::pod::Pod;
 use crate::region::Region;
 
-/// A table's slots: released slots return to use only after the day closes, lowest first, so which slot a row gets
-/// depends only on the order of allocations.
+/// A table's slots: released slots return to use only after the day closes, first in first out, so which slot a row
+/// gets depends only on the order of allocations and releases, and a slot rests as long as the table has older free
+/// ones before its generation turns again.
 #[derive(Debug)]
 pub struct SlotAlloc<B: Backing = SystemBacking> {
     live: Region<u64, B>,
-    /// Free slots in descending order, so the lowest is taken from the end.
+    /// Free slots in the order they return to use: a ring of `ring` places from `head`, `n_free` long, its places a
+    /// power of two within a reservation of the power of two at or above the table's slots.
     free: Region<u32, B>,
+    head: usize,
     n_free: usize,
+    ring: usize,
     released: Region<u32, B>,
     n_released: usize,
     high: u32,
@@ -32,8 +36,10 @@ impl<B: Backing> SlotAlloc<B> {
         let words = to_usize(max.div_ceil(BITS));
         SlotAlloc {
             live: Region::reserve(space, words),
-            free: Region::reserve(space, to_usize(max)),
+            free: Region::reserve(space, to_usize(max).next_power_of_two()),
+            head: 0,
             n_free: 0,
+            ring: 0,
             released: Region::reserve(space, to_usize(max)),
             n_released: 0,
             high: 0,
@@ -63,13 +69,14 @@ impl<B: Backing> SlotAlloc<B> {
         }
     }
 
-    /// The lowest free slot, or a new one above every slot handed out.
+    /// The free slot that has waited longest, or a new one above every slot handed out.
     pub fn alloc(&mut self) -> Slot {
-        let slot = if let Some(last) = self.n_free.checked_sub(1) {
-            let Some(free) = self.free.slice(self.n_free).get(last).copied() else {
-                violation!(clause = "SET.12", "a free list shorter than its count", count = self.n_free);
+        let slot = if self.n_free > 0 {
+            let Some(free) = self.free.slice(self.ring).get(self.head).copied() else {
+                violation!(clause = "SET.12", "a free ring shorter than its head", head = self.head);
             };
-            self.n_free = last;
+            self.head = (self.head + 1) % self.ring;
+            self.n_free -= 1;
             Slot::new(free)
         } else {
             if self.high == self.max {
@@ -96,30 +103,38 @@ impl<B: Backing> SlotAlloc<B> {
         self.n_released = n;
     }
 
-    /// Merges the day's released slots into the free list, which stays in descending order.
+    /// Widens the ring to hold `need` free slots, at least doubling it, and moves the part before its old end to the
+    /// new end when the ring had wrapped, so its committed pages follow the most slots ever free at once, not the
+    /// table's capacity.
+    fn widen(&mut self, need: usize) {
+        if need <= self.ring {
+            return;
+        }
+        let (old, ring) = (self.ring, need.next_power_of_two());
+        self.free.ensure(ring);
+        if self.head + self.n_free > old {
+            let head = ring - (old - self.head);
+            self.free.slice_mut(ring).copy_within(self.head..old, head);
+            self.head = head;
+        }
+        self.ring = ring;
+    }
+
+    /// Appends the day's released slots to the ring's tail in ascending order: the close's cost follows the day's
+    /// releases alone.
     pub fn close_day(&mut self) {
+        if self.n_released == 0 {
+            return;
+        }
         let total = self.n_free + self.n_released;
-        self.free.ensure(total);
+        self.widen(total);
         let released = self.released.slice_mut(self.n_released);
-        released.sort_unstable_by(|x, y| y.cmp(x));
-        let free = self.free.slice_mut(total);
-        // Merged from the back, the smallest first: the write position never passes an unread free slot.
-        let (mut from_free, mut from_released) = (self.n_free, self.n_released);
-        for at in (0..total).rev() {
-            let take_free = match (from_free.checked_sub(1), from_released.checked_sub(1)) {
-                (Some(f), Some(r)) => free.get(f) < released.get(r),
-                (Some(_), None) => true,
-                (None, _) => false,
-            };
-            let value = if take_free {
-                from_free -= 1;
-                free.get(from_free).copied()
-            } else {
-                from_released -= 1;
-                released.get(from_released).copied()
-            };
-            if let (Some(cell), Some(v)) = (free.get_mut(at), value) {
-                *cell = v;
+        released.sort_unstable();
+        let ring = self.ring;
+        let cells = self.free.slice_mut(ring);
+        for (at, slot) in (self.head + self.n_free..).zip(released.iter()) {
+            if let Some(cell) = cells.get_mut(at % ring) {
+                *cell = *slot;
             }
         }
         self.n_free = total;
@@ -143,7 +158,7 @@ impl<B: Backing> SlotAlloc<B> {
         self.live_words().iter().map(|w| u64::from(w.count_ones())).sum()
     }
 
-    /// The bytes its live bits and free and released lists hold committed.
+    /// The bytes its live bits, free ring and released list hold committed.
     #[must_use]
     pub fn bytes_committed(&self) -> usize {
         self.live.bytes_committed() + self.free.bytes_committed() + self.released.bytes_committed()
@@ -234,23 +249,30 @@ impl<B: Backing> crate::save::Saved for SlotAlloc<B> {
         self.high.save(w);
         self.max.save(w);
         self.live.save_prefix(to_usize(self.high.div_ceil(BITS)), w, crate::Transform::Plain);
-        self.free.save_prefix(self.n_free, w, crate::Transform::Plain);
+        // The ring is written as it lies, so a restored table turns it from the same head and saves the same bytes.
+        w.count(self.head);
+        w.count(self.n_free);
+        self.free.save_prefix(self.ring, w, crate::Transform::Plain);
         self.released.save_prefix(self.n_released, w, crate::Transform::Plain);
     }
 
     fn load(r: &mut crate::save::Reader<'_>) -> Result<SlotAlloc<B>, crate::save::LoadError> {
         let (high, max) = (u32::load(r)?, u32::load(r)?);
         let (live, words) = Region::load_prefix(r, crate::Transform::Plain)?;
-        let (free, n_free) = Region::load_prefix(r, crate::Transform::Plain)?;
+        let (head, n_free) = (r.count()?, r.count()?);
+        let (free, ring) = Region::load_prefix(r, crate::Transform::Plain)?;
         let (released, n_released) = Region::load_prefix(r, crate::Transform::Plain)?;
         let wrong = high > max
             || words != to_usize(high.div_ceil(BITS))
-            || free.capacity() != to_usize(max)
+            || n_free > ring
+            || (ring > 0 && head >= ring)
+            || !(ring == 0 || ring.is_power_of_two())
+            || free.capacity() != to_usize(max).next_power_of_two()
             || released.capacity() != to_usize(max);
         if wrong {
             return Err(crate::save::LoadError::Invalid("a slot allocator whose parts disagree".to_owned()));
         }
-        Ok(SlotAlloc { live, free, n_free, released, n_released, high, max })
+        Ok(SlotAlloc { live, free, head, n_free, ring, released, n_released, high, max })
     }
 }
 
@@ -333,7 +355,7 @@ mod tests {
         s.release(Slot::new(1));
         s.close_day();
         let next: Vec<u32> = (0..6).map(|_| s.alloc().get()).collect();
-        assert_eq!(next, vec![1, 3, 5, 7, 11, 12]);
+        assert_eq!(next, vec![3, 5, 7, 1, 11, 12], "each day's releases in order, the earlier day's first");
         assert_eq!(s.live_slots().count(), 13);
     }
 

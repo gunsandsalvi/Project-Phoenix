@@ -12,6 +12,7 @@ phx-exec = { path = "../../kernel/phx-exec" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-market = { path = "../../kernel/phx-market" }
 phx-rand = { path = "../../foundation/phx-rand" }
+phx-store = { path = "../../kernel/phx-store" }
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
