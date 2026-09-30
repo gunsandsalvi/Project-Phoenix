@@ -761,9 +761,12 @@ after that it is a fact whose one writer is the owner's decision. Each
 change writes a dated announcement with its effective day, at least the next business day (VAL.6, POL.7). A change
 that moves a hazard's rate books its process afresh on the parties it concerns (§7.7).
 
-A `PolicyValue<T>` holds its opening value and its announcements in effective-day order, and is saved;
-`value_on(day)` is the last effective on or before the day. `announce` refuses a writer other than the owner's
-decision and an effective day before the next business day of the policy's country after the announcement.
+Every schedule of one value type lives in a `PolicyBook<T>` (§7.3, K-20): its opening value, its owner — the party
+that holds the decision in its country — and its dated changes (`PolicyEntry`: effective day, announced day, owner,
+value), saved with the world. `in_force(h, day)` is the last change effective on or before the day, or the opening
+value; `announce` refuses a writer other than the owner and an effective day before the next business day of the
+owner's country after the announcement; rules read the value in force on the day opened by the schedule's handle,
+`PolicyH<T>`, bound once at assembly.
 
 ### 4.7 Decision points, deciders and rule handles
 
@@ -1752,7 +1755,7 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams and K-19 built, S1.177–S1.178; K-20–K-24 planned, S1.114, S1.179–S1.185)
+Status: building (streams, K-19 and K-20 built, S1.177–S1.179; K-21–K-24 planned, S1.114, S1.180–S1.185)
 
 #### Streams
 
@@ -1796,10 +1799,25 @@ maintenance periods (S3.114).
 
 #### K-20 The register: handles and policy schedules
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.179).
-
-**Today** (`register/`, `policy.rs`): the register of §5.3 and the policy values of §4.6.
+The register (§5.3) is read on the day's paths only through handles bound at assembly (`Prim<T>`, PC-98). A POLICY
+primitive its owner may change during the run is a dated schedule in a `PolicyBook<T>` (`policy.rs`), bound by
+`bind(prim, register, country, owner)` — refused where the primitive is not a policy or names no owning system — or
+`open(opening, country, owner)`, each returning the schedule's `PolicyH<T>`. A book holds each schedule's opening value,
+owner (a `PartyRef`) and country, and all their changes (`PolicyEntry`: effective day, announced day, owner, value) in
+one column ordered by schedule then effective day, with each schedule's start. `announce((h, writer), calendar,
+(announced, effective, value))` refuses a writer other than the owner (Law 16) and an effective day before the next
+business day of the owner's country after the announcement (TIME.7). `in_force(h, day)` is the last change effective
+on or before the day (binary search), or the opening value; `announced_by(h, day)` the changes a party could know on
+the day, for the announcement heuristic (Law 12); `segments(h, (from, until))` each part of a period with the value in
+force throughout, a change inside the period splitting it. `open_day(day)` advances only the schedules a change takes
+effect in, popped from a heap of their next effective days, into the values in force, which `read(h)` returns by one
+indexed read. `succeed(ended, successor)` passes an ended owner's schedules to its successor (Law 13). The opening
+values, owners, countries, changes and the day last opened are saved; the values in force and the heap are rebuilt at
+load. `[fin.policy]` over ten thousand schedules: `read_ns` 0.6 (0.32–0.45 measured, the step's 1) and `resolve_ns` 995
+(the day's advance at 710–796 ns, the step's 1 ms). The day runner opens the book after the day's facts (S1.186), and
+the rules that read a policy take its handle as each policy's system migrates. Extension points: rates and bands in
+force (S1.253, S1.435), limits and the insolvency law's class order (S1.338, S1.345), the appropriation (S1.423), and
+every later stage's dated POLICY.
 
 #### K-21 The kind catalogue
 
@@ -3813,7 +3831,7 @@ credited while the world holds it (GEN.10).
     | PC-15 | a kernel or interface crate without a committed `public-api.txt`, or whose API differs from it; `public-api --write` records beside each item the crates outside it that name it outside their tests (`// used by: …`, no part of the API compared), and `public-api --unused` lists the items none names — a report, since a base is built before its users, which S1.360 reads (S1.131) |
     | PC-16 | a per-crate `clippy.toml` other than the root file minus that crate's declared exemptions |
     | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day; on the day's paths, `Calendar::date`, `civil_date` or `days_after` (the day's facts are read instead; today's sites admitted by its exceptions file) |
-    | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
+    | PC-18 | a primitive's value reached other than through `Prim` or a `PolicyBook`'s handle; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `WorldStreams`, `open_keyed`, `ObserverDraws` and `AdviceDraws` named outside their listed files (§5.3) |
     | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
     | PC-96 | in a hot module of `phx-world` or a system (PC-92's hot set; the kernel's crates implement the traversals and are not read), a whole-table walk: a call of `live_slots`, `live_every`, `open_slots`, `firm_slots`, `deposits_of`, `money_totals` or `issuer_held`, or of `all`, `totals` or `money` with no argument, or a range `0..x.len()`, `0..x.count()` or `0..x.rows()`; admitted inside what is handed to `for_chunks`, `for_agenda` or `apply_by_range`, in a function carrying `#[sweep(store, cycle = …)]` or `#[opening]`; a `#[sweep]` without its cycle is refused; its exceptions file admits today's sites (S1.121) |

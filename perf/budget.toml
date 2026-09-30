@@ -431,6 +431,21 @@ counter = "fin.calendar.open_ns"
 value = 177
 direction = "down"
 
+# Policy schedules (S1.179, 2026-10-01; `tools/bench.sh -F policy`): ten thousand dated schedules, five changes
+# announced a day, the day opened once — advancing only the schedules a change takes effect in — and a hundred reads
+# of each schedule's value in force by its handle: a read 0.32–0.45 ns (the step's 1) and the day's resolution
+# 710–796 ns (the step's 1 ms). Each ratchet stands a quarter above the higher.
+
+[[ratchet]]
+counter = "fin.policy.read_ns"
+value = 0.6
+direction = "down"
+
+[[ratchet]]
+counter = "fin.policy.resolve_ns"
+value = 995
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

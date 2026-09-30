@@ -54,7 +54,7 @@ pub phx_core::calendar::facts::PeriodEnd::Year  // used by: phx-ledger, phx-num,
 pub struct phx_core::calendar::facts::DayFacts
 pub phx_core::calendar::facts::DayFacts::business: bool  // used by: phx-fin, phx-world
 pub phx_core::calendar::facts::DayFacts::closes: phx_core::calendar::facts::PeriodEnd  // used by: sys-frm
-pub phx_core::calendar::facts::DayFacts::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::calendar::facts::DayFacts::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_core::calendar::facts::DayFacts::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::calendar::facts::DayFacts::month: u32  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-store, phx-world
 pub phx_core::calendar::facts::DayFacts::quarter: u32
@@ -85,7 +85,7 @@ pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Wri
 pub struct phx_core::calendar::period::ScheduleDates  // used by: phx-ledger, phx-world
 pub phx_core::calendar::period::ScheduleDates::anchor: phx_id::day::Date  // used by: phx-geo, phx-ledger, phx-val, phx-world
 pub phx_core::calendar::period::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention  // used by: phx-cli, phx-ledger, phx-world
-pub phx_core::calendar::period::ScheduleDates::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::calendar::period::ScheduleDates::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_core::calendar::period::ScheduleDates::eom: phx_core::calendar::period::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::calendar::period::ScheduleDates::period: phx_core::calendar::period::Period  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 impl phx_core::calendar::period::ScheduleDates
@@ -130,7 +130,7 @@ pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result:
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::calendar::rules::WeekendRule  // used by: phx-fin
 pub phx_core::calendar::rules::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub const phx_core::calendar::rules::WEEK: [phx_id::day::Weekday; 7]  // used by: phx-id
@@ -151,7 +151,7 @@ pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)  // used by: ph
 pub fn phx_core::calendar::Calendar::new(phx_id::day::Date, alloc::vec::Vec<(phx_id::ids::CountryId, phx_core::calendar::rules::CountryRules)>, i32) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::calendar::Calendar::next_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-world
 pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-world
-pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-world
+pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-fin, phx-world
 pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day  // used by: phx-cli, phx-ledger, phx-world
 impl phx_core::calendar::Calendar
@@ -159,7 +159,7 @@ pub fn phx_core::calendar::Calendar::facts_of(&self, phx_id::ids::CountryId, phx
 pub fn phx_core::calendar::Calendar::open_day(&mut self, phx_id::day::Day) -> &[phx_core::calendar::facts::DayFacts]  // used by: phx-fin
 pub fn phx_core::calendar::Calendar::today(&self) -> &[phx_core::calendar::facts::DayFacts]  // used by: phx-cli, phx-exec, phx-fin, phx-obs, phx-store, phx-world, sys-sta
 pub struct phx_core::calendar::CountryCalendar
-pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::calendar::CountryCalendar::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_core::calendar::civil_date(i64) -> phx_id::day::Date  // used by: phx-pop
 pub fn phx_core::calendar::civil_serial(phx_id::day::Date) -> i64  // used by: phx-pop
 pub fn phx_core::calendar::days_after(phx_id::day::Date, i64) -> phx_id::day::Date  // used by: sys-dem
@@ -341,7 +341,7 @@ pub fn phx_core::contribution::Contribution::derived(&self) -> &'static [&'stati
 pub fn phx_core::contribution::Contribution::drawn(&self) -> &'static [&'static str]  // used by: phx-fin, phx-world, sys-dem
 pub fn phx_core::contribution::Contribution::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_core::contribution::Contribution::phase(&self) -> phx_core::streams::OpeningPhase  // used by: phx-cli, phx-world
-pub fn phx_core::contribution::Contribution::reads(&self) -> &'static [&'static str]  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::contribution::Contribution::reads(&self) -> &'static [&'static str]  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub fn phx_core::contribution::Contribution::writes(&self) -> &'static [&'static str]  // used by: phx-check
 pub trait phx_core::contribution::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::contribution::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)  // used by: phx-cli, phx-world
@@ -389,7 +389,7 @@ pub fn phx_core::decisions::DecisionKinds::position(&self, &str) -> core::option
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
 pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::decisions::DecisionPointDecl<I, O>  // used by: if-labour, if-state, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub phx_core::decisions::DecisionPointDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::decisions::DecisionPointDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -763,7 +763,7 @@ pub phx_core::hazards::DrawScheme::Scheduled  // used by: phx-macros
 pub enum phx_core::hazards::RateChange  // used by: phx-macros
 pub phx_core::hazards::RateChange::Birthday  // used by: phx-macros
 pub phx_core::hazards::RateChange::MonthStart  // used by: phx-macros
-pub phx_core::hazards::RateChange::Policy(&'static str)  // used by: phx-macros
+pub phx_core::hazards::RateChange::Policy(&'static str)  // used by: phx-fin, phx-macros
 pub phx_core::hazards::RateChange::Review(&'static str)  // used by: phx-macros
 pub phx_core::hazards::RateChange::YearStart  // used by: phx-macros
 pub struct phx_core::hazards::HazardDecl  // used by: phx-geo, phx-macros
@@ -829,21 +829,55 @@ pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<u
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub const phx_core::kinds::ESTATE_KIND: phx_core::kinds::KindDecl  // used by: phx-world
 pub const phx_core::kinds::LEGAL_FORMS: phx_core::register::PrimDecl  // used by: phx-world
-pub mod phx_core::policy  // used by: phx-macros, phx-val, sys-cb
+pub mod phx_core::policy  // used by: phx-fin, phx-macros, phx-val, sys-cb
 pub enum phx_core::policy::AnnounceRefused
 pub phx_core::policy::AnnounceRefused::NotOwner
 pub phx_core::policy::AnnounceRefused::TooSoon
 pub phx_core::policy::AnnounceRefused::TooSoon::earliest: phx_id::day::Day
-pub struct phx_core::policy::Announcement<T>  // used by: phx-val
-pub phx_core::policy::Announcement::announced: phx_id::day::Day  // used by: phx-val, phx-world
-pub phx_core::policy::Announcement::effective: phx_id::day::Day  // used by: phx-val, phx-world
-pub phx_core::policy::Announcement::value: T  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
-pub struct phx_core::policy::PolicyValue<T>
-impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
-pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
-pub fn phx_core::policy::PolicyValue<T>::announcements(&self) -> &[phx_core::policy::Announcement<T>]
-pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::policy::PolicyValue<T> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
-pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
+pub struct phx_core::policy::PolicyBook<T: phx_store::save::Saved + core::marker::Copy>  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::announce(&mut self, (phx_core::policy::PolicyH<T>, phx_id::ids::PartyRef), &phx_core::calendar::Calendar, (phx_id::day::Day, phx_id::day::Day, T)) -> core::result::Result<(), phx_core::policy::AnnounceRefused>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::announced_by(&self, phx_core::policy::PolicyH<T>, phx_id::day::Day) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::policy::PolicyEntry<T>>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::bind<P>(&mut self, (phx_core::register::Prim<P>, &phx_core::register::Register), phx_id::ids::CountryId, phx_id::ids::PartyRef) -> core::result::Result<phx_core::policy::PolicyH<T>, alloc::string::String> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::entries(&self, phx_core::policy::PolicyH<T>) -> &[phx_core::policy::PolicyEntry<T>]  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::in_force(&self, phx_core::policy::PolicyH<T>, phx_id::day::Day) -> T  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::open(&mut self, T, phx_id::ids::CountryId, phx_id::ids::PartyRef) -> phx_core::policy::PolicyH<T>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::open_day(&mut self, phx_id::day::Day)  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::read(&self, phx_core::policy::PolicyH<T>) -> T  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::segments(&self, phx_core::policy::PolicyH<T>, (phx_id::day::Day, phx_id::day::Day)) -> phx_core::policy::Segments<'_, T>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::succeed(&mut self, phx_id::ids::PartyRef, phx_id::ids::PartyRef) -> u64  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy + core::cmp::PartialEq> core::cmp::PartialEq for phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::eq(&self, &phx_core::policy::PolicyBook<T>) -> bool  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> core::default::Default for phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::default() -> phx_core::policy::PolicyBook<T>  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> phx_store::save::Saved for phx_core::policy::PolicyBook<T> where alloc::vec::Vec<T>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyRef>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::CountryId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::policy::PolicyEntry<T>>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, PolicyCache<T>: core::default::Default
+pub fn phx_core::policy::PolicyBook<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> phx_store::stats::StoreStats for phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_core::policy::PolicyEntry<T: phx_store::save::Saved>
+pub phx_core::policy::PolicyEntry::announced: phx_id::day::Day  // used by: phx-val, phx-world
+pub phx_core::policy::PolicyEntry::effective: phx_id::day::Day  // used by: phx-fin, phx-val, phx-world
+pub phx_core::policy::PolicyEntry::owner: phx_id::ids::PartyRef  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-num, phx-store, phx-world
+pub phx_core::policy::PolicyEntry::value: T  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
+impl<T> phx_store::save::Saved for phx_core::policy::PolicyEntry<T> where phx_id::day::Day: phx_store::save::Saved, phx_id::ids::PartyRef: phx_store::save::Saved, T: phx_store::save::Saved + phx_store::save::Saved
+pub fn phx_core::policy::PolicyEntry<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::policy::PolicyEntry<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
+pub fn phx_core::policy::PolicyEntry<T>::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::policy::PolicyH<T>  // used by: phx-fin
+impl<T> core::clone::Clone for phx_core::policy::PolicyH<T>
+pub fn phx_core::policy::PolicyH<T>::clone(&self) -> phx_core::policy::PolicyH<T>  // used by: phx-fin
+impl<T> core::cmp::Eq for phx_core::policy::PolicyH<T>
+impl<T> core::cmp::PartialEq for phx_core::policy::PolicyH<T>
+pub fn phx_core::policy::PolicyH<T>::eq(&self, &phx_core::policy::PolicyH<T>) -> bool  // used by: phx-fin
+impl<T> core::marker::Copy for phx_core::policy::PolicyH<T>
+pub struct phx_core::policy::Segments<'a, T: phx_store::save::Saved + core::marker::Copy>
+impl<T: phx_store::save::Saved + core::marker::Copy> core::iter::traits::iterator::Iterator for phx_core::policy::Segments<'_, T>
+pub type phx_core::policy::Segments<'_, T>::Item = (phx_id::day::Day, phx_id::day::Day, T)
+pub fn phx_core::policy::Segments<'_, T>::next(&mut self) -> core::option::Option<(phx_id::day::Day, phx_id::day::Day, T)>
 pub mod phx_core::pop  // used by: phx-check, phx-cli, phx-geo, phx-rand, phx-store, phx-world
 pub enum phx_core::pop::PopItem  // used by: phx-pop
 pub phx_core::pop::PopItem::Attr(phx_core::pop::AttrDecl)  // used by: phx-obs, phx-pop
@@ -877,7 +911,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &
 pub struct phx_core::pop::PositionDecl  // used by: if-pop, phx-pop
 pub phx_core::pop::PositionDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::PositionDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::pop::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-geo, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
+pub phx_core::pop::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub struct phx_core::pop::RoleDecl  // used by: if-pop, phx-pop
 pub phx_core::pop::RoleDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::RoleDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -1009,7 +1043,7 @@ pub fn phx_core::register::profile::JointProfile::index(&self, &str) -> core::op
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::profile::Moments
 pub phx_core::register::profile::Moments::cov: alloc::vec::Vec<f64>
 pub phx_core::register::profile::Moments::mean: alloc::vec::Vec<f64>  // used by: phx-cli, phx-geo, phx-val, phx-world, sys-dem, sys-lab
@@ -1155,12 +1189,12 @@ pub fn phx_core::register::values::Distribution::mean(&self) -> f64  // used by:
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::KindName(pub alloc::string::String)  // used by: phx-world, sys-dem
 impl phx_core::register::values::PrimType for phx_core::register::values::KindName
 pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
 pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::OutsideAxes
 pub struct phx_core::register::values::Partition  // used by: phx-val, sys-dem, sys-sta
 pub phx_core::register::values::Partition::bounds: alloc::boxed::Box<[i64]>  // used by: phx-cli, phx-exec, phx-macros, phx-val, phx-world, sys-bnk, sys-gds
@@ -1168,7 +1202,7 @@ pub phx_core::register::values::Partition::exp: u8  // used by: phx-cli, phx-geo
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
 pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::Table1  // used by: phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 impl phx_core::register::values::Table1
 pub fn phx_core::register::values::Table1::at(&self, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
@@ -1178,7 +1212,7 @@ pub fn phx_core::register::values::Table1::values(&self) -> &[i64]  // used by: 
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::Table2  // used by: phx-geo, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-tec
 impl phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
@@ -1187,7 +1221,7 @@ pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]  // used by: ph
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 #[repr(transparent)] pub struct phx_core::register::values::TypeId(_)
 impl phx_core::register::values::TypeId
 pub const fn phx_core::register::values::TypeId::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -1204,7 +1238,7 @@ pub phx_core::register::values::TypeShare::value: i64  // used by: phx-check, ph
 pub trait phx_core::register::values::PrimType
 pub type phx_core::register::values::PrimType::Read<'a>  // used by: phx-store
 pub fn phx_core::register::values::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::PrimType::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::PrimType::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounting::Permitted>
 pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::accounting::Permitted>>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
@@ -1224,59 +1258,59 @@ pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::reads(phx_core::regist
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
 pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::KindName
 pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
 pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
 pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_id::day::Date
 pub type phx_id::day::Date::Read<'a> = phx_id::day::Date  // used by: phx-store
 pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::money::Amount
 pub type phx_num::money::Amount::Read<'a> = phx_num::money::Amount  // used by: phx-store
 pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::points::PointTable
 pub type phx_num::points::PointTable::Read<'a> = &'a phx_num::points::PointTable  // used by: phx-store
 pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::Count
 pub type phx_num::qty::Count::Read<'a> = phx_num::qty::Count  // used by: phx-store
 pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::QtyRaw
 pub type phx_num::qty::QtyRaw::Read<'a> = phx_num::qty::QtyRaw  // used by: phx-store
 pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::rate::Rate
 pub type phx_num::rate::Rate::Read<'a> = phx_num::rate::Rate  // used by: phx-store
 pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl<const E: u8> phx_core::register::values::PrimType for phx_num::fixed::Fixed<E>
 pub type phx_num::fixed::Fixed<E>::Read<'a> = phx_num::fixed::Fixed<E>  // used by: if-base, phx-fin, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub fn phx_num::fixed::Fixed<E>::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::fixed::Fixed<E>>  // used by: if-base, phx-fin, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
@@ -1291,7 +1325,7 @@ impl phx_core::register::Level
 pub fn phx_core::register::Level::dir(self) -> &'static str  // used by: phx-check, phx-cli, phx-world
 pub enum phx_core::register::PrimKind
 pub phx_core::register::PrimKind::Endowment
-pub phx_core::register::PrimKind::Policy  // used by: phx-macros
+pub phx_core::register::PrimKind::Policy  // used by: phx-fin, phx-macros
 pub phx_core::register::PrimKind::Preference
 pub phx_core::register::PrimKind::Resolution
 pub phx_core::register::PrimKind::Shape
@@ -1323,7 +1357,7 @@ pub phx_core::register::Source::Placeholder  // used by: phx-macros
 pub struct phx_core::register::CountryEntry  // used by: phx-world
 pub phx_core::register::CountryEntry::level: phx_core::register::Level  // used by: phx-check, phx-geo, phx-market, phx-store, phx-val, phx-world, sys-dem, sys-lab
 pub struct phx_core::register::DataFile  // used by: phx-world
-pub phx_core::register::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::register::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_core::register::DataFile::path: alloc::string::String  // used by: phx-check, phx-cli, phx-fin, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-lab
 pub phx_core::register::DataFile::text: alloc::string::String  // used by: phx-check, phx-cli, phx-fin, phx-macros, phx-obs, phx-store, phx-world
 pub struct phx_core::register::Prim<T>  // used by: phx-acct, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -1953,7 +1987,7 @@ pub phx_core::PositionOpening::Missing  // used by: if-base, if-labour, if-pop, 
 pub phx_core::PositionOpening::OwedAYear  // used by: if-pop, phx-world
 pub enum phx_core::PrimKind
 pub phx_core::PrimKind::Endowment
-pub phx_core::PrimKind::Policy  // used by: phx-macros
+pub phx_core::PrimKind::Policy  // used by: phx-fin, phx-macros
 pub phx_core::PrimKind::Preference
 pub phx_core::PrimKind::Resolution
 pub phx_core::PrimKind::Shape
@@ -2016,7 +2050,7 @@ pub phx_core::Purpose::Weather  // used by: phx-world
 pub enum phx_core::RateChange  // used by: phx-macros
 pub phx_core::RateChange::Birthday  // used by: phx-macros
 pub phx_core::RateChange::MonthStart  // used by: phx-macros
-pub phx_core::RateChange::Policy(&'static str)  // used by: phx-macros
+pub phx_core::RateChange::Policy(&'static str)  // used by: phx-fin, phx-macros
 pub phx_core::RateChange::Review(&'static str)  // used by: phx-macros
 pub phx_core::RateChange::YearStart  // used by: phx-macros
 pub enum phx_core::ReprClass
@@ -2198,10 +2232,6 @@ impl phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>  // used by: phx-world, sys-dem, sys-lab
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-world, sys-dem, sys-lab
-pub struct phx_core::Announcement<T>  // used by: phx-val
-pub phx_core::Announcement::announced: phx_id::day::Day  // used by: phx-val, phx-world
-pub phx_core::Announcement::effective: phx_id::day::Day  // used by: phx-val, phx-world
-pub phx_core::Announcement::value: T  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
 pub struct phx_core::Apportioned  // used by: phx-world
 pub phx_core::Apportioned::drawn: u64  // used by: phx-fin, phx-world, sys-dem
 pub phx_core::Apportioned::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
@@ -2251,7 +2281,7 @@ pub fn phx_core::calendar::Calendar::move_window(&mut self, i32)  // used by: ph
 pub fn phx_core::calendar::Calendar::new(phx_id::day::Date, alloc::vec::Vec<(phx_id::ids::CountryId, phx_core::calendar::rules::CountryRules)>, i32) -> core::result::Result<phx_core::calendar::Calendar, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::calendar::Calendar::next_business(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-world
 pub fn phx_core::calendar::Calendar::next_turn_day(&self, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-world
-pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-world
+pub fn phx_core::calendar::Calendar::on_or_after(&self, phx_id::ids::CountryId, phx_id::day::Day) -> phx_id::day::Day  // used by: phx-fin, phx-world
 pub fn phx_core::calendar::Calendar::on_or_before(&self, phx_id::ids::CountryId, phx_id::day::Day) -> core::option::Option<phx_id::day::Day>
 pub fn phx_core::calendar::Calendar::plus(&self, phx_id::day::Day, phx_core::calendar::period::Period) -> phx_id::day::Day  // used by: phx-cli, phx-ledger, phx-world
 impl phx_core::calendar::Calendar
@@ -2262,7 +2292,7 @@ pub struct phx_core::Claim  // used by: phx-world
 pub phx_core::Claim::item: &'static str  // used by: phx-check, phx-exec, phx-fin, phx-macros, phx-pop, phx-world, sys-dem
 pub phx_core::Claim::system: phx_id::ids::SystemCode  // used by: phx-check, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_core::CountryCalendar
-pub phx_core::CountryCalendar::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::CountryCalendar::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub struct phx_core::CountryEntry  // used by: phx-world
 pub phx_core::CountryEntry::level: phx_core::register::Level  // used by: phx-check, phx-geo, phx-market, phx-store, phx-val, phx-world, sys-dem, sys-lab
 pub struct phx_core::CountryRules  // used by: phx-fin, phx-world
@@ -2275,9 +2305,9 @@ pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result:
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::DataFile  // used by: phx-world
-pub phx_core::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_core::DataFile::path: alloc::string::String  // used by: phx-check, phx-cli, phx-fin, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-lab
 pub phx_core::DataFile::text: alloc::string::String  // used by: phx-check, phx-cli, phx-fin, phx-macros, phx-obs, phx-store, phx-world
 pub struct phx_core::DecisionKind
@@ -2294,7 +2324,7 @@ pub fn phx_core::decisions::DecisionKinds::position(&self, &str) -> core::option
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
 pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::DecisionMeta
 pub phx_core::DecisionMeta::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::DecisionMeta::system: &'static str  // used by: phx-check, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
@@ -2361,7 +2391,7 @@ pub fn phx_core::register::values::Distribution::mean(&self) -> f64  // used by:
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::Event  // used by: phx-cli, phx-fin, phx-ledger
 pub phx_core::Event::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_core::Event::details: alloc::vec::Vec<(u64, i64)>  // used by: phx-cli, phx-geo, phx-world
@@ -2481,7 +2511,7 @@ pub fn phx_core::register::profile::JointProfile::index(&self, &str) -> core::op
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::KindDecl  // used by: phx-macros, phx-world
 pub phx_core::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::KindDecl::legal_form: &'static str  // used by: phx-world
@@ -2590,12 +2620,46 @@ pub struct phx_core::PhysicalToken(_)
 pub struct phx_core::Pinned  // used by: phx-world
 pub phx_core::Pinned::index: usize  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 pub phx_core::Pinned::part: u8  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-num, phx-store, phx-world, sys-lab
-pub struct phx_core::PolicyValue<T>
-impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
-pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
-pub fn phx_core::policy::PolicyValue<T>::announcements(&self) -> &[phx_core::policy::Announcement<T>]
-pub fn phx_core::policy::PolicyValue<T>::open<P>(phx_core::register::Prim<P>, &phx_core::register::Register, phx_id::ids::CountryId) -> phx_core::policy::PolicyValue<T> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>
-pub fn phx_core::policy::PolicyValue<T>::value_on(&self, phx_id::day::Day) -> T
+pub struct phx_core::PolicyBook<T: phx_store::save::Saved + core::marker::Copy>  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::announce(&mut self, (phx_core::policy::PolicyH<T>, phx_id::ids::PartyRef), &phx_core::calendar::Calendar, (phx_id::day::Day, phx_id::day::Day, T)) -> core::result::Result<(), phx_core::policy::AnnounceRefused>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::announced_by(&self, phx_core::policy::PolicyH<T>, phx_id::day::Day) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::policy::PolicyEntry<T>>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::bind<P>(&mut self, (phx_core::register::Prim<P>, &phx_core::register::Register), phx_id::ids::CountryId, phx_id::ids::PartyRef) -> core::result::Result<phx_core::policy::PolicyH<T>, alloc::string::String> where P: phx_core::register::values::PrimType, for<'a> <P as phx_core::register::values::PrimType>::Read: core::convert::Into<T>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::entries(&self, phx_core::policy::PolicyH<T>) -> &[phx_core::policy::PolicyEntry<T>]  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::in_force(&self, phx_core::policy::PolicyH<T>, phx_id::day::Day) -> T  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::open(&mut self, T, phx_id::ids::CountryId, phx_id::ids::PartyRef) -> phx_core::policy::PolicyH<T>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::open_day(&mut self, phx_id::day::Day)  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::read(&self, phx_core::policy::PolicyH<T>) -> T  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::segments(&self, phx_core::policy::PolicyH<T>, (phx_id::day::Day, phx_id::day::Day)) -> phx_core::policy::Segments<'_, T>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::succeed(&mut self, phx_id::ids::PartyRef, phx_id::ids::PartyRef) -> u64  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy + core::cmp::PartialEq> core::cmp::PartialEq for phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::eq(&self, &phx_core::policy::PolicyBook<T>) -> bool  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> core::default::Default for phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::default() -> phx_core::policy::PolicyBook<T>  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> phx_store::save::Saved for phx_core::policy::PolicyBook<T> where alloc::vec::Vec<T>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyRef>: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::CountryId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::policy::PolicyEntry<T>>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, PolicyCache<T>: core::default::Default
+pub fn phx_core::policy::PolicyBook<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<T: phx_store::save::Saved + core::marker::Copy> phx_store::stats::StoreStats for phx_core::policy::PolicyBook<T>
+pub fn phx_core::policy::PolicyBook<T>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_core::policy::PolicyBook<T>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_core::PolicyEntry<T: phx_store::save::Saved>
+pub phx_core::PolicyEntry::announced: phx_id::day::Day  // used by: phx-val, phx-world
+pub phx_core::PolicyEntry::effective: phx_id::day::Day  // used by: phx-fin, phx-val, phx-world
+pub phx_core::PolicyEntry::owner: phx_id::ids::PartyRef  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-num, phx-store, phx-world
+pub phx_core::PolicyEntry::value: T  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
+impl<T> phx_store::save::Saved for phx_core::policy::PolicyEntry<T> where phx_id::day::Day: phx_store::save::Saved, phx_id::ids::PartyRef: phx_store::save::Saved, T: phx_store::save::Saved + phx_store::save::Saved
+pub fn phx_core::policy::PolicyEntry<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
+pub fn phx_core::policy::PolicyEntry<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
+pub fn phx_core::policy::PolicyEntry<T>::save(&self, &mut phx_store::save::Writer<'_>)
+pub struct phx_core::PolicyH<T>  // used by: phx-fin
+impl<T> core::clone::Clone for phx_core::policy::PolicyH<T>
+pub fn phx_core::policy::PolicyH<T>::clone(&self) -> phx_core::policy::PolicyH<T>  // used by: phx-fin
+impl<T> core::cmp::Eq for phx_core::policy::PolicyH<T>
+impl<T> core::cmp::PartialEq for phx_core::policy::PolicyH<T>
+pub fn phx_core::policy::PolicyH<T>::eq(&self, &phx_core::policy::PolicyH<T>) -> bool  // used by: phx-fin
+impl<T> core::marker::Copy for phx_core::policy::PolicyH<T>
 pub struct phx_core::PopEntry  // used by: phx-pop
 pub phx_core::PopEntry::item: phx_core::pop::PopItem  // used by: phx-check, phx-exec, phx-fin, phx-macros, phx-pop, phx-world, sys-dem
 pub phx_core::PopEntry::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
@@ -2610,7 +2674,7 @@ pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &
 pub struct phx_core::PositionDecl  // used by: if-pop, phx-pop
 pub phx_core::PositionDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::PositionDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-geo, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
+pub phx_core::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub struct phx_core::Prefs  // used by: phx-world
 pub phx_core::Prefs::management: phx_num::missing::Missing<u16>  // used by: phx-cli, phx-world, sys-frm
 pub phx_core::Prefs::memory: phx_num::missing::Missing<u16>  // used by: phx-val, phx-world
@@ -2706,7 +2770,7 @@ pub struct phx_core::RoleId(pub &'static str)  // used by: phx-macros
 pub struct phx_core::ScheduleDates  // used by: phx-ledger, phx-world
 pub phx_core::ScheduleDates::anchor: phx_id::day::Date  // used by: phx-geo, phx-ledger, phx-val, phx-world
 pub phx_core::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention  // used by: phx-cli, phx-ledger, phx-world
-pub phx_core::ScheduleDates::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_core::ScheduleDates::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_core::ScheduleDates::eom: phx_core::calendar::period::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::ScheduleDates::period: phx_core::calendar::period::Period  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 impl phx_core::calendar::period::ScheduleDates
@@ -2748,7 +2812,7 @@ pub fn phx_core::register::values::Table1::values(&self) -> &[i64]  // used by: 
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::Table2  // used by: phx-geo, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-tec
 impl phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
@@ -2757,7 +2821,7 @@ pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]  // used by: ph
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::TermsToken(_)
 #[repr(transparent)] pub struct phx_core::TypeId(_)
 impl phx_core::register::values::TypeId
@@ -2823,7 +2887,7 @@ pub fn phx_core::Contribution::derived(&self) -> &'static [&'static str]  // use
 pub fn phx_core::Contribution::drawn(&self) -> &'static [&'static str]  // used by: phx-fin, phx-world, sys-dem
 pub fn phx_core::Contribution::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_core::Contribution::phase(&self) -> phx_core::streams::OpeningPhase  // used by: phx-cli, phx-world
-pub fn phx_core::Contribution::reads(&self) -> &'static [&'static str]  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::Contribution::reads(&self) -> &'static [&'static str]  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub fn phx_core::Contribution::writes(&self) -> &'static [&'static str]  // used by: phx-check
 pub trait phx_core::FactDef  // used by: if-pop, phx-macros, phx-world, sys-dem, sys-hh
 pub const phx_core::FactDef::ITEM: phx_core::facts::ItemDecl  // used by: if-pop, phx-world, sys-dem, sys-hh
@@ -2855,7 +2919,7 @@ pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_cor
 pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>  // used by: phx-store
 pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::PrimType::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::PrimType::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounting::Permitted>
 pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn alloc::vec::Vec<phx_core::accounting::Permitted>::read(&phx_core::register::values::PrimValue) -> core::option::Option<&alloc::vec::Vec<phx_core::accounting::Permitted>>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
@@ -2875,59 +2939,59 @@ pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::reads(phx_core::regist
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
 pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
 pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
 pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::KindName
 pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
 pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
 pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
 pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
 pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_id::day::Date
 pub type phx_id::day::Date::Read<'a> = phx_id::day::Date  // used by: phx-store
 pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::money::Amount
 pub type phx_num::money::Amount::Read<'a> = phx_num::money::Amount  // used by: phx-store
 pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::points::PointTable
 pub type phx_num::points::PointTable::Read<'a> = &'a phx_num::points::PointTable  // used by: phx-store
 pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::Count
 pub type phx_num::qty::Count::Read<'a> = phx_num::qty::Count  // used by: phx-store
 pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::QtyRaw
 pub type phx_num::qty::QtyRaw::Read<'a> = phx_num::qty::QtyRaw  // used by: phx-store
 pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::rate::Rate
 pub type phx_num::rate::Rate::Read<'a> = phx_num::rate::Rate  // used by: phx-store
 pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
-pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-obs, phx-world
+pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl<const E: u8> phx_core::register::values::PrimType for phx_num::fixed::Fixed<E>
 pub type phx_num::fixed::Fixed<E>::Read<'a> = phx_num::fixed::Fixed<E>  // used by: if-base, phx-fin, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub fn phx_num::fixed::Fixed<E>::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::fixed::Fixed<E>>  // used by: if-base, phx-fin, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
