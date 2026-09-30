@@ -1228,7 +1228,7 @@ least half its slots are still its members; a sparse instance's pairs are compac
 its live pairs. The audit's rolling sweep (K-14) compacts the lists it passes. Every walk reports its dropped entries,
 counted against `dead_share`.
 
-**Traversal**: event-driven. Inserts and leaves come from applies partitioned by key range (K-13), so each list has one
+**Traversal**: event-driven. Inserts and leaves come from applies partitioned by key range (K-12), so each list has one
 writer in a stage and the pairs arrive in key order; walks are `&self` reads from any worker.
 
 **Save and load**: derived — its owner marks it `#[saved(skip, rebuild = …)]` and rebuilds it from the member columns in
