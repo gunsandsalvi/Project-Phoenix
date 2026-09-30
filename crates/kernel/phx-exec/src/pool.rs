@@ -6,6 +6,30 @@ use phx_num::violation;
 use crate::consts::SPIN_ROUNDS;
 use crate::os;
 use crate::spec::PoolSpec;
+use crate::trace;
+
+/// What every pool of the process has run, as the counters read it; never read by the world.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct PoolUsage {
+    pub chunks: u64,
+    pub dispatches: u64,
+    /// Rounds idle workers have spun waiting for the next dispatch.
+    pub spun: u64,
+}
+
+/// Every pool's work so far.
+#[must_use]
+pub fn usage() -> PoolUsage {
+    let (c, read) = (trace::counted(), |a: &AtomicU64| a.load(Ordering::Relaxed));
+    PoolUsage { chunks: read(&c.chunks), dispatches: read(&c.dispatches), spun: read(&c.spun) }
+}
+
+/// `f` run as one counted chunk. A chunk's CPU is not read here: a span reads the whole process's at its ends, which
+/// sums every worker's at no cost a chunk. The pool wraps every item in it; the counters' own measure calls it bare.
+pub fn counted_chunk(f: impl FnOnce()) {
+    f();
+    trace::counted().chunks.fetch_add(1, Ordering::Relaxed);
+}
 
 /// Why a pool could not be started.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,7 +41,6 @@ struct Shared {
     unpinned: AtomicUsize,
     /// Advanced at every dispatch; a spinning worker stops when it changes.
     epoch: AtomicU64,
-    spun: AtomicU64,
 }
 
 /// The engine's workers, pinned one per core; every parallel primitive of the crate runs on it, and nothing else in
@@ -48,7 +71,6 @@ impl Pool {
             tids: (0..workers).map(|_| AtomicI32::new(0)).collect(),
             unpinned: AtomicUsize::new(0),
             epoch: AtomicU64::new(0),
-            spun: AtomicU64::new(0),
         });
         let (cores, pin, started) = (spec.cores.clone(), spec.pin, Arc::clone(&shared));
         let threads = rayon_core::ThreadPoolBuilder::new()
@@ -86,21 +108,16 @@ impl Pool {
         self.shared.unpinned.load(Ordering::Relaxed)
     }
 
-    /// Spin rounds idle workers have spent waiting for the next dispatch, a cost the counters report.
-    #[must_use]
-    pub fn spun(&self) -> u64 {
-        self.shared.spun.load(Ordering::Relaxed)
-    }
-
     /// Runs `f` once per item, on whichever worker is free; returns when every item is done. Nothing it computes may
-    /// depend on which worker ran which item or in what order.
+    /// depend on which worker ran which item or in what order; each item is one counted chunk.
     pub fn for_each<I: Send, F: Fn(I) + Sync>(&self, items: impl IntoIterator<Item = I>, f: F) {
         let items: Vec<I> = items.into_iter().collect();
         self.shared.epoch.fetch_add(1, Ordering::AcqRel);
         let f = &f;
+        trace::counted().dispatches.fetch_add(1, Ordering::Relaxed);
         self.threads.scope(move |s| {
             for item in items {
-                s.spawn(move |_| f(item));
+                s.spawn(move |_| counted_chunk(|| f(item)));
             }
         });
         self.keep_warm();
@@ -147,7 +164,7 @@ impl Pool {
                 std::hint::spin_loop();
                 rounds += 1;
             }
-            shared.spun.fetch_add(rounds, Ordering::Relaxed);
+            trace::counted().spun.fetch_add(rounds, Ordering::Relaxed);
         });
     }
 }

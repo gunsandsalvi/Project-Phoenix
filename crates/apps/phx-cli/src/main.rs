@@ -12,6 +12,11 @@ use std::process::ExitCode;
 
 use clap::{Args, Parser, Subcommand};
 
+/// The bench's build counts every allocation, so its trace tells each span's.
+#[cfg(feature = "bench")]
+#[global_allocator]
+static ALLOC: phx_exec::alloc::CountingAlloc = phx_exec::alloc::CountingAlloc;
+
 /// The world's command line.
 #[derive(Debug, Parser)]
 #[command(name = "phx")]

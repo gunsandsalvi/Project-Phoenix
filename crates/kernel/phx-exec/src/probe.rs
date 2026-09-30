@@ -4,7 +4,9 @@ use phx_rand::philox;
 use phx_store::{AddressSpace, Region};
 
 use crate::clock::Clock;
-use crate::consts::{NS_PER_S, PREFETCH_DISTANCE, PROBE_PIECE_BYTES, PROBE_UNIT_BLOCKS};
+use crate::consts::{
+    NS_PER_S, PREFETCH_DISTANCE, PROBE_GATHER_BYTES, PROBE_GATHER_ROWS, PROBE_PIECE_BYTES, PROBE_UNIT_BLOCKS,
+};
 use crate::convert::{index, to_u64};
 use crate::mix::mix64;
 use crate::os;
@@ -159,6 +161,28 @@ pub fn gather(
     })
 }
 
+/// What a run reads of the machine before its opening: the process's resident bytes once its workers stand and
+/// before any store is reserved, and the rate of random row reads, plain and prefetched, that a miss budget is
+/// counted in.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Baseline {
+    pub resident_bytes: Option<u64>,
+    pub gather: Option<GatherRate>,
+    pub gather_prefetched: Option<GatherRate>,
+}
+
+/// The baseline read on the run's own pool, before anything of the world is built.
+#[must_use]
+pub fn baseline(pool: &Pool, clock: &dyn Clock) -> Baseline {
+    let resident_bytes = os::resident_bytes();
+    let region = filled_region(pool, PROBE_GATHER_BYTES);
+    Baseline {
+        resident_bytes,
+        gather: gather(pool, clock, &region, PROBE_GATHER_ROWS, false),
+        gather_prefetched: gather(pool, clock, &region, PROBE_GATHER_ROWS, true),
+    }
+}
+
 /// Bytes per second every worker together reads sweeping the region in pieces, once over.
 #[must_use]
 pub fn sweep(pool: &Pool, clock: &dyn Clock, region: &Region<u64>) -> Option<u64> {
@@ -190,7 +214,7 @@ pub fn barrier(pool: &Pool, clock: &dyn Clock, rounds: u64) -> Option<u64> {
 mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
-    use super::{barrier, core_rates, filled_region, gather, sweep};
+    use super::{barrier, baseline, core_rates, filled_region, gather, sweep};
     use crate::clock::Clock;
     use crate::pool::Pool;
     use crate::spec::PoolSpec;
@@ -216,6 +240,8 @@ mod tests {
         }
         assert!(sweep(&pool, &clock, &region).is_some());
         assert!(barrier(&pool, &clock, 100).is_some());
+        let base = baseline(&pool, &clock);
+        assert!(base.gather.is_some_and(|g| !g.prefetch) && base.gather_prefetched.is_some_and(|g| g.prefetch));
         let rates = core_rates(&clock, 5_000).unwrap();
         assert!(!rates.is_empty() && rates.iter().all(|r| r.alone_per_s > 0 && r.loaded_per_s > 0));
     }

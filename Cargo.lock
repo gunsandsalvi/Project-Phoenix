@@ -413,6 +413,7 @@ name = "phx-fin"
 version = "0.1.0"
 dependencies = [
  "phx-core",
+ "phx-exec",
  "phx-rand",
  "serde",
  "serde_json",

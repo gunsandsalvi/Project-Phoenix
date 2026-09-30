@@ -37,3 +37,18 @@ direction = "down"
 counter = "phx_budget.busy_core_hundredths"
 value = 140
 direction = "up"
+
+# The counters' own cost (S1.117, 2026-09-30), in ns: a chunk's counting measured 9 to 13, under the step's bound of
+# 100, which stands for the workers' contention on the count; a span's two readings of the process's CPU and faults
+# measured 1 183 to 1 819, system calls each, not the 500 the step assumed of clocks the kernel serves without one. The
+# span stands a quarter above the higher: at the run's 184 spans a day it is under half a millisecond of the day.
+
+[[ratchet]]
+counter = "fin.counters.chunk_ns"
+value = 100
+direction = "down"
+
+[[ratchet]]
+counter = "fin.counters.span_ns"
+value = 2274
+direction = "down"

@@ -17,3 +17,7 @@ rayon-core.workspace = true
 
 [lints]
 workspace = true
+
+[features]
+# The bench's build: the counting allocator.
+bench = []

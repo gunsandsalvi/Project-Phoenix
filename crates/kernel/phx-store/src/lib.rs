@@ -16,6 +16,7 @@ pub mod pod;
 pub mod region;
 pub mod save;
 mod save_values;
+pub mod stats;
 pub mod table;
 
 pub use arena::{ArenaLists, CellListRef, CellLists, ChunkArena, ListRef};
@@ -30,4 +31,5 @@ pub use parties::Parties;
 pub use pod::{__seal, Pod, as_bytes, as_bytes_mut, from_bytes};
 pub use region::Region;
 pub use save::{LoadError, Reader, Saved, Writer, hash_saved, narrow};
+pub use stats::StoreStats;
 pub use table::{SlotAlloc, Table, TableChunk, TableChunks};

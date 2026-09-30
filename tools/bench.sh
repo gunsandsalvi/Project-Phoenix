@@ -58,7 +58,7 @@ cd "$root"
 built=0
 if [[ $build == 1 ]]; then
     start=$(date +%s)
-    cargo build --release -q -p phx-cli
+    cargo build --release -q -p phx-cli --features bench
     built=$(( $(date +%s) - start ))
 fi
 

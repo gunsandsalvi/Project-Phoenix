@@ -8,13 +8,18 @@ pub const phx_exec::consts::CHUNK_COST: u64
 pub const phx_exec::consts::GATHER_SERIAL_BELOW: usize
 pub const phx_exec::consts::KEYED_SHARDS: usize
 pub const phx_exec::consts::KEYED_SHARD_BITS: u32
+pub const phx_exec::consts::KIB: u64
+pub const phx_exec::consts::KINDS: usize
 pub const phx_exec::consts::LITTLE_CORE_SHARE_DEN: u32
 pub const phx_exec::consts::LITTLE_CORE_SHARE_NUM: u32
 pub const phx_exec::consts::MAX_CPUS: usize
 pub const phx_exec::consts::MIX_MULTIPLIERS: [u64; 2]
 pub const phx_exec::consts::MIX_SHIFTS: [u32; 3]
+pub const phx_exec::consts::MONTHS_A_YEAR: usize
 pub const phx_exec::consts::NS_PER_S: u64
 pub const phx_exec::consts::PREFETCH_DISTANCE: u64
+pub const phx_exec::consts::PROBE_GATHER_BYTES: u64
+pub const phx_exec::consts::PROBE_GATHER_ROWS: u64
 pub const phx_exec::consts::PROBE_PIECE_BYTES: usize
 pub const phx_exec::consts::PROBE_UNIT_BLOCKS: u32
 pub const phx_exec::consts::RADIX_BITS: u32
@@ -25,14 +30,20 @@ pub const phx_exec::consts::SPIN_ROUNDS: u64
 pub mod phx_exec::counters
 pub struct phx_exec::counters::ExecCounters
 pub phx_exec::counters::ExecCounters::barriers: u64
+pub phx_exec::counters::ExecCounters::buffer_bytes: u64
 pub phx_exec::counters::ExecCounters::bytes: u64
 pub phx_exec::counters::ExecCounters::chunks: u64
 pub phx_exec::counters::ExecCounters::rows: u64
+pub phx_exec::counters::ExecCounters::spun: u64
+pub phx_exec::counters::ExecCounters::visited: [u64; 32]
 pub phx_exec::counters::ExecCounters::wall_ns: u64
 impl phx_exec::counters::ExecCounters
 pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters
+pub fn phx_exec::counters::ExecCounters::buffered(&mut self, u64)
 pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)
+pub fn phx_exec::counters::ExecCounters::spin(&mut self, u64)
 pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T
+pub fn phx_exec::counters::ExecCounters::visited(&mut self, usize, u64)
 pub mod phx_exec::gather
 pub struct phx_exec::gather::IntentBuf<T>
 impl<T: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::gather::IntentBuf<T>
@@ -60,6 +71,16 @@ impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + 
 pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
 pub mod phx_exec::mix
 pub fn phx_exec::mix::mix64(u64) -> u64
+pub mod phx_exec::os
+pub fn phx_exec::os::allowed_cores() -> core::option::Option<alloc::vec::Vec<usize>>
+pub fn phx_exec::os::current_tid() -> i32
+pub fn phx_exec::os::page_size() -> core::option::Option<u64>
+pub fn phx_exec::os::peak_resident_bytes() -> core::option::Option<u64>
+pub fn phx_exec::os::pin_current(usize) -> bool
+pub fn phx_exec::os::prefetch<T>(*const T)
+pub fn phx_exec::os::process_cpu_ns() -> core::option::Option<u64>
+pub fn phx_exec::os::process_faults() -> core::option::Option<u64>
+pub fn phx_exec::os::resident_bytes() -> core::option::Option<u64>
 pub mod phx_exec::partition
 pub struct phx_exec::partition::Partitioned<T>
 pub phx_exec::partition::Partitioned::items: alloc::vec::Vec<T>
@@ -78,16 +99,25 @@ pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core:
 pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
 pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::Pool::spun(&self) -> u64
 pub fn phx_exec::pool::Pool::unpinned(&self) -> usize
 pub fn phx_exec::pool::Pool::worker_tids(&self) -> alloc::vec::Vec<i32>
 pub fn phx_exec::pool::Pool::workers(&self) -> usize
 impl core::fmt::Debug for phx_exec::pool::Pool
 pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_exec::pool::PoolError(pub alloc::string::String)
+pub struct phx_exec::pool::PoolUsage
+pub phx_exec::pool::PoolUsage::chunks: u64
+pub phx_exec::pool::PoolUsage::dispatches: u64
+pub phx_exec::pool::PoolUsage::spun: u64
+pub fn phx_exec::pool::counted_chunk(impl core::ops::function::FnOnce())
 pub fn phx_exec::pool::each<I: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, impl core::iter::traits::collect::IntoIterator<Item = I>, impl core::ops::function::Fn(I) + core::marker::Sync)
 pub fn phx_exec::pool::map<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
+pub fn phx_exec::pool::usage() -> phx_exec::pool::PoolUsage
 pub mod phx_exec::probe
+pub struct phx_exec::probe::Baseline
+pub phx_exec::probe::Baseline::gather: core::option::Option<phx_exec::probe::GatherRate>
+pub phx_exec::probe::Baseline::gather_prefetched: core::option::Option<phx_exec::probe::GatherRate>
+pub phx_exec::probe::Baseline::resident_bytes: core::option::Option<u64>
 pub struct phx_exec::probe::CoreRate
 pub phx_exec::probe::CoreRate::alone_per_s: u64
 pub phx_exec::probe::CoreRate::capacity: core::option::Option<u32>
@@ -101,6 +131,7 @@ pub phx_exec::probe::GatherRate::page_size: core::option::Option<u64>
 pub phx_exec::probe::GatherRate::prefetch: bool
 pub phx_exec::probe::GatherRate::rows: u64
 pub fn phx_exec::probe::barrier(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, u64) -> core::option::Option<u64>
+pub fn phx_exec::probe::baseline(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock) -> phx_exec::probe::Baseline
 pub fn phx_exec::probe::core_rates(&dyn phx_exec::clock::Clock, u64) -> core::result::Result<alloc::vec::Vec<phx_exec::probe::CoreRate>, phx_exec::pool::PoolError>
 pub fn phx_exec::probe::filled_region(&phx_exec::pool::Pool, u64) -> phx_store::region::Region<u64>
 pub fn phx_exec::probe::gather(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>, u64, bool) -> core::option::Option<phx_exec::probe::GatherRate>
@@ -142,6 +173,15 @@ pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
 pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize
 pub fn phx_exec::spec::read_capacity(usize) -> core::option::Option<u32>
 pub fn phx_exec::spec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>
+pub mod phx_exec::stats
+pub use phx_exec::stats::StoreStats
+pub struct phx_exec::stats::Sample
+pub phx_exec::stats::Sample::bytes: u64
+pub phx_exec::stats::Sample::rows_ever: u64
+pub phx_exec::stats::Sample::rows_live: u64
+impl phx_exec::stats::Sample
+pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample
+pub fn phx_exec::stats::growth_per_year(&[u64]) -> core::option::Option<i128>
 pub mod phx_exec::tally
 pub struct phx_exec::tally::Tally(_)
 impl phx_exec::tally::Tally
@@ -153,8 +193,27 @@ pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)
 pub mod phx_exec::trace
 pub enum phx_exec::trace::Mark<'a>
 pub phx_exec::trace::Mark::Begun(&'static str)
-pub phx_exec::trace::Mark::Ended(&'static str, core::option::Option<u64>)
+pub phx_exec::trace::Mark::Ended(&'static str, core::option::Option<u64>, &'a [(&'static str, i64)])
 pub phx_exec::trace::Mark::Note(&'static str, &'a [(&'static str, i64)])
+pub struct phx_exec::trace::Reading
+pub phx_exec::trace::Reading::allocated: core::option::Option<(u64, u64)>
+pub phx_exec::trace::Reading::cpu_ns: core::option::Option<u64>
+pub phx_exec::trace::Reading::faults: core::option::Option<u64>
+pub phx_exec::trace::Reading::pool: phx_exec::pool::PoolUsage
+impl phx_exec::trace::Reading
+pub fn phx_exec::trace::Reading::now() -> phx_exec::trace::Reading
+pub struct phx_exec::trace::Spent
+pub phx_exec::trace::Spent::alloc_bytes: core::option::Option<u64>
+pub phx_exec::trace::Spent::allocs: core::option::Option<u64>
+pub phx_exec::trace::Spent::barriers: core::option::Option<u64>
+pub phx_exec::trace::Spent::chunks: core::option::Option<u64>
+pub phx_exec::trace::Spent::cpu_ns: core::option::Option<u64>
+pub phx_exec::trace::Spent::faults: core::option::Option<u64>
+pub phx_exec::trace::Spent::items: core::option::Option<u64>
+pub phx_exec::trace::Spent::spun: core::option::Option<u64>
+impl phx_exec::trace::Spent
+pub fn phx_exec::trace::Spent::between(core::option::Option<u64>, &phx_exec::trace::Reading, &phx_exec::trace::Reading) -> phx_exec::trace::Spent
+pub fn phx_exec::trace::Spent::counts(&self) -> alloc::vec::Vec<(&'static str, i64)>
 pub trait phx_exec::trace::Tracer: phx_exec::clock::Clock
 pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)
 pub fn phx_exec::trace::count(usize) -> i64
@@ -163,6 +222,7 @@ pub fn phx_exec::trace::note(&'static str, &[(&'static str, i64)])
 pub fn phx_exec::trace::on() -> bool
 pub fn phx_exec::trace::set(&'static dyn phx_exec::trace::Tracer)
 pub fn phx_exec::trace::span<T>(&'static str, impl core::ops::function::FnOnce() -> T) -> T
+pub fn phx_exec::trace::span_items<T>(&'static str, u64, impl core::ops::function::FnOnce() -> T) -> T
 pub mod phx_exec::traverse
 pub fn phx_exec::traverse::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
 pub fn phx_exec::traverse::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
@@ -171,14 +231,20 @@ pub mod phx_exec::tree
 pub fn phx_exec::tree::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
 pub struct phx_exec::ExecCounters
 pub phx_exec::ExecCounters::barriers: u64
+pub phx_exec::ExecCounters::buffer_bytes: u64
 pub phx_exec::ExecCounters::bytes: u64
 pub phx_exec::ExecCounters::chunks: u64
 pub phx_exec::ExecCounters::rows: u64
+pub phx_exec::ExecCounters::spun: u64
+pub phx_exec::ExecCounters::visited: [u64; 32]
 pub phx_exec::ExecCounters::wall_ns: u64
 impl phx_exec::counters::ExecCounters
 pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters
+pub fn phx_exec::counters::ExecCounters::buffered(&mut self, u64)
 pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)
+pub fn phx_exec::counters::ExecCounters::spin(&mut self, u64)
 pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T
+pub fn phx_exec::counters::ExecCounters::visited(&mut self, usize, u64)
 pub struct phx_exec::IntentBuf<T>
 impl<T: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::gather::IntentBuf<T>
 pub fn phx_exec::gather::IntentBuf<T>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = &mut [alloc::vec::Vec<T>]>
@@ -201,7 +267,6 @@ pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core:
 pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
 pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::Pool::spun(&self) -> u64
 pub fn phx_exec::pool::Pool::unpinned(&self) -> usize
 pub fn phx_exec::pool::Pool::worker_tids(&self) -> alloc::vec::Vec<i32>
 pub fn phx_exec::pool::Pool::workers(&self) -> usize

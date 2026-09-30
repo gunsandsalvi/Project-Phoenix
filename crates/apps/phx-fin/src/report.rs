@@ -41,7 +41,8 @@ impl Report {
         let [first, second] = self.days.turns_ms;
         let _ = writeln!(out, "turns: 4 NB + B' {first:.0} ms, 3 NB + H {second:.0} ms");
         for (base, op, items, ns) in &self.ops {
-            let _ = writeln!(out, "  {base}.{op}: {items} items, {ns:?} ns an item");
+            let ns = ns.map_or_else(|| "no".to_owned(), |n| n.to_string());
+            let _ = writeln!(out, "  {base}.{op}: {items} items, {ns} ns an item");
         }
         for m in &self.misses {
             let _ = writeln!(out, "  missed: {m}");

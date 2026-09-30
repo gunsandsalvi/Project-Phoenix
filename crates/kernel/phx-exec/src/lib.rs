@@ -1,3 +1,5 @@
+#[cfg(feature = "bench")]
+pub mod alloc;
 pub mod clock;
 pub mod consts;
 mod convert;
@@ -6,13 +8,14 @@ pub mod gather;
 pub mod hint;
 pub mod keyed;
 pub mod mix;
-mod os;
+pub mod os;
 pub mod partition;
 pub mod pool;
 pub mod probe;
 pub mod radix;
 pub mod site;
 pub mod spec;
+pub mod stats;
 pub mod tally;
 pub mod trace;
 pub mod traverse;

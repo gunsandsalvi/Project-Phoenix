@@ -9,7 +9,7 @@ const RULE: &str = "PC-05";
 /// The pool records the running site in one thread-local, read only by the panic hook.
 const SITE: (&str, &str) = ("phx-exec", "src/site.rs");
 
-/// The bench's trace keeps where its marks go in one static, which no outcome reads.
+/// The bench's trace keeps where its marks go and what the counters count in one static, which no outcome reads.
 const TRACE: (&str, &str) = ("phx-exec", "src/trace.rs");
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {

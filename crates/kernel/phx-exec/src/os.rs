@@ -74,6 +74,58 @@ pub fn process_cpu_ns() -> Option<u64> {
     None
 }
 
+/// The page faults, minor and major, every thread of the process has taken.
+#[cfg(unix)]
+#[must_use]
+pub fn process_faults() -> Option<u64> {
+    // SAFETY: an all-zero rusage is a valid value to be overwritten.
+    let mut u: libc::rusage = unsafe { std::mem::zeroed() };
+    // SAFETY: the rusage is valid and writable; RUSAGE_SELF names the process.
+    let status = unsafe { libc::getrusage(libc::RUSAGE_SELF, &raw mut u) };
+    let minor = u64::try_from(u.ru_minflt).ok()?;
+    let major = u64::try_from(u.ru_majflt).ok()?;
+    (status == 0).then_some(minor + major)
+}
+
+#[cfg(not(unix))]
+#[must_use]
+pub fn process_faults() -> Option<u64> {
+    None
+}
+
+/// The bytes the process holds resident now, from the kernel's page counts.
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[must_use]
+pub fn resident_bytes() -> Option<u64> {
+    let statm = std::fs::read_to_string("/proc/self/statm").ok()?;
+    let pages: u64 = statm.split_whitespace().nth(1)?.parse().ok()?;
+    Some(pages * page_size()?)
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "android")))]
+#[must_use]
+pub fn resident_bytes() -> Option<u64> {
+    None
+}
+
+/// The most bytes the process has held resident at once.
+#[cfg(unix)]
+#[must_use]
+pub fn peak_resident_bytes() -> Option<u64> {
+    // SAFETY: as in `process_faults`.
+    let mut u: libc::rusage = unsafe { std::mem::zeroed() };
+    // SAFETY: the rusage is valid and writable; RUSAGE_SELF names the process.
+    let status = unsafe { libc::getrusage(libc::RUSAGE_SELF, &raw mut u) };
+    let kib = u64::try_from(u.ru_maxrss).ok()?;
+    (status == 0).then(|| kib * crate::consts::KIB)
+}
+
+#[cfg(not(unix))]
+#[must_use]
+pub fn peak_resident_bytes() -> Option<u64> {
+    None
+}
+
 /// Asks the core to start loading a line it will read soon; a hint with no effect on any value.
 #[inline]
 pub fn prefetch<T>(ptr: *const T) {

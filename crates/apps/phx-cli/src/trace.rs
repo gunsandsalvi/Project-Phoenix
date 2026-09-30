@@ -1,6 +1,7 @@
 //! The run's trace printed as it happens: each span as it begins and ends with its own time, each note with its
 //! counts, every line with the time since the run began and the memory held then, indented by nesting.
 
+use std::fmt::Write as _;
 use std::time::Instant;
 
 use phx_exec::Clock;
@@ -23,14 +24,19 @@ impl Tracer for Printer {
         let head = format!("{since:>10.3}s {:>7} MiB {}", resident_mib(), "  ".repeat(depth));
         match mark {
             Mark::Begun(name) => println!("{head}> {name}"),
-            Mark::Ended(name, Some(ns)) => println!("{head}< {name} {:.1} ms", ms(ns)),
-            Mark::Ended(name, None) => println!("{head}< {name} ? ms"),
-            Mark::Note(name, counts) => {
-                let fields: Vec<String> = counts.iter().map(|(k, v)| format!("{k}={v}")).collect();
-                println!("{head}= {name} {}", fields.join(" "));
-            }
+            Mark::Ended(name, Some(ns), counts) => println!("{head}< {name} {:.1} ms{}", ms(ns), fields(counts)),
+            Mark::Ended(name, None, counts) => println!("{head}< {name} ? ms{}", fields(counts)),
+            Mark::Note(name, counts) => println!("{head}= {name}{}", fields(counts)),
         }
     }
+}
+
+/// Named counts as the trace prints them, each after a space.
+fn fields(counts: &[(&'static str, i64)]) -> String {
+    counts.iter().fold(String::new(), |mut out, (k, v)| {
+        let _ = write!(out, " {k}={v}");
+        out
+    })
 }
 
 /// Nanoseconds read as milliseconds.

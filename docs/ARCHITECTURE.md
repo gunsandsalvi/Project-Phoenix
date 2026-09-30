@@ -971,6 +971,10 @@ settlement, facts, goods, capital, posted-price meetings and labour matching.
 
 Status: planned (S1.159–S1.168)
 
+Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
+counters sample (K-15) and the world never reads. The rows a walk visits are counted by the traversal that walks it, in
+`phx-exec`, since no `phx-store` code may share a counter across workers.
+
 #### K-01 Columns in reserved address space
 
 No step rebuilds it: the columns stand as below, and the core's close (S1.360) writes their capacity and ratchets at
@@ -1050,7 +1054,7 @@ planned (S1.162, S1.163).
 
 ### 7.2 phx-exec
 
-Status: planned (S1.117, S1.169–S1.171)
+Status: planned (S1.169–S1.171)
 
 #### K-11 Chunk plans
 
@@ -1078,11 +1082,42 @@ planned (S1.171).
 
 #### K-15 Measurement counters
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.117).
+The counters measure the run and never reach the world: nothing the world decides reads them. A span of the trace
+(§14.7) reads the process at its two ends (`trace::Reading`) and marks its end with what it spent (`trace::Spent`):
+its items where it has them (`span_items`), every thread's CPU (`CLOCK_PROCESS_CPUTIME_ID`) and page faults
+(`getrusage(RUSAGE_SELF)`), the pools' chunks, dispatches and spin, and its allocations. CPU and faults are read for
+the whole process at the span's ends, never at a chunk's: that sum is every worker's work and its spin between
+dispatches, the same for any number of workers, and a chunk pays only one relaxed add to the process's chunk count
+(`pool::counted_chunk`, around every item `for_each` runs). Reading each worker's own clock at each chunk's ends
+(two `CLOCK_THREAD_CPUTIME_ID` and two `RUSAGE_THREAD` reads) cost about 900 ns a chunk on the build machine, since
+none of them is served without a system call. A count the system does not give is missing, never zero. When nothing is
+traced, a span reads nothing.
 
-**Today** (`counters.rs`, `trace.rs`, `tally.rs`): the trace of §14.7, and `Tally`, an integer sum the same on any
-pool.
+Allocations are counted by `alloc::CountingAlloc`, the system allocator with two relaxed counters (calls and bytes),
+which only the `bench` feature compiles and only the bench's binary installs as its global allocator (`tools/bench.sh`
+builds `phx-cli` with `--features bench`); the world's build has neither the counter nor its cost. A sub-step's
+`ExecCounters` add rows and bytes touched, chunks and barriers, rows visited per kind (`visited`, called by the
+traversal that walks them, since only `phx-exec` may share a counter across workers), day-buffer bytes and spin; every
+add is checked, and a counter past `u64` is `capacity_exceeded!`. A store reports `StoreStats` (§7.1): its rows live
+and ever and its bytes, sampled as `stats::Sample`; `stats::growth_per_year` reads a store's growth from its samples at
+each simulated month's end, over whole years only, none before a year is sampled.
+
+`probe::baseline`, run on the run's pool before anything of the world is reserved, reads the process's resident bytes
+(`/proc/self/statm`: code, libraries, allocator arenas and the workers' stacks) and the rate of random reads of 8-byte
+rows over a 64 MiB region (`PROBE_GATHER_BYTES`, past every cache of a phone), plain and prefetched, a
+`PROBE_GATHER_ROWS` a worker: the miss a gather's budget is counted in (R12). `os::peak_resident_bytes` reads the
+process's peak.
+
+**Volumes and ratchets**: `tools/bench.sh -F counters` (`phx-fin::counters`) runs a day's dispatches (`[day.*]
+barriers`) with every worker's chunk in each: `fin.counters.chunk_ns` (a chunk's counting, 13 ns measured, ratchet
+100) and `fin.counters.span_ns` (a span's two readings and its counts: 1.2–1.8 µs measured, the process's CPU and faults
+being system calls; ratchet 2 274, under half a millisecond at the run's 184 spans a day).
+
+**Extension points**: the run's report and the bench's summary carry the spans' counts, the store samples and the
+baseline (S1.118); K-03's buffers report their bytes (S1.160); K-11's traversals count rows visited, chunks, barriers
+and spin (S1.169); every base implements `StoreStats` at its step.
+
+**Today** (`tally.rs`): `Tally`, an integer sum the same on any pool.
 
 ### 7.3 phx-core
 
@@ -2903,14 +2938,14 @@ Every job runs on push and pull request on a pinned runner image with a 30-minut
 from `tools/versions.toml`, caches on `Cargo.lock` and the toolchains, and may not fail. CODEOWNERS gives the owner
 `/perf/`, `docs/PROJECT_PHOENIX.md` and `data/profiles/`.
 
-**The bench** (`tools/bench.sh`, on the build machine — the development VM, 4 cores and 15 GB — the one benchmarking tool) builds `--release` (thin LTO, §17) and runs the world: `-p` the persons (the committed resolution by
+**The bench** (`tools/bench.sh`, on the build machine — the development VM, 4 cores and 15 GB — the one benchmarking tool) builds `--release` (thin LTO, §17) with the `bench` feature, which counts every allocation (K-15), and runs the world: `-p` the persons (the committed resolution by
 default, where the budget is judged), `-d` the days from day zero (twenty, the span the budget's ratchets are measured
 over), `-s` the seed, `-w` the workers, `-c` the live checks; `-g` a stage gate's run instead — settled, two years,
 the audit and every live check; `-k` keeps the report in `perf/bench/`; `-t` stops the world after so many seconds; `-P` samples the run (the kernel tools' `perf`) and ranks every function by
 the time spent in it.
 **The trace** (`phx_exec::trace`) tells the run as it happens: every span of the opening and of each day — its stages
-and sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time, and notes of
-what each did (parties, dues, flows, buyers, stalls, rounds, sales, failures); a loop notes how far it is at each power
+and sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time and what else it
+spent (K-15: every thread's CPU and faults, chunks, barriers, spin and allocations), and notes of what each did (parties, dues, flows, buyers, stalls, rounds, sales, failures); a loop notes how far it is at each power
 of two of its rounds, so one that runs away shows. The host sets where its marks go (`phx run` prints each with the
 time since the start and the memory held); with none set it tells nothing, and no outcome reads it. Ctrl-C or `-t`
 stop the world, never the bench, whose summary is then read from the log. It writes the run's whole report (each day's
@@ -2925,8 +2960,9 @@ run is at the gates; a stage gate's settled two-year run is also the device run'
 **The finished-volume measure** (`tools/bench.sh -F <bases|all>`, `phx fin`, the crate `phx-fin`) measures the code at
 the design point, never a world (N8.8). Each base's driver (`FinBase`, `src/<base>.rs`, one registry line) fills its
 base from `perf/design.toml` with draws of its own stream `fin.<base>` at the design point's seed, then runs it through
-its own kernels a day of each type — `-D` picks among B, NB, H and BC, `turn` every one — the first day of each type
-warming the day buffers and never counted. Per base and operation it reports items, CPU summed over threads, wall, ns
+its own kernels a day of each type — `-D` picks among B, NB, H and BC, `turn` every one; BC's counts are B's with
+`[day.bc]` written over — the first day of each type warming the day buffers and never counted, each operation read
+on the application's clock through `Measures::read`. Per base and operation it reports items, CPU summed over threads, wall, ns
 an item (CPU over items, the same for any number of workers), faults and allocations. It composes the phone's lines —
 a line's core-ms its VM ns × the phone's factor × its day's count; a line no driver measures yet the steps' declared
 `[stage]` figure, reported as declared — each day type's sum, the business day after closed days with its declared
@@ -3050,7 +3086,7 @@ credited while the world holds it (GEN.10).
     | PC-02 | a direct external dependency outside the allow-list (`rules/dependencies.rs`, by crate or layer; `proptest` and `trybuild` as development dependencies anywhere) |
     | PC-03 | `allow(unsafe_code)` outside `phx-store` and `phx-exec` |
     | PC-04 | `rayon` anywhere, `rayon-core` outside `phx-exec`, `libc` outside `phx-exec` and `phx-store` |
-    | PC-05 | a `static` item in a world crate, but `phx-exec/src/site.rs`'s thread-local and `phx-exec/src/trace.rs`'s one static, where the bench's marks go |
+    | PC-05 | a `static` item in a world crate, but `phx-exec/src/site.rs`'s thread-local and `phx-exec/src/trace.rs`'s one static, where the bench's marks go and what the counters count across threads |
     | PC-06 | a numeric literal other than 0, 1, −1 and 2 in a world crate outside `consts.rs`, type positions, tests and benches, with the arguments of the assert, format, write, `vec!` and `violation!` macros parsed as expressions; a constant in `consts.rs` without a doc comment |
     | PC-07 | a comment matching a clause id, `Law n`, `Nn`, `§`, `spec`, a document's name, a plan step, `TODO` or `FIXME` |
     | PC-08 | a function in an interface crate other than a constructor or a field accessor |

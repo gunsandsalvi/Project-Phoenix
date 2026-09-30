@@ -117,12 +117,18 @@ impl Design {
         for day in DayType::ALL {
             days.insert(day, counts(&table, &format!("day.{}", day.key()))?);
         }
+        // The business day after closed days is an ordinary one with its own counts written over.
+        if let (Some(b), Some(bc)) = (days.get(&DayType::B), days.get(&DayType::Bc)) {
+            let mut merged = b.clone();
+            merged.extend(bc.iter().map(|(k, v)| (k.clone(), *v)));
+            days.insert(DayType::Bc, merged);
+        }
         let bc_extra_core_ms = real(get(&table, "day.bc.extra_core_ms")?, "day.bc.extra_core_ms")?;
         let store = counts(&table, "store")?;
         Ok(Design { point, phone, store, stage, bc_extra_core_ms, days, table })
     }
 
-    /// A day type's counts.
+    /// A day type's counts; the business day after closed days holds the ordinary one's with its own written over.
     #[must_use]
     pub fn day(&self, day: DayType) -> Option<&BTreeMap<String, u64>> {
         self.days.get(&day)

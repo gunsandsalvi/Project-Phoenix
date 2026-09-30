@@ -4,6 +4,7 @@
 
 pub mod budget;
 pub mod compose;
+pub mod counters;
 pub mod design;
 pub mod fill;
 pub mod measure;
@@ -16,6 +17,7 @@ use std::collections::BTreeMap;
 use design::Design;
 use fill::Streams;
 use measure::{Measure, Measures};
+use phx_exec::Clock;
 use report::Report;
 
 /// A refusal of the harness: a key the design point lacks, a base it does not know, a capacity or a driver's failure.
@@ -94,12 +96,17 @@ pub trait FinBase {
     fn fill(&mut self, design: &Design, streams: &Streams) -> Result<Filled, FinError>;
     /// # Errors
     /// A kernel's refusal.
-    fn day(&mut self, day: DayType, counts: &BTreeMap<String, u64>, measures: &mut Measures) -> Result<(), FinError>;
+    fn day(
+        &mut self,
+        day: DayType,
+        counts: &BTreeMap<String, u64>,
+        measures: &mut Measures<'_>,
+    ) -> Result<(), FinError>;
     fn bytes(&self) -> Bytes;
 }
 
 /// Every driver, in the order the bases depend on one another; each base's step adds its own.
-pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[];
+pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[|| Box::new(counters::Counters::default())];
 
 /// What a run fills, runs and reads.
 #[derive(Debug, Clone)]
@@ -128,7 +135,7 @@ pub fn capacities_short(design: &Design) -> Vec<String> {
 ///
 /// # Errors
 /// A key the design point lacks, a base with no driver, a driver's refusal.
-pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>]) -> Result<Report, FinError> {
+pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock) -> Result<Report, FinError> {
     let design = Design::parse(&args.design)?;
     let ratchets = budget::read(&args.budget)?;
     let streams = Streams::new(design.point.seed);
@@ -141,13 +148,13 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>]) -> Result<Report, 
             chosen.retain(|d| names.iter().any(|n| n == d.name()));
         }
     }
-    let mut measures = Measures::default();
+    let mut measures = Measures::new(clock);
     for driver in &mut chosen {
         driver.fill(&design, &streams)?;
         for day in &args.days {
             let counts =
                 design.day(*day).ok_or_else(|| FinError(format!("the design point has no `day.{}`", day.key())))?;
-            driver.day(*day, counts, &mut Measures::default())?;
+            driver.day(*day, counts, &mut Measures::new(clock))?;
             driver.day(*day, counts, &mut measures)?;
         }
     }

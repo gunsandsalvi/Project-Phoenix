@@ -57,3 +57,13 @@ pub const CAPACITY_PATH: [&str; 2] = ["/sys/devices/system/cpu/cpu", "/cpu_capac
 
 /// Largest core number the affinity mask is read for: Linux's default `CPU_SETSIZE`.
 pub const MAX_CPUS: usize = 1024;
+/// Bytes in a kibibyte, the unit the system reports peak resident memory in.
+pub const KIB: u64 = 1024;
+/// The kinds a party may be of: as many as its key's kind bits can name.
+pub const KINDS: usize = 1 << phx_id::consts::KEY_KIND_BITS;
+/// Months in a year: the stores are sampled at each month's end and their growth read over whole years.
+pub const MONTHS_A_YEAR: usize = 12;
+/// Bytes of the region the run's gather probe reads: well past every cache of a phone, so each row is a miss.
+pub const PROBE_GATHER_BYTES: u64 = 64 << 20;
+/// Random rows each worker reads in the run's gather probe: about 25 ms of misses, twice over.
+pub const PROBE_GATHER_ROWS: u64 = 1 << 18;

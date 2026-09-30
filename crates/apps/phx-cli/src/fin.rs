@@ -23,7 +23,7 @@ pub fn run(a: &FinArgs) -> Result<bool, String> {
         bases: Some(a.bases.split(',').map(|b| b.trim().to_owned()).collect()),
         days,
     };
-    let report = phx_fin::run(&args, REGISTRY).map_err(|e| e.0)?;
+    let report = phx_fin::run(&args, REGISTRY, &crate::clock::WallClock::new()).map_err(|e| e.0)?;
     print!("{}", report.summary());
     if let Some(path) = &a.report {
         let json = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;

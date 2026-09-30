@@ -649,6 +649,11 @@ pub fn phx_store::save::compress_frame(&[u8]) -> core::io::error::Result<alloc::
 pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>
 pub type phx_store::save::Frames<'a> = &'a dyn core::ops::function::Fn(&[alloc::vec::Vec<u8>]) -> alloc::vec::Vec<core::io::error::Result<alloc::vec::Vec<u8>>>
+pub mod phx_store::stats
+pub trait phx_store::stats::StoreStats
+pub fn phx_store::stats::StoreStats::bytes(&self) -> u64
+pub fn phx_store::stats::StoreStats::rows_ever(&self) -> u64
+pub fn phx_store::stats::StoreStats::rows_live(&self) -> u64
 pub mod phx_store::table
 pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
@@ -1240,6 +1245,10 @@ pub fn [u128; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [usize; N]
 pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
 pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
+pub trait phx_store::StoreStats
+pub fn phx_store::StoreStats::bytes(&self) -> u64
+pub fn phx_store::StoreStats::rows_ever(&self) -> u64
+pub fn phx_store::StoreStats::rows_live(&self) -> u64
 pub trait phx_store::TableChunks
 pub type phx_store::TableChunks::Rows
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>

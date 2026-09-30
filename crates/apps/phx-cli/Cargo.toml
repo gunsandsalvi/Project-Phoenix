@@ -32,3 +32,7 @@ toml.workspace = true
 
 [lints]
 workspace = true
+
+[features]
+# The bench's build: every allocation counted, so the trace can tell a span's allocations.
+bench = ["phx-exec/bench"]

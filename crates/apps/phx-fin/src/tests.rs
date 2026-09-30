@@ -41,6 +41,15 @@ zones = 1_000
 cell_m = "Missing"
 "#;
 
+/// A clock that never moves: the harness's arithmetic reads no time.
+struct Ticks;
+
+impl phx_exec::Clock for Ticks {
+    fn now_ns(&self) -> u64 {
+        0
+    }
+}
+
 fn design() -> Design {
     Design::parse(DESIGN).unwrap()
 }
@@ -66,8 +75,8 @@ fn turns_are_sums_of_days() {
 
 #[test]
 fn ns_per_op_is_cpu_over_items() {
-    let one = Measure { items: 1_000, cpu_ns: 500_000, wall_ns: 500_000, ..Measure::default() };
-    let four = Measure { items: 1_000, cpu_ns: 500_000, wall_ns: 125_000, ..Measure::default() };
+    let one = Measure { items: 1_000, cpu_ns: Some(500_000), wall_ns: Some(500_000), ..Measure::default() };
+    let four = Measure { items: 1_000, cpu_ns: Some(500_000), wall_ns: Some(125_000), ..Measure::default() };
     assert_eq!(one.ns_per_op(), Some(500));
     assert_eq!(four.ns_per_op(), one.ns_per_op(), "the workers change the wall, never the CPU an item");
     assert_eq!(Measure::default().ns_per_op(), None, "no items, no cost an item");
@@ -79,6 +88,13 @@ fn a_missing_design_key_is_refused() {
     assert_eq!(refused, FinError("`point.seed` is missing from the design point".to_owned()));
     let overflow = Design::parse(&DESIGN.replace("seed = 1", "seed = -1")).unwrap_err();
     assert_eq!(overflow, FinError("`point.seed` is not a count".to_owned()));
+}
+
+#[test]
+fn the_day_after_closed_days_is_a_business_day_written_over() {
+    let d = design();
+    let bc = d.day(DayType::Bc).unwrap();
+    assert_eq!((bc.get("retail"), bc.get("applies")), (Some(&100), Some(&10)));
 }
 
 #[test]
@@ -101,10 +117,10 @@ impl FinBase for Counting {
     fn fill(&mut self, _: &Design, _: &Streams) -> Result<Filled, FinError> {
         Ok(Filled { rows: 1 })
     }
-    fn day(&mut self, _: DayType, counts: &BTreeMap<String, u64>, m: &mut Measures) -> Result<(), FinError> {
+    fn day(&mut self, _: DayType, counts: &BTreeMap<String, u64>, m: &mut Measures<'_>) -> Result<(), FinError> {
         self.days += 1;
         let items = counts.values().sum();
-        m.record("counting", "op", &Measure { items, cpu_ns: items * 7, ..Measure::default() });
+        m.record("counting", "op", &Measure { items, cpu_ns: Some(items * 7), ..Measure::default() });
         Ok(())
     }
     fn bytes(&self) -> Bytes {
@@ -115,14 +131,14 @@ impl FinBase for Counting {
 #[test]
 fn warm_day_is_not_counted() {
     let args = Args { design: DESIGN.to_owned(), budget: String::new(), bases: None, days: vec![DayType::B] };
-    let report = run(&args, &[|| Box::new(Counting::default())]).unwrap();
+    let report = run(&args, &[|| Box::new(Counting::default())], &Ticks).unwrap();
     assert_eq!(
         report.ops,
         [("counting".to_owned(), "op".to_owned(), 100, Some(7))],
         "one day measured, its warm-up not"
     );
     let unknown = Args { bases: Some(vec!["stalls".to_owned()]), ..args };
-    assert!(run(&unknown, &[]).is_err(), "a base with no driver is refused");
+    assert!(run(&unknown, &[], &Ticks).is_err(), "a base with no driver is refused");
 }
 
 #[test]
