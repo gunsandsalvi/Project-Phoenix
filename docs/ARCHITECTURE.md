@@ -2981,7 +2981,10 @@ credited while the world holds it (GEN.10).
    tests), a test of another step it names that lists it, a test the workspace holds, a live check a step lists or the
    code runs, a `-F` case its budget names — or `n/a:` with the reason; and every standing step that changes code
    done on the fast checks and the bench's read by its Kind — a base, kernel or index its `tools/bench.sh -F`
-   measure, a gate the `-g` run (its own or §2.24's), any other the bench's run — a `docs` step exempt.
+   measure, a gate the `-g` run (its own or §2.24's), any other the bench's run — a `docs` step exempt. The design
+   point's figure set (`perf/design.toml`) is held by PC-09 too: its tables standing, each fixed line its shares ×
+   scale (the barriers unscaled), each calendar list its items and its core-ms its sum × scale, the stage day its
+   stages, the ledger's total its lines, and every `[table] key` and `fin.fixed.<line>` the plan cites present.
 7. **Process**: live-check identifiers never disappear; a primitive's value in `data/` changes only with its `source`
    in the same diff; the placeholder count only falls except by placeholders a stage introduces, and no system is done
    while a placeholder naming it remains; public-API snapshots of kernel and interface crates change only with the

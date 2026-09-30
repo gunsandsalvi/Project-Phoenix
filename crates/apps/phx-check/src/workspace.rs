@@ -119,6 +119,8 @@ pub struct Workspace {
     pub spec: String,
     pub architecture: String,
     pub plan: String,
+    /// The design point's figure set, `perf/design.toml`.
+    pub design: String,
     /// Every `.toml` file under `data/`, as (path, text), sorted by path.
     pub data: Vec<(String, String)>,
 }
@@ -126,6 +128,7 @@ pub struct Workspace {
 pub const SPEC: &str = "docs/PROJECT_PHOENIX.md";
 pub const ARCHITECTURE: &str = "docs/ARCHITECTURE.md";
 pub const PLAN: &str = "docs/IMPLEMENTATION.md";
+pub const DESIGN: &str = "perf/design.toml";
 /// A kernel or interface crate's committed public API, beside its manifest.
 pub const API_SNAPSHOT: &str = "public-api.txt";
 /// The pinned tool versions.
@@ -145,6 +148,7 @@ impl Workspace {
             spec: String::new(),
             architecture: String::new(),
             plan: String::new(),
+            design: String::new(),
             data: Vec::new(),
         }
     }
@@ -214,6 +218,7 @@ pub fn load() -> Result<Workspace, String> {
         spec: read(&root.join(SPEC))?,
         architecture: read(&root.join(ARCHITECTURE))?,
         plan: read(&root.join(PLAN))?,
+        design: read(&root.join(DESIGN))?,
         root,
         crates,
     })

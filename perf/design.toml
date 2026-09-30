@@ -1,0 +1,1095 @@
+# The design point's one figure set: the counts, daily volumes, phone model, unit targets, rows' bytes, itemised
+# fixed lines and calendar days, the memory ledger and the RESOLUTION settings the finished world is measured at.
+# No count here is a primitive, and the world never reads this file: phx-fin fills every base to it and phx-check
+# holds it together and to what the plan cites. The steps state their figures at [point] steps_persons' counts; the
+# totals here are those statements × [point] scale, the parts that do not grow with the persons excepted.
+
+[point]
+persons = 6_000_000
+per_person_margin = 1.5
+seed = 1
+steps_persons = 7_500_000   # the counts every step states its figures at (§2.11)
+scale = 0.8                 # persons ÷ steps_persons: each total below is its steps' statements × scale, fixed parts excepted
+
+[phone]
+cores = 3.0
+k_compute = 1.0
+k_gather = 1.3
+memory_mb = 4_349
+turn_ms = [1_000, 2_000]
+save_s = 5
+load_s = 5
+
+[store]   # each count with the step whose figure it is: the steps' counts × scale; the world's own counts as they are
+persons = 6_000_000              # S1.207
+households = 1_768_000           # S1.196
+firms = 921_600                  # S1.196
+firm_bytes = 520                 # S1.196 (hot 192)
+banks = 35                       # S1.407
+institutions = 16_000            # S1.196: PTY.1's kinds 15 k and the trade unions 1 k
+offices = 2_000_000              # S1.209
+estates = 72_000                 # S1.342
+directory_slots = 8_800_000      # S1.194
+tombstones = 672_000             # S1.194
+accounts = 5_920_000             # S1.240
+side_rows = 7_496_000            # S1.241, from S2.117's facilities and S2.177's deposits
+deposits = 50_000                # S1.191 (S1.437's count)
+holdings = 3_960_000             # S1.280
+lots = 880_000                   # S1.276
+instruments = 61_600             # S1.279
+unit_rows = 3_600_000            # S1.274
+physical_rows = 800_000          # S1.271
+plant_cells = 9_400_000          # S1.271: 0.92 M firms × 5.1 at two condition classes ([resolution])
+named_units = 160_000            # S1.284
+buildings = 1_280_000            # S1.284, the count S2.171 derives
+processes = 800_000              # S1.287
+liens = 960_000                  # S1.277
+terms = 640_000                  # S1.168
+ways = 50_000                    # S6.102
+stalls = 1_360_000               # S1.299
+goods_with_stalls = 60_000       # S1.299
+vacancies = 160_000              # S1.296
+standing_orders = 160_000        # S1.296
+dealer_quotes = 40_000           # S1.296
+listings = 36_000                # S1.296
+posted_rates = 5_000             # S1.296
+market_instances = 46_400        # S1.296
+capacity_resources = 921_600     # S1.324
+wheel_rows = 25_200_000          # S1.225
+wheel_far = 960_000              # S1.225
+wheel_days = 128                 # S1.225
+agenda_entries = 2_680_000       # S1.227
+messages_live = 400_000          # S1.237
+thresholds = 480_000             # S1.239
+bureau_borrowers = 400_000       # S1.217
+bureau_events = 560_000          # S1.217
+filed_statements = 736_000       # S1.216, at the two-year horizon
+events = 584_000                 # S1.213, at the 365-day horizon
+segments = 500_000               # S1.187, at 1 000 zones
+segment_tiles = 1_000_000        # S1.190: the per-tile segment index, a segment crossing ≈ 2 tiles
+parcels = 800_000                # S1.190: ≤ 1.0 M at the steps' counts (S2.140)
+zones = 1_000                    # [resolution]
+regions = 25                     # E 29
+tiles = 40_000                   # E 29
+products = 250
+unit_ids = 110_000               # S1.183: about 110 a zone
+
+[store.contracts]   # S1.257's families (codes S1.181's), rows at the design point; 34.6 M rows, 859.2 MB (43.2 M, 1 074.0 at the steps' counts)
+"LAB.employment" = 3_040_000
+"LAB.public_employment" = 560_000
+"BNK.household_loan" = 1_440_000
+"BNK.firm_loan" = 360_000
+"SOC.benefit" = 600_000
+"SOC.benefit_flat" = 600_000
+"SOC.pension" = 1_800_000
+"invoices" = 4_000_000
+"statements" = 400_000
+"tax_payables" = 720_000
+"FRM.appointment" = 1_120_000
+"pension_rights" = 3_600_000
+"FRM.owner_liability" = 40_000
+"DEM.kin" = 960_000
+"HSG.tenancy" = 900_000
+"HSG.land_lease" = 160_000
+"SRV.storage" = 160_000
+"FRT.pass" = 1_200_000
+"term_deposits" = 240_000
+"ENE.supply" = 3_960_000
+"ENE.wholesale_supply" = 240_000
+"DRV.contract" = 540_000
+"INS.policy" = 5_000_000   # with INS.annuity
+"INS.firm_policy" = 400_000
+"TAX.corporate_due" = 368_000
+"TAX.arrear" = 160_000
+"POL.membership" = 240_000
+"TEC.licence" = 240_000
+"DEM.schooling" = 1_280_000
+"the small families together" = 240_000
+# rows 34.568 M
+
+[day.b]   # an ordinary business day
+retail = 5_400_000
+b2b = 2_640_000
+batches = 960_000
+production = 320_000
+dues = 2_400_000
+flows = 360_000
+applies = 3_600_000
+short = 16_000
+row_life = 464_000
+interns = 464_000
+spending = 377_600
+visits = 196_800
+reviews = 270_400
+attention = 196_800
+searches = 72_000
+selections = 40_000
+posts = 120_000
+hits = 54_400
+redraws = 60_000
+entries = 3_680_000
+capacity_uses = 4_000_000
+reprices = 80_000
+removals = 400_000
+life_records = 1_280_000
+touched = 1_600_000
+barriers = 40
+
+[day.nb]   # a non-business day (TIME.8)
+retail = 5_400_000
+b2b = 240_000
+batches = 720_000
+production = 80_000
+pending = 800_000
+row_life = 24_000
+interns = 24_000
+spending = 377_600
+visits = 24_000
+reviews = 132_000
+hits = 54_400
+redraws = 60_000
+entries = 760_000
+reprices = 40_000
+removals = 400_000
+life_records = 640_000
+touched = 800_000
+barriers = 20
+
+[day.h]   # a quarter-end payday after three closed days
+retail = 5_400_000
+b2b = 2_640_000
+batches = 960_000
+production = 320_000
+dues = 18_000_000
+flows = 480_000
+applies = 8_800_000
+short = 120_000
+row_life = 1_840_000
+interns = 1_840_000
+spending = 377_600
+visits = 196_800
+reviews = 270_400
+attention = 196_800
+searches = 72_000
+selections = 40_000
+posts = 120_000
+hits = 54_400
+redraws = 60_000
+entries = 19_280_000
+capacity_uses = 4_000_000
+reprices = 80_000
+removals = 400_000
+life_records = 1_280_000
+touched = 4_000_000
+barriers = 48
+
+[day.bc]   # the business day after four closed days: [day.b] with these (+37.6 core-ms; +47 at the steps' counts)
+applies = 6_000_000
+short = 48_000
+pending_settled = 1_000_000
+touched = 2_400_000
+
+[unit]   # phone ns a kind of work (VM = phone ÷ k); each with its miss budget in perf/budget.toml
+retail = 31      # match 21 + apply 10
+spend = 215
+dues = 15
+handler = 30
+nb_pending = 4
+b2b = 60
+apply = 10
+flow = 25
+short = 50
+batch = 35
+prod = 15
+rowlife = 40
+entry = 3
+visit = 800
+review = 550
+attend = 120
+search = 300     # S1.321
+select = 200
+post = 50
+osearch = 350    # S1.321
+hit = 800
+redraw = 80
+order = 150      # a book order 130 (S1.315) and its fill 20
+book_order = 130 # S1.315
+quote = 150      # S1.316
+claim = 49
+ident = 10       # the audit's identities of a touched party, inside fin.fixed.recount
+
+[bytes]
+person = 66
+household = 174
+firm = 520
+firm_hot = 192
+account = 20
+side_facility = 12
+side_held = 8
+side_link = 4
+side_statement = 12
+side_accrual = 16
+contract = 24.9
+holding = 33.3
+lot = 20
+wheel_entry = 4
+agenda_entry = 8
+estate = 256
+parcel = 24
+segment_tile = 4
+
+[stage]
+#### ---- the day by stage, core-ms B / NB / H at the design point, at [resolution]'s settings ----
+#### unit lines at [day.*] counts × [unit] costs; fixed lines = the sum of [fin.fixed.<line>]; per-item additions
+#### beyond the unit leaves are [fin.decide.additions] (not split by stage). The steps' counts × scale, the barriers
+#### as they are; two condition classes (S1.285's close twice: 9 Value +0.24 / 0 / +46.4) and the audit at 60 days
+#### (10 Close −14 / −6 / −14 against 30).
+"1 Open" = [12.24, 3.2, 59.04]
+"2 Resolve" = [63.52, 5.92, 311.84]
+"3 Nature" = [48.32, 48.32, 48.32]
+"4 Real work" = [60.32, 14.08, 60.32]
+"5 Decide" = [784.08, 190.8, 816.4]
+"6 Prices" = [476.96, 217.52, 495.76]
+"7 Settle" = [76.4, 4.16, 199.6]
+"8 Fund" = [19.52, 0, 21.12]
+"9 Value" = [57.68, 8, 206]
+"10 Close" = [78, 32, 115.36]
+"Barriers" = [92, 47, 112]
+"additions beyond the unit leaves" = [189.84, 19.68, 293.12]
+"day" = [1958.88, 590.68, 2738.88]   # B′ = B + 37.6 ([day.bc]) = 1996.48
+
+[fin.decide.additions]   # per-item work beyond the leaves, by part, core-ms B / NB / H at the design point (steps state ns × items)
+"core and Stage 1 (S1.330 per-party deltas, S1.338, S1.415, S1.268, visit leaf 804)" = [20.8, 5.6, 42.4]
+"Stages 2, 3, 8 (S2.118 190 ns × 75 k, S2.163, S2.149, S8.117 +45 × 90 k, S8.103/S8.197 handler, S8.122 +40, S8.129)" = [85.6, 9.6, 136.8]
+"Stages 4-7 (the table below × scale)" = [83.45, 4.51, 113.95]
+[fin.decide.additions.stages_4_7]   # at the steps' counts: each step's items at its unit's cost plus its stated ns × items; book orders are
+#### fin.fixed.securities'; units: rowlife 40, dues 15, flow 25, mark 10, vm 13, margin 3 000, hit 800, redraw 80,
+#### attend 120, review 550, handler 30, tally 2, index insert 20 phone-ns
+"S4.101" = [1.25, 0, 2.5]
+"S4.102" = [4, 0, 6]
+"S4.105" = [2.4, 0, 3.6]
+"S4.106" = [9, 0, 9]
+"S4.107" = [9.6, 0, 9.6]
+"S4.108" = [32.5, 0, 33.75]
+"S4.118" = [0.4, 0, 0.4]
+"S4.119" = [0.075, 0, 0.15]
+"S4.122" = [0.075, 0, 0.075]
+"S4.125" = [0.8, 0, 0.8]
+"S4.128" = [4.5, 0, 0]
+"S4.130" = [0.8, 0, 0.8]
+"S4.131" = [0.405, 0, 0.405]
+"S4.134" = [1.6, 1.6, 1.6]
+"S4.146" = [0, 0, 4]
+"S4.148" = [0, 0, 10]
+"S4.149" = [0.04, 0, 0.04]
+"S4.154" = [0, 0, 0.075]
+"S4.172" = [2.25, 0, 2.25]
+"S5.104" = [0, 0, 3.6]
+"S5.106" = [0.9, 0, 13.5]
+"S5.108" = [1.08, 0, 2.7]
+"S5.115" = [0.03, 0, 0.3]
+"S5.117" = [2, 0, 2]
+"S5.118" = [0.8, 0, 0.8]
+"S5.119" = [0.6, 0, 0.6]
+"S5.120" = [0.1, 0, 0.1]
+"S5.126" = [0.72, 0, 5.4]
+"S5.161" = [3.75, 0, 3.75]
+"S5.164" = [0.2, 0, 0.2]
+"S5.165" = [0.4, 0, 0.4]
+"S5.176" = [2.75, 0, 2.75]
+"S5.177" = [6.6, 0.6, 6.6]
+"S5.179" = [0.25, 0, 0.25]
+"S5.180" = [0.6, 0, 0.6]
+"S5.181" = [0.075, 0, 0.075]
+"S5.183" = [3, 0, 3]
+"S5.185" = [0.4, 0, 0.4]
+"S5.186" = [0.04, 0, 0.04]
+"S6.103" = [0.006, 0, 0.006]
+"S6.106" = [4.2, 0, 4.2]
+"S6.107" = [0.208, 0.128, 0.208]
+"S6.108" = [0.017, 0, 0.017]
+"S6.109" = [0.182, 0.082, 0.182]
+"S6.110" = [0.902, 0, 0.902]
+"S6.115" = [0.45, 0.03, 0.45]
+"S6.116" = [1.15, 0.01, 1.15]
+"S6.120" = [0.796, 0.796, 0.796]
+"S6.122" = [1.242, 1.222, 1.242]
+"S6.123" = [1.17, 1.17, 1.17]
+
+#### [fin.fixed.<line>]: each shared stage line is the sum of its steps' shares × scale (core-ms B / NB / H at the
+#### design point; the shares as the steps state them, at their counts; the barriers unscaled). A step's share is
+#### stated in its Budget; `tools/bench.sh -F all -D B,NB,H,BC,turn` reads each line against its measured span, and
+#### S1.360 and every gate sum the table against `fin.turn.worst_ms`.
+[fin.fixed.open]
+b_core_ms = 1.2
+nb_core_ms = 0.88
+h_core_ms = 1.2
+[fin.fixed.open.shares]
+"S1.178" = [0.003, 0.003, 0.003]
+"S1.179" = [1, 1, 1]
+"S1.237" = [0.5, 0.1, 0.5]
+
+[fin.fixed.resolve]
+b_core_ms = 27.5
+nb_core_ms = 5.92
+h_core_ms = 41.82
+[fin.fixed.resolve.shares]
+"S1.194" = [0.2, 0.2, 0.2]
+"S1.239" = [0.6, 0, 0.6]
+"S1.265" = [0.5, 0, 3.9]
+"S1.269" = [0.7, 0, 0.7]
+"S1.277" = [3, 0, 12]
+"S1.281" = [1, 0, 2]
+"S1.342" = [2, 1, 2]
+"S1.343" = [6, 6, 6]
+"S1.345" = [1, 0, 1]
+"S1.428" = [1, 0, 1]
+"S2.101" = [1, 0, 1]
+"S2.104" = [0.2, 0, 2]
+"S2.111" = [0.5, 0, 0.5]
+"S2.114" = [2.8, 0, 5.5]
+"S2.123" = [0.8, 0, 0.8]
+"S2.127" = [5, 0, 5]
+"S2.133" = [4.9, 0, 4.9]
+"S2.135" = [0.3, 0, 0.3]
+"S2.136" = [0.6, 0, 0.6]
+"S2.158" = [0.4, 0, 0.4]
+"S2.168" = [0.2, 0, 0.2]
+"S3.161" = [0.01, 0, 0.01]
+"S3.176" = [0.05, 0, 0.05]
+"S3.195" = [0.01, 0, 0.01]
+"S4.128" = [0.1, 0, 0.1]
+"S5.114" = [0.2, 0.2, 0.2]
+"S8.186" = [0.001, 0, 0.001]
+"S8.196" = [1, 0, 1]
+"S8.197" = [0.3, 0, 0.3]
+
+[fin.fixed.kinks]
+b_core_ms = 13.16
+nb_core_ms = 5.8
+h_core_ms = 13.16
+[fin.fixed.kinks.shares]
+"S1.284" = [1, 0, 1]
+"S1.285" = [0, 0, 0]
+"S1.289" = [6, 1.5, 6]
+"S1.290" = [0.2, 0, 0.2]
+"S1.287" = [3, 1.5, 3]
+"S1.457" = [5, 3, 5]
+"S2.159" = [0.25, 0.25, 0.25]
+"S2.207" = [0.2, 0.2, 0.2]
+"S6.104" = [0.8, 0.8, 0.8]
+
+[fin.fixed.day_use]
+b_core_ms = 6.4
+nb_core_ms = 1.84
+h_core_ms = 6.4
+[fin.fixed.day_use.shares]
+"S2.172" = [6, 2.3, 6]
+"S2.174" = [2, 0, 2]
+
+[fin.fixed.real]
+b_core_ms = 35.97
+nb_core_ms = 5.25
+h_core_ms = 35.97
+[fin.fixed.real.shares]
+"S1.274" = [1, 1, 1]
+"S1.192" = [0.03, 0.03, 0.03]
+"S1.287" = [3, 1.5, 3]
+"S1.459" = [1, 0, 1]
+"S1.464" = [0.2, 0.2, 0.2]
+"S1.466" = [4, 2, 4]
+"S1.467" = [6, 0, 6]
+"S1.468" = [1, 0, 1]
+"S2.156" = [0.05, 0, 0.05]
+"S2.160" = [2, 0.6, 2]
+"S2.169" = [13, 0, 13]
+"S2.202" = [0.06, 0.06, 0.06]
+"S2.210" = [1, 1, 1]
+"S5.178" = [11, 0, 11]
+"S6.119" = [0.02, 0.02, 0.02]
+"S8.132" = [1.3, 0, 1.3]
+"S8.133" = [0.3, 0.15, 0.3]
+
+[fin.fixed.pay_rounds]
+b_core_ms = 16.4
+nb_core_ms = 0
+h_core_ms = 16.48
+[fin.fixed.pay_rounds.shares]
+"S1.296" = [1.8, 0, 1.8]
+"S1.416" = [15, 0, 15]
+"S1.417" = [1, 0, 1]
+"S2.168" = [0, 0, 0.1]
+"S8.118" = [2, 0, 2]
+"S8.136" = [0.7, 0, 0.7]
+
+[fin.fixed.osearch]
+b_core_ms = 39.4
+nb_core_ms = 0
+h_core_ms = 39.4
+[fin.fixed.osearch.shares]
+"S1.461" = [8, 0, 8]
+"S2.146" = [0, 0, 0]   # replaced by S8.113
+"S2.150" = [6, 0, 6]
+"S2.151" = [0, 0, 0]   # replaced by S8.114
+"S2.175" = [2, 0, 2]
+"S2.195" = [1.5, 0, 1.5]
+"S3.190" = [0.45, 0, 0.45]
+"S4.130" = [1.5, 0, 1.5]
+"S4.131" = [1.6, 0, 1.6]
+"S4.132" = [7.5, 0, 7.5]
+"S8.113" = [10, 0, 10]
+"S8.114" = [8, 0, 8]
+"S8.120" = [2, 0, 2]
+"S8.144" = [0.3, 0, 0.3]
+"S8.168" = [0.4, 0, 0.4]
+
+[fin.fixed.household_reviews]
+b_core_ms = 84.18
+nb_core_ms = 9.28
+h_core_ms = 84.18
+[fin.fixed.household_reviews.shares]
+"S1.435" = [5, 0, 5]
+"S1.452" = [5, 5, 5]
+"S1.489" = [4, 4, 4]
+"S1.490" = [1, 1, 1]
+"S2.138" = [0, 0, 0]   # replaced by S8.109
+"S2.141" = [10, 0, 10]
+"S2.144" = [0, 0, 0]   # replaced by S8.110
+"S2.145" = [0, 0, 0]   # replaced by S8.114
+"S2.147" = [0.5, 0, 0.5]
+"S2.153" = [2.5, 0, 2.5]
+"S2.154" = [1, 0, 1]
+"S2.155" = [2, 0, 2]
+"S2.173" = [0, 0, 0]   # replaced by S8.115
+"S2.164" = [0, 0, 0]   # replaced by S8.112
+"S2.165" = [0, 0, 0]   # replaced by S8.112
+"S2.166" = [0, 0, 0]   # replaced by S8.112
+"S2.204" = [0.27, 0, 0.27]
+"S3.158" = [0, 0, 0]   # replaced by S8.111
+"S3.188" = [0.75, 0, 0.75]
+"S4.150" = [21, 0, 21]
+"S4.151" = [0.1, 0, 0.1]
+"S5.128" = [3, 1, 3]
+"S5.181" = [1.5, 0, 1.5]
+"S6.119" = [3.6, 0, 3.6]
+"S6.121" = [1.5, 0, 1.5]
+"S6.124" = [3, 0.6, 3]
+"S6.128" = [3.5, 0, 3.5]
+"S8.108" = [4, 0, 4]
+"S8.109" = [4, 0, 4]
+"S8.110" = [5, 0, 5]
+"S8.111" = [6, 0, 6]
+"S8.112" = [3, 0, 3]
+"S8.114" = [2.3, 0, 2.3]
+"S8.115" = [6, 0, 6]
+"S8.149" = [0.1, 0, 0.1]
+"S8.151" = [0.2, 0, 0.2]
+"S8.153" = [0.1, 0, 0.1]
+"S8.185" = [0.3, 0, 0.3]
+"S8.200" = [5, 0, 5]
+
+[fin.fixed.institutions]
+b_core_ms = 197.5
+nb_core_ms = 8.56
+h_core_ms = 229.82
+[fin.fixed.institutions.shares]
+"S1.279" = [1, 0, 1]
+"S1.420" = [0.3, 0.3, 0.3]
+"S1.421" = [5, 0, 5]
+"S1.423" = [1, 0, 1]
+"S1.424" = [0.5, 0, 0.5]
+"S1.425" = [13, 0, 13]
+"S1.490" = [0.3, 0, 0.3]
+"S2.103" = [2, 0, 15]
+"S2.107" = [1, 0, 5]
+"S2.110" = [5, 0, 5]
+"S2.115" = [5, 0, 10]
+"S2.117" = [1, 0, 1]
+"S2.119" = [1, 0, 0]
+"S2.124" = [6, 0, 6]
+"S2.130" = [16, 0, 16]
+"S2.143" = [3, 0, 3]
+"S2.167" = [0.1, 0, 0.1]
+"S2.179" = [0.1, 0, 0.1]
+"S2.180" = [0.02, 0, 0.02]
+"S2.181" = [0.06, 0, 0.06]
+"S2.182" = [0.5, 0, 0.5]
+"S2.183" = [1, 0, 1]
+"S2.184" = [0.01, 0, 0.01]
+"S2.188" = [0.004, 0, 0.004]
+"S2.189" = [0.05, 0, 0.05]
+"S2.190" = [0.04, 0, 0.04]
+"S2.191" = [0.001, 0, 0.001]
+"S2.200" = [0.1, 0, 0.1]
+"S2.201" = [0.001, 0, 0.001]
+"S2.208" = [9, 9, 9]
+"S2.213" = [0.1, 0, 0.1]
+"S3.102" = [0.4, 0, 0.4]
+"S3.103" = [2.4, 0, 2.4]
+"S3.105" = [0.2, 0, 0.2]
+"S3.110" = [0.04, 0, 0.04]
+"S3.120" = [0.7, 0, 0.7]
+"S3.123" = [0.01, 0, 0.01]
+"S3.130" = [0.4, 0, 0.4]
+"S3.132" = [0.001, 0, 0.001]
+"S3.133" = [0.4, 0, 0.4]
+"S3.134" = [1.2, 0, 1.2]
+"S3.136" = [2.5, 0, 3.5]
+"S3.140" = [0.2, 0, 0.2]
+"S3.148" = [9, 0, 9]
+"S3.154" = [0.01, 0, 0.01]
+"S3.160" = [0.02, 0, 0.02]
+"S3.165" = [9, 0, 9]
+"S3.167" = [0.1, 0, 0.1]
+"S3.172" = [0, 0, 0]
+"S3.177" = [0.1, 0, 0.1]
+"S3.187" = [0.8, 0, 0.8]
+"S3.189" = [0.9, 0, 0.9]
+"S3.191" = [14, 0, 14]
+"S3.192" = [0.3, 0, 0.3]
+"S3.194" = [0.3, 0, 0.3]
+"S3.196" = [0.01, 0, 0.01]
+"S3.197" = [0, 0, 0]
+"S3.199" = [0, 0, 0]
+"S3.200" = [0, 0, 0]
+"S3.201" = [0, 0, 0]
+"S3.207" = [0.75, 0, 0.75]
+"S3.213" = [0.3, 0, 0.3]
+"S3.216" = [1, 0, 1]
+"S3.217" = [0.01, 0, 0.01]
+"S4.105" = [7, 0, 7]
+"S4.109" = [1, 0, 1]
+"S4.116" = [16, 0, 16]
+"S4.120" = [4, 0, 4]
+"S4.129" = [4, 0, 4]
+"S4.130" = [1, 0, 1]
+"S4.133" = [2, 0, 2]
+"S4.134" = [0.1, 0, 0.1]
+"S4.135" = [0.1, 0, 0.1]
+"S4.137" = [1, 0, 1]
+"S4.138" = [0.06, 0, 0.06]
+"S4.145" = [2, 0, 2]
+"S4.154" = [0.1, 0, 0.1]
+"S4.155" = [3, 0, 3]
+"S4.156" = [0.5, 0, 0.5]
+"S4.161" = [0.1, 0, 0.1]
+"S4.162" = [1, 0, 1]
+"S4.165" = [1, 0, 1]
+"S4.167" = [0, 0, 0]
+"S4.169" = [0.1, 0, 0.1]
+"S4.173" = [0.2, 0, 0.2]
+"S4.175" = [0, 0, 0]
+"S4.177" = [0.1, 0, 0.1]
+"S4.178" = [0.1, 0, 0.1]
+"S4.179" = [0.1, 0, 0.1]
+"S4.182" = [0, 0, 0]
+"S5.109" = [3, 0, 3]
+"S5.111" = [2, 0, 20]
+"S5.115" = [1, 0, 1]
+"S5.123" = [5, 0, 5]
+"S5.125" = [0.3, 0, 0.3]
+"S5.129" = [0.02, 0, 0.02]
+"S5.130" = [0.02, 0, 0.02]
+"S5.131" = [0.03, 0, 0.03]
+"S5.141" = [0, 0, 0]
+"S5.143" = [0, 0, 0]
+"S5.144" = [0.1, 0, 0.1]
+"S5.145" = [0, 0, 0]
+"S5.146" = [0, 0, 0]
+"S5.147" = [0, 0, 0]
+"S5.148" = [0, 0, 0]
+"S5.149" = [0, 0, 0]
+"S5.150" = [0, 0, 0]
+"S5.151" = [0.04, 0, 0.04]
+"S5.152" = [0.04, 0, 0.04]
+"S5.154" = [0, 0, 0]
+"S5.155" = [0, 0, 0]
+"S5.162" = [0.06, 0, 0.06]
+"S5.164" = [20, 0, 20]
+"S5.167" = [0.01, 0, 0.01]
+"S5.169" = [0.02, 0, 0.02]
+"S5.170" = [0, 0, 0]
+"S5.172" = [0.08, 0, 0.08]
+"S5.179" = [0.2, 0, 0.2]
+"S5.182" = [0.3, 0, 0.3]
+"S6.108" = [0.1, 0, 0.1]
+"S6.118" = [0.1, 0, 0.1]
+"S8.119" = [1, 0, 1]
+"S8.123" = [0.4, 0, 0.4]
+"S8.124" = [12, 0, 12]
+"S8.125" = [16, 0, 16]
+"S8.126" = [5, 0, 5]
+"S8.136" = [0.05, 0, 0.05]
+"S8.137" = [0.05, 0, 0.05]
+"S8.139" = [0.4, 0, 0.4]
+"S8.140" = [3.4, 0, 3.4]
+"S8.142" = [0.2, 0, 0.2]
+"S8.144" = [0.4, 0, 0.4]
+"S8.145" = [0.001, 0, 0.001]
+"S8.146" = [0.1, 0, 0.1]
+"S8.148" = [1.4, 1.4, 1.4]
+"S8.154" = [0.05, 0, 0.05]
+"S8.155" = [0.01, 0, 0.01]
+"S8.156" = [0.5, 0, 0.5]
+"S8.157" = [0.001, 0, 0.001]
+"S8.158" = [0.001, 0, 0.001]
+"S8.159" = [1.4, 0, 1.4]
+"S8.160" = [0.001, 0, 0.001]
+"S8.161" = [0.9, 0, 0.9]
+"S8.162" = [0.3, 0, 0.3]
+"S8.163" = [0.9, 0, 0.9]
+"S8.164" = [0.1, 0, 0.5]
+"S8.165" = [0.02, 0, 0.02]
+"S8.166" = [0.01, 0, 0.01]
+"S8.167" = [0.001, 0, 0.001]
+"S8.169" = [0.001, 0, 0.001]
+"S8.170" = [0.6, 0, 0.6]
+"S8.171" = [0.001, 0, 0.001]
+"S8.175" = [0.3, 0, 0.3]
+"S8.177" = [0.001, 0, 0.001]
+"S8.180" = [0.001, 0, 0.001]
+"S8.181" = [2, 0, 2]
+"S8.182" = [0.001, 0, 0.001]
+"S8.183" = [0.1, 0, 0.1]
+"S8.184" = [0.05, 0, 0.05]
+"S8.190" = [0.001, 0, 0.001]
+"S8.192" = [0.01, 0, 0.01]
+"S8.200" = [5, 0, 5]
+
+[fin.fixed.securities]
+b_core_ms = 55.92
+nb_core_ms = 0
+h_core_ms = 68.56
+[fin.fixed.securities.shares]
+"S1.277" = [0, 0, 0]
+"S1.280" = [12, 0, 15]
+"S3.120" = [0.8, 0, 0.8]
+"S3.134" = [1.8, 0, 1.8]
+"S3.147" = [27.4, 0, 34.9]
+"S3.149" = [1, 0, 1.3]
+"S3.175" = [2, 0, 2]
+"S3.151" = [0.03, 0, 0.03]   # book orders
+"S3.158" = [0.9, 0, 0.9]   # book orders
+"S3.174" = [1.5, 0, 1.5]   # book orders
+"S3.176" = [0.045, 0, 0.045]   # book orders
+"S3.180" = [0.09, 0, 0.09]   # book orders
+"S3.191" = [3, 0, 3]   # book orders
+"S4.155" = [0.225, 0, 0.225]   # book orders
+"S4.163" = [0.15, 0, 0.15]   # book orders
+"S4.165" = [0.3, 0, 0.3]   # book orders
+"S4.168" = [0.03, 0, 0.03]   # book orders
+"S4.169" = [0.0075, 0, 0.0075]   # book orders
+"S4.110" = [9, 0, 12]
+"S4.120" = [8, 0, 10]
+"S5.171" = [0.6, 0, 0.6]
+"S8.187" = [0.8, 0, 0.8]
+"S8.188" = [0.2, 0, 0.2]
+"S8.191" = [0.02, 0, 0.02]
+
+[fin.fixed.calls]
+b_core_ms = 61.61
+nb_core_ms = 10.48
+h_core_ms = 67.77
+[fin.fixed.calls.shares]
+"S1.326" = [0.2, 0.1, 0.2]
+"S1.449" = [4, 4, 4]
+"S2.155" = [1, 0, 1]
+"S2.157" = [8, 0, 8]
+"S2.209" = [9, 9, 9]
+"S3.121" = [1.2, 0, 1.2]
+"S3.127" = [3, 0, 3]
+"S3.135" = [1.2, 0, 1.2]
+"S3.147" = [7, 0, 7]
+"S3.152" = [0.8, 0, 0.8]
+"S3.166" = [7.5, 0, 9]
+"S3.168" = [15, 0, 20]
+"S3.169" = [1, 0, 1]
+"S3.170" = [0, 0, 0]
+"S3.171" = [0.02, 0, 0.02]
+"S3.178" = [0.05, 0, 0.05]
+"S3.185" = [7.5, 0, 7.5]
+"S3.194" = [0.2, 0, 0.2]
+"S4.106" = [4, 0, 4]
+"S4.115" = [0.02, 0, 0.02]
+"S4.117" = [0.3, 0, 0.3]
+"S4.118" = [3, 0, 3.6]
+"S5.163" = [3, 0, 3.6]
+"S5.165" = [0.01, 0, 0.01]
+"S5.168" = [0.01, 0, 0.01]
+
+[fin.fixed.fixed_point]
+b_core_ms = 12
+nb_core_ms = 0
+h_core_ms = 20
+[fin.fixed.fixed_point.shares]
+"S1.248" = [15, 0, 25]
+"S1.250" = [0, 0, 0]
+
+[fin.fixed.fund]
+b_core_ms = 19.54
+nb_core_ms = 0
+h_core_ms = 21.14
+[fin.fixed.fund.shares]
+"S1.320" = [0.1, 0, 0.1]
+"S1.429" = [2, 0, 3]
+"S1.430" = [2, 0, 3]
+"S1.432" = [1, 0, 1]
+"S2.185" = [0.04, 0, 0.04]
+"S3.101" = [18, 0, 18]
+"S3.104" = [0.7, 0, 0.7]
+"S3.108" = [0.5, 0, 0.5]
+"S3.109" = [0.01, 0, 0.01]
+"S3.112" = [0.02, 0, 0.02]
+"S3.114" = [0.001, 0, 0.001]
+"S3.116" = [0, 0, 0.003]
+"S3.215" = [0.01, 0, 0.01]
+"S4.138" = [0.02, 0, 0.02]
+"S5.184" = [0.01, 0, 0.01]
+"S8.167" = [0.001, 0, 0.001]
+"S8.171" = [0.01, 0, 0.01]
+
+[fin.fixed.close_books]
+b_core_ms = 0.48
+nb_core_ms = 0
+h_core_ms = 124.56
+[fin.fixed.close_books.shares]
+"S1.285" = [0.6, 0, 116]   # at two condition classes
+"S1.328" = [0, 0, 34]
+"S1.333" = [0, 0, 0]
+"S3.157" = [0, 0, 2.5]
+"S5.104" = [0, 0, 3.2]
+
+[fin.fixed.holder_rows]
+b_core_ms = 0.34
+nb_core_ms = 0
+h_core_ms = 2.74
+[fin.fixed.holder_rows.shares]
+"S1.281" = [0.34, 0, 0.34]
+"S2.119" = [0, 0, 1]
+"S3.150" = [0.03, 0, 0.03]
+"S3.155" = [0.05, 0, 0.05]
+"S8.127" = [0, 0, 2]
+
+[fin.fixed.valuation]
+b_core_ms = 29.87
+nb_core_ms = 1.6
+h_core_ms = 51.66
+[fin.fixed.valuation.shares]
+"S1.251" = [0.2, 0, 0.2]
+"S1.330" = [5, 2, 10]
+"S1.338" = [2, 0, 2]
+"S2.102" = [0.1, 0, 0.2]
+"S2.105" = [0.5, 0, 0.5]
+"S2.106" = [0, 0, 0]
+"S2.116" = [6.5, 0, 6.5]
+"S2.122" = [0.2, 0, 1]
+"S2.186" = [0.01, 0, 0.01]
+"S3.107" = [0.05, 0, 0.05]
+"S3.137" = [0.2, 0, 2]
+"S3.139" = [0.001, 0, 0.01]
+"S3.145" = [0.1, 0, 0.1]
+"S3.157" = [0.51, 0, 0.05]
+"S3.179" = [6, 0, 6]
+"S3.184" = [7, 0, 7]
+"S3.186" = [0.01, 0, 0.01]
+"S3.193" = [0.05, 0, 0.05]
+"S3.209" = [0.07, 0, 0.07]
+"S3.210" = [0, 0, 0]
+"S3.214" = [0, 0, 0.01]
+"S4.107" = [1, 0, 1]
+"S4.109" = [1, 0, 1]
+"S4.110" = [0.2, 0, 0.2]
+"S4.136" = [3.5, 0, 3.5]
+"S4.153" = [0.2, 0, 0.2]
+"S5.110" = [2, 0, 20]
+"S5.112" = [0.7, 0, 0.7]
+"S5.165" = [0.02, 0, 2]
+"S5.171" = [0.1, 0, 0.1]
+"S8.172" = [0.001, 0, 0.001]
+"S8.189" = [0.1, 0, 0.1]
+"S8.193" = [0.01, 0, 0.01]
+
+[fin.fixed.outlooks]
+b_core_ms = 27.02
+nb_core_ms = 6.4
+h_core_ms = 27.02
+[fin.fixed.outlooks.shares]
+"S1.336" = [30, 8, 30]
+"S1.454" = [1, 0, 1]
+"S1.469" = [1, 0, 1]
+"S3.187" = [1, 0, 1]
+"S3.203" = [0.05, 0, 0.05]
+"S3.204" = [0.2, 0, 0.2]
+"S3.205" = [0, 0, 0]
+"S3.211" = [0.01, 0, 0.01]
+"S3.212" = [0.01, 0, 0.01]
+"S3.218" = [0.3, 0, 0.3]
+"S6.128" = [0.2, 0, 0.2]
+"S8.194" = [0.001, 0, 0.001]
+
+[fin.fixed.recount]
+b_core_ms = 33.56
+nb_core_ms = 16.01
+h_core_ms = 57.56
+[fin.fixed.recount.shares]
+"S1.243" = [0, 0, 0]   # inside S1.353's whole audit
+"S1.331" = [0, 0, 0]
+"S1.353" = [37.5, 17.5, 67.5]   # the audit at 60 days
+"S1.354" = [0, 0, 0]
+"S1.442" = [0, 0, 0]   # inside S1.353's whole audit
+"S1.448" = [0, 0, 0]   # inside S1.353's whole audit
+"S2.162" = [0.1, 0, 0.1]
+"S2.185" = [0.04, 0, 0.04]
+"S3.149" = [0.1, 0, 0.1]
+"S3.204" = [0.1, 0, 0.1]
+"S4.159" = [0.1, 0.1, 0.1]
+"S4.167" = [0.3, 0.3, 0.3]
+"S4.183" = [0.01, 0.01, 0.01]
+"S5.161" = [0.3, 0, 0.3]
+"S5.185" = [0.3, 0, 0.3]
+"S6.112" = [0.1, 0.1, 0.1]
+"S6.125" = [1, 1, 1]
+"S8.201" = [2, 1, 2]
+
+[fin.fixed.stats]
+b_core_ms = 18.7
+nb_core_ms = 1.61
+h_core_ms = 26.94
+[fin.fixed.stats.shares]
+"S1.221" = [0.5, 0.2, 0.5]
+"S1.254" = [2.5, 1.8, 2.5]
+"S1.478" = [1, 0, 1]
+"S1.453" = [1, 0, 1]
+"S1.479" = [1, 0, 1]
+"S1.469" = [1, 0, 1]
+"S1.475" = [1, 0, 5]
+"S1.476" = [2, 0, 5]
+"S1.477" = [2, 0, 5]
+"S2.161" = [0.1, 0, 0.1]
+"S2.176" = [0.4, 0, 0.4]
+"S4.124" = [10, 0, 10]
+"S4.159" = [0.1, 0, 0.1]
+"S4.171" = [0, 0, 0.1]
+"S4.180" = [0, 0, 0.1]
+"S4.184" = [0, 0, 0.1]
+"S5.121" = [0.05, 0, 0.05]
+"S5.133" = [0.05, 0, 0.05]
+"S5.138" = [0.1, 0, 0.1]
+"S5.173" = [0.05, 0, 0.05]
+"S6.105" = [0.1, 0, 0.1]
+"S6.111" = [0.3, 0, 0.3]
+"S6.126" = [0.01, 0.01, 0.01]
+"S6.130" = [0.02, 0, 0.02]
+"S8.122" = [0.1, 0, 0.1]
+
+[fin.fixed.observer]
+b_core_ms = 25.73
+nb_core_ms = 14.4
+h_core_ms = 30.85
+[fin.fixed.observer.shares]
+"S1.213" = [3, 2, 3]
+"S1.223" = [18, 12, 18]
+"S1.358" = [0.3, 0.3, 0.3]
+"S2.109" = [0.6, 0, 4]
+"S2.128" = [3, 0, 6]
+"S3.100" = [0, 0, 0]
+"S3.109" = [0.11, 0, 0.11]
+"S3.128" = [0.1, 0, 0.1]
+"S3.141" = [0.15, 0, 0.15]
+"S6.135" = [0, 0, 0]
+"S8.121" = [0.3, 0.1, 0.3]
+"S8.199" = [6.6, 3.6, 6.6]
+
+[fin.fixed.barriers]
+b_core_ms = 92
+nb_core_ms = 47
+h_core_ms = 112
+[fin.fixed.barriers.shares]
+"S1.169" = [90, 45, 110]
+"S1.185" = [2, 2, 2]
+
+[fin.calendar]   # dated days: extra core-ms on the turn they join (steps state each as fin.calendar.<event>, at their
+#### counts); each list's `sum` is its entries', its `core_ms` the sum × scale, what the turn carries at the design point
+[fin.calendar.joins_h]   # every dated day a step says can fall on the quarter-end payday, all on one H (the worst)
+"S1.242 crediting" = 6
+"S1.270 tax_period_close" = 38
+"S1.334 consolidation" = 5
+"S1.341 valuation_dates" = 19
+"S1.358 december" = 2
+"S1.358 month_close" = 1
+"S1.434 month_end" = 0.3
+"S2.108 filing_window_end" = 55
+"S2.128 month_end" = 5
+"S2.162 month_end" = 1
+"S2.177 deposit_credit" = 2.4
+"S2.186 bank_reporting" = 11
+"S2.192 bank_reporting" = 0.07
+"S2.193 deposit_premiums" = 0.07
+"S2.215 quarterly_accounts" = 15
+"S3.111 cb_meeting" = 0.15
+"S3.112 cb_framework_review" = 0.4
+"S3.113 cb_tender" = 0.2
+"S3.114 maintenance_end" = 0.04
+"S3.119 trs_plan_review" = 0.3
+"S3.125 trs_operations" = 0.2
+"S3.126 trs_plan_review" = 0.03
+"S3.206 index_rebalance" = 7.5
+"S4.111 fund_sizing" = 3
+"S4.139 protection_levy" = 0.01
+"S4.146 scheme_year_end (spread)" = 4
+"S4.152 valuation_weekday" = 7
+"S4.158 guarantee_levy" = 1
+"S4.166 sec_determination" = 2.4
+"S4.166 sec_payment" = 3
+"S4.167 sec_determination" = 0.1
+"S4.181 quarter_end" = 0.3
+"S5.107 remittance" = 4
+"S5.109 filing_window_end" = 6
+"S5.111 instalment_day" = 6
+"S5.113 property_instalment" = 28
+"S5.157 property_instalment" = 3
+"S5.121 effective_rates_release" = 0.5
+"S5.126 scheme_year_first_payday" = 22
+"S5.133 stabiliser_release" = 0.5
+"S5.173 stabiliser_release" = 0.2
+"S5.142 election_day" = 1
+"S5.158 election_day" = 1
+"S5.186 bop_release" = 1
+"S6.117 enrolment_window" = 3
+"S6.129 consumption_survey" = 0.1
+"S7.101 wealth_survey" = 11
+"S8.143 filing_window_end" = 1.8
+"S8.173 cb_meeting and review" = 0.011
+"S8.174 cb_tender" = 0.001
+"S8.177 bank_reporting" = 0.01
+"S8.178 deposit_premiums" = 0.001
+sum = 279.59
+core_ms = 223.67
+[fin.calendar.joins_bprime]   # every dated day a step says can fall on the business day after four closed days
+"S1.281 record_peak" = 1.6
+"S1.334 consolidation" = 5
+"S1.358 december" = 2
+"S2.116 statement_preparation" = 15
+"S2.119 year_end_statements" = 5
+"S2.177 deposit_credit" = 2.4
+"S3.111 cb_meeting" = 0.15
+"S3.112 cb_framework_review" = 0.4
+"S3.113 cb_tender" = 0.2
+"S3.114 maintenance_end" = 0.04
+"S3.117 cb_remittance" = 0.06
+"S3.119 trs_plan_review" = 0.3
+"S3.125 trs_operations" = 0.2
+"S3.126 trs_plan_review" = 0.03
+"S3.150 record_peak" = 0.15
+"S3.155 record_peak" = 0.2
+"S3.206 index_rebalance" = 7.5
+"S3.209 reporting_peak" = 0.6
+"S3.218 reporting_peak" = 4.1
+"S4.111 fund_sizing" = 3
+"S4.120 quarterly_expiry (rolled)" = 12
+"S4.121 quarterly_expiry (rolled)" = 10
+"S4.135 treaty_renewal" = 10
+"S4.146 scheme_year_end (spread)" = 4
+"S4.148 dc_dealing" = 19
+"S4.152 valuation_weekday" = 7
+"S5.106 invoices rolled" = 12.6
+"S5.112 assessment_date" = 2
+"S5.121 tax_year_close" = 1
+"S5.121 effective_rates_release" = 0.5
+"S5.121 tax_year_close (spread)" = 5
+"S5.133 tax_year_close (spread)" = 2
+"S5.173 tax_year_close (spread)" = 1
+"S5.126 scheme_year_first_payday" = 22
+"S5.133 stabiliser_release" = 0.5
+"S5.173 stabiliser_release" = 0.2
+"S5.135 policy_effective" = 1
+"S5.142 election_day" = 1
+"S5.153 budget_effective" = 1
+"S5.158 election_day" = 1
+"S5.186 bop_release" = 1
+"S6.118 school_year" = 10
+"S8.173 cb_meeting and review" = 0.011
+"S8.174 cb_tender" = 0.001
+sum = 171.74
+core_ms = 137.39
+[fin.calendar.campaign]   # a campaign business day, national and local at once, on its opening day; joins H and B′
+"S5.140 campaign_day" = 110
+"S5.156 local_campaign_day" = 21
+"S5.144 campaign_day" = 2
+"S5.152 campaign_day" = 0.5
+"S5.137 campaign_opening" = 11
+sum = 144.5
+core_ms = 115.6
+[fin.calendar.mass_default]   # E1: S1.345's table, the sum of the shares on the day; S1.345's one ratchet
+sum = 221.5
+core_ms = 177.2
+ratchet = 225
+[fin.calendar.events]   # each event's worst day (its own shares, the tails of its cause that fall there), composed
+#### by S1.360 with the worst calendar set and a campaign day it can join (§13.2); core-ms at the steps' counts,
+#### composed × scale (E1's next day 213.52 at the design point)
+"mass_default D+1 (E1 tails 153.8: S1.267, S1.342, S1.345, S2.103, S2.104, S2.109, S2.121, S2.123, S2.133, S8.112, S8.141, S8.142; its bank's resolution_d1 113.1: S2.196–S2.199)" = 266.9
+"mass_default (S1.345's table)" = 221.5
+"bank_run D+1 (S2.195 90, S3.190 27, S8.168 23)" = 140
+"resolution_d1 (S2.196–S2.199, S8.165, S8.178, S8.179)" = 113.1
+"tax_announcement (S5.116)" = 88
+"offer_first_day (S4.174 23 and its spread 20)" = 43
+"catastrophe (S1.271 10, S1.274 8, S1.284 5, S1.464 4, S4.132 1.5, S4.133 5)" = 33.5
+"insurer_resolution (S4.140)" = 17
+"credit_event auction day (S4.119)" = 12.7
+"shed (S2.211; joins NB too)" = 12
+"wind_up (S4.157)" = 7
+"fund_run (S3.192, S8.183)" = 5.1
+"crash_day D+1 (S3.191's spread 4.5, S3.180's slices 0.1; the day itself 1.1)" = 4.6
+"day_one (S6.140; its B turn, once)" = 300
+
+[resolution]   # E 41 backwards: each valve's setting at the design point, its forced_by and what it frees or costs;
+#### the settings the owner fixed say so; the play resolution stays the run's (N8.5). The stage lines and the ledger
+#### are at these settings. Restored in E 41's order (the horizons from the bottom of their rows up) while the worst
+#### turn stays ≤ 1 700 ms and the ledger ≤ 3 950 MB, the owner's margins (§12).
+cell_m = 100   # the owner's (E 29, GEO.19; 2026-09-30), no valve: 10 000 cells a tile; land held apart as parcels and paths through a per-tile segment index (S1.190): ledger line 12 +24.8 MB against the 1 km cell, 0 core-ms on the day
+draw_scheme = "as committed"   # forced_by: —; no resident memory and no measurable time to free
+audit_cycle_days = 60   # the owner's (2026-09-30); the rolling part 28 / 12 / 28 core-ms at 30 days → 14 / 6 / 14; every party recounted six times a year
+age_classes = "as committed"   # forced_by: —; no resident memory, redraws ≈ 0
+horizon_events_days = "730 → 365"   # forced_by: the memory margin: 730 (+14.8 MB, S1.213) would bring the ledger to 3 960.7 MB
+horizon_series_days = 730   # restored: +2.8 MB (S1.215)
+horizon_filings_years = 2   # restored: +17.6 MB (S1.216)
+horizon_day_ledger_days = 730   # restored: +0.8 MB (S1.219)
+horizon_marks_goods_labour_days = 730   # restored: +23.1 MB (S1.326)
+horizon_marks_instruments_days = 730   # restored: +5.4 MB (S1.326)
+horizon_life_records_days = 730   # on storage, 0 MB resident (S1.223)
+condition_classes = 2   # restored from 1: +34.4 MB (ledger line 24, S1.271) and S1.285's close twice, +0.24 / 0 / +46.4 core-ms (+15.5 ms on 3 NB + H); 4, the committed resolution's, would cost ≈ +119 MB and +139 core-ms on H (+46 ms), past both margins
+zones = 1_000   # the owner's (2026-09-30; the valve to 500 withdrawn): against 500, +21.75 MB (lines 19, 12, 17, 16) and ≈ 0.6 / 0.2 / 0.6 core-ms
+preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 MB and ≈ 0 ms
+
+[ledger]   # ARCHITECTURE §13 lines, MB resident at the heaviest day at the design point: the steps' own statements
+#### summed by line × scale; lines 1, 6, 19 and 23 and the parts that follow the zones or the segments as they are
+1 = { name = "process", mb = 300.0 }
+2 = { name = "persons", mb = 402.4 }   # S1.207 495, S4.142 8 (503.0 at the steps' counts)
+3 = { name = "directory", mb = 50.6 }
+4 = { name = "households", mb = 307.6 }   # S1.196: 1.77 M × 174 B
+5 = { name = "firms", mb = 479.7 }   # S1.196 599, S5.176 0.6 (599.6)
+6 = { name = "institutions", mb = 78.1 }
+7 = { name = "offices", mb = 32.0 }
+8 = { name = "accounts and side rows", mb = 228.2 }   # S1.240 148, S1.241 134.2 (9.37 M slots by kind), S5.159 3 (285.2)
+9 = { name = "contracts", mb = 865.6 }   # S1.257 1 074.0, S4.150 8 (1 082.0)
+10 = { name = "terms", mb = 33.1 }
+11 = { name = "holdings", mb = 150.2 }   # S1.276 22, S1.280 165, S4.115 0.7 (187.7)
+12 = { name = "units, cells, owner index", mb = 117.5 }   # 144.8 at the steps' counts, S1.190's cells 37.7 of it (parcels 32.0; segment index 5.3 and directories 0.4, unscaled); the zones' 2.5 unscaled
+13 = { name = "liens and processes", mb = 58.2 }   # S1.277 30, S1.287 40, S1.332 1, S3.106 0.1, S3.195 0.6, S4.109 0.04, S5.131 0.1, S5.178 0.6, S6.119 0.24 (72.7)
+14 = { name = "wheel and agenda", mb = 120.8 }
+15 = { name = "hazards", mb = 1.4 }
+16 = { name = "small-bases pool", mb = 173.6 }   # the zones' 1.75 unscaled
+17 = { name = "markets", mb = 104.1 }   # 129.5 at the steps' counts, the marks at 730 days; the zones' 2.5 unscaled
+18 = { name = "records", mb = 120.2 }   # 150.2 at the steps' counts: every step's line-18 figure at the horizons above
+19 = { name = "map and network", mb = 30.5 }   # at 1 000 zones
+20 = { name = "estates", mb = 18.4 }
+21 = { name = "day buffers", mb = 128.1 }   # the live set at the heaviest sub-step
+22 = { name = "slack", mb = 45.6 }
+23 = { name = "save buffers", mb = 13.0 }
+24 = { name = "plant cells", mb = 77.4 }   # 96.8 at the steps' counts, at two condition classes
+25 = { name = "windows", mb = 9.6 }
+total_mb = 3945.9   # 4 823.5 at the steps' counts; against fin.mem.peak_mb 4 349: 403 MB (9.3 %) below, 4 below the owner's 3 950
+
+[save]   # the save and load buffers' representation (ledger line 23), as the snapshot step S1.356 states it; not a valve
+frames_per_worker = 4
+frame_kib = 512

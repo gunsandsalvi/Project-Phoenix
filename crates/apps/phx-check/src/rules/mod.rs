@@ -11,6 +11,7 @@ mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;
 mod dependencies;
+mod design;
 mod documents;
 mod draws;
 mod equity;
@@ -85,6 +86,7 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-07", title: "no references in comments", since: "S0.01", run: comment_refs::run },
     Rule { id: "PC-08", title: "interface crates without behaviour", since: "S0.01", run: interfaces::run },
     Rule { id: "PC-09", title: "documents", since: "S0.01", run: documents::run },
+    Rule { id: "PC-09", title: "the design point's figure set", since: "S1.113", run: design::run },
     Rule {
         id: "PC-10",
         title: "allow and expect counts within their ratchets",
