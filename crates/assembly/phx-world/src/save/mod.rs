@@ -205,6 +205,22 @@ fn readable(format: u32) -> Result<(), String> {
     }
 }
 
+/// Whether this build and run read a save by its manifest: its format, its build and its seed must be theirs.
+///
+/// # Errors
+/// A save of another format, build or seed, with its reason.
+#[clause("SET.15")]
+fn admitted(manifest: &Manifest, build: &str, seed: u64) -> Result<(), String> {
+    readable(manifest.format)?;
+    if manifest.build != build {
+        return Err("a save another build wrote".to_owned());
+    }
+    if manifest.seed != seed {
+        return Err(format!("a save of seed {} where the run's is {seed}", manifest.seed));
+    }
+    Ok(())
+}
+
 /// A world read back from a save to continue from its close: the build and data assembled as the save's were, its
 /// opening not drawn, its core and day read from the save and held to the manifest's world hash, and the run's
 /// measures read back beside it. The save's format, build, register and seed must be this build's and run's.
@@ -221,13 +237,7 @@ pub fn load(
     build: &str,
 ) -> Result<World, String> {
     let manifest = Manifest::read(dir)?;
-    readable(manifest.format)?;
-    if manifest.build != build {
-        return Err("a save another build wrote".to_owned());
-    }
-    if manifest.seed != config.seed {
-        return Err(format!("a save of seed {} where the run's is {}", manifest.seed, config.seed));
-    }
+    admitted(&manifest, build, config.seed)?;
     let mut world = crate::registry::assemble_loaded(systems, interfaces, config, &mut |register| {
         if hex(register) != manifest.register {
             return Err("a save of other data than this run's".to_owned());
@@ -242,15 +252,40 @@ pub fn load(
         return Err(format!("a save of {} persons where the run opens {}", manifest.persons, world.persons));
     }
     // Every index left out of the save and naming its rebuild is rebuilt now, the world rebound around it.
-    phx_store::Saved::rebuild_skipped(&mut world.core);
+    phx_store::rebuild(&mut world.core).map_err(|e| e.to_string())?;
     world.metrics = read_store(dir, RUN, &mut |r| Metrics::load(r))?;
     Ok(world)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::readable;
+    use super::{admitted, readable};
     use crate::consts::SAVE_FORMAT;
+    use crate::save::manifest::Manifest;
+
+    fn manifest(build: &str, seed: u64) -> Manifest {
+        Manifest {
+            format: SAVE_FORMAT,
+            build: build.to_owned(),
+            register: String::new(),
+            seed,
+            day: 0,
+            date: String::new(),
+            settling_years: 0,
+            persons: 0,
+            stores: Vec::new(),
+            world_hash: String::new(),
+        }
+    }
+
+    #[test]
+    fn other_build_refused() {
+        assert!(admitted(&manifest("b1", 7), "b1", 7).is_ok());
+        assert_eq!(admitted(&manifest("b0", 7), "b1", 7).unwrap_err(), "a save another build wrote");
+        assert!(admitted(&manifest("b1", 8), "b1", 7).unwrap_err().contains("seed 8"), "a save of another seed");
+        let old = Manifest { format: SAVE_FORMAT - 1, ..manifest("b1", 7) };
+        assert!(admitted(&old, "b1", 7).is_err(), "a save of another format");
+    }
 
     #[test]
     fn save_format_rises_with_the_wheel() {

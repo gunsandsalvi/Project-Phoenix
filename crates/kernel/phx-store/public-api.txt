@@ -77,7 +77,7 @@ pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::ar
 pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32  // used by: phx-core, phx-pop
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 #[repr(C)] pub struct phx_store::arena::ListRef
 pub phx_store::arena::ListRef::cap: u32  // used by: phx-exec, phx-market, phx-world
@@ -185,7 +185,7 @@ pub mod phx_store::column  // used by: phx-check, phx-core, phx-geo, phx-world, 
 pub struct phx_store::column::ChunkMut<'a, T>
 pub phx_store::column::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
 pub phx_store::column::ChunkMut::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
-pub phx_store::column::ChunkMut::rows: &'a mut [T]  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_store::column::ChunkMut::rows: &'a mut [T]  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub struct phx_store::column::Column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-core, phx-pop
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::bytes_committed(&self) -> usize  // used by: phx-core, phx-pop
@@ -207,7 +207,7 @@ pub fn phx_store::column::Column<T, B>::load_as(&mut phx_store::save::Reader<'_>
 pub fn phx_store::column::Column<T, B>::save_as(&self, &mut phx_store::save::Writer<'_>, phx_store::descriptor::Transform)  // used by: phx-core, phx-pop
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 pub mod phx_store::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_store::consts::ARENA_DEAD_DEN: u64
@@ -352,7 +352,7 @@ pub fn phx_store::edges::EdgeTable<R, B>::rows(&self) -> &[R]  // used by: phx-c
 pub fn phx_store::edges::EdgeTable<R, B>::rows_mut(&mut self) -> &mut [R]  // used by: phx-core
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::edges::EdgeTable<R, B>::rebuild_skipped(&mut self)  // used by: phx-core
+pub fn phx_store::edges::EdgeTable<R, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 #[repr(C)] pub struct phx_store::edges::Pair
 pub phx_store::edges::Pair::ends: [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
@@ -409,7 +409,7 @@ pub fn phx_store::genref::Generations<T, B>::resolve(&self, &phx_store::table::S
 pub fn phx_store::genref::Generations<T, B>::short(&self, phx_id::ids::Slot) -> core::option::Option<u8>  // used by: phx-fin
 impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
 pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 pub struct phx_store::genref::ShortRef<T>
 impl<T> phx_store::genref::ShortRef<T>
@@ -441,36 +441,36 @@ pub fn phx_store::hash::LogicalHasher::block_list<B: phx_store::backing::Backing
 pub fn phx_store::hash::LogicalHasher::bytes(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::hash::LogicalHasher::cell_list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, u32, phx_store::arena::CellListRef)
 pub fn phx_store::hash::LogicalHasher::column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&mut self, &phx_store::column::Column<T, B>, &phx_store::table::SlotAlloc<B>)  // used by: phx-check, phx-core, phx-geo, phx-world, sys-dem, sys-sta, sys-tec
-pub fn phx_store::hash::LogicalHasher::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
+pub fn phx_store::hash::LogicalHasher::finish(self) -> u128  // used by: phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::hash::LogicalHasher::list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, phx_store::arena::ListRef)  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
 pub fn phx_store::hash::LogicalHasher::new([u64; 2]) -> phx_store::hash::LogicalHasher  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_store::hash::LogicalHasher::u64(&mut self, u64)  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm
 pub struct phx_store::hash::Sip128  // used by: phx-cli
 impl phx_store::hash::Sip128
-pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
+pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
-pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-obs, phx-world
-pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core
+pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world
+pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::close_day(&mut self)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::close_day(&mut self)  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 pub struct phx_store::parties::PartyRows
 pub mod phx_store::pod  // used by: phx-check, phx-core, phx-macros
 pub mod phx_store::pod::__seal  // used by: phx-macros
@@ -603,6 +603,28 @@ pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &
 pub fn phx_store::pod::as_bytes<T: phx_store::pod::Pod>(&[T]) -> &[u8]  // used by: phx-core, phx-id, phx-rand, phx-world
 pub fn phx_store::pod::as_bytes_mut<T: phx_store::pod::Pod>(&mut [T]) -> &mut [u8]
 pub fn phx_store::pod::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
+pub mod phx_store::rebuild  // used by: phx-check, phx-fin, phx-macros, phx-rand, phx-world
+pub struct phx_store::rebuild::RebuildError  // used by: phx-macros
+pub phx_store::rebuild::RebuildError::store: &'static str  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-world
+pub phx_store::rebuild::RebuildError::why: alloc::string::String  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
+impl core::fmt::Display for phx_store::rebuild::RebuildError
+pub fn phx_store::rebuild::RebuildError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-val, phx-world
+pub struct phx_store::rebuild::Rebuilt
+impl phx_store::rebuild::Rebuilt
+pub fn phx_store::rebuild::Rebuilt::record(&mut self, &'static str, u64)  // used by: phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-world
+pub fn phx_store::rebuild::Rebuilt::stores(&self) -> &[(&'static str, u64)]  // used by: phx-cli, phx-world
+impl phx_store::stats::StoreStats for phx_store::rebuild::Rebuilt
+pub fn phx_store::rebuild::Rebuilt::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
+pub fn phx_store::rebuild::Rebuilt::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
+pub fn phx_store::rebuild::Rebuilt::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin
+pub trait phx_store::rebuild::RebuildRows  // used by: phx-macros
+pub fn phx_store::rebuild::RebuildRows::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+impl phx_store::rebuild::RebuildRows for core::result::Result<u64, alloc::string::String>
+pub fn core::result::Result<u64, alloc::string::String>::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_store::rebuild::RebuildRows for u64
+pub fn u64::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub fn phx_store::rebuild::by_ranges<R>(usize, usize, impl core::ops::function::FnMut(core::ops::range::Range<usize>, &mut alloc::vec::Vec<R>)) -> alloc::vec::Vec<R>
+pub fn phx_store::rebuild::rebuild<T: phx_store::save::Saved>(&mut T) -> core::result::Result<phx_store::rebuild::Rebuilt, phx_store::rebuild::RebuildError>  // used by: phx-check, phx-fin, phx-macros, phx-rand, phx-world
 pub mod phx_store::region  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-market, phx-pop, phx-world, sys-dem, sys-lab, sys-soc
 pub struct phx_store::region::Region<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::region::Region<T, B>
@@ -614,7 +636,9 @@ pub fn phx_store::region::Region<T, B>::release_above(&mut self, usize)  // used
 pub fn phx_store::region::Region<T, B>::reserve(&mut phx_store::backing::AddressSpace, usize) -> phx_store::region::Region<T, B>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 pub fn phx_store::region::Region<T, B>::slice(&self, usize) -> &[T]  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 pub fn phx_store::region::Region<T, B>::slice_mut(&mut self, usize) -> &mut [T]  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
-pub mod phx_store::save  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub mod phx_store::roundtrip
+pub fn phx_store::roundtrip::roundtrip<T: phx_store::save::Saved + core::cmp::PartialEq + core::fmt::Debug>(&T) -> core::result::Result<(T, phx_store::rebuild::Rebuilt), alloc::string::String>
+pub mod phx_store::save  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub enum phx_store::save::LoadError  // used by: phx-core, phx-exec, phx-ledger, phx-world
 pub phx_store::save::LoadError::Decode(phx_store::encode::DecodeError)
 pub phx_store::save::LoadError::Invalid(alloc::string::String)  // used by: phx-ledger
@@ -625,198 +649,198 @@ impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::Lo
 pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
 impl core::fmt::Display for phx_store::save::LoadError
 pub fn phx_store::save::LoadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-val, phx-world
-pub struct phx_store::save::Reader<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-world
+pub struct phx_store::save::Reader<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 impl<'a> phx_store::save::Reader<'a>
-pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::with_names(&mut self, &[&'static str])  // used by: phx-core, phx-exec, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::with_names(&mut self, &[&'static str])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 impl core::fmt::Debug for phx_store::save::Reader<'_>
-pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub struct phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub struct phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl<'a> phx_store::save::Writer<'a>
-pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::count(&mut self, usize)  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::count(&mut self, usize)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl core::fmt::Debug for phx_store::save::Writer<'_>
-pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub trait phx_store::save::Saved: core::marker::Sized  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_store::save::Saved::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_store::save::Saved::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub trait phx_store::save::Saved: core::marker::Sized  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_store::save::Saved::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_store::save::Saved::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for &'static str
 pub fn &'static str::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<&'static str, phx_store::save::LoadError>
-pub fn &'static str::rebuild_skipped(&mut self)
+pub fn &'static str::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn &'static str::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for alloc::string::String
-pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn alloc::string::String::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn alloc::string::String::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for bool
-pub fn bool::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn bool::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn bool::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn bool::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn bool::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn bool::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for f64
-pub fn f64::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<f64, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn f64::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn f64::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<f64, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn f64::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for i128
-pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn i128::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn i128::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_id::day::Date
-pub fn phx_id::day::Date::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::day::Date, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_id::day::Date::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_id::day::Date::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_id::day::Date::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::day::Date, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_id::day::Date::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_id::day::Date::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_id::ids::RowRef
-pub fn phx_id::ids::RowRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::ids::RowRef, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_id::ids::RowRef::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_id::ids::RowRef::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_id::ids::RowRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::ids::RowRef, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_id::ids::RowRef::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_id::ids::RowRef::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::money::Money
-pub fn phx_num::money::Money::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::money::Money, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::money::Money::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::money::Money::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::money::Money::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::money::Money, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::money::Money::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::money::Money::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::price::Price
-pub fn phx_num::price::Price::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::price::Price, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::price::Price::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::price::Price::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::price::Price::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::price::Price, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::price::Price::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::price::Price::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::qty::Qty
-pub fn phx_num::qty::Qty::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::qty::Qty, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::qty::Qty::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::qty::Qty::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::qty::Qty::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::qty::Qty, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::qty::Qty::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::qty::Qty::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::rate::DayFraction
-pub fn phx_num::rate::DayFraction::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::DayFraction, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::rate::DayFraction::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::rate::DayFraction::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::rate::DayFraction::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::DayFraction, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::rate::DayFraction::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::rate::DayFraction::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::rate::Rate
-pub fn phx_num::rate::Rate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::Rate, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::rate::Rate::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::rate::Rate::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::rate::Rate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::Rate, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::rate::Rate::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::rate::Rate::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::rate::RatePeriod
-pub fn phx_num::rate::RatePeriod::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::RatePeriod, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::rate::RatePeriod::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::rate::RatePeriod::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::rate::RatePeriod::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::RatePeriod, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::rate::RatePeriod::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::rate::RatePeriod::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::round::Round
-pub fn phx_num::round::Round::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::round::Round, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::round::Round::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::round::Round::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::round::Round::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::round::Round, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::round::Round::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::round::Round::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for u128
-pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn u128::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn u128::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for usize
-pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn usize::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn usize::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved, E: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D, E)
 pub fn (A, B, C, D, E)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D, E), phx_store::save::LoadError>
-pub fn (A, B, C, D, E)::rebuild_skipped(&mut self)
+pub fn (A, B, C, D, E)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B, C, D, E)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D)
 pub fn (A, B, C, D)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D), phx_store::save::LoadError>
-pub fn (A, B, C, D)::rebuild_skipped(&mut self)
+pub fn (A, B, C, D)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B, C, D)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved> phx_store::save::Saved for (A, B, C)
 pub fn (A, B, C)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C), phx_store::save::LoadError>
-pub fn (A, B, C)::rebuild_skipped(&mut self)
+pub fn (A, B, C)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B, C)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved> phx_store::save::Saved for (A, B)
 pub fn (A, B)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B), phx_store::save::LoadError>
-pub fn (A, B)::rebuild_skipped(&mut self)
+pub fn (A, B)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>  // used by: phx-check, phx-core, phx-fin, phx-market
-pub fn phx_store::table::Table<B>::rebuild_skipped(&mut self)  // used by: phx-check, phx-core, phx-fin, phx-market
+pub fn phx_store::table::Table<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-core, phx-fin, phx-market
 impl<K: phx_store::save::Saved + core::cmp::Ord, V: phx_store::save::Saved> phx_store::save::Saved for alloc::collections::btree::map::BTreeMap<K, V>
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::map::BTreeMap<K, V>, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
-pub fn alloc::collections::btree::map::BTreeMap<K, V>::rebuild_skipped(&mut self)  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
+pub fn alloc::collections::btree::map::BTreeMap<K, V>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::edges::EdgeTable<R, B>::rebuild_skipped(&mut self)  // used by: phx-core
+pub fn phx_store::edges::EdgeTable<R, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
 pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 impl<T: phx_store::pod::Pod> phx_store::save::Saved for T
-pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn T::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn T::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn T::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn T::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl<T: phx_store::save::Saved + core::cmp::Ord> phx_store::save::Saved for alloc::collections::btree::set::BTreeSet<T>
 pub fn alloc::collections::btree::set::BTreeSet<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::set::BTreeSet<T>, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-geo, phx-world
-pub fn alloc::collections::btree::set::BTreeSet<T>::rebuild_skipped(&mut self)  // used by: phx-check, phx-cli, phx-geo, phx-world
+pub fn alloc::collections::btree::set::BTreeSet<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-cli, phx-geo, phx-world
 pub fn alloc::collections::btree::set::BTreeSet<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-cli, phx-geo, phx-world
 impl<T: phx_store::save::Saved> phx_store::save::Saved for alloc::vec::Vec<T>
 pub fn alloc::vec::Vec<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
-pub fn alloc::vec::Vec<T>::rebuild_skipped(&mut self)  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn alloc::vec::Vec<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn alloc::vec::Vec<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 impl<T: phx_store::save::Saved> phx_store::save::Saved for core::option::Option<T>
 pub fn core::option::Option<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<core::option::Option<T>, phx_store::save::LoadError>  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
-pub fn core::option::Option<T>::rebuild_skipped(&mut self)  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
+pub fn core::option::Option<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
 pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn phx_num::missing::Missing<T>::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_num::missing::Missing<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [bool; N]
 pub fn [bool; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[bool; N], phx_store::save::LoadError>
-pub fn [bool; N]::rebuild_skipped(&mut self)
+pub fn [bool; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [bool; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [f64; N]
 pub fn [f64; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[f64; N], phx_store::save::LoadError>
-pub fn [f64; N]::rebuild_skipped(&mut self)
+pub fn [f64; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [f64; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [i128; N]
 pub fn [i128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[i128; N], phx_store::save::LoadError>
-pub fn [i128; N]::rebuild_skipped(&mut self)
+pub fn [i128; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [i128; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<f64>; N]
 pub fn [phx_num::missing::Missing<f64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<f64>; N], phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn [phx_num::missing::Missing<f64>; N]::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn [phx_num::missing::Missing<f64>; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn [phx_num::missing::Missing<f64>; N]::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<i64>; N]
 pub fn [phx_num::missing::Missing<i64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<i64>; N], phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn [phx_num::missing::Missing<i64>; N]::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn [phx_num::missing::Missing<i64>; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn [phx_num::missing::Missing<i64>; N]::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<u16>; N]
 pub fn [phx_num::missing::Missing<u16>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<u16>; N], phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn [phx_num::missing::Missing<u16>; N]::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn [phx_num::missing::Missing<u16>; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn [phx_num::missing::Missing<u16>; N]::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [u128; N]
 pub fn [u128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[u128; N], phx_store::save::LoadError>
-pub fn [u128; N]::rebuild_skipped(&mut self)
+pub fn [u128; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [u128; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [usize; N]
 pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
-pub fn [usize; N]::rebuild_skipped(&mut self)
+pub fn [usize; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
 pub fn phx_store::save::compress_frame(&[u8]) -> core::io::error::Result<alloc::vec::Vec<u8>>  // used by: phx-world
 pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)  // used by: phx-world
@@ -826,15 +850,19 @@ pub mod phx_store::stats  // used by: if-state, phx-cli, phx-exec, phx-world, sy
 pub trait phx_store::stats::StoreStats  // used by: phx-cli, phx-core, phx-exec, phx-fin
 pub fn phx_store::stats::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::stats::StoreStats::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
-pub fn phx_store::stats::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec
+pub fn phx_store::stats::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin
+impl phx_store::stats::StoreStats for phx_store::rebuild::Rebuilt
+pub fn phx_store::rebuild::Rebuilt::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
+pub fn phx_store::rebuild::Rebuilt::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
+pub fn phx_store::rebuild::Rebuilt::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::dayplan::DayRegion<B>
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
@@ -858,14 +886,14 @@ pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace
 pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::table::Table<B: phx_store::backing::Backing>  // used by: phx-check, phx-core, phx-fin, phx-market
-pub phx_store::table::Table::id: phx_id::ids::TableId  // used by: if-base, phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_store::table::Table::id: phx_id::ids::TableId  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_store::table::Table::slots: phx_store::table::SlotAlloc<B>  // used by: phx-fin, phx-id, phx-pop, phx-world
 impl<B: phx_store::backing::Backing> phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>  // used by: phx-check, phx-core, phx-fin, phx-market
@@ -873,12 +901,12 @@ pub fn phx_store::table::Table<B>::new(&mut phx_store::backing::AddressSpace, ph
 pub fn phx_store::table::Table<B>::rows_per_chunk(&self) -> u32  // used by: phx-check, phx-core, phx-fin, phx-market
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>  // used by: phx-check, phx-core, phx-fin, phx-market
-pub fn phx_store::table::Table<B>::rebuild_skipped(&mut self)  // used by: phx-check, phx-core, phx-fin, phx-market
+pub fn phx_store::table::Table<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-core, phx-fin, phx-market
 pub struct phx_store::table::TableChunk<R>
 pub phx_store::table::TableChunk::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
 pub phx_store::table::TableChunk::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
-pub phx_store::table::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_store::table::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub trait phx_store::table::TableChunks
 pub type phx_store::table::TableChunks::Rows  // used by: phx-fin
 pub fn phx_store::table::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market
@@ -1013,12 +1041,12 @@ pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::ar
 pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32  // used by: phx-core, phx-pop
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 pub struct phx_store::ChunkMut<'a, T>
 pub phx_store::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
 pub phx_store::ChunkMut::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
-pub phx_store::ChunkMut::rows: &'a mut [T]  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_store::ChunkMut::rows: &'a mut [T]  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub struct phx_store::Column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-core, phx-pop
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::bytes_committed(&self) -> usize  // used by: phx-core, phx-pop
@@ -1040,7 +1068,7 @@ pub fn phx_store::column::Column<T, B>::load_as(&mut phx_store::save::Reader<'_>
 pub fn phx_store::column::Column<T, B>::save_as(&self, &mut phx_store::save::Writer<'_>, phx_store::descriptor::Transform)  // used by: phx-core, phx-pop
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 pub struct phx_store::ColumnDescriptor  // used by: phx-exec
 pub phx_store::ColumnDescriptor::elem_bytes: u16  // used by: phx-exec
@@ -1112,7 +1140,7 @@ pub fn phx_store::edges::EdgeTable<R, B>::rows(&self) -> &[R]  // used by: phx-c
 pub fn phx_store::edges::EdgeTable<R, B>::rows_mut(&mut self) -> &mut [R]  // used by: phx-core
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::edges::EdgeTable<R, B>::rebuild_skipped(&mut self)  // used by: phx-core
+pub fn phx_store::edges::EdgeTable<R, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 pub struct phx_store::FieldDescriptor
 pub phx_store::FieldDescriptor::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -1144,7 +1172,7 @@ pub fn phx_store::genref::Generations<T, B>::resolve(&self, &phx_store::table::S
 pub fn phx_store::genref::Generations<T, B>::short(&self, phx_id::ids::Slot) -> core::option::Option<u8>  // used by: phx-fin
 impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
 pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 pub struct phx_store::HeapBacking<const PAGE: usize>
 impl<const PAGE: usize> core::marker::Send for phx_store::backing::HeapBacking<PAGE>
@@ -1178,7 +1206,7 @@ pub fn phx_store::hash::LogicalHasher::block_list<B: phx_store::backing::Backing
 pub fn phx_store::hash::LogicalHasher::bytes(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::hash::LogicalHasher::cell_list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, u32, phx_store::arena::CellListRef)
 pub fn phx_store::hash::LogicalHasher::column<T: phx_store::pod::Pod, B: phx_store::backing::Backing>(&mut self, &phx_store::column::Column<T, B>, &phx_store::table::SlotAlloc<B>)  // used by: phx-check, phx-core, phx-geo, phx-world, sys-dem, sys-sta, sys-tec
-pub fn phx_store::hash::LogicalHasher::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
+pub fn phx_store::hash::LogicalHasher::finish(self) -> u128  // used by: phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::hash::LogicalHasher::list<B: phx_store::backing::Backing>(&mut self, &phx_store::arena::ChunkArena<B>, phx_store::arena::ListRef)  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
 pub fn phx_store::hash::LogicalHasher::new([u64; 2]) -> phx_store::hash::LogicalHasher  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_store::hash::LogicalHasher::u64(&mut self, u64)  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm
@@ -1202,46 +1230,59 @@ pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey) 
 impl phx_store::pod::Pod for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
-pub struct phx_store::Parties<B: phx_store::backing::Backing>  // used by: phx-core
+pub struct phx_store::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::close_day(&mut self)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::close_day(&mut self)  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 pub struct phx_store::Placed  // used by: phx-world
 pub phx_store::Placed::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub phx_store::Placed::decl: usize  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
 pub phx_store::Placed::life: phx_store::dayplan::Life  // used by: phx-fin, phx-val, phx-world, sys-cap, sys-dem
 pub phx_store::Placed::offset: u64  // used by: phx-check, phx-core, phx-fin, phx-geo, sys-dem
-pub struct phx_store::Reader<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-world
+pub struct phx_store::Reader<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 impl<'a> phx_store::save::Reader<'a>
-pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-ledger, phx-world
-pub fn phx_store::save::Reader<'a>::with_names(&mut self, &[&'static str])  // used by: phx-core, phx-exec, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::bytes(&mut self, usize) -> core::result::Result<alloc::vec::Vec<u8>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::count(&mut self) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::fill(&mut self, &mut [u8]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::name(&self, &str) -> core::result::Result<&'static str, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::new(&'a mut dyn alloc::io::read::Read) -> core::io::error::Result<phx_store::save::Reader<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::rows<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::rows_into<T: phx_store::pod::Pod>(&mut self, phx_store::descriptor::Transform, &mut [T]) -> core::result::Result<(), phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::space(&mut self) -> &mut phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::take_space(&mut self) -> phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'a>::with_names(&mut self, &[&'static str])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
 impl core::fmt::Debug for phx_store::save::Reader<'_>
-pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-ledger, phx-world
+pub fn phx_store::save::Reader<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-world
+pub struct phx_store::RebuildError  // used by: phx-macros
+pub phx_store::RebuildError::store: &'static str  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-world
+pub phx_store::RebuildError::why: alloc::string::String  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
+impl core::fmt::Display for phx_store::rebuild::RebuildError
+pub fn phx_store::rebuild::RebuildError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-val, phx-world
+pub struct phx_store::Rebuilt
+impl phx_store::rebuild::Rebuilt
+pub fn phx_store::rebuild::Rebuilt::record(&mut self, &'static str, u64)  // used by: phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-world
+pub fn phx_store::rebuild::Rebuilt::stores(&self) -> &[(&'static str, u64)]  // used by: phx-cli, phx-world
+impl phx_store::stats::StoreStats for phx_store::rebuild::Rebuilt
+pub fn phx_store::rebuild::Rebuilt::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
+pub fn phx_store::rebuild::Rebuilt::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
+pub fn phx_store::rebuild::Rebuilt::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin
 pub struct phx_store::Region<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::region::Region<T, B>
 pub fn phx_store::region::Region<T, B>::bytes_committed(&self) -> usize  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
@@ -1274,7 +1315,7 @@ pub fn phx_store::genref::ShortRefs<T, H, B>::new(&mut phx_store::backing::Addre
 pub fn phx_store::genref::ShortRefs<T, H, B>::put(&mut self, phx_id::ids::Slot, phx_store::genref::ShortRef<T>)
 pub struct phx_store::Sip128  // used by: phx-cli
 impl phx_store::hash::Sip128
-pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
+pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
 pub struct phx_store::SlotAlloc<B: phx_store::backing::Backing>  // used by: phx-fin
@@ -1291,14 +1332,14 @@ pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace
 pub fn phx_store::table::SlotAlloc<B>::release(&mut self, phx_id::ids::Slot)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::Table<B: phx_store::backing::Backing>  // used by: phx-check, phx-core, phx-fin, phx-market
-pub phx_store::Table::id: phx_id::ids::TableId  // used by: if-base, phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_store::Table::id: phx_id::ids::TableId  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_store::Table::slots: phx_store::table::SlotAlloc<B>  // used by: phx-fin, phx-id, phx-pop, phx-world
 impl<B: phx_store::backing::Backing> phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::column<T: phx_store::pod::Pod>(&self, &mut phx_store::backing::AddressSpace) -> phx_store::column::Column<T, B>  // used by: phx-check, phx-core, phx-fin, phx-market
@@ -1306,22 +1347,22 @@ pub fn phx_store::table::Table<B>::new(&mut phx_store::backing::AddressSpace, ph
 pub fn phx_store::table::Table<B>::rows_per_chunk(&self) -> u32  // used by: phx-check, phx-core, phx-fin, phx-market
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>  // used by: phx-check, phx-core, phx-fin, phx-market
-pub fn phx_store::table::Table<B>::rebuild_skipped(&mut self)  // used by: phx-check, phx-core, phx-fin, phx-market
+pub fn phx_store::table::Table<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-core, phx-fin, phx-market
 pub struct phx_store::TableChunk<R>
 pub phx_store::TableChunk::chunk: u32  // used by: phx-core, phx-exec, phx-market, phx-pop, phx-world
 pub phx_store::TableChunk::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
-pub phx_store::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
-pub struct phx_store::Writer<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub phx_store::TableChunk::rows: R  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub struct phx_store::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl<'a> phx_store::save::Writer<'a>
-pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::count(&mut self, usize)  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::bytes(&mut self, &[u8])  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::count(&mut self, usize)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::finish(self) -> core::io::error::Result<(u64, u64)>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::framed(&'a mut dyn core::io::write::Write, phx_store::save::Frames<'a>) -> phx_store::save::Writer<'a>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::new(&'a mut dyn core::io::write::Write) -> core::io::error::Result<phx_store::save::Writer<'a>>  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'a>::rows<T: phx_store::pod::Pod>(&mut self, &[T], phx_store::descriptor::Transform)  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl core::fmt::Debug for phx_store::save::Writer<'_>
-pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub trait phx_store::ArenaLists
 pub fn phx_store::ArenaLists::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
 pub fn phx_store::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
@@ -1439,6 +1480,12 @@ impl<T: phx_store::pod::Pod, const N: usize> phx_store::pod::Pod for [T; N]
 pub fn [T; N]::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)
 impl<const E: u8> phx_store::pod::Pod for phx_num::fixed::Fixed<E>
 pub fn phx_num::fixed::Fixed<E>::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: if-base, phx-core, phx-geo, phx-ledger, phx-num, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
+pub trait phx_store::RebuildRows  // used by: phx-macros
+pub fn phx_store::RebuildRows::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+impl phx_store::rebuild::RebuildRows for core::result::Result<u64, alloc::string::String>
+pub fn core::result::Result<u64, alloc::string::String>::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_store::rebuild::RebuildRows for u64
+pub fn u64::rows(self) -> core::result::Result<u64, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub trait phx_store::Recheck
 pub const phx_store::Recheck::DAYS: u8  // used by: phx-fin
 pub trait phx_store::Row: phx_store::pod::Pod  // used by: phx-core, phx-world
@@ -1447,186 +1494,190 @@ pub fn phx_store::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used
 impl phx_store::edges::Row for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
-pub trait phx_store::Saved: core::marker::Sized  // used by: phx-core, phx-exec, phx-ledger, phx-macros, phx-world
-pub fn phx_store::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_store::Saved::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_store::Saved::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub trait phx_store::Saved: core::marker::Sized  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
+pub fn phx_store::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_store::Saved::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_store::Saved::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for &'static str
 pub fn &'static str::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<&'static str, phx_store::save::LoadError>
-pub fn &'static str::rebuild_skipped(&mut self)
+pub fn &'static str::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn &'static str::save(&self, &mut phx_store::save::Writer<'_>)
 impl phx_store::save::Saved for alloc::string::String
-pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn alloc::string::String::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn alloc::string::String::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::string::String, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn alloc::string::String::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn alloc::string::String::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for bool
-pub fn bool::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn bool::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn bool::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn bool::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn bool::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn bool::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for f64
-pub fn f64::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<f64, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn f64::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn f64::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<f64, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn f64::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn f64::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for i128
-pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn i128::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn i128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<i128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn i128::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn i128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_id::day::Date
-pub fn phx_id::day::Date::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::day::Date, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_id::day::Date::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_id::day::Date::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_id::day::Date::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::day::Date, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_id::day::Date::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_id::day::Date::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_id::ids::RowRef
-pub fn phx_id::ids::RowRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::ids::RowRef, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_id::ids::RowRef::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_id::ids::RowRef::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_id::ids::RowRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_id::ids::RowRef, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_id::ids::RowRef::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_id::ids::RowRef::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::money::Money
-pub fn phx_num::money::Money::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::money::Money, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::money::Money::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::money::Money::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::money::Money::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::money::Money, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::money::Money::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::money::Money::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::price::Price
-pub fn phx_num::price::Price::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::price::Price, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::price::Price::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::price::Price::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::price::Price::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::price::Price, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::price::Price::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::price::Price::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::qty::Qty
-pub fn phx_num::qty::Qty::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::qty::Qty, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::qty::Qty::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::qty::Qty::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::qty::Qty::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::qty::Qty, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::qty::Qty::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::qty::Qty::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::rate::DayFraction
-pub fn phx_num::rate::DayFraction::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::DayFraction, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::rate::DayFraction::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::rate::DayFraction::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::rate::DayFraction::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::DayFraction, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::rate::DayFraction::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::rate::DayFraction::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::rate::Rate
-pub fn phx_num::rate::Rate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::Rate, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::rate::Rate::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::rate::Rate::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::rate::Rate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::Rate, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::rate::Rate::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::rate::Rate::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::rate::RatePeriod
-pub fn phx_num::rate::RatePeriod::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::RatePeriod, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::rate::RatePeriod::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::rate::RatePeriod::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::rate::RatePeriod::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::rate::RatePeriod, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::rate::RatePeriod::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::rate::RatePeriod::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for phx_num::round::Round
-pub fn phx_num::round::Round::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::round::Round, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn phx_num::round::Round::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn phx_num::round::Round::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn phx_num::round::Round::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::round::Round, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn phx_num::round::Round::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn phx_num::round::Round::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for u128
-pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn u128::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn u128::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<u128, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn u128::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn u128::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl phx_store::save::Saved for usize
-pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn usize::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn usize::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<usize, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn usize::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn usize::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved, E: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D, E)
 pub fn (A, B, C, D, E)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D, E), phx_store::save::LoadError>
-pub fn (A, B, C, D, E)::rebuild_skipped(&mut self)
+pub fn (A, B, C, D, E)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B, C, D, E)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved, D: phx_store::save::Saved> phx_store::save::Saved for (A, B, C, D)
 pub fn (A, B, C, D)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C, D), phx_store::save::LoadError>
-pub fn (A, B, C, D)::rebuild_skipped(&mut self)
+pub fn (A, B, C, D)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B, C, D)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved, C: phx_store::save::Saved> phx_store::save::Saved for (A, B, C)
 pub fn (A, B, C)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B, C), phx_store::save::LoadError>
-pub fn (A, B, C)::rebuild_skipped(&mut self)
+pub fn (A, B, C)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B, C)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<A: phx_store::save::Saved, B: phx_store::save::Saved> phx_store::save::Saved for (A, B)
 pub fn (A, B)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B), phx_store::save::LoadError>
-pub fn (A, B)::rebuild_skipped(&mut self)
+pub fn (A, B)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rebuild_skipped(&mut self)  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::table::SlotAlloc<B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::table::SlotAlloc<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::Table<B>
 pub fn phx_store::table::Table<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::Table<B>, phx_store::save::LoadError>  // used by: phx-check, phx-core, phx-fin, phx-market
-pub fn phx_store::table::Table<B>::rebuild_skipped(&mut self)  // used by: phx-check, phx-core, phx-fin, phx-market
+pub fn phx_store::table::Table<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-core, phx-fin, phx-market
 pub fn phx_store::table::Table<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-core, phx-fin, phx-market
 impl<K: phx_store::save::Saved + core::cmp::Ord, V: phx_store::save::Saved> phx_store::save::Saved for alloc::collections::btree::map::BTreeMap<K, V>
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::map::BTreeMap<K, V>, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
-pub fn alloc::collections::btree::map::BTreeMap<K, V>::rebuild_skipped(&mut self)  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
+pub fn alloc::collections::btree::map::BTreeMap<K, V>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
 pub fn alloc::collections::btree::map::BTreeMap<K, V>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-lab, sys-tec
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::edges::EdgeTable<R, B>, phx_store::save::LoadError>  // used by: phx-core
-pub fn phx_store::edges::EdgeTable<R, B>::rebuild_skipped(&mut self)  // used by: phx-core
+pub fn phx_store::edges::EdgeTable<R, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 impl<T, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::genref::Generations<T, B>
 pub fn phx_store::genref::Generations<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::genref::Generations<T, B>, phx_store::save::LoadError>  // used by: phx-fin
-pub fn phx_store::genref::Generations<T, B>::rebuild_skipped(&mut self)  // used by: phx-fin
+pub fn phx_store::genref::Generations<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::genref::Generations<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::column::Column<T, B>
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::column::Column<T, B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-pop
+pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
 impl<T: phx_store::pod::Pod> phx_store::save::Saved for T
-pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-world
-pub fn T::rebuild_skipped(&mut self)  // used by: phx-macros, phx-world
-pub fn T::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-world
+pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
+pub fn T::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
+pub fn T::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 impl<T: phx_store::save::Saved + core::cmp::Ord> phx_store::save::Saved for alloc::collections::btree::set::BTreeSet<T>
 pub fn alloc::collections::btree::set::BTreeSet<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::collections::btree::set::BTreeSet<T>, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-geo, phx-world
-pub fn alloc::collections::btree::set::BTreeSet<T>::rebuild_skipped(&mut self)  // used by: phx-check, phx-cli, phx-geo, phx-world
+pub fn alloc::collections::btree::set::BTreeSet<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-check, phx-cli, phx-geo, phx-world
 pub fn alloc::collections::btree::set::BTreeSet<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-check, phx-cli, phx-geo, phx-world
 impl<T: phx_store::save::Saved> phx_store::save::Saved for alloc::vec::Vec<T>
 pub fn alloc::vec::Vec<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<alloc::vec::Vec<T>, phx_store::save::LoadError>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
-pub fn alloc::vec::Vec<T>::rebuild_skipped(&mut self)  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn alloc::vec::Vec<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn alloc::vec::Vec<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 impl<T: phx_store::save::Saved> phx_store::save::Saved for core::option::Option<T>
 pub fn core::option::Option<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<core::option::Option<T>, phx_store::save::LoadError>  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
-pub fn core::option::Option<T>::rebuild_skipped(&mut self)  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
+pub fn core::option::Option<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
 pub fn core::option::Option<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-labour, if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-gds, sys-idx, sys-lab, sys-sov, sys-sta, sys-tec
 impl<T: phx_store::save::Saved> phx_store::save::Saved for phx_num::missing::Missing<T>
 pub fn phx_num::missing::Missing<T>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_num::missing::Missing<T>, phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn phx_num::missing::Missing<T>::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_num::missing::Missing<T>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_num::missing::Missing<T>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [bool; N]
 pub fn [bool; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[bool; N], phx_store::save::LoadError>
-pub fn [bool; N]::rebuild_skipped(&mut self)
+pub fn [bool; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [bool; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [f64; N]
 pub fn [f64; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[f64; N], phx_store::save::LoadError>
-pub fn [f64; N]::rebuild_skipped(&mut self)
+pub fn [f64; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [f64; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [i128; N]
 pub fn [i128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[i128; N], phx_store::save::LoadError>
-pub fn [i128; N]::rebuild_skipped(&mut self)
+pub fn [i128; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [i128; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<f64>; N]
 pub fn [phx_num::missing::Missing<f64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<f64>; N], phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn [phx_num::missing::Missing<f64>; N]::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn [phx_num::missing::Missing<f64>; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn [phx_num::missing::Missing<f64>; N]::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<i64>; N]
 pub fn [phx_num::missing::Missing<i64>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<i64>; N], phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn [phx_num::missing::Missing<i64>; N]::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn [phx_num::missing::Missing<i64>; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn [phx_num::missing::Missing<i64>; N]::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [phx_num::missing::Missing<u16>; N]
 pub fn [phx_num::missing::Missing<u16>; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[phx_num::missing::Missing<u16>; N], phx_store::save::LoadError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub fn [phx_num::missing::Missing<u16>; N]::rebuild_skipped(&mut self)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn [phx_num::missing::Missing<u16>; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn [phx_num::missing::Missing<u16>; N]::save(&self, &mut phx_store::save::Writer<'_>)  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl<const N: usize> phx_store::save::Saved for [u128; N]
 pub fn [u128; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[u128; N], phx_store::save::LoadError>
-pub fn [u128; N]::rebuild_skipped(&mut self)
+pub fn [u128; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [u128; N]::save(&self, &mut phx_store::save::Writer<'_>)
 impl<const N: usize> phx_store::save::Saved for [usize; N]
 pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
-pub fn [usize; N]::rebuild_skipped(&mut self)
+pub fn [usize; N]::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
 pub trait phx_store::StoreStats  // used by: phx-cli, phx-core, phx-exec, phx-fin
 pub fn phx_store::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::StoreStats::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
-pub fn phx_store::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec
+pub fn phx_store::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin
+impl phx_store::stats::StoreStats for phx_store::rebuild::Rebuilt
+pub fn phx_store::rebuild::Rebuilt::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
+pub fn phx_store::rebuild::Rebuilt::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
+pub fn phx_store::rebuild::Rebuilt::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::dayplan::DayRegion<B>
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
@@ -1665,5 +1716,7 @@ pub fn phx_store::encode_rows<T: phx_store::pod::Pod>(&[phx_store::descriptor::F
 pub fn phx_store::from_bytes<T: phx_store::pod::Pod>(&[u8]) -> core::option::Option<T>
 pub fn phx_store::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store::hash::LogicalHasher)  // used by: phx-world
 pub fn phx_store::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>  // used by: sys-tec
+pub fn phx_store::rebuild<T: phx_store::save::Saved>(&mut T) -> core::result::Result<phx_store::rebuild::Rebuilt, phx_store::rebuild::RebuildError>  // used by: phx-check, phx-fin, phx-macros, phx-rand, phx-world
+pub fn phx_store::roundtrip<T: phx_store::save::Saved + core::cmp::PartialEq + core::fmt::Debug>(&T) -> core::result::Result<(T, phx_store::rebuild::Rebuilt), alloc::string::String>
 pub fn phx_store::rows_in(&[u8]) -> core::result::Result<usize, phx_store::encode::DecodeError>
 pub type phx_store::SystemBacking = phx_store::backing::MmapBacking  // used by: phx-core, phx-pop, phx-world

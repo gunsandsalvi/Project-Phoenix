@@ -125,6 +125,6 @@ pub if_labour::law::Law::severance_days_a_year: u32  // used by: phx-world, sys-
 pub if_labour::law::Law::wage_weight: f64  // used by: phx-market, phx-world, sys-lab
 pub if_labour::law::Law::weeks_a_month: f64  // used by: phx-world, sys-lab
 impl phx_store::save::Saved for if_labour::law::Law where u32: phx_store::save::Saved, f64: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
-pub fn if_labour::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn if_labour::law::Law::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn if_labour::law::Law::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn if_labour::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_labour::law::Law::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn if_labour::law::Law::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world

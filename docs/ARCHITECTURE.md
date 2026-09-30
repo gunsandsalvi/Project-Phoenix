@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02 and K-03 built (S1.159–S1.161); the rest planned (S1.162–S1.168)
+Status: K-02, K-03 and K-10's save contract built (S1.159–S1.162); the rest planned (S1.163–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1179,8 +1179,34 @@ planned (S1.168).
 
 #### K-10 The save contract and the world hash
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.162, S1.163).
+The save contract is written (S1.162); the world hash as a tree of frame hashes is planned (S1.163).
+
+**What is primary, what is derived**: a save holds only primary state — columns, slot allocators (live bits, free
+rings, released lists, generations), arenas' raw words with their dead counts, rings' live chunks, policy schedules,
+the cursors of rolling sweeps. Everything derived — keyed indexes, sum-trees, the links an owner declares derived, the
+wheel's buckets and the agenda, the interner's indexes, per-day caches — is left out as
+`#[saved(skip, rebuild = path)]`, and day buffers are empty at every close. A derived index saved, a skipped field
+restored by `Default`, and a rebuild left lazy to its first use are refused.
+
+**The rebuild pass** (`rebuild.rs`): after every store is read, `phx_store::rebuild` runs `Saved::rebuild_derived`
+over the saved tree: store by store in the tree's declaration order, each field's rebuild in field order, so no
+rebuild's order depends on registration. The derive writes it: a saved field passes the pass on to its own fields
+(and `Vec`, `Option`, `Missing`, tuples and maps to their elements), and a skipped field calls its named path, which
+reads only primary columns and the indexes rebuilt before it; one that reads another's result declares it,
+`after = field`, and the derive refuses an `after` naming no earlier field (`rebuild_order_is_declared`). A rebuild
+returns its rows, or, where it can fail, its rows or why (`RebuildRows`); a failure stops the load naming the store and
+field (`RebuildError`, `failed_rebuild_names_store`). The pass reports each index's rows (`Rebuilt`, a `StoreStats`).
+A large rebuild cuts its rows into slot ranges and joins them in range order (`by_ranges`), the same for any workers
+(`rebuild_same_for_any_workers`), until the chunk plans take it (S1.169).
+
+**The round-trip harness** (`roundtrip.rs`): `roundtrip(&store)` saves a store, reads it back, runs the pass, and
+holds the copy's logical hash to the store's and the copy to the store: each index the day kept is equal to the one
+rebuilt from scratch (`roundtrip_heavy_fixture`). Every base that leaves an index out calls it in its tests.
+
+**Volumes and ratchets**: `tools/bench.sh -F save` round-trips the design point's 8.8 M party slots and times the pass:
+nothing derived stands in them yet, and the pass takes under a microsecond; `[fin.save] rebuild_ms` 190 holds the
+whole rebuild at a load — the lists, the wheel, the agenda and the terms index — as their bases add their stores to
+the driver (S1.165, S1.225, S1.227, S1.263).
 
 **Today** (`encode.rs`, `hash.rs`, `save.rs`): the column encoding and the world hash of §11.
 
@@ -2802,10 +2828,9 @@ never read as the world's. CI never runs the world.
   the declarations the core holds by reference — the population's household kind, the benefit's claim and the
   consumption tax's rule, the bills' kind, the statistics' rate and index — which a load binds again as the opening
   bound them (`Core::rebind`), marked `#[saved(skip)]`. The day's working buffers (`Work`, a meeting's and a wheel's
-  scratch) are empty at a close and are skipped too. A derived index is left out as `#[saved(skip, rebuild = path)]`:
-  the derive's `Saved::rebuild_skipped` calls each such path after a load, in field order and through the saved fields
-  that hold it, and the load calls it on the core once the world is rebound; `skip` alone is PC-101's to refuse, today's
-  sites admitted until each base names its rebuild (S1.162's rebuild pass then runs them in canonical order). Every name a save holds — the kinds' and the families'
+  scratch) are empty at a close and are skipped too. A derived index is left out as `#[saved(skip, rebuild = path)]`,
+  and the load runs the rebuild pass (K-10) on the core once the world is rebound, a failed rebuild stopping the load
+  with its store's name; `skip` alone is PC-101's to refuse, today's sites admitted until each base names its rebuild. Every name a save holds — the kinds' and the families'
   (`consts::families`) — is read back as the build's own, and a name the build does not declare is refused.
 - **Every save is full** (SET.12, spec Appendix E 22): a restore reads one save. Allocator state (free slots, list
   links, released slots) is saved as it stands.

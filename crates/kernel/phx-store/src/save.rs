@@ -405,8 +405,13 @@ pub trait Saved: Sized {
     /// When the store is damaged or does not hold this value.
     fn load(r: &mut Reader<'_>) -> Result<Self, LoadError>;
     /// Rebuilds, after a load, every index left out of the save, each by the function its field names, in field order
-    /// and through the fields saved; a value that leaves nothing out has nothing to rebuild.
-    fn rebuild_skipped(&mut self) {}
+    /// and through the fields saved, recording each's rows; a value that leaves nothing out has nothing to rebuild.
+    ///
+    /// # Errors
+    /// The first rebuild that fails, naming its store.
+    fn rebuild_derived(&mut self, _out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        Ok(())
+    }
 }
 
 impl<T: Pod> Saved for T {
@@ -507,6 +512,10 @@ impl<T: Saved> Saved for Vec<T> {
         }
         Ok(out)
     }
+
+    fn rebuild_derived(&mut self, out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        self.iter_mut().try_for_each(|v| v.rebuild_derived(out))
+    }
 }
 
 impl<T: Saved> Saved for Option<T> {
@@ -519,6 +528,10 @@ impl<T: Saved> Saved for Option<T> {
 
     fn load(r: &mut Reader<'_>) -> Result<Option<T>, LoadError> {
         Ok(if bool::load(r)? { Some(T::load(r)?) } else { None })
+    }
+
+    fn rebuild_derived(&mut self, out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        self.iter_mut().try_for_each(|v| v.rebuild_derived(out))
     }
 }
 
@@ -533,6 +546,13 @@ impl<T: Saved> Saved for Missing<T> {
     fn load(r: &mut Reader<'_>) -> Result<Missing<T>, LoadError> {
         Ok(if bool::load(r)? { Missing::Present(T::load(r)?) } else { Missing::Absent })
     }
+
+    fn rebuild_derived(&mut self, out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        match self {
+            Missing::Present(v) => v.rebuild_derived(out),
+            Missing::Absent => Ok(()),
+        }
+    }
 }
 
 impl<A: Saved, B: Saved> Saved for (A, B) {
@@ -543,6 +563,11 @@ impl<A: Saved, B: Saved> Saved for (A, B) {
 
     fn load(r: &mut Reader<'_>) -> Result<(A, B), LoadError> {
         Ok((A::load(r)?, B::load(r)?))
+    }
+
+    fn rebuild_derived(&mut self, out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        self.0.rebuild_derived(out)?;
+        self.1.rebuild_derived(out)
     }
 }
 
@@ -555,6 +580,12 @@ impl<A: Saved, B: Saved, C: Saved> Saved for (A, B, C) {
 
     fn load(r: &mut Reader<'_>) -> Result<(A, B, C), LoadError> {
         Ok((A::load(r)?, B::load(r)?, C::load(r)?))
+    }
+
+    fn rebuild_derived(&mut self, out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        self.0.rebuild_derived(out)?;
+        self.1.rebuild_derived(out)?;
+        self.2.rebuild_derived(out)
     }
 }
 
@@ -630,6 +661,10 @@ impl<K: Saved + Ord, V: Saved> Saved for BTreeMap<K, V> {
             }
         }
         Ok(out)
+    }
+
+    fn rebuild_derived(&mut self, out: &mut crate::rebuild::Rebuilt) -> Result<(), crate::rebuild::RebuildError> {
+        self.values_mut().try_for_each(|v| v.rebuild_derived(out))
     }
 }
 
@@ -781,8 +816,9 @@ mod tests {
     }
 
     impl Indexed {
-        fn reindex(&mut self) {
+        fn reindex(&mut self) -> u64 {
             self.positive = (0_u32..).zip(&self.rows).filter(|(_, v)| **v > 0).map(|(i, _)| i).collect();
+            u64::try_from(self.positive.len()).unwrap()
         }
     }
 
@@ -798,8 +834,10 @@ mod tests {
         let outer = Outer { inner };
         let mut back: Outer = read(&write(|w| outer.save(w)), Saved::load);
         assert!(back.inner.positive.is_empty(), "left out of the save");
-        back.rebuild_skipped();
+        let mut rebuilt = crate::rebuild::Rebuilt::default();
+        back.rebuild_derived(&mut rebuilt).unwrap();
         assert_eq!(back, outer, "rebuilt through the saved field that holds it, equal to what was saved");
+        assert_eq!(rebuilt.stores(), [("Indexed.positive", 2)]);
     }
 
     #[test]

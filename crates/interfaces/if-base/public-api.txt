@@ -9,7 +9,7 @@ pub const fn if_base::products::IndustryId::new(u16) -> if_base::products::Indus
 pub struct if_base::products::ProductDecl  // used by: sys-tec
 pub if_base::products::ProductDecl::delivered_at_once: bool  // used by: phx-core, sys-tec
 pub if_base::products::ProductDecl::extracts: phx_num::missing::Missing<u16>  // used by: phx-core, sys-tec
-pub if_base::products::ProductDecl::id: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub if_base::products::ProductDecl::id: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub if_base::products::ProductDecl::industry: if_base::products::IndustryId  // used by: phx-core, sys-frm, sys-tec
 pub if_base::products::ProductDecl::storable: bool  // used by: phx-core, phx-world, sys-frm, sys-tec
 pub if_base::products::ProductDecl::unit: phx_num::qty::UnitId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
@@ -53,7 +53,7 @@ pub struct if_base::OccFamily(pub u8)  // used by: sys-tec
 pub struct if_base::ProductDecl  // used by: sys-tec
 pub if_base::ProductDecl::delivered_at_once: bool  // used by: phx-core, sys-tec
 pub if_base::ProductDecl::extracts: phx_num::missing::Missing<u16>  // used by: phx-core, sys-tec
-pub if_base::ProductDecl::id: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub if_base::ProductDecl::id: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub if_base::ProductDecl::industry: if_base::products::IndustryId  // used by: phx-core, sys-frm, sys-tec
 pub if_base::ProductDecl::storable: bool  // used by: phx-core, phx-world, sys-frm, sys-tec
 pub if_base::ProductDecl::unit: phx_num::qty::UnitId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec

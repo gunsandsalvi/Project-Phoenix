@@ -26,22 +26,22 @@ impl phx_geo::climate::Marginal
 pub fn phx_geo::climate::Marginal::moments(&self) -> (f64, f64)  // used by: phx-cli, phx-core
 pub fn phx_geo::climate::Marginal::quantile(&self, f64) -> f64  // used by: phx-core, phx-rand
 impl phx_store::save::Saved for phx_geo::climate::Marginal where f64: phx_store::save::Saved
-pub fn phx_geo::climate::Marginal::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::climate::Marginal::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::climate::Marginal::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::climate::Marginal::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
 pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8  // used by: if-credit, if-labour, phx-cli, phx-core, phx-ledger, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
 pub fn phx_geo::climate::ClimateRule::latitude_tenths(&self, u32) -> i64
-pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> phx_geo::climate::ClimateRule  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> phx_geo::climate::ClimateRule  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub struct phx_geo::climate::RegionClimate
 pub phx_geo::climate::RegionClimate::months: alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>  // used by: if-state, phx-cli, phx-core, phx-ledger, phx-world, sys-lab, sys-soc
 pub phx_geo::climate::RegionClimate::persistence: alloc::vec::Vec<f64>  // used by: phx-cli
 impl phx_geo::climate::RegionClimate
 pub fn phx_geo::climate::RegionClimate::month(&self, u8) -> &[phx_geo::climate::Marginal]  // used by: phx-cli, phx-core, phx-id, phx-ledger, phx-store, phx-world
 impl phx_store::save::Saved for phx_geo::climate::RegionClimate where alloc::vec::Vec<alloc::vec::Vec<phx_geo::climate::Marginal>>: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved
-pub fn phx_geo::climate::RegionClimate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::climate::RegionClimate::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::climate::RegionClimate::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::climate::RegionClimate::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::climate::RegionClimate::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::climate::RegionClimate::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_geo::climate::exp_of(&phx_core::register::PrimDecl) -> u32
 pub fn phx_geo::climate::regions(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map) -> alloc::vec::Vec<phx_geo::climate::RegionClimate>  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
 pub fn phx_geo::climate::scaled(i64, u32) -> f64  // used by: phx-core, phx-ledger, phx-num, phx-rand, sys-dem
@@ -64,17 +64,17 @@ pub enum phx_geo::deposits::Opening  // used by: phx-check, phx-core, phx-rand, 
 pub phx_geo::deposits::Opening::Finite(u64)  // used by: phx-world
 pub phx_geo::deposits::Opening::Unbounded  // used by: phx-world
 impl phx_store::save::Saved for phx_geo::deposits::Opening where u64: phx_store::save::Saved
-pub fn phx_geo::deposits::Opening::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::deposits::Opening::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::deposits::Opening::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::deposits::Opening::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::deposits::Deposit
 pub phx_geo::deposits::Deposit::grade: phx_num::fixed::Fixed<3>  // used by: phx-core, phx-world, sys-gds
 pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub phx_geo::deposits::Deposit::resource: u16  // used by: phx-world
 pub phx_geo::deposits::Deposit::tile: phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::deposits::Deposit where phx_id::ids::TileId: phx_store::save::Saved, u16: phx_store::save::Saved, phx_num::fixed::Fixed<3>: phx_store::save::Saved, phx_geo::deposits::Opening: phx_store::save::Saved
-pub fn phx_geo::deposits::Deposit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::deposits::Deposit::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::deposits::Deposit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::deposits::Deposit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::deposits::Deposit::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::deposits::Deposit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::deposits::DEPOSITS_STREAM: phx_core::streams::StreamDecl
 pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>  // used by: phx-core, phx-market, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_geo::deposits::everywhere(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> alloc::vec::Vec<alloc::string::String>
@@ -90,9 +90,9 @@ pub fn phx_geo::distance::ZoneDistances::between(&self, phx_id::ids::ZoneId, phx
 pub fn phx_geo::distance::ZoneDistances::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub fn phx_geo::distance::ZoneDistances::measure(&phx_geo::generate::Map) -> phx_geo::distance::ZoneDistances  // used by: phx-check, phx-fin, phx-obs
 impl phx_store::save::Saved for phx_geo::distance::ZoneDistances where alloc::vec::Vec<(usize, usize)>: phx_store::save::Saved, alloc::vec::Vec<(usize, alloc::vec::Vec<u32>)>: phx_store::save::Saved
-pub fn phx_geo::distance::ZoneDistances::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::distance::ZoneDistances::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::distance::ZoneDistances::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::distance::ZoneDistances::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::distance::ZoneDistances::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::distance::ZoneDistances::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_geo::distance::dijkstra(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId) -> alloc::vec::Vec<core::option::Option<u64>>
 pub fn phx_geo::distance::path_length(&phx_geo::distance::Terrain<'_>, phx_id::ids::TileId, phx_id::ids::TileId) -> core::option::Option<u64>
 pub mod phx_geo::exposure  // used by: phx-cli, phx-val, sys-sta
@@ -106,9 +106,9 @@ pub struct phx_geo::generate::HeightCurve
 pub phx_geo::generate::HeightCurve::axis: alloc::vec::Vec<i64>  // used by: phx-core, sys-frt, sys-gds, sys-lab, sys-tec
 pub phx_geo::generate::HeightCurve::metres: alloc::vec::Vec<i64>  // used by: phx-market, phx-world
 impl phx_store::save::Saved for phx_geo::generate::HeightCurve where alloc::vec::Vec<i64>: phx_store::save::Saved
-pub fn phx_geo::generate::HeightCurve::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::generate::HeightCurve::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::generate::HeightCurve::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::generate::HeightCurve::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::generate::HeightCurve::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::generate::HeightCurve::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::generate::Map  // used by: phx-cli
 pub phx_geo::generate::Map::attempt: u64  // used by: phx-cli
 pub phx_geo::generate::Map::drains_to: alloc::vec::Vec<core::option::Option<phx_id::ids::TileId>>
@@ -123,9 +123,9 @@ pub phx_geo::generate::Map::zones: alloc::vec::Vec<phx_geo::tile::Zone>  // used
 impl phx_geo::generate::Map
 pub fn phx_geo::generate::Map::is_river(&self, usize) -> bool
 impl phx_store::save::Saved for phx_geo::generate::Map where phx_geo::grid::Grid: phx_store::save::Saved, alloc::vec::Vec<phx_geo::tile::Tile>: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved, alloc::vec::Vec<core::option::Option<phx_id::ids::TileId>>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, u32: phx_store::save::Saved, alloc::vec::Vec<phx_geo::tile::Zone>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::tile::Region>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::generate::Rejection>: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_geo::generate::Map::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::generate::Map::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::generate::Map::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::generate::Map::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::generate::Map::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::generate::Map::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::generate::MapParams
 pub phx_geo::generate::MapParams::cells_per_tile: u32
 pub phx_geo::generate::MapParams::land_heights: phx_geo::generate::HeightCurve
@@ -148,23 +148,23 @@ pub phx_geo::generate::MapParams::zone_max_tiles: u64  // used by: phx-cli
 pub phx_geo::generate::MapParams::zone_min_tiles: u64  // used by: phx-cli
 pub phx_geo::generate::MapParams::zones: u64  // used by: phx-cli, phx-fin, phx-world
 impl phx_store::save::Saved for phx_geo::generate::MapParams where u64: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved, phx_geo::relief::ReliefParams: phx_store::save::Saved, phx_geo::generate::HeightCurve: phx_store::save::Saved, alloc::vec::Vec<phx_geo::generate::TerrainClass>: phx_store::save::Saved, alloc::vec::Vec<u64>: phx_store::save::Saved
-pub fn phx_geo::generate::MapParams::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::generate::MapParams::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::generate::MapParams::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::generate::MapParams::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::generate::MapParams::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::generate::MapParams::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::generate::Rejection
 pub phx_geo::generate::Rejection::attempt: u64  // used by: phx-cli
 pub phx_geo::generate::Rejection::condition: alloc::string::String  // used by: phx-cli, phx-core, phx-world
 impl phx_store::save::Saved for phx_geo::generate::Rejection where u64: phx_store::save::Saved, alloc::string::String: phx_store::save::Saved
-pub fn phx_geo::generate::Rejection::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::generate::Rejection::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::generate::Rejection::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::generate::Rejection::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::generate::Rejection::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::generate::Rejection::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::generate::TerrainClass
 pub phx_geo::generate::TerrainClass::max_elevation_m: i16
 pub phx_geo::generate::TerrainClass::max_relief_m: u32
 impl phx_store::save::Saved for phx_geo::generate::TerrainClass where i16: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn phx_geo::generate::TerrainClass::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::generate::TerrainClass::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::generate::TerrainClass::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::generate::TerrainClass::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::generate::TerrainClass::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::generate::TerrainClass::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_geo::generate::generate(&phx_geo::generate::MapParams, &dyn core::ops::function::Fn(phx_geo::generate::ClimateInput) -> u8, &dyn core::ops::function::Fn(u64) -> phx_rand::draws::Draws) -> phx_geo::generate::Map
 pub fn phx_geo::generate::latitude_cycle(u32, u32) -> u32
 pub fn phx_geo::generate::sea_distance(&phx_geo::grid::Grid, &[bool]) -> alloc::vec::Vec<u64>
@@ -188,9 +188,9 @@ pub fn phx_geo::grid::Grid::seams(&self, phx_id::ids::TileId, phx_id::ids::TileI
 pub fn phx_geo::grid::Grid::tile(&self, usize) -> phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-world
 pub fn phx_geo::grid::Grid::xy(&self, phx_id::ids::TileId) -> (u32, u32)
 impl phx_store::save::Saved for phx_geo::grid::Grid where u32: phx_store::save::Saved
-pub fn phx_geo::grid::Grid::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::grid::Grid::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::grid::Grid::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::grid::Grid::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::grid::Grid::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::grid::Grid::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::grid::DIRECTIONS: usize  // used by: phx-cli
 pub fn phx_geo::grid::rounded_sqrt(u64) -> u64
 pub mod phx_geo::hazards  // used by: phx-cli, phx-core, phx-macros, phx-world
@@ -214,9 +214,9 @@ pub fn phx_geo::network::Network::bytes(&self) -> usize  // used by: phx-check, 
 pub fn phx_geo::network::Network::lengths(&self) -> phx_geo::network::Lengths  // used by: phx-world
 pub fn phx_geo::network::Network::route(&self, u16, phx_id::ids::ZoneId, phx_id::ids::ZoneId) -> core::option::Option<phx_geo::network::Route>  // used by: phx-world
 impl phx_store::save::Saved for phx_geo::network::Network where alloc::vec::Vec<phx_geo::network::Segment>: phx_store::save::Saved
-pub fn phx_geo::network::Network::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::network::Network::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::network::Network::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::network::Network::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::network::Network::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::network::Network::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::network::Route
 pub phx_geo::network::Route::metres: u64  // used by: phx-market, phx-world
 pub phx_geo::network::Route::mode: u16  // used by: phx-core, phx-market, phx-rand, phx-world
@@ -228,9 +228,9 @@ pub phx_geo::network::Segment::mode: u16  // used by: phx-core, phx-market, phx-
 pub phx_geo::network::Segment::to: phx_id::ids::ZoneId  // used by: phx-check, phx-core, phx-exec, phx-ledger, phx-market, phx-store, phx-world, sys-lab
 pub phx_geo::network::Segment::tonnes: u64  // used by: phx-world
 impl phx_store::save::Saved for phx_geo::network::Segment where phx_id::ids::ZoneId: phx_store::save::Saved, u16: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_geo::network::Segment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::network::Segment::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::network::Segment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::network::Segment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::network::Segment::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::network::Segment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::network::LAND: [u16; 2]  // used by: sys-tec
 pub const phx_geo::network::RAIL: u16
 pub const phx_geo::network::ROAD: u16
@@ -416,9 +416,9 @@ pub phx_geo::relief::ReliefParams::plates: u32
 pub phx_geo::relief::ReliefParams::roughness: f64
 pub phx_geo::relief::ReliefParams::warp: f64
 impl phx_store::save::Saved for phx_geo::relief::ReliefParams where u32: phx_store::save::Saved, u8: phx_store::save::Saved, f64: phx_store::save::Saved
-pub fn phx_geo::relief::ReliefParams::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::relief::ReliefParams::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::relief::ReliefParams::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::relief::ReliefParams::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::relief::ReliefParams::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::relief::ReliefParams::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_geo::relief::erode(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut [f64], &[bool], &[u64])
 pub fn phx_geo::relief::raw(&phx_geo::relief::ReliefParams, &phx_geo::grid::Grid, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<f64>  // used by: phx-core, phx-id, phx-ledger, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-tec
 pub fn phx_geo::relief::to_curve(&mut [f64], &[bool], &phx_geo::relief::Curve, f64)
@@ -444,9 +444,9 @@ pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
-pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::state::GeoState::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::state::GeoState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::state::HazardState
 pub phx_geo::state::HazardState::by_country: alloc::vec::Vec<alloc::vec::Vec<alloc::vec::Vec<phx_id::ids::TileId>>>  // used by: phx-cli, phx-world
 pub phx_geo::state::HazardState::event_kind: u16
@@ -455,9 +455,9 @@ pub phx_geo::state::HazardState::rate: alloc::vec::Vec<f64>  // used by: if-stat
 pub phx_geo::state::HazardState::severity: alloc::vec::Vec<(f64, f64)>
 pub phx_geo::state::HazardState::spread: alloc::vec::Vec<f64>  // used by: phx-ledger, phx-rand, phx-world, sys-dem
 impl phx_store::save::Saved for phx_geo::state::HazardState where u16: phx_store::save::Saved, alloc::vec::Vec<core::option::Option<u8>>: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved, alloc::vec::Vec<(f64, f64)>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<alloc::vec::Vec<phx_id::ids::TileId>>>: phx_store::save::Saved
-pub fn phx_geo::state::HazardState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::state::HazardState::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::state::HazardState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::state::HazardState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::state::HazardState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::state::HazardState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::state::MAP_PHASE: phx_core::streams::OpeningPhase  // used by: phx-world
 pub const phx_geo::state::MAP_STREAM: phx_core::streams::StreamDecl
 pub fn phx_geo::state::params(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment) -> core::result::Result<phx_geo::generate::MapParams, alloc::string::String>  // used by: phx-cli, phx-macros, phx-val, phx-world
@@ -474,9 +474,9 @@ pub mod phx_geo::tile  // used by: phx-check, phx-cli, phx-world
 pub struct phx_geo::tile::Region  // used by: phx-cli, phx-core, phx-exec, phx-id, phx-pop, phx-rand, phx-store, phx-world
 pub phx_geo::tile::Region::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-core, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_store::save::Saved for phx_geo::tile::Region where phx_id::ids::CountryId: phx_store::save::Saved
-pub fn phx_geo::tile::Region::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::tile::Region::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::tile::Region::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::tile::Region::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::tile::Region::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::tile::Region::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 #[repr(C)] pub struct phx_geo::tile::Tile
 pub phx_geo::tile::Tile::climate: u8  // used by: phx-cli, phx-world
 pub phx_geo::tile::Tile::elevation_m: i16
@@ -494,9 +494,9 @@ pub phx_geo::tile::Zone::centroid: phx_id::ids::TileId
 pub phx_geo::tile::Zone::region: phx_id::ids::RegionId  // used by: phx-cli, phx-exec, phx-fin, phx-market, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_geo::tile::Zone::tiles: u32  // used by: phx-cli, phx-world, sys-dem
 impl phx_store::save::Saved for phx_geo::tile::Zone where phx_id::ids::RegionId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn phx_geo::tile::Zone::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::tile::Zone::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::tile::Zone::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::tile::Zone::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::tile::Zone::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::tile::Zone::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::tile::LAND: u8  // used by: sys-tec
 pub const phx_geo::tile::WATER: u8
 pub mod phx_geo::weather  // used by: phx-cli, phx-world
@@ -577,6 +577,6 @@ pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
-pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::state::GeoState::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::state::GeoState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world

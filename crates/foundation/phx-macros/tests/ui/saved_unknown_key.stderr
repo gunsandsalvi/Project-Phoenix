@@ -1,4 +1,4 @@
-error: a saved field is marked `skip`, `skip, rebuild = path`, or not at all
+error: a saved field is marked `skip`, `skip, rebuild = path[, after = field]`, or not at all
  --> tests/ui/saved_unknown_key.rs:5:13
   |
 5 |     #[saved(keep)]

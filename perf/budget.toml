@@ -150,6 +150,16 @@ counter = "fin.daybuf.peak_mb"
 value = 128.1
 direction = "down"
 
+# The save contract (S1.162, 2026-09-30; `tools/bench.sh -F save`): the design point's 8.8 M party slots saved, read
+# back and passed through the load's rebuild pass, which finds nothing derived in them and takes under a microsecond.
+# The ratchet is the step's bound for the whole rebuild at a load, which the lists, the wheel, the agenda and the terms
+# index fill as their bases add their stores to the driver.
+
+[[ratchet]]
+counter = "fin.save.rebuild_ms"
+value = 190
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

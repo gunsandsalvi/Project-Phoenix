@@ -74,7 +74,7 @@ pub struct Core {
     /// The taxes arising, their collectors' debts and what was remitted.
     pub taxes: crate::core_taxes::Taxes,
     /// Each kind's collectors' family, by the kind's place: found among the families, never saved.
-    #[saved(skip, rebuild = Core::index_collectors)]
+    #[saved(skip, rebuild = Core::reindex_collectors)]
     pub(crate) collectors: Vec<Option<usize>>,
     /// The central banks' facilities, their positions' days, their income and the money they record owing.
     pub central: crate::core_central::Central,
@@ -153,19 +153,21 @@ pub struct Apportioned {
 
 impl Core {
     /// The kinds and families bound to their places among the core's.
-    fn bind_routes(&mut self) {
+    fn bind_routes(&mut self) -> u64 {
         self.bound = crate::bound::Bound::of(&self.names, &self.families);
+        phx_rand::float::len_u64(self.families.len())
     }
 
     /// A family opened on the core, and bound among the families the day routes by.
     pub(crate) fn add_family(&mut self, family: crate::core_day::DatedFamily) {
         self.families.push(family);
-        self.bind_routes();
+        self.bound = crate::bound::Bound::of(&self.names, &self.families);
     }
 
     /// A core read back has counted nothing of the run yet.
-    fn uncounted(&mut self) {
+    fn uncounted(&mut self) -> u64 {
         self.counts = RunCounts::default();
+        0
     }
 
     /// The build's declarations a core read back from a save holds by reference, bound again as its opening bound

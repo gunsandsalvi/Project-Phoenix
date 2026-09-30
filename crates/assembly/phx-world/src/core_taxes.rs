@@ -208,6 +208,12 @@ impl Core {
         self.collectors = collectors_index(&families, self.names.len());
     }
 
+    /// The collectors' index rebuilt after a load: its rows are the families it reads.
+    pub(crate) fn reindex_collectors(&mut self) -> u64 {
+        self.index_collectors();
+        phx_rand::float::len_u64(self.families.len())
+    }
+
     /// Each tax whose base's payment settled today made its collector's debt: added to the debt it owes for the base
     /// on the coming collection day, or a new one, and entered as its collector's tax; and the day's remittances
     /// counted.

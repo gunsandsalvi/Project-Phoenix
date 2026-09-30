@@ -28,8 +28,8 @@ pub phx_core::calendar::bizday::BusinessDayConvention::ModifiedPreceding
 pub phx_core::calendar::bizday::BusinessDayConvention::Preceding
 pub phx_core::calendar::bizday::BusinessDayConvention::Unadjusted  // used by: phx-cli
 impl phx_store::save::Saved for phx_core::calendar::bizday::BusinessDayConvention
-pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub mod phx_core::calendar::daycount  // used by: phx-ledger, phx-world, sys-dem
 pub enum phx_core::calendar::daycount::DayCount  // used by: phx-ledger, phx-world
 pub phx_core::calendar::daycount::DayCount::Act360
@@ -38,8 +38,8 @@ pub phx_core::calendar::daycount::DayCount::ActActIsda
 pub phx_core::calendar::daycount::DayCount::Thirty360Bond
 pub phx_core::calendar::daycount::DayCount::Thirty360E
 impl phx_store::save::Saved for phx_core::calendar::daycount::DayCount
-pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_core::calendar::daycount::actual_days(phx_id::day::Date, phx_id::day::Date) -> i64  // used by: phx-ledger, sys-dem
 pub fn phx_core::calendar::daycount::day_fraction(phx_id::day::Date, phx_id::day::Date, phx_core::calendar::daycount::DayCount) -> phx_num::rate::DayFraction  // used by: phx-ledger
 pub mod phx_core::calendar::period  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
@@ -47,8 +47,8 @@ pub enum phx_core::calendar::period::EndOfMonth  // used by: phx-ledger, phx-wor
 pub phx_core::calendar::period::EndOfMonth::Keep  // used by: sys-cap
 pub phx_core::calendar::period::EndOfMonth::Plain  // used by: phx-ledger, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
-pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::calendar::period::Period  // used by: phx-cli, phx-ledger, phx-val, phx-world
 impl phx_core::calendar::period::Period
 pub fn phx_core::calendar::period::Period::day_count(self) -> u16  // used by: phx-ledger
@@ -57,9 +57,9 @@ pub fn phx_core::calendar::period::Period::month_count(self) -> u16  // used by:
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-world, sys-lab, sys-soc
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-world, sys-sov
 impl phx_store::save::Saved for phx_core::calendar::period::Period where u16: phx_store::save::Saved
-pub fn phx_core::calendar::period::Period::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::period::Period::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::period::Period::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::period::Period::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::calendar::period::ScheduleDates  // used by: phx-ledger, phx-world
 pub phx_core::calendar::period::ScheduleDates::anchor: phx_id::day::Date  // used by: phx-geo, phx-ledger, phx-val, phx-world
 pub phx_core::calendar::period::ScheduleDates::convention: phx_core::calendar::bizday::BusinessDayConvention  // used by: phx-cli, phx-ledger, phx-world
@@ -70,9 +70,9 @@ impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
-pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::period::ScheduleDates::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::period::ScheduleDates::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_core::calendar::period::advance(phx_id::day::Date, phx_core::calendar::period::Period, u32, phx_core::calendar::period::EndOfMonth) -> phx_id::day::Date  // used by: phx-ledger
 pub mod phx_core::calendar::prims  // used by: phx-cli, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
 pub const phx_core::calendar::prims::CALENDAR: phx_core::register::PrimDecl  // used by: phx-check, phx-world
@@ -107,7 +107,7 @@ pub fn phx_core::calendar::rules::CountryRules::is_weekend(&self, phx_id::day::D
 pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result::Result<(), alloc::string::String>
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
-pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::calendar::rules::WeekendRule  // used by: phx-fin
 pub phx_core::calendar::rules::WeekendRule::days: alloc::vec::Vec<phx_id::day::Weekday>  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
@@ -145,8 +145,8 @@ pub struct phx_core::capacity::Capacity
 pub phx_core::capacity::Capacity::design_rows: u32
 pub phx_core::capacity::Capacity::growth_per_year: u32  // used by: phx-cli, phx-exec
 pub phx_core::capacity::Capacity::row_bytes: u32
-pub phx_core::capacity::Capacity::rows: u32  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
-pub phx_core::capacity::Capacity::store: &'static str  // used by: phx-cli, phx-exec, phx-fin, phx-obs, phx-pop, phx-store, phx-world
+pub phx_core::capacity::Capacity::rows: u32  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_core::capacity::Capacity::store: &'static str  // used by: phx-cli, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world
 pub const phx_core::capacity::AGENT_ROWS: u32  // used by: phx-world
 pub const phx_core::capacity::ARENA_WORDS: u32  // used by: phx-world
 pub const phx_core::capacity::EVENT_ROWS: u32  // used by: phx-world
@@ -230,18 +230,18 @@ pub phx_core::contribution::Adjustment::drawn: i128  // used by: phx-world, sys-
 pub phx_core::contribution::Adjustment::set: i128  // used by: phx-check, phx-cli, phx-exec, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem
 pub phx_core::contribution::Adjustment::what: alloc::string::String  // used by: phx-check, phx-cli, phx-num, phx-store, phx-world, sys-tec
 impl phx_store::save::Saved for phx_core::contribution::Adjustment where alloc::string::String: phx_store::save::Saved, i128: phx_store::save::Saved
-pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::Adjustment::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::Adjustment::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::contribution::Apportioned  // used by: phx-world
 pub phx_core::contribution::Apportioned::drawn: u64  // used by: phx-world, sys-dem
 pub phx_core::contribution::Apportioned::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
 pub phx_core::contribution::Apportioned::realised: u64  // used by: phx-cli, phx-world
 pub phx_core::contribution::Apportioned::stratum: alloc::string::String  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::Apportioned::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::Apportioned::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::contribution::GenReport
 pub phx_core::contribution::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
 pub phx_core::contribution::GenReport::agent_issuers: u64
@@ -258,9 +258,9 @@ pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyId) -> 
 pub fn phx_core::contribution::GenReport::new(core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>) -> phx_core::contribution::GenReport  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contribution::WriteRecord)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
-pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::GenReport::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::GenReport::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::contribution::Opening<'a>  // used by: phx-check, phx-geo, phx-rand, phx-world
 pub phx_core::contribution::Opening::attachments: &'a [(&'static str, alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>)]
 pub phx_core::contribution::Opening::books: &'a mut dyn core::any::Any  // used by: phx-cli, phx-fin, phx-world, sys-frt
@@ -278,7 +278,7 @@ pub fn phx_core::contribution::Opening<'_>::fmt(&self, &mut core::fmt::Formatter
 pub struct phx_core::contribution::OpeningCountry  // used by: if-labour, if-state, phx-ledger, phx-world, sys-bnk, sys-cb, sys-dem, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
 pub phx_core::contribution::OpeningCountry::derived: alloc::vec::Vec<(alloc::string::String, f64)>  // used by: phx-check, phx-ledger, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab
 pub phx_core::contribution::OpeningCountry::gdp: f64  // used by: phx-ledger, phx-world, sys-bnk
-pub phx_core::contribution::OpeningCountry::id: phx_id::ids::CountryId  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::contribution::OpeningCountry::id: phx_id::ids::CountryId  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::contribution::OpeningCountry::people: u64  // used by: phx-ledger, phx-world, sys-bnk, sys-dem
 pub phx_core::contribution::OpeningCountry::regions: alloc::vec::Vec<(u32, alloc::vec::Vec<phx_id::ids::TileId>)>  // used by: phx-cli, phx-fin, phx-geo, phx-world, sys-dem
 pub phx_core::contribution::OpeningCountry::sites: alloc::vec::Vec<phx_id::ids::TileId>  // used by: phx-check, phx-world
@@ -296,9 +296,9 @@ pub phx_core::contribution::WriteRecord::counter: phx_id::ids::PartyId  // used 
 pub phx_core::contribution::WriteRecord::identity: u64
 pub phx_core::contribution::WriteRecord::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::WriteRecord::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::WriteRecord::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_core::contribution::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::contribution::CONTRACTS: phx_core::streams::OpeningPhase  // used by: phx-world
 pub const phx_core::contribution::DECLARATIONS: phx_core::streams::OpeningPhase
@@ -316,7 +316,7 @@ pub fn phx_core::contribution::Contribution::reads(&self) -> &'static [&'static 
 pub fn phx_core::contribution::Contribution::writes(&self) -> &'static [&'static str]  // used by: phx-check
 pub trait phx_core::contribution::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::contribution::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)  // used by: phx-cli, phx-world
-pub fn phx_core::contribution::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>  // used by: phx-cli, phx-store, phx-world
+pub fn phx_core::contribution::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>  // used by: phx-cli, phx-fin, phx-store, phx-world
 pub fn phx_core::contribution::ReportSink::write(&mut self, &phx_core::contribution::WriteRecord)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store, phx-world
 pub fn phx_core::contribution::apportion(u64, &[u64], &mut phx_rand::draws::Draws) -> alloc::vec::Vec<u64>  // used by: phx-cli, phx-geo, phx-world, sys-dem
 pub fn phx_core::contribution::opening_subject(u32, u32) -> phx_rand::key::Subject  // used by: phx-world, sys-bnk, sys-cb, sys-dem
@@ -344,8 +344,8 @@ pub phx_core::decisions::TakenIn::Household  // used by: phx-world, sys-bnk, sys
 pub phx_core::decisions::TakenIn::Office(alloc::string::String)  // used by: phx-world
 pub phx_core::decisions::TakenIn::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
 impl phx_store::save::Saved for phx_core::decisions::TakenIn where alloc::string::String: phx_store::save::Saved
-pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::decisions::DecisionKind
 pub phx_core::decisions::DecisionKind::concerns: alloc::vec::Vec<u8>
 pub phx_core::decisions::DecisionKind::mode: phx_core::decisions::Mode  // used by: phx-geo, phx-market, phx-rand, phx-world
@@ -359,7 +359,7 @@ pub fn phx_core::decisions::DecisionKinds::check(&self, &[&str], &[phx_core::kin
 pub fn phx_core::decisions::DecisionKinds::position(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
-pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::decisions::DecisionPointDecl<I, O>  // used by: if-labour, if-state, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub phx_core::decisions::DecisionPointDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -381,17 +381,17 @@ pub phx_core::decisions::Prefs::window: phx_num::missing::Missing<u16>  // used 
 impl phx_core::decisions::Prefs
 pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs  // used by: phx-store, phx-world
 impl phx_store::save::Saved for phx_core::decisions::Prefs where phx_num::missing::Missing<u16>: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved
-pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::Prefs::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::decisions::Prefs::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::decisions::QueuedIntent  // used by: phx-world
 pub phx_core::decisions::QueuedIntent::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
 pub phx_core::decisions::QueuedIntent::point: &'static str  // used by: phx-check, phx-cli, phx-fin, phx-num, phx-rand, phx-world, sys-frm, sys-hh, sys-lab
 pub phx_core::decisions::QueuedIntent::words: alloc::vec::Vec<i64>  // used by: phx-check, phx-exec, phx-fin, phx-pop, phx-rand, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
-pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::QueuedIntent::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::decisions::QueuedIntent::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_core::decisions::DECISIONS: phx_core::register::PrimDecl  // used by: phx-world
 pub trait phx_core::decisions::QueuedPayload: core::marker::Sized  // used by: phx-world
 pub fn phx_core::decisions::QueuedPayload::decode(&[i64]) -> core::option::Option<Self>
@@ -410,7 +410,7 @@ pub struct phx_core::events::Event  // used by: phx-cli, phx-ledger
 pub phx_core::events::Event::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_core::events::Event::details: alloc::vec::Vec<(u64, i64)>  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::events::Event::develops_from: phx_num::missing::Missing<u64>  // used by: phx-world
-pub phx_core::events::Event::id: u64  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::events::Event::id: u64  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::events::Event::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::events::Event::public: bool  // used by: phx-cli, phx-world, sys-frm, sys-tec
 pub phx_core::events::Event::subjects: alloc::vec::Vec<u64>  // used by: phx-cli, phx-geo, phx-rand, phx-world
@@ -434,7 +434,7 @@ pub fn phx_core::events::EventStore<B>::publish(&mut self, phx_id::day::Day, &dy
 pub fn phx_core::events::EventStore<B>::record(&mut self, phx_core::events::NewEvent<'_>) -> u64  // used by: phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::events::EventStore<B> where phx_store::column::Column<EventRow, B>: phx_store::save::Saved, phx_store::arena::ChunkArena<B>: phx_store::save::Saved
 pub fn phx_core::events::EventStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
-pub fn phx_core::events::EventStore<B>::rebuild_skipped(&mut self)  // used by: phx-world
+pub fn phx_core::events::EventStore<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
 pub fn phx_core::events::EventStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
 pub struct phx_core::events::NewEvent<'a>  // used by: phx-world
 pub phx_core::events::NewEvent::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
@@ -491,7 +491,7 @@ pub phx_core::facts::ReprClass::Individual
 pub phx_core::facts::ReprClass::Key  // used by: phx-check, phx-num, phx-store
 pub phx_core::facts::ReprClass::Position  // used by: phx-pop
 pub phx_core::facts::ReprClass::Profile
-pub enum phx_core::facts::Writer  // used by: phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub enum phx_core::facts::Writer  // used by: phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub phx_core::facts::Writer::Placeholder  // used by: phx-macros
 pub phx_core::facts::Writer::Placeholder::retired_by: &'static str
 pub phx_core::facts::Writer::System(&'static str)  // used by: phx-check, phx-exec, phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -524,16 +524,16 @@ pub phx_core::findings::FindingOwner::Run  // used by: phx-cli, phx-world
 pub phx_core::findings::FindingOwner::Table(phx_id::ids::TableId)  // used by: phx-check, phx-fin, phx-market, phx-store
 pub phx_core::findings::FindingOwner::Tile(phx_id::ids::TileId)  // used by: phx-cli, phx-geo, phx-id, phx-rand, phx-world
 impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved, phx_id::ids::TableId: phx_store::save::Saved
-pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::findings::Unit  // used by: phx-macros, phx-world
 pub phx_core::findings::Unit::Count  // used by: phx-geo, phx-market, phx-num, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax
 pub phx_core::findings::Unit::Days  // used by: phx-fin
 pub phx_core::findings::Unit::Money(phx_num::money::Ccy)  // used by: phx-ledger, phx-market, phx-num, phx-store, phx-val, phx-world
 pub phx_core::findings::Unit::Qty(phx_num::qty::UnitId)  // used by: phx-ledger, phx-num, phx-store
 impl phx_store::save::Saved for phx_core::findings::Unit where phx_num::money::Ccy: phx_store::save::Saved, phx_num::qty::UnitId: phx_store::save::Saved
-pub fn phx_core::findings::Unit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::Unit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::Unit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::Unit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::findings::Finding  // used by: phx-world
 pub phx_core::findings::Finding::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::findings::Finding::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
@@ -543,9 +543,9 @@ pub phx_core::findings::Finding::owner: phx_core::findings::FindingOwner  // use
 pub phx_core::findings::Finding::size: i128  // used by: if-state, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
 pub phx_core::findings::Finding::unit: phx_core::findings::Unit  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 impl phx_store::save::Saved for phx_core::findings::Finding where &'static str: phx_store::save::Saved, phx_core::findings::FindingOwner: phx_store::save::Saved, i128: phx_store::save::Saved, phx_core::findings::Unit: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::string::String: phx_store::save::Saved
-pub fn phx_core::findings::Finding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::Finding::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::Finding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::Finding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::findings::Findings  // used by: phx-world
 impl phx_core::findings::Findings
 pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-world, sys-dem, sys-frm, sys-tec
@@ -553,11 +553,11 @@ pub fn phx_core::findings::Findings::extend(&mut self, phx_core::findings::Findi
 pub fn phx_core::findings::Findings::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_core::findings::Findings::len(&self) -> usize  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
-pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)  // used by: phx-cli, phx-fin, phx-macros, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::Vec<phx_core::findings::Finding>: phx_store::save::Saved
-pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::Findings::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::Findings::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub mod phx_core::flows  // used by: phx-cli, phx-fin, phx-market, phx-obs, phx-val, phx-world
 pub struct phx_core::flows::Credit  // used by: phx-world
 pub phx_core::flows::Credit::amount: i64  // used by: phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
@@ -571,9 +571,9 @@ pub fn phx_core::flows::Denom::money(u8) -> phx_core::flows::Denom  // used by: 
 pub fn phx_core::flows::Denom::unit(self) -> u16  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 pub fn phx_core::flows::Denom::units(u16) -> phx_core::flows::Denom  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
 impl phx_store::save::Saved for phx_core::flows::Denom where u16: phx_store::save::Saved
-pub fn phx_core::flows::Denom::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::flows::Denom::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::flows::Denom::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::flows::Denom::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::flows::Denom::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::flows::Denom::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::flows::Flow  // used by: phx-fin, phx-market, phx-val, phx-world
 pub phx_core::flows::Flow::amount: i64  // used by: phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
 pub phx_core::flows::Flow::denomination: phx_core::flows::Denom  // used by: phx-fin, phx-market, phx-world
@@ -583,9 +583,9 @@ pub phx_core::flows::Flow::payer: phx_id::ids::PartyKey  // used by: phx-cli, ph
 pub phx_core::flows::Flow::reason: u8  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
 pub phx_core::flows::Flow::source: u32  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::flows::Flow where phx_id::ids::PartyKey: phx_store::save::Saved, i64: phx_store::save::Saved, u32: phx_store::save::Saved, phx_core::flows::Denom: phx_store::save::Saved, u8: phx_store::save::Saved
-pub fn phx_core::flows::Flow::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::flows::Flow::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::flows::Flow::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::flows::Flow::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::flows::Flow::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::flows::Flow::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::flows::FlowBufs  // used by: phx-fin, phx-world
 impl phx_core::flows::FlowBufs
 pub fn phx_core::flows::FlowBufs::chunks_mut(&mut self) -> &mut [alloc::vec::Vec<phx_core::flows::Flow>]  // used by: phx-exec, phx-fin, phx-market, phx-store, phx-world
@@ -625,8 +625,8 @@ pub enum phx_core::goods::Held  // used by: phx-cli, phx-pop, phx-world
 pub phx_core::goods::Held::Capital(phx_core::units::Class)  // used by: phx-cli, phx-world
 pub phx_core::goods::Held::Good(phx_core::goods::Good)  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_core::goods::Held where phx_core::goods::Good: phx_store::save::Saved, phx_core::units::Class: phx_store::save::Saved
-pub fn phx_core::goods::Held::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::Held::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::Held::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::Held::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::goods::Carriage  // used by: phx-world
 pub phx_core::goods::Carriage::arrived: u8  // used by: phx-cli, phx-world
 pub phx_core::goods::Carriage::shipped: u8  // used by: phx-world
@@ -635,9 +635,9 @@ pub phx_core::goods::Good::grade: u8  // used by: phx-geo, phx-world, sys-gds
 pub phx_core::goods::Good::product: u16  // used by: if-base, phx-check, phx-cli, phx-fin, phx-market, phx-num, phx-world, sys-frm, sys-tec
 pub phx_core::goods::Good::zone: u32  // used by: phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world
 impl phx_store::save::Saved for phx_core::goods::Good where u16: phx_store::save::Saved, u8: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn phx_core::goods::Good::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::Good::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::goods::Good::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::Good::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::Good::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::goods::Good::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::goods::Holding  // used by: phx-macros, phx-world
 pub phx_core::goods::Holding::committed: i64  // used by: phx-cli, phx-store, phx-world
 pub phx_core::goods::Holding::cost: i64  // used by: phx-cli, phx-exec, phx-geo, phx-market, phx-val, phx-world, sys-cap, sys-frm, sys-gds
@@ -648,9 +648,9 @@ pub phx_core::goods::Holding::units: i64  // used by: phx-check, phx-cli, phx-ex
 impl phx_core::goods::Holding
 pub fn phx_core::goods::Holding::free(&self) -> i64  // used by: phx-store, phx-world, sys-frm, sys-hh
 impl phx_store::save::Saved for phx_core::goods::Holding where u16: phx_store::save::Saved, u32: phx_store::save::Saved, i64: phx_store::save::Saved
-pub fn phx_core::goods::Holding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::Holding::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::goods::Holding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::Holding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::Holding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::goods::Holding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::goods::Shipment  // used by: phx-world
 pub phx_core::goods::Shipment::arrives: u32  // used by: phx-world
 pub phx_core::goods::Shipment::carrier: phx_id::ids::PartyKey  // used by: phx-cli, phx-market, phx-world
@@ -659,9 +659,9 @@ pub phx_core::goods::Shipment::owner: phx_id::ids::PartyKey  // used by: phx-che
 pub phx_core::goods::Shipment::to: u16  // used by: phx-check, phx-exec, phx-geo, phx-ledger, phx-market, phx-store, phx-world, sys-lab
 pub phx_core::goods::Shipment::units: i64  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
 impl phx_store::save::Saved for phx_core::goods::Shipment where phx_id::ids::PartyKey: phx_store::save::Saved, u16: phx_store::save::Saved, u32: phx_store::save::Saved, i64: phx_store::save::Saved
-pub fn phx_core::goods::Shipment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::Shipment::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::goods::Shipment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::Shipment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::Shipment::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::goods::Shipment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::goods::Shipments  // used by: phx-world
 impl phx_core::goods::Shipments
 pub fn phx_core::goods::Shipments::arrive(&mut self, phx_id::day::Day, &mut phx_core::goods::Stocks, phx_core::goods::Carriage, &mut alloc::vec::Vec<phx_core::flows::Flow>)  // used by: phx-world
@@ -675,9 +675,9 @@ pub fn phx_core::goods::Shipments::overdue(&self, phx_id::day::Day) -> usize  //
 pub fn phx_core::goods::Shipments::pass(&mut self, phx_id::ids::PartyKey, phx_id::ids::PartyKey)  // used by: phx-exec, phx-geo, phx-world
 pub fn phx_core::goods::Shipments::shrink(&mut self, phx_id::ids::PartyKey, u16, i64)
 impl phx_store::save::Saved for phx_core::goods::Shipments where alloc::vec::Vec<phx_core::goods::Shipment>: phx_store::save::Saved, alloc::vec::Vec<bool>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved, phx_core::wheel::DueWheel: phx_store::save::Saved
-pub fn phx_core::goods::Shipments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::Shipments::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::goods::Shipments::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::Shipments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::Shipments::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::goods::Shipments::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::goods::Short
 pub phx_core::goods::Short::asked: i64  // used by: phx-world, sys-dem, sys-lab, sys-sov
 pub phx_core::goods::Short::held: i64  // used by: phx-cli, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-frm
@@ -695,9 +695,9 @@ pub fn phx_core::goods::Stocks::receive(&mut self, phx_id::ids::PartyKey, u16, (
 pub fn phx_core::goods::Stocks::succeed(&mut self, phx_id::ids::PartyKey, phx_id::ids::PartyKey)  // used by: phx-world, sys-dem
 pub fn phx_core::goods::Stocks::totals(&self) -> alloc::vec::Vec<i128>  // used by: phx-world, sys-dem
 impl phx_store::save::Saved for phx_core::goods::Stocks where alloc::vec::Vec<phx_core::goods::Holding>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved
-pub fn phx_core::goods::Stocks::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::Stocks::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::goods::Stocks::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::Stocks::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::Stocks::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::goods::Stocks::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::goods::UnitIds  // used by: phx-world
 impl phx_core::goods::UnitIds
 pub fn phx_core::goods::UnitIds::find(&self, phx_core::goods::Held) -> core::option::Option<u16>  // used by: phx-acct, phx-check, phx-cli, phx-fin, phx-macros, phx-obs, phx-rand, phx-world, sys-dem, sys-lab
@@ -706,9 +706,9 @@ pub fn phx_core::goods::UnitIds::is_empty(&self) -> bool  // used by: phx-check,
 pub fn phx_core::goods::UnitIds::len(&self) -> usize  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_core::goods::UnitIds::unit(&mut self, phx_core::goods::Held) -> u16  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 impl phx_store::save::Saved for phx_core::goods::UnitIds where alloc::vec::Vec<phx_core::goods::Held>: phx_store::save::Saved, alloc::vec::Vec<(phx_core::goods::Held, u16)>: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<core::option::Option<u16>>>: core::default::Default, usize: core::default::Default
-pub fn phx_core::goods::UnitIds::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::goods::UnitIds::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::goods::UnitIds::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::goods::UnitIds::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::goods::UnitIds::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::goods::UnitIds::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_core::goods::NATURE: phx_id::ids::PartyKey  // used by: phx-market, phx-world
 pub fn phx_core::goods::breaks(&[i128], &[i128], &[i128]) -> alloc::vec::Vec<(u16, i128, i128)>  // used by: phx-cli, phx-world
 pub fn phx_core::goods::nature_net<'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::flows::Flow>) -> alloc::vec::Vec<i128>  // used by: phx-world
@@ -905,7 +905,7 @@ pub mod phx_core::register  // used by: phx-check, phx-cli, phx-macros, phx-mark
 pub use phx_core::register::Missing  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-geo, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub mod phx_core::register::forms  // used by: phx-world
 pub struct phx_core::register::forms::FormDecl
-pub phx_core::register::forms::FormDecl::id: alloc::string::String  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::register::forms::FormDecl::id: alloc::string::String  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::register::forms::FormDecl::owner: alloc::string::String  // used by: phx-check, phx-cli, phx-geo, phx-store, phx-world
 pub phx_core::register::forms::FormDecl::reason: alloc::string::String  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
 pub phx_core::register::forms::FormDecl::source: phx_core::register::Source  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-store, phx-world
@@ -920,18 +920,18 @@ pub phx_core::register::limit::Binding::day: phx_id::day::Day  // used by: if-st
 pub phx_core::register::limit::Binding::excess: i128  // used by: if-state, phx-world, sys-sov
 pub phx_core::register::limit::Binding::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
-pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::register::limit::Binding::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::register::limit::Binding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::register::limit::Bindings
 impl phx_core::register::limit::Bindings
 pub fn phx_core::register::limit::Bindings::append(&mut self, phx_core::register::limit::Bindings)  // used by: phx-pop, phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_  // used by: phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
 impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
-pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::register::limit::Bindings::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::register::limit::Bindings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::register::limit::Bindings::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::register::limit::Bindings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::register::limit::Bound<T>  // used by: phx-world
 impl<T: core::marker::Copy> phx_core::register::limit::Bound<T>
 pub fn phx_core::register::limit::Bound<T>::excess(&self) -> T  // used by: phx-world
@@ -978,14 +978,14 @@ pub fn phx_core::register::profile::JointProfile::correlation(&self, usize, usiz
 pub fn phx_core::register::profile::JointProfile::index(&self, &str) -> core::option::Option<usize>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
-pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::profile::Moments
 pub phx_core::register::profile::Moments::cov: alloc::vec::Vec<f64>
 pub phx_core::register::profile::Moments::mean: alloc::vec::Vec<f64>  // used by: phx-cli, phx-geo, phx-val, phx-world, sys-dem, sys-lab
 pub struct phx_core::register::profile::Pinned  // used by: phx-world
 pub phx_core::register::profile::Pinned::index: usize  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
-pub phx_core::register::profile::Pinned::part: u8  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-world, sys-lab
+pub phx_core::register::profile::Pinned::part: u8  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-store, phx-world, sys-lab
 pub struct phx_core::register::profile::ProfileValue  // used by: phx-rand
 pub phx_core::register::profile::ProfileValue::countries: u32  // used by: phx-cli, phx-geo, phx-world, sys-cap, sys-dem, sys-frm, sys-hh, sys-lab, sys-tec
 pub phx_core::register::profile::ProfileValue::mean: i64  // used by: phx-cli, phx-geo, phx-val, phx-world, sys-dem, sys-lab
@@ -1124,12 +1124,12 @@ pub fn phx_core::register::values::Distribution::draw(&self, &mut phx_rand::draw
 pub fn phx_core::register::values::Distribution::mean(&self) -> f64  // used by: phx-cli, phx-geo, phx-val, phx-world, sys-dem, sys-lab
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
-pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::KindName(pub alloc::string::String)  // used by: phx-world, sys-dem
 impl phx_core::register::values::PrimType for phx_core::register::values::KindName
 pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
-pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::OutsideAxes
 pub struct phx_core::register::values::Partition  // used by: phx-val, sys-dem, sys-sta
@@ -1137,7 +1137,7 @@ pub phx_core::register::values::Partition::bounds: alloc::boxed::Box<[i64]>  // 
 pub phx_core::register::values::Partition::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
-pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::Table1  // used by: phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 impl phx_core::register::values::Table1
@@ -1147,16 +1147,16 @@ pub fn phx_core::register::values::Table1::max_over(&self, &[i64]) -> core::resu
 pub fn phx_core::register::values::Table1::values(&self) -> &[i64]  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
-pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::Table2  // used by: phx-geo, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-tec
 impl phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
 pub fn phx_core::register::values::Table2::columns(&self) -> &[i64]  // used by: phx-exec, phx-store, phx-world, sys-dem, sys-frm, sys-tec
-pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
-pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 #[repr(transparent)] pub struct phx_core::register::values::TypeId(_)
 impl phx_core::register::values::TypeId
@@ -1168,12 +1168,12 @@ pub fn phx_core::register::values::TypeSet::build(&phx_core::register::values::D
 pub fn phx_core::register::values::TypeSet::new(alloc::vec::Vec<phx_core::register::values::TypeShare>) -> core::result::Result<phx_core::register::values::TypeSet, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::register::values::TypeSet::types(&self) -> &[phx_core::register::values::TypeShare]  // used by: phx-macros, phx-val, phx-world, sys-dem, sys-frm, sys-hh
 pub struct phx_core::register::values::TypeShare
-pub phx_core::register::values::TypeShare::id: phx_core::register::values::TypeId  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::register::values::TypeShare::id: phx_core::register::values::TypeId  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::register::values::TypeShare::share_ppm: u32  // used by: sys-dem
 pub phx_core::register::values::TypeShare::value: i64  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
 pub trait phx_core::register::values::PrimType
 pub type phx_core::register::values::PrimType::Read<'a>  // used by: phx-store
-pub fn phx_core::register::values::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::PrimType::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounting::Permitted>
 pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
@@ -1193,59 +1193,59 @@ pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::read(&phx_core::regist
 pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::reads(phx_core::register::values::ValueType) -> bool  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
-pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
-pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
-pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
-pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::KindName
 pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
-pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
-pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
-pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
-pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_id::day::Date
 pub type phx_id::day::Date::Read<'a> = phx_id::day::Date  // used by: phx-store
-pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::money::Amount
 pub type phx_num::money::Amount::Read<'a> = phx_num::money::Amount  // used by: phx-store
-pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::points::PointTable
 pub type phx_num::points::PointTable::Read<'a> = &'a phx_num::points::PointTable  // used by: phx-store
-pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::Count
 pub type phx_num::qty::Count::Read<'a> = phx_num::qty::Count  // used by: phx-store
-pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::QtyRaw
 pub type phx_num::qty::QtyRaw::Read<'a> = phx_num::qty::QtyRaw  // used by: phx-store
-pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::rate::Rate
 pub type phx_num::rate::Rate::Read<'a> = phx_num::rate::Rate  // used by: phx-store
-pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl<const E: u8> phx_core::register::values::PrimType for phx_num::fixed::Fixed<E>
 pub type phx_num::fixed::Fixed<E>::Read<'a> = phx_num::fixed::Fixed<E>  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
@@ -1307,7 +1307,7 @@ impl<T> core::marker::Copy for phx_core::register::Prim<T>
 pub struct phx_core::register::PrimDecl  // used by: phx-geo, phx-macros, sys-cap, sys-dem, sys-frt, sys-gds
 pub phx_core::register::PrimDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::register::PrimDecl::decided_by: phx_num::missing::Missing<phx_core::register::RoleId>  // used by: phx-macros
-pub phx_core::register::PrimDecl::id: &'static str  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::register::PrimDecl::id: &'static str  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::register::PrimDecl::kind: phx_core::register::PrimKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::register::PrimDecl::period: phx_num::missing::Missing<phx_core::register::PrimPeriod>  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 pub phx_core::register::PrimDecl::scope: phx_core::register::Scope  // used by: phx-check, phx-exec, phx-macros
@@ -1415,7 +1415,7 @@ pub phx_core::spoilage::SpoilageDecl::clause: &'static str  // used by: if-base,
 pub phx_core::spoilage::SpoilageDecl::rates: fn(&phx_core::register::Register) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>  // used by: if-credit, phx-cli, phx-world, sys-bnk, sys-tax
 pub phx_core::spoilage::SpoilageDecl::visit: &'static str  // used by: phx-check
 pub fn phx_core::spoilage::lost(&[(i64, i64)], i64, f64, i64) -> core::option::Option<i64>  // used by: phx-world
-pub mod phx_core::store  // used by: phx-cli, phx-exec, phx-fin, phx-obs, phx-pop, phx-store, phx-world
+pub mod phx_core::store  // used by: phx-cli, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world
 pub struct phx_core::store::Accounts<B: phx_store::backing::Backing>  // used by: phx-world
 pub phx_core::store::Accounts::balance: phx_store::column::Column<i64, B>  // used by: phx-cli, phx-fin, phx-world
 pub phx_core::store::Accounts::bank: phx_store::column::Column<u32, B>  // used by: phx-cli, phx-fin, phx-world, sys-bnk
@@ -1424,7 +1424,7 @@ pub phx_core::store::Accounts::held: phx_store::column::Column<i64, B>  // used 
 pub phx_core::store::Accounts::pending: phx_store::column::Column<i64, B>  // used by: phx-check, phx-cli, phx-fin, phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::Accounts<B> where phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<i64, B>: phx_store::save::Saved
 pub fn phx_core::store::Accounts<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
-pub fn phx_core::store::Accounts<B>::rebuild_skipped(&mut self)  // used by: phx-world
+pub fn phx_core::store::Accounts<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
 pub fn phx_core::store::Accounts<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
 pub struct phx_core::store::CashLines<B: phx_store::backing::Backing>
 pub phx_core::store::CashLines::amounts: phx_store::column::Column<i64, B>  // used by: phx-world
@@ -1433,7 +1433,7 @@ pub phx_core::store::CashLines::received: alloc::vec::Vec<core::option::Option<u
 pub phx_core::store::CashLines::width: usize  // used by: phx-fin, phx-geo, phx-store, phx-val, phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::CashLines<B> where phx_store::column::Column<i64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, alloc::vec::Vec<core::option::Option<usize>>: phx_store::save::Saved
 pub fn phx_core::store::CashLines<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_core::store::CashLines<B>::rebuild_skipped(&mut self)
+pub fn phx_core::store::CashLines<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn phx_core::store::CashLines<B>::save(&self, &mut phx_store::save::Writer<'_>)
 pub struct phx_core::store::Family<R: phx_store::edges::Row, B: phx_store::backing::Backing>  // used by: phx-world, sys-dem
 pub phx_core::store::Family::edges: phx_store::edges::EdgeTable<R, B>  // used by: phx-cli, phx-fin, phx-geo, phx-obs, phx-store, phx-world, sys-hh, sys-tax
@@ -1451,7 +1451,7 @@ pub fn phx_core::store::Family<R, B>::save(&self, &mut phx_store::save::Writer<'
 pub struct phx_core::store::KindStore<B: phx_store::backing::Backing>  // used by: phx-world
 pub phx_core::store::KindStore::accounts: core::option::Option<phx_core::store::Accounts<B>>  // used by: phx-cli, phx-world, sys-bnk
 pub phx_core::store::KindStore::cash: core::option::Option<phx_core::store::CashLines<B>>  // used by: if-state, phx-world, sys-hh, sys-sov
-pub phx_core::store::KindStore::parties: phx_store::parties::Parties<B>  // used by: phx-cli, phx-obs, phx-store, phx-world
+pub phx_core::store::KindStore::parties: phx_store::parties::Parties<B>  // used by: phx-cli, phx-fin, phx-obs, phx-store, phx-world
 pub phx_core::store::KindStore::records: phx_store::column::Column<phx_num::missing::MaybeI64, B>  // used by: phx-cli
 pub phx_core::store::KindStore::stride: usize  // used by: phx-world
 impl<B: phx_store::backing::Backing> phx_core::store::KindStore<B>
@@ -1467,7 +1467,7 @@ pub fn phx_core::store::KindStore<B>::with_accounts(self, &mut phx_store::backin
 pub fn phx_core::store::KindStore<B>::with_cash(self, &mut phx_store::backing::AddressSpace, (u32, u32), usize, (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<core::option::Option<usize>>)) -> phx_core::store::KindStore<B>  // used by: phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindStore<B> where phx_store::parties::Parties<B>: phx_store::save::Saved, phx_store::column::Column<phx_num::missing::MaybeI64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
 pub fn phx_core::store::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::rebuild_skipped(&mut self)  // used by: phx-world
+pub fn phx_core::store::KindStore<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_core::store::KindStore<B>
 pub fn phx_core::store::KindStore<B>::bytes(&self) -> u64  // used by: phx-world
@@ -1646,18 +1646,18 @@ pub phx_core::units::Chain::efficiency: alloc::vec::Vec<f64>  // used by: phx-wo
 pub phx_core::units::Chain::leaving_per_year: f64  // used by: phx-world, sys-cap
 pub phx_core::units::Chain::value: alloc::vec::Vec<f64>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
 impl phx_store::save::Saved for phx_core::units::Chain where f64: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved
-pub fn phx_core::units::Chain::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::units::Chain::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::units::Chain::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::units::Chain::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::units::Chain::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::units::Chain::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::units::Class  // used by: phx-world
 pub phx_core::units::Class::band: u8  // used by: phx-cli, phx-ledger, phx-world, sys-dem, sys-lab
 pub phx_core::units::Class::condition: u8  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::units::Class::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::units::Class::zone: u32  // used by: phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world
 impl phx_store::save::Saved for phx_core::units::Class where u16: phx_store::save::Saved, u8: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn phx_core::units::Class::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::units::Class::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::units::Class::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::units::Class::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::units::Class::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::units::Class::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_core::units::capacity(&phx_core::goods::Stocks, &phx_core::goods::UnitIds, phx_id::ids::PartyKey, (u16, core::option::Option<u32>), &phx_core::units::Chain) -> f64  // used by: phx-check, phx-exec, phx-fin, phx-geo, phx-pop, phx-store, phx-world, sys-cap, sys-frm
 pub fn phx_core::units::issue_chain(&mut phx_core::goods::UnitIds, phx_core::units::Class, u8) -> alloc::vec::Vec<u16>  // used by: phx-world
 pub fn phx_core::units::wear<'a>((&mut phx_core::goods::Stocks, &phx_core::goods::UnitIds), phx_id::ids::PartyKey, impl core::ops::function::Fn(u16) -> core::option::Option<&'a phx_core::units::Chain>, (i64, i64), u8, &mut alloc::vec::Vec<phx_core::flows::Flow>)  // used by: phx-world, sys-cap
@@ -1681,9 +1681,9 @@ pub fn phx_core::wheel::DueWheel::schedule(&mut self, u32, phx_id::day::Day)  //
 pub fn phx_core::wheel::DueWheel::schedule_all(&mut self, &[u32], phx_id::day::Day)  // used by: phx-fin
 pub fn phx_core::wheel::DueWheel::take(&mut self, phx_id::day::Day, &mut alloc::vec::Vec<u32>, core::option::Option<&phx_exec::pool::Pool>)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
 impl phx_store::save::Saved for phx_core::wheel::DueWheel where phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<u32>>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::day::Day, u32)>: phx_store::save::Saved + core::default::Default, u32: phx_store::save::Saved, alloc::vec::Vec<(u32, u32)>: core::default::Default, alloc::vec::Vec<u32>: core::default::Default
-pub fn phx_core::wheel::DueWheel::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::wheel::DueWheel::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::wheel::DueWheel::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::wheel::DueWheel::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::wheel::DueWheel::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::wheel::DueWheel::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::ActsOn  // used by: phx-geo, phx-macros, phx-world
 pub phx_core::ActsOn::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
 pub phx_core::ActsOn::Holding  // used by: phx-macros, phx-world
@@ -1713,8 +1713,8 @@ pub phx_core::BusinessDayConvention::ModifiedPreceding
 pub phx_core::BusinessDayConvention::Preceding
 pub phx_core::BusinessDayConvention::Unadjusted  // used by: phx-cli
 impl phx_store::save::Saved for phx_core::calendar::bizday::BusinessDayConvention
-pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::bizday::BusinessDayConvention::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::bizday::BusinessDayConvention::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::CarryingBasis  // used by: phx-acct
 pub phx_core::CarryingBasis::AmortisedCost
 pub phx_core::CarryingBasis::CostLessDepreciation
@@ -1727,8 +1727,8 @@ pub phx_core::DayCount::ActActIsda
 pub phx_core::DayCount::Thirty360Bond
 pub phx_core::DayCount::Thirty360E
 impl phx_store::save::Saved for phx_core::calendar::daycount::DayCount
-pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::daycount::DayCount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::daycount::DayCount::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::Discretisation
 pub phx_core::Discretisation::EqualShares
 pub enum phx_core::DrawScheme  // used by: phx-geo, phx-macros
@@ -1738,8 +1738,8 @@ pub enum phx_core::EndOfMonth  // used by: phx-ledger, phx-world
 pub phx_core::EndOfMonth::Keep  // used by: sys-cap
 pub phx_core::EndOfMonth::Plain  // used by: phx-ledger, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::EndOfMonth
-pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::period::EndOfMonth::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::period::EndOfMonth::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::FactType  // used by: phx-macros
 pub phx_core::FactType::Count  // used by: phx-geo, phx-market, phx-num, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax
 pub phx_core::FactType::Day  // used by: if-state, phx-cli, phx-fin, phx-id, phx-ledger, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-sta
@@ -1800,8 +1800,8 @@ pub phx_core::FindingOwner::Run  // used by: phx-cli, phx-world
 pub phx_core::FindingOwner::Table(phx_id::ids::TableId)  // used by: phx-check, phx-fin, phx-market, phx-store
 pub phx_core::FindingOwner::Tile(phx_id::ids::TileId)  // used by: phx-cli, phx-geo, phx-id, phx-rand, phx-world
 impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved, phx_id::ids::TableId: phx_store::save::Saved
-pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::HeldFor  // used by: phx-acct
 pub phx_core::HeldFor::Collect  // used by: phx-check
 pub phx_core::HeldFor::Sell  // used by: sys-cap
@@ -2033,8 +2033,8 @@ pub phx_core::TakenIn::Household  // used by: phx-world, sys-bnk, sys-dem, sys-l
 pub phx_core::TakenIn::Office(alloc::string::String)  // used by: phx-world
 pub phx_core::TakenIn::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
 impl phx_store::save::Saved for phx_core::decisions::TakenIn where alloc::string::String: phx_store::save::Saved
-pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::decisions::TakenIn::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::decisions::TakenIn::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::Transform  // used by: phx-macros, phx-store
 pub phx_core::Transform::Identity
 pub phx_core::Transform::Log
@@ -2047,8 +2047,8 @@ pub phx_core::Unit::Days  // used by: phx-fin
 pub phx_core::Unit::Money(phx_num::money::Ccy)  // used by: phx-ledger, phx-market, phx-num, phx-store, phx-val, phx-world
 pub phx_core::Unit::Qty(phx_num::qty::UnitId)  // used by: phx-ledger, phx-num, phx-store
 impl phx_store::save::Saved for phx_core::findings::Unit where phx_num::money::Ccy: phx_store::save::Saved, phx_num::qty::UnitId: phx_store::save::Saved
-pub fn phx_core::findings::Unit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::Unit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::Unit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::Unit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::ValueType  // used by: phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
 pub phx_core::ValueType::Calendar  // used by: phx-fin, phx-ledger, phx-world
 pub phx_core::ValueType::CarryingBases
@@ -2087,7 +2087,7 @@ pub phx_core::WakeKind::KinkDay  // used by: sys-dem, sys-lab
 pub phx_core::WakeKind::Message  // used by: sys-bnk, sys-lab
 pub phx_core::WakeKind::PlayerIntent
 pub phx_core::WakeKind::Surprise  // used by: sys-frm
-pub enum phx_core::Writer  // used by: phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub enum phx_core::Writer  // used by: phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub phx_core::Writer::Placeholder  // used by: phx-macros
 pub phx_core::Writer::Placeholder::retired_by: &'static str
 pub phx_core::Writer::System(&'static str)  // used by: phx-check, phx-exec, phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -2096,9 +2096,9 @@ pub phx_core::Adjustment::drawn: i128  // used by: phx-world, sys-dem
 pub phx_core::Adjustment::set: i128  // used by: phx-check, phx-cli, phx-exec, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem
 pub phx_core::Adjustment::what: alloc::string::String  // used by: phx-check, phx-cli, phx-num, phx-store, phx-world, sys-tec
 impl phx_store::save::Saved for phx_core::contribution::Adjustment where alloc::string::String: phx_store::save::Saved, i128: phx_store::save::Saved
-pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::Adjustment::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::Adjustment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::Adjustment::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::AgentView<'a>  // used by: phx-world, sys-dem, sys-lab
 pub phx_core::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>  // used by: phx-cli, phx-geo, phx-world, sys-dem, sys-lab
@@ -2120,9 +2120,9 @@ pub phx_core::Apportioned::party: phx_id::ids::PartyId  // used by: phx-fin, phx
 pub phx_core::Apportioned::realised: u64  // used by: phx-cli, phx-world
 pub phx_core::Apportioned::stratum: alloc::string::String  // used by: phx-cli, phx-world
 impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::Apportioned::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::Apportioned::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::AttrDecl  // used by: if-pop, phx-pop, sys-bnk, sys-frm, sys-hh
 pub phx_core::AttrDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::AttrDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -2132,18 +2132,18 @@ pub phx_core::Binding::day: phx_id::day::Day  // used by: if-state, phx-check, p
 pub phx_core::Binding::excess: i128  // used by: if-state, phx-world, sys-sov
 pub phx_core::Binding::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
-pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::register::limit::Binding::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::register::limit::Binding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::Bindings
 impl phx_core::register::limit::Bindings
 pub fn phx_core::register::limit::Bindings::append(&mut self, phx_core::register::limit::Bindings)  // used by: phx-pop, phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_  // used by: phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
 impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
-pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::register::limit::Bindings::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::register::limit::Bindings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::register::limit::Bindings::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::register::limit::Bindings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::Bound<T>  // used by: phx-world
 impl<T: core::marker::Copy> phx_core::register::limit::Bound<T>
 pub fn phx_core::register::limit::Bound<T>::excess(&self) -> T  // used by: phx-world
@@ -2182,7 +2182,7 @@ pub fn phx_core::calendar::rules::CountryRules::is_weekend(&self, phx_id::day::D
 pub fn phx_core::calendar::rules::CountryRules::validate(&self) -> core::result::Result<(), alloc::string::String>
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
-pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::DataFile  // used by: phx-world
 pub phx_core::DataFile::country: phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
@@ -2201,7 +2201,7 @@ pub fn phx_core::decisions::DecisionKinds::check(&self, &[&str], &[phx_core::kin
 pub fn phx_core::decisions::DecisionKinds::position(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
-pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::DecisionMeta
 pub phx_core::DecisionMeta::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -2268,13 +2268,13 @@ pub fn phx_core::register::values::Distribution::draw(&self, &mut phx_rand::draw
 pub fn phx_core::register::values::Distribution::mean(&self) -> f64  // used by: phx-cli, phx-geo, phx-val, phx-world, sys-dem, sys-lab
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
-pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::Event  // used by: phx-cli, phx-ledger
 pub phx_core::Event::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_core::Event::details: alloc::vec::Vec<(u64, i64)>  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::Event::develops_from: phx_num::missing::Missing<u64>  // used by: phx-world
-pub phx_core::Event::id: u64  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::Event::id: u64  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::Event::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::Event::public: bool  // used by: phx-cli, phx-world, sys-frm, sys-tec
 pub phx_core::Event::subjects: alloc::vec::Vec<u64>  // used by: phx-cli, phx-geo, phx-rand, phx-world
@@ -2298,7 +2298,7 @@ pub fn phx_core::events::EventStore<B>::publish(&mut self, phx_id::day::Day, &dy
 pub fn phx_core::events::EventStore<B>::record(&mut self, phx_core::events::NewEvent<'_>) -> u64  // used by: phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::events::EventStore<B> where phx_store::column::Column<EventRow, B>: phx_store::save::Saved, phx_store::arena::ChunkArena<B>: phx_store::save::Saved
 pub fn phx_core::events::EventStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
-pub fn phx_core::events::EventStore<B>::rebuild_skipped(&mut self)  // used by: phx-world
+pub fn phx_core::events::EventStore<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
 pub fn phx_core::events::EventStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
 pub struct phx_core::EventsRule  // used by: phx-world
 impl phx_core::events_rule::EventsRule
@@ -2320,9 +2320,9 @@ pub phx_core::Finding::owner: phx_core::findings::FindingOwner  // used by: phx-
 pub phx_core::Finding::size: i128  // used by: if-state, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
 pub phx_core::Finding::unit: phx_core::findings::Unit  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 impl phx_store::save::Saved for phx_core::findings::Finding where &'static str: phx_store::save::Saved, phx_core::findings::FindingOwner: phx_store::save::Saved, i128: phx_store::save::Saved, phx_core::findings::Unit: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::string::String: phx_store::save::Saved
-pub fn phx_core::findings::Finding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::Finding::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::Finding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::Finding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::findings::Finding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::Findings  // used by: phx-world
 impl phx_core::findings::Findings
 pub fn phx_core::findings::Findings::all(&self) -> &[phx_core::findings::Finding]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-world, sys-dem, sys-frm, sys-tec
@@ -2330,11 +2330,11 @@ pub fn phx_core::findings::Findings::extend(&mut self, phx_core::findings::Findi
 pub fn phx_core::findings::Findings::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_core::findings::Findings::len(&self) -> usize  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_core::findings::Findings::of_family<'a>(&'a self, &'a str) -> impl core::iter::traits::iterator::Iterator<Item = &'a phx_core::findings::Finding> + 'a
-pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub fn phx_core::findings::Findings::record(&mut self, phx_core::findings::Finding)  // used by: phx-cli, phx-fin, phx-macros, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::findings::Findings where alloc::vec::Vec<phx_core::findings::Finding>: phx_store::save::Saved
-pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::findings::Findings::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::findings::Findings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::findings::Findings::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::findings::Findings::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::GenReport
 pub phx_core::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Adjustment>
 pub phx_core::GenReport::agent_issuers: u64
@@ -2351,9 +2351,9 @@ pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyId) -> 
 pub fn phx_core::contribution::GenReport::new(core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>) -> phx_core::contribution::GenReport  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contribution::WriteRecord)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
-pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::GenReport::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::GenReport::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::HazardDecl  // used by: phx-geo, phx-macros
 pub phx_core::HazardDecl::acts_on: phx_core::hazards::ActsOn  // used by: phx-geo, phx-macros, phx-world
 pub phx_core::HazardDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -2388,7 +2388,7 @@ pub fn phx_core::register::profile::JointProfile::correlation(&self, usize, usiz
 pub fn phx_core::register::profile::JointProfile::index(&self, &str) -> core::option::Option<usize>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
-pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::KindDecl  // used by: phx-macros, phx-world
 pub phx_core::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -2442,7 +2442,7 @@ pub fn phx_core::contribution::Opening<'_>::fmt(&self, &mut core::fmt::Formatter
 pub struct phx_core::OpeningCountry  // used by: if-labour, if-state, phx-ledger, phx-world, sys-bnk, sys-cb, sys-dem, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
 pub phx_core::OpeningCountry::derived: alloc::vec::Vec<(alloc::string::String, f64)>  // used by: phx-check, phx-ledger, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab
 pub phx_core::OpeningCountry::gdp: f64  // used by: phx-ledger, phx-world, sys-bnk
-pub phx_core::OpeningCountry::id: phx_id::ids::CountryId  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::OpeningCountry::id: phx_id::ids::CountryId  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::OpeningCountry::people: u64  // used by: phx-ledger, phx-world, sys-bnk, sys-dem
 pub phx_core::OpeningCountry::regions: alloc::vec::Vec<(u32, alloc::vec::Vec<phx_id::ids::TileId>)>  // used by: phx-cli, phx-fin, phx-geo, phx-world, sys-dem
 pub phx_core::OpeningCountry::sites: alloc::vec::Vec<phx_id::ids::TileId>  // used by: phx-check, phx-world
@@ -2466,9 +2466,9 @@ pub fn phx_core::calendar::period::Period::month_count(self) -> u16  // used by:
 pub fn phx_core::calendar::period::Period::months(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-world, sys-lab, sys-soc
 pub fn phx_core::calendar::period::Period::weeks(u16) -> core::option::Option<phx_core::calendar::period::Period>  // used by: if-state, phx-world, sys-sov
 impl phx_store::save::Saved for phx_core::calendar::period::Period where u16: phx_store::save::Saved
-pub fn phx_core::calendar::period::Period::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::period::Period::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::period::Period::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::period::Period::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::calendar::period::Period::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::Permitted  // used by: phx-acct
 pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBasis>  // used by: phx-acct, phx-cli, phx-fin, phx-world
 pub phx_core::Permitted::form: alloc::string::String  // used by: phx-acct, phx-macros, phx-world
@@ -2497,7 +2497,7 @@ pub fn phx_core::schedule::Phase::within(phx_core::calendar::period::Period, u16
 pub struct phx_core::PhysicalToken(_)
 pub struct phx_core::Pinned  // used by: phx-world
 pub phx_core::Pinned::index: usize  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
-pub phx_core::Pinned::part: u8  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-world, sys-lab
+pub phx_core::Pinned::part: u8  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-store, phx-world, sys-lab
 pub struct phx_core::PolicyValue<T>
 impl<T: core::marker::Copy> phx_core::policy::PolicyValue<T>
 pub fn phx_core::policy::PolicyValue<T>::announce(&mut self, phx_id::ids::SystemCode, &phx_core::calendar::Calendar, phx_core::policy::Announcement<T>) -> core::result::Result<(), phx_core::policy::AnnounceRefused>
@@ -2529,9 +2529,9 @@ pub phx_core::Prefs::window: phx_num::missing::Missing<u16>  // used by: phx-val
 impl phx_core::decisions::Prefs
 pub const phx_core::decisions::Prefs::NONE: phx_core::decisions::Prefs  // used by: phx-store, phx-world
 impl phx_store::save::Saved for phx_core::decisions::Prefs where phx_num::missing::Missing<u16>: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved
-pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::Prefs::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::decisions::Prefs::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::Prim<T>  // used by: phx-acct, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 impl<T: phx_core::register::values::PrimType> phx_core::register::Prim<T>
 pub fn phx_core::register::Prim<T>::decl(self, &phx_core::register::Register) -> &phx_core::register::PrimDecl  // used by: phx-acct, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -2543,7 +2543,7 @@ impl<T> core::marker::Copy for phx_core::register::Prim<T>
 pub struct phx_core::PrimDecl  // used by: phx-geo, phx-macros, sys-cap, sys-dem, sys-frt, sys-gds
 pub phx_core::PrimDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::PrimDecl::decided_by: phx_num::missing::Missing<phx_core::register::RoleId>  // used by: phx-macros
-pub phx_core::PrimDecl::id: &'static str  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::PrimDecl::id: &'static str  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::PrimDecl::kind: phx_core::register::PrimKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::PrimDecl::period: phx_num::missing::Missing<phx_core::register::PrimPeriod>  // used by: if-state, phx-cli, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
 pub phx_core::PrimDecl::scope: phx_core::register::Scope  // used by: phx-check, phx-exec, phx-macros
@@ -2573,9 +2573,9 @@ pub phx_core::QueuedIntent::party: phx_id::ids::PartyId  // used by: phx-fin, ph
 pub phx_core::QueuedIntent::point: &'static str  // used by: phx-check, phx-cli, phx-fin, phx-num, phx-rand, phx-world, sys-frm, sys-hh, sys-lab
 pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>  // used by: phx-check, phx-exec, phx-fin, phx-pop, phx-rand, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
-pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::decisions::QueuedIntent::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::decisions::QueuedIntent::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::RateFn  // used by: phx-geo
 pub phx_core::RateFn::axes: &'static [&'static str]  // used by: phx-geo, phx-macros
 pub phx_core::RateFn::changes: &'static [phx_core::hazards::RateChange]  // used by: phx-check, phx-cli, phx-geo, phx-macros, phx-val, phx-world
@@ -2621,9 +2621,9 @@ impl phx_core::calendar::period::ScheduleDates
 pub fn phx_core::calendar::period::ScheduleDates::days<'a>(&'a self, &'a phx_core::calendar::Calendar, u32) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::day::Day> + 'a  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
 pub fn phx_core::calendar::period::ScheduleDates::nth(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-world
 impl phx_store::save::Saved for phx_core::calendar::period::ScheduleDates where phx_id::day::Date: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_core::calendar::period::EndOfMonth: phx_store::save::Saved, phx_core::calendar::bizday::BusinessDayConvention: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved
-pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::calendar::period::ScheduleDates::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::calendar::period::ScheduleDates::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::calendar::period::ScheduleDates::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::calendar::period::ScheduleDates::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::SetupValue  // used by: phx-world, sys-dem
 pub phx_core::SetupValue::derived: &'static str  // used by: phx-check, phx-ledger, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab
 pub phx_core::SetupValue::prim: &'static phx_core::register::PrimDecl  // used by: phx-acct, phx-geo, phx-macros, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -2664,16 +2664,16 @@ pub fn phx_core::register::values::Table1::max_over(&self, &[i64]) -> core::resu
 pub fn phx_core::register::values::Table1::values(&self) -> &[i64]  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
-pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::Table2  // used by: phx-geo, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-tec
 impl phx_core::register::values::Table2
 pub fn phx_core::register::values::Table2::at(&self, i64, i64) -> core::result::Result<i64, phx_core::register::values::OutsideAxes>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
 pub fn phx_core::register::values::Table2::columns(&self) -> &[i64]  // used by: phx-exec, phx-store, phx-world, sys-dem, sys-frm, sys-tec
-pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub fn phx_core::register::values::Table2::rows(&self) -> &[i64]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
-pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::TermsToken(_)
 #[repr(transparent)] pub struct phx_core::TypeId(_)
@@ -2686,7 +2686,7 @@ pub fn phx_core::register::values::TypeSet::build(&phx_core::register::values::D
 pub fn phx_core::register::values::TypeSet::new(alloc::vec::Vec<phx_core::register::values::TypeShare>) -> core::result::Result<phx_core::register::values::TypeSet, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::register::values::TypeSet::types(&self) -> &[phx_core::register::values::TypeShare]  // used by: phx-macros, phx-val, phx-world, sys-dem, sys-frm, sys-hh
 pub struct phx_core::TypeShare
-pub phx_core::TypeShare::id: phx_core::register::values::TypeId  // used by: if-base, phx-check, phx-cli, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::TypeShare::id: phx_core::register::values::TypeId  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::TypeShare::share_ppm: u32  // used by: sys-dem
 pub phx_core::TypeShare::value: i64  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
 pub struct phx_core::WearDecl
@@ -2705,9 +2705,9 @@ pub phx_core::WriteRecord::counter: phx_id::ids::PartyId  // used by: phx-check,
 pub phx_core::WriteRecord::identity: u64
 pub phx_core::WriteRecord::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_core::contribution::WriteRecord::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
-pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::contribution::WriteRecord::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_core::BALANCES: phx_core::streams::OpeningPhase
 pub const phx_core::CALENDAR: phx_core::register::PrimDecl  // used by: phx-check, phx-world
 pub const phx_core::CONTRACTS: phx_core::streams::OpeningPhase  // used by: phx-world
@@ -2760,7 +2760,7 @@ pub fn phx_core::PopProcess::outcome(&self, &phx_core::register::Register, &phx_
 pub fn phx_core::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &phx_core::pop_process::Person) -> f64  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 pub trait phx_core::PrimType
 pub type phx_core::PrimType::Read<'a>  // used by: phx-store
-pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::PrimType::read(&phx_core::register::values::PrimValue) -> core::option::Option<Self::Read>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::PrimType::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for alloc::vec::Vec<phx_core::accounting::Permitted>
 pub type alloc::vec::Vec<phx_core::accounting::Permitted>::Read<'a> = &'a alloc::vec::Vec<phx_core::accounting::Permitted>  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
@@ -2780,59 +2780,59 @@ pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::read(&phx_core::regist
 pub fn alloc::vec::Vec<phx_core::products::ProductEntry>::reads(phx_core::register::values::ValueType) -> bool  // used by: if-base, if-credit, if-labour, if-state, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 impl phx_core::register::values::PrimType for phx_core::calendar::rules::CountryRules
 pub type phx_core::calendar::rules::CountryRules::Read<'a> = &'a phx_core::calendar::rules::CountryRules  // used by: phx-store
-pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::calendar::rules::CountryRules::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::calendar::rules::CountryRules>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::calendar::rules::CountryRules::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::decisions::DecisionKinds
 pub type phx_core::decisions::DecisionKinds::Read<'a> = &'a phx_core::decisions::DecisionKinds  // used by: phx-store
-pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::decisions::DecisionKinds::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::decisions::DecisionKinds>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::decisions::DecisionKinds::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::profile::JointProfile
 pub type phx_core::register::profile::JointProfile::Read<'a> = &'a phx_core::register::profile::JointProfile  // used by: phx-store
-pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::profile::JointProfile::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::profile::JointProfile>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::profile::JointProfile::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Distribution
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
-pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::KindName
 pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
-pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
-pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Partition::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table1
 pub type phx_core::register::values::Table1::Read<'a> = &'a phx_core::register::values::Table1  // used by: phx-store
-pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table1::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table1>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table1::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Table2
 pub type phx_core::register::values::Table2::Read<'a> = &'a phx_core::register::values::Table2  // used by: phx-store
-pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::Table2::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Table2>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Table2::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_id::day::Date
 pub type phx_id::day::Date::Read<'a> = phx_id::day::Date  // used by: phx-store
-pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_id::day::Date::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_id::day::Date>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_id::day::Date::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::money::Amount
 pub type phx_num::money::Amount::Read<'a> = phx_num::money::Amount  // used by: phx-store
-pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::money::Amount::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::money::Amount>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::money::Amount::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::points::PointTable
 pub type phx_num::points::PointTable::Read<'a> = &'a phx_num::points::PointTable  // used by: phx-store
-pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::points::PointTable::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_num::points::PointTable>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::points::PointTable::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::Count
 pub type phx_num::qty::Count::Read<'a> = phx_num::qty::Count  // used by: phx-store
-pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::qty::Count::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::qty::Count::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::qty::QtyRaw
 pub type phx_num::qty::QtyRaw::Read<'a> = phx_num::qty::QtyRaw  // used by: phx-store
-pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::qty::QtyRaw::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::qty::QtyRaw>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::qty::QtyRaw::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_num::rate::Rate
 pub type phx_num::rate::Rate::Read<'a> = phx_num::rate::Rate  // used by: phx-store
-pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_num::rate::Rate::read(&phx_core::register::values::PrimValue) -> core::option::Option<phx_num::rate::Rate>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_num::rate::Rate::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl<const E: u8> phx_core::register::values::PrimType for phx_num::fixed::Fixed<E>
 pub type phx_num::fixed::Fixed<E>::Read<'a> = phx_num::fixed::Fixed<E>  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
@@ -2856,7 +2856,7 @@ impl phx_core::decisions::QueuedPayload for usize
 pub fn usize::decode(&[i64]) -> core::option::Option<usize>
 pub trait phx_core::ReportSink: core::fmt::Debug + core::marker::Send + core::marker::Sync
 pub fn phx_core::ReportSink::apportioned(&mut self, &phx_core::contribution::Apportioned)  // used by: phx-cli, phx-world
-pub fn phx_core::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>  // used by: phx-cli, phx-store, phx-world
+pub fn phx_core::ReportSink::finish(alloc::boxed::Box<Self>) -> core::result::Result<(), alloc::string::String>  // used by: phx-cli, phx-fin, phx-store, phx-world
 pub fn phx_core::ReportSink::write(&mut self, &phx_core::contribution::WriteRecord)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store, phx-world
 pub trait phx_core::StreamDef  // used by: phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
 pub const phx_core::StreamDef::DECL: phx_core::streams::StreamDecl  // used by: phx-geo, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta

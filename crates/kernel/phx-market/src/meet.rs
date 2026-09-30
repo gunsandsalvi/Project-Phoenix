@@ -84,8 +84,9 @@ pub struct Meeting {
 
 impl Meeting {
     /// A meeting read back counts nothing yet.
-    fn uncounted(&mut self) {
+    fn uncounted(&mut self) -> u64 {
         self.weighed = 0;
+        0
     }
 
     /// The sales, chunk by chunk of stalls.

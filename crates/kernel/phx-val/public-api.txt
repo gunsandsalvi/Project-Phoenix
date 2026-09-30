@@ -36,7 +36,7 @@ pub phx_val::heuristic::Params::kappa: f64  // used by: phx-world, sys-hh
 pub phx_val::heuristic::Params::lambda: f64  // used by: phx-cli, phx-core, phx-rand, phx-world
 pub struct phx_val::heuristic::Seen  // used by: phx-world
 pub phx_val::heuristic::Seen::announced: phx_num::missing::Missing<phx_val::heuristics::Announced>  // used by: phx-core, phx-world
-pub phx_val::heuristic::Seen::before: f64  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-idx
+pub phx_val::heuristic::Seen::before: f64  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-idx
 pub phx_val::heuristic::Seen::horizon_end: phx_id::day::Day  // used by: phx-world
 pub phx_val::heuristic::Seen::last: f64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-world, sys-dem, sys-frm
 pub phx_val::heuristic::Seen::level: f64  // used by: phx-check, phx-core, phx-geo, phx-market, phx-store, phx-world, sys-dem, sys-lab

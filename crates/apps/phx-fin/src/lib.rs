@@ -19,6 +19,7 @@ pub mod kept_wheel;
 pub mod measure;
 pub mod refs;
 pub mod report;
+pub mod save;
 pub mod seed;
 #[path = "seed_tests.rs"]
 mod seed_tests;
@@ -131,6 +132,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(kept::Kept::default()),
     || Box::new(refs::Refs::default()),
     || Box::new(daybuf::DayBufs::default()),
+    || Box::new(save::Save::default()),
 ];
 
 /// What a run fills, runs and reads.

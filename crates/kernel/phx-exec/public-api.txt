@@ -33,7 +33,7 @@ pub phx_exec::counters::ExecCounters::barriers: u64  // used by: phx-cli
 pub phx_exec::counters::ExecCounters::buffer_bytes: u64
 pub phx_exec::counters::ExecCounters::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub phx_exec::counters::ExecCounters::chunks: u64  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
-pub phx_exec::counters::ExecCounters::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_exec::counters::ExecCounters::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub phx_exec::counters::ExecCounters::spun: u64  // used by: phx-cli
 pub phx_exec::counters::ExecCounters::visited: [u64; 32]
 pub phx_exec::counters::ExecCounters::wall_ns: u64  // used by: phx-cli, phx-fin, phx-world
@@ -129,7 +129,7 @@ pub phx_exec::probe::GatherRate::core_ns_per_row: u64
 pub phx_exec::probe::GatherRate::ns_per_row: u64
 pub phx_exec::probe::GatherRate::page_size: core::option::Option<u64>
 pub phx_exec::probe::GatherRate::prefetch: bool
-pub phx_exec::probe::GatherRate::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_exec::probe::GatherRate::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub fn phx_exec::probe::barrier(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, u64) -> core::option::Option<u64>
 pub fn phx_exec::probe::baseline(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock) -> phx_exec::probe::Baseline  // used by: phx-cli
 pub fn phx_exec::probe::core_rates(&dyn phx_exec::clock::Clock, u64) -> core::result::Result<alloc::vec::Vec<phx_exec::probe::CoreRate>, phx_exec::pool::PoolError>  // used by: phx-cli, phx-world
@@ -178,7 +178,7 @@ pub use phx_exec::stats::StoreStats  // used by: phx-cli, phx-core, phx-fin, phx
 pub struct phx_exec::stats::Sample  // used by: phx-cli, phx-core
 pub phx_exec::stats::Sample::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub phx_exec::stats::Sample::rows_ever: u64  // used by: phx-core, phx-store
-pub phx_exec::stats::Sample::rows_live: u64  // used by: phx-cli, phx-core, phx-store
+pub phx_exec::stats::Sample::rows_live: u64  // used by: phx-cli, phx-core, phx-fin, phx-store
 impl phx_exec::stats::Sample
 pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample  // used by: phx-check, phx-cli, phx-core, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_exec::stats::growth_per_year(&[u64]) -> core::option::Option<i128>  // used by: phx-cli, phx-core
@@ -188,8 +188,8 @@ impl phx_exec::tally::Tally
 pub fn phx_exec::tally::Tally::add(&self, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-obs, phx-store, phx-world
 pub fn phx_exec::tally::Tally::get(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl phx_store::save::Saved for phx_exec::tally::Tally
-pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub mod phx_exec::trace  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world
 pub enum phx_exec::trace::Mark<'a>  // used by: phx-cli
 pub phx_exec::trace::Mark::Begun(&'static str)  // used by: phx-cli
@@ -234,7 +234,7 @@ pub phx_exec::ExecCounters::barriers: u64  // used by: phx-cli
 pub phx_exec::ExecCounters::buffer_bytes: u64
 pub phx_exec::ExecCounters::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub phx_exec::ExecCounters::chunks: u64  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
-pub phx_exec::ExecCounters::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_exec::ExecCounters::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub phx_exec::ExecCounters::spun: u64  // used by: phx-cli
 pub phx_exec::ExecCounters::visited: [u64; 32]
 pub phx_exec::ExecCounters::wall_ns: u64  // used by: phx-cli, phx-fin, phx-world
@@ -290,8 +290,8 @@ impl phx_exec::tally::Tally
 pub fn phx_exec::tally::Tally::add(&self, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-obs, phx-store, phx-world
 pub fn phx_exec::tally::Tally::get(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl phx_store::save::Saved for phx_exec::tally::Tally
-pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub trait phx_exec::Clock: core::marker::Sync  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::Clock::now_ns(&self) -> u64  // used by: phx-cli, phx-fin, phx-world
 pub trait phx_exec::PerfHint
