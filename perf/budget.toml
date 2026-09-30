@@ -362,12 +362,42 @@ counter = "fin.apply.waves_h"
 value = 6
 direction = "down"
 
+# Declared sweeps (S1.171, 2026-10-01; `tools/bench.sh -F settle`): the design point's 5.92 M accounts as 16-byte rows
+# of balance and pending. Each business day's `pending` sweep (cycle one day) moves every pending amount into its
+# balance as one chunk plan on the pool: 2.8–3.4 ns of CPU an account against the step's 0.4, which is a phone's
+# sequential stream; here the rows' 95 MB read and written again is this machine's memory bandwidth, which a sweep
+# of the rows alone reaches at the same 2.5–3.5 ns. The audit's rolling slice (cycle `[resolution] audit_cycle_days`,
+# 60) recounts a sixtieth of the balances a day, 2.3–4.6 ns a row, run on the calling thread since a slice is below a
+# dispatch's worth. Each ratchet stands a quarter above the highest. The ledger counts no row that no declaration
+# explains, and a cursor is 8 bytes.
+
+[[ratchet]]
+counter = "fin.settle.sweep_ns"
+value = 4.3
+direction = "down"
+
+[[ratchet]]
+counter = "fin.settle.recount_ns"
+value = 5.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.settle.ledger_undeclared_rows"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.settle.cursor_bytes"
+value = 8
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
 # and 8 144 226 spin rounds a day, and a 4 MiB baseline. The counts stand a tenth above the measure, the spin, which
 # follows the machine's timing, a quarter. Spin is counted in rounds: its time is not read round by round. Rows visited
-# a day are counted by K-14's sweep ledger, and join at S1.171.
+# a day are counted by K-14's sweep ledger (S1.171), and join once the day runner counts each slot's rows into it
+# (S1.186).
 
 [[ratchet]]
 counter = "phx_budget.unit_cost_per_firm_day"

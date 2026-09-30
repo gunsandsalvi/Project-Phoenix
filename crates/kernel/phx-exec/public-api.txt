@@ -147,6 +147,7 @@ pub fn phx_exec::plan::ChunkPlan::cost(&self) -> u64  // used by: phx-cli, phx-c
 pub fn phx_exec::plan::ChunkPlan::cut(&mut self, u32, u64, u32)  // used by: phx-core, phx-geo, phx-val, phx-world
 pub fn phx_exec::plan::ChunkPlan::cut_rows(&mut self, usize, u64)  // used by: phx-world
 pub fn phx_exec::plan::ChunkPlan::cut_slots(&mut self, &[phx_id::ids::Slot], u64, u32)
+pub fn phx_exec::plan::ChunkPlan::cut_span(&mut self, core::ops::range::Range<u32>, u64, u32)
 pub fn phx_exec::plan::ChunkPlan::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_exec::plan::ChunkPlan::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_exec::plan::ChunkPlan::new(u32, u64, u32) -> phx_exec::plan::ChunkPlan  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -192,7 +193,7 @@ pub fn phx_exec::probe::baseline(&phx_exec::pool::Pool, &dyn phx_exec::clock::Cl
 pub fn phx_exec::probe::core_rates(&dyn phx_exec::clock::Clock, u64) -> core::result::Result<alloc::vec::Vec<phx_exec::probe::CoreRate>, phx_exec::pool::PoolError>  // used by: phx-cli, phx-world
 pub fn phx_exec::probe::filled_region(&phx_exec::pool::Pool, u64) -> phx_store::region::Region<u64>
 pub fn phx_exec::probe::gather(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>, u64, bool) -> core::option::Option<phx_exec::probe::GatherRate>  // used by: phx-cli, phx-fin, phx-world
-pub fn phx_exec::probe::sweep(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>) -> core::option::Option<u64>  // used by: phx-check
+pub fn phx_exec::probe::sweep(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>) -> core::option::Option<u64>  // used by: phx-check, phx-macros
 pub mod phx_exec::radix
 pub trait phx_exec::radix::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
 pub const phx_exec::radix::RadixKey::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
@@ -239,6 +240,56 @@ pub phx_exec::stats::Sample::rows_live: u64  // used by: phx-cli, phx-core, phx-
 impl phx_exec::stats::Sample
 pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample  // used by: phx-check, phx-cli, phx-core, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_exec::stats::growth_per_year(&[u64]) -> core::option::Option<i128>  // used by: phx-cli, phx-core
+pub mod phx_exec::sweep  // used by: phx-check, phx-macros
+pub enum phx_exec::sweep::Visit  // used by: phx-check
+pub phx_exec::sweep::Visit::Agenda  // used by: phx-core
+pub phx_exec::sweep::Visit::Apply  // used by: phx-fin
+pub phx_exec::sweep::Visit::Index  // used by: phx-core, phx-fin, phx-macros, phx-store
+pub phx_exec::sweep::Visit::Pass  // used by: phx-cli
+pub phx_exec::sweep::Visit::Sweep  // used by: phx-core
+pub enum phx_exec::sweep::When  // used by: phx-fin, phx-ledger
+pub phx_exec::sweep::When::OnReason  // used by: phx-fin
+pub phx_exec::sweep::When::Rolling  // used by: phx-fin
+pub phx_exec::sweep::When::Rolling::cycle: u32  // used by: phx-fin, sys-dem
+pub struct phx_exec::sweep::Cursor  // used by: phx-fin
+impl phx_exec::sweep::Cursor
+pub fn phx_exec::sweep::Cursor::cycle_start_day(&self) -> u32
+pub fn phx_exec::sweep::Cursor::from_slot(&self) -> u32
+pub fn phx_exec::sweep::Cursor::slice(&mut self, u32, u32, u32) -> core::ops::range::Range<u32>  // used by: phx-core, phx-fin, phx-store, phx-world
+pub fn phx_exec::sweep::Cursor::starting(u32) -> phx_exec::sweep::Cursor  // used by: phx-fin
+impl phx_store::save::Saved for phx_exec::sweep::Cursor where u32: phx_store::save::Saved
+pub fn phx_exec::sweep::Cursor::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_exec::sweep::Cursor::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_exec::sweep::Cursor::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_exec::sweep::DayVisits
+pub phx_exec::sweep::DayVisits::declared: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-num, phx-obs, phx-store, phx-val, phx-world
+pub phx_exec::sweep::DayVisits::following: u64
+pub phx_exec::sweep::DayVisits::undeclared: u64  // used by: phx-fin, phx-world
+pub struct phx_exec::sweep::SweepDecl  // used by: phx-fin
+pub phx_exec::sweep::SweepDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_exec::sweep::SweepDecl::slot: usize  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
+pub phx_exec::sweep::SweepDecl::store: usize  // used by: phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world
+pub phx_exec::sweep::SweepDecl::when: phx_exec::sweep::When  // used by: phx-cli, phx-fin, phx-ledger, phx-macros
+pub struct phx_exec::sweep::SweepLedger  // used by: phx-fin
+impl phx_exec::sweep::SweepLedger
+pub fn phx_exec::sweep::SweepLedger::at(&self, (usize, usize), phx_exec::sweep::Visit) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
+pub fn phx_exec::sweep::SweepLedger::close_day(&mut self) -> phx_exec::sweep::DayVisits  // used by: phx-core, phx-fin, phx-store, phx-world
+pub fn phx_exec::sweep::SweepLedger::count(&mut self, (usize, usize), phx_exec::sweep::Visit, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub fn phx_exec::sweep::SweepLedger::day(&self) -> phx_exec::sweep::DayVisits  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
+pub fn phx_exec::sweep::SweepLedger::new(usize, usize) -> phx_exec::sweep::SweepLedger  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_store::stats::StoreStats for phx_exec::sweep::SweepLedger
+pub fn phx_exec::sweep::SweepLedger::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_exec::sweep::SweepLedger::rows_ever(&self) -> u64  // used by: phx-core, phx-store
+pub fn phx_exec::sweep::SweepLedger::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-fin, phx-store
+pub struct phx_exec::sweep::SweepRun<T>  // used by: phx-fin
+impl<T: core::marker::Send + core::default::Default> phx_exec::sweep::SweepRun<T>
+pub fn phx_exec::sweep::SweepRun<T>::on_reason(&mut self, core::option::Option<&phx_exec::pool::Pool>, (&phx_exec::sweep::SweepDecl, phx_exec::sweep::Walk), bool, &mut phx_exec::sweep::SweepLedger, impl core::ops::function::Fn(core::ops::range::Range<u32>, &mut T) + core::marker::Sync) -> &[T]  // used by: phx-fin
+pub fn phx_exec::sweep::SweepRun<T>::rolling(&mut self, core::option::Option<&phx_exec::pool::Pool>, (&phx_exec::sweep::SweepDecl, &mut phx_exec::sweep::Cursor, phx_exec::sweep::Walk), u32, &mut phx_exec::sweep::SweepLedger, impl core::ops::function::Fn(core::ops::range::Range<u32>, &mut T) + core::marker::Sync) -> &[T]  // used by: phx-fin
+pub fn phx_exec::sweep::SweepRun<T>::rolling_mut<C: core::marker::Send>(&mut self, core::option::Option<&phx_exec::pool::Pool>, (&phx_exec::sweep::SweepDecl, &mut phx_exec::sweep::Cursor, phx_exec::sweep::Walk), u32, (&mut phx_exec::sweep::SweepLedger, &mut [C]), impl core::ops::function::Fn(core::ops::range::Range<u32>, &mut [C], &mut T) + core::marker::Sync) -> &[T]  // used by: phx-fin
+pub struct phx_exec::sweep::Walk  // used by: phx-fin
+pub phx_exec::sweep::Walk::cost_per_row: u64  // used by: phx-fin
+pub phx_exec::sweep::Walk::high_water: u32  // used by: phx-fin, phx-store, phx-world
+pub phx_exec::sweep::Walk::rows_per_chunk: u32  // used by: phx-core, phx-fin, phx-pop, phx-store
 pub mod phx_exec::tally  // used by: phx-world
 pub struct phx_exec::tally::Tally(_)  // used by: phx-world
 impl phx_exec::tally::Tally
@@ -291,6 +342,16 @@ pub fn phx_exec::traverse::for_plan<T: core::marker::Send>(core::option::Option<
 pub fn phx_exec::traverse::map_chunks<I: core::marker::Send, T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-core, phx-market, phx-world
 pub mod phx_exec::tree  // used by: phx-check, phx-fin, phx-rand, phx-store, sys-dem
 pub fn phx_exec::tree::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
+pub enum phx_exec::Visit  // used by: phx-check
+pub phx_exec::Visit::Agenda  // used by: phx-core
+pub phx_exec::Visit::Apply  // used by: phx-fin
+pub phx_exec::Visit::Index  // used by: phx-core, phx-fin, phx-macros, phx-store
+pub phx_exec::Visit::Pass  // used by: phx-cli
+pub phx_exec::Visit::Sweep  // used by: phx-core
+pub enum phx_exec::When  // used by: phx-fin, phx-ledger
+pub phx_exec::When::OnReason  // used by: phx-fin
+pub phx_exec::When::Rolling  // used by: phx-fin
+pub phx_exec::When::Rolling::cycle: u32  // used by: phx-fin, sys-dem
 pub struct phx_exec::ChunkPlan  // used by: phx-core, phx-fin, phx-world
 impl phx_exec::plan::ChunkPlan
 pub fn phx_exec::plan::ChunkPlan::chunk(&self, usize) -> core::ops::range::Range<usize>  // used by: phx-core, phx-fin, phx-market, phx-pop, phx-store, phx-world
@@ -298,11 +359,26 @@ pub fn phx_exec::plan::ChunkPlan::cost(&self) -> u64  // used by: phx-cli, phx-c
 pub fn phx_exec::plan::ChunkPlan::cut(&mut self, u32, u64, u32)  // used by: phx-core, phx-geo, phx-val, phx-world
 pub fn phx_exec::plan::ChunkPlan::cut_rows(&mut self, usize, u64)  // used by: phx-world
 pub fn phx_exec::plan::ChunkPlan::cut_slots(&mut self, &[phx_id::ids::Slot], u64, u32)
+pub fn phx_exec::plan::ChunkPlan::cut_span(&mut self, core::ops::range::Range<u32>, u64, u32)
 pub fn phx_exec::plan::ChunkPlan::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_exec::plan::ChunkPlan::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_exec::plan::ChunkPlan::new(u32, u64, u32) -> phx_exec::plan::ChunkPlan  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_exec::plan::ChunkPlan::of_rows(usize, u64) -> phx_exec::plan::ChunkPlan  // used by: phx-core, phx-fin
 pub fn phx_exec::plan::ChunkPlan::over_slots(&[phx_id::ids::Slot], u64, u32) -> phx_exec::plan::ChunkPlan
+pub struct phx_exec::Cursor  // used by: phx-fin
+impl phx_exec::sweep::Cursor
+pub fn phx_exec::sweep::Cursor::cycle_start_day(&self) -> u32
+pub fn phx_exec::sweep::Cursor::from_slot(&self) -> u32
+pub fn phx_exec::sweep::Cursor::slice(&mut self, u32, u32, u32) -> core::ops::range::Range<u32>  // used by: phx-core, phx-fin, phx-store, phx-world
+pub fn phx_exec::sweep::Cursor::starting(u32) -> phx_exec::sweep::Cursor  // used by: phx-fin
+impl phx_store::save::Saved for phx_exec::sweep::Cursor where u32: phx_store::save::Saved
+pub fn phx_exec::sweep::Cursor::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_exec::sweep::Cursor::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_exec::sweep::Cursor::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_exec::DayVisits
+pub phx_exec::DayVisits::declared: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-num, phx-obs, phx-store, phx-val, phx-world
+pub phx_exec::DayVisits::following: u64
+pub phx_exec::DayVisits::undeclared: u64  // used by: phx-fin, phx-world
 pub struct phx_exec::ExecCounters
 pub phx_exec::ExecCounters::barriers: u64  // used by: phx-cli, phx-fin
 pub phx_exec::ExecCounters::buffer_bytes: u64
@@ -366,6 +442,27 @@ pub phx_exec::Site::chunk: u32  // used by: phx-core, phx-fin, phx-market, phx-p
 pub phx_exec::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_exec::Site::handler: u16  // used by: phx-store
 pub phx_exec::Site::substep: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-world
+pub struct phx_exec::SweepDecl  // used by: phx-fin
+pub phx_exec::SweepDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_exec::SweepDecl::slot: usize  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
+pub phx_exec::SweepDecl::store: usize  // used by: phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world
+pub phx_exec::SweepDecl::when: phx_exec::sweep::When  // used by: phx-cli, phx-fin, phx-ledger, phx-macros
+pub struct phx_exec::SweepLedger  // used by: phx-fin
+impl phx_exec::sweep::SweepLedger
+pub fn phx_exec::sweep::SweepLedger::at(&self, (usize, usize), phx_exec::sweep::Visit) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
+pub fn phx_exec::sweep::SweepLedger::close_day(&mut self) -> phx_exec::sweep::DayVisits  // used by: phx-core, phx-fin, phx-store, phx-world
+pub fn phx_exec::sweep::SweepLedger::count(&mut self, (usize, usize), phx_exec::sweep::Visit, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub fn phx_exec::sweep::SweepLedger::day(&self) -> phx_exec::sweep::DayVisits  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
+pub fn phx_exec::sweep::SweepLedger::new(usize, usize) -> phx_exec::sweep::SweepLedger  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_store::stats::StoreStats for phx_exec::sweep::SweepLedger
+pub fn phx_exec::sweep::SweepLedger::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_exec::sweep::SweepLedger::rows_ever(&self) -> u64  // used by: phx-core, phx-store
+pub fn phx_exec::sweep::SweepLedger::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-fin, phx-store
+pub struct phx_exec::SweepRun<T>  // used by: phx-fin
+impl<T: core::marker::Send + core::default::Default> phx_exec::sweep::SweepRun<T>
+pub fn phx_exec::sweep::SweepRun<T>::on_reason(&mut self, core::option::Option<&phx_exec::pool::Pool>, (&phx_exec::sweep::SweepDecl, phx_exec::sweep::Walk), bool, &mut phx_exec::sweep::SweepLedger, impl core::ops::function::Fn(core::ops::range::Range<u32>, &mut T) + core::marker::Sync) -> &[T]  // used by: phx-fin
+pub fn phx_exec::sweep::SweepRun<T>::rolling(&mut self, core::option::Option<&phx_exec::pool::Pool>, (&phx_exec::sweep::SweepDecl, &mut phx_exec::sweep::Cursor, phx_exec::sweep::Walk), u32, &mut phx_exec::sweep::SweepLedger, impl core::ops::function::Fn(core::ops::range::Range<u32>, &mut T) + core::marker::Sync) -> &[T]  // used by: phx-fin
+pub fn phx_exec::sweep::SweepRun<T>::rolling_mut<C: core::marker::Send>(&mut self, core::option::Option<&phx_exec::pool::Pool>, (&phx_exec::sweep::SweepDecl, &mut phx_exec::sweep::Cursor, phx_exec::sweep::Walk), u32, (&mut phx_exec::sweep::SweepLedger, &mut [C]), impl core::ops::function::Fn(core::ops::range::Range<u32>, &mut [C], &mut T) + core::marker::Sync) -> &[T]  // used by: phx-fin
 pub struct phx_exec::Tally(_)  // used by: phx-world
 impl phx_exec::tally::Tally
 pub fn phx_exec::tally::Tally::add(&self, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-obs, phx-store, phx-world
@@ -373,6 +470,10 @@ pub fn phx_exec::tally::Tally::get(&self) -> u64  // used by: phx-check, phx-cli
 impl phx_store::save::Saved for phx_exec::tally::Tally
 pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_exec::Walk  // used by: phx-fin
+pub phx_exec::Walk::cost_per_row: u64  // used by: phx-fin
+pub phx_exec::Walk::high_water: u32  // used by: phx-fin, phx-store, phx-world
+pub phx_exec::Walk::rows_per_chunk: u32  // used by: phx-core, phx-fin, phx-pop, phx-store
 pub trait phx_exec::Clock: core::marker::Sync  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::Clock::now_ns(&self) -> u64  // used by: phx-cli, phx-fin, phx-world
 pub trait phx_exec::PerfHint

@@ -204,6 +204,37 @@ unsafe impl<T: Send> Send for Out<T> {}
 // SAFETY: as above; no position is read during the scatter.
 unsafe impl<T: Send> Sync for Out<T> {}
 
+/// A column shared by a plan's chunks, each taking only its own run of rows.
+struct Runs<C>(*mut C);
+
+// SAFETY: a plan's chunks are disjoint runs of the column, which outlives the dispatch, and each is taken once.
+unsafe impl<C: Send> Send for Runs<C> {}
+// SAFETY: as above; no chunk reads another's run.
+unsafe impl<C: Send> Sync for Runs<C> {}
+
+/// `f` on each of a plan's chunks with its own run of `column` and its result: a plan's bounds only rise, so its
+/// chunks' runs are disjoint, and each chunk index is run once, so each run is written by one thread. A plan past the
+/// column stops the run.
+pub(crate) fn for_plan_runs<C: Send, T: Send>(
+    pool: Option<&Pool>,
+    plan: &crate::plan::ChunkPlan,
+    (column, out): (&mut [C], &mut [T]),
+    f: impl Fn(std::ops::Range<usize>, &mut [C], &mut T) + Sync,
+) {
+    let end = plan.len().checked_sub(1).map(|last| plan.chunk(last).end);
+    if end.is_some_and(|e| e > column.len()) || out.len() != plan.len() {
+        violation!(clause = "TIME.6", "a plan's chunks past its column or its results", chunks = plan.len());
+    }
+    let base = Runs(column.as_mut_ptr());
+    let base = &base;
+    crate::traverse::run(pool.filter(|_| plan.cost() >= crate::consts::INLINE_BELOW), out, |k, o| {
+        let rows = plan.chunk(k);
+        // SAFETY: the run lies within the column, which the check above holds, and no other chunk's run meets it.
+        let run = unsafe { std::slice::from_raw_parts_mut(base.0.add(rows.start), rows.len()) };
+        f(rows, run, o);
+    });
+}
+
 /// A piece of the inputs the scatter counts and places as one: `len` items from `input`'s `offset`th on, running on
 /// into the inputs after, so the scatter's counts follow the items and not how many inputs hold them.
 #[derive(Clone, Copy, Debug)]

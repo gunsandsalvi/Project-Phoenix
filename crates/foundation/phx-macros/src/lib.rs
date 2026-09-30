@@ -6,6 +6,7 @@ mod markers;
 mod opening;
 mod pod;
 mod saved;
+mod sweep;
 
 use proc_macro::TokenStream;
 
@@ -27,6 +28,14 @@ pub fn absent_is_zero(args: TokenStream, item: TokenStream) -> TokenStream {
 #[proc_macro_attribute]
 pub fn opening(args: TokenStream, item: TokenStream) -> TokenStream {
     opening::expand(args.into(), item.into()).into()
+}
+
+/// Marks the function that runs a declared sweep — the few passes a clause needs over a whole store — naming its
+/// store and the cycle its slices share the store over, or the reason it runs on; the function is emitted unchanged,
+/// and the checks admit its walks.
+#[proc_macro_attribute]
+pub fn sweep(args: TokenStream, item: TokenStream) -> TokenStream {
+    sweep::expand(args.into(), item.into()).into()
 }
 
 /// Marks a function whose value is computed once a day per party; it is named only as what the day's cache computes,

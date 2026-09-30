@@ -1,0 +1,5 @@
+error: a sweep's reason is said in words
+ --> tests/ui/sweep_empty_reason.rs:3:36
+  |
+3 | #[sweep(store = accounts, reason = " ")]
+  |                                    ^^^

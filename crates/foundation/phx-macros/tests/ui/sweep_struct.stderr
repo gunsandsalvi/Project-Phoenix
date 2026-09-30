@@ -1,0 +1,5 @@
+error: `#[sweep]` marks only a function
+ --> tests/ui/sweep_struct.rs:4:1
+  |
+4 | struct Recount;
+  | ^^^^^^^^^^^^^^^

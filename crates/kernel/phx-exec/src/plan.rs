@@ -32,6 +32,13 @@ impl ChunkPlan {
         self.cut_groups(groups, u64::from(rows), cost_per_row);
     }
 
+    /// The plan cut again over the slots `span` of a table chunked by `rows_per_chunk` — a sweep's slice — its places
+    /// counted from the span's start: its chunks close only where a table chunk ends, so writes stay chunk-local.
+    pub fn cut_span(&mut self, span: Range<u32>, cost_per_row: u64, rows_per_chunk: u32) {
+        let runs = SpanRuns { at: span.start, end: span.end, rows_per_chunk };
+        self.cut_groups(runs, u64::from(span.end - span.start), cost_per_row);
+    }
+
     /// A plan over `rows` rows of no table — a buffer the day filled — each declaring `cost_per_row`: its chunks are
     /// even runs of rows, each at the cost a chunk closes at.
     #[must_use]
@@ -153,6 +160,30 @@ impl Iterator for SlotRuns<'_> {
         let run = rest.partition_point(|s| s.get() / self.rows_per_chunk == chunk);
         self.at += run;
         Some(crate::convert::to_u32(run))
+    }
+}
+
+/// A span of slots' runs within one table chunk each, as their counts.
+struct SpanRuns {
+    at: u32,
+    end: u32,
+    rows_per_chunk: u32,
+}
+
+impl Iterator for SpanRuns {
+    type Item = u32;
+
+    fn next(&mut self) -> Option<u32> {
+        if self.at >= self.end {
+            return None;
+        }
+        let to = match (self.at / self.rows_per_chunk + 1).checked_mul(self.rows_per_chunk) {
+            Some(chunk_end) if chunk_end < self.end => chunk_end,
+            _ => self.end,
+        };
+        let run = to - self.at;
+        self.at = to;
+        Some(run)
     }
 }
 

@@ -102,3 +102,18 @@ fn rows_of_no_table_cut_evenly_by_cost() {
     assert_eq!(ChunkPlan::of_rows(10, 0).len(), 1, "rows declaring no cost are one chunk");
     assert!(ChunkPlan::of_rows(0, 25).is_empty());
 }
+
+#[test]
+fn span_closes_at_table_chunks() {
+    // A slice from inside one table chunk to inside another: its chunks close only where a table chunk ends, and its
+    // places count from the slice's start.
+    let mut plan = ChunkPlan::default();
+    plan.cut_span(5_000..70_000, 40_000, 4096);
+    let got = chunks(&plan);
+    assert_eq!(got.iter().map(ExactSizeIterator::len).sum::<usize>(), 65_000);
+    for r in &got {
+        assert!((r.end + 5_000) % 4096 == 0 || r.end == 65_000, "{r:?} ends a table chunk");
+    }
+    plan.cut_span(9..9, 40_000, 4096);
+    assert!(plan.is_empty());
+}

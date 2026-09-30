@@ -19,6 +19,7 @@ pub mod radix;
 pub mod site;
 pub mod spec;
 pub mod stats;
+pub mod sweep;
 pub mod tally;
 pub mod trace;
 pub mod traverse;
@@ -39,6 +40,7 @@ pub use pool::{Pool, PoolError};
 pub use radix::{RadixKey, radix_sort};
 pub use site::Site;
 pub use spec::{PoolSpec, select_cores};
+pub use sweep::{Cursor, DayVisits, SweepDecl, SweepLedger, SweepRun, Visit, Walk, When};
 pub use tally::Tally;
 pub use traverse::{
     agenda_units, each_chunk, for_agenda, for_chunks, for_each_chunk, for_each_pair, for_plan, map_chunks,

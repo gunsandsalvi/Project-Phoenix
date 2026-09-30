@@ -1,7 +1,7 @@
 //! PC-96: nothing on a day's path in the world or a system walks a whole kind, table, account column or holding
 //! list except through the kernel's traversals — whose chunks are the unit and are counted — or a function declared
-//! a sweep with its cycle, so a day's cost follows its events, not the world's size. The kernel's own crates implement
-//! the traversals and are not read.
+//! a sweep with its cycle or reason, so a day's cost follows its events, not the world's size. The kernel's own
+//! crates implement the traversals and are not read.
 
 use syn::visit::{self, Visit};
 use syn::{
@@ -23,16 +23,17 @@ const BARE_WALKS: &[&str] = &["all", "totals", "money"];
 const WHOLE: &[&str] = &["len", "count", "rows"];
 /// The kernel's traversals: a walk inside what they are handed is theirs.
 const TRAVERSALS: &[&str] = &["for_chunks", "for_agenda", "apply_by_range"];
-/// A function declared a sweep, and the argument naming its cycle; a function of the opening.
+/// A function declared a sweep, and the arguments naming its cycle or its reason; a function of the opening.
 const SWEEP: &str = "sweep";
 const CYCLE: &str = "cycle";
+const REASON: &str = "reason";
 const OPENING: &str = "opening";
 
 fn in_scope(c: &Crate) -> bool {
     c.name == "phx-world" || c.name.starts_with("sys-")
 }
 
-/// Every whole-table walk PC-96 finds, and a breach for each source that does not parse or sweep without a cycle.
+/// Every whole-table walk PC-96 finds, and a breach for each source that does not parse or sweeps without a cycle or reason.
 #[must_use]
 pub fn found(ws: &Workspace) -> (Vec<Found>, Vec<Breach>) {
     let (mut sites, mut breaches) = (Vec::new(), Vec::new());
@@ -58,7 +59,7 @@ pub fn found(ws: &Workspace) -> (Vec<Found>, Vec<Breach>) {
                 line,
             }));
             breaches.extend(finder.uncycled.into_iter().map(|(line, name)| {
-                Breach::new(RULE, &source.path, line, format!("`{name}` declared a sweep without its cycle"))
+                Breach::new(RULE, &source.path, line, format!("`{name}` declared a sweep without its cycle or reason"))
             }));
         }
     }
@@ -81,12 +82,12 @@ struct Finder {
     items: Vec<String>,
 }
 
-/// A function's standing: a sweep with its cycle or a function of the opening is admitted; a sweep without its cycle
-/// is refused, and admitted as a sweep so its walks are not reported twice.
+/// A function's standing: a sweep with its cycle or reason, or a function of the opening, is admitted; a sweep with
+/// neither is refused, and admitted as a sweep so its walks are not reported twice.
 fn admitted_fn(attrs: &[Attribute]) -> (bool, bool) {
     let sweep = attrs.iter().find(|a| a.path().is_ident(SWEEP));
     let cycled = sweep.is_some_and(|a| match &a.meta {
-        syn::Meta::List(list) => attrs::has_ident(&list.tokens, CYCLE),
+        syn::Meta::List(list) => attrs::has_ident(&list.tokens, CYCLE) || attrs::has_ident(&list.tokens, REASON),
         _ => false,
     });
     let opening = attrs.iter().any(|a| a.path().is_ident(OPENING));
@@ -253,7 +254,8 @@ mod tests {
     #[test]
     fn declared_sweeps_are_admitted() {
         let f = finds(
-            "#[sweep(accounts, cycle = 30)] fn audit_accounts(s: &S) { for x in s.live_slots() {} }\n\
+            "#[sweep(store = accounts, cycle = 30)] fn audit_accounts(s: &S) { for x in s.live_slots() {} }\n\
+                       #[sweep(store = accounts, reason = \"a bank failing\")] fn depositors(s: &S) { for x in s.live_slots() {} }\n\
                        #[opening] fn open(s: &S) { for x in s.live_slots() {} }",
         );
         assert!(f.found.is_empty() && f.uncycled.is_empty());
@@ -261,7 +263,7 @@ mod tests {
 
     #[test]
     fn sweep_without_cycle_is_refused() {
-        let text = "#[sweep(accounts)] fn audit(s: &S) { for x in s.live_slots() {} }";
+        let text = "#[sweep(store = accounts)] fn audit(s: &S) { for x in s.live_slots() {} }";
         let c = with_source(krate("phx-world", Layer::Assembly), "src/core_audit.rs", text);
         let breaches = run(&Workspace::new(vec![c]));
         assert_eq!(breaches.len(), 1);

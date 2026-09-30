@@ -402,6 +402,7 @@ version = "0.1.0"
 dependencies = [
  "libc",
  "phx-id",
+ "phx-macros",
  "phx-num",
  "phx-rand",
  "phx-store",

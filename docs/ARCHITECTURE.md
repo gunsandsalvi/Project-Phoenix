@@ -1495,7 +1495,7 @@ workers (`hash_ms` 650, the step's bound on three phone cores).
 
 ### 7.2 phx-exec
 
-Status: K-11, K-12 built (S1.169, S1.170); K-14 planned (S1.171)
+Status: K-11, K-12, K-14 built (S1.169–S1.171)
 
 #### K-11 Chunk plans
 
@@ -1603,8 +1603,50 @@ planned (S1.360).
 
 #### K-14 Declared sweeps and rolling cursors
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.171).
+The few passes a clause needs over a whole store — the audit's rolling recount, a bank's depositors on its failure,
+the day's `pending`, daily variation margin, funds' values — are declared with their store, slot and cycle or reason,
+run as chunk plans over a saved cursor's slice, and counted in the sweep ledger beside every other traversal, so a
+pass over every row that no declaration names shows as rows nothing explains.
+
+**Declaration** (`sweep.rs`): a `SweepDecl { name, store, slot, when }` names the ledger's store and slot indexes and
+`When::Rolling { cycle }` — a share of the store a day over a cycle of days, a RESOLUTION primitive where the spec
+makes it one (the audit's `audit_cycle_days`) or the clause's period (a daily pass is a cycle of one) — or
+`When::OnReason`, the whole store on the days its reason occurs. The function that runs it carries `#[sweep(store =
+…, cycle = …)]` or `#[sweep(store = …, reason = "…")]` (`phx-macros`, which refuses one with neither, both, an empty
+reason or a mark on anything but a function), and PC-96 admits its walks and refuses a sweep with neither.
+
+**Cursor**: `Cursor { from_slot, cycle_start_day }`, 8 bytes, saved (the save holds the cursors of rolling sweeps,
+K-10), so a restored world continues its cycle at the same slot. `slice(cycle, high_water, today)` shares the rows
+left in the cycle over its days left, ⌈(high water − from slot) ÷ days left⌉, so a cycle reads every slot below its
+last day's high water exactly once and closes on its day; a store that grows lengthens only the slices. The day after
+a cycle's last begins the next at slot 0; rows gained since, and those a day the sweep did not run left unread, are
+read in it. A day before the cycle began, a high water below the cursor or a cycle of no days stops the run.
+
+**Run** (`SweepRun<T>`, its plan and a result a chunk kept across days): `rolling` and `on_reason` cut the slice into
+a chunk plan whose chunks close only where a table chunk ends (`ChunkPlan::cut_span`) and run it on the pool, `f`
+given each chunk's slots and its result, the results in chunk order, the same for any workers; `rolling_mut` hands
+each chunk besides its own run of the store's column (`partition::for_plan_runs`, disjoint by the plan's rising
+bounds), so a sweep that writes takes no lock. A sweep run otherwise than declared stops. A reason sweep reads nothing
+on a day its reason did not occur. A sum kept through the chunk's result pointer is stored at every row and triples a
+sweep's cost; a sweep sums in locals and stores once.
+
+**Sweep ledger**: `SweepLedger` counts rows visited by (store, slot) and how the traversal came to them — agenda,
+index, apply, sweep or a pass — and closes each day into `DayVisits { following, declared, undeclared }`; a pass
+over a store that no agenda, index, apply or declaration explains is its `undeclared`. The world's traversals count
+into it once the day runner walks the stage table's slots (S1.186); until then the bench measures it under `-F
+settle`.
+
+**Volumes and ratchets** (`tools/bench.sh -F settle`): the design point's 5.92 M accounts as 16-byte rows. Each
+business day's `pending` sweep costs 2.8–3.4 ns of CPU an account (`[fin.settle] sweep_ns` 4.3) against the step's
+0.4, a phone's sequential stream: here the rows' 95 MB read and written again is this machine's memory bandwidth,
+which a bare loop over the rows reaches at the same 2.5–3.5 ns. The audit's slice, a sixtieth a day, is 2.3–4.6 ns a
+row on the calling thread (`recount_ns` 5.8); `ledger_undeclared_rows` 0; `cursor_bytes` 8.
+
+**Extension points**: a bank's depositors on its failure (S1.240, S2.199); settlement's `pending` sweep (S1.248); the
+9a sweep (S1.251); column sweeps and books (S1.259, S1.267); collectors' period close (S1.270); the rolling recounts
+(S1.331, S1.353); variation margin (S1.340, S4.107); valuation by rows (S1.341); the reporting-date and surprise-day
+sweeps (S2.111, S2.176, S2.186, S2.195, S2.211); funds' values (S3.184); the event and year-end sweeps (S4.119,
+S4.146, S4.152, S4.157, S4.161, S5.137); the rolling cursors of S6.112, S6.125, S6.129 and S7.101.
 
 #### K-15 Measurement counters
 
@@ -3584,7 +3626,7 @@ credited while the world holds it (GEN.10).
    literals only 0, 1, −1 and 2 in mechanisms, engineering constants in one `consts` item per crate; no clause
    identifiers in comments; interface crates without behaviour; no forecast by running the world (PC-33): `phx-val`
    depends on nothing that holds the world, and no function of it takes the world, a table or a handler's context; no
-   full sweep in a sub-step not declared as one (*not built*: no rule refuses an undeclared full sweep yet).
+   whole-table walk on a day's path outside the kernel's traversals and declared sweeps (PC-96).
 4. **Types that refuse**: `Money`, `Qty`, `Missing` without `Default` or clamping; kind identifiers without equality
    outside the kernel; private-constructed handles; zero-sized systems.
 5. **The clause map**: every spec clause is assigned to a step in `IMPLEMENTATION.md`, and `phx-check clauses` refuses a

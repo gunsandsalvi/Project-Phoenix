@@ -1,0 +1,5 @@
+error: declare a sweep as `#[sweep(store = …, cycle = …)]` or `#[sweep(store = …, reason = "…")]`
+ --> tests/ui/sweep_no_cycle.rs:3:9
+  |
+3 | #[sweep(store = accounts)]
+  |         ^^^^^^^^^^^^^^^^

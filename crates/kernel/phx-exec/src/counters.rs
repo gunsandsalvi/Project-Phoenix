@@ -20,7 +20,7 @@ pub struct ExecCounters {
 }
 
 /// `n` added to a counter; a counter past `u64` stops the run rather than wrapping into a small number.
-fn add(counter: &mut u64, n: u64) {
+pub(crate) fn add(counter: &mut u64, n: u64) {
     match counter.checked_add(n) {
         Some(sum) => *counter = sum,
         None => capacity_exceeded!("a measurement counter", u64::MAX, i128::from(*counter) + i128::from(n)),

@@ -11,7 +11,7 @@ use crate::site;
 
 /// `f` on every slot of `out` with its index, each a chunk: on the pool when one is given and inline on the calling
 /// thread otherwise, in chunk order, so either way each result lies at its chunk's index.
-fn run<T: Send>(pool: Option<&Pool>, out: &mut [T], f: impl Fn(usize, &mut T) + Sync) {
+pub(crate) fn run<T: Send>(pool: Option<&Pool>, out: &mut [T], f: impl Fn(usize, &mut T) + Sync) {
     if let Some(p) = pool {
         p.run_into(out, f);
     } else {

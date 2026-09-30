@@ -28,6 +28,7 @@ pub mod save;
 pub mod seed;
 #[path = "seed_tests.rs"]
 mod seed_tests;
+pub mod settle;
 pub mod stalls;
 pub mod terms;
 #[path = "tests.rs"]
@@ -147,6 +148,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(terms::Terms::default()),
     || Box::new(pool::PoolBase::default()),
     || Box::new(apply::Apply::default()),
+    || Box::new(settle::Settle::default()),
 ];
 
 /// What a run fills, runs and reads.
