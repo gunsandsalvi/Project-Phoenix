@@ -136,6 +136,18 @@ impl<B: Backing> SlotAlloc<B> {
     pub fn live_words(&self) -> &[u64] {
         self.live.slice(to_usize(self.high.div_ceil(BITS)))
     }
+
+    /// Slots live now.
+    #[must_use]
+    pub fn live_count(&self) -> u64 {
+        self.live_words().iter().map(|w| u64::from(w.count_ones())).sum()
+    }
+
+    /// The bytes its live bits and free and released lists hold committed.
+    #[must_use]
+    pub fn bytes_committed(&self) -> usize {
+        self.live.bytes_committed() + self.free.bytes_committed() + self.released.bytes_committed()
+    }
 }
 
 /// A table's geometry and slot space, shared by every column its owner keeps.

@@ -14,6 +14,9 @@ use crate::RunArgs;
 use crate::checks::{CHECKS, Observed, Outcome, Run};
 use crate::clock::WallClock;
 
+/// Bytes to MiB, a shift.
+const MIB_SHIFT: u32 = 20;
+
 /// The classes of equal count the woken firms' answers to their surprises are reported in, by the surprise's size.
 const SIZE_CLASSES: usize = 4;
 
@@ -435,7 +438,7 @@ fn play(
     args: &RunArgs,
     (settle_end, end): (phx_id::Day, phx_id::Day),
     clock: &WallClock,
-    obs: &mut Observing,
+    (obs, stores): (&mut Observing, &mut StoreSamples),
 ) -> Result<Option<PathBuf>, String> {
     let (saves, build) = (args.run_dir.join("saves"), build_id()?);
     let mut period = save_period(Inspector::new(world), world.today())?;
@@ -447,6 +450,7 @@ fn play(
         let seen = Inspector::new(world).findings().len();
         world.run_turn_observed(&[], clock, Some(&mut obs.watch));
         println!("{}", progress(Inspector::new(world), settle_end));
+        stores.take_at_month_end(Inspector::new(world));
         // Each finding as the turn found it, so a run that stops later still shows what the audit saw.
         for f in Inspector::new(world).findings().iter().skip(seen) {
             println!("finding {} {} day {}: {:?} {}: {}", f.family, f.clause, f.day.get(), f.owner, f.size, f.detail);
@@ -463,6 +467,79 @@ fn play(
         }
     }
     Ok(injection_save)
+}
+
+/// The process's resident MiB before anything of the world is built, and the rate of random row reads on a pool of the
+/// world's cores, plain and prefetched: the miss a gather's budget is counted in. Missing where the machine gives none.
+fn baseline_report(clock: &WallClock) -> (Option<u64>, serde_json::Value) {
+    let Ok(pool) = phx_exec::Pool::new(&phx_exec::PoolSpec::detect()) else { return (None, serde_json::Value::Null) };
+    let b = phx_exec::probe::baseline(&pool, clock);
+    let rate = |g: Option<phx_exec::probe::GatherRate>| {
+        g.map(|g| json!({ "ns_per_row": g.ns_per_row, "core_ns_per_row": g.core_ns_per_row, "rows": g.rows }))
+    };
+    let gather = json!({ "region_bytes": b.gather.map(|g| g.bytes), "plain": rate(b.gather),
+                         "prefetched": rate(b.gather_prefetched) });
+    (b.resident_bytes.map(|r| r >> MIB_SHIFT), gather)
+}
+
+/// Every kind's store sampled at the run's start and at each simulated month's end.
+#[derive(Debug, Default)]
+struct StoreSamples {
+    taken: Vec<(phx_id::Date, Vec<(&'static str, phx_exec::stats::Sample)>)>,
+}
+
+impl StoreSamples {
+    /// The stores as the opening left them, the first sample.
+    fn opened(w: Inspector<'_>) -> StoreSamples {
+        let mut samples = StoreSamples::default();
+        samples.take(w);
+        samples
+    }
+
+    fn take(&mut self, w: Inspector<'_>) {
+        let core = w.core();
+        let stores = core.names.iter().zip(&core.kinds).map(|(n, k)| (*n, phx_exec::stats::Sample::of(k))).collect();
+        self.taken.push((w.date(w.today()), stores));
+    }
+
+    /// A sample when the turn just run crossed into a new month: the stores as the month it closed left them.
+    fn take_at_month_end(&mut self, w: Inspector<'_>) {
+        let month = |d: phx_id::Date| (d.year(), d.month());
+        if self.taken.last().is_none_or(|(d, _)| month(*d) != month(w.date(w.today()))) {
+            self.take(w);
+        }
+    }
+
+    /// Each sample's date and stores, and each store's rows live gained a simulated year over the whole years sampled.
+    fn report(&self) -> serde_json::Value {
+        let samples: Vec<serde_json::Value> = self
+            .taken
+            .iter()
+            .map(|(date, stores)| {
+                let by_name: serde_json::Map<_, _> = stores
+                    .iter()
+                    .map(|(n, s)| {
+                        let row = json!({ "rows_live": s.rows_live, "rows_ever": s.rows_ever, "bytes": s.bytes });
+                        ((*n).to_owned(), row)
+                    })
+                    .collect();
+                json!({ "date": date_text(*date), "stores": by_name })
+            })
+            .collect();
+        let names: Vec<&str> = self.taken.first().map(|(_, s)| s.iter().map(|(n, _)| *n).collect()).unwrap_or_default();
+        let growth: serde_json::Map<_, _> = names
+            .iter()
+            .map(|name| {
+                let rows: Vec<u64> = self
+                    .taken
+                    .iter()
+                    .filter_map(|(_, s)| s.iter().find(|(n, _)| n == name).map(|(_, x)| x.rows_live))
+                    .collect();
+                ((*name).to_owned(), json!(phx_exec::stats::growth_per_year(&rows).map(|g| g.to_string())))
+            })
+            .collect();
+        json!({ "samples": samples, "rows_live_growth_per_year": growth })
+    }
 }
 
 /// The turn just run, so a run can be followed as it goes: its dates and days, its wall time, and what the core's
@@ -675,7 +752,8 @@ fn days_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
 /// counter keeps its ratchet and the memory keeps its budget.
 pub fn run(args: &RunArgs) -> Result<bool, String> {
     crate::panic_hook::install(format!("seed{}-pid{}", args.seed, std::process::id()), PathBuf::from("violations"));
-    crate::trace::start();
+    let printer = crate::trace::start();
+    let baseline = baseline_report(&WallClock::new());
     let config = config(args)?;
     let clock = WallClock::new();
     let assembling = clock.now_ns();
@@ -688,7 +766,8 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
     let meter = crate::budget::Meter::start(clock.now_ns());
-    let injection_save = play(&mut world, args, (settle_end, end), &clock, &mut obs)?;
+    let mut stores = StoreSamples::opened(Inspector::new(&world));
+    let injection_save = play(&mut world, args, (settle_end, end), &clock, (&mut obs, &mut stores))?;
     let span = meter.stop(clock.now_ns());
     let injecting = clock.now_ns();
     if let Some(dir) = &injection_save {
@@ -742,6 +821,10 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         "reads": reads_report(&obs.watch.recorder, &view),
         "drift": drift_report(&settled, &ended),
         "peak_resident_bytes": peak,
+        "spans": printer.spans(),
+        "stores": stores.report(),
+        "baseline_mb": baseline.0,
+        "gather_rate": baseline.1,
         "budget": budget_block,
         "memory_budget_bytes": WORLD_BYTES,
         "counters": counters.iter().map(|(n, v)| ((*n).to_owned(), json!(v))).collect::<serde_json::Map<_, _>>(),
@@ -754,11 +837,7 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         o.extend(sections(w));
     }
     if let Some(path) = &args.report {
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
-        }
-        let text = serde_json::to_string_pretty(&report).map_err(|e| e.to_string())?;
-        std::fs::write(path, text + "\n").map_err(|e| format!("{}: {e}", path.display()))?;
+        write_report(path, &report)?;
     }
     // A run is clean only when its audit found nothing: a finding is a missing or wrong mechanism.
     let findings = w.findings().len();
@@ -773,6 +852,15 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         if budget_kept { "kept" } else { "missed" }
     );
     Ok(clean && budget_kept)
+}
+
+/// The report written where the run was told, its directory made first.
+fn write_report(path: &Path, report: &serde_json::Value) -> Result<(), String> {
+    if let Some(dir) = path.parent() {
+        std::fs::create_dir_all(dir).map_err(|e| format!("{}: {e}", dir.display()))?;
+    }
+    let text = serde_json::to_string_pretty(report).map_err(|e| e.to_string())?;
+    std::fs::write(path, text + "\n").map_err(|e| format!("{}: {e}", path.display()))
 }
 
 /// Each country's fund stage a day: what its banks placed and borrowed, what stood overdue, what was remitted.

@@ -972,7 +972,8 @@ settlement, facts, goods, capital, posted-price meetings and labour matching.
 Status: planned (S1.159–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
-counters sample (K-15) and the world never reads. The rows a walk visits are counted by the traversal that walks it, in
+counters sample (K-15) and the world never reads. A kind's `Parties` report their live and ever-handed slots and the
+bytes of their slots, generations and identities; `phx-core`'s `KindStore` adds its records, accounts and cash lines. The rows a walk visits are counted by the traversal that walks it, in
 `phx-exec`, since no `phx-store` code may share a counter across workers.
 
 #### K-01 Columns in reserved address space
@@ -1113,8 +1114,10 @@ barriers`) with every worker's chunk in each: `fin.counters.chunk_ns` (a chunk's
 100) and `fin.counters.span_ns` (a span's two readings and its counts: 1.2–1.8 µs measured, the process's CPU and faults
 being system calls; ratchet 2 274, under half a millisecond at the run's 184 spans a day).
 
-**Extension points**: the run's report and the bench's summary carry the spans' counts, the store samples and the
-baseline (S1.118); K-03's buffers report their bytes (S1.160); K-11's traversals count rows visited, chunks, barriers
+The run's report and the bench's summary carry the spans' totals, the store samples, the baseline and the gather rate
+(§14.7).
+
+**Extension points**: K-03's buffers report their bytes (S1.160); K-11's traversals count rows visited, chunks, barriers
 and spin (S1.169); every base implements `StoreStats` at its step.
 
 **Today** (`tally.rs`): `Tally`, an integer sum the same on any pool.
@@ -2948,11 +2951,18 @@ and sub-stages, settlement's passes, each product's meeting — as it begins and
 spent (K-15: every thread's CPU and faults, chunks, barriers, spin and allocations), and notes of what each did (parties, dues, flows, buyers, stalls, rounds, sales, failures); a loop notes how far it is at each power
 of two of its rounds, so one that runs away shows. The host sets where its marks go (`phx run` prints each with the
 time since the start and the memory held); with none set it tells nothing, and no outcome reads it. Ctrl-C or `-t`
-stop the world, never the bench, whose summary is then read from the log. It writes the run's whole report (each day's
-stages in microseconds under `core_days[].stages_us`), the run's log and a summary: the run, the budget's block against
+stop the world, never the bench, whose summary is then read from the log. A span's line ends with `items=` where the
+span has items, `cpu_ms=` (every thread's), `faults=` and, in the bench's build, `allocs=`; the printer gathers every
+span's totals by name. It writes the run's whole report (each day's stages in microseconds under
+`core_days[].stages_us`; `spans`, each name's `count`, `wall_ms`, `cpu_ms`, `items`, `ns_per_item` — CPU over items,
+none for a span without items — `faults`, `allocs`, `alloc_bytes`, `chunks`, `barriers` and `spun`, a sum missing
+where any of its parts was; `stores`, every kind's store sampled at the opening and at each simulated month's end —
+`rows_live`, `rows_ever`, `bytes` — with each store's `rows_live_growth_per_year` over whole years only;
+`baseline_mb`, the process's resident memory before the opening; `gather_rate`, a random row read's ns and core-ns,
+plain and prefetched, over its region), the run's log and a summary: the run, the budget's block against
 `perf/budget.toml`'s ratchets — which may only fall (the cores only rise), a step that must raise one saying so and
-why — the spans still open where the run did not finish, every span's count, total, mean and worst, the heaviest
-meetings, settlement's and the day's notes, the parties opened, memory, cores, page faults, the flows and the findings.
+why — the spans still open where the run did not finish, the baseline and the gather rate, every span's count, wall,
+worst, CPU, items, ns an item, faults and allocations, heaviest CPU first, the heaviest meetings, settlement's and the day's notes, the parties opened, memory, cores, page faults, the flows and the findings.
 Its numbers are the code's, never the world's. A gate's run is **clean** when the audit reports nothing, every failing
 live check is recorded where it is settled, and no ratchet moves the wrong way. A step is done on its fast checks, the budget read by the bench, and the world's long
 run is at the gates; a stage gate's settled two-year run is also the device run's, on the phone.

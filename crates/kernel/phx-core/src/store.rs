@@ -5,10 +5,10 @@
 
 use phx_id::{Day, PartyId, PartyRef, Slot};
 use phx_macros::clause;
-use phx_num::{MaybeI64, violation};
+use phx_num::{MaybeI64, capacity_exceeded, violation};
 use phx_store::backing::{AddressSpace, Backing};
 use phx_store::edges::{NONE, Row};
-use phx_store::{Column, EdgeTable, Parties};
+use phx_store::{Column, EdgeTable, Parties, StoreStats};
 
 use crate::settle::{Book, Books, Lines};
 use crate::wheel::DueWheel;
@@ -42,6 +42,30 @@ pub struct KindStore<B: Backing> {
     pub stride: usize,
     pub accounts: Option<Accounts<B>>,
     pub cash: Option<CashLines<B>>,
+}
+
+/// A kind's rows are its parties'; its bytes are theirs with every column each party keeps.
+impl<B: Backing> StoreStats for KindStore<B> {
+    fn rows_live(&self) -> u64 {
+        self.parties.rows_live()
+    }
+
+    fn rows_ever(&self) -> u64 {
+        self.parties.rows_ever()
+    }
+
+    fn bytes(&self) -> u64 {
+        let accounts = self.accounts.as_ref().map_or(0, |a| {
+            [a.balance.bytes_committed(), a.pending.bytes_committed(), a.held.bytes_committed()]
+                .into_iter()
+                .chain([a.facility.bytes_committed(), a.bank.bytes_committed()])
+                .sum()
+        });
+        let own =
+            self.records.bytes_committed() + accounts + self.cash.as_ref().map_or(0, |c| c.amounts.bytes_committed());
+        let own = u64::try_from(own).unwrap_or_else(|_| capacity_exceeded!("a store's bytes", u64::MAX, own));
+        self.parties.bytes() + own
+    }
 }
 
 /// A new party's account: the bank it is held at and its opening balance.

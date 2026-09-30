@@ -3,10 +3,11 @@
 
 use phx_id::{PartyId, PartyRef, Slot};
 use phx_macros::clause;
-use phx_num::violation;
+use phx_num::{capacity_exceeded, violation};
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
 use crate::column::Column;
+use crate::stats::StoreStats;
 use crate::table::SlotAlloc;
 
 /// The parties of one kind: slots allocated lowest first and released at the day's close, each slot's party's
@@ -98,12 +99,28 @@ impl<B: Backing> Parties<B> {
     }
 }
 
+impl<B: Backing> StoreStats for Parties<B> {
+    fn rows_live(&self) -> u64 {
+        self.slots.live_count()
+    }
+
+    fn rows_ever(&self) -> u64 {
+        u64::from(self.slots.high_water())
+    }
+
+    fn bytes(&self) -> u64 {
+        let bytes = self.slots.bytes_committed() + self.generations.bytes_committed() + self.ids.bytes_committed();
+        u64::try_from(bytes).unwrap_or_else(|_| capacity_exceeded!("a store's bytes", u64::MAX, bytes))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use phx_id::{PartyId, Slot};
 
     use super::Parties;
     use crate::backing::{AddressSpace, HeapBacking};
+    use crate::stats::StoreStats;
 
     #[test]
     fn slots_reuse_with_new_generation() {
@@ -122,5 +139,8 @@ mod tests {
         assert_eq!(p.resolve(c), Some(a.slot()));
         assert_eq!(p.at(Slot::new(1)), Some(b));
         assert_eq!(p.id(c.slot()), Some(PartyId::new(9)), "the slot holds its new party's identity");
+        p.end(b);
+        assert_eq!((p.rows_live(), p.rows_ever()), (1, 2), "one live of the two slots ever handed out");
+        assert!(p.bytes() > 0);
     }
 }

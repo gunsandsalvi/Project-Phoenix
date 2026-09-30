@@ -24,10 +24,11 @@
 # The run's trace is printed and written to <dir>/run.log as it happens: every span of the opening and of each day —
 # stages, sub-stages, settlement's passes, each product's meeting — as it begins and ends with its own time, and notes
 # of what each did (parties, flows, buyers, stalls, rounds, sales, failures), each line with the time since the run
-# began and the memory held. Loops note how far they are at each power of two of their rounds, so a runaway shows.
+# began and the memory held; each span's end carries its items, CPU over every thread, faults and allocations. Loops
+# note how far they are at each power of two of their rounds, so a runaway shows.
 # Ctrl-C or -t stops the world, not the bench. Then <dir>/summary.txt: the run and the budget from <dir>/report.json
-# where the run finished; the spans still open where it did not; every span's count, total, mean and worst; the
-# heaviest meetings; settlement's and the day's notes; the parties opened; the findings and checks.
+# where the run finished; the spans still open where it did not; the baseline and the gather rate; every span's count,
+# wall, worst, CPU, items, ns an item, faults and allocations, heaviest CPU first; the heaviest meetings; settlement's and the day's notes; the parties opened; the findings and checks.
 set -euo pipefail
 
 persons="" days=20 gate=0 seed=1 workers="" checks="" out="target/bench" build=1 keep=0 limit="" profile=0 fin="" findays="turn"
@@ -175,10 +176,17 @@ for text in log:
         ms = re.match(r"([\d.]+) ms", rest)
         if ms:
             v = float(ms.group(1))
-            s = spans.setdefault(name, [0, 0.0, 0.0])
+            f = dict(kv.split("=", 1) for kv in rest.split() if "=" in kv)
+            # times, wall total, worst, CPU ms, items, faults, allocations; a count a line lacks leaves its sum out
+            s = spans.setdefault(name, [0, 0.0, 0.0, 0.0, 0, 0, 0, True, True, True, True])
             s[0] += 1
             s[1] += v
             s[2] = max(s[2], v)
+            for i, key, kind in ((3, "cpu_ms", float), (4, "items", int), (5, "faults", int), (6, "allocs", int)):
+                if key in f:
+                    s[i] += kind(f[key])
+                else:
+                    s[i + 4] = False
             if name == "goods.meet" and pending is not None:
                 meetings.append((v, context.get("stage", "?"), context.get("product", "?"), pending))
                 pending = None
@@ -225,10 +233,23 @@ if days:
     for d in days:
         print(f"{d['day']:>6} {d['ms']:>8} {d['flows']:>9} {d['settled']:>9} {d['failed']:>7} {d['committed']:>9}")
 
+if r:
+    g = r.get("gather_rate") or {}
+    rate = lambda k: (g.get(k) or {}).get("core_ns_per_row")
+    print(f"baseline: {r.get('baseline_mb')} MiB resident before the opening; a random row read costs "
+          f"{rate('plain')} core-ns, {rate('prefetched')} prefetched, over {(g.get('region_bytes') or 0) >> 20} MiB")
+
 if spans:
-    print(f"{'span':<30} {'times':>6} {'total ms':>11} {'mean ms':>9} {'worst ms':>10}")
-    for name, (n, total, worst) in sorted(spans.items(), key=lambda kv: -kv[1][1])[:60]:
-        print(f"{name:<30} {n:>6} {total:>11.1f} {total / n:>9.1f} {worst:>10.1f}")
+    print("spans by CPU; a blank where a line gave no count:")
+    print(f"{'span':<30} {'times':>6} {'wall ms':>10} {'worst ms':>9} {'cpu ms':>10} {'items':>11} {'ns/item':>8} "
+          f"{'faults':>8} {'allocs':>9}")
+    show = lambda ok, v, fmt: format(v, fmt) if ok else ""
+    for name, s in sorted(spans.items(), key=lambda kv: -(kv[1][3] if kv[1][7] else kv[1][1]))[:60]:
+        n, total, worst, cpu, items, faults, allocs, has_cpu, has_items, has_faults, has_allocs = s
+        per = show(has_cpu and has_items and items > 0, cpu * 1e6 / items if items else 0, ".0f")
+        print(f"{name:<30} {n:>6} {total:>10.1f} {worst:>9.1f} {show(has_cpu, cpu, '.1f'):>10} "
+              f"{show(has_items, items, 'd'):>11} {per:>8} {show(has_faults, faults, 'd'):>8} "
+              f"{show(has_allocs, allocs, 'd'):>9}")
 
 if meetings:
     print("heaviest meetings: ms, stage, product, buyers, stalls, places, rounds, sales, unserved")

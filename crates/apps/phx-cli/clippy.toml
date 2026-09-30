@@ -139,7 +139,6 @@ disallowed-types = [
     "std::collections::HashMap",
     "std::collections::HashSet",
     "std::hash::RandomState",
-    "std::sync::Mutex",
     "std::sync::RwLock",
     "std::sync::OnceLock",
     "std::sync::LazyLock",

@@ -25,8 +25,8 @@ const ATOMICS: &[&str] = &[
 const PRINTING: &[&str] = &["std::println", "std::eprintln", "std::print", "std::eprint"];
 
 /// The entries a crate's own clippy file drops from the root lists: modular arithmetic where an algorithm is
-/// modular, threads in the pool and the one cell that holds where the bench's trace goes, the clock and printing in
-/// the applications.
+/// modular, threads in the pool and the one cell that holds where the bench's trace goes, the clock, printing and the
+/// trace's host gathering spans from any thread in the applications.
 pub fn exemptions(krate: &str) -> Vec<String> {
     let modular = || {
         INTEGERS.iter().flat_map(|t| ["wrapping_add", "wrapping_sub", "wrapping_mul"].map(|op| format!("{t}::{op}")))
@@ -41,7 +41,7 @@ pub fn exemptions(krate: &str) -> Vec<String> {
         }
         "phx-rand" | "phx-store" => modular().collect(),
         "phx-cli" => {
-            let mut e = owned(&["std::time::Instant::now", "std::env::var"]);
+            let mut e = owned(&["std::time::Instant::now", "std::env::var", "std::sync::Mutex"]);
             e.extend(owned(PRINTING));
             e
         }

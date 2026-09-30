@@ -347,6 +347,10 @@ pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> 
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64
 pub mod phx_store::pod
 pub mod phx_store::pod::__seal
 pub trait phx_store::pod::__seal::Sealed
@@ -654,13 +658,19 @@ pub trait phx_store::stats::StoreStats
 pub fn phx_store::stats::StoreStats::bytes(&self) -> u64
 pub fn phx_store::stats::StoreStats::rows_ever(&self) -> u64
 pub fn phx_store::stats::StoreStats::rows_live(&self) -> u64
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64
 pub mod phx_store::table
 pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
+pub fn phx_store::table::SlotAlloc<B>::bytes_committed(&self) -> usize
 pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)
 pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32
 pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::table::SlotAlloc<B>::live_count(&self) -> u64
 pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::table::SlotAlloc<B>::live_words(&self) -> &[u64]
 pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
@@ -934,6 +944,10 @@ pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> 
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::column::Column<u32, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64
 pub struct phx_store::Reader<'a>
 impl<'a> phx_store::save::Reader<'a>
 pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>
@@ -967,9 +981,11 @@ pub fn phx_store::hash::Sip128::write(&mut self, &[u8])
 pub struct phx_store::SlotAlloc<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
+pub fn phx_store::table::SlotAlloc<B>::bytes_committed(&self) -> usize
 pub fn phx_store::table::SlotAlloc<B>::close_day(&mut self)
 pub fn phx_store::table::SlotAlloc<B>::high_water(&self) -> u32
 pub fn phx_store::table::SlotAlloc<B>::is_live(&self, phx_id::ids::Slot) -> bool
+pub fn phx_store::table::SlotAlloc<B>::live_count(&self) -> u64
 pub fn phx_store::table::SlotAlloc<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_
 pub fn phx_store::table::SlotAlloc<B>::live_words(&self) -> &[u64]
 pub fn phx_store::table::SlotAlloc<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::table::SlotAlloc<B>
@@ -1249,6 +1265,10 @@ pub trait phx_store::StoreStats
 pub fn phx_store::StoreStats::bytes(&self) -> u64
 pub fn phx_store::StoreStats::rows_ever(&self) -> u64
 pub fn phx_store::StoreStats::rows_live(&self) -> u64
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
+pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64
+pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64
 pub trait phx_store::TableChunks
 pub type phx_store::TableChunks::Rows
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>

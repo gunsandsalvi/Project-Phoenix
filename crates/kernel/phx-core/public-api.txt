@@ -1436,6 +1436,10 @@ pub fn phx_core::store::KindStore<B>::with_cash(self, &mut phx_store::backing::A
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindStore<B> where phx_store::parties::Parties<B>: phx_store::save::Saved, phx_store::column::Column<phx_num::missing::MaybeI64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
 pub fn phx_core::store::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
 pub fn phx_core::store::KindStore<B>::save(&self, &mut phx_store::save::Writer<'_>)
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_core::store::KindStore<B>
+pub fn phx_core::store::KindStore<B>::bytes(&self) -> u64
+pub fn phx_core::store::KindStore<B>::rows_ever(&self) -> u64
+pub fn phx_core::store::KindStore<B>::rows_live(&self) -> u64
 pub struct phx_core::store::Opening
 pub phx_core::store::Opening::balance: i64
 pub phx_core::store::Opening::bank: u32
