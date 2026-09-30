@@ -921,80 +921,29 @@ party range (K-48) and their tallies fused into the sweep (K-52).
 ### 6.6 Cost bounds
 
 **The rule** (the owner's, plan §12): every operation a day performs costs at most **O(log n)** in the size of any
-store of the world — parties, holders, rows, lines, agents, persons, instruments, records, events, history — and a
-day's cost is the sum of its events' costs: the rows due, payments, hits, outcomes, orders and visits it has, each at
-most O(log n) (N8.6). A pass over a world-sized store is allowed only as a declared **rolling slice**, a fixed share a
-day (the audit's thirtieth), counted in §13.2. Nothing a day does grows with elapsed time. A kernel that cannot meet
-the rule is a finding, not an exception.
+store of the world — parties, holders, contracts, persons, instruments, records, events, history — and a day's cost
+is the sum of its events' costs, each at most O(log n) (N8.6). A pass over a world-sized store is allowed only as a
+declared **rolling slice**, a fixed share a day on a declared cycle (the audit's is `[resolution] audit_cycle_days`),
+counted in §13.2. Nothing a day does grows with elapsed time. A kernel that cannot meet the rule is a finding, not an
+exception.
 
-Where the day breaks, the representation that meets it, each part with the
-published technique it rests on:
+The core's design rules, each held by a guard or a ratchet; every base designs to them and every review checks
+against them. How each base meets them is its own section in §7.
 
-- **Dense identity.** A party id indexes a dense array of its location (ids are issued in order, and the ended keep a
-  bounded window of tombstones), so `locate` is one read, with no hashing. Hashed maps remain only where keys are
-  sparse and few.
-- **Standing facts on their owners.** What does not change from day to day is kept where it belongs, updated when it
-  changes. A holder keeps its money account per currency and that account's issuer, written when an account opens or
-  closes. A line keeps how it is reckoned and who owes it, written when a listed side's membership changes (its side
-  version). The day's look-up maps (`Found`) go.
-- **Row index.** A holder's rows are ordered by (line, side), and one row is found by search: a branchless scan of a
-  cache line of keys for a small holder, and for a large one (a bank, a treasury) an Eytzinger-ordered key array
-  (Khuong and Morin, *Array layouts for comparison-based searching*, 2017). The cost is O(log R). A find returns the row's
-  word offset, so a write does not search again.
-- **Due index.** Holders sit in the agenda's hierarchical timing wheel keyed by their run head's next due day
-  (Varghese and Lauck, *Hashed and hierarchical timing wheels*, 1987). 7a visits only the holders due today, O(1)
-  each, and a rewritten head re-files its holder.
-- **The day's payment table.** 7a reckons each due row once into a structure of arrays: payer, payee, amount,
-  principal, line, order and route. A route depends only on the payer's and payee's accounts and their issuers, so it
-  is interned once and payments carry its index, which keeps legs off the heap. Payments are indexed by payer and by
-  each bank on their route in compressed sparse rows, built by a counting sort (a semisort; Gu, Shun, Sun and
-  Blelloch, *A top-down parallel semisort*, 2015). 7b, 7c, the verdicts and the pending pass read the table, and none
-  reckons a payment again.
-- **The fixed point** is the greatest set of payments that can settle, found by removal. It descends from Eisenberg
-  and Noe's fictitious-default algorithm (*Systemic risk in financial systems*, 2001; Rogers and Veraart, 2013, for
-  default costs). Each payer keeps a cursor into its payments in payment order. A prefix fails by advancing the
-  cursor, so each payment is removed at most once, and the whole fixed point costs O(payments + removals). A
-  customer's payments through a failing bank are that bank's index range. Queued and failed marks are epoch-stamped
-  dense arrays, not ordered sets.
-- **Parallel without order.** A payer's removal of its own payments is monotone, so its greatest fixed point is unique
-  whatever the order (Tarski), and a round can take every short payer at once and reach the same set. A bank's
-  removal reads the bank's debit, which a customer's own failure lowers, so it is taken only once the payers are done,
-  every short bank of a round at once, which leaves the result the same in any order. 7b runs on one thread, its cost a
-  small part of stage 7's (0.07 to 0.28 s of the full load's 2.9 s). A cleared line's losers depend only on its failed
-  count. The result is deterministic by construction (Blelloch, Fineman, Gibbons and
-  Shun, *Internally deterministic parallel algorithms can be fast*, 2012). 7a runs over due-holder shards, and 7c's
-  nets are grouped by a counting sort on (line, party, side) and applied by target shard.
-- **Day buffers** live on the books across days: cleared by epoch, never freed. After the first heavy day the kernel
-  maps no new pages.
-- **Verdicts and audits** fold into the passes that already hold the values. An account's movement is checked where
-  its net applies. A failed payer's shortfall is read at its cursor. Per-line balance totals are kept at the apply,
-  so the audit's money and contract families read sums and a rolling slice. The accruals' mismatches are running sums
-  per line. Arrears keep their start and compute their age when read.
-- **Agents.** 3e's outcomes run over agent chunks on the pool (an agent's writes are confined to it, PC-34): each
-  household is changed and the words it is to be written back as are reckoned there, and only the writing, with the
-  moves of attachments where a person is gone, follows in slot order on one thread, since a gone person's contracts
-  leaving can take attachments off other agents. 3b reads the agenda's agents in slot order. Hazards
-  are drawn in batches with Philox's four-lane counter blocks (Salmon, Moraes, Dror and Shaw, *Parallel random numbers:
-  as easy as 1, 2, 3*, 2011) and bounded integers by multiply-shift (Lemire, *Fast random integer generation in an
-  interval*, 2019).
-- **Gathers.** A visit reading rows it does not own batches its reads and prefetches them, in the manner of group
-  prefetching and asynchronous memory-access chaining (Chen, Ailamaki, Gibbons and Mowry, 2004; Kocberber, Falsafi and
-  Grot, 2015). Hot columns are split from cold ones, so a chunk's cache lines carry only what the pass reads.
-- **Saves** write only the stores the world saves, in independent zstd frames compressed on the pool (RFC 8878).
-  Incompressible blocks are stored raw, and the bench's held stores carry their columns' shapes, not uniform words.
-
-As built at Stage 0's close: dense identity; the standing facts on their owners (a listed side's holders as a count and
-the exclusive-or of their keys, each holder's money rows); the due index, as a map from a day to the holders' keys
-filed under it, not yet the agenda's wheel; the day's buffers kept across days, its records dealt to 64 shards by runs
-of slots and stamped by day; each due line's dues planned once, and a settled due's interest folded by party. On the
-world's pool, in fixed shards and waves so the result is the same with any workers: 3b and 3e; 7a, its bookings folded
-a records shard to a worker; 7c's gather, each payment's route made again and what it adds (records, nets, income)
-folded a key shard to a worker, the failed and pending recorded in the stream's order; 7c's balances, heads and leg
-reads; the audit's families, each into its own findings, kept in their order; the opening's regions; and saves, each
-store to its own file at once, in fixed 1 MiB zstd frames compressed a wave at a time. Rows are found by reading their
-heads, not by an index; 7b runs on one thread; 7c's balance writes land by holder chunk on the pool, its
-checks and records in line order on one thread; the money and contract families
-still read an unlisted side whole. The rest is carried to the Stage 1 gate (the plan's S1.16).
+| Rule | Guard |
+| --- | --- |
+| **R1** Columns per kind, dense by slot; no map, list or wide optional on a day's path. | PC-92 (S1.120) |
+| **R2** Due-driven: nothing visits every party every day; whole-store work only as a declared sweep. | PC-96 (S1.121); the rows-visited ratchet (S1.133) |
+| **R3** Decide, then apply by target range; the same result for any number of workers. | PC-97 (S1.122); busy cores per span (S1.133) |
+| **R4** Maintained aggregates are integers kept by their one writer; the audit recounts them from source rows. | PC-101 (S1.128) |
+| **R5** No allocation in the day; buffers sized by the heaviest day and kept. | PC-99 (S1.124); `faults_per_day`, `allocs_per_day` (S1.117, S1.133) |
+| **R6** Per-item effects batched; kernels expose batch entry points only. | compile level, in each base |
+| **R7** Per-day values computed once and day-stamped. | PC-101 (S1.129); `unit_cost_per_firm_day` ≤ 1 (S1.133) |
+| **R8** One dispatch a pass over cost-sized chunks; inline when small; bounded spin. | PC-97; `barriers_*`, `spin_us` (S1.117, S1.133) |
+| **R9** Saves hold live rows; every index is rebuilt at load. | PC-101 (S1.130); `fin.save.*` (S1.132) |
+| **R10** Every base counted; every span a unit cost. | S1.117; the unit-cost ratchets (S1.132) |
+| **R11** O(log n) per event; no per-round rebuild. | `meeting_work_per_sale` (S1.133), `fin.retail.work_per_sale` (S1.132) |
+| **R12** A miss budget per item: partition by target, then sweep. | the probe's gather rate in every report (S1.117) |
 
 ---
 
