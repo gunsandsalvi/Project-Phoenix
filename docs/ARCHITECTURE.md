@@ -921,8 +921,10 @@ the families' wheel takes (`Core::run_day`, `pay_currencies`, `fund_stage`). The
 family's dues, in the families' order, then one for what the day's stages made. Grouping places each chunk's flows by
 their payers' ranges stably (`FlowBufs::group`, a counting sort), so a payer's flows, read chunk by chunk, are in the
 order they were made however the day is cut into chunks; its lots are drawn in that order and its payments ranked by
-(order, lot, place). The outcome is the same for any chunking and any number of workers. The families make their dues in turn until the
-kernel's chunk plans (S1.169) give a traversal to make them on the pool.
+(order, lot, place). The outcome is the same for any chunking and any number of workers. The employers', spenders' and hazards' wheels are taken on the
+pool and hiring's searches run on it in fixed chunks (`SEARCH_CHUNK`), each returning in its items' order. The families
+make their dues, and the hazards' bookings are followed, in turn until the kernel's chunk plans (S1.169) give a
+traversal to run them on the pool.
 
 ### 6.3 Traversals
 

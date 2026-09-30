@@ -1,4 +1,4 @@
-# The sites PC-97 admits for now, 18 in all, held to `phx_check.exceptions_pc97`. Each migration removes its own; a site is never added.
+# The sites PC-97 admits for now, 13 in all, held to `phx_check.exceptions_pc97`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
@@ -8,38 +8,8 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::decide_spending"
-what = "None pool"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::make"
 what = "pool dispatch"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::answer_reviews"
-what = "None pool"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::post"
-what = "None pool"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::search_round"
-what = "None pool"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::run_hazards"
-what = "None pool"
 count = 1
 
 [[site]]

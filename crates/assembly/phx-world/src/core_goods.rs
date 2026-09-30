@@ -1236,7 +1236,7 @@ impl Core {
         let Missing::Present(region_at) = decl.sited_by else { return (0, 0) };
         let mut due = Vec::new();
         if let Some(w) = self.goods.spenders.as_mut() {
-            w.take(day, &mut due, None);
+            w.take(day, &mut due, ctx.pool);
         }
         let month = months(ctx.calendar.date(day));
         let mut wants = Vec::new();

@@ -124,3 +124,18 @@ fn a_person_takes_the_best_paid_offer_it_accepts() {
     assert!(none.is_empty());
     assert_eq!(v.map(|x| x.open), [2, 1, 2]);
 }
+
+#[test]
+fn search_on_pool_equals_inline() {
+    // Seekers of three skills over vacancies of two regions, many more than one chunk's worth.
+    let v: Vec<Vacancy> =
+        (0..40_u32).map(|i| vacancy(i, (i % 2, 3, i % 3), 1_000.0 + f64::from(i) * 25.0, 1 + i % 4)).collect();
+    let st = Standing::new(&v);
+    let seekers: Vec<Seeker> = (0..20_000_u32)
+        .map(|i| Seeker { region: i % 2, ..seeker(i, i % 3, 900.0 + f64::from(i % 11) * 40.0) })
+        .collect();
+    let pool = phx_exec::Pool::new(&phx_exec::PoolSpec::unpinned(3)).unwrap();
+    let inline = search(None, (&v, &st), &seekers, (1.5, 2.3), (&draws, &picker()));
+    assert!(inline.len() > seekers.len(), "most send more than one");
+    assert_eq!(search(Some(&pool), (&v, &st), &seekers, (1.5, 2.3), (&draws, &picker())), inline);
+}

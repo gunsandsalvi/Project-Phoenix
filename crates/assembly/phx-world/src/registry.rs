@@ -468,6 +468,7 @@ fn core_of(
         streams: &p.c.streams,
         processes: &p.processes,
         regions: &regions,
+        pool: None,
     };
     phx_exec::trace::span("open.hazards", || core.open_hazards(&ctx, &p.pop, today.succ()));
     let Some(frm) = own
@@ -522,6 +523,7 @@ fn core_of(
             kind,
             regions: &regions,
             clock: None,
+            pool: None,
         };
         phx_exec::trace::span("open.labour", || core.open_labour(&lctx, &opening, today))
             .map_err(|e| AssemblyErrors(vec![e]))?;

@@ -34,7 +34,7 @@ direction = "down"
 # (the absent pools S1.152 and S1.153, the dispatches K-11 and K-12); the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc97"
-value = 18
+value = 13
 direction = "down"
 
 # PC-98's admitted sites (S1.123, 2026-09-30): the register read by name and names compared on the day's paths,

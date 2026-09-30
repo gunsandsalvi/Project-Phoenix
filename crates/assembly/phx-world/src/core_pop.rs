@@ -98,6 +98,8 @@ pub(crate) struct Ctx<'a> {
     pub streams: &'a Streams,
     pub processes: &'a [Bound],
     pub regions: &'a [CountryId],
+    /// The world's pool the hazards' wheels are taken on; none at the opening, before the world has one.
+    pub pool: Option<&'a phx_exec::Pool>,
 }
 
 impl Core {
@@ -240,7 +242,7 @@ impl Core {
         }
         for at in 0..self.hazards.len() {
             let Some(hz) = self.hazards.get_mut(at) else { continue };
-            hz.wheel.take(day, &mut due, None);
+            hz.wheel.take(day, &mut due, ctx.pool);
             let process = hz.process;
             for slot in due.iter().copied().map(Slot::new) {
                 let booked = self.hazards.get(at).and_then(|hz| hz.next.get(index(slot)).copied().flatten());

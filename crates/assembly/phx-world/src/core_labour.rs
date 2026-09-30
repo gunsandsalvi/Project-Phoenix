@@ -153,6 +153,8 @@ pub struct LabourCtx<'a> {
     pub regions: &'a [CountryId],
     /// The run's clock its stages are timed by for the bench; none at the opening.
     pub clock: Option<&'a dyn phx_exec::Clock>,
+    /// The world's pool the day's takes and searches run on; none at the opening, before the world has one.
+    pub pool: Option<&'a phx_exec::Pool>,
 }
 
 impl std::fmt::Debug for LabourCtx<'_> {
@@ -395,7 +397,7 @@ impl Core {
         };
         let mut due = Vec::new();
         if let Some(w) = self.labour.employers.as_mut() {
-            w.take(day, &mut due, None);
+            w.take(day, &mut due, ctx.pool);
         }
         self.labour.due_today.clone_from(&due);
         let mut totals = (0, 0, 0, len_u64(due.len()));
@@ -737,7 +739,7 @@ impl Core {
                 self.decide_own(searching, s.household, |_| SearchIn { reach, draws }).unwrap_or_default()
             };
             for a in search(
-                None,
+                ctx.pool,
                 (&self.labour.vacancies, &standing),
                 &mine,
                 (law.wage_weight, law.applications_a_week),
@@ -924,7 +926,7 @@ impl Core {
                 self.decide_own(searching, s.household, |_| SearchIn { reach, draws }).unwrap_or_default()
             };
             sent.extend(search(
-                None,
+                ctx.pool,
                 (&self.labour.vacancies, &standing),
                 &mine,
                 (law.wage_weight, law.applications_a_week / DAYS_A_WEEK),

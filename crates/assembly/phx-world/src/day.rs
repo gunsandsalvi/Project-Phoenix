@@ -69,6 +69,7 @@ impl World {
             streams: &self.streams,
             processes: &self.processes,
             regions: &regions,
+            pool: self.pool.as_ref(),
         };
         let date = self.calendar.date(day);
         if date.month() == 1 && date.day() == 1 {
@@ -95,6 +96,7 @@ impl World {
                 kind,
                 regions: &regions,
                 clock: t,
+                pool: self.pool.as_ref(),
             };
             let _ = self.core.timed(t, "labour", |c| c.labour_day(&lctx, day));
         }
