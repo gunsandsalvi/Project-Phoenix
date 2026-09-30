@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 874 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 872 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -778,7 +778,7 @@ count = 2
 path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::open_goods"
 what = "`.collect()`"
-count = 5
+count = 4
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
@@ -1066,12 +1066,6 @@ count = 4
 path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::open_labour"
 what = "`.to_string()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::open_labour"
-what = "`format!`"
 count = 1
 
 [[site]]

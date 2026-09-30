@@ -834,6 +834,15 @@ an interface item whose writer is not registered.
   of no values, roles or person attributes beyond a person's word, a kind sited by two attributes or by one it does
   not hold.
 
+  The opening refuses a primitive absent for what the world holds, naming it, rather than reading it as zero: a product
+  with no lead time (`TEC.lead_time`, compiled once into `CoreGoods::lead`), a country with no lending rate
+  (`GEN.lending_rate`) or labour law, a product with no opening price in a country (`GDS.opening_price`, read for the
+  opening stocks and plant), a country with no drawn growth, and accounts short of the shape the opening reads
+  (`opening::economy::shape_breaks`: an input of each activity to each, a final use's take and value added's parts
+  of each activity, the taxes one an activity and one a final use, public administration among the activities and the
+  sale's final uses among the final uses). Past the opening, a lead, rate or law read for a product or country the
+  world does not hold stops the run (`CoreGoods::lead_of`, `at_country`); a zero the dataset writes is read as zero.
+
 ---
 
 ## 6. The day

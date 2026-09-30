@@ -7,6 +7,7 @@ use phx_core::Register;
 use phx_core::register::values::ValueType;
 use phx_id::CountryId;
 use phx_macros::clause;
+use phx_num::violation;
 use phx_rand::float::{from_i64, len_u64};
 
 use crate::consts::SECTORS_WORTH_NOTHING;
@@ -42,6 +43,58 @@ fn at(v: &[f64], i: usize) -> f64 {
 
 fn cell(m: &[Vec<f64>], r: usize, c: usize) -> f64 {
     m.get(r).map_or(f64::NAN, |row| at(row, c))
+}
+
+/// A cell of the accounts after the assembly's check has held their shape: one they lack stops the run.
+#[clause("GEN.15")]
+pub(crate) fn entry(row: &[f64], column: usize) -> f64 {
+    match row.get(column) {
+        Some(v) => *v,
+        None => violation!(clause = "GEN.15", "an accounts cell outside their checked shape", column = column),
+    }
+}
+
+/// A row of the accounts after the assembly's check has held their shape: one they lack stops the run.
+#[clause("GEN.15")]
+pub(crate) fn line(m: &[Vec<f64>], r: usize) -> &[f64] {
+    match m.get(r) {
+        Some(row) => row,
+        None => violation!(clause = "GEN.15", "an accounts row outside their checked shape", row = r),
+    }
+}
+
+/// The flows' shape, each break named: an output an activity, an input of each activity to each, an activity's value
+/// added in its parts, a final use's take of each activity, the taxes on products one an activity and one a final
+/// use, and the activities and final uses the opening reads by their places.
+#[clause("GEN.15")]
+#[must_use]
+pub fn shape_breaks(f: &Flows) -> Vec<String> {
+    let n = f.output.len();
+    let (Some(finals), Some(parts)) = (f.finals.first().map(Vec::len), f.added.first().map(Vec::len)) else {
+        return vec![format!("GEN.final_composition: {n} activities and no final use or value added of any")];
+    };
+    let mut out = Vec::new();
+    let rows = |id: &str, m: &[Vec<f64>], (count, width): (usize, usize), out: &mut Vec<String>| {
+        if m.len() != count {
+            out.push(format!("{id}: {} rows for {count}", m.len()));
+        }
+        for (i, row) in m.iter().enumerate().filter(|(_, r)| r.len() != width) {
+            out.push(format!("{id}: row {i} has {} columns for {width}", row.len()));
+        }
+    };
+    rows("TEC.inputs", &f.inputs, (n, n), &mut out);
+    rows("GEN.final_composition", &f.finals, (n, finals), &mut out);
+    rows("GEN.value_added_parts", &f.added, (n, parts), &mut out);
+    if f.taxes.len() != n + finals {
+        out.push(format!("GEN.product_taxes: {} rates for {n} activities and {finals} final uses", f.taxes.len()));
+    }
+    if n <= crate::consts::firm::PUBLIC_ADMINISTRATION {
+        out.push(format!("GEN.final_composition: {n} activities hold no public administration"));
+    }
+    if finals <= crate::consts::final_use::TAXED {
+        out.push(format!("GEN.final_weights: {finals} final uses for those bought at a sale"));
+    }
+    out
 }
 
 /// The flows' identities, each break named: every activity's supply is its uses, every activity's output is its
@@ -136,7 +189,7 @@ pub(crate) fn table(register: &Register, id: &str, country: CountryId) -> Result
 }
 
 fn row(register: &Register, id: &str, country: CountryId) -> Result<Vec<f64>, String> {
-    Ok(table(register, id, country)?.0.into_iter().next().unwrap_or_default())
+    table(register, id, country)?.0.into_iter().next().ok_or_else(|| format!("`{id}` has no row"))
 }
 
 /// The solution of `m · x = b` by elimination, `m` square and its pivots nonzero as `I − A` for inputs worth less than
@@ -259,7 +312,7 @@ fn level_breaks(register: &Register, country: CountryId, f: &Flows) -> Result<Ve
 /// What the labour and firm tables must hold against the accounts: the ways' hours one column an activity, none below
 /// nothing, and every activity the world staffs — the products and public administration — asking some; a share of
 /// each product's employed self-employed and a number of firms per person employed, a share each; each occupation's
-/// women a share of it; and the taxes on products one an activity and one a final use.
+/// women a share of it.
 fn labour_breaks(register: &Register, country: CountryId, f: &Flows) -> Result<Vec<String>, String> {
     let mut out = Vec::new();
     let activities = f.output.len();
@@ -296,11 +349,6 @@ fn labour_breaks(register: &Register, country: CountryId, f: &Flows) -> Result<V
         out.push(format!("FRM.firms_per_employed: product {i} makes no firm"));
     }
     share("LAB.women_by_occupation", ways.len(), &row(register, "LAB.women_by_occupation", country)?, &mut out);
-    let taxes = f.taxes.len();
-    let finals = f.finals.first().map_or(0, Vec::len);
-    if taxes != activities + finals {
-        out.push(format!("GEN.product_taxes: {taxes} rates for {activities} activities and {finals} final uses"));
-    }
     Ok(out)
 }
 
@@ -316,7 +364,8 @@ pub fn check(register: &Register, countries: usize) -> Result<(), Vec<String>> {
         let country = CountryId::new(id);
         let read = || -> Result<Vec<String>, String> {
             let (flows, unit) = accounts(register, country)?;
-            let mut breaks = flows_breaks(&flows, unit);
+            let mut breaks = shape_breaks(&flows);
+            breaks.extend(flows_breaks(&flows, unit));
             breaks.extend(level_breaks(register, country, &flows)?);
             breaks.extend(labour_breaks(register, country, &flows)?);
             Ok(breaks)

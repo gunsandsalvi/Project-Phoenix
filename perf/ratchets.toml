@@ -18,7 +18,7 @@ direction = "down"
 # migration of the core removes its own; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc92"
-value = 248
+value = 246
 direction = "down"
 
 # PC-96's admitted sites (S1.121, 2026-09-30): the world's and the systems' whole-table walks on the day's paths
@@ -26,7 +26,7 @@ direction = "down"
 # removes its own; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc96"
-value = 79
+value = 78
 direction = "down"
 
 # PC-97's admitted sites (S1.122, 2026-09-30): literal `None` handed to a kernel's pool and work run on a pool
@@ -42,7 +42,7 @@ direction = "down"
 # S1.141–S1.146 and S1.180 (K-21) remove them; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc98"
-value = 87
+value = 85
 direction = "down"
 
 # PC-99's admitted sites (S1.124, 2026-09-30): the syntax of allocation on the day's paths as the code stood when the
@@ -51,7 +51,7 @@ direction = "down"
 # empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 874
+value = 872
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and
@@ -60,7 +60,7 @@ direction = "down"
 # S1.136–S1.139, S1.159 (K-02) and the migrations remove them; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc100"
-value = 266
+value = 245
 direction = "down"
 
 # PC-101's admitted sites (S1.130, 2026-09-30): fields left out of a save without naming their rebuild, which today's

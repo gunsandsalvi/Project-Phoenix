@@ -3,6 +3,7 @@ use std::fmt;
 use phx_core::{Declarations, ItemDecl, check_claims};
 use phx_id::SystemCode;
 use phx_macros::clause;
+use phx_rand::float::from_i64;
 
 /// Every refusal of an assembly, reported at once.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,6 +34,41 @@ pub fn refusals(d: &Declarations, items: &[ItemDecl], registered: &[SystemCode])
     }
     errors
 }
+
+/// Each product's lead time in days, compiled once from the technology's table: a product it lacks refuses the world.
+///
+/// # Errors
+/// The first product the table holds no lead for.
+pub(crate) fn leads(products: usize, lead: &dyn Fn(i64) -> Option<i64>) -> Result<Vec<f64>, String> {
+    (0_i64..)
+        .take(products)
+        .map(|p| lead(p).map(from_i64).ok_or_else(|| format!("TEC.lead_time: product {p} has none")))
+        .collect()
+}
+
+/// A product's opening price in a country: none refuses the world.
+///
+/// # Errors
+/// A country or product the opening's prices do not hold.
+pub(crate) fn opening_price(prices: &[Vec<f64>], (country, product): (usize, u16)) -> Result<f64, String> {
+    prices
+        .get(country)
+        .and_then(|p| p.get(usize::from(product)))
+        .copied()
+        .ok_or_else(|| format!("GDS.opening_price: country {country} has no price for product {product}"))
+}
+
+/// A country's lending rate, the rate its firms finance their making at: none refuses the world.
+///
+/// # Errors
+/// A country the drawn rates do not hold.
+pub(crate) fn lending_rate(rate: Option<f64>, country: u8) -> Result<f64, String> {
+    rate.ok_or_else(|| format!("GEN.lending_rate: country {country} has none"))
+}
+
+#[cfg(test)]
+#[path = "refusals_tests.rs"]
+mod values;
 
 #[cfg(test)]
 mod tests {

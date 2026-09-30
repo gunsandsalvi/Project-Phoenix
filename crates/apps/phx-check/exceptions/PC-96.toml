@@ -1,4 +1,4 @@
-# The sites PC-96 admits for now, 79 in all, held to `phx_check.exceptions_pc96`. Each migration removes its own; a site is never added.
+# The sites PC-96 admits for now, 78 in all, held to `phx_check.exceptions_pc96`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -292,12 +292,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::open_stocks"
 what = "firm_slots"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::opening_spending"
-what = "live_slots"
 count = 1
 
 [[site]]

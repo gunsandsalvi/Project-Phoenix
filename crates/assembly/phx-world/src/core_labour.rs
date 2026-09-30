@@ -182,8 +182,16 @@ fn after(day: Day, n: u64) -> Day {
     }
 }
 
-pub(crate) fn at_country<T>(v: &[T], c: u8) -> &T {
-    v.get(usize::from(c)).unwrap_or_else(|| violation!(clause = "LAB.16", "a country with no labour law", country = c))
+pub(crate) fn at_country<T>(v: &[T], c: impl Into<usize>) -> &T {
+    let c: usize = c.into();
+    v.get(c).unwrap_or_else(|| violation!(clause = "LAB.16", "a country with no labour law", country = c))
+}
+
+/// A country's entry of a per-country table, to add to; a country the table does not hold stops the run.
+pub(crate) fn at_country_mut<T>(v: &mut [T], c: impl Into<usize>) -> &mut T {
+    let c: usize = c.into();
+    let len = v.len();
+    v.get_mut(c).unwrap_or_else(|| violation!(clause = "LAB.16", "a country beyond the table", country = c, held = len))
 }
 
 impl LabourCtx<'_> {
@@ -278,9 +286,7 @@ impl Core {
         for c in countries {
             let law = (ctx.kind.law)(ctx.register, c)?;
             let ways = table(ctx.register, "TEC.labour", c.id)?.0;
-            let Some(rate) = c.derived("GEN.lending_rate") else {
-                return Err(format!("country {}: no lending rate", c.id.get()));
-            };
+            let rate = crate::refusals::lending_rate(c.derived("GEN.lending_rate"), c.id.get())?;
             by_id.insert(c.id.get(), (law, ways, rate / PERCENT));
         }
         for (_, (law, ways, rate)) in by_id {
@@ -472,12 +478,7 @@ impl Core {
         let ways = at_country(&self.labour.ways, c);
         let level = at_country(&self.labour.level, c).clone();
         let lot = sys_frm::FilingPrims::lot(ctx.register, u16::try_from(f.product).unwrap_or(u16::MAX));
-        let lead = ctx
-            .register
-            .table1("TEC.lead_time")
-            .ok()
-            .and_then(|t| t.at(i64::try_from(f.product).ok()?).ok())
-            .map_or(0.0, from_i64);
+        let lead = self.goods.lead_of(f.product);
         let financing = at_country(&self.labour.financing, c) * lead / DAYS_A_YEAR;
         let full = f64::from(law.full_time_hours);
         let job_hours = full / DAYS_A_WEEK;

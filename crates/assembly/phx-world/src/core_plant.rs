@@ -173,8 +173,8 @@ impl Core {
                     continue;
                 };
                 let product = self.plant.bought_as.get(kind).copied().ok_or("a kind bought as no product")?;
-                let price = prices.get(f.country).and_then(|p| p.get(usize::from(product))).copied().unwrap_or(0.0);
-                let g = growth.get(f.country).copied().unwrap_or(0.0);
+                let price = crate::refusals::opening_price(&prices, (f.country, product))?;
+                let g = *crate::core_labour::at_country(&growth, f.country);
                 let (weights, per_efficient, _) = steady_path(k, classes, g);
                 let need = per * f.output;
                 let kind16 = u16::try_from(kind).map_err(|e| e.to_string())?;
