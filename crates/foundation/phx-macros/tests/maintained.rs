@@ -1,4 +1,4 @@
-use phx_macros::Maintained;
+use phx_macros::{Maintained, per_day};
 
 fn record_sale() {}
 
@@ -19,4 +19,15 @@ fn maintained_marks_integers() {
 #[test]
 fn maintained_needs_a_writer() {
     trybuild::TestCases::new().compile_fail("tests/ui/maintained_*.rs");
+}
+
+#[per_day]
+fn unit_cost(firm: u32) -> u64 {
+    u64::from(firm) + 1
+}
+
+#[test]
+fn per_day_marks_functions() {
+    let cached: fn(u32) -> u64 = unit_cost;
+    assert_eq!(cached(2), 3);
 }

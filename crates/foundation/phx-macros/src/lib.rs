@@ -29,6 +29,13 @@ pub fn opening(args: TokenStream, item: TokenStream) -> TokenStream {
     opening::expand(args.into(), item.into()).into()
 }
 
+/// Marks a function whose value is computed once a day per party; it is named only as what the day's cache computes,
+/// never called. The function is emitted unchanged.
+#[proc_macro_attribute]
+pub fn per_day(args: TokenStream, item: TokenStream) -> TokenStream {
+    markers::per_day(&args.into(), item.into()).into()
+}
+
 /// Marks the aggregates a struct maintains, each `#[maintained(writer = path)]` on its field, naming its one writer; a
 /// field so marked is an integer, so the audit's recount from source rows equals it. Emits nothing.
 #[proc_macro_derive(Maintained, attributes(maintained))]

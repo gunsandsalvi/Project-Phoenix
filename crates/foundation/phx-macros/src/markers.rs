@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+use quote::quote;
 use syn::{Data, DeriveInput, Expr, Field, Meta, Type};
 
 /// The integer types a maintained aggregate may be: the machine's, and the number types that are integers inside.
@@ -42,5 +43,24 @@ fn check_integer(field: &Field) -> syn::Result<()> {
             &field.ty,
             "a maintained aggregate is an integer: no float, no `i128`, no composite",
         ))
+    }
+}
+
+/// The function unchanged: its value is computed once a day per party, so it is reached only through the day's cache,
+/// which the checks hold. It takes no arguments and marks nothing but a function.
+pub fn per_day(args: &TokenStream, item: TokenStream) -> TokenStream {
+    let refused = if !args.is_empty() {
+        Some(syn::Error::new_spanned(args, "`#[per_day]` takes no arguments"))
+    } else if syn::parse2::<syn::ItemFn>(item.clone()).is_err() {
+        Some(syn::Error::new_spanned(&item, "`#[per_day]` marks only a function"))
+    } else {
+        None
+    };
+    match refused {
+        Some(error) => {
+            let error = error.into_compile_error();
+            quote! { #error #item }
+        }
+        None => item,
     }
 }

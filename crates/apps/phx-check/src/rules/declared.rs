@@ -1,11 +1,13 @@
 //! PC-101: what the world keeps is declared as what it is. An aggregate a writer maintains is marked
 //! `#[maintained(writer = path)]`, is an integer, so a sum rebuilt from its rows equals it, and is never read by the
 //! audit, which recounts from the source rows so a maintained sum cannot hide the fault the audit is there to find.
+//! And a value computed once a day per party, its function marked `#[per_day]`, is reached only through the day's
+//! cache: the function is passed to it as a path and never called, so no path computes it twice in a day.
 
 use std::collections::BTreeSet;
 
 use syn::visit::{self, Visit};
-use syn::{ExprField, ItemFn, ItemMod, ItemStruct, Member, Type};
+use syn::{Expr, ExprCall, ExprField, ExprMethodCall, ImplItemFn, ItemFn, ItemMod, ItemStruct, Member, Type};
 
 use super::{Breach, attrs, unparsed};
 use crate::workspace::Workspace;
@@ -21,6 +23,8 @@ const INTEGERS: &[&str] = &[
 ];
 /// The crate of the audit.
 const AUDIT: &str = "phx-audit";
+/// The mark of a value computed once a day per party.
+const PER_DAY: &str = "per_day";
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let mut breaches = Vec::new();
@@ -45,6 +49,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             }
         }
     }
+    breaches.extend(per_day(ws));
     if let Some(audit) = ws.crates.iter().find(|c| c.name == AUDIT) {
         for source in audit.sources.iter().filter(|s| !s.is_test_or_bench()) {
             let Ok(file) = &source.file else { continue };
@@ -57,6 +62,98 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
         }
     }
     breaches
+}
+
+/// Every call of a function marked `#[per_day]` in a world crate: the function is named only as a path handed to the
+/// day's cache.
+fn per_day(ws: &Workspace) -> Vec<Breach> {
+    let mut marked = PerDay::default();
+    for c in ws.world_crates() {
+        for source in c.sources.iter().filter(|s| !s.is_test_or_bench()) {
+            if let Ok(file) = &source.file {
+                marked.visit_file(file);
+            }
+        }
+    }
+    if marked.names.is_empty() {
+        return Vec::new();
+    }
+    let mut breaches = Vec::new();
+    for c in ws.world_crates() {
+        for source in c.sources.iter().filter(|s| !s.is_test_or_bench()) {
+            let Ok(file) = &source.file else { continue };
+            let mut calls = Calls { names: &marked.names, found: Vec::new() };
+            calls.visit_file(file);
+            breaches.extend(calls.found.into_iter().map(|(line, name)| {
+                let message = format!("`{name}` called directly: a per-day value is reached through the day's cache");
+                Breach::new(RULE, &source.path, line, message)
+            }));
+        }
+    }
+    breaches
+}
+
+/// The functions marked `#[per_day]`, by name.
+#[derive(Debug, Default)]
+struct PerDay {
+    names: BTreeSet<String>,
+}
+
+fn marked_per_day(attrs_: &[syn::Attribute]) -> bool {
+    attrs_.iter().any(|a| a.path().segments.last().is_some_and(|s| s.ident == PER_DAY))
+}
+
+impl<'ast> Visit<'ast> for PerDay {
+    fn visit_item_fn(&mut self, item: &'ast ItemFn) {
+        if marked_per_day(&item.attrs) {
+            self.names.insert(item.sig.ident.to_string());
+        }
+        visit::visit_item_fn(self, item);
+    }
+
+    fn visit_impl_item_fn(&mut self, item: &'ast ImplItemFn) {
+        if marked_per_day(&item.attrs) {
+            self.names.insert(item.sig.ident.to_string());
+        }
+        visit::visit_impl_item_fn(self, item);
+    }
+}
+
+/// The calls of the marked functions, outside tests.
+struct Calls<'a> {
+    names: &'a BTreeSet<String>,
+    found: Vec<(usize, String)>,
+}
+
+impl<'ast> Visit<'ast> for Calls<'_> {
+    fn visit_item_mod(&mut self, item: &'ast ItemMod) {
+        if !attrs::is_test(&item.attrs) {
+            visit::visit_item_mod(self, item);
+        }
+    }
+
+    fn visit_item_fn(&mut self, item: &'ast ItemFn) {
+        if !attrs::is_test(&item.attrs) {
+            visit::visit_item_fn(self, item);
+        }
+    }
+
+    fn visit_expr_call(&mut self, call: &'ast ExprCall) {
+        if let Expr::Path(p) = &*call.func
+            && let Some(seg) = p.path.segments.last()
+            && self.names.contains(&seg.ident.to_string())
+        {
+            self.found.push((attrs::line(seg.ident.span()), seg.ident.to_string()));
+        }
+        visit::visit_expr_call(self, call);
+    }
+
+    fn visit_expr_method_call(&mut self, call: &'ast ExprMethodCall) {
+        if self.names.contains(&call.method.to_string()) {
+            self.found.push((attrs::line(call.method.span()), call.method.to_string()));
+        }
+        visit::visit_expr_method_call(self, call);
+    }
 }
 
 /// Every maintained field: its line, its name, and whether it is an integer.
@@ -130,6 +227,28 @@ mod tests {
         let found = breaches(ledger, "");
         assert_eq!(found.len(), 2, "{found:?}");
         assert!(found.iter().all(|m| m.contains("is no integer")));
+    }
+
+    fn per_day_breaches(text: &str) -> Vec<String> {
+        let c = with_source(krate("phx-acct", Layer::Kernel), "src/cost.rs", text);
+        run(&Workspace::new(vec![c])).into_iter().map(|b| b.message).collect()
+    }
+
+    const UNIT_COST: &str = "impl Firm { #[per_day] pub fn unit_cost(&self, day: Day) -> Money { self.costs } }\n";
+
+    #[test]
+    fn per_day_only_through_the_cache() {
+        let text =
+            format!("{UNIT_COST}fn price(f: &Firm, d: Day) -> Money {{ f.unit_cost(d) + Firm::unit_cost(f, d) }}");
+        assert_eq!(per_day_breaches(&text).len(), 2, "a method call and a path call");
+    }
+
+    #[test]
+    fn per_day_path_is_admitted() {
+        let text = format!(
+            "{UNIT_COST}fn price(c: &mut DayCached<Money>, d: Day) -> Money {{ c.get_or(d, Firm::unit_cost) }}"
+        );
+        assert!(per_day_breaches(&text).is_empty());
     }
 
     #[test]
