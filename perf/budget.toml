@@ -101,8 +101,9 @@ direction = "down"
 
 # Generation references (S1.159, 2026-09-30; `tools/bench.sh -F refs`): the design point's 8.8 M party slots in one
 # table, a day's rows ended and begun first in first out with the close, and a day's references resolved in slot order:
-# 13 ns a row begun or ended and 2 a resolve over two measures, within the step's unit targets, which stand as the
-# ratchets; a slot's generation is 4 bytes.
+# 9–10 ns a row begun or ended (after the ring's wrap became a mask and a release one touch of its live word, from 11–20
+# on this shared machine) and 1–2 a resolve, within the step's unit targets, which stand as the ratchets; a slot's
+# generation is 4 bytes.
 
 [[ratchet]]
 counter = "fin.refs.resolve_ns"

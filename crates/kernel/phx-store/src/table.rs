@@ -60,13 +60,11 @@ impl<B: Backing> SlotAlloc<B> {
             && self.live.slice(to_usize(self.high.div_ceil(BITS))).get(word).is_some_and(|w| w & mask != 0)
     }
 
-    fn set_live(&mut self, slot: Slot, live: bool) {
-        let words = to_usize(self.high.div_ceil(BITS));
-        self.live.ensure(words);
+    /// The live bits' word holding a slot below the high water, whose words are committed.
+    fn word_mut(&mut self, slot: Slot) -> Option<(&mut u64, u64)> {
         let (word, mask) = bit(slot);
-        if let Some(w) = self.live.slice_mut(words).get_mut(word) {
-            *w = if live { *w | mask } else { *w & !mask };
-        }
+        let words = to_usize(self.high.div_ceil(BITS));
+        self.live.slice_mut(words).get_mut(word).map(|w| (w, mask))
     }
 
     /// The free slot that has waited longest, or a new one above every slot handed out.
@@ -75,7 +73,8 @@ impl<B: Backing> SlotAlloc<B> {
             let Some(free) = self.free.slice(self.ring).get(self.head).copied() else {
                 violation!(clause = "SET.12", "a free ring shorter than its head", head = self.head);
             };
-            self.head = (self.head + 1) % self.ring;
+            // The ring's places are a power of two, so wrapping is a mask, not a division.
+            self.head = (self.head + 1) & (self.ring - 1);
             self.n_free -= 1;
             Slot::new(free)
         } else {
@@ -83,20 +82,26 @@ impl<B: Backing> SlotAlloc<B> {
                 capacity_exceeded!("table slots", self.max, u64::from(self.max) + 1);
             }
             self.high += 1;
+            self.live.ensure(to_usize(self.high.div_ceil(BITS)));
             Slot::new(self.high - 1)
         };
-        self.set_live(slot, true);
+        if let Some((w, mask)) = self.word_mut(slot) {
+            *w |= mask;
+        }
         slot
     }
 
     /// Frees a live slot; it is handed out again only after the day closes.
     pub fn release(&mut self, slot: Slot) {
-        if !self.is_live(slot) {
-            violation!(clause = "SET.12", "a slot released that is not in use", slot = slot.get());
+        let high = self.high;
+        match self.word_mut(slot) {
+            Some((w, mask)) if slot.get() < high && *w & mask != 0 => *w &= !mask,
+            _ => violation!(clause = "SET.12", "a slot released that is not in use", slot = slot.get()),
         }
-        self.set_live(slot, false);
         let n = self.n_released + 1;
-        self.released.ensure(n);
+        if n > self.released.committed_len() {
+            self.released.ensure(n);
+        }
         if let Some(cell) = self.released.slice_mut(n).last_mut() {
             *cell = slot.get();
         }
@@ -133,7 +138,7 @@ impl<B: Backing> SlotAlloc<B> {
         let ring = self.ring;
         let cells = self.free.slice_mut(ring);
         for (at, slot) in (self.head + self.n_free..).zip(released.iter()) {
-            if let Some(cell) = cells.get_mut(at % ring) {
+            if let Some(cell) = cells.get_mut(at & (ring - 1)) {
                 *cell = *slot;
             }
         }

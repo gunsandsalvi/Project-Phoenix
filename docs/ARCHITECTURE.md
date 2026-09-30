@@ -1072,10 +1072,11 @@ A contract family holds fewer than 2²⁴ rows.
 
 **Volumes and ratchets**: `tools/bench.sh -F refs` fills the design point's 8.8 M party slots in one table and, on
 each day type, ends and begins up to half its `row_life` rows at drawn slots and resolves its `applies` references in
-slot order. Over the turn: 12–13 ns a row begun or ended and 1–2 a resolve, `[fin.refs]` `alloc_ns` 15.4,
-`resolve_ns` 2.3, `gen_bytes` 4. A row's cost follows the day's density: 10 ns on a heavy day, 22–25 on a business
-day and 48 on a non-business day, whose few ended rows each meet a cold line of the live bits and the generations; in
-the world the row's own columns are written in the same pass, and its lines are warm.
+slot order. Over the turn: 9–10 ns a row begun or ended and 1–2 a resolve, `[fin.refs]` `alloc_ns` 15.4,
+`resolve_ns` 2.3, `gen_bytes` 4. A row's cost follows the day's density: 6 ns on a heavy day, 16 on a business day
+and 45 on a non-business day, whose few ended rows each meet a cold line of the live bits and the generations; in the
+world the row's own columns are written in the same pass, and its lines are warm. The ring wraps by a mask (its places
+are a power of two), and a release reads and clears its live bit in one touch of the word.
 
 **Extension points**: the directory's generation column and FIFO reuse (S1.194), the keyed indexes' and the
 interner's members (S1.165, S1.168), typed references (S1.174), messages' and records' references (S1.237, S1.240),
