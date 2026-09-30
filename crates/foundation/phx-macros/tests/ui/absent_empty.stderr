@@ -1,0 +1,5 @@
+error: say why the absence is zero: `#[absent_is_zero(reason = "…")]`
+ --> tests/ui/absent_empty.rs:3:18
+  |
+3 | #[absent_is_zero(reason = " ")]
+  |                  ^^^^^^^^^^^^

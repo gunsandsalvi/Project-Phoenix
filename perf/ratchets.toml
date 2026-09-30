@@ -54,12 +54,13 @@ counter = "phx_check.exceptions_pc99"
 value = 903
 direction = "down"
 
-# PC-100's admitted sites (S1.125, 2026-09-30): saved maps, sets and pair lists keyed by a bare slot or a party's
-# key, as the code stood when the rule came, 35 in all. S1.159 (K-02) and the migrations remove them; the count only
-# falls, and S1.492 empties it.
+# PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and
+# absent values read as zero without a stated reason (S1.126, 231: 118 unwrap_or, 76 map_or, 37 unwrap_or_default),
+# as the code stood when each check came, 266 in all. The second check raises the count once, by its own sites;
+# S1.136–S1.139, S1.159 (K-02) and the migrations remove them; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc100"
-value = 35
+value = 266
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by

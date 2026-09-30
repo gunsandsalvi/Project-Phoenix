@@ -1,3 +1,4 @@
+mod absent;
 mod clause;
 mod consts;
 mod decl;
@@ -11,6 +12,13 @@ use proc_macro::TokenStream;
 #[proc_macro_attribute]
 pub fn clause(args: TokenStream, item: TokenStream) -> TokenStream {
     clause::expand(args.into(), item.into()).into()
+}
+
+/// Marks a function that reads an absent value as zero because the absence truly is zero — a count of an entry that is
+/// not there — saying why; the function is emitted unchanged, and the checks admit its reads.
+#[proc_macro_attribute]
+pub fn absent_is_zero(args: TokenStream, item: TokenStream) -> TokenStream {
+    absent::expand(&args.into(), item.into()).into()
 }
 
 /// Marks a function that runs only while the world is assembled or opened, where names are bound to handles; the
