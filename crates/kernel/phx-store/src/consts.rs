@@ -5,10 +5,6 @@ pub const VA_BUDGET: usize = 1 << 36;
 /// Page size of the heap backing, which stands in for the system's pages under Miri and in tests; phones use 16 KiB.
 pub const HEAP_PAGE: usize = 1 << 14;
 
-/// Words a chunk's arena reserves when its table declares none: 32 MiB of address space, 1 024 words per row of a
-/// full chunk. Reservation costs no memory until committed.
-pub const ARENA_RESERVED_WORDS: u32 = 1 << 22;
-
 /// A relocated list's capacity grows by 5/4 of the length it needs, so repeated appends relocate a logarithmic number
 /// of times while the slack stays near an eighth on average.
 pub const ARENA_GROWTH_NUM: u64 = 5;

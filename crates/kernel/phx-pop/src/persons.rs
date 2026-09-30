@@ -2,12 +2,12 @@
 //! household in its chunk's arena and found by the household's slot, so a person's event reads and writes its own
 //! household alone.
 
+use phx_core::capacity::PERSON_ARENA_WORDS;
 use phx_id::Slot;
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 use phx_store::arena::{CellListRef, ChunkArena, ListRef};
 use phx_store::backing::{AddressSpace, Backing};
-use phx_store::consts::ARENA_RESERVED_WORDS;
 use phx_store::region::Region;
 use phx_store::{Column, SystemBacking};
 
@@ -59,7 +59,7 @@ impl<B: Backing> Persons<B> {
         }
         let chunk = self.chunk(slot);
         while self.arenas.len() <= chunk {
-            self.arenas.push(ChunkArena::new(space, ARENA_RESERVED_WORDS));
+            self.arenas.push(ChunkArena::new(space, PERSON_ARENA_WORDS));
         }
     }
 
@@ -167,7 +167,7 @@ impl<B: Backing> Persons<B> {
     pub fn compact_due(&mut self, space: &mut AddressSpace) -> u64 {
         let mut done = 0;
         let per = index(self.rows_per_chunk);
-        let mut scratch: Region<u64, B> = Region::reserve(space, index(ARENA_RESERVED_WORDS));
+        let mut scratch: Region<u64, B> = Region::reserve(space, index(PERSON_ARENA_WORDS));
         for chunk in 0..self.arenas.len() {
             if !self.arenas.get(chunk).is_some_and(ChunkArena::needs_compaction) {
                 continue;

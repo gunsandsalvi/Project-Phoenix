@@ -123,6 +123,9 @@ pub const GROWTH_YEARS: u32 = 2;
 pub const ROW_BYTES_UNLAID: u32 = 64;
 /// Words an event's subjects and details take at most in the events' arena.
 pub const EVENT_WORDS: u32 = 8;
+/// Words a household's list of persons may take in its chunk's arena, at two a person: 512 persons, beyond any
+/// household, since a list that outgrows its room stops the run. Address space only, committed as it is written.
+pub const HOUSEHOLD_WORDS: u32 = 1024;
 /// Days the due wheel files ahead: past a quarter, the longest period a bill or an anchor waits.
 pub const WHEEL_DAYS: u32 = 128;
 /// The longest quarter, July to September or October to December.

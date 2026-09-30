@@ -66,4 +66,4 @@ pub const MONTHS_A_YEAR: usize = 12;
 /// Bytes of the region the run's gather probe reads: well past every cache of a phone, so each row is a miss.
 pub const PROBE_GATHER_BYTES: u64 = 64 << 20;
 /// Random rows each worker reads in the run's gather probe: about 25 ms of misses, twice over.
-pub const PROBE_GATHER_ROWS: u64 = 1 << 18;
+pub const PROBE_GATHER_READS: u64 = 1 << 18;

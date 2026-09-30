@@ -211,7 +211,6 @@ pub const phx_store::consts::ARENA_DEAD_DEN: u64
 pub const phx_store::consts::ARENA_DEAD_NUM: u64
 pub const phx_store::consts::ARENA_GROWTH_DEN: u64
 pub const phx_store::consts::ARENA_GROWTH_NUM: u64
-pub const phx_store::consts::ARENA_RESERVED_WORDS: u32
 pub const phx_store::consts::ARENA_ROUND_WORDS: u32
 pub const phx_store::consts::BLOCK_ENTRIES: usize
 pub const phx_store::consts::BLOCK_HALF: usize

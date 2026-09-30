@@ -5,7 +5,7 @@ use phx_store::{AddressSpace, Region};
 
 use crate::clock::Clock;
 use crate::consts::{
-    NS_PER_S, PREFETCH_DISTANCE, PROBE_GATHER_BYTES, PROBE_GATHER_ROWS, PROBE_PIECE_BYTES, PROBE_UNIT_BLOCKS,
+    NS_PER_S, PREFETCH_DISTANCE, PROBE_GATHER_BYTES, PROBE_GATHER_READS, PROBE_PIECE_BYTES, PROBE_UNIT_BLOCKS,
 };
 use crate::convert::{index, to_u64};
 use crate::mix::mix64;
@@ -178,8 +178,8 @@ pub fn baseline(pool: &Pool, clock: &dyn Clock) -> Baseline {
     let region = filled_region(pool, PROBE_GATHER_BYTES);
     Baseline {
         resident_bytes,
-        gather: gather(pool, clock, &region, PROBE_GATHER_ROWS, false),
-        gather_prefetched: gather(pool, clock, &region, PROBE_GATHER_ROWS, true),
+        gather: gather(pool, clock, &region, PROBE_GATHER_READS, false),
+        gather_prefetched: gather(pool, clock, &region, PROBE_GATHER_READS, true),
     }
 }
 

@@ -19,7 +19,7 @@ pub const phx_exec::consts::MONTHS_A_YEAR: usize
 pub const phx_exec::consts::NS_PER_S: u64
 pub const phx_exec::consts::PREFETCH_DISTANCE: u64
 pub const phx_exec::consts::PROBE_GATHER_BYTES: u64
-pub const phx_exec::consts::PROBE_GATHER_ROWS: u64
+pub const phx_exec::consts::PROBE_GATHER_READS: u64
 pub const phx_exec::consts::PROBE_PIECE_BYTES: usize
 pub const phx_exec::consts::PROBE_UNIT_BLOCKS: u32
 pub const phx_exec::consts::RADIX_BITS: u32

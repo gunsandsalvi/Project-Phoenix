@@ -151,6 +151,7 @@ pub const phx_core::capacity::EVENT_ROWS: u32
 pub const phx_core::capacity::INSTRUMENT_ROWS: u32
 pub const phx_core::capacity::KIND_ROWS: u32
 pub const phx_core::capacity::LINK_BITS: u32
+pub const phx_core::capacity::PERSON_ARENA_WORDS: u32
 pub const phx_core::capacity::WHEEL_DAYS: u32
 pub fn phx_core::capacity::family_code(usize) -> core::option::Option<u8>
 pub const fn phx_core::capacity::slot_fits(u32) -> bool
@@ -190,6 +191,7 @@ pub const phx_core::consts::FAMILY_BITS: u32
 pub const phx_core::consts::GROWTH_DIVISOR: u32
 pub const phx_core::consts::GROWTH_YEARS: u32
 pub const phx_core::consts::HOLDINGS_CODE: u8
+pub const phx_core::consts::HOUSEHOLD_WORDS: u32
 pub const phx_core::consts::INSTITUTIONS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::INSTRUMENTS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::KEYED_ORDINAL: u8

@@ -2,12 +2,13 @@
 //! reference its generation checks, never a bare slot, so a slot reused after its party ended is never read as that
 //! party: a saved struct's field is refused where it is a map or set keyed by a bare slot or a party's key, or a list
 //! of pairs led by a party's key. And an absent value is never read as zero unless the function says why the absence
-//! truly is zero, through `#[absent_is_zero(reason = "…")]`.
+//! truly is zero, through `#[absent_is_zero(reason = "…")]`. And a store's capacity is the declared table's, never a
+//! literal shift, so every store is sized for the design point and its growth.
 
 use syn::visit::{self, Visit};
 use syn::{
-    Attribute, Expr, ExprMethodCall, Fields, GenericArgument, ImplItemFn, ItemFn, ItemImpl, ItemMod, ItemStruct, Lit,
-    PathArguments, Type,
+    Attribute, BinOp, Expr, ExprCall, ExprMethodCall, Fields, GenericArgument, ImplItemFn, ItemConst, ItemFn, ItemImpl,
+    ItemMod, ItemStruct, Lit, PathArguments, Type,
 };
 
 use super::{Breach, attrs, unparsed};
@@ -67,6 +68,7 @@ pub fn found(ws: &Workspace) -> (Vec<Found>, Vec<Breach>) {
 
 pub fn run(ws: &Workspace) -> Vec<Breach> {
     let (sites, mut breaches) = found(ws);
+    breaches.extend(capacities(ws));
     match Exceptions::load(ws, RULE) {
         Ok(ex) => breaches.extend(ex.judge(&ws.ratchets, sites)),
         Err(b) => breaches.push(b),
@@ -167,6 +169,101 @@ impl<'ast> Visit<'ast> for Finder {
     }
 }
 
+/// Where capacities are declared, and the names a capacity constant ends with.
+const CAPACITY_FILE: (&str, &str) = ("phx-core", "src/capacity.rs");
+const CAPACITY_NAMES: &[&str] = &["_ROWS", "_WORDS", "_CAPACITY"];
+const INSTRUMENTS: &str = "INSTRUMENTS";
+/// The stores whose constructors take a capacity.
+const STORES: &[&str] = &[
+    "Column",
+    "Parties",
+    "KindStore",
+    "Table",
+    "SlotAlloc",
+    "Region",
+    "EdgeTable",
+    "BlockPool",
+    "Persons",
+    "ChunkArena",
+];
+const CONSTRUCTORS: &[&str] = &["new", "reserve"];
+
+/// Every literal capacity in a world crate outside the declared table: no exception is kept, since none stands.
+fn capacities(ws: &Workspace) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    for c in ws.world_crates() {
+        for source in c.sources.iter().filter(|s| !s.is_test_or_bench()) {
+            if c.name == CAPACITY_FILE.0 && source.path == format!("{}/{}", c.dir, CAPACITY_FILE.1) {
+                continue;
+            }
+            let Ok(file) = &source.file else { continue };
+            if attrs::is_test(&file.attrs) {
+                continue;
+            }
+            let mut finder = Capacities::default();
+            finder.visit_file(file);
+            breaches.extend(finder.found.into_iter().map(|(line, what)| {
+                Breach::new(RULE, &source.path, line, format!("{what}: read the capacity from `phx_core::capacity`"))
+            }));
+        }
+    }
+    breaches
+}
+
+/// A shift of literals, the form a capacity written by hand takes.
+fn is_literal_shift(e: &Expr) -> bool {
+    match e {
+        Expr::Binary(b) => {
+            matches!(b.op, BinOp::Shl(_)) && matches!(&*b.left, Expr::Lit(_)) && matches!(&*b.right, Expr::Lit(_))
+        }
+        Expr::Paren(p) => is_literal_shift(&p.expr),
+        _ => false,
+    }
+}
+
+#[derive(Debug, Default)]
+struct Capacities {
+    found: Vec<(usize, String)>,
+}
+
+impl<'ast> Visit<'ast> for Capacities {
+    fn visit_item_mod(&mut self, item: &'ast ItemMod) {
+        if !attrs::is_test(&item.attrs) {
+            visit::visit_item_mod(self, item);
+        }
+    }
+
+    fn visit_item_fn(&mut self, item: &'ast ItemFn) {
+        if !attrs::is_test(&item.attrs) {
+            visit::visit_item_fn(self, item);
+        }
+    }
+
+    fn visit_item_const(&mut self, item: &'ast ItemConst) {
+        let name = item.ident.to_string();
+        let capacity = CAPACITY_NAMES.iter().any(|s| name.ends_with(s)) || name == INSTRUMENTS;
+        if capacity && is_literal_shift(&item.expr) {
+            self.found.push((attrs::line(item.ident.span()), format!("`{name}` a literal capacity")));
+        }
+        visit::visit_item_const(self, item);
+    }
+
+    fn visit_expr_call(&mut self, call: &'ast ExprCall) {
+        if let Expr::Path(p) = &*call.func {
+            let segs: Vec<String> = p.path.segments.iter().map(|s| s.ident.to_string()).collect();
+            if let [.., ty, f] = segs.as_slice()
+                && STORES.contains(&ty.as_str())
+                && CONSTRUCTORS.contains(&f.as_str())
+                && call.args.iter().any(is_literal_shift)
+            {
+                let line = attrs::line(call.paren_token.span.open());
+                self.found.push((line, format!("`{ty}::{f}` given a literal capacity")));
+            }
+        }
+        visit::visit_expr_call(self, call);
+    }
+}
+
 /// The mark of a function whose absences are truly zero.
 const ABSENT_IS_ZERO: &str = "absent_is_zero";
 /// The zero of the number types.
@@ -248,7 +345,7 @@ impl<'ast> Visit<'ast> for Zeros {
 
 #[cfg(test)]
 mod tests {
-    use super::{Finder, Zeros};
+    use super::{Capacities, Finder, Zeros};
     use syn::visit::Visit;
 
     fn whats(text: &str) -> Vec<String> {
@@ -310,6 +407,39 @@ mod tests {
         let text = "#[absent_is_zero(reason = \"a firm with no sale today sold none\")] fn sold(of: Option<u32>) -> u32 { of.unwrap_or(0) }\n\
                     #[cfg(test)] mod tests { fn t() { let _ = None::<u8>.unwrap_or(0); } }";
         assert!(zeros(text).is_empty());
+    }
+
+    fn capacities(text: &str) -> Vec<String> {
+        let file: syn::File = syn::parse_str(text).unwrap();
+        let mut c = Capacities::default();
+        c.visit_file(&file);
+        c.found.into_iter().map(|(_, w)| w).collect()
+    }
+
+    #[test]
+    fn literal_capacity_is_refused() {
+        let found = capacities(
+            "const AGENT_ROWS: u32 = 1 << 24; const ARENA_WORDS: usize = (1 << 20); const INSTRUMENTS: u32 = 1 << 16;\n\
+             const FROM_TABLE_ROWS: u32 = STORES[0].rows;\n\
+             fn open(space: &mut S) { let c: Column<u32> = Column::new(space, 1 << 20, 4096); let t = Table::new(space, id, ROWS, 4096); }",
+        );
+        assert_eq!(
+            found,
+            [
+                "`AGENT_ROWS` a literal capacity",
+                "`ARENA_WORDS` a literal capacity",
+                "`INSTRUMENTS` a literal capacity",
+                "`Column::new` given a literal capacity"
+            ]
+        );
+    }
+
+    #[test]
+    fn chunk_sizes_are_admitted() {
+        assert!(
+            capacities("const AGENT_ROWS_PER_CHUNK: u32 = 1 << 12; const KIND_ROWS_PER_CHUNK: u32 = 1 << 8;")
+                .is_empty()
+        );
     }
 
     #[test]
