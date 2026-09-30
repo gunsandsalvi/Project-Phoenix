@@ -109,3 +109,6 @@ pub const INDEX_NEW_KEYS: u32 = 1 << 12;
 /// A sparse index's run of new pairs holds a sixteenth of its entries, so a merge copies its pairs about once for each
 /// sixteenth that comes.
 pub const INDEX_NEW_SHARE: u32 = 16;
+
+/// The floors a ring's owner may set on its horizon over a run: one a change of the policy that sets it.
+pub const RING_FLOORS: u32 = 64;

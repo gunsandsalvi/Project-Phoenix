@@ -231,6 +231,7 @@ pub const phx_store::consts::HEAP_PAGE: usize
 pub const phx_store::consts::INDEX_BLOCKS_PER_ENTRIES: (u32, u32)
 pub const phx_store::consts::INDEX_NEW_KEYS: u32
 pub const phx_store::consts::INDEX_NEW_SHARE: u32
+pub const phx_store::consts::RING_FLOORS: u32
 pub const phx_store::consts::SAVE_FRAME_BYTES: usize  // used by: phx-fin
 pub const phx_store::consts::SAVE_FRAME_WAVE: usize
 pub const phx_store::consts::SAVE_READ_STEP: usize
@@ -741,6 +742,32 @@ pub fn phx_store::region::Region<T, B>::release_above(&mut self, usize)  // used
 pub fn phx_store::region::Region<T, B>::reserve(&mut phx_store::backing::AddressSpace, usize) -> phx_store::region::Region<T, B>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 pub fn phx_store::region::Region<T, B>::slice(&self, usize) -> &[T]  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
 pub fn phx_store::region::Region<T, B>::slice_mut(&mut self, usize) -> &mut [T]  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-world
+pub mod phx_store::ring  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world
+pub struct phx_store::ring::HorizonRing<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::append(&mut self, u32, &[T]) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::chunks_live(&self) -> usize  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::compact_subject(&self, &mut phx_store::index::Index<B>, u64, impl core::ops::function::Fn(&T) -> u64, &mut phx_store::daybuf::DayBuf<u32, B>)  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::horizon_on(&self, u32) -> u32  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::index_since(&self, u64, &mut phx_store::index::Index<B>, impl core::ops::function::Fn(&T) -> u64) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::new(&mut phx_store::backing::AddressSpace, (u32, u32), u32) -> core::result::Result<phx_store::ring::HorizonRing<T, B>, alloc::string::String>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::of_subject(&self, &phx_store::index::Index<B>, u64, impl core::ops::function::Fn(&T) -> u64, &mut phx_store::daybuf::DayBuf<u32, B>) -> u32  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::ordinals(&self) -> (u64, u64)  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::prune(&mut self, u32) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::range(&self, (u32, u32), impl core::ops::function::FnMut(u64, &[u32], &[T]))  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::row(&self, u64) -> phx_num::missing::Missing<(u32, T)>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::set_floor(&mut self, u32, u32)  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> core::cmp::PartialEq for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::eq(&self, &phx_store::ring::HorizonRing<T, B>) -> bool  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::ring::HorizonRing<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_live(&self) -> u64  // used by: phx-fin
 pub mod phx_store::roundtrip
 pub fn phx_store::roundtrip::roundtrip<T: phx_store::save::Saved + core::cmp::PartialEq + core::fmt::Debug>(&T) -> core::result::Result<(T, phx_store::rebuild::Rebuilt), alloc::string::String>
 pub mod phx_store::save  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
@@ -898,6 +925,10 @@ impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Sa
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::ring::HorizonRing<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod> phx_store::save::Saved for T
 pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
 pub fn T::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
@@ -996,6 +1027,10 @@ impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::S
 pub fn phx_store::daybuf::DayBuf<T, B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::daybuf::DayBuf<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::daybuf::DayBuf<T, B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_live(&self) -> u64  // used by: phx-fin
 pub mod phx_store::sumtree
 pub struct phx_store::sumtree::SumTrees<B: phx_store::backing::Backing>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::sumtree::SumTrees<B>
@@ -1382,6 +1417,31 @@ pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::ran
 pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
 pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub struct phx_store::HorizonRing<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::append(&mut self, u32, &[T]) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::chunks_live(&self) -> usize  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::compact_subject(&self, &mut phx_store::index::Index<B>, u64, impl core::ops::function::Fn(&T) -> u64, &mut phx_store::daybuf::DayBuf<u32, B>)  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::horizon_on(&self, u32) -> u32  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::index_since(&self, u64, &mut phx_store::index::Index<B>, impl core::ops::function::Fn(&T) -> u64) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::new(&mut phx_store::backing::AddressSpace, (u32, u32), u32) -> core::result::Result<phx_store::ring::HorizonRing<T, B>, alloc::string::String>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::of_subject(&self, &phx_store::index::Index<B>, u64, impl core::ops::function::Fn(&T) -> u64, &mut phx_store::daybuf::DayBuf<u32, B>) -> u32  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::ordinals(&self) -> (u64, u64)  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::prune(&mut self, u32) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::range(&self, (u32, u32), impl core::ops::function::FnMut(u64, &[u32], &[T]))  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::row(&self, u64) -> phx_num::missing::Missing<(u32, T)>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::set_floor(&mut self, u32, u32)  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> core::cmp::PartialEq for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::eq(&self, &phx_store::ring::HorizonRing<T, B>) -> bool  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::ring::HorizonRing<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::Index<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin, phx-macros
 impl<B: phx_store::backing::Backing> phx_store::index::Index<B>
 pub fn phx_store::index::Index<B>::add(&mut self, u64, i64)  // used by: phx-core, phx-fin, phx-macros
@@ -1874,6 +1934,10 @@ impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Sa
 pub fn phx_store::column::Column<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::column::Column<T, B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::column::Column<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::ring::HorizonRing<T, B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<T: phx_store::pod::Pod> phx_store::save::Saved for T
 pub fn T::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<T, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
 pub fn T::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros
@@ -1966,6 +2030,10 @@ impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::S
 pub fn phx_store::daybuf::DayBuf<T, B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::daybuf::DayBuf<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::daybuf::DayBuf<T, B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::ring::HorizonRing<T, B>
+pub fn phx_store::ring::HorizonRing<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::ring::HorizonRing<T, B>::rows_live(&self) -> u64  // used by: phx-fin
 pub trait phx_store::TableChunks
 pub type phx_store::TableChunks::Rows  // used by: phx-fin
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market

@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02, K-03, K-05–K-07 and K-10 built (S1.159–S1.166); the rest planned (S1.167, S1.168)
+Status: K-02, K-03, K-05–K-08 and K-10 built (S1.159–S1.167); the rest planned (S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1321,8 +1321,70 @@ touched (S1.330, S1.331, S1.342); what the day changed, for the audit (S1.353); 
 
 #### K-08 Horizon rings
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.167).
+Every kept history — marks and volumes, events, filed statements, weather, credit records, volatility windows, life
+records — is an append-only dated ring with its own declared horizon, pruned by whole chunks, never by a pass over rows:
+its rows a year are its rows a day times its horizon, and nothing it holds outlives the horizon (SET.13).
+
+**Layout** (`ring.rs`): `HorizonRing<T: Pod>` keeps each row's day (u32) and payload in chunks of a declared row count,
+reserved once for at most a declared number of chunks and committed as chunks are first made. A chunk holds consecutive
+days' rows; a day's rows begin a new chunk unless they fit the last one's room, and only a day of more rows than a chunk
+spans chunks. The live chunks' headers (24 B: first and last day, first row's ordinal, where the chunk lies, its rows)
+form a ring of headers in day order; pruned chunks go on a free list and are taken again before any new one is made, so
+a ring in its steady state never commits more. Rows are addressed by a monotone ordinal (u64), the live ones
+`[base, next)`.
+
+**API**: `append(day, rows)` appends a day's rows in the order the caller's stage fixes and returns the first one's
+ordinal; a day before the last appended stops the run (TIME.9, TIME.10). `row(ordinal)` reads a live row and its day,
+none once pruned. `range((from, to), each)` hands the reader each chunk's run of rows within the days — its first
+ordinal, its days and its rows — so the reader's own loop is the only one over rows. `prune(today)` drops every leading
+chunk whose last day lies before today less the horizon and returns the rows dropped. `set_floor(day, days)` records
+the POLICY floor its owner reads from the schedule in force (BNK.21, HH.21, DRV.10, STA.5): the horizon on a day,
+`horizon_on`, is the larger of the ring's RESOLUTION horizon and the floor in force; a floor that rises stops pruning
+from its day, and rows already pruned stay pruned. Assembly refuses a RESOLUTION horizon below a floor in force at the
+opening.
+
+**Subject index**: where a kind declares one, its owner keeps a lazy keyed index (K-06) from a subject — a party, an
+instrument, a series — to row ordinals: `index_since(from, index, subject_of)` enters the rows appended from an
+ordinal on; `of_subject` walks a subject's live rows in ordinal order, an entry below the base dropped by the walk as
+dead by construction; `compact_subject` rewrites a key whose walk drops as many entries as it keeps. A row naming a
+party keeps its `PartyRef`; a reader resolves it through the directory's tombstones (S1.194), kept at least the longest
+horizon of any ring that can name a party (SET.13, PTY.10).
+
+**Algorithms and bounds**: append is O(rows) copies into a chunk pruned long ago, so its cost is its row's width in
+cold memory; `range` is O(log chunks + rows read) — binary search on the headers' last days, then on the first and last
+chunks' days; `prune` is O(chunks dropped), no row visited; `row` is O(log chunks).
+
+**Traversal**: appends at their stage, in the stage's chunk order (E7), from the day buffers the stage's writers staged
+per chunk (K-05); prune at 10d over the headers; ranges when read. Traversals over a ring's rows run in `phx-exec`,
+which counts their rows visited into `ExecCounters::visited`.
+
+**Save and load** (`ring_save.rs`, off the day's paths): the live chunks and their headers are saved in order
+(SET.12: the histories are state), with the ordinals, the horizon and the floors; a load lays them again from the
+ring's first chunk, the pruned chunks not kept, and refuses chunks whose ordinals do not run from the base to the next.
+The subject index is left out and rebuilt from the live rows in ordinal order (`#[saved(skip, rebuild = …)]`,
+`rebuild_equals_incremental`). Two rings are equal when their horizons, floors, ordinals and live rows are, wherever
+their chunks lie.
+
+**Growth** (E9): each ring reports its rows live and ever through `StoreStats` each simulated year; a ring whose rows
+exceed its rows a day times its horizon by more than a quarter is a finding for the run's report.
+
+**Volumes and ratchets** (`tools/bench.sh -F records`): the design point's 584 000 events at the 365-day horizon
+(24 B rows) and 736 000 filed statements at two years (48 B rows before S1.216 packs them), each ring run past its
+horizon so its appends reuse chunks pruned long ago; each operation is read once over a month of the rings' days, a
+day's appends being a few microseconds, below what one reading of the clock tells. Growth reads 1.00 of rows a day
+times horizon. An append is a copy into cold memory and costs what a raw copy of the same bytes does on this machine:
+4.2–5.0 ns a 28-byte event row (`[fin.records] append_ns` 6.2; the step's 3.8 lies below the copy's floor here),
+7.0–8.9 a 52-byte statement row (`append_statements_ns` 11). A range over the month just appended reads rows the
+appends have left beyond the cache, 1.7–2.3 ns a row (`[fin.ring] range_ns` 2.8); the same range again reads 0.26, and
+a day's rows read right after their append, as the close reads the day's events, about 0.5. A prune 0.05–0.08 ns a row
+aged out (`prune_ns` 0.1).
+
+**Extension points**: the weather's history (S1.192); the event log's public ring, a chunk a day (S1.213); the series'
+dated chunks (S1.215); filed accounts' blocks (S1.216); the day ledger (S1.219); marks by instrument and by good
+(S1.326); yearly means (S1.336); volatility windows (S1.340); the audit's findings kept for their horizon (S1.353); the
+recorder (S1.358); a risk factor's daily changes within its lookback horizon (S4.108). Each replaces, in its base's
+migration, the history it keeps today: `Core::deaths`, `Taxes::sample`, `Outlooks::responses`, `Weather::shocks`,
+`CoreStats::published`, `Series::annual.insert(0, …)`, and the fixed 2²⁴-row `EventStore`.
 
 #### K-09 The interner
 

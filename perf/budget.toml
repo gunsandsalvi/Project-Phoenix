@@ -255,6 +255,34 @@ counter = "fin.epoch.iter_ns"
 value = 0.4
 direction = "down"
 
+# Horizon rings (S1.167, 2026-10-01; `tools/bench.sh -F records`): the design point's events at 365 days and filed
+# statements at two years, each ring past its horizon so its appends reuse chunks pruned long ago, each operation read
+# once over a month of the rings' days. An append is a copy into cold memory and costs what a raw copy of the same
+# bytes does on this machine: events 4.2–5.0 ns a 28-byte row, statements 7.0–8.9 a 52-byte row, each ratchet a
+# quarter above the highest (the step's 3.8 is below the copy's floor here). A range over the month just appended
+# reads rows the appends have left beyond the cache, 1.7–2.3 ns a row, a quarter above (the step's 1 holds only for
+# rows still cached: the same range again reads 0.26). A prune drops whole chunks, 0.05–0.08 ns a row aged out.
+
+[[ratchet]]
+counter = "fin.records.append_ns"
+value = 6.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.records.append_statements_ns"
+value = 11
+direction = "down"
+
+[[ratchet]]
+counter = "fin.ring.prune_ns"
+value = 0.1
+direction = "down"
+
+[[ratchet]]
+counter = "fin.ring.range_ns"
+value = 2.8
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

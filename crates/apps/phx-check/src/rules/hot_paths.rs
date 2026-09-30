@@ -27,6 +27,7 @@ const COLD: &[(&str, &str, &str)] = &[
     ("phx-store", "src/rebuild.rs", "a load's rebuild pass"),
     ("phx-store", "src/roundtrip.rs", "saving"),
     ("phx-store", "src/hash.rs", "hashing a save or the register"),
+    ("phx-store", "src/ring_save.rs", "saving"),
     ("phx-world", "src/registry.rs", "assembly"),
     ("phx-world", "src/compile.rs", "assembly"),
     ("phx-world", "src/save/", "saving"),
