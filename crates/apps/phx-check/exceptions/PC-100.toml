@@ -1,0 +1,211 @@
+# The sites PC-100 admits for now, 35 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "field `estates`: `Vec<(PartyKey, _)>`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "field `loan_books`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "field `touched`: `BTreeSet` keyed by `u32`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core.rs"
+item = "Core"
+what = "field `waiting`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Accounts"
+what = "field `income`: `PartyMap`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Accounts"
+what = "field `opening`: `PartyMap`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Agencies"
+what = "field `budget`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Agencies"
+what = "field `targets`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Central"
+what = "field `targets`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "LoanMoves"
+what = "field `lent`: `Vec<(PartyKey, _)>`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "LoanMoves"
+what = "field `repaid`: `Vec<(PartyKey, _)>`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "LoanMoves"
+what = "field `written_off`: `Vec<(PartyKey, _)>`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Decisions"
+what = "field `holders`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Insolvency"
+what = "field `claims`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Deposits"
+what = "field `held`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Deposits"
+what = "field `working`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Freight"
+what = "field `modes`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "CoreGoods"
+what = "field `services_owed`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "field `fills`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "field `noticed`: `BTreeSet` keyed by `u32`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "field `reviews`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "field `searching`: `BTreeSet` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Credit"
+what = "field `filed`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Credit"
+what = "field `lenders`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Outlooks"
+what = "field `awaiting`: `BTreeMap` keyed by `u32`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Owners"
+what = "field `holds`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Owners"
+what = "field `of`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Owners"
+what = "field `working`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Owners"
+what = "field `works_at`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Plant"
+what = "field `reviewed`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Plant"
+what = "field `sold`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Rates"
+what = "field `tallies`: `BTreeMap` keyed by `u32`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Month"
+what = "field `vital`: `BTreeMap` keyed by `u32`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Taxes"
+what = "field `open`: `BTreeMap` keyed by `PartyKey`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "field `unserved`: `Vec<(PartyKey, _)>`"
+count = 1

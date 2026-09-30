@@ -23,6 +23,7 @@ mod forecasts;
 mod hand_pod;
 pub mod hot_paths;
 mod id_default;
+pub mod identities;
 mod interfaces;
 mod layering;
 mod ledger_writes;
@@ -202,6 +203,12 @@ pub const RULES: &[Rule] = &[
         run: names::run,
     },
     Rule { id: "PC-99", title: "no allocation on the day's paths", since: "S1.124", run: allocation::run },
+    Rule {
+        id: "PC-100",
+        title: "saved state names parties by generation-checked references",
+        since: "S1.125",
+        run: identities::run,
+    },
 ];
 
 /// Rules retired with what they guarded, their numbers kept and never reused.
