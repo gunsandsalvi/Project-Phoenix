@@ -1097,6 +1097,7 @@ pub phx_core::register::values::PrimValue::Distribution(phx_core::register::valu
 pub phx_core::register::values::PrimValue::Fixed  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_core::register::values::PrimValue::Fixed::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
 pub phx_core::register::values::PrimValue::Fixed::raw: i64  // used by: phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-tec
+pub phx_core::register::values::PrimValue::Kind(phx_core::register::values::KindName)  // used by: phx-world, sys-cap
 pub phx_core::register::values::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::register::values::PrimValue::Money(phx_num::money::Amount)  // used by: phx-ledger, phx-market, phx-num, phx-store, phx-val, phx-world
 pub phx_core::register::values::PrimValue::NewsRule(alloc::vec::Vec<phx_core::events_rule::NewsEntry>)
@@ -1118,6 +1119,7 @@ pub phx_core::register::values::ValueType::Distribution  // used by: phx-val, sy
 pub phx_core::register::values::ValueType::Distribution::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
 pub phx_core::register::values::ValueType::Fixed  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_core::register::values::ValueType::Fixed::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
+pub phx_core::register::values::ValueType::Kind  // used by: phx-world, sys-cap
 pub phx_core::register::values::ValueType::LegalForms
 pub phx_core::register::values::ValueType::Money  // used by: phx-ledger, phx-market, phx-num, phx-store, phx-val, phx-world
 pub phx_core::register::values::ValueType::Money::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
@@ -1150,6 +1152,11 @@ impl phx_core::register::values::PrimType for phx_core::register::values::Distri
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
+pub struct phx_core::register::values::KindName(pub alloc::string::String)  // used by: phx-world, sys-dem
+impl phx_core::register::values::PrimType for phx_core::register::values::KindName
+pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
+pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 pub struct phx_core::register::values::OutsideAxes
 pub struct phx_core::register::values::Partition  // used by: phx-val, sys-dem, sys-sta
 pub phx_core::register::values::Partition::bounds: alloc::boxed::Box<[i64]>  // used by: phx-cli, phx-macros, phx-val, phx-world, sys-bnk, sys-gds
@@ -1226,6 +1233,10 @@ impl phx_core::register::values::PrimType for phx_core::register::values::Distri
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
+impl phx_core::register::values::PrimType for phx_core::register::values::KindName
+pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
+pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
 pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
@@ -1343,7 +1354,7 @@ pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-fin, phx-ledger, phx-num, phx-val, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
 pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>  // used by: phx-world, sys-idx, sys-lab, sys-soc, sys-sta
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms  // used by: phx-world
-pub fn phx_core::register::Register::handle<T: phx_core::register::values::PrimType>(&self, &phx_core::register::PrimDecl) -> core::result::Result<phx_core::register::Prim<T>, alloc::string::String>  // used by: sys-bnk, sys-dem, sys-lab, sys-soc
+pub fn phx_core::register::Register::handle<T: phx_core::register::values::PrimType>(&self, &phx_core::register::PrimDecl) -> core::result::Result<phx_core::register::Prim<T>, alloc::string::String>  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>  // used by: phx-cli, phx-exec, phx-geo, phx-market, phx-rand, phx-val, phx-world
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>  // used by: phx-check
 pub fn phx_core::register::Register::products(&self, &str) -> core::result::Result<&[phx_core::products::ProductEntry], alloc::string::String>  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
@@ -1914,6 +1925,7 @@ pub phx_core::PrimValue::Distribution(phx_core::register::values::Distribution) 
 pub phx_core::PrimValue::Fixed  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_core::PrimValue::Fixed::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
 pub phx_core::PrimValue::Fixed::raw: i64  // used by: phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-tec
+pub phx_core::PrimValue::Kind(phx_core::register::values::KindName)  // used by: phx-world, sys-cap
 pub phx_core::PrimValue::LegalForms(alloc::vec::Vec<phx_core::kinds::LegalForm>)
 pub phx_core::PrimValue::Money(phx_num::money::Amount)  // used by: phx-ledger, phx-market, phx-num, phx-store, phx-val, phx-world
 pub phx_core::PrimValue::NewsRule(alloc::vec::Vec<phx_core::events_rule::NewsEntry>)
@@ -2077,6 +2089,7 @@ pub phx_core::ValueType::Distribution  // used by: phx-val, sys-dem, sys-frm
 pub phx_core::ValueType::Distribution::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
 pub phx_core::ValueType::Fixed  // used by: if-base, phx-geo, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_core::ValueType::Fixed::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
+pub phx_core::ValueType::Kind  // used by: phx-world, sys-cap
 pub phx_core::ValueType::LegalForms
 pub phx_core::ValueType::Money  // used by: phx-ledger, phx-market, phx-num, phx-store, phx-val, phx-world
 pub phx_core::ValueType::Money::exp: u8  // used by: phx-cli, phx-geo, phx-market, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-lab, sys-tax
@@ -2629,7 +2642,7 @@ pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-fin, phx-ledger, phx-num, phx-val, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
 pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>  // used by: phx-world, sys-idx, sys-lab, sys-soc, sys-sta
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms  // used by: phx-world
-pub fn phx_core::register::Register::handle<T: phx_core::register::values::PrimType>(&self, &phx_core::register::PrimDecl) -> core::result::Result<phx_core::register::Prim<T>, alloc::string::String>  // used by: sys-bnk, sys-dem, sys-lab, sys-soc
+pub fn phx_core::register::Register::handle<T: phx_core::register::values::PrimType>(&self, &phx_core::register::PrimDecl) -> core::result::Result<phx_core::register::Prim<T>, alloc::string::String>  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub fn phx_core::register::Register::partition(&self, &str) -> core::result::Result<&phx_core::register::values::Partition, alloc::string::String>  // used by: phx-cli, phx-exec, phx-geo, phx-market, phx-rand, phx-val, phx-world
 pub fn phx_core::register::Register::placeholders(&self) -> alloc::vec::Vec<(&'static str, &'static str)>  // used by: phx-check
 pub fn phx_core::register::Register::products(&self, &str) -> core::result::Result<&[phx_core::products::ProductEntry], alloc::string::String>  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
@@ -2832,6 +2845,10 @@ impl phx_core::register::values::PrimType for phx_core::register::values::Distri
 pub type phx_core::register::values::Distribution::Read<'a> = &'a phx_core::register::values::Distribution  // used by: phx-store
 pub fn phx_core::register::values::Distribution::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Distribution>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub fn phx_core::register::values::Distribution::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
+impl phx_core::register::values::PrimType for phx_core::register::values::KindName
+pub type phx_core::register::values::KindName::Read<'a> = &'a phx_core::register::values::KindName  // used by: phx-store
+pub fn phx_core::register::values::KindName::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::KindName>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_core::register::values::KindName::reads(phx_core::register::values::ValueType) -> bool  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
 impl phx_core::register::values::PrimType for phx_core::register::values::Partition
 pub type phx_core::register::values::Partition::Read<'a> = &'a phx_core::register::values::Partition  // used by: phx-store
 pub fn phx_core::register::values::Partition::read(&phx_core::register::values::PrimValue) -> core::option::Option<&phx_core::register::values::Partition>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-dem

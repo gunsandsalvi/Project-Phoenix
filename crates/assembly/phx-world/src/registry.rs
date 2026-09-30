@@ -114,6 +114,37 @@ fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]
         .collect()
 }
 
+/// Countries whose inheritance law names no destination for an estate with no heir, or names a kind the world does
+/// not declare.
+#[opening]
+fn heirless_refusals(kinds: &[&str], destinations: &[Option<&str>]) -> Vec<String> {
+    let mut out = Vec::new();
+    for (country, to) in destinations.iter().enumerate() {
+        match to {
+            None => out.push(format!("country {country}: its law names no destination for an estate with no heir")),
+            Some(kind) if !kinds.contains(kind) => out.push(format!(
+                "country {country}: its law passes an estate with no heir to `{kind}`, a kind the world does not declare"
+            )),
+            Some(_) => {}
+        }
+    }
+    out
+}
+
+/// Each country's heirless destination read from its law and checked against the kinds the world declares.
+#[opening]
+fn heirless_destinations(d: &Declarations, register: &phx_core::Register, countries: usize) -> Vec<String> {
+    let prim = match register.handle::<phx_core::register::values::KindName>(&sys_dem::HEIRLESS_TO) {
+        Ok(p) => p,
+        Err(e) => return vec![e],
+    };
+    let destinations: Vec<Option<&str>> = (0..countries)
+        .map(|c| u8::try_from(c).ok().map(|c| prim.get(register, phx_id::CountryId::new(c)).0.as_str()))
+        .collect();
+    let kinds: Vec<&str> = d.kinds.iter().map(|(_, k)| k.name).collect();
+    heirless_refusals(&kinds, &destinations)
+}
+
 /// Decisions the register and the systems do not declare alike, or taken in an office no legal form has.
 fn undeclared_decisions(d: &Declarations, kernel: &KernelPrims, register: &phx_core::Register) -> Vec<String> {
     let points: Vec<&str> = d.decisions.iter().map(|m| m.name).collect();
@@ -249,6 +280,7 @@ fn prepare(
         }
     };
     errors.extend(misplaced_kinds(&d, &pop));
+    errors.extend(heirless_destinations(&d, &c.register, levels.len()));
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }

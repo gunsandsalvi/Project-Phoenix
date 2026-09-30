@@ -32,7 +32,7 @@ ECONOMY = {
     "FRM.firms_per_employed",
 }
 LAW = {
-    "CB.currency", "GEN.units_per_dollar", "DEM.age_of_majority", "DEM.school_leaving_age",
+    "CB.currency", "GEN.units_per_dollar", "DEM.age_of_majority", "DEM.heirless_to", "DEM.school_leaving_age",
     "FRM.insolvency_grace_days", "IDX.base", "LAB.full_time_hours", "LAB.notice_days", "LAB.severance_days_a_year",
     "LAB.minimum_wage_share", "SOC.benefit_replacement", "SOC.benefit_months", "SOC.pension_age",
     "SOC.replacement_rate", "SOC.pension_coverage", "SOC.disability_benefit_coverage", "STA.release_day",

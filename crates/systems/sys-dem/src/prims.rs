@@ -1,9 +1,15 @@
 //! DEM's primitives: the demography and households each country opens with, and the representation of households.
 
-use phx_core::register::values::{Distribution, Partition, Table1, Table2};
+use phx_core::register::values::{Distribution, KindName, Partition, Table1, Table2};
 use phx_core::{Declarations, Prim, declare_prim};
 use phx_num::{Count, Fixed};
 
+declare_prim! {
+    /// The kind of the country's institution its inheritance law passes an estate with no heir to.
+    pub HEIRLESS_TO = "DEM.heirless_to" {
+        kind: Policy, decided_by: "parliament", value: Kind, clause: "POP.9", scope: PerCountry
+    }
+}
 declare_prim! {
     /// Brass's logit of survivorship to each age by sex, the country's life table's standard.
     pub SURVIVAL = "DEM.survival_logit_standard" {
@@ -186,6 +192,7 @@ pub struct Prims {
     pub single_fathers: Prim<Fixed<6>>,
     pub disabled_mortality: Prim<Table1>,
     pub life_expectancy: Prim<Fixed<2>>,
+    pub heirless_to: Prim<KindName>,
 }
 
 impl Prims {
@@ -217,6 +224,7 @@ impl Prims {
             single_fathers: d.prim(&SINGLE_FATHERS),
             disabled_mortality: d.prim(&DISABLED_MORTALITY),
             life_expectancy: d.prim(&LIFE_EXPECTANCY),
+            heirless_to: d.prim(&HEIRLESS_TO),
         }
     }
 
@@ -252,6 +260,7 @@ impl Prims {
             single_fathers: register.handle(&SINGLE_FATHERS)?,
             disabled_mortality: register.handle(&DISABLED_MORTALITY)?,
             life_expectancy: register.handle(&LIFE_EXPECTANCY)?,
+            heirless_to: register.handle(&HEIRLESS_TO)?,
         })
     }
 }

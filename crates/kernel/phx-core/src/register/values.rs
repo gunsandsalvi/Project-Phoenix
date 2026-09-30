@@ -46,6 +46,8 @@ pub enum ValueType {
     },
     Calendar,
     LegalForms,
+    /// A kind of party, by its declared name.
+    Kind,
     /// The products, each with its unit, industry and how it is held and delivered.
     Products,
     /// Which kinds of event become public, and from what size.
@@ -363,6 +365,7 @@ pub enum PrimValue {
     PointTable(PointTable),
     Calendar(CountryRules),
     LegalForms(Vec<LegalForm>),
+    Kind(KindName),
     Products(Vec<crate::ProductEntry>),
     NewsRule(Vec<NewsEntry>),
     CarryingBases(Vec<crate::accounting::Permitted>),
@@ -370,6 +373,10 @@ pub enum PrimValue {
     Partition(Partition),
     Decisions(crate::decisions::DecisionKinds),
 }
+
+/// A kind of party named in data by its declared name; which kinds the world declares is checked at assembly.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct KindName(pub String);
 
 /// A range cut into steps at strictly increasing boundaries, each a decimal written as an integer scaled by 10^`exp`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -535,6 +542,13 @@ fn calendar(v: &Value) -> Result<CountryRules, String> {
     let rules = CountryRules { weekend, holidays: list.iter().map(holiday).collect::<Result<_, _>>()? };
     rules.validate()?;
     Ok(rules)
+}
+
+/// A kind's name, in the snake case every kind is declared in.
+fn kind_name(v: &Value) -> Result<KindName, String> {
+    let name = v.as_str().ok_or("a kind is named by a string")?;
+    let snake = !name.is_empty() && name.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_');
+    if snake { Ok(KindName(name.to_owned())) } else { Err(format!("`{name}` is not a kind's name")) }
 }
 
 fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
@@ -767,6 +781,7 @@ pub fn parse(v: &Value, ty: ValueType, period: Option<RatePeriod>) -> Result<Pri
         }
         ValueType::Calendar => Ok(PrimValue::Calendar(calendar(v)?)),
         ValueType::LegalForms => Ok(PrimValue::LegalForms(legal_forms(v)?)),
+        ValueType::Kind => kind_name(v).map(PrimValue::Kind),
         ValueType::Decisions => Ok(PrimValue::Decisions(decisions(v)?)),
         ValueType::Products => Ok(PrimValue::Products(products(v)?)),
         ValueType::NewsRule => Ok(PrimValue::NewsRule(news_rule(v)?)),
@@ -848,6 +863,7 @@ read_ref!(Distribution, Distribution, ValueType::Distribution { .. });
 read_ref!(PointTable, PointTable, ValueType::PointTable { .. });
 read_ref!(CountryRules, Calendar, ValueType::Calendar);
 read_ref!(Vec<LegalForm>, LegalForms, ValueType::LegalForms);
+read_ref!(KindName, Kind, ValueType::Kind);
 read_ref!(Vec<crate::ProductEntry>, Products, ValueType::Products);
 read_ref!(Vec<NewsEntry>, NewsRule, ValueType::NewsRule);
 read_ref!(Vec<crate::accounting::Permitted>, CarryingBases, ValueType::CarryingBases);

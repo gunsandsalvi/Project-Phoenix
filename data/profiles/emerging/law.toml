@@ -235,3 +235,12 @@ owner = "SOC"
 source = "measured"
 source_ref = "Share of persons with severe disabilities receiving a disability benefit, by sex (female, male): each sex's median over 30 economies of the group at their latest year 2015-2025, from the ILO's Social Security Inquiry and its modelled estimates (SDG indicator 1.3.1), OECD SDMX API, Pensions at a Glance (DF_PAG); ILOSTAT SDMX API (SDG 1.3.1); World Bank GFDD (fetched 2026-09-24). The group's standard at every drawn value."
 value = { axis = [0, 1], values = [1.000000, 1.000000], outside = "refuse" }
+
+[[primitive]]
+id = "DEM.heirless_to"
+kind = "POLICY"
+owner = "DEM"
+decided_by = "parliament"
+source = "assumed"
+source_ref = "Where an estate with no heir passes: to the state, as the law of intestate succession in civil-law countries (the German Civil Code, section 1936) and escheat or bona vacantia in common-law countries (the English Administration of Estates Act 1925, section 46(1)(vi)) provide; the state's institution that takes it is its treasury, the kind the world's state holds its finances in."
+value = "treasury"

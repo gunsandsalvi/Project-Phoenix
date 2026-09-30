@@ -1933,7 +1933,8 @@ population are outcomes.
   moving, beat staying (HH.9); a move across a border needs the destination's admission (POLICY, XB).
 - **POP.9 PROCESS** — **Inheritance**: a person's estate pays its debts, taxes and costs, selling what it must to
   do so, and distributes the rest to named heirs **in kind** by declared law (POLICY): a dwelling, holdings and a
-  household business pass to the heirs, who keep, sell or run them as they choose.
+  household business pass to the heirs, who keep, sell or run them as they choose. An estate with no heir passes what it
+  leaves to the institution its country's inheritance law names (POLICY, `DEM.heirless_to`).
 
 **Invariants**
 

@@ -148,7 +148,7 @@ fn expand_items(input: TokenStream, body: fn(&Decl) -> syn::Result<TokenStream>)
 
 const PRIM_KINDS: [&str; 6] = ["Technology", "Preference", "Policy", "Endowment", "Resolution", "Shape"];
 const PERIODS: [&str; 5] = ["Day", "Week", "Month", "Quarter", "Year"];
-const VALUE_TYPES: [&str; 18] = [
+const VALUE_TYPES: [&str; 19] = [
     "Fixed",
     "Rate",
     "Money",
@@ -161,6 +161,7 @@ const VALUE_TYPES: [&str; 18] = [
     "PointTable",
     "Calendar",
     "LegalForms",
+    "Kind",
     "Products",
     "NewsRule",
     "CarryingBases",

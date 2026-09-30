@@ -767,6 +767,15 @@ def pensions(members_of: dict, m: dict) -> dict:
     return out
 
 
+def inheritance() -> list:
+    """Where the law passes an estate with no heir: the state, by escheat, through its treasury."""
+    ref = ("Where an estate with no heir passes: to the state, as the law of intestate succession in civil-law countries "
+           "(the German Civil Code, section 1936) and escheat or bona vacantia in common-law countries (the English "
+           "Administration of Estates Act 1925, section 46(1)(vi)) provide; the state's institution that takes it is its "
+           "treasury, the kind the world's state holds its finances in.")
+    return [entry("DEM.heirless_to", "POLICY", "DEM", "assumed", ref, '"treasury"')]
+
+
 def main() -> None:
     g = groups()
     m = manifest()
@@ -790,6 +799,7 @@ def main() -> None:
         write(level, "BNK", f"# The {level} group's accounts and borrowing (spec GEN.2, BNK), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", bnk)
         profile_files.retire(level, ["LAB.occupation_shares", "LAB.status_shares", "SOC.public_staff_share"])
+        profile_files.put(level, inheritance())
         soc, occ = pen[level]
         write(level, "SOC", f"# The {level} group's state pension and benefit coverage (spec GEN.2, SOC), derived by "
                             "tools/data/derive_pop.py; never edited by hand.", soc)
