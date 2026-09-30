@@ -414,6 +414,8 @@ version = "0.1.0"
 dependencies = [
  "phx-core",
  "phx-exec",
+ "phx-id",
+ "phx-market",
  "phx-rand",
  "serde",
  "serde_json",

@@ -2981,6 +2981,20 @@ extra, and the binding turns (4 NB + B′ and 3 NB + H over `[phone] cores`). It
 measure misses; `-k` keeps the report as `perf/bench/<commit>-fin-<bases>.json`. `phx-fin` reads the foundation and the
 kernel only (PC-01).
 
+**The kept baseline** (`-F kept`, `phx-fin::kept`) measures today's kernels that the core keeps or replaces, at the
+design point, on the machine's pool: flows grouped and settled over `[store] accounts` at `[store] banks`
+(`flow`, `flow_h` on the heaviest day), the due wheel over `wheel_rows` and `wheel_far` taking a day's `dues` and
+filing each again (`due`), the posted-price meeting over `stalls` by product and zone meeting a day's `retail` wants
+(`purchase`), hiring's search over `vacancies` by a day's `searches` (`search`), the calendar's civil and business-day
+reads (`civil`) and the streams' draws (`draw`); a kernel runs only on a day whose counts name its work, so a closed
+day settles and takes nothing. Each fill draws from its own `fin.kept.*` stream, the same for any workers; what a
+day's work is given is made before it is timed. The report gives each base's rows and MiB filled, read against
+`fin.<base>.mb`. Until their bases land, the composite day puts each measure in its declared stage line in place of the
+unit cost it stands for (`kept::LEAVES`: settlement's flows in 7 Settle, the dues in 1 Open, the meeting in 6 Prices,
+the search in 5 Decide), a line so changed reported as `Partly`; so `-F all` reads today's real distance to the
+budget. The `[fin.kept]` ratchets stand at the measures of 2026-09-30 with the budget file's margins, each named for
+the step whose base retires it (`kept::RETIRERS`).
+
 ### 14.8 The realism reads
 
 Stage 7 measures the world's one run (N3, N4, N7; spec Appendix E 36): the normal world run at the play resolution,

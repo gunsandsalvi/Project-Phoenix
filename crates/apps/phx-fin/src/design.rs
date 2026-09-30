@@ -37,6 +37,8 @@ pub struct Design {
     pub stage: BTreeMap<String, [f64; 3]>,
     /// The work of the business day after closed days beyond an ordinary one's, in core-ms.
     pub bc_extra_core_ms: f64,
+    /// Each kind of work's declared phone ns, where the design point declares them.
+    pub unit: BTreeMap<String, f64>,
     days: BTreeMap<DayType, BTreeMap<String, u64>>,
     table: Table,
 }
@@ -125,7 +127,15 @@ impl Design {
         }
         let bc_extra_core_ms = real(get(&table, "day.bc.extra_core_ms")?, "day.bc.extra_core_ms")?;
         let store = counts(&table, "store")?;
-        Ok(Design { point, phone, store, stage, bc_extra_core_ms, days, table })
+        let unit = match table.get("unit") {
+            Some(Value::Table(t)) => t
+                .iter()
+                .map(|(k, v)| Ok((k.clone(), real(v, &format!("unit.{k}"))?)))
+                .collect::<Result<_, FinError>>()?,
+            Some(_) => return Err(refuse("unit", "is not a table")),
+            None => BTreeMap::new(),
+        };
+        Ok(Design { point, phone, store, stage, bc_extra_core_ms, unit, days, table })
     }
 
     /// A day type's counts; the business day after closed days holds the ordinary one's with its own written over.

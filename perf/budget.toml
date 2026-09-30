@@ -52,3 +52,49 @@ direction = "down"
 counter = "fin.counters.span_ns"
 value = 2274
 direction = "down"
+
+# Today's kept kernels at the design point (S1.119, 2026-09-30; `tools/bench.sh -F kept`), before any base lands, four
+# measures each: flows grouped and settled 862–956 ns a flow on a business day and 648–749 on the heaviest, a due taken
+# and filed again 21–24, a retail want met 1 363–1 381, a searcher's round 9 811–12 626, a civil date and business-day
+# read 28–33, a draw 10–12, and 360 MiB filled. Each time stands a quarter above its highest measure and the bytes a
+# tenth. Each key is removed by the step whose own base replaces its kernel (phx-fin's `kept::RETIRERS`).
+
+[[ratchet]]
+counter = "fin.kept.flow_ns"
+value = 1195
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.flow_h_ns"
+value = 937
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.due_ns"
+value = 30
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.purchase_ns"
+value = 1727
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.search_ns"
+value = 15783
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.civil_ns"
+value = 42
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.draw_ns"
+value = 15
+direction = "down"
+
+[[ratchet]]
+counter = "fin.kept.mb"
+value = 396
+direction = "down"

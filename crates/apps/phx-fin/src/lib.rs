@@ -7,6 +7,14 @@ pub mod compose;
 pub mod counters;
 pub mod design;
 pub mod fill;
+pub mod kept;
+pub mod kept_calendar;
+pub mod kept_flows;
+pub mod kept_meet;
+pub mod kept_search;
+#[path = "kept_tests.rs"]
+mod kept_tests;
+pub mod kept_wheel;
 pub mod measure;
 pub mod report;
 #[path = "tests.rs"]
@@ -19,6 +27,9 @@ use fill::Streams;
 use measure::{Measure, Measures};
 use phx_exec::Clock;
 use report::Report;
+
+/// Bytes to MiB, a shift.
+const MIB_SHIFT: u32 = 20;
 
 /// A refusal of the harness: a key the design point lacks, a base it does not know, a capacity or a driver's failure.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -106,7 +117,8 @@ pub trait FinBase {
 }
 
 /// Every driver, in the order the bases depend on one another; each base's step adds its own.
-pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[|| Box::new(counters::Counters::default())];
+pub const REGISTRY: &[fn() -> Box<dyn FinBase>] =
+    &[|| Box::new(counters::Counters::default()), || Box::new(kept::Kept::default())];
 
 /// What a run fills, runs and reads.
 #[derive(Debug, Clone)]
@@ -149,8 +161,11 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
         }
     }
     let mut measures = Measures::new(clock);
+    let mut sizes = Vec::new();
     for driver in &mut chosen {
-        driver.fill(&design, &streams)?;
+        let filled = driver.fill(&design, &streams)?;
+        let bytes = driver.bytes();
+        sizes.push((driver.name().to_owned(), filled.rows, (bytes.rows + bytes.resident) >> MIB_SHIFT));
         for day in &args.days {
             let counts =
                 design.day(*day).ok_or_else(|| FinError(format!("the design point has no `day.{}`", day.key())))?;
@@ -158,12 +173,18 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
             driver.day(*day, counts, &mut measures)?;
         }
     }
-    let lines = compose::declared(&design);
-    let days = compose::days(&lines, &design);
-    let per_op: BTreeMap<String, f64> = measures
+    let mut per_op: BTreeMap<String, f64> = measures
         .iter()
         .filter_map(|((base, op), m)| Some((format!("fin.{base}.{op}_ns"), m.ns_per_op()?.to_string().parse().ok()?)))
         .collect();
+    for (base, _, mb) in &sizes {
+        if let Ok(mb) = mb.to_string().parse() {
+            per_op.insert(format!("fin.{base}.mb"), mb);
+        }
+    }
+    let mut lines = compose::declared(&design);
+    compose::substitute(&mut lines, &design, (kept::BASE, kept::LEAVES), &|key| per_op.get(key).copied());
+    let days = compose::days(&lines, &design);
     let mut misses = capacities_short(&design);
     misses.extend(budget::misses(&ratchets, &|key| per_op.get(key).copied()));
     Ok(Report {
@@ -172,6 +193,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
             .iter()
             .map(|((b, o), m): (&(String, String), &Measure)| (b.clone(), o.clone(), m.items, m.ns_per_op()))
             .collect(),
+        sizes,
         lines,
         days,
         misses,

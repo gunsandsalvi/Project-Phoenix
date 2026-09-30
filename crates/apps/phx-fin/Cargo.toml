@@ -9,6 +9,8 @@ publish.workspace = true
 [dependencies]
 phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
+phx-id = { path = "../../foundation/phx-id" }
+phx-market = { path = "../../kernel/phx-market" }
 phx-rand = { path = "../../foundation/phx-rand" }
 serde.workspace = true
 serde_json.workspace = true

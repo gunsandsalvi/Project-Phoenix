@@ -246,7 +246,7 @@ activates bases.
 | --- | --- | --- |
 | **0 Foundations** | S0.01–S0.28 | done: the workspace, the foundation and kernel crates, the map, the setup and the persistence |
 | **1 The circular flow**, done | S1.01–S1.14, S1.17–S1.23, S1.26 | done: the Stage 1 systems' declarations and rules, the meter, one representation, the core and the bench, money and settlement, markets and goods on the core, one opening dataset per profile, Stage 0's world on the core, the decision core |
-| **1 The core: frame and tools** | S1.119–S1.133 (S1.100–S1.118 done) | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
+| **1 The core: frame and tools** | S1.120–S1.133 (S1.100–S1.119 done) | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
 | **1 The core: repairs** | S1.134–S1.158 | defects that stand apart from any base |
 | **1 The core: bases** | S1.159–S1.360 | every store, kernel and index the finished world needs, each designed for its last user and measured at the design point, each followed by the migration of its current users |
 | **1 Stage 1 on the core** | S1.400–S1.499 | Stage 0's and Stage 1's mechanisms as rules over the bases, Stage 1's remaining clauses, the opening's derivations, and the Stage 1 gate |
@@ -276,8 +276,9 @@ The steps of each stage, in build order:
   S1.111 every code step reads the bench · S1.112 the crate map's layering order ·
   S1.113 the design point's figure set · S1.114 the capacity table · S1.115 capacities
   read from it · S1.116 `phx-fin` and `tools/bench.sh -F` · S1.117 the measurement
-  counters · S1.118 the counters in the run's report and the bench's summary.
-- **Stage 1, the core: frame and tools**: S1.119 `-F` baseline of the kept kernels · S1.120 No map, list, dynamic dispatch or wide optional on day paths (R1) · S1.121 Whole-table traversal only through kernel traversals or declared sweeps (R2) · S1.122 Dispatch only through kernel traversals; no absent pool (R3, R8) · S1.123 No register, kind or family read by name on day paths · S1.124 No allocation on day paths (R5) · S1.125 No map keyed by a bare slot in saved state · S1.126 No absent value read as zero · S1.127 No literal capacity · S1.128 Maintained aggregates declared and never read by the audit (R4) · S1.129 Per-day values only through the day-stamped cache (R7) · S1.130 Every index left out of a save names its rebuild (R9) · S1.131 Architecture names exist; unused kernel API reported · S1.132 The design point's ratchets in `perf/budget.toml` · S1.133 The world run's counters for the core's rules
+  counters · S1.118 the counters in the run's report and the bench's summary · S1.119 the
+  `-F` baseline of the kept kernels.
+- **Stage 1, the core: frame and tools**: S1.120 No map, list, dynamic dispatch or wide optional on day paths (R1) · S1.121 Whole-table traversal only through kernel traversals or declared sweeps (R2) · S1.122 Dispatch only through kernel traversals; no absent pool (R3, R8) · S1.123 No register, kind or family read by name on day paths · S1.124 No allocation on day paths (R5) · S1.125 No map keyed by a bare slot in saved state · S1.126 No absent value read as zero · S1.127 No literal capacity · S1.128 Maintained aggregates declared and never read by the audit (R4) · S1.129 Per-day values only through the day-stamped cache (R7) · S1.130 Every index left out of a save names its rebuild (R9) · S1.131 Architecture names exist; unused kernel API reported · S1.132 The design point's ratchets in `perf/budget.toml` · S1.133 The world run's counters for the core's rules
 - **Stage 1, the core: repairs**: S1.134 An agency's withheld tax opens in its collector's family · S1.135 A firm estate's project completes at its own site · S1.136 A failed goods move stops the run or fails whole, never a zero cost · S1.137 Missing technology, law or price refused, never zero · S1.138 Impossible values stop the run at the conversion · S1.139 Absent preferences, standings, standards and accounts matched · S1.140 Balances written at endings become flows · S1.141 Legal forms declare whether they have owners and who owns them · S1.142 Kinds declare their place · S1.143 The heirless destination declared by each country's law · S1.144 Kinds' features read as declared · S1.145 Families and kinds bound to handles at assembly · S1.146 The register read by handles on day paths · S1.147 The activity the state's agencies produce declared · S1.148 Numeric literals in mechanisms declared · S1.149 An employment's notice cleared on every close · S1.150 Measurement histories held by declared horizons · S1.151 Dates placed by the calendar, not counted · S1.152 Settlement and the day's flows on the pool · S1.153 Wheel takes, hiring's search and hazards' follow on the pool · S1.154 Production, orders and the opening's needs return actions, not floors · S1.155 The bill offer returns an action; no floor by comparison · S1.156 The duplicated decision runtime deleted · S1.157 Stale comments corrected · S1.158 Vacuous `phx-check` rules re-aimed
 - **Stage 1, the core: bases**: S1.159 Generation references for every table · S1.160 Day buffers · S1.161 The day plan: buffers' lives and shared pages · S1.162 The save contract: the rebuild pass and the round-trip harness · S1.163 The world hash as a tree of frame hashes · S1.164 The sum-tree · S1.165 Keyed indexes maintained by events · S1.166 Epoch flags and change sets · S1.167 Horizon rings · S1.168 The interner with reference counts · S1.169 Chunk plans and bounded spin · S1.170 Partitioned apply with its sweep hooks · S1.171 Declared sweeps and rolling cursors · S1.172 Apportionment with a named residue · S1.173 The four money viewpoints · S1.174 Typed references and the contract link's widths · S1.175 24-bit unit ids · S1.176 Stream families in the key, slot ordinals in the counter · S1.177 Stream declarations by family, and the families' draw types · S1.178 The calendar's day facts · S1.179 Dated policy schedules and rule handles · S1.180 The kind catalogue · S1.181 The family codes of the finished world · S1.182 Kinds, families and capacities read from the catalogue · S1.183 The units registry · S1.184 Goods and capital classes issued by the registry · S1.185 The stage table · S1.186 The day runner walks the stage table · S1.187 Networks and routes · S1.188 The day's use of the network as pair flows · S1.189 Freight's routes onto the route table · S1.190 Cells and the ground things stand on · S1.191 The deposits register · S1.192 Weather history and catastrophe footprints · S1.193 The weather's stores onto the ring and the footprint · S1.194 The party directory: generations, tombstones and successors · S1.195 The world's parties onto the directory · S1.196 Kind stores with typed columns at fixed byte maps · S1.197 Windowed groups: columns that exist only within a dated window · S1.198 Firms' record words to typed columns · S1.199 Households' record words to typed columns · S1.200 Equity and income lines onto kind columns · S1.201 Banks onto the bank kind: lending records and loan books · S1.202 Banks' reserve targets onto the bank kind · S1.203 The extraction flag as a firm flag bit · S1.204 Carriers' modes read from their ways · S1.205 Agencies onto the agency kind: staff targets and budgets · S1.206 The remaining kinds onto phx-pop; phx-core's KindStore deleted · S1.207 Persons as parties in their households · S1.208 Persons onto the person kind · S1.209 Offices and founding preferences · S1.210 Office holders and founding preferences onto offices · S1.211 The per-day party cache · S1.212 The stored log: immutable day segments on storage · S1.213 The event log: public events resident, occurrences stored · S1.214 Hazard events, weather records and deaths onto the event log · S1.215 The records store: series records by vintage, as published · S1.216 Filed accounts encoded per block · S1.217 The credit bureau's records: sparse summaries and adverse events · S1.218 Releases, filed earnings, auction history and the opening's present values onto records · S1.219 The day ledger: the representation reported every day · S1.220 The per-day records onto the day ledger · S1.221 Statistics accumulators · S1.222 Sample frames and saved samples · S1.223 Life records on storage within their horizon · S1.224 Tallies and votes · S1.225 The due wheel in phx-agenda with due-day runs · S1.226 Dated families' takes onto the phx-agenda wheel · S1.227 The decision agenda: one entry a party, a next day a reason · S1.228 Firms' production visits onto the decision agenda · S1.229 Extraction reviews onto the decision agenda · S1.230 Shipping onto the decision agenda · S1.231 Investment reviews onto the decision agenda · S1.232 Employers' postings onto the decision agenda · S1.233 Households' spending onto the decision agenda · S1.234 Employers' pay rounds onto the decision agenda · S1.235 Hazards drawn ahead on the agenda · S1.236 Today's hazards onto the agenda · S1.237 Messages and notices · S1.238 Notices, applications and offers onto messages · S1.239 The trigger index · S1.240 Money accounts: one 20-byte row, no owner column, banknotes · S1.241 Account side slots: facilities, held amounts, links and statements · S1.242 Exact interest on accounts by Abel summation · S1.243 Money totals maintained in the settlement sweep · S1.244 Accounts and money passes moved onto the ledger · S1.245 Flow batches: 16-byte items, 24-bit denominations, link groups, the chains' entry points · S1.246 Card authorization and reason gates · S1.247 Flows moved from `phx-core` with their producers · S1.248 Settlement in `phx-ledger`: the `pending` sweep, short payers re-derived, outcome by place · S1.249 Settlement routed onto the ledger; failure maps onto the outcome by place · S1.250 Linked legs across currencies and correspondent settlement · S1.251 Dated commitments on both books · S1.252 Pending flows moved onto commitments and accounts' `pending` · S1.253 The levy engine: declared levy sets fused at emission, accrued by collector · S1.254 Settlement tallies by reason, fused in the sweeps · S1.255 Per-flow passes moved onto tallies and the declared payment order · S1.256 The agency's statistics passes moved onto accumulators · S1.257 The contract store: declared families, compact rows, codes and runs · S1.258 Chains and lazy block lists: the walked sides · S1.259 Column sweeps and book sides · S1.260 Dated families moved onto the contract store · S1.261 Side aggregates maintained on row events · S1.262 Staff, wage bills, owed balances and collateral moved onto side aggregates · S1.263 Terms, shapes and the day's due plans · S1.264 Reckoning and schedules moved onto shared plans · S1.265 Status, arrears and the day's transitions · S1.266 Arrears, grace, closes and default moved onto status · S1.267 Books, bulk side moves and the rows of a book · S1.268 Participations: sides held in shares · S1.269 Accruing statement contracts: invoice pairs, open and closed periods, carving · S1.270 Taxes moved onto the levy engine and collectors' payables · S1.271 Holdings of goods and physical units by holder · S1.272 Stocks' users moved onto holdings · S1.273 Unit totals and nature's net, maintained · S1.274 The place index · S1.275 The goods identity read from maintained totals · S1.276 Lots and cost flows, with realised gains · S1.277 Bounds and liens: committed, pledged, received under title · S1.278 Sales' covers and carriers' pledges moved onto bounds · S1.279 The instruments register · S1.280 Instrument holdings and holders by instrument · S1.281 The instrument events engine · S1.282 Bills moved onto instruments and their events · S1.283 Owners moved onto equity holdings · S1.284 Named units and what stands on a tile · S1.285 Capital classes: wear and maintained capacity · S1.286 Plant's wear and capacity moved onto capital classes · S1.287 Processes in progress: shipments, projects, production in flight, spells · S1.288 Shipments moved onto processes · S1.289 Standing rates realised lazily · S1.290 Cumulative output per way and its thresholds · S1.291 Production and spoilage moved onto standing rates · S1.292 Projects moved onto processes · S1.293 Deposits and extraction rights moved onto the register and holdings · S1.294 Catastrophes' losses found by place · S1.295 A firm's unit cost read once a day from the bases · S1.296 Standing offers and market instances · S1.297 Price points and ladders · S1.298 The shared admission hook · S1.299 The stall family in good-major blocks · S1.300 Posted prices onto standing offers · S1.301 The stall book: a sum-tree per good at its zone · S1.302 Closed borders read as a declared scope · S1.303 Stalls and the cheapest price onto the stall book · S1.304 The vacancy book and searchers · S1.305 Vacancies and searchers onto the vacancy book · S1.306 The posted-price meeting on the stall book's sum-trees · S1.307 The between-firm meeting on price levels from the stall book · S1.308 The world's purchases onto the meetings · S1.309 The sale as its payment: seller-range sweep and the (seller, good) batch · S1.310 Failed between-firm sales reversed before the close · S1.311 Booking and delivery onto the sales batch · S1.312 The call auction · S1.313 The bill auction onto the call auction · S1.314 The network call: a transport model over lines · S1.315 The continuous book with its closing call · S1.316 The dealer market · S1.317 The bilateral protocol · S1.318 The lending round onto the bilateral protocol · S1.319 The administered form · S1.320 The central bank's facilities onto the administered form · S1.321 Search and match · S1.322 Labour's rounds onto search and match · S1.323 Rationed queues · S1.324 Perishable daily capacity · S1.325 Services' capacity onto perishable capacity · S1.326 Prints, marks, fixings and market measures · S1.327 Traded sums and marks onto prints and marks · S1.328 Account lines (K-87) · S1.329 Income recognition onto lines · S1.330 Equity accounts and maintained net assets (K-88) · S1.331 The accounts audit onto recounts · S1.332 Carrying values, provisions and unrealised differences (K-89) · S1.333 Statements (K-90) · S1.334 Consolidation (K-90) · S1.335 Valuations and curves (K-91) · S1.336 Public series and methods (K-92) · S1.337 Public series onto the store · S1.338 Books and declared limits (K-93) · S1.339 Loan books and lenders' classes onto books · S1.340 Netting sets, margin and collateral (K-94) · S1.341 Exact linear aggregates (K-95) · S1.342 Estates' lifecycle (K-96) · S1.343 The ending kernel (K-97) · S1.344 Endings onto the ending kernel and estates' lifecycle · S1.345 Claims and the priority waterfall (K-98) · S1.346 Estates' payments onto the waterfall · S1.347 The resolution engine (K-99) · S1.348 The decision core (K-100) · S1.349 Decisions onto the decision core · S1.350 The attention kernel (K-101) · S1.351 Attention onto the kernel and the agenda · S1.352 Minds (K-102) · S1.353 The audit engine (K-103) · S1.354 Audit families onto the engine · S1.355 `phx-world` refuses stores and per-party passes · S1.356 Snapshots of every base (K-104) · S1.357 The investor schedule and position rule (K-105) · S1.358 The measurement recorder (K-106) · S1.359 The recorder routed at the day's close · S1.360 The core's close
 - **Stage 1 on the core**: S1.400 Stage 1's macro reads frozen · S1.401 Hazards' chances and their following in sys-dem · S1.402 Outcomes on persons and households in sys-dem · S1.403 Extended households' members from the DHS · S1.404 Households and persons drawn by sys-dem · S1.405 Persons own their accounts and debts at the opening · S1.406 A household's payments drawn from its persons · S1.407 Banks opened by sys-bnk · S1.408 The central bank opened by sys-cb · S1.409 The treasury opened by sys-trs · S1.410 Agencies and the state pensions in payment opened by sys-soc · S1.411 The developing group's job tenure · S1.412 Jobs and working owners dealt by sys-lab at the opening · S1.413 Vacancies posted from the employer's own state · S1.414 Searchers apply from their own reservation · S1.415 Selection, offers and hires · S1.416 Pay rounds at contracts' review dates · S1.417 Layoffs, notice and separations · S1.418 SOC.3 pays the named person · S1.419 Retirement closes jobs · S1.420 The state pension claimed at retirement · S1.421 The benefit claimed on a lost job · S1.422 Working owners' hours, pay and leaving · S1.423 Public agencies' appropriation, funding and staff · S1.424 The state's purchases through its agencies · S1.425 The lending round · S1.426 A firm's rate for new debt as its own position · S1.427 A firm's shortfall borrowed from its own bank · S1.428 Default after grace · S1.429 The central bank's facilities and remittance · S1.430 A bank's request of the facilities · S1.431 The treasury's position and cash buffer · S1.432 Bills at auction · S1.433 Sovereign debt's maturities and holders at the opening · S1.434 A bill's discount accrued over its life · S1.435 Income and consumption tax rules in sys-tax · S1.436 Mining divisions apart · S1.437 Coal deposits' sizes and grades · S1.438 A way's graded inputs declared in content · S1.439 Graded inputs used and valued by content · S1.440 A firm's unit cost as a sys-frm rule · S1.441 Which way to run · S1.442 Capacity's check declared in the Units family · S1.443 Production on the firm's schedule · S1.444 Input orders against the stall book · S1.445 Services bought for what was made · S1.446 Spoilage on standing rates · S1.447 Extraction on its schedule · S1.448 Household spending on its schedule · S1.449 Posted-price marks by units sold · S1.450 Price reviews · S1.451 Firms' attention, and reviews paid in hours · S1.452 Households' attention to their stances · S1.453 Firms' outlooks and stances · S1.454 Households' outlooks and experience weights · S1.455 Management types' spread from the SCE panel · S1.456 Surveyed expectations at the snapshot · S1.457 Wear by use and age, on its kinks · S1.458 Investment on its occasion · S1.459 Projects bought from named producers, paid in stages · S1.460 How an investment is funded · S1.461 A firm enters a line by investing · S1.462 Hazards' damage from the damage functions · S1.463 Crops' yield response to weather · S1.464 Weather and catastrophes destroy crops and stocks at named places · S1.465 Coastal vessels from the IMO, MARAD and shipbuilding · S1.466 Carriers' room and empty repositioning · S1.467 Sellers ship when the gap pays · S1.468 Buyers ship when origin plus freight beats home · S1.469 Freight, basis and supply-shock reads · S1.470 The trade ways declared · S1.471 The trade firms' products at the opening · S1.472 Stockists and merchants · S1.473 Distributors between makers and households · S1.474 The price indices' accumulators and records declared · S1.475 Price indices chained and released · S1.476 Labour force, life table and money released · S1.477 National accounts by three measures · S1.478 Labour's reads · S1.479 Capital's reads · S1.480 Realised rates on the observer's panel · S1.481 Firms' ages at the opening · S1.482 Farms over the size classes · S1.483 Firms drawn at the opening by sys-frm · S1.484 The opening's plant on the steady path · S1.485 Defined-benefit pensions in payment at the opening · S1.486 Each firm's latest filed accounts at the opening · S1.487 The dwelling capital kind declared · S1.488 The opening dwellings held without a housing market · S1.489 Founding reviewed at the adults' attention · S1.490 Firm births · S1.491 Day zero: each party's opening decisions once · S1.492 `phx-world` holds routing only · S1.493 PC-107: rules live in their systems · S1.494 Estimators I: filters, dating, tails · S1.495 Estimators II: survival, regressions, spells, forecasts · S1.496 Credit, verdicts and fact reports · S1.497 Chain relationships computed and reported · S1.498 Stage 1's liveness checks and live reads · S1.499 The Stage 1 gate
@@ -865,67 +866,6 @@ unchanged.
 
 ---
 
-### S1.119 — `-F` baseline of the kept kernels
-
-**Status**: planned
-**Kind**: tool
-**Clauses**: none
-**Architecture**: §7.2, §7.3, §7.11 "Today" paragraphs (followed), §14.7
-**Depends on**: S1.116 (the harness), S1.117 (the counters it reads)
-**Goal**: today's kernels that the core keeps or replaces are measured at the design point before any base lands:
-flows grouped and settled, the due wheel's takes, the posted-price meeting, hiring's search, the calendar and the
-streams, each with `[fin.kept]` ratchets at today's measure that only tighten, so every base step's gain is read
-against a measure, never a guess.
-
-**Files**:
-| path | purpose |
-| --- | --- |
-| `crates/apps/phx-fin/src/kept_flows.rs` | `phx_core::flows` + `settle` at the flows of `[day.b]` and `[day.h]` over `[store] accounts` |
-| `crates/apps/phx-fin/src/kept_wheel.rs` | `phx_core::wheel::DueWheel` with `[store] wheel_rows`; takes at `[day.b]` and `[day.h]` dues |
-| `crates/apps/phx-fin/src/kept_meet.rs` | `phx_market::meet` over `[store] stalls`, `[day.*] retail` wants |
-| `crates/apps/phx-fin/src/kept_search.rs` | `phx_market::hiring::search` over `[store] vacancies`, `[day.b] searches` |
-| `crates/apps/phx-fin/src/kept_calendar.rs` | `phx_core::calendar` civil date and business-day reads; `phx_rand` Philox draws |
-| `perf/budget.toml` | `[fin.kept]` |
-
-**Design**:
-- Each driver fills today's structure through its public API at the design point's counts (`[store]`, `[day.*]`),
-  with the pool passed (never `None`), and times the day's operation mix as S1.116 does.
-- **Keys** (`[fin.kept]`, added): `flow_ns`, `flow_h_ns`, `due_ns`, `purchase_ns`, `search_ns`, `civil_ns`,
-  `draw_ns`, `mb`, each set at the first measure plus the file's margin (a quarter above for times, a tenth for bytes).
-  They are placeholders: each is removed by the base step whose driver replaces it — `flow_ns`, `flow_h_ns` by S1.248
-  (settlement), `due_ns` by S1.225 (the wheel), `purchase_ns` by the retail meeting's step (K-73, S1.306), `search_ns`
-  by S1.321 (search and meeting), `civil_ns` by S1.178 (day facts), `draw_ns` by S1.176 (streams).
-- The composite day of S1.116 uses these measures for the lines they stand for until their bases land, so the first
-  `-F all` reads today's real distance to the budget.
-
-**Edge cases**:
-- E5: the H day's flows and takes (`[day.h]`) are measured — `kept_heavy_day_runs`.
-- E7: `-w 1` and the machine's workers give the same filled digest; ns an op read at each —
-  `kept_fill_is_worker_independent`.
-- E2: a zone with no stall in the meeting's fill is a failed want, never a division by zero —
-  `empty_zone_is_a_failed_want`.
-
-**Extension points**: the base steps named above retire their key; S1.132 keeps `[fin.kept]` beside `[fin.*]`.
-
-**Unit tests**: `kept_heavy_day_runs`, `kept_fill_is_worker_independent`, `empty_zone_is_a_failed_want` (each over a
-scaled fixture), `kept_fill_counts_match_design` (each driver's fill reports `[store]`'s counts on a scaled fixture);
-`kept_keys_named_for_their_retirers` (every `[fin.kept]` key maps to a retiring step in the driver's table).
-
-**Live checks**: none.
-
-**Budget**: measures only; the committed resolution's world is not touched.
-
-**Guards**: none added.
-
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a kept kernel changed to measure better; a kept ratchet set above its measure's margin.
-
-**Done when**:
-- [ ] The drivers and `[fin.kept]` written; `tools/bench.sh -F kept` run and its report kept (`-k`).
-- [ ] Fast checks pass; the bench at the committed resolution within `perf/budget.toml`.
-- [ ] §14.7 names the kept baseline; the two reviews done; status `done` and the section removed.
-
----
 ### S1.120 — No map, list, dynamic dispatch or wide optional on day paths (R1)
 
 **Status**: planned
@@ -6272,7 +6212,7 @@ in ARCHITECTURE §13's memory ledger):
 | Institution | per kind (most ≤ 1 024; unions, authorities ≈ 3 KB) | per kind, declared | per kind |
 | Office | 16 | one | none |
 
-Placeholders introduced: none. Placeholders retired: none (the `[fin.kept.due_ns]` baseline ratchet of S1.119 is
+Placeholders introduced: none. Placeholders retired: none (the `[fin.kept] due_ns` baseline ratchet of S1.119 is
 replaced by S1.225's `[fin.wheel]`).
 
 ### S1.194 — The party directory: generations, tombstones and successors
@@ -8442,7 +8382,7 @@ their owner's own due. This step builds the wheel in `phx-agenda`; S1.226 moves 
 - Save: `#[saved(skip, rebuild = refile)]`: at load every owner refiles its rows from their own dues and terms (≈ 36 M
   × 3 ns ≈ 0.1 s); the far list likewise. Measurement: `StoreStats` (entries, bytes, heaviest bucket); takes report
   rows visited through `ExecCounters::visited`.
-- Retires the placeholder ratchet `[fin.kept.due_ns]` of S1.119, replaced by `[fin.wheel]`. The `#[clause("TIME.3")]`
+- Retires the placeholder ratchet `[fin.kept] due_ns` of S1.119, replaced by `[fin.wheel]`. The `#[clause("TIME.3")]`
   carrier (done at S0.08) moves to it with S1.226.
 
 **Edge cases**:
@@ -8479,7 +8419,7 @@ over every party every day; an allocation per day.
 **Done when**:
 - [ ] `phx-agenda` created; `DueWheel` built; tests pass.
 - [ ] Fast checks pass.
-- [ ] `tools/bench.sh -F wheel` within `entry_ns`, `file_ns`, `entry_bytes`, `mb`; `[fin.kept.due_ns]` removed.
+- [ ] `tools/bench.sh -F wheel` within `entry_ns`, `file_ns`, `entry_bytes`, `mb`; `[fin.kept] due_ns` removed.
 - [ ] ARCHITECTURE §7.7 "The due wheel" written.
 - [ ] Both reviews' findings fixed; status `done`, section removed.
 
@@ -9388,7 +9328,7 @@ deleted (S1.244, S1.247, S1.249, S1.252, S1.255, S1.256, S1.260, S1.262, S1.264,
 | --- | --- | --- |
 | a flow's 15-bit unit denomination (an id beyond 2¹⁵ stops the run) | S1.174 | S1.245 |
 | money totals folded by today's settlement apply, moved from `phx-core` into `phx-ledger` (naming S1.248) | S1.244 | S1.248 |
-| `[fin.kept.flows]`, today's flows and settlement measured as kept kernels | S1.119 | S1.248 |
+| `[fin.kept] flow_ns` and `flow_h_ns`, today's flows and settlement measured as kept kernels | S1.119 | S1.248 |
 | floating and indexed resets read the last published value (naming IDX) | S1.263 | S3.203 |
 | books with no world user until today's endings adopt them, measured by `-F` only (naming EST) | S1.267 | S1.344 |
 | participations with no world user, measured by `-F` only (naming the opening's joint holdings) | S1.268 | S1.405 |
@@ -10012,7 +9952,7 @@ bitmap by place replaces every value-keyed failure map.
 - **`Values`** (SET.10): gross, net, ring count and value, fails by cause, per currency — written each business day to
   the day ledger's kind `settlement` (K-38).
 - **SET.7**: an ending party's items settle against its estate's account (K-31's successor).
-- **Retires** `[fin.kept.flows]` (S1.119; replaced by `[fin.settle]`, `[fin.ledger]`).
+- **Retires** `[fin.kept] flow_ns` and `flow_h_ns` (S1.119; replaced by `[fin.settle]`, `[fin.ledger]`).
 - Carried (done at S0.15): SET.4 — its carrier moves.
 - **Measurement**: sweep and passes report rows through `ExecCounters::visited`.
 
@@ -14031,7 +13971,7 @@ to its buyers, a sold-out stall leaves its tree in O(log n), and each sale is an
 | `crates/kernel/phx-market/src/wants.rs` | want segments per (chunk, instance), 10 B SoA (buyer, zone, amount; wide amounts and limit points aside) |
 | `crates/kernel/phx-market/src/meet_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/retail.rs` | -F driver `fin.retail` |
-| `perf/budget.toml` | `[fin.retail]` `match_ns` 19.1, `work_per_sale` 4, `buffer_mb` 102; `[fin.kept.purchase_ns]` removed |
+| `perf/budget.toml` | `[fin.retail]` `match_ns` 19.1, `work_per_sale` 4, `buffer_mb` 102; `[fin.kept] purchase_ns` removed |
 | `docs/ARCHITECTURE.md` | §7.11 "The posted-price meeting (K-73)" |
 
 **Design**:
@@ -14071,7 +14011,7 @@ to its buyers, a sold-out stall leaves its tree in O(log n), and each sale is an
   serves (S1.326). A buyer left with nothing it can buy goes without (MKT.10), nothing added to clear (MKT.17).
 - **Scratch**: per worker, not per job or chunk: `left` and the touched bitmap over the running instance's positions,
   choosing records (32 B a buyer still choosing), zone cumulatives — ≤ 2 MiB a worker at the largest instance.
-- Retires `[fin.kept.purchase_ns]` (S1.119), replaced by `[fin.retail]`.
+- Retires `[fin.kept] purchase_ns` (S1.119), replaced by `[fin.retail]`.
 - **Measurement**: `ExecCounters::visited` (stalls touched, positions scanned); `meeting_work_per_sale` (≤ 4); rounds
   and rejections per instance in the trace.
 
@@ -15017,7 +14957,7 @@ match's quality as its taste.
 | `crates/kernel/phx-market/src/search.rs` | `apply`, `meetings`, `select`, `accept` (generalising `hiring.rs`, which stays until S1.322) |
 | `crates/kernel/phx-market/src/search_tests.rs` | unit tests (`hiring_tests.rs`'s carried over) |
 | `crates/apps/phx-fin/src/vacancies.rs` | the search driver in `fin.vacancies`; other searches in `fin.decide` |
-| `perf/budget.toml` | `[fin.vacancies]` `search_ns` 170; `[fin.decide]` `search_ns` 300, `osearch_ns` 350; `[fin.kept.search_ns]` removed |
+| `perf/budget.toml` | `[fin.vacancies]` `search_ns` 170; `[fin.decide]` `search_ns` 300, `osearch_ns` 350; `[fin.kept] search_ns` and `mb` removed |
 | `docs/ARCHITECTURE.md` | §7.11 "Search and match (K-82)" |
 
 **Design**:
@@ -15041,7 +14981,8 @@ match's quality as its taste.
   distribution (the job offer's taste is the match's quality) and accepts the best whose worth with its taste beats its
   reservation; the other offers lapse and their jobs return to their vacancies at the apply.
 - Integer wage points throughout (no f64 wage); pulls from S1.304's point table.
-- Retires `[fin.kept.search_ns]` (S1.119), replaced by `[fin.vacancies] search_ns`.
+- Retires `[fin.kept] search_ns` (S1.119), replaced by `[fin.vacancies] search_ns`, and `[fin.kept] mb` with the last
+  kept kernel.
 - **Measurement**: applications, offers, acceptances, meetings per kind; `ExecCounters::visited` (listings weighed).
 
 **Edge cases**:

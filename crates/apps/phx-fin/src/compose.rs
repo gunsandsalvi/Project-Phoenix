@@ -9,6 +9,8 @@ use crate::design::Design;
 pub enum Source {
     Measured,
     Declared,
+    /// Declared, with a kernel of today measured in place of the unit cost it stands for.
+    Partly,
 }
 
 /// One line of the day: its core-ms on a business, a non-business and a heavy day.
@@ -58,4 +60,44 @@ pub fn declared(design: &Design) -> Vec<Line> {
         .filter(|(name, _)| name.as_str() != "day")
         .map(|(name, core_ms)| Line { name: name.clone(), core_ms: *core_ms, source: Source::Declared })
         .collect()
+}
+
+/// A measure standing in a declared line for the unit cost of a leaf of it: the operation measured, the line, the
+/// unit cost and the day count it replaces, the day types it runs on, and whether its work is bound by gathers.
+#[derive(Debug, Clone, Copy)]
+pub struct Leaf {
+    pub op: &'static str,
+    pub line: &'static str,
+    pub unit: &'static str,
+    pub count: &'static str,
+    pub days: &'static [DayType],
+    pub gather: bool,
+}
+
+/// Each leaf measured put in its line in place of its declared unit cost, on each day type whose counts hold it: the
+/// line gains the measure's phone core-ms and loses the unit cost's.
+pub fn substitute(
+    lines: &mut [Line],
+    design: &Design,
+    (base, leaves): (&str, &[Leaf]),
+    measured: &dyn Fn(&str) -> Option<f64>,
+) {
+    const NS_A_MS: f64 = 1e6;
+    for leaf in leaves {
+        let (Some(vm_ns), Some(unit_ns)) =
+            (measured(&format!("fin.{base}.{}_ns", leaf.op)), design.unit.get(leaf.unit))
+        else {
+            continue;
+        };
+        let Some(line) = lines.iter_mut().find(|l| l.name == leaf.line) else { continue };
+        let k = if leaf.gather { design.phone.k_gather } else { design.phone.k_compute };
+        for day in leaf.days {
+            let Some(n) = design.day(*day).and_then(|c| c.get(leaf.count)) else { continue };
+            let n = phx_rand::float::from_u64(*n);
+            if let Some(ms) = line.core_ms.get_mut(day.index()) {
+                *ms += line_core_ms(vm_ns, k, n) - unit_ns * n / NS_A_MS;
+                line.source = Source::Partly;
+            }
+        }
+    }
 }
