@@ -460,7 +460,7 @@ mod tests {
             may_hold: Vec::new(),
             features: vec![Feature::SeparateParty],
             endings: vec!["dissolution".to_owned()],
-            owners: "shareholders".to_owned(),
+            owners: crate::kinds::Owners::Shareholders,
             offices: vec!["chief_executive".to_owned()],
         };
         assert!(kinds.check(&["FRM.close", "HH.spend"], std::slice::from_ref(&company)).is_ok());

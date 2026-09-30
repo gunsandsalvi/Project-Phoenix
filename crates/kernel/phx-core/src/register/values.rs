@@ -549,15 +549,19 @@ fn legal_forms(v: &Value) -> Result<Vec<LegalForm>, String> {
                 "limited_liability" => Ok(Feature::LimitedLiability),
                 "takes_deposits" => Ok(Feature::TakesDeposits),
                 "issues_currency" => Ok(Feature::IssuesCurrency),
+                "has_owners" => Ok(Feature::HasOwners),
                 other => Err(format!("`{other}` is not a feature of a legal form")),
             })
             .collect::<Result<_, _>>()?;
+        let name = text(t, "name")?;
+        let owners =
+            crate::kinds::Owners::parse(text(t, "owners")?).map_err(|e| format!("legal form `{name}`: {e}"))?;
         let form = LegalForm {
-            name: text(t, "name")?.to_owned(),
+            name: name.to_owned(),
             may_hold: names(t, "may_hold")?,
             features,
             endings: names(t, "endings")?,
-            owners: text(t, "owners")?.to_owned(),
+            owners,
             offices: names(t, "offices")?,
         };
         form.validate()?;
@@ -858,8 +862,9 @@ mod tests {
 
     use super::{
         Discretisation, Distribution, Family, Outside, OutsideAxes, PrimValue, TypeId, TypeSet, TypeShare, ValueType,
-        decimal, draw_type, parse,
+        decimal, draw_type, legal_forms, parse,
     };
+    use crate::kinds::{Feature, Owners};
 
     fn value(text: &str) -> Value {
         toml::from_str::<toml::Table>(&format!("v = {text}")).unwrap().remove("v").unwrap()
@@ -967,5 +972,46 @@ mod tests {
         for (count, (p, bound)) in counts.iter().zip([(0.1, 820.0), (0.6, 1335.0), (0.3, 1250.0)]) {
             assert!((f64::from(*count) - p * f64::from(n)).abs() < bound, "{counts:?}");
         }
+    }
+
+    /// The committed legal forms, as their declaration's value.
+    fn declared_forms() -> Vec<crate::kinds::LegalForm> {
+        let file: toml::Table = toml::from_str(include_str!("../../../../../data/shared/PTY.toml")).unwrap();
+        let entry = file["primitive"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["id"].as_str() == Some("PTY.legal_forms"))
+            .unwrap();
+        legal_forms(&entry["value"]).unwrap()
+    }
+
+    #[test]
+    fn owners_parsed_from_declared_forms() {
+        let owners: Vec<(String, Owners)> = declared_forms().into_iter().map(|f| (f.name, f.owners)).collect();
+        assert!(owners.contains(&("central bank".to_owned(), Owners::State)));
+        assert!(owners.contains(&("company".to_owned(), Owners::Shareholders)));
+        assert!(owners.contains(&("household".to_owned(), Owners::Members)));
+        assert!(owners.contains(&("estate".to_owned(), Owners::HeirsAndCreditors)));
+        let named = value(
+            r#"[{ name = "x", may_hold = [], features = [], endings = ["e"], owners = "the state", offices = [] }]"#,
+        );
+        assert_eq!(legal_forms(&named), Err("legal form `x`: `the state` is not an owner of a legal form".to_owned()));
+    }
+
+    #[test]
+    fn form_without_features_parses() {
+        let bare = value(
+            r#"[{ name = "x", may_hold = [], features = [], endings = ["e"], owners = "members", offices = [] }]"#,
+        );
+        let forms = legal_forms(&bare).unwrap();
+        assert!(forms.iter().all(|f| f.features.is_empty()));
+    }
+
+    #[test]
+    fn has_owners_on_bank_and_company() {
+        let owned: Vec<String> =
+            declared_forms().into_iter().filter(|f| f.has(Feature::HasOwners)).map(|f| f.name).collect();
+        assert_eq!(owned, vec!["bank".to_owned(), "company".to_owned()]);
     }
 }

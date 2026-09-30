@@ -468,7 +468,8 @@ is a party with a permanent identity.
   ownership are the person's. A household holds its persons, each with its role in it (REP.26).
 - **PTY.4 STATE** — Every party has a **legal form**, and the legal form is declared data (Law 10): what it
   may hold, whether it is a party separate from its owners, whether its owners have limited liability,
-  whether it may take deposits, how it can end, and who its owners are.
+  whether it may take deposits, how it can end, who its owners are — the state, its shareholders, its members, or
+  the heirs and creditors of the party it was — and whether they hold its equity (ACC.4).
 - **PTY.5 STATE** — Every party has a **site** on the map (GEO), from which its region and country are read;
   a party with several establishments has a site for each. A household or firm has a **zone** for each site among
   its attributes, and its site is the tile of what it holds there, drawn when something depends on it (REP.24).

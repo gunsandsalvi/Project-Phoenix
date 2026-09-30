@@ -780,10 +780,18 @@ pub phx_core::hazards::RateFn::table: &'static str  // used by: phx-check, phx-f
 pub fn phx_core::hazards::annual_to_daily(f64, u32) -> f64  // used by: phx-cli, phx-geo, sys-dem
 pub mod phx_core::kinds  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
 pub enum phx_core::kinds::Feature
+pub phx_core::kinds::Feature::HasOwners
 pub phx_core::kinds::Feature::IssuesCurrency
 pub phx_core::kinds::Feature::LimitedLiability
 pub phx_core::kinds::Feature::SeparateParty
 pub phx_core::kinds::Feature::TakesDeposits
+pub enum phx_core::kinds::Owners  // used by: phx-world
+pub phx_core::kinds::Owners::HeirsAndCreditors
+pub phx_core::kinds::Owners::Members
+pub phx_core::kinds::Owners::Shareholders
+pub phx_core::kinds::Owners::State  // used by: phx-world
+impl phx_core::kinds::Owners
+pub fn phx_core::kinds::Owners::parse(&str) -> core::result::Result<phx_core::kinds::Owners, alloc::string::String>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-macros
 pub struct phx_core::kinds::KindDecl  // used by: phx-macros
 pub phx_core::kinds::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::kinds::KindDecl::legal_form: &'static str  // used by: phx-world
@@ -798,7 +806,7 @@ pub phx_core::kinds::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Featu
 pub phx_core::kinds::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
 pub phx_core::kinds::LegalForm::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::kinds::LegalForm::offices: alloc::vec::Vec<alloc::string::String>  // used by: phx-world
-pub phx_core::kinds::LegalForm::owners: alloc::string::String  // used by: phx-cli, phx-world
+pub phx_core::kinds::LegalForm::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-world
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool  // used by: sys-dem
 pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>  // used by: phx-world
@@ -1783,6 +1791,7 @@ pub phx_core::Family::Weibull  // used by: phx-geo
 pub phx_core::Family::Weibull::k: i64  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-lab, sys-tec
 pub phx_core::Family::Weibull::lambda: i64  // used by: phx-cli, phx-rand, phx-val, phx-world
 pub enum phx_core::Feature
+pub phx_core::Feature::HasOwners
 pub phx_core::Feature::IssuesCurrency
 pub phx_core::Feature::LimitedLiability
 pub phx_core::Feature::SeparateParty
@@ -2389,7 +2398,7 @@ pub phx_core::LegalForm::features: alloc::vec::Vec<phx_core::kinds::Feature>
 pub phx_core::LegalForm::may_hold: alloc::vec::Vec<alloc::string::String>
 pub phx_core::LegalForm::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::LegalForm::offices: alloc::vec::Vec<alloc::string::String>  // used by: phx-world
-pub phx_core::LegalForm::owners: alloc::string::String  // used by: phx-cli, phx-world
+pub phx_core::LegalForm::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-world
 impl phx_core::kinds::LegalForm
 pub fn phx_core::kinds::LegalForm::has(&self, phx_core::kinds::Feature) -> bool  // used by: sys-dem
 pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<usize>  // used by: phx-world

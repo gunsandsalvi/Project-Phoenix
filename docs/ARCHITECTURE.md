@@ -834,6 +834,10 @@ an interface item whose writer is not registered.
   of no values, roles or person attributes beyond a person's word, a kind sited by two attributes or by one it does
   not hold.
 
+  A legal form is refused whose owners fall outside the forms' vocabulary (`Owners`: the state, shareholders, its
+  members, its heirs and creditors), or whose owners hold its equity (`Feature::HasOwners`) while being its own
+  members.
+
   The opening refuses a primitive absent for what the world holds, naming it, rather than reading it as zero: a product
   with no lead time (`TEC.lead_time`, compiled once into `CoreGoods::lead`), a country with no lending rate
   (`GEN.lending_rate`) or labour law, a product with no opening price in a country (`GDS.opening_price`, read for the

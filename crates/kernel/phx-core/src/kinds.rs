@@ -1,4 +1,4 @@
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 
 use crate::declare_prim;
 
@@ -52,6 +52,35 @@ pub enum Feature {
     TakesDeposits,
     /// It issues its own currency, and so cannot end in it.
     IssuesCurrency,
+    /// Owners hold its equity, so it keeps an equity account for them.
+    HasOwners,
+}
+
+/// Who owns a legal form's parties: the state, its shareholders, its own members, or the heirs and creditors of the
+/// party it was.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Owners {
+    State,
+    Shareholders,
+    Members,
+    HeirsAndCreditors,
+}
+
+impl Owners {
+    /// The owners a form declares, by their name in the forms' vocabulary.
+    ///
+    /// # Errors
+    /// A name outside the vocabulary.
+    #[opening]
+    pub fn parse(name: &str) -> Result<Owners, String> {
+        match name {
+            "state" => Ok(Owners::State),
+            "shareholders" => Ok(Owners::Shareholders),
+            "members" => Ok(Owners::Members),
+            "heirs_and_creditors" => Ok(Owners::HeirsAndCreditors),
+            other => Err(format!("`{other}` is not an owner of a legal form")),
+        }
+    }
 }
 
 /// What a legal form permits, as its country declares it: what it may hold, its features, how it can end, who owns
@@ -63,7 +92,7 @@ pub struct LegalForm {
     pub may_hold: Vec<String>,
     pub features: Vec<Feature>,
     pub endings: Vec<String>,
-    pub owners: String,
+    pub owners: Owners,
     pub offices: Vec<String>,
 }
 
@@ -79,11 +108,13 @@ impl LegalForm {
         self.offices.iter().position(|o| o == name)
     }
 
-    /// Every party can end, except an issuer of its own currency; no office is named twice.
+    /// Every party can end, except an issuer of its own currency; no office is named twice; a form whose owners hold
+    /// its equity is owned by others than its own members.
     ///
     /// # Errors
-    /// When a form has no ending and issues no currency, or names an office twice.
-    #[clause("PTY.13", "PTY.16")]
+    /// When a form has no ending and issues no currency, names an office twice, or keeps equity for its members.
+    #[opening]
+    #[clause("PTY.4", "PTY.13", "PTY.16")]
     pub fn validate(&self) -> Result<(), String> {
         if self.endings.is_empty() && !self.has(Feature::IssuesCurrency) {
             return Err(format!("legal form `{}` has no way to end", self.name));
@@ -91,13 +122,16 @@ impl LegalForm {
         if self.offices.iter().enumerate().any(|(i, o)| self.office(o) != Some(i)) {
             return Err(format!("legal form `{}` names an office twice", self.name));
         }
+        if self.has(Feature::HasOwners) && self.owners == Owners::Members {
+            return Err(format!("legal form `{}` keeps equity for its own members", self.name));
+        }
         Ok(())
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Feature, LegalForm};
+    use super::{Feature, LegalForm, Owners};
 
     #[test]
     fn legal_form_needs_ending() {
@@ -106,7 +140,7 @@ mod tests {
             may_hold: vec!["any".to_owned()],
             features: vec![Feature::SeparateParty, Feature::LimitedLiability],
             endings: vec![],
-            owners: "shareholders".to_owned(),
+            owners: Owners::Shareholders,
             offices: vec!["chief_executive".to_owned()],
         };
         assert!(form.validate().is_err());
@@ -115,5 +149,25 @@ mod tests {
         form.features.pop();
         form.endings.push("insolvency".to_owned());
         assert!(form.validate().is_ok());
+    }
+
+    #[test]
+    fn unknown_owners_refused() {
+        assert_eq!(Owners::parse("the state"), Err("`the state` is not an owner of a legal form".to_owned()));
+        assert_eq!(Owners::parse("heirs_and_creditors"), Ok(Owners::HeirsAndCreditors));
+    }
+
+    #[test]
+    fn owned_by_members_keeps_no_equity() {
+        let form = LegalForm {
+            name: "household".to_owned(),
+            may_hold: vec![],
+            features: vec![Feature::HasOwners],
+            endings: vec!["dissolution".to_owned()],
+            owners: Owners::Members,
+            offices: vec![],
+        };
+        assert!(form.validate().is_err());
+        assert!(LegalForm { features: vec![], ..form }.validate().is_ok());
     }
 }

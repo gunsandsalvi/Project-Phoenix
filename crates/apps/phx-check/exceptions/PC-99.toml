@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 872 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 870 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -1961,12 +1961,6 @@ path = "crates/kernel/phx-core/src/hazards.rs"
 item = "HazardDecl::validate"
 what = "`format!`"
 count = 1
-
-[[site]]
-path = "crates/kernel/phx-core/src/kinds.rs"
-item = "LegalForm::validate"
-what = "`format!`"
-count = 2
 
 [[site]]
 path = "crates/kernel/phx-core/src/policy.rs"
