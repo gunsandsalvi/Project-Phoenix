@@ -832,45 +832,36 @@ an interface item whose writer is not registered.
 
 ## 6. The day
 
-### 6.1 Turns, stages and sub-steps
+### 6.1 Turns, stages and slots
 
 A **turn** advances the world to the next day that is a business day in any country, running each day in between as
 its own day (N8.2). On each day, each country's business-day calendar decides which of its markets and institutions
-act (TIME.2). A sub-step marked **B** runs only for countries whose business day it is; everything else runs every
-day, as TIME.8 lists.
+act (TIME.2). The day is the **stage table** (K-23, §7.18): TIME.6's ten stages, each a run of **slots**; a slot
+marked **B** runs only for the countries whose business day it is, and on a non-business day only the slots TIME.8
+lists run. A slot runs on the pool over the bases it names, or is an **apply**, where the intents of its stage are
+applied by target range (§6.2); a barrier follows each slot that ran.
 
-| Stage | Sub-steps |
+| Stage | Slots (bases) |
 | --- | --- |
-| 1 Open | 1a lapse orders, quotes and day-local messages whose day has passed · 1b the lines due today marked (§6.5) · 1c the player's queued intents become wakes (§12) |
-| 2 Resolve | 2a accruals post where a date needs them · 2b (B) **resolutions** opened by the last business day's failures: valuation and write-downs, a clearing house's recovery by its rulebook on its pending legs (§9.2) · 2c (B) **settle** calls and demands due today (the settlement routine of stage 7); failures handed to their owners at once (TIME.7) · 2d (B) earlier fails delivered to owners; arrears · 2e (B) recognised losses land; parties that cannot go on end; estates open and compute their waterfall · 2f apply |
-| 3 Nature and population | 3a weather; catastrophes (§7.4) · 3b the **agenda** gathered, and hazards and occasions drawn for its agents (§7.7) · 3c demographic events; foundings and moves decided before; each country's school year's date; households formed (`combine`) and divided (`divide`) on the day their dwelling is their own · 3d overlapping occasions allocated · 3e hits answered, then stage 3's apply (§6.2): transformation records; hit records reach the systems a process declares interested, which open what they answer (claims); discoveries, imitations and meetings applied |
-| 4 Real work | 4a production, services, shipments, construction; jobs starting and ending · 4b apply |
-| 5 Decide | 5a public-series outlooks per method, and registered instrument outlooks and their values on days with a new print (§8); migration's memo of inclusive values (`sys-hh`) · 5b continuous decisions of rows scheduled or woken today, fused per table · 5c lumpy decisions of occasion holders; institutions (B); answers to messages at their declared sub-step · 5d apply |
-| 6 Form prices | 6a meetings: retail, services and electricity every day; all others (B), open-ended funds' dealing at the value computed after its orders were taken (forward pricing, administered, MKT.8) among them; a resolution's selection among bids by the authority's least-cost rule (B, §9.2); admission hooks over each member's order set (§8) · 6b marks, and instruments' and currency pairs' fixings by the pricing service's declared method (§8) · 6c (B) the curve and the valuation inputs derived from 6b's fixings (discount-factor tables) · 6d apply: matches become instructions, drawing the commitments they meet (a terms grant's `Row` leg in place of the money leg, §4.4); banknotes change hands; on non-business days card payments and electricity trades are recorded as **pending** on the payer's deposit row and the payee's, settling at the next business day's stage 7 |
-| 7 Settle (B) | 7a **payer pass**: per holder, its run head, and on the head's day its dated rows, each payer's legs in declared order checked against its funds, per currency; a bank's conversion commitment drawn for a leg in a currency its payer does not hold; holding levies on their dates; per-category tallies of rows on lines whose sides sit in two countries; the day's due holders of lines with no retail holder list gathered; per-bank nets by keyed reduction · 7b **fixed point**: the greatest set of payments that can settle given one another, with banks' nets and intraday credit, by a fail-only worklist (§6.5) · 7c the surviving payments' nets applied per account, one instruction per line, deposits and reserves together, with the streaming audit fused in and the survivors' declared tallies added · 7d fails recorded; payees of failed payers drawn (REP.23) · 7e levy follow-ons written (§4.3); banking arrangements that a settled resolution transfer moved rewritten by their one writer (§9.2). As built at Stage 0, all of it — the stream, the fixed point, the apply, the losers' draw and the estates' settlement (§9.1) — runs in 7c's kernel block; 7a, 7b, 7d and 7e run nothing of their own |
-| 8 Fund (B) | 8a money-market orders and the central bank's tender orders · 8b the **linked call**: the money market and the tenders meet together (§8) · 8c its trades settle · 8d standing-facility, lender-of-last-resort and the treasury's direct-borrowing requests, met by `phx-market`'s administered form within their declared limits, reading the supervisor's solvency fact · 8e they settle · 8f intraday credit closes: a bank that cannot repay has the shortfall recorded as an **overdue claim of the central bank** and its liquidity failure recorded (MON.3, MON.12, BFL.10) |
-| 9 Value and judge (B) | 9a valuations, provisions among them, and each party's sensitivities per (party, bucket) · 9b accounts and ratios, funds' net asset values and the group fact, reading 9a's valuations · 9c tests: margins (a house's initial margin one blocked product over its accounts), covenants, capital, solvency — each test and the consequence it triggers in one handler, consolidated statements a pure `phx-acct` read; demands issued, due next business day; resolutions triggered and bids invited (§9.2); reports read from the books · 9d publications: reports, ratings, net asset values, benchmark reference rates fixed from 8b's match sets (§8), analysts' estimates revised on the day's reports · 9e apply: stage 9's intents — demands, messages, wakes, facts on other parties, the closed fact, income events |
-| 10 Close | 10a public events; an election's tally where one closes today · 10b declared sweeps a system registers and `phx-pop` runs (a campaign's intentions written and cleared) · 10c (B) nothing at Stage 0 · 10d on a day with no 9b, the day's accounts posted first (§3.3); incremental audit families · 10e views and pages on a turn's last day (read-only) · 10f metrics |
+| 1 Open | 1a today's buckets taken: dated rows, completions, arrivals, lapses, commitments and messages (K-42), the parties due (K-43) and the hazards among them (K-44), the day's facts (K-19), the policy values in force (K-20), terms due resolved (K-55) · 1b offers and messages lapse (K-70, K-45); the player's intents become wakes (K-100) |
+| 2 Resolve | 2a accruals where a date needs them (K-55 → K-87) · 2b (B) dated items streamed into both parties' `pending`, levies fused (K-51, K-47, K-12) · 2c (B) resolutions opened; calls and demands due (K-99, K-45, K-48, K-49) · 2d (B) fails become arrears; the day's status transitions (K-56) · 2e (B) instrument events to holders of record (K-65) · 2f (B) losses land, parties end, estates distribute (K-97, K-96, K-57, K-98) |
+| 3 Nature and population | 3a weather and catastrophes (K-30, K-27, K-05, K-60, K-26) · 3b hazard hits followed (K-44, K-33, K-31, K-69) |
+| 4 Real work | 4a production realised at its kinks and visits, wear, processes arriving, jobs starting and ending (K-68, K-67, K-69, K-53) · 4b every trip of the day placed, adding its legs' loads to the segments it crosses (K-26) · 4c each trip's time and cost read at the loads all the day's trips put on its legs: the day's fixed point (GEO.20), never the load of trips placed before it |
+| 5 Decide | 5a public outlooks (K-92) · 5b continuous decisions of the parties due (K-43, K-100, K-35), wants bucketed (K-03) · 5c (B; on a non-business day the occasions TIME.8 admits) lumpy decisions and answers (K-101, K-45, K-80) · 5d apply: offers posted through the shared admission hook, the agenda refiled, triggers registered (K-70–K-72, K-43, K-46) |
+| 6 Form prices | 6a meetings (K-73, K-75, K-82, K-76, K-78, K-79, K-81, K-84, K-83, K-77), capacity used (K-85) · 6b the seller-range sweep, (seller, good) batches closed (K-74, K-87, K-51, K-39, K-68, K-60) · 6c prints, marks, fixings, curves (K-86, K-91) · 6d apply: decided matches, banknotes, non-business-day commitments, trades for later settlement (K-48, K-47, K-50, K-71) |
+| 7 Settle (B) | 7a the `pending` sweep by account range (K-47, K-48, K-50) · 7b short payers re-derived, the fixed point and the ring, link groups (K-49, K-74) · 7c rows opened and closed, fails recorded (K-53, K-54, K-36) |
+| 8 Fund (B) | 8a–8f money-market and tender orders, the linked call, its settlement, the administered facilities and their settlement, a shortfall's end (K-77, K-76, K-49, K-81, K-93, K-47, K-53) |
+| 9 Value and judge (B) | 9a valuations, provisions, margin (K-91, K-95, K-89, K-94, K-14, K-35, K-92) · 9b thresholds, books, net asset values, quarter-end books, holder rows (K-88, K-46, K-93, K-87, K-90, K-65, K-41) · 9c tests; demands due the next business day; resolutions triggered (K-45, K-99) · 9d publications; triggers crossed (K-37, K-39, K-46, K-43) |
+| 10 Close | 10a public events; an election's tally (K-36, K-41) · 10b declared sweeps (K-14) · 10c the audit (K-103; on a non-business day it recounts `pending` and units only) · 10d the day ledger, accumulators, the recorder, life-record buffers, horizons, store statistics (K-38, K-39, K-106, K-40, K-08, K-15) · 10e slots released, day buffers reset, caches expired (K-02, K-31, K-03, K-35) |
 
-The **kernel applies** — 2f, 4b, 5d, 6d, 7c, 9e and 10b — are a sub-step kind of their own: no system registers a
-handler there (§5.4), and the kernel runs each on every day its stage runs, whatever is queued. What a system does
-there is declared — an intent the apply executes (a policy value, a currency trade's legs, an attachment moved in
-place), a tally it feeds, a sweep `phx-pop` runs.
+A save is taken at its declared moments, apart from the turn (K-104, N8.10). Money moves only at 2c, 6d
+(banknotes), 7 and 8; on a non-business day a purchase is paid in banknotes or recorded as a commitment settling at the
+next business day's stage 7 (TIME.8). **Day zero** runs stage 5 alone, on the snapshot (GEN.13); **settling** runs
+ordinary days for GEN.6's length.
 
-On a non-business day, 5b and 5c run only the decision points that TIME.8 lists, other occasions waiting for the first
-day their decision is taken, and payments that stages 3 and 4 give rise to (a founding's capital, severance) are
-recorded as pending, settling at the next business day's stage 7. Money moves only at 2c, 6d (banknotes), 7 and 8;
-estate distributions, resolution transfers and line transfers are instructions settled by that routine.
-
-Assembly runs every system's `declare`, then every `handlers`, then compilation, and reports every refusal at once, by
-item and system. `World::run_turn` queues the player's intents for 1c and runs each day from the day after the last turn
-up to `Calendar::next_turn_day`, keeping a `TurnRecord` whose wall time comes from the application's `Clock`
-(`phx-exec`) and reaches the metrics, never the world. `run_day` walks `SUB_STEPS` in order: a sub-step runs when it has
-handlers, when it is a kernel apply of a stage that runs, when it holds the kernel's own work, or when it is the
-audit's (10d), and a business-only one only when some country has a business day; each that runs leaves a
-`SubStepRecord`. A country's business days are its rules, which are the calendar's state, and a bitset built from them
-over the years from the epoch's to `CALENDAR_WINDOW_YEARS` past the current one, rebuilt each 1 January; outside the
-window the rules answer.
+**Today** (until S1.185 and S1.186): the day is `phx-world/src/day.rs`'s hand sequence over the sub-steps
+`phx-core/src/substep.rs` names; the stage table's step (S1.185) compiles the table above into data, and the day
+runner (S1.186) walks it.
 
 **The calendar** (`phx-core::calendar`) is built at assembly from each country's declared rules: a weekend and
 holidays that are `Fixed`, `NthWeekday` (−1 the last), `EasterOffset` (the Gregorian computus) or `Substitute`
@@ -888,60 +879,32 @@ convention.
 
 ### 6.2 Order without order dependence
 
-Within a sub-step every handler reads the state as it was at the sub-step's start. A handler writes directly only its
-own rows' columns that no other handler of the sub-step reads or writes, and later sub-steps see those writes; every
-other effect is an **intent**, gathered at the end of its sub-step and applied by the one apply routine (§6.4) at the
-first **apply point** at or after it: its stage's kernel apply (2f, 4b, 5d, 6d, 7c, 9e, 10b), the end of 3e for stage
-3, and otherwise — stages 1 and 8, and 7d, 7e and 10c to 10f after their stage's apply — the end of its own sub-step.
-The settlement routine applies what it settles where it runs (2c, 7c, 8c, 8e). Up to an apply point, later sub-steps
-therefore read earlier ones' direct writes and never their intents. The handler graph, built from declared reads and
-writes at the granularity of (table, column or line kind), refuses two direct writers of one resource and a direct
-write another handler reads, so registration order carries no meaning; intent buffers are keyed (chunk, canonical
-handler id), so gathers and new identities do not depend on it either, which a logic-level test holds: the canonical
-ids a registration list yields are the same for every order of it (§14.3).
-
-A handler's canonical id (`HandlerId`) is its place in the order of (system code, handler name), which `HandlerGraph`
-keeps its handlers in.
-
-As built at Stage 0 no system's handler writes an instruction, so the world's apply routine (`phx_world::day`'s
-`apply`) records the day's event intents, dated by the sub-step that drew them, and stops the run on any other intent.
-What moves the books is the kernel's own work at its sub-step: 3b's catastrophe losses (§9.1); 3e's outcomes on the
-agents, the ledger's `members_leave` and the estates' line transfers; and 7c's block, which runs
-`Books::settle_day` and then the estates' settlement (§6.5, §9.1). Instructions go through the ledger's one
-instruction apply (`Ledger::apply`), which feeds the audit.
+A slot reads today's writes of earlier slots only: stage 5 reads yesterday's prints and publications, stage 9
+today's (TIME.10), each slot's read tag declared in the stage table (K-23). **Decide, then apply**: a decider reads
+`&self` over its agenda chunk and writes only its own party's columns; every other effect is an **intent** into a
+(chunk, handler) buffer, applied by target range at its stage's apply slot. Ties are broken by identity, then rule,
+then lot, so no outcome depends on registration or processing order, which a logic-level test holds: the canonical
+ids a registration list yields are the same for every order of it (§14.3). Nothing is demanded and paid in one stage
+(TIME.7).
 
 ### 6.3 Traversals
 
-`phx-exec` runs one traversal per table per sub-step, in **cost-sized chunks** (declared per table, never dependent on
-the thread count), running every handler of the sub-step on a chunk while it is in cache. Each sub-step declares whether
-it is an **agenda** pass (the rows the agenda lists, in slot order), a **stream** over the rows a batch reads (the payer
-pass of §6.5, reading only the columns it needs), **index-driven**, a **full sweep** — only where a clause needs every
-row that day, and always declared: a surprise's wake pass (§7.7), the singles' counts for meetings, a scheme's valuation
-and the sweeps systems register (§6.1) — or a **kernel apply** (§6.2). A **sweep ledger** counts rows and bytes touched
-per sub-step, and a ratchet holds it (§16). As built at Stage 0 the ledger is partial: each sub-step's `SubStepRecord`
-keeps the rows its handlers visited and its wall time, its bytes and barriers are 0, the kernel's own work at a sub-step
-(hazard draws, outcomes, settlement) is not counted in it, and no ratchet reads it.
+A slot traverses one of four ways: **agenda chunks** (K-11's `for_agenda`, the parties due in slot order), **market
+keys**, **party ranges** (K-12's `apply_by_range`) or a **declared sweep** (K-14), counted in the sweep ledger and held
+by its ratchet. Chunk bounds come from rows and declared costs, never from the worker count; barriers are at most 40 on
+a business day, 20 on a non-business day and 48 on a heavy day, each spinning at most 20 µs before parking; the
+runner's own overhead is at most 2 ms a day (§13).
 
-The kernel's own small tables (regions, countries) keep their facts as columns (`FactColumns`) and are traversed chunk
-by chunk on the day's thread, since each is one chunk. The pool's traversal arrives with the first handler on a kind
-table, whose chunks are handed to workers as disjoint column views; the order of chunks and handlers, and
-so of intents, is the same either way. The kernel's own passes over agents — 3b's hazard draws, 3e's outcomes, 7a's
-and 7c's gathers and the audit — run on the pool in shards whose results are joined in slot order; each shard holds
-its scratch, the household it reads each agent into and the chances it fills, and reuses it for every agent it draws,
-so a pass allocates for its largest household rather than for each agent.
-
-`phx-exec`'s primitives give the same result whatever the worker count. Chunk boundaries depend only on the table's
-size, or on the agenda's rows and their declared cost: an agenda unit closes only at a table-chunk boundary once its
-cost reaches `CHUNK_COST`, so arena writes stay chunk-local. Workers take chunks as they free, but each result is
-stored at its chunk's index; gathers concatenate in (chunk, canonical handler) order; `reduce_tree` folds a
+`phx-exec`'s primitives give the same result whatever the worker count. Workers take chunks as they free, but each
+result is stored at its chunk's index; gathers concatenate in (chunk, canonical handler) order; `reduce_tree` folds a
 left-balanced pairwise tree whose shape depends only on the number of results. Radix sorts are stable LSD over
 11-bit digits, skipping a digit every key shares, with a stable comparison sort below 2 048 pairs. `gather`,
 `KeyedReduce` and `radix_sort` take the pool as an option and give the same result without one. The pool pins each
 worker to a core whose `cpu_capacity` is at least half the largest (all allowed cores when capacities cannot be
 read; a pin refused leaves the worker unpinned and counted); idle workers spin a bounded number of rounds before
-parking, so back-to-back sub-steps pay no wake-up. Only `pool.rs` and `site.rs` read a worker's index; atomics and
-threads exist only inside `phx-exec` and never appear in its API. Wall time comes from an injected `Clock` and
-reaches counters and the application only (TIME.11).
+parking. Only `pool.rs` and `site.rs` read a worker's index; atomics and threads exist only inside `phx-exec` and
+never appear in its API. Wall time comes from an injected `Clock` and reaches counters and the application only
+(TIME.11).
 
 ### 6.4 Compute, gather, apply
 
@@ -1218,7 +1181,7 @@ over `Held`).
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
 planned (S1.185).
 
-**Today** (`substep.rs`): the sub-step table of §6.1.
+**Today** (`substep.rs`): the sub-steps the day runs until the stage table replaces them (§6.1).
 
 #### K-24 The capacity table
 
