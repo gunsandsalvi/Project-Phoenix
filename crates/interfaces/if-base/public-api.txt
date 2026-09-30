@@ -18,7 +18,7 @@ impl if_base::products::ProductId
 pub const fn if_base::products::ProductId::index(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct if_base::products::Products  // used by: phx-core, sys-tec
-pub if_base::products::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>  // used by: phx-core, phx-obs, phx-world, sys-tec
+pub if_base::products::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>  // used by: phx-core, phx-fin, phx-obs, phx-store, phx-world, sys-tec
 pub if_base::products::Products::industries: alloc::vec::Vec<alloc::string::String>  // used by: sys-tec
 pub if_base::products::Products::names: alloc::vec::Vec<alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-tec
 pub mod if_base::ways  // used by: phx-world, sys-frm, sys-lab, sys-tec
@@ -62,7 +62,7 @@ impl if_base::products::ProductId
 pub const fn if_base::products::ProductId::index(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct if_base::Products  // used by: phx-core, sys-tec
-pub if_base::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>  // used by: phx-core, phx-obs, phx-world, sys-tec
+pub if_base::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>  // used by: phx-core, phx-fin, phx-obs, phx-store, phx-world, sys-tec
 pub if_base::Products::industries: alloc::vec::Vec<alloc::string::String>  // used by: sys-tec
 pub if_base::Products::names: alloc::vec::Vec<alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-tec
 pub struct if_base::Way  // used by: sys-tec

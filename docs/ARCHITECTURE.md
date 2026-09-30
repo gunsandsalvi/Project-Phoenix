@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02 and K-03's day buffers built (S1.159, S1.160); the rest planned (S1.161–S1.168)
+Status: K-02 and K-03 built (S1.159–S1.161); the rest planned (S1.162–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1083,7 +1083,7 @@ contract rows' 8-bit generation in their terms word (S1.257), and every later ta
 
 #### K-03 Day buffers and the day plan
 
-The buffers are written (S1.160); where they live in the day and which share pages is the day plan's, planned (S1.161).
+The buffers (S1.160) and the day plan that places them (S1.161).
 
 **Layout** (`daybuf.rs`): a `DayBuf<T: Pod>` is its name, a `Region<T>` reserved at its declared capacity (K-24), a
 length, and its longest length on each kind of day (business, non-business, heavy, the business day after closed
@@ -1114,9 +1114,26 @@ on each type's second day no page faulted and nothing allocated — `[fin.daybuf
 `allocs_per_day` 0. The buffers' bytes are line 21's, stated by the day plan. **Slack** — memory resident but holding
 no live row — is line 22: each column's one page tail, the keyed indexes' dead entries between compactions (K-06), the
 free slots awaiting reuse and their generations (K-02), and the wheel's run tails (K-42); `-F all` reads it as what
-the bases hold beside their live rows, `[fin.mem] slack_mb` 57, today 1 MB with the bases built.
+the bases hold beside their live rows, `[fin.mem] slack_mb` 45.6 at the design point (57 at the steps' counts), today
+1 MB with the bases built.
 
-**Extension points**: the day plan places these buffers and shares their pages (S1.161); every later traversal's
+**The day plan** (`dayplan.rs`): every buffer declares its **life** — the slot it is first filled in and the slot
+after which it is released, on the stage table's slots — and its bytes at the heaviest day, or `Rest`: the one
+buffer sized to what the day's largest live set leaves beside the buffers sharing its slots (the dues' wave lane at
+2b), so it reaches the maximum and never passes it. `DayPlan::plan` places each at the lowest offset of one region
+where it meets no placed buffer whose life meets its own, the longest lives first, then the largest, then in
+declaration order: two buffers whose lives meet never share a byte, and the plan is the declarations' alone, the same
+on every run of a build. On the heaviest day's buffers (the design point's `[dayplan]`, each its owner step's figure)
+this reaches the largest live set exactly: the region's extent is 6a's live set — wants, between-firm steps, meeting
+scratch, spend, prints and the tallies — 160.1 MB at the steps' counts, 128.1 at the design point, §13's line 21.
+`DayRegion` reserves the region at the extent and hands a buffer its lane at a slot of its life; a read outside the
+life is a violation in debug builds (`check_read`, TIME.10's form: after its release its pages are another buffer's).
+Its `StoreStats` report its committed bytes, and `lane_bytes` each lane's. The plan is build data, never saved.
+`-F daybuf` fills the heaviest day's lanes in slot order and reads the region resident at `[fin.daybuf] peak_mb` 128.1.
+A buffer outside the plan, or a live set figure other than the maximum over the day's slots, is refused.
+
+**Extension points**: the owners of the planned buffers declare their lives in code as they are built (S1.170, S1.211,
+S1.245, S1.248, S1.306, S1.326, S1.348); every later traversal's
 intents, scratch and per-chunk staging are day buffers (S1.162–S1.171, S1.192, S1.194, S1.212–S1.225, S1.245,
 S1.269–S1.312, S1.326, S1.348, S2.211, S4.130, S4.131).
 

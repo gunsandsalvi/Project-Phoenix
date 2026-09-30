@@ -26,6 +26,13 @@ pub struct Phone {
     pub turn_ms: [u64; 2],
 }
 
+/// The day plan as the design point declares it: its slots, and each buffer's name, MB and life by slot names.
+#[derive(Debug, Clone, PartialEq)]
+pub struct DayPlanDecl {
+    pub slots: Vec<String>,
+    pub buffers: Vec<(String, Option<f64>, (String, String))>,
+}
+
 /// The design point's figure set.
 #[derive(Debug, Clone)]
 pub struct Design {
@@ -142,6 +149,38 @@ impl Design {
     #[must_use]
     pub fn day(&self, day: DayType) -> Option<&BTreeMap<String, u64>> {
         self.days.get(&day)
+    }
+
+    /// The day plan's slots, and each heaviest-day buffer's name, its MB (none for the one sized by the rest) and its
+    /// life as the slots it is filled and released in.
+    ///
+    /// # Errors
+    /// A plan the design point lacks or writes otherwise.
+    pub fn dayplan(&self) -> Result<DayPlanDecl, FinError> {
+        let slots: Vec<String> = get(&self.table, "dayplan.slots")?
+            .as_array()
+            .ok_or_else(|| refuse("dayplan.slots", "is not a list"))?
+            .iter()
+            .map(|v| v.as_str().map(str::to_owned).ok_or_else(|| refuse("dayplan.slots", "names a slot by no name")))
+            .collect::<Result<_, _>>()?;
+        let Value::Table(bufs) = get(&self.table, "dayplan.buffer")? else {
+            return Err(refuse("dayplan.buffer", "is not a table"));
+        };
+        let mut buffers = Vec::new();
+        for (name, b) in bufs {
+            let key = format!("dayplan.buffer.{name}");
+            let mb = match b.get("mb") {
+                Some(Value::String(s)) if s == "rest" => None,
+                Some(v) => Some(real(v, &key)?),
+                None => return Err(refuse(&key, "has no `mb`")),
+            };
+            let life = b.get("life").and_then(Value::as_array).ok_or_else(|| refuse(&key, "has no life"))?;
+            let [Some(fill), Some(release)] = [life.first(), life.get(1)].map(|v| v.and_then(Value::as_str)) else {
+                return Err(refuse(&key, "has no fill and release slots"));
+            };
+            buffers.push((name.clone(), mb, (fill.to_owned(), release.to_owned())));
+        }
+        Ok(DayPlanDecl { slots, buffers })
     }
 
     /// A `[resolution]` setting a driver reads, refused where it is absent or still `Missing`.

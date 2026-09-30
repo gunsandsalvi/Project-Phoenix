@@ -260,6 +260,25 @@ segment_tile = 4
 "additions beyond the unit leaves" = [189.84, 19.68, 293.12]
 "day" = [1958.88, 590.68, 2738.88]   # B′ = B + 37.6 ([day.bc]) = 1996.48
 
+[dayplan]   # S1.161: the day's slots, and the heaviest day's buffers, each its owner step's MB at H and its life (fill, release)
+slots = ["1a", "1b", "2a", "2b", "2c", "2d", "2e", "2f", "3a", "3b", "4a", "4b", "4c", "5a", "5b", "5c", "5d", "6a", "6b", "6c", "6d", "7a", "7b", "7c", "8a", "8b", "8c", "8d", "8e", "8f", "9a", "9b", "9c", "9d", "10a", "10b", "10c", "10d", "10e"]
+[dayplan.buffer]   # mb = "rest": the lane the day's maximum leaves beside its slots' other buffers
+wants = { mb = 67.5, life = ["5b", "6b"] }            # S1.306: 6.75 M × 10 B, then the retail items in their pages
+between_firm = { mb = 39.6, life = ["5b", "10e"] }    # S1.306: 3.3 M × 12 B, then their items; the close's source
+intents = { mb = 28.8, life = ["5b", "5d"] }          # S1.348: 1.2 M × 24 B, by target range
+write_back = { mb = 4, life = ["5b", "5c"] }          # S1.211: ≤ 4 MB of 12 B records
+spend = { mb = 18, life = ["6a", "6b"] }              # S1.306: 2.2 M × 8 B
+meeting = { mb = 16, life = ["6a", "6a"] }            # S1.306: ≤ 2 MiB × ≤ 8 workers
+prints = { mb = 8, life = ["6a", "10e"] }             # S1.326: 0.5 M × 16 B
+flush_2b = { mb = 4.8, life = ["2b", "2b"] }          # S1.170: ranges × 256 B × ≤ 8 workers, at each apply
+flush_5d = { mb = 4.8, life = ["5d", "5d"] }
+flush_6b = { mb = 4.8, life = ["6b", "6b"] }
+flush_6d = { mb = 4.8, life = ["6d", "7c"] }
+dues = { mb = "rest", life = ["2b", "2b"] }           # S1.170, S1.245: one wave of the dues' shards
+decided = { mb = 20, life = ["6d", "7b"] }            # S1.245: 0.6 M × 16 B, and their shards
+short = { mb = 4, life = ["7b", "7b"] }               # S1.248: 0.15 M × 24 B
+tallies = { mb = 11, life = ["1a", "10e"] }           # statistics' shard tallies, the audit's bitmaps, pool scratch
+
 [fin.decide.additions]   # per-item work beyond the leaves, by part, core-ms B / NB / H at the design point (steps state ns × items)
 "core and Stage 1 (S1.330 per-party deltas, S1.338, S1.415, S1.268, visit leaf 804)" = [20.8, 5.6, 42.4]
 "Stages 2, 3, 8 (S2.118 190 ns × 75 k, S2.163, S2.149, S8.117 +45 × 90 k, S8.103/S8.197 handler, S8.122 +40, S8.129)" = [85.6, 9.6, 136.8]

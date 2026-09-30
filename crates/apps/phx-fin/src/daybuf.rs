@@ -1,11 +1,12 @@
 //! `-F daybuf`: a day buffer for each of the design point's daily counts, reserved at its heaviest day, each day
 //! cleared and filled to that day's count, so a day after the first of its kind is read committing no page and
-//! allocating nothing.
+//! allocating nothing; and the heaviest day's buffers placed by the day plan, their owners' figures scaled to the design
+//! point, each filled in its lane in slot order, so the plan's region is read resident at its largest live set.
 
 use std::collections::BTreeMap;
 
 use phx_exec::trace::{Reading, Spent};
-use phx_store::{AddressSpace, DayBuf};
+use phx_store::{AddressSpace, BufDecl, DayBuf, DayPlan, DayRegion, Life, Size, StoreStats};
 
 use crate::design::Design;
 use crate::fill::Streams;
@@ -16,6 +17,15 @@ use crate::{Bytes, DayType, Filled, FinBase, FinError};
 /// The base the day buffers are measured under.
 pub const BASE: &str = "daybuf";
 
+/// A decimal megabyte, the unit the plan's figures are stated in.
+const MB: f64 = 1_000_000.0;
+
+/// A plan's figures in MB, to the nearest tenth the steps state them to: the region's last page's tail is below it.
+fn tenths(bytes: u64) -> Result<f64, FinError> {
+    let tenths = ((bytes + 50_000) / 100_000).to_string();
+    tenths.parse::<f64>().map(|t| t / 10.0).map_err(|e| FinError(e.to_string()))
+}
+
 /// The pages a day faulted and the allocations it made, each missing where the machine gives none.
 type Cost = (Option<u64>, Option<u64>);
 
@@ -24,6 +34,7 @@ type Cost = (Option<u64>, Option<u64>);
 pub struct DayBufs {
     bufs: BTreeMap<String, DayBuf<u64>>,
     last: BTreeMap<DayType, Cost>,
+    plan: Option<DayRegion>,
 }
 
 impl FinBase for DayBufs {
@@ -46,6 +57,27 @@ impl FinBase for DayBufs {
         for (key, n) in &heaviest {
             self.bufs.insert(key.clone(), DayBuf::new(&mut space, BASE, index(*n)?));
         }
+        let declared = design.dayplan()?;
+        let slot = |name: &str| {
+            let at = declared.slots.iter().position(|s| s == name);
+            at.and_then(|a| u16::try_from(a).ok()).ok_or_else(|| FinError(format!("the day has no slot `{name}`")))
+        };
+        let mut decls = Vec::new();
+        for (name, mb, (fill, release)) in &declared.buffers {
+            let size = match mb {
+                Some(mb) => {
+                    let bytes = format!("{:.0}", mb * MB * design.point.scale);
+                    Size::Bytes(bytes.parse().map_err(|e| FinError(format!("{name}: {e}")))?)
+                }
+                None => Size::Rest,
+            };
+            // The declarations live as long as the run: the plan names each by its declared name.
+            let name: &'static str = Box::leak(name.clone().into_boxed_str());
+            decls.push(BufDecl { name, size, life: Life { fill: slot(fill)?, release: slot(release)? } });
+        }
+        let slots = u16::try_from(declared.slots.len()).map_err(|e| FinError(e.to_string()))?;
+        let plan = DayPlan::plan(&decls, slots).map_err(FinError)?;
+        self.plan = Some(DayRegion::new(&mut space, plan));
         Ok(Filled { rows: heaviest.values().sum() })
     }
 
@@ -67,11 +99,25 @@ impl FinBase for DayBufs {
             Spent::between(Some(items), &before, &Reading::now())
         });
         self.last.insert(day, (spent.faults, spent.allocs));
+        // The heaviest day's buffers fill their lanes in slot order, each as it is first filled.
+        if day == DayType::H
+            && let Some(region) = self.plan.as_mut()
+        {
+            let placed = region.plan().placed().to_vec();
+            let last = placed.iter().fold(0, |a, p| if p.life.release > a { p.life.release } else { a });
+            for slot in 0..=last {
+                for p in placed.iter().filter(|p| p.life.fill == slot) {
+                    let words = index(p.bytes.div_ceil(u64::from(u64::BITS / u8::BITS)))?;
+                    region.lane_mut(p.decl, slot, words).fill(u64::from(slot));
+                }
+            }
+        }
         Ok(())
     }
 
     fn bytes(&self) -> Bytes {
-        Bytes { rows: self.bufs.values().map(|b| wide(b.bytes_committed())).sum(), resident: 0 }
+        let bufs: u64 = self.bufs.values().map(|b| wide(b.bytes_committed())).sum();
+        Bytes { rows: bufs + self.plan.as_ref().map_or(0, StoreStats::bytes), resident: 0 }
     }
 
     /// The most pages faulted and allocations made by any type of day, each read on its second.
@@ -81,7 +127,8 @@ impl FinBase for DayBufs {
             all.sort_unstable();
             all.last().and_then(|n| u32::try_from(*n).ok()).map(f64::from)
         };
-        [("faults_per_day", most(|l| l.0)), ("allocs_per_day", most(|l| l.1))]
+        let peak = self.plan.as_ref().and_then(|r| tenths(r.bytes()).ok());
+        [("faults_per_day", most(|l| l.0)), ("allocs_per_day", most(|l| l.1)), ("peak_mb", peak)]
             .into_iter()
             .filter_map(|(k, v)| Some((k, v?)))
             .collect()

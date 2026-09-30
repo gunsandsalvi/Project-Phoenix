@@ -138,19 +138,19 @@ pub fn phx_exec::probe::gather(&phx_exec::pool::Pool, &dyn phx_exec::clock::Cloc
 pub fn phx_exec::probe::sweep(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>) -> core::option::Option<u64>  // used by: phx-check
 pub mod phx_exec::radix
 pub trait phx_exec::radix::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
-pub const phx_exec::radix::RadixKey::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const phx_exec::radix::RadixKey::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn phx_exec::radix::RadixKey::digit(self, u32) -> usize  // used by: phx-market
 pub fn phx_exec::radix::RadixKey::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u128
-pub const u128::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const u128::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u128::digit(self, u32) -> usize  // used by: phx-market
 pub fn u128::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u32
-pub const u32::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const u32::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u32::digit(self, u32) -> usize  // used by: phx-market
 pub fn u32::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u64
-pub const u64::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const u64::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u64::digit(self, u32) -> usize  // used by: phx-market
 pub fn u64::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub fn phx_exec::radix::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)  // used by: phx-core
@@ -174,7 +174,7 @@ pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, p
 pub fn phx_exec::spec::read_capacity(usize) -> core::option::Option<u32>
 pub fn phx_exec::spec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>
 pub mod phx_exec::stats  // used by: if-state, phx-cli, phx-store, phx-world, sys-idx, sys-sta
-pub use phx_exec::stats::StoreStats  // used by: phx-cli, phx-core, phx-store
+pub use phx_exec::stats::StoreStats  // used by: phx-cli, phx-core, phx-fin, phx-store
 pub struct phx_exec::stats::Sample  // used by: phx-cli, phx-core
 pub phx_exec::stats::Sample::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub phx_exec::stats::Sample::rows_ever: u64  // used by: phx-core, phx-store
@@ -301,19 +301,19 @@ impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
 pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
 pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
 pub trait phx_exec::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
-pub const phx_exec::RadixKey::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const phx_exec::RadixKey::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn phx_exec::RadixKey::digit(self, u32) -> usize  // used by: phx-market
 pub fn phx_exec::RadixKey::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u128
-pub const u128::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const u128::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u128::digit(self, u32) -> usize  // used by: phx-market
 pub fn u128::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u32
-pub const u32::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const u32::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u32::digit(self, u32) -> usize  // used by: phx-market
 pub fn u32::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u64
-pub const u64::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub const u64::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u64::digit(self, u32) -> usize  // used by: phx-market
 pub fn u64::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub fn phx_exec::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>

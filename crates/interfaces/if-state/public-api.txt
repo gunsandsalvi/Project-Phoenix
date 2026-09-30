@@ -38,7 +38,7 @@ pub struct if_state::kinds::BillKind  // used by: phx-world, sys-sov
 pub if_state::kinds::BillKind::bid: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::BidIn, alloc::vec::Vec<(f64, f64)>>  // used by: phx-world, sys-sov
 pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>  // used by: phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
 pub if_state::kinds::BillKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BillLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
-pub if_state::kinds::BillKind::size: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::SizeIn, f64>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
+pub if_state::kinds::BillKind::size: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::SizeIn, f64>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
 pub struct if_state::kinds::BillLaw  // used by: phx-world, sys-sov
 pub if_state::kinds::BillLaw::buffer_weeks: f64  // used by: phx-world, sys-sov
 pub if_state::kinds::BillLaw::face: i64  // used by: phx-world, sys-sov
@@ -80,7 +80,7 @@ pub struct if_state::kinds::TaxLaw  // used by: phx-world, sys-tax
 pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>  // used by: phx-cli, phx-ledger, phx-world, sys-tax
 pub if_state::kinds::TaxLaw::remit_day: u32  // used by: phx-world, sys-tax
 pub struct if_state::kinds::TreasuryKind  // used by: phx-world, sys-trs
-pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
+pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-store, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
 pub mod if_state::stats  // used by: phx-cli, phx-exec, phx-store, phx-world, sys-idx, sys-sta
 pub struct if_state::stats::IndexKind  // used by: phx-world, sys-idx
 pub if_state::stats::IndexKind::base: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-pop, phx-rand, phx-store, phx-world, sys-idx

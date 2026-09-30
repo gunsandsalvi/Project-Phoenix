@@ -8,6 +8,7 @@ pub mod column;
 pub mod consts;
 mod convert;
 pub mod daybuf;
+pub mod dayplan;
 pub mod descriptor;
 pub mod edges;
 pub mod encode;
@@ -26,6 +27,7 @@ pub use backing::{AddressSpace, Backing, HeapBacking, MmapBacking, SystemBacking
 pub use block_list::{BlockBag, BlockList, BlockPool};
 pub use column::{ChunkMut, Column};
 pub use daybuf::{DayBuf, DayBufs};
+pub use dayplan::{BufDecl, DayPlan, DayRegion, Life, Placed, Size};
 pub use descriptor::{ColumnDescriptor, FieldDescriptor, FieldTag, Transform};
 pub use edges::{EdgeTable, Pair, Row};
 pub use encode::{DecodeError, decode_column, decode_rows, encode_column, encode_rows, rows_in};

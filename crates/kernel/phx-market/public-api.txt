@@ -105,7 +105,7 @@ pub fn phx_market::meet::Buyer::load(&mut phx_store::save::Reader<'_>) -> core::
 pub fn phx_market::meet::Buyer::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
 pub fn phx_market::meet::Buyer::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_market::meet::GoodsLeg  // used by: phx-world
-pub phx_market::meet::GoodsLeg::order: u8  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
+pub phx_market::meet::GoodsLeg::order: u8  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-store, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
 pub phx_market::meet::GoodsLeg::reason: u8  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub phx_market::meet::GoodsLeg::unit: phx_core::flows::Denom  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 pub phx_market::meet::GoodsLeg::used: bool  // used by: phx-check, phx-core, phx-world, sys-frm

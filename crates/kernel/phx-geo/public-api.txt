@@ -195,14 +195,14 @@ pub const phx_geo::grid::DIRECTIONS: usize  // used by: phx-cli
 pub fn phx_geo::grid::rounded_sqrt(u64) -> u64
 pub mod phx_geo::hazards  // used by: phx-cli, phx-core, phx-macros, phx-world
 pub struct phx_geo::hazards::HazardSpec
-pub phx_geo::hazards::HazardSpec::decl: phx_core::hazards::HazardDecl  // used by: phx-cli, phx-core, phx-macros, phx-obs, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
+pub phx_geo::hazards::HazardSpec::decl: phx_core::hazards::HazardDecl  // used by: phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
 pub phx_geo::hazards::HazardSpec::event: phx_core::events::EventKindDecl  // used by: phx-cli, phx-core, phx-ledger, phx-world, sys-dem, sys-lab
 pub phx_geo::hazards::HazardSpec::tables: [&'static phx_core::register::PrimDecl; 7]  // used by: phx-cli, phx-market, phx-world, sys-dem
 pub const phx_geo::hazards::CATASTROPHE_STREAM: &str
 pub const phx_geo::hazards::HAZARDS: &[phx_geo::hazards::HazardSpec]  // used by: phx-cli
 pub mod phx_geo::hydrology
 pub struct phx_geo::hydrology::Drainage
-pub phx_geo::hydrology::Drainage::order: alloc::vec::Vec<u32>  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-market, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
+pub phx_geo::hydrology::Drainage::order: alloc::vec::Vec<u32>  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
 pub phx_geo::hydrology::Drainage::receiver: alloc::vec::Vec<core::option::Option<u32>>  // used by: phx-check
 pub fn phx_geo::hydrology::drainage(&phx_geo::grid::Grid, &[f64], &[bool], &[u64]) -> phx_geo::hydrology::Drainage
 pub fn phx_geo::hydrology::upstream(&phx_geo::hydrology::Drainage) -> alloc::vec::Vec<u32>

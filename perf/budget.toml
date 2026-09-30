@@ -122,7 +122,8 @@ direction = "down"
 # Day buffers (S1.160, 2026-09-30; `tools/bench.sh -F daybuf`): a buffer for each of the design point's daily counts,
 # reserved at its heaviest day and refilled each day, a word an item: 1 ns a word appended, and on the second day of
 # each type no page faulted and nothing allocated, which the ratchets hold at nought. The memory's slack is what the
-# bases filled by `-F all` hold beside their live rows, held to the step's 57 MB.
+# bases filled by `-F all` hold beside their live rows, held to ARCHITECTURE §13's line 22: the step's 57 MB at the
+# steps' counts, 45.6 at the design point.
 
 [[ratchet]]
 counter = "fin.daybuf.faults_per_day"
@@ -136,7 +137,16 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.mem.slack_mb"
-value = 57
+value = 45.6
+direction = "down"
+
+# The day plan (S1.161): the heaviest day's buffers placed in one region, longest lives first, reach the day's
+# largest live set, 6a's: 160.1 MB at the steps' counts, 128.1 at the design point, ARCHITECTURE §13's line 21, read to
+# the tenth the steps state.
+
+[[ratchet]]
+counter = "fin.daybuf.peak_mb"
+value = 128.1
 direction = "down"
 
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80

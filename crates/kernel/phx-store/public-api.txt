@@ -267,6 +267,41 @@ pub fn phx_store::daybuf::DayBufs<T, B>::get(&self, usize, usize) -> &[T]  // us
 pub fn phx_store::daybuf::DayBufs<T, B>::join(&self, &mut phx_store::daybuf::DayBuf<T, B>)  // used by: phx-fin
 pub fn phx_store::daybuf::DayBufs<T, B>::mark(&mut self, usize)  // used by: phx-fin
 pub fn phx_store::daybuf::DayBufs<T, B>::new(&mut phx_store::backing::AddressSpace, &'static str, (usize, usize), usize) -> phx_store::daybuf::DayBufs<T, B>  // used by: phx-fin
+pub mod phx_store::dayplan  // used by: phx-fin
+pub enum phx_store::dayplan::Size  // used by: phx-fin
+pub phx_store::dayplan::Size::Bytes(u64)  // used by: phx-fin
+pub phx_store::dayplan::Size::Rest  // used by: phx-fin
+pub struct phx_store::dayplan::BufDecl  // used by: phx-fin
+pub phx_store::dayplan::BufDecl::life: phx_store::dayplan::Life  // used by: phx-fin, phx-val, phx-world, sys-cap, sys-dem
+pub phx_store::dayplan::BufDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_store::dayplan::BufDecl::size: phx_store::dayplan::Size  // used by: if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-val, phx-world, sys-frm, sys-sov
+pub struct phx_store::dayplan::DayPlan  // used by: phx-fin
+impl phx_store::dayplan::DayPlan
+pub fn phx_store::dayplan::DayPlan::check_read(&self, usize, u16)
+pub fn phx_store::dayplan::DayPlan::extent(&self) -> u64
+pub fn phx_store::dayplan::DayPlan::peak_live(&self, u16) -> u64
+pub fn phx_store::dayplan::DayPlan::placed(&self) -> &[phx_store::dayplan::Placed]  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_store::dayplan::DayPlan::plan(&[phx_store::dayplan::BufDecl], u16) -> core::result::Result<phx_store::dayplan::DayPlan, alloc::string::String>  // used by: phx-check, phx-fin, phx-ledger, phx-world
+pub struct phx_store::dayplan::DayRegion<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::dayplan::DayRegion<B>
+pub fn phx_store::dayplan::DayRegion<B>::lane_bytes(&self, usize) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::lane_mut(&mut self, usize, u16, usize) -> &mut [u64]  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::new(&mut phx_store::backing::AddressSpace, phx_store::dayplan::DayPlan) -> phx_store::dayplan::DayRegion<B>  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::plan(&self) -> &phx_store::dayplan::DayPlan  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::dayplan::DayRegion<B>
+pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_store::dayplan::Life  // used by: phx-fin
+pub phx_store::dayplan::Life::fill: u16  // used by: phx-core, phx-fin, phx-geo, phx-rand, phx-world, sys-frm, sys-lab
+pub phx_store::dayplan::Life::release: u16  // used by: phx-fin
+impl phx_store::dayplan::Life
+pub fn phx_store::dayplan::Life::meets(self, phx_store::dayplan::Life) -> bool
+pub struct phx_store::dayplan::Placed  // used by: phx-world
+pub phx_store::dayplan::Placed::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
+pub phx_store::dayplan::Placed::decl: usize  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
+pub phx_store::dayplan::Placed::life: phx_store::dayplan::Life  // used by: phx-fin, phx-val, phx-world, sys-cap, sys-dem
+pub phx_store::dayplan::Placed::offset: u64  // used by: phx-check, phx-core, phx-fin, phx-geo, sys-dem
 pub mod phx_store::descriptor
 pub enum phx_store::descriptor::FieldTag
 pub phx_store::descriptor::FieldTag::Amount  // used by: phx-core, phx-ledger, phx-num, phx-world
@@ -788,10 +823,14 @@ pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>  // used by: sys-tec
 pub type phx_store::save::Frames<'a> = &'a dyn core::ops::function::Fn(&[alloc::vec::Vec<u8>]) -> alloc::vec::Vec<core::io::error::Result<alloc::vec::Vec<u8>>>
 pub mod phx_store::stats  // used by: if-state, phx-cli, phx-exec, phx-world, sys-idx, sys-sta
-pub trait phx_store::stats::StoreStats  // used by: phx-cli, phx-core, phx-exec
+pub trait phx_store::stats::StoreStats  // used by: phx-cli, phx-core, phx-exec, phx-fin
 pub fn phx_store::stats::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::stats::StoreStats::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
 pub fn phx_store::stats::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::dayplan::DayRegion<B>
+pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
@@ -892,6 +931,9 @@ impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::Lo
 pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
 impl core::fmt::Display for phx_store::save::LoadError
 pub fn phx_store::save::LoadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-val, phx-world
+pub enum phx_store::Size  // used by: phx-fin
+pub phx_store::Size::Bytes(u64)  // used by: phx-fin
+pub phx_store::Size::Rest  // used by: phx-fin
 pub enum phx_store::Transform  // used by: phx-core, phx-macros
 pub phx_store::Transform::Delta
 pub phx_store::Transform::DeltaZigzag
@@ -933,6 +975,10 @@ pub fn phx_store::block_list::BlockPool<B>::max_blocks(&self) -> u32
 pub fn phx_store::block_list::BlockPool<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::push(&mut self, &mut phx_store::block_list::BlockBag, u32)
 pub fn phx_store::block_list::BlockPool<B>::remove_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
+pub struct phx_store::BufDecl  // used by: phx-fin
+pub phx_store::BufDecl::life: phx_store::dayplan::Life  // used by: phx-fin, phx-val, phx-world, sys-cap, sys-dem
+pub phx_store::BufDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_store::BufDecl::size: phx_store::dayplan::Size  // used by: if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-val, phx-world, sys-frm, sys-sov
 #[repr(C)] pub struct phx_store::CellListRef
 pub phx_store::CellListRef::cap: u16  // used by: phx-exec, phx-market, phx-world
 pub phx_store::CellListRef::len: u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
@@ -1031,6 +1077,23 @@ pub fn phx_store::daybuf::DayBufs<T, B>::get(&self, usize, usize) -> &[T]  // us
 pub fn phx_store::daybuf::DayBufs<T, B>::join(&self, &mut phx_store::daybuf::DayBuf<T, B>)  // used by: phx-fin
 pub fn phx_store::daybuf::DayBufs<T, B>::mark(&mut self, usize)  // used by: phx-fin
 pub fn phx_store::daybuf::DayBufs<T, B>::new(&mut phx_store::backing::AddressSpace, &'static str, (usize, usize), usize) -> phx_store::daybuf::DayBufs<T, B>  // used by: phx-fin
+pub struct phx_store::DayPlan  // used by: phx-fin
+impl phx_store::dayplan::DayPlan
+pub fn phx_store::dayplan::DayPlan::check_read(&self, usize, u16)
+pub fn phx_store::dayplan::DayPlan::extent(&self) -> u64
+pub fn phx_store::dayplan::DayPlan::peak_live(&self, u16) -> u64
+pub fn phx_store::dayplan::DayPlan::placed(&self) -> &[phx_store::dayplan::Placed]  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_store::dayplan::DayPlan::plan(&[phx_store::dayplan::BufDecl], u16) -> core::result::Result<phx_store::dayplan::DayPlan, alloc::string::String>  // used by: phx-check, phx-fin, phx-ledger, phx-world
+pub struct phx_store::DayRegion<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::dayplan::DayRegion<B>
+pub fn phx_store::dayplan::DayRegion<B>::lane_bytes(&self, usize) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::lane_mut(&mut self, usize, u16, usize) -> &mut [u64]  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::new(&mut phx_store::backing::AddressSpace, phx_store::dayplan::DayPlan) -> phx_store::dayplan::DayRegion<B>  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::plan(&self) -> &phx_store::dayplan::DayPlan  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::dayplan::DayRegion<B>
+pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::EdgeTable<R: phx_store::edges::Row, B: phx_store::backing::Backing>  // used by: phx-core
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])  // used by: phx-core
@@ -1095,6 +1158,11 @@ pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::ran
 pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
 pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub struct phx_store::Life  // used by: phx-fin
+pub phx_store::Life::fill: u16  // used by: phx-core, phx-fin, phx-geo, phx-rand, phx-world, sys-frm, sys-lab
+pub phx_store::Life::release: u16  // used by: phx-fin
+impl phx_store::dayplan::Life
+pub fn phx_store::dayplan::Life::meets(self, phx_store::dayplan::Life) -> bool
 #[repr(C)] pub struct phx_store::ListRef
 pub phx_store::ListRef::cap: u32  // used by: phx-exec, phx-market, phx-world
 pub phx_store::ListRef::len: u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
@@ -1154,6 +1222,11 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core
+pub struct phx_store::Placed  // used by: phx-world
+pub phx_store::Placed::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
+pub phx_store::Placed::decl: usize  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
+pub phx_store::Placed::life: phx_store::dayplan::Life  // used by: phx-fin, phx-val, phx-world, sys-cap, sys-dem
+pub phx_store::Placed::offset: u64  // used by: phx-check, phx-core, phx-fin, phx-geo, sys-dem
 pub struct phx_store::Reader<'a>  // used by: phx-core, phx-exec, phx-ledger, phx-world
 impl<'a> phx_store::save::Reader<'a>
 pub fn phx_store::save::Reader<'a>::at_end(&mut self) -> core::result::Result<bool, phx_store::save::LoadError>  // used by: phx-core, phx-exec, phx-ledger, phx-world
@@ -1542,10 +1615,14 @@ impl<const N: usize> phx_store::save::Saved for [usize; N]
 pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
 pub fn [usize; N]::rebuild_skipped(&mut self)
 pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
-pub trait phx_store::StoreStats  // used by: phx-cli, phx-core, phx-exec
+pub trait phx_store::StoreStats  // used by: phx-cli, phx-core, phx-exec, phx-fin
 pub fn phx_store::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::StoreStats::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
 pub fn phx_store::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::dayplan::DayRegion<B>
+pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core

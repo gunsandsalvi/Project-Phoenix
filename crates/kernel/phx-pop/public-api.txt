@@ -17,7 +17,7 @@ pub phx_pop::kind::Declared::item: T  // used by: phx-check, phx-core, phx-exec,
 pub phx_pop::kind::Declared::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_pop::kind::PersonField
 pub phx_pop::kind::PersonField::bits: u32  // used by: phx-core, phx-num, phx-rand, phx-store, phx-world
-pub phx_pop::kind::PersonField::decl: phx_core::pop::PersonAttrDecl  // used by: phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
+pub phx_pop::kind::PersonField::decl: phx_core::pop::PersonAttrDecl  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
 pub phx_pop::kind::PersonField::shift: u32  // used by: phx-exec, phx-market, phx-num, phx-rand, phx-store, phx-world
 pub phx_pop::kind::PersonField::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_pop::kind::PopKindDecl  // used by: phx-world, sys-dem
@@ -32,7 +32,7 @@ pub fn phx_pop::kind::PopKindDecl::attr(&self, &str) -> core::option::Option<usi
 pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry]) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>  // used by: phx-core, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub fn phx_pop::kind::PopKindDecl::has_persons(&self) -> bool  // used by: phx-world
 pub fn phx_pop::kind::PopKindDecl::person_attr(&self, &str) -> core::option::Option<usize>  // used by: phx-core, sys-dem, sys-lab
-pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
+pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
 pub fn phx_pop::kind::PopKindDecl::role(&self, &str) -> core::option::Option<usize>  // used by: phx-cli, phx-core, phx-macros, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub fn phx_pop::kind::PopKindDecl::role_name(&self, usize) -> &'static str
 pub fn phx_pop::kind::compile_kinds(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>  // used by: phx-world
