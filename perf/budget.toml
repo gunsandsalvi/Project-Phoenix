@@ -193,6 +193,53 @@ counter = "fin.sumtree.bytes_per_weight"
 value = 12
 direction = "down"
 
+# Keyed indexes (S1.165, 2026-10-01; `tools/bench.sh -F index`): every instance of the inventory at its members, the
+# day's 0.3 M inserts and leaves applied by key, every key walked, the close's compactions, a flood's owner draws. The
+# sizes stand at the step's bounds, which they meet: 3 bytes an entry, 33.9 MB of line 16, a dead share of 7 %. The
+# times stand a quarter above their highest measure: a dense insert or leave 12–17 ns (the step's 15.4 falls within its
+# noise), a pair's 4–7, a dense walk 7–8 ns an entry (the step's 2.3 is this machine's bare loop over the validity
+# column alone), a sparse lookup 180–200 ns a key, an owner draw 20–23 ns (the step's 38).
+
+[[ratchet]]
+counter = "fin.index.insert_ns"
+value = 21
+direction = "down"
+
+[[ratchet]]
+counter = "fin.index.insert_pairs_ns"
+value = 9
+direction = "down"
+
+[[ratchet]]
+counter = "fin.index.walk_ns"
+value = 10
+direction = "down"
+
+[[ratchet]]
+counter = "fin.index.lookup_ns"
+value = 250
+direction = "down"
+
+[[ratchet]]
+counter = "fin.index.entry_bytes"
+value = 5.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.index.dead_share"
+value = 0.5
+direction = "down"
+
+[[ratchet]]
+counter = "fin.index.mb"
+value = 50
+direction = "down"
+
+[[ratchet]]
+counter = "fin.units.draw_ns"
+value = 38
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

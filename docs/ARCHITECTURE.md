@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02, K-03, K-05 and K-10 built (S1.159–S1.164); the rest planned (S1.165–S1.168)
+Status: K-02, K-03, K-05, K-06 and K-10 built (S1.159–S1.165); the rest planned (S1.166–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1193,8 +1193,94 @@ S1.306, S1.307); a catastrophe's draw (S2.211); a uniform member drawn (S6.122).
 
 #### K-06 Keyed indexes
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.165).
+One kernel answers every "who is at this key" a rule enumerates — owners at a zone, parties by zone and kind, holders
+by instrument — as an instance a system declares in data (`IndexDecl`, `index_decl.rs`: its name, member table, the
+declared columns its key and membership read, its mode, its key space and the most entries it holds). It is kept by
+the events that change a key, read in O(k) for a key's k members, compacted lazily and rebuilt at load; no index is
+rebuilt per call or per day, and none is declared where a party's own chain, a declared sweep (K-14) or another
+instance answers.
+
+**Layout** (`index.rs`): an instance's key space is declared **dense** where its keys hold many members each — zones,
+(zone, kind), instruments, tiles — or **sparse** where they hold few among millions — a party, a firm, a series.
+- A dense key has a 24-byte head: its **run**, the slots the opening placed its members in key by key (the opening
+  places a zone's parties, a tile's units, together), two words; its **lazy list** of members come since, a K-04
+  block bag in the order they came, duplicates and leavers among them; and its count of known-dead entries.
+- A sparse instance holds its entries as **(key, member) pairs**, sorted, 8 bytes an entry with no list of its own a
+  key; the pairs come since the last merge wait in a sorted run a sixteenth of its entries long (4 096 at least),
+  appended in O(1) as the applies bring them in key order, and merged into the pairs in one pass when it fills or at
+  the owner's close.
+- **Weighted** mode keeps a key's members in a sum-tree (K-05), a member's position being a field of its own row, with
+  each key's free positions in a K-04 sorted block list; **count** mode keeps a key's count, maintained on the same
+  events and recounted by the audit (R4); **counted** lazy mode keeps both.
+
+**API**: `insert(key, member)` O(1); `left(key)` counts one dead and never searches; `members(key, valid, out)` appends
+the key's members to a day buffer in slot order, each once, and returns the entries dropped: an entry is kept exactly
+when `valid` finds its member at the key by its own columns now, so a leaver, a reused slot's other occupant and a
+repeat are dropped — no entry carries a generation and no member row a back-pointer. `place_run` (the opening's and a
+load's), `compact(key)`, `compact_pairs`, `settle`; `insert_weighted`, `update`, `remove`, `draw` (a key of total
+nought draws `Missing`); `count`, `add`.
+
+**Algorithms and bounds**: a walk writes its entries in place into its output, sized once; what it finds rises through
+the run and a compacted list, so only the tail after that rising prefix is sorted and merged into it from the back
+through the room past the output's end — linear, never a sort of the whole. A dense key whose dead entries pass its
+live ones is compacted by its owner's apply at the close: its members rewritten in slot order, its run kept while at
+least half its slots are still its members; a sparse instance's pairs are compacted in one pass when its leavers pass
+its live pairs. The audit's rolling sweep (K-14) compacts the lists it passes. Every walk reports its dropped entries,
+counted against `dead_share`.
+
+**Traversal**: event-driven. Inserts and leaves come from applies partitioned by key range (K-13), so each list has one
+writer in a stage and the pairs arrive in key order; walks are `&self` reads from any worker.
+
+**Save and load**: derived — its owner marks it `#[saved(skip, rebuild = …)]` and rebuilds it from the member columns in
+slot order, placing each key's run where its members lie together (`rebuild_equals_incremental`); counts recounted.
+
+**Capacity**: the declared key space and entries; a key past the space, or an entry past the room, stops the run.
+
+**Instances** (`perf/design.toml [index.instance]`, each its declaring step's members at the design point; line is
+ARCHITECTURE §13's ledger line):
+
+| Instance (declaring step) | Key (space) | Form, mode | Members | Line |
+| --- | --- | --- | --- | --- |
+| owners of physical units (S1.271) | zone (1 000) | dense, lazy | 2.6 M | 12 |
+| rows by holder (S1.271) | holder (8.8 M) | sparse, lazy | 0.6 M | 11 |
+| holders by instrument (S1.280) | instrument (61.6 k) | dense, lazy | 3.4 M | 11 |
+| named units by tile (S1.284) | tile (40 k) | dense, lazy | 1.4 M | 12 |
+| offers by poster (S1.296) | poster (0.92 M) | sparse, lazy | 2.2 M | 17 |
+| stalls (S1.301) | (good, zone) (250 k) | dense, weighted | 1.7 M | 17 |
+| vacancy runs (S1.304) | (instance, skill) (46.4 k) | sparse, lazy | 0.2 M | 17 |
+| parties by zone and kind (S1.404) | (zone, kind) (32 k) | dense, counted | 3.35 M | 16 |
+| searchers by region (S1.304) | region (25) | dense, lazy | 0.2 M | 16 |
+| messages by addressee (S1.237) | addressee (8.8 M) | sparse, lazy | 0.5 M | 16 |
+| queue memberships by claimant (S1.323) | claimant (8.8 M) | sparse, lazy | 0.3 M | 16 |
+| registered pairs by series (S1.336) | series (0.1 M) | sparse, lazy | 0.1 M | 16 |
+| loans awaiting workout (S2.101) | lender (35) | dense, lazy | 10 k | 16 |
+| the bureau's subject index (S2.109) | subject (8.8 M) | sparse, lazy | 0.3 M | 16 |
+| firms in a procedure (S2.123) | firm (0.92 M) | sparse, lazy | 3 k | 16 |
+| shares by syndicate (S3.140) | syndicate (50 k) | sparse, lazy | 50 k | 16 |
+| registrations by instrument (S3.148) | instrument (61.6 k) | sparse, lazy | 50 k | 16 |
+| agencies by issuer (S3.207) | issuer (20 k) | sparse, lazy | 20 k | 16 |
+| pots pending by (trust, fund) (S4.142) | (trust, fund) (16 k) | dense, lazy | 1.0 M | 16 |
+| foreign-currency holders (S5.165) | currency (3) | dense, lazy | 0.2 M | 16 |
+| imitation pools (S6.109) | (product, region) (6 250) | dense, weighted | 0.15 M | 16 |
+| singles (S6.122) | (region, age class) (500) | dense, weighted | 1.7 M | 16 |
+| employment by (zone, industry) (S2.174) | (zone, industry) (19 k) | dense, count | — | 16 |
+
+Not instances: consumers by (region, priority class) on a shed day (S2.211) and persons by region (S6.125), each a
+declared sweep; persons by zone for injury victims (S4.134 draws a household from parties by zone and kind).
+
+**Volumes and ratchets** (`tools/bench.sh -F index`): every instance at its members, dense ones placed in runs as the
+opening places them, the day's 0.3 M inserts and leaves applied by key, every key walked, the close's compactions, and
+on a heavy day a flood's 0.2 M owner draws from 20 struck zones. Measured: 3 bytes an entry over the listing instances
+(`[fin.index] entry_bytes` 5.4), the small-bases pool's instances 33.9 MB of §13's line 16 (`mb` 50), a dead share at
+most 7 % after a day's moves (`dead_share` 0.5); a dense insert or leave 12–17 ns (`insert_ns` 21), a pair's 4–7 ns
+(`insert_pairs_ns` 9); a dense walk 7–8 ns an entry read with its validity check (`walk_ns` 10), where a bare loop over
+the same validity column runs 2.3 ns on this machine; a sparse key's lookup 180–200 ns (`lookup_ns` 250); an owner draw
+20–23 ns, its zone's cumulative built once from the walk and shared by its draws (`[fin.units] draw_ns` 38).
+
+**Extension points**: each declaring step above declares its instance and adopts it in place of the indexes rebuilt
+per call today (`stalls` ×5 a day, `Standing::new` ×2, `post`'s map of every vacancy, `keep_vacancies`, `searching` in
+`core_labour.rs`, the scan of every firm for a struck tile in `core_weather.rs`); a ring's optional subject index is a
+lazy instance (S1.167); the declared instances maintained on writes (S1.196); the audit's sweep compacts (S1.171).
 
 #### K-07 Epoch flags and change sets
 

@@ -8,6 +8,7 @@ pub mod counters;
 pub mod daybuf;
 pub mod design;
 pub mod fill;
+pub mod index;
 pub mod kept;
 pub mod kept_calendar;
 pub mod kept_flows;
@@ -135,6 +136,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(daybuf::DayBufs::default()),
     || Box::new(save::Save::default()),
     || Box::new(stalls::Stalls::default()),
+    || Box::new(index::Indexes::default()),
 ];
 
 /// What a run fills, runs and reads.

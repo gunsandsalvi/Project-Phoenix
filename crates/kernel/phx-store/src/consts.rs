@@ -83,9 +83,11 @@ pub const SHORT_LINK_SLOT_BITS: u32 = 24;
 /// and the business day after closed days.
 pub const DAY_KINDS: usize = 4;
 
-/// A sum-tree's first class holds four members, and each class twice the one before, so a tree that grows moves a
-/// logarithmic number of times.
+/// A sum-tree's first class holds four members.
 pub const SUMTREE_BASE_CAPACITY: usize = 4;
+
+/// Sum-tree classes a doubling: four, so each class holds a quarter of the base's octave more than the one before.
+pub const SUMTREE_STEPS: u32 = 4;
 
 /// A sum-tree's length takes the low 24 bits of its header's word, its class the rest.
 pub const SUMTREE_LEN_BITS: u32 = 24;
@@ -93,5 +95,17 @@ pub const SUMTREE_LEN_BITS: u32 = 24;
 /// Sum-trees' columns chunk as the tables' do; no traversal walks them by chunk.
 pub const SUMTREE_ROWS_PER_CHUNK: u32 = 1 << 12;
 
-/// Sum-tree classes: the base capacity doubled until a class holds every length a header's 24 bits count.
-pub const SUMTREE_CLASSES: usize = 23;
+/// Sum-tree classes: four a doubling from the base until a class holds every length a header's 24 bits count.
+pub const SUMTREE_CLASSES: usize = 88;
+
+/// An index's blocks are sized for their entries at three quarters of a block, the fill a lazy list keeps between
+/// compactions.
+pub const INDEX_BLOCKS_PER_ENTRIES: (u32, u32) = (3, 4);
+
+/// A sparse index's pairs come since its last merge are sorted apart and merged into its pairs in one pass when their
+/// run fills: at least this many, so a merge's cost is shared by the pairs that filled it.
+pub const INDEX_NEW_KEYS: u32 = 1 << 12;
+
+/// A sparse index's run of new pairs holds a sixteenth of its entries, so a merge copies its pairs about once for each
+/// sixteenth that comes.
+pub const INDEX_NEW_SHARE: u32 = 16;

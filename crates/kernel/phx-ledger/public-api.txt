@@ -159,7 +159,7 @@ pub fn phx_ledger::algebra::Facility::load(&mut phx_store::save::Reader<'_>) -> 
 pub fn phx_ledger::algebra::Facility::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_ledger::algebra::Facility::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Fixing
-pub phx_ledger::algebra::Fixing::on: phx_id::day::Day  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-world, sys-lab
+pub phx_ledger::algebra::Fixing::on: phx_id::day::Day  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-lab
 pub phx_ledger::algebra::Fixing::rate: phx_num::rate::Rate  // used by: if-state, phx-cli, phx-core, phx-geo, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 impl phx_store::save::Saved for phx_ledger::algebra::Fixing where phx_num::rate::Rate: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved
 pub fn phx_ledger::algebra::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-store, phx-world
@@ -231,7 +231,7 @@ pub const phx_ledger::consts::MONTHS_A_YEAR: u8  // used by: phx-exec, phx-world
 pub mod phx_ledger::levy  // used by: phx-world
 pub struct phx_ledger::levy::Band  // used by: phx-world
 pub phx_ledger::levy::Band::from: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_ledger::levy::Band::share: i64  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-val, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc, sys-sov
+pub phx_ledger::levy::Band::share: i64  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc, sys-sov
 impl phx_store::save::Saved for phx_ledger::levy::Band where i64: phx_store::save::Saved
 pub fn phx_ledger::levy::Band::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_ledger::levy::Band::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store

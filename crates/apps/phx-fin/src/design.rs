@@ -33,6 +33,18 @@ pub struct DayPlanDecl {
     pub buffers: Vec<(String, Option<f64>, (String, String))>,
 }
 
+/// A keyed index's instance as the design point declares it: its members, its key space and form, its mode and its
+/// ledger line.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IndexInstance {
+    pub name: String,
+    pub members: u64,
+    pub keys: u64,
+    pub sparse: bool,
+    pub mode: String,
+    pub line: u64,
+}
+
 /// The design point's figure set.
 #[derive(Debug, Clone)]
 pub struct Design {
@@ -181,6 +193,46 @@ impl Design {
             buffers.push((name.clone(), mb, (fill.to_owned(), release.to_owned())));
         }
         Ok(DayPlanDecl { slots, buffers })
+    }
+
+    /// The keyed indexes' instances as the design point declares them, and its `[index]` counts.
+    ///
+    /// # Errors
+    /// An inventory the design point lacks or writes otherwise.
+    pub fn index_instances(&self) -> Result<Vec<IndexInstance>, FinError> {
+        let Value::Table(all) = get(&self.table, "index.instance")? else {
+            return Err(refuse("index.instance", "is not a table"));
+        };
+        let mut out = Vec::new();
+        for (name, v) in all {
+            let key = format!("index.instance.{name}");
+            let field = |f: &str| v.get(f).ok_or_else(|| refuse(&format!("{key}.{f}"), "is missing"));
+            let text = |f: &str| {
+                field(f)?.as_str().map(str::to_owned).ok_or_else(|| refuse(&format!("{key}.{f}"), "is not a word"))
+            };
+            out.push(IndexInstance {
+                name: name.clone(),
+                members: count(field("members")?, &key)?,
+                keys: count(field("keys")?, &key)?,
+                sparse: match text("form")?.as_str() {
+                    "dense" => false,
+                    "sparse" => true,
+                    _ => return Err(refuse(&key, "is neither dense nor sparse")),
+                },
+                mode: text("mode")?,
+                line: count(field("line")?, &key)?,
+            });
+        }
+        Ok(out)
+    }
+
+    /// A count of the `[index]` table.
+    ///
+    /// # Errors
+    /// A count the table lacks.
+    pub fn index_count(&self, name: &str) -> Result<u64, FinError> {
+        let key = format!("index.{name}");
+        count(get(&self.table, &key)?, &key)
     }
 
     /// The memory ledger's lines by their names, each its MB at the design point.

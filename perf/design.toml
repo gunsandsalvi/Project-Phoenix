@@ -280,6 +280,37 @@ decided = { mb = 20, life = ["6d", "7b"] }            # S1.245: 0.6 M × 16 B, a
 short = { mb = 4, life = ["7b", "7b"] }               # S1.248: 0.15 M × 24 B
 tallies = { mb = 11, life = ["1a", "10e"] }           # statistics' shard tallies, the audit's bitmaps, pool scratch
 
+[index]   # S1.165: the keyed indexes' instances, each its declaring step's members at the design point, its key space
+#### (the store count it follows) and form — sparse where its keys hold under about five members each, its entries then
+#### (key, member) pairs — its mode, and its ledger line
+churn = 300_000   # inserts and leaves a day over every instance, by their members
+struck_zones = 20   # a flood day's zones struck, whose owners are drawn
+owner_draws = 200_000   # a flood day's owner draws
+[index.instance]
+owners_by_zone = { members = 2_600_000, keys = 1_000, form = "dense", mode = "lazy", line = 12 }   # S1.271; zones
+rows_by_holder = { members = 600_000, keys = 8_800_000, form = "sparse", mode = "lazy", line = 11 }   # S1.271; directory slots
+holders_by_instrument = { members = 3_400_000, keys = 61_600, form = "dense", mode = "lazy", line = 11 }   # S1.280; instruments
+named_units_by_tile = { members = 1_400_000, keys = 40_000, form = "dense", mode = "lazy", line = 12 }   # S1.284; tiles
+offers_by_poster = { members = 2_200_000, keys = 921_600, form = "sparse", mode = "lazy", line = 17 }   # S1.296; firms
+stalls = { members = 1_700_000, keys = 250_000, form = "dense", mode = "weighted", line = 17 }   # S1.301; stall keys
+vacancy_runs = { members = 200_000, keys = 46_400, form = "sparse", mode = "lazy", line = 17 }   # S1.304; market instances
+parties_by_zone_kind = { members = 3_350_000, keys = 32_000, form = "dense", mode = "counted", line = 16 }   # S1.404; zones × 32 kinds
+searchers_by_region = { members = 200_000, keys = 25, form = "dense", mode = "lazy", line = 16 }   # S1.304; regions
+messages_by_addressee = { members = 500_000, keys = 8_800_000, form = "sparse", mode = "lazy", line = 16 }   # S1.237; directory slots
+queue_by_claimant = { members = 300_000, keys = 8_800_000, form = "sparse", mode = "lazy", line = 16 }   # S1.323; directory slots
+pairs_by_series = { members = 100_000, keys = 100_000, form = "sparse", mode = "lazy", line = 16 }   # S1.336; a series a pair at most
+loans_awaiting_workout = { members = 10_000, keys = 35, form = "dense", mode = "lazy", line = 16 }   # S2.101; banks
+bureau_subjects = { members = 300_000, keys = 8_800_000, form = "sparse", mode = "lazy", line = 16 }   # S2.109; directory slots
+firms_in_procedure = { members = 3_000, keys = 921_600, form = "sparse", mode = "lazy", line = 16 }   # S2.123; firms
+shares_by_syndicate = { members = 50_000, keys = 50_000, form = "sparse", mode = "lazy", line = 16 }   # S3.140; a syndicate a share at most
+registrations_by_instrument = { members = 50_000, keys = 61_600, form = "sparse", mode = "lazy", line = 16 }   # S3.148; instruments
+agencies_by_issuer = { members = 20_000, keys = 20_000, form = "sparse", mode = "lazy", line = 16 }   # S3.207; an issuer an agency at most
+pots_by_trust_fund = { members = 1_000_000, keys = 16_000, form = "dense", mode = "lazy", line = 16 }   # S4.142; institutions
+fx_holders_by_currency = { members = 200_000, keys = 3, form = "dense", mode = "lazy", line = 16 }   # S5.165; currencies
+imitation_pools = { members = 150_000, keys = 6_250, form = "dense", mode = "weighted", line = 16 }   # S6.109; products × regions
+singles = { members = 1_700_000, keys = 500, form = "dense", mode = "weighted", line = 16 }   # S6.122; regions × 20 age classes
+employment_by_zone_industry = { members = 0, keys = 19_000, form = "dense", mode = "count", line = 16 }   # S2.174; zones × 19 industries
+
 [fin.decide.additions]   # per-item work beyond the leaves, by part, core-ms B / NB / H at the design point (steps state ns × items)
 "core and Stage 1 (S1.330 per-party deltas, S1.338, S1.415, S1.268, visit leaf 804)" = [20.8, 5.6, 42.4]
 "Stages 2, 3, 8 (S2.118 190 ns × 75 k, S2.163, S2.149, S8.117 +45 × 90 k, S8.103/S8.197 handler, S8.122 +40, S8.129)" = [85.6, 9.6, 136.8]

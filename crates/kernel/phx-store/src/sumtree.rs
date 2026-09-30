@@ -6,7 +6,7 @@ use phx_num::{Missing, capacity_exceeded, violation};
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
 use crate::column::Column;
-use crate::consts::{SUMTREE_BASE_CAPACITY, SUMTREE_CLASSES, SUMTREE_LEN_BITS};
+use crate::consts::{SUMTREE_BASE_CAPACITY, SUMTREE_CLASSES, SUMTREE_LEN_BITS, SUMTREE_STEPS};
 use crate::convert::{to_u32, to_u64, to_usize};
 use crate::stats::StoreStats;
 
@@ -38,9 +38,11 @@ impl TreeHeader {
     }
 }
 
-/// The entries a class holds: the base capacity doubled once a class.
+/// The entries a class holds: four classes a doubling from the base — 4, 5, 6, 7, 8, 10, 12, 14, 16… — so a tree
+/// holds at most a quarter more than its members, and moves a logarithmic number of times as it grows.
 fn capacity(class: u32) -> usize {
-    SUMTREE_BASE_CAPACITY << class
+    let (octave, step) = (class / SUMTREE_STEPS, class % SUMTREE_STEPS);
+    (SUMTREE_BASE_CAPACITY + to_usize(step) * (SUMTREE_BASE_CAPACITY / to_usize(SUMTREE_STEPS))) << octave
 }
 
 /// A cell's word as an index.

@@ -176,6 +176,8 @@ impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::bytes_committed(&self) -> usize
 pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_list::BlockList, u32) -> bool
 pub fn phx_store::block_list::BlockPool<B>::drain(&mut self, &mut phx_store::block_list::BlockBag, &mut alloc::vec::Vec<u32>)
+pub fn phx_store::block_list::BlockPool<B>::empty_bag(&mut self, &mut phx_store::block_list::BlockBag)
+pub fn phx_store::block_list::BlockPool<B>::for_each_in_bag(&self, phx_store::block_list::BlockBag, impl core::ops::function::FnMut(u32))
 pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
 pub fn phx_store::block_list::BlockPool<B>::max_blocks(&self) -> u32
@@ -226,6 +228,9 @@ pub const phx_store::consts::ENCODE_MAGIC: u32
 pub const phx_store::consts::ENCODE_VERSION: u16
 pub const phx_store::consts::FRAME_BYTES: usize
 pub const phx_store::consts::HEAP_PAGE: usize
+pub const phx_store::consts::INDEX_BLOCKS_PER_ENTRIES: (u32, u32)
+pub const phx_store::consts::INDEX_NEW_KEYS: u32
+pub const phx_store::consts::INDEX_NEW_SHARE: u32
 pub const phx_store::consts::SAVE_FRAME_BYTES: usize  // used by: phx-fin
 pub const phx_store::consts::SAVE_FRAME_WAVE: usize
 pub const phx_store::consts::SAVE_READ_STEP: usize
@@ -241,6 +246,7 @@ pub const phx_store::consts::SUMTREE_BASE_CAPACITY: usize
 pub const phx_store::consts::SUMTREE_CLASSES: usize
 pub const phx_store::consts::SUMTREE_LEN_BITS: u32
 pub const phx_store::consts::SUMTREE_ROWS_PER_CHUNK: u32
+pub const phx_store::consts::SUMTREE_STEPS: u32
 pub const phx_store::consts::VA_BUDGET: usize
 pub const phx_store::consts::ZSTD_LEVEL: i32
 pub mod phx_store::daybuf  // used by: phx-fin
@@ -462,6 +468,61 @@ pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // use
 pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
 pub fn phx_store::hash::frame_hash([u64; 2], &[u8]) -> u128  // used by: phx-fin
 pub fn phx_store::hash::frame_root([u64; 2], &[u128]) -> u128  // used by: phx-fin, phx-world
+pub mod phx_store::index  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub struct phx_store::index::Index<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin, phx-macros
+impl<B: phx_store::backing::Backing> phx_store::index::Index<B>
+pub fn phx_store::index::Index<B>::add(&mut self, u64, i64)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::bytes_committed(&self) -> usize  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::compact(&mut self, u64, impl core::ops::function::Fn(u32) -> bool, &mut phx_store::daybuf::DayBuf<u32, B>)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::compact_pairs(&mut self, impl core::ops::function::Fn(u64, u32) -> bool)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::count(&self, u64) -> i64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::dead(&self, u64) -> u32  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::dead_and_entries(&self) -> (u64, u64)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::decl(&self) -> &phx_store::index_decl::IndexDecl  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::draw(&self, u64, u64) -> phx_num::missing::Missing<usize>  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::entries(&self, u64) -> u32  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::insert(&mut self, u64, u32)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::insert_weighted(&mut self, u64, u64) -> usize  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::left(&mut self, u64)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::members(&self, u64, impl core::ops::function::Fn(u32) -> bool, &mut phx_store::daybuf::DayBuf<u32, B>) -> u32  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::needs_compaction(&self, u64) -> bool  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::new(&mut phx_store::backing::AddressSpace, phx_store::index_decl::IndexDecl) -> core::result::Result<phx_store::index::Index<B>, alloc::string::String>  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::pairs_need_compaction(&self) -> bool  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::place_run(&mut self, u64, u32, u32)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::remove(&mut self, u64, usize)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::settle(&mut self)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::total(&self, u64) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::update(&mut self, u64, usize, u64)  // used by: phx-core, phx-fin, phx-macros
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::index::Index<B>
+pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub mod phx_store::index_decl
+pub enum phx_store::index_decl::Keys  // used by: phx-fin
+pub phx_store::index_decl::Keys::Dense(u32)  // used by: phx-fin
+pub phx_store::index_decl::Keys::Sparse(u32)  // used by: phx-fin
+impl phx_store::index_decl::Keys
+pub fn phx_store::index_decl::Keys::count(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub enum phx_store::index_decl::Mode  // used by: phx-core, phx-fin
+pub phx_store::index_decl::Mode::Count  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-num, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax
+pub phx_store::index_decl::Mode::Lazy  // used by: phx-fin
+pub phx_store::index_decl::Mode::LazyCounted  // used by: phx-fin
+pub phx_store::index_decl::Mode::Weighted  // used by: phx-fin
+impl phx_store::index_decl::Mode
+pub fn phx_store::index_decl::Mode::counts(self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-rand, phx-world, sys-dem
+pub fn phx_store::index_decl::Mode::lists(self) -> bool  // used by: phx-check, phx-fin, phx-pop
+pub fn phx_store::index_decl::Mode::weighs(self) -> bool  // used by: phx-fin
+pub struct phx_store::index_decl::IndexDecl  // used by: phx-fin
+pub phx_store::index_decl::IndexDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_store::index_decl::IndexDecl::entries: u32  // used by: phx-check, phx-core, phx-fin, phx-pop, phx-world, sys-frm, sys-tec
+pub phx_store::index_decl::IndexDecl::key: &'static str  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-world, sys-lab, sys-tec
+pub phx_store::index_decl::IndexDecl::keys: phx_store::index_decl::Keys  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-num, phx-val, phx-world
+pub phx_store::index_decl::IndexDecl::member_table: &'static str  // used by: phx-fin
+pub phx_store::index_decl::IndexDecl::mode: phx_store::index_decl::Mode  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-rand, phx-world
+pub phx_store::index_decl::IndexDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_store::index_decl::IndexDecl::predicate: phx_num::missing::Missing<&'static str>  // used by: phx-fin
+impl phx_store::index_decl::IndexDecl
+pub fn phx_store::index_decl::IndexDecl::check(&self) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-val, phx-world
 pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world
 pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
@@ -878,6 +939,10 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::index::Index<B>
+pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
@@ -1000,6 +1065,11 @@ pub phx_store::FieldTag::PartyRef  // used by: phx-core, phx-id
 pub phx_store::FieldTag::Plain  // used by: phx-core, phx-fin, phx-ledger, phx-world
 pub phx_store::FieldTag::Qty  // used by: phx-core, phx-ledger, phx-num
 pub phx_store::FieldTag::TileRef
+pub enum phx_store::Keys  // used by: phx-fin
+pub phx_store::Keys::Dense(u32)  // used by: phx-fin
+pub phx_store::Keys::Sparse(u32)  // used by: phx-fin
+impl phx_store::index_decl::Keys
+pub fn phx_store::index_decl::Keys::count(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
 pub enum phx_store::LoadError  // used by: phx-core, phx-exec, phx-ledger, phx-world
 pub phx_store::LoadError::Decode(phx_store::encode::DecodeError)
 pub phx_store::LoadError::Invalid(alloc::string::String)  // used by: phx-ledger
@@ -1010,6 +1080,15 @@ impl core::convert::From<phx_store::encode::DecodeError> for phx_store::save::Lo
 pub fn phx_store::save::LoadError::from(phx_store::encode::DecodeError) -> phx_store::save::LoadError  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
 impl core::fmt::Display for phx_store::save::LoadError
 pub fn phx_store::save::LoadError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-val, phx-world
+pub enum phx_store::Mode  // used by: phx-core, phx-fin
+pub phx_store::Mode::Count  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-num, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax
+pub phx_store::Mode::Lazy  // used by: phx-fin
+pub phx_store::Mode::LazyCounted  // used by: phx-fin
+pub phx_store::Mode::Weighted  // used by: phx-fin
+impl phx_store::index_decl::Mode
+pub fn phx_store::index_decl::Mode::counts(self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-rand, phx-world, sys-dem
+pub fn phx_store::index_decl::Mode::lists(self) -> bool  // used by: phx-check, phx-fin, phx-pop
+pub fn phx_store::index_decl::Mode::weighs(self) -> bool  // used by: phx-fin
 pub enum phx_store::Size  // used by: phx-fin
 pub phx_store::Size::Bytes(u64)  // used by: phx-fin
 pub phx_store::Size::Rest  // used by: phx-fin
@@ -1048,6 +1127,8 @@ impl<B: phx_store::backing::Backing> phx_store::block_list::BlockPool<B>
 pub fn phx_store::block_list::BlockPool<B>::bytes_committed(&self) -> usize
 pub fn phx_store::block_list::BlockPool<B>::contains(&self, phx_store::block_list::BlockList, u32) -> bool
 pub fn phx_store::block_list::BlockPool<B>::drain(&mut self, &mut phx_store::block_list::BlockBag, &mut alloc::vec::Vec<u32>)
+pub fn phx_store::block_list::BlockPool<B>::empty_bag(&mut self, &mut phx_store::block_list::BlockBag)
+pub fn phx_store::block_list::BlockPool<B>::for_each_in_bag(&self, phx_store::block_list::BlockBag, impl core::ops::function::FnMut(u32))
 pub fn phx_store::block_list::BlockPool<B>::insert_sorted(&mut self, &mut phx_store::block_list::BlockList, u32)
 pub fn phx_store::block_list::BlockPool<B>::iter(&self, phx_store::block_list::BlockList) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_
 pub fn phx_store::block_list::BlockPool<B>::max_blocks(&self) -> u32
@@ -1237,6 +1318,45 @@ pub fn phx_store::backing::HeapBacking<PAGE>::decommit(&mut self, core::ops::ran
 pub fn phx_store::backing::HeapBacking<PAGE>::page(&self) -> usize
 pub fn phx_store::backing::HeapBacking<PAGE>::reserve(usize) -> phx_store::backing::HeapBacking<PAGE>
 pub fn phx_store::backing::HeapBacking<PAGE>::reserved(&self) -> usize
+pub struct phx_store::Index<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin, phx-macros
+impl<B: phx_store::backing::Backing> phx_store::index::Index<B>
+pub fn phx_store::index::Index<B>::add(&mut self, u64, i64)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::bytes_committed(&self) -> usize  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::compact(&mut self, u64, impl core::ops::function::Fn(u32) -> bool, &mut phx_store::daybuf::DayBuf<u32, B>)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::compact_pairs(&mut self, impl core::ops::function::Fn(u64, u32) -> bool)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::count(&self, u64) -> i64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::dead(&self, u64) -> u32  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::dead_and_entries(&self) -> (u64, u64)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::decl(&self) -> &phx_store::index_decl::IndexDecl  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::draw(&self, u64, u64) -> phx_num::missing::Missing<usize>  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::entries(&self, u64) -> u32  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::insert(&mut self, u64, u32)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::insert_weighted(&mut self, u64, u64) -> usize  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::left(&mut self, u64)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::members(&self, u64, impl core::ops::function::Fn(u32) -> bool, &mut phx_store::daybuf::DayBuf<u32, B>) -> u32  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::needs_compaction(&self, u64) -> bool  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::new(&mut phx_store::backing::AddressSpace, phx_store::index_decl::IndexDecl) -> core::result::Result<phx_store::index::Index<B>, alloc::string::String>  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::pairs_need_compaction(&self) -> bool  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::place_run(&mut self, u64, u32, u32)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::remove(&mut self, u64, usize)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::settle(&mut self)  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::total(&self, u64) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::update(&mut self, u64, usize, u64)  // used by: phx-core, phx-fin, phx-macros
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::index::Index<B>
+pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub struct phx_store::IndexDecl  // used by: phx-fin
+pub phx_store::IndexDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_store::IndexDecl::entries: u32  // used by: phx-check, phx-core, phx-fin, phx-pop, phx-world, sys-frm, sys-tec
+pub phx_store::IndexDecl::key: &'static str  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-world, sys-lab, sys-tec
+pub phx_store::IndexDecl::keys: phx_store::index_decl::Keys  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-num, phx-val, phx-world
+pub phx_store::IndexDecl::member_table: &'static str  // used by: phx-fin
+pub phx_store::IndexDecl::mode: phx_store::index_decl::Mode  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-rand, phx-world
+pub phx_store::IndexDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_store::IndexDecl::predicate: phx_num::missing::Missing<&'static str>  // used by: phx-fin
+impl phx_store::index_decl::IndexDecl
+pub fn phx_store::index_decl::IndexDecl::check(&self) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-val, phx-world
 pub struct phx_store::Life  // used by: phx-fin
 pub phx_store::Life::fill: u16  // used by: phx-core, phx-fin, phx-geo, phx-rand, phx-world, sys-frm, sys-lab
 pub phx_store::Life::release: u16  // used by: phx-fin
@@ -1753,6 +1873,10 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::dayplan::DayRegion<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::dayplan::DayRegion<B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::index::Index<B>
+pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+pub fn phx_store::index::Index<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin

@@ -474,15 +474,16 @@ impl<B: Backing> BlockPool<B> {
         self.put_node(rid, high);
     }
 
-    /// Adds an entry after the bag's last; a bag holds duplicates.
+    /// Adds an entry after the bag's last, written in place in its tail block; a bag holds duplicates.
     pub fn push(&mut self, bag: &mut BlockBag, key: u32) {
         if bag.tail != NONE {
-            let mut leaf = self.leaf(bag.tail);
+            let Some(leaf) = self.leaves.slice_mut(to_usize(self.n_leaves)).get_mut(to_usize(bag.tail)) else {
+                violation!(clause = "SET.12", "a bag naming a block not in its pool", block = bag.tail);
+            };
             let len = to_usize(leaf.len);
             if len < BLOCK_ENTRIES {
                 set(&mut leaf.keys, len, key);
                 leaf.len += 1;
-                self.put_leaf(bag.tail, leaf);
                 bag.len += 1;
                 return;
             }
@@ -510,6 +511,32 @@ impl<B: Backing> BlockPool<B> {
             out.extend_from_slice(prefix(&leaf.keys, to_usize(leaf.len)));
             self.drop_leaf(id);
             id = leaf.next;
+        }
+        *bag = BlockBag::EMPTY;
+    }
+
+    /// Calls `each` on the bag's entries in the order they were pushed, read in place, a block at a time.
+    pub fn for_each_in_bag(&self, bag: BlockBag, mut each: impl FnMut(u32)) {
+        let leaves = self.leaves.slice(to_usize(self.n_leaves));
+        let mut id = bag.head;
+        while id != NONE {
+            let Some(leaf) = leaves.get(to_usize(id)) else {
+                violation!(clause = "SET.12", "a bag naming a block not in its pool", block = id);
+            };
+            for key in prefix(&leaf.keys, to_usize(leaf.len)) {
+                each(*key);
+            }
+            id = leaf.next;
+        }
+    }
+
+    /// Returns the bag's blocks to the pool and leaves it empty.
+    pub fn empty_bag(&mut self, bag: &mut BlockBag) {
+        let mut id = bag.head;
+        while id != NONE {
+            let next = self.leaf(id).next;
+            self.drop_leaf(id);
+            id = next;
         }
         *bag = BlockBag::EMPTY;
     }

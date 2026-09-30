@@ -76,7 +76,7 @@ pub fn phx_geo::deposits::Deposit::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_geo::deposits::Deposit::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::deposits::Deposit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::deposits::DEPOSITS_STREAM: phx_core::streams::StreamDecl
-pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>  // used by: phx-core, phx-market, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>  // used by: phx-core, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_geo::deposits::everywhere(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> alloc::vec::Vec<alloc::string::String>
 pub fn phx_geo::deposits::row_of(&[phx_geo::deposits::Deposit], u32) -> phx_num::missing::Missing<phx_id::ids::Slot>
 pub mod phx_geo::distance  // used by: phx-cli, phx-fin, phx-market, phx-obs, phx-world
@@ -178,7 +178,7 @@ impl phx_geo::grid::Grid
 pub fn phx_geo::grid::Grid::at(&self, u32, u32) -> phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
 pub fn phx_geo::grid::Grid::centre_m(&self, phx_id::ids::TileId) -> (u64, u64)
 pub fn phx_geo::grid::Grid::direction(&self, phx_id::ids::TileId, phx_id::ids::TileId) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-fin, phx-world
-pub fn phx_geo::grid::Grid::index(&self, phx_id::ids::TileId) -> usize  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub fn phx_geo::grid::Grid::index(&self, phx_id::ids::TileId) -> usize  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-tec
 pub fn phx_geo::grid::Grid::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_geo::grid::Grid::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_geo::grid::Grid::length_m(&self, phx_id::ids::TileId, i16, phx_id::ids::TileId, i16) -> u64
@@ -219,13 +219,13 @@ pub fn phx_geo::network::Network::rebuild_derived(&mut self, &mut phx_store::reb
 pub fn phx_geo::network::Network::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::network::Route
 pub phx_geo::network::Route::metres: u64  // used by: phx-market, phx-world
-pub phx_geo::network::Route::mode: u16  // used by: phx-core, phx-market, phx-rand, phx-world
+pub phx_geo::network::Route::mode: u16  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
 pub phx_geo::network::Route::segments: alloc::vec::Vec<usize>  // used by: phx-check, phx-macros, phx-market, phx-world
 pub struct phx_geo::network::Segment
 pub phx_geo::network::Segment::from: phx_id::ids::ZoneId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_geo::network::Segment::metres: u64  // used by: phx-market, phx-world
-pub phx_geo::network::Segment::mode: u16  // used by: phx-core, phx-market, phx-rand, phx-world
-pub phx_geo::network::Segment::to: phx_id::ids::ZoneId  // used by: phx-check, phx-core, phx-exec, phx-ledger, phx-market, phx-store, phx-world, sys-lab
+pub phx_geo::network::Segment::mode: u16  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub phx_geo::network::Segment::to: phx_id::ids::ZoneId  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-store, phx-world, sys-lab
 pub phx_geo::network::Segment::tonnes: u64  // used by: phx-world
 impl phx_store::save::Saved for phx_geo::network::Segment where phx_id::ids::ZoneId: phx_store::save::Saved, u16: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_geo::network::Segment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
@@ -241,7 +241,7 @@ pub mod phx_geo::noise
 pub struct phx_geo::noise::Lattice
 impl phx_geo::noise::Lattice
 pub fn phx_geo::noise::Lattice::at(&self, f64, f64) -> f64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
-pub fn phx_geo::noise::Lattice::draw(u32, u32, &mut phx_rand::draws::Draws) -> phx_geo::noise::Lattice  // used by: phx-core, phx-market, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_geo::noise::Lattice::draw(u32, u32, &mut phx_rand::draws::Draws) -> phx_geo::noise::Lattice  // used by: phx-core, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_geo::noise::fractal(&[phx_geo::noise::Lattice], f64, f64, f64) -> f64
 pub fn phx_geo::noise::octaves(u32, u32, u8, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_geo::noise::Lattice>
 pub mod phx_geo::partition  // used by: phx-cli, phx-core, phx-exec, phx-market, phx-rand, phx-val, phx-world

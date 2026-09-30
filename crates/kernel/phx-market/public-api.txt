@@ -97,7 +97,7 @@ pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_mark
 pub mod phx_market::meet  // used by: phx-fin, phx-world
 pub struct phx_market::meet::Buyer  // used by: phx-fin, phx-world
 pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey  // used by: phx-core, phx-fin, phx-ledger, phx-obs, phx-store, phx-world
-pub phx_market::meet::Buyer::place: u32  // used by: if-credit, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_market::meet::Buyer::place: u32  // used by: if-credit, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub phx_market::meet::Buyer::subject: u64  // used by: phx-cli, phx-core, phx-fin, phx-id, phx-rand, phx-world, sys-bnk, sys-dem
 pub phx_market::meet::Buyer::want: phx_market::retail::Want  // used by: phx-core, phx-fin, phx-world
 impl phx_store::save::Saved for phx_market::meet::Buyer where phx_id::ids::PartyKey: phx_store::save::Saved, u64: phx_store::save::Saved, phx_market::retail::Want: phx_store::save::Saved, u32: phx_store::save::Saved
