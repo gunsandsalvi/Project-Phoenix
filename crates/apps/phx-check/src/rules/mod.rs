@@ -38,6 +38,7 @@ mod register_reads;
 mod size_split;
 mod statics;
 mod substeps;
+pub mod traversals;
 mod unsafe_code;
 
 pub mod attrs;
@@ -179,6 +180,12 @@ pub const RULES: &[Rule] = &[
         run: hot_paths::run,
     },
     Rule { id: "PC-94", title: "no mechanism split by size", since: "S1.24", run: size_split::run },
+    Rule {
+        id: "PC-96",
+        title: "whole-table walks only through the kernel's traversals or declared sweeps",
+        since: "S1.121",
+        run: traversals::run,
+    },
 ];
 
 /// Rules retired with what they guarded, their numbers kept and never reused.

@@ -1,0 +1,451 @@
+# The sites PC-96 admits for now, 79 in all, held to `phx_check.exceptions_pc96`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::deposits"
+what = "deposits_of"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::open_accounts"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::post_agencies"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::posts_held"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit_close"
+what = "totals"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::held"
+what = "deposits_of"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::held"
+what = "money_totals"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::held"
+what = "totals"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::audit_debt"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::issue_held"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_books.rs"
+item = "Core::owed_on_loans"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::bank_deposits"
+what = "deposits_of"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "deposits_of"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::requests"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::returns"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::firm_loans"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::household_loans"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::money_breaks"
+what = "deposits_of"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::money_breaks"
+what = "issuer_held"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::money_breaks"
+what = "money_totals"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "deposits_of"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "issuer_held"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "money_totals"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::close_contracts"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::review_extraction"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::persons_by_region"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::cover_by_place"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "0..len()"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::ship"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::attend"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_inputs"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::cheapest"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::close_services"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::count_stances"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::deliver_sales"
+what = "totals"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::firm_slots"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::goods_day"
+what = "totals"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::make"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::mark_surprised"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_expected"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_markups"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_stocks"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::opening_spending"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::region_shares"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::region_shares"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::spoil"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::stalls"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::firm_hours"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "deal"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::searching_persons"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::class_opening_loans"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::open_credit"
+what = "live_slots"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Core::refresh_windows"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::investment_wants"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "firm_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::plant_capacity"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::wear_plant"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::seat_player"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::open_hazards"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::run_hazards"
+what = "0..len()"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Core::measure_rates"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::employed_ids"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::exposed"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::labour_force"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::money_stock"
+what = "live_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::audit_taxes"
+what = "open_slots"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::destroy"
+what = "live_slots"
+count = 1

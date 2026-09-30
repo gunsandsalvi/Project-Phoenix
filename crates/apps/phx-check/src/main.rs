@@ -87,7 +87,8 @@ fn main() -> ExitCode {
 }
 
 /// The rules whose sites an exceptions file can admit, with how each finds them.
-const FINDERS: &[(&str, exceptions::Finder)] = &[(rules::hot_paths::RULE, rules::hot_paths::found)];
+const FINDERS: &[(&str, exceptions::Finder)] =
+    &[(rules::hot_paths::RULE, rules::hot_paths::found), (rules::traversals::RULE, rules::traversals::found)];
 
 fn exceptions_command(ws: &Workspace, rule: &str, write: bool) -> ExitCode {
     let Some((id, find)) = FINDERS.iter().find(|(id, _)| *id == rule) else {
