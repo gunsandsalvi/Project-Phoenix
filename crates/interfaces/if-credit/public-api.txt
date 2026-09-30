@@ -10,7 +10,7 @@ pub fn if_credit::central::Corridor::rebuild_skipped(&mut self)  // used by: phx
 pub fn if_credit::central::Corridor::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct if_credit::central::Request  // used by: sys-bnk
 pub if_credit::central::Request::borrow: i64  // used by: phx-world, sys-bnk
-pub if_credit::central::Request::place: i64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub if_credit::central::Request::place: i64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub struct if_credit::central::RequestIn  // used by: phx-world, sys-bnk
 pub if_credit::central::RequestIn::collateral: i64  // used by: phx-ledger, phx-world, sys-bnk
 pub if_credit::central::RequestIn::reserves: i64  // used by: phx-core, phx-fin, phx-world, sys-bnk

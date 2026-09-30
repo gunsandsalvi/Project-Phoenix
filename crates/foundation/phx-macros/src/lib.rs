@@ -70,7 +70,8 @@ pub fn declare_fact(input: TokenStream) -> TokenStream {
     decl::fact_decl(input.into()).into()
 }
 
-/// A kind of party, `pub NAME = "kind" { legal_form: "…", clause: "…" }`.
+/// A kind of party, `pub NAME = "kind" { legal_form: "…", place: Site { word: 0 }, clause: "…" }`: its place one of
+/// `Site`, `Region` or `Country` with its record word, or `Sited`.
 #[proc_macro]
 pub fn declare_kind(input: TokenStream) -> TokenStream {
     decl::kind_decl(input.into()).into()

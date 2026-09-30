@@ -838,6 +838,10 @@ an interface item whose writer is not registered.
   members, its heirs and creditors), or whose owners hold its equity (`Feature::HasOwners`) while being its own
   members.
 
+  A kind is refused whose place (`KindDecl::place`: its site's tile, its region or its country in a word of its
+  record, or `Sited` by its population declaration) is read from a word beyond the record its parties are begun with,
+  or which is sited by a population declaration that sites it by none.
+
   The opening refuses a primitive absent for what the world holds, naming it, rather than reading it as zero: a product
   with no lead time (`TEC.lead_time`, compiled once into `CoreGoods::lead`), a country with no lending rate
   (`GEN.lending_rate`) or labour law, a product with no opening price in a country (`GDS.opening_price`, read for the

@@ -12,8 +12,8 @@ use phx_num::Fixed;
 
 pub use opening::site;
 
-declare_kind! { pub CENTRAL_BANK = "central_bank" { legal_form: "central bank", clause: "CB.1" } }
-declare_kind! { pub TREASURY = "treasury" { legal_form: "treasury", clause: "CB.1" } }
+declare_kind! { pub CENTRAL_BANK = "central_bank" { legal_form: "central bank", place: Site { word: 0 }, clause: "CB.1" } }
+declare_kind! { pub TREASURY = "treasury" { legal_form: "treasury", place: Site { word: 0 }, clause: "CB.1" } }
 
 declare_stream! { pub OpeningStream = "CB.opening" { purpose: Opening, keyed: false, clause: "GEN.3" } }
 

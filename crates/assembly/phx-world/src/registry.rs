@@ -8,7 +8,7 @@ use phx_core::{CountryEntry, DataFile, Declarations, Findings, ItemDecl, Opening
 use phx_geo::state::MAP_PHASE;
 use phx_geo::{Allotment, GeoState};
 use phx_id::{CountryId, SystemCode};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::Missing;
 use phx_rand::Seed;
 
@@ -85,6 +85,31 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .filter(|(_, kind)| !forms.iter().any(|f| f.name == kind.legal_form))
         .map(|(_, kind)| {
             format!("kind `{}` takes the legal form `{}`, which the law does not declare", kind.name, kind.legal_form)
+        })
+        .collect()
+}
+
+/// Kinds whose place their records do not hold: a word beyond the record its parties are begun with — a population
+/// kind's its attributes and positions, the firm's its record, every other kind's one word, its site's tile or its
+/// country — or a kind sited by a population declaration that sites it by none.
+#[opening]
+fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]) -> Vec<String> {
+    let firm = crate::consts::kinds::KINDS.get(crate::consts::kinds::FIRM);
+    d.kinds
+        .iter()
+        .filter_map(|(_, k)| {
+            let declared = pop.iter().find(|(p, _)| p.kind == k.name).map(|(p, _)| p);
+            if k.place == phx_core::Place::Sited
+                && !declared.is_some_and(|p| matches!(p.sited_by, phx_num::Missing::Present(_)))
+            {
+                return Some(format!("kind `{}` is sited by a population declaration that sites it by none", k.name));
+            }
+            let words = match declared {
+                Some(p) => p.attrs.len() + p.positions.len(),
+                None if firm == Some(&k.name) => crate::consts::firm::RECORD,
+                None => 1,
+            };
+            k.place.check(k.name, words).err()
         })
         .collect()
 }
@@ -223,6 +248,7 @@ fn prepare(
             (Vec::new(), Vec::new())
         }
     };
+    errors.extend(misplaced_kinds(&d, &pop));
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
     }
@@ -669,3 +695,7 @@ pub(crate) fn assemble_loaded(
     world.loaded = true;
     Ok(world)
 }
+
+#[cfg(test)]
+#[path = "registry_tests.rs"]
+mod tests;

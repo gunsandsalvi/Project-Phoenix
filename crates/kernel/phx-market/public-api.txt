@@ -97,7 +97,7 @@ pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_mark
 pub mod phx_market::meet  // used by: phx-fin, phx-world
 pub struct phx_market::meet::Buyer  // used by: phx-fin, phx-world
 pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey  // used by: phx-core, phx-fin, phx-ledger, phx-obs, phx-store, phx-world
-pub phx_market::meet::Buyer::place: u32  // used by: if-credit, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_market::meet::Buyer::place: u32  // used by: if-credit, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-macros, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub phx_market::meet::Buyer::subject: u64  // used by: phx-cli, phx-core, phx-fin, phx-id, phx-rand, phx-world, sys-bnk, sys-dem
 pub phx_market::meet::Buyer::want: phx_market::retail::Want  // used by: phx-core, phx-fin, phx-world
 impl phx_store::save::Saved for phx_market::meet::Buyer where phx_id::ids::PartyKey: phx_store::save::Saved, u64: phx_store::save::Saved, phx_market::retail::Want: phx_store::save::Saved, u32: phx_store::save::Saved
@@ -119,7 +119,7 @@ impl phx_store::save::Saved for phx_market::meet::Meeting where alloc::vec::Vec<
 pub fn phx_market::meet::Meeting::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_market::meet::Meeting::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
 pub fn phx_market::meet::Meeting::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
-pub struct phx_market::meet::Place  // used by: phx-fin, phx-world, sys-dem
+pub struct phx_market::meet::Place  // used by: phx-core, phx-fin, phx-world, sys-dem
 pub phx_market::meet::Place::near: alloc::vec::Vec<(u32, f64)>  // used by: phx-fin, phx-geo, phx-world
 pub struct phx_market::meet::Sale  // used by: phx-world
 pub phx_market::meet::Sale::buyer: phx_id::ids::PartyKey  // used by: phx-world
@@ -146,7 +146,7 @@ pub struct phx_market::reach::Reach
 impl phx_market::reach::Reach
 pub fn phx_market::reach::Reach::new(&phx_market::reach::MarketPrims, &phx_core::register::Register) -> phx_market::reach::Reach  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
-pub struct phx_market::reach::Site  // used by: phx-check, phx-exec
+pub struct phx_market::reach::Site  // used by: phx-check, phx-core, phx-exec
 pub phx_market::reach::Site::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-core, phx-geo, phx-ledger, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub phx_market::reach::Site::zone: phx_id::ids::ZoneId  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-world
 pub const phx_market::reach::CLOSED_BORDERS: phx_core::register::PrimDecl

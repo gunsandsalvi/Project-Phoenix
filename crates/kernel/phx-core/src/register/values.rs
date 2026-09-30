@@ -977,12 +977,8 @@ mod tests {
     /// The committed legal forms, as their declaration's value.
     fn declared_forms() -> Vec<crate::kinds::LegalForm> {
         let file: toml::Table = toml::from_str(include_str!("../../../../../data/shared/PTY.toml")).unwrap();
-        let entry = file["primitive"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|p| p["id"].as_str() == Some("PTY.legal_forms"))
-            .unwrap();
+        let entry =
+            file["primitive"].as_array().unwrap().iter().find(|p| p["id"].as_str() == Some("PTY.legal_forms")).unwrap();
         legal_forms(&entry["value"]).unwrap()
     }
 

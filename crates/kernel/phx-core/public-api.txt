@@ -792,10 +792,22 @@ pub phx_core::kinds::Owners::Shareholders
 pub phx_core::kinds::Owners::State  // used by: phx-world
 impl phx_core::kinds::Owners
 pub fn phx_core::kinds::Owners::parse(&str) -> core::result::Result<phx_core::kinds::Owners, alloc::string::String>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-macros
+pub enum phx_core::kinds::Place  // used by: phx-fin, phx-market, phx-world, sys-dem
+pub phx_core::kinds::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
+pub phx_core::kinds::Place::Country::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::kinds::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::kinds::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market
+pub phx_core::kinds::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::kinds::Place::Sited  // used by: phx-world
+impl phx_core::kinds::Place
+pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
+pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub struct phx_core::kinds::KindDecl  // used by: phx-macros
 pub phx_core::kinds::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::kinds::KindDecl::legal_form: &'static str  // used by: phx-world
 pub phx_core::kinds::KindDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::kinds::KindDecl::place: phx_core::kinds::Place  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 #[repr(transparent)] pub struct phx_core::kinds::KindId(_)
 impl phx_core::kinds::KindId
 pub const fn phx_core::kinds::KindId::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -1854,6 +1866,17 @@ pub phx_core::Notice::Never  // used by: phx-pop, phx-world
 pub enum phx_core::Outside
 pub phx_core::Outside::Edge
 pub phx_core::Outside::Refuse
+pub enum phx_core::Place  // used by: phx-fin, phx-market, phx-world, sys-dem
+pub phx_core::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
+pub phx_core::Place::Country::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market
+pub phx_core::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::Place::Sited  // used by: phx-world
+impl phx_core::kinds::Place
+pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
+pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub enum phx_core::PopItem  // used by: phx-pop
 pub phx_core::PopItem::Attr(phx_core::pop::AttrDecl)  // used by: phx-obs, phx-pop
 pub phx_core::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)  // used by: phx-pop
@@ -2388,6 +2411,7 @@ pub struct phx_core::KindDecl  // used by: phx-macros
 pub phx_core::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::KindDecl::legal_form: &'static str  // used by: phx-world
 pub phx_core::KindDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::KindDecl::place: phx_core::kinds::Place  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 #[repr(transparent)] pub struct phx_core::KindId(_)
 impl phx_core::kinds::KindId
 pub const fn phx_core::kinds::KindId::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec

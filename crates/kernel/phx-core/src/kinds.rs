@@ -13,7 +13,7 @@ declare_prim! {
 crate::declare_kind! {
     /// An estate: the members of a cell who end on one occasion, holding their count of what they held until it is
     /// sold and passed on.
-    pub ESTATE_KIND = "estate" { legal_form: "estate", clause: "PTY.9" }
+    pub ESTATE_KIND = "estate" { legal_form: "estate", place: Country { word: 0 }, clause: "PTY.9" }
 }
 
 /// A kind of party, numbered at assembly in declaration order.
@@ -33,13 +33,52 @@ impl KindId {
     }
 }
 
-/// A kind of party, its legal form named from its country's declared forms.
-#[clause("PTY.4")]
+/// A kind of party, its legal form named from its country's declared forms, and where its parties' region and country
+/// are read from.
+#[clause("PTY.4", "PTY.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct KindDecl {
     pub name: &'static str,
     pub legal_form: &'static str,
+    pub place: Place,
     pub clause: &'static str,
+}
+
+/// Where a kind's parties' region and country are read from: the tile of their site, their region or their country,
+/// each in a word of their record, or their region in the attribute their population declaration sites them by.
+#[clause("PTY.5")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Place {
+    Site { word: u16 },
+    Region { word: u16 },
+    Country { word: u16 },
+    Sited,
+}
+
+impl Place {
+    /// The record word the place is read from; none for a kind its population declaration sites.
+    #[must_use]
+    pub const fn word(self) -> Option<u16> {
+        match self {
+            Place::Site { word } | Place::Region { word } | Place::Country { word } => Some(word),
+            Place::Sited => None,
+        }
+    }
+
+    /// A place read from a word of a record of `words` words lies within it; a sited kind's attribute is checked by
+    /// its population declaration.
+    ///
+    /// # Errors
+    /// A word beyond the record.
+    #[opening]
+    pub fn check(self, kind: &str, words: usize) -> Result<(), String> {
+        match self.word() {
+            Some(word) if usize::from(word) >= words => {
+                Err(format!("kind `{kind}` reads its place from word {word} of a record of {words}"))
+            }
+            _ => Ok(()),
+        }
+    }
 }
 
 /// What a legal form may be; a form has each feature its country lists for it, and no other.
@@ -131,7 +170,7 @@ impl LegalForm {
 
 #[cfg(test)]
 mod tests {
-    use super::{Feature, LegalForm, Owners};
+    use super::{Feature, LegalForm, Owners, Place};
 
     #[test]
     fn legal_form_needs_ending() {
@@ -169,5 +208,22 @@ mod tests {
         };
         assert!(form.validate().is_err());
         assert!(LegalForm { features: vec![], ..form }.validate().is_ok());
+    }
+
+    #[test]
+    fn country_place_reads_country_word() {
+        assert_eq!(super::ESTATE_KIND.place, Place::Country { word: 0 });
+        assert_eq!(Place::Country { word: 0 }.word(), Some(0));
+        assert_eq!(Place::Sited.word(), None);
+    }
+
+    #[test]
+    fn place_beyond_stride_refused() {
+        assert_eq!(
+            Place::Region { word: 1 }.check("firm", 1),
+            Err("kind `firm` reads its place from word 1 of a record of 1".to_owned())
+        );
+        assert_eq!(Place::Site { word: 0 }.check("bank", 1), Ok(()));
+        assert_eq!(Place::Sited.check("household", 0), Ok(()), "its population declaration checks the attribute");
     }
 }

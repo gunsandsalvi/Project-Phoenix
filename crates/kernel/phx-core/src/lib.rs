@@ -55,7 +55,7 @@ pub use facts::{
 };
 pub use findings::{Finding, FindingOwner, Findings, Unit};
 pub use hazards::{ActsOn, DrawScheme, HazardDecl, RateChange, RateFn, annual_to_daily};
-pub use kinds::{ESTATE_KIND, Feature, KindDecl, KindId, LEGAL_FORMS, LegalForm};
+pub use kinds::{ESTATE_KIND, Feature, KindDecl, KindId, LEGAL_FORMS, LegalForm, Place};
 pub use phx_macros::{declare_fact, declare_hazard, declare_kind, declare_prim, declare_stream};
 pub use policy::{AnnounceRefused, Announcement, PolicyValue};
 pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOpening, RoleDecl};
