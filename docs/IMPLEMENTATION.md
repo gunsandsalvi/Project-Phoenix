@@ -10125,7 +10125,11 @@ count and serve 2.5, item 1.5, spend item 1 ≈ 18; the chunk-local placement is
 buffers (ledger line 21, the 6a live set): +67.5 MB (wants 6.75 M × 10 B, their pages recycled into the 8 B items; the
 zone column is the 13.5 MB REP.24's distance adds); +16 MB (meeting scratch, ≤ 2 MiB × ≤ 8 workers); +18 MB (spend
 accumulator, 2.2 M × 8 B) — `fin.retail.buffer_mb` 102. Traversal: one job per instance on the pool, in ascending
-instance order, chunked by declared cost (K-11).
+instance order, chunked by declared cost (K-11). The world's page faults: the retail meeting's spans (`goods`,
+`goods.households`, `goods.sales`, `goods.buyers`) faulted ≈ 27 k pages a day at S1.177, their per-day allocations
+returned to the system and taken again, which held `phx_budget.faults_per_day` at 16.3–29.1 k (restated to 32 035
+then); with the meeting on kept buffers the step measures the world's faults again and lowers that ratchet to a tenth
+above the higher of two runs.
 **Guards**: `phx_market::meet` on PC-92's hot list; no allocation in the kernel after warm-up (PC-99).
 **Not allowed**: an alias table or weight table rebuilt per round or per sold-out place; a pass over every stall; a
 stored quantity per stall; a taste drawn per seller; a buyer or seller of last resort; an allocation per day.

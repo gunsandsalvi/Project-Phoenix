@@ -12,6 +12,11 @@
 # no room for it and are raised back to the margin — and the cores busy at 1.40, below the measure.
 # The capacities read from the declared table (S1.115, 2026-09-30): two smokes held 1 506 and 1 492 bytes a person,
 # the reservations shrunk to the design point; the bytes stand a tenth above the higher.
+# The faults restated (2026-10-01): runs of S1.168, S1.169 and S1.177 faulted 23 619, 28 264, 24 234, 29 123 and
+# 16 337 pages a day against the 22 098 of the S1.24 measure, the machine's noise wider than its tenth; the retail
+# meeting's spans fault most of them, its per-day allocations handed back to the system and taken again. The ratchet
+# stands a tenth above the highest until the meeting runs on kept buffers (S1.306), which measures the faults again
+# and lowers it.
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_median"
@@ -30,7 +35,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.faults_per_day"
-value = 22098
+value = 32035
 direction = "down"
 
 [[ratchet]]
@@ -426,7 +431,10 @@ direction = "down"
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
 # and 8 144 226 spin rounds a day, and a 4 MiB baseline. The counts stand a tenth above the measure, the spin, which
-# follows the machine's timing, a quarter. Spin is counted in rounds: its time is not read round by round. Rows visited
+# follows the machine's timing, a quarter. The spin is restated in nanoseconds (2026-10-01): S1.169's pool times its
+# spin, each worker keeping up at most `SPIN_US` (20 µs) after a dispatch, and counts what it spun in nanoseconds; three
+# runs at S1.169 and S1.177 spun 20.9–21.5 ms a day, three workers after each of the day's ≈ 360 dispatches, and the
+# ratchet stands a quarter above the higher. Rows visited
 # a day are counted by K-14's sweep ledger (S1.171), and join once the day runner counts each slot's rows into it
 # (S1.186).
 
@@ -456,8 +464,8 @@ value = 397
 direction = "down"
 
 [[ratchet]]
-counter = "phx_budget.spin_rounds_per_day"
-value = 10180282
+counter = "phx_budget.spin_ns_per_day"
+value = 26833890
 direction = "down"
 
 [[ratchet]]

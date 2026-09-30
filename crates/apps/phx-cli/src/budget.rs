@@ -149,7 +149,7 @@ pub fn cost(w: Inspector<'_>, peak: Option<u64>, span: &Span, beside: &Beside) -
     let allocs = put("phx_budget.allocs_per_day", beside.allocs_per_day);
     let below = put("phx_budget.spans_below_busy", whole(beside.spans_below_busy));
     let barriers = put("phx_budget.barriers_per_day", per(dispatches, Some(days)));
-    let spin_rate = put("phx_budget.spin_rounds_per_day", per(spun, Some(days)));
+    let spin_rate = put("phx_budget.spin_ns_per_day", per(spun, Some(days)));
     let baseline = put("phx_budget.baseline_mb", whole(beside.baseline_mb));
     let block = json!({
         "persons": persons,
@@ -163,7 +163,7 @@ pub fn cost(w: Inspector<'_>, peak: Option<u64>, span: &Span, beside: &Beside) -
         "allocs_per_day": allocs,
         "spans_below_busy": below,
         "barriers_per_day": barriers,
-        "spin_rounds_per_day": spin_rate,
+        "spin_ns_per_day": spin_rate,
         "baseline_mb": baseline,
     });
     Cost { counters, block }

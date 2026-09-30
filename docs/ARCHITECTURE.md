@@ -3745,9 +3745,10 @@ credited while the world holds it (GEN.10).
    (unit costs reckoned, counted on the core in a field never saved, over firms × days; the rule's value 1, R7),
    `meeting_work_per_sale` (the sellers' weights the meeting reckons, over its sales; R11), `allocs_per_day` (the
    bench's allocator from the tenth day on; the rule's 0, R5), `spans_below_busy` (spans of 64 k items or more on
-   fewer than 2.5 busy cores; R3), `barriers_per_day` and `spin_rounds_per_day` (the pools' dispatches and spin, R8),
+   fewer than 2.5 busy cores; R3), `barriers_per_day` and `spin_ns_per_day` (the pool's dispatches and its workers' spin in nanoseconds, R8),
    `baseline_mb`. A `phx_budget.` ratchet the run did not produce is refused, never read as met; rows visited a day
-   join with K-14's sweep ledger (S1.171). The other counters are not built.
+   join with K-14's sweep ledger once the day runner counts each slot's rows into it (S1.186). The other counters are
+   not built.
 9. **The design point's ratchets**, `perf/budget.toml`'s `[fin]` section, seeded from `perf/design.toml` by
    `phx fin --seed-budget` (`phx-fin::seed`) so the two files cannot disagree, between its marker lines and edited
    only by it: `fin.day.<b|nb|h|bc>_core_ms` from the day's stage line and `[day.bc]`'s extra; `fin.turn.median_ms`
