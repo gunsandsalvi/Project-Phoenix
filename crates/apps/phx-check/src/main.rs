@@ -92,6 +92,7 @@ const FINDERS: &[(&str, exceptions::Finder)] = &[
     (rules::traversals::RULE, rules::traversals::found),
     (rules::dispatch::RULE, rules::dispatch::found),
     (rules::names::RULE, rules::names::found),
+    (rules::allocation::RULE, rules::allocation::found),
 ];
 
 fn exceptions_command(ws: &Workspace, rule: &str, write: bool) -> ExitCode {

@@ -1,0 +1,3361 @@
+# The sites PC-99 admits for now, 903 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::account_moves"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::audit_accounts"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::audit_accounts"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::audit_accounts"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::post_agencies"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::post_agencies"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::post_agencies"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::posts_held"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::posts_held"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::posts_held"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::quit_jobs"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit_close"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::auctions"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::auctions"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::audit_debt"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bill"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bills"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bills"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bills"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bills"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_books.rs"
+item = "Core::book_loans"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_books.rs"
+item = "Core::book_loans"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_books.rs"
+item = "Core::open_loan_books"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::facility_family"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::open_central"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::open_central"
+what = "`vec!`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::open_position"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::record_fund_days"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::remittances"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::requests"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::returns"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::firm_loans"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::firm_loans"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::firm_loans"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::household_loans"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::household_loans"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::household_loans"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::lend_shortfalls"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::loan_family"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_loans"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_state"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_state"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_state"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_state"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "loan_terms"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::estates_pay"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::estates_pay"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::estates_pay"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::hold_arrears"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::money_breaks"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::money_breaks"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::pay_currencies"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::record_wages_settled"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::withhold"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Core::open_decisions"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Core::open_decisions"
+what = "`.collect()`"
+count = 6
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Core::open_decisions"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Decisions::appoint"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Decisions::taken"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Decisions::vacate"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::claims_of"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::close_contracts"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::debts_of"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::end_defaulted"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::open_insolvency"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::open_insolvency"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "shares"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "shares"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::audit_deposits"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::audit_deposits"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::review_extraction"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::drafts"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::open_firms"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::open_firms"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::persons_by_region"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::price_drafts"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::price_drafts"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "apportion"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "apportion_amount"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "cells"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "cells"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "cells"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "mean_hours"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "row"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "share_output"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "snapshot"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "snapshot"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "snapshot"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::basis"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::cover_by_place"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::meet_carriage"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::meet_carriage"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::attend"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::attend"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_inputs"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_services"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_services"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::decide_spending"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::decide_spending"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::deliver_sales"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::deliver_sales"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::firm_slots"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::goods_day"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::goods_day"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::goods_day"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::input_orders"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::input_orders"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::make"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::mark"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::mark_surprised"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_expected"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_expected"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`.collect()`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`.to_owned()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_stocks"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::public_wants"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::public_wants"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::recipes"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::region_shares"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::region_shares"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::review_chance"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::reviewing_today"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::spoil"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::stalls"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::stored_inputs"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "by_product_of"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "by_product_of"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "by_product_of"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::drawn_jobs"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::drawn_jobs"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::firm_hours"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::firm_hours"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::job_family"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::open_jobs"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::open_jobs"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::open_jobs"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::open_jobs"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::pay_jobs"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::pay_jobs"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::put_last_point"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "activity_rates"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "deal"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "deal"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "net_needs"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "net_needs"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "occupation_wages"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::answer_offers"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::answer_reviews"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::answer_reviews"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::end_benefit"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::hire"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::keep_vacancies"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::keep_vacancies"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::keep_vacancies"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::lay_off"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::leave_jobs"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post_one"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post_one"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::review_wages"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::search_round"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::search_round"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::searches_again"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::seekers"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::seekers"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::seekers"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::select_applicants"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::select_applicants"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::separate"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::set_last_point"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::staff_of"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::staff_of"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "staff_means"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::apply_for_loan"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::apply_for_loan"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::apply_for_loan"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::apply_for_loan"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::class_opening_loans"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::open_credit"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::open_credit"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::open_credit"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::review_lenders"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::begin_household"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::empty"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::empty"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::empty"
+what = "`Vec::new`"
+count = 22
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open_deposits"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open_deposits"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open_deposits"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open_deposits"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::pension_family"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::persons_of"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "DatedFamily::schedule_of"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Core::refresh_windows"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Core::refresh_windows"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Core::refresh_windows"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Outlooks::print"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Outlooks::print"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Outlooks::print"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Series::enter_year"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::price_owners"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::price_owners"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::price_owners"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::price_owners"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::investment_wants"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "`.to_string()`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::plant_capacity"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::plant_products"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::wear_plant"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::wear_plant"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "opening_plant"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "opening_plant"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::queue"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::say"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::seat_player"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::seat_player"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::seat_player"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_player.rs"
+item = "Core::seat_player"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::end_household"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::open_hazards"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::open_hazards"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::open_hazards"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::open_hazards"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::outcomes"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::outcomes"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::outcomes"
+what = "`Vec::new`"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::person_left"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::record_event"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::run_hazards"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::run_hazards"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Core::measure_rates"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Core::measure_rates"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Core::measure_rates"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::close_month"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::close_month"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::close_month"
+what = "`vec!`"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::employed_ids"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::exposed"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::labour_force"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::life_table"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::money_stock"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::money_stock"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::open_stats"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::open_stats"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "link"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::accrue_taxes"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::audit_taxes"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::open_taxes"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::owe_tax"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::destroy"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::weather_day"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::weather_day"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "struck_tiles"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "struck_tiles"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/day.rs"
+item = "World::core_day"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/mod.rs"
+item = "Calendar::move_window"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/mod.rs"
+item = "Calendar::new"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/mod.rs"
+item = "Calendar::new"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/mod.rs"
+item = "CountryCalendar::build"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/mod.rs"
+item = "CountryCalendar::build"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/rules.rs"
+item = "CountryRules::holidays_around"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/rules.rs"
+item = "CountryRules::holidays_around"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/rules.rs"
+item = "CountryRules::holidays_in"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/rules.rs"
+item = "CountryRules::validate"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/rules.rs"
+item = "CountryRules::validate"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/calendar/rules.rs"
+item = "CountryRules::validate"
+what = "`format!`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-core/src/decisions.rs"
+item = "DecisionKinds::check"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/decisions.rs"
+item = "DecisionKinds::check"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/decisions.rs"
+item = "DecisionPointDecl::validate"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/decisions.rs"
+item = "PlayerQueue::unseated"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/decisions.rs"
+item = "Vec::decode"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/events.rs"
+item = "EventStore::get"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/events.rs"
+item = "EventStore::get"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/events.rs"
+item = "EventStore::record"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/events_rule.rs"
+item = "EventsRule::new"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/events_rule.rs"
+item = "EventsRule::new"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/facts.rs"
+item = "check_claims"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/facts.rs"
+item = "check_claims"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/facts.rs"
+item = "check_claims"
+what = "`format!`"
+count = 5
+
+[[site]]
+path = "crates/kernel/phx-core/src/facts.rs"
+item = "code"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "FlowBufs::group"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "FlowBufs::group"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "Grouped::new"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "Grouped::new"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "Grouped::new"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "Grouped::new"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "Ranges::new"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Shipments::new"
+what = "`Vec::new`"
+count = 7
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Shipments::pass"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Shipments::shrink"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Stocks::end"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Stocks::succeed"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Stocks::totals"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "breaks"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "nature_net"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/hazards.rs"
+item = "HazardDecl::validate"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/kinds.rs"
+item = "LegalForm::validate"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/policy.rs"
+item = "PolicyValue::open"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/products.rs"
+item = "ProductEntry::validate"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Books::deposit_breaks"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Books::owed"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::apply"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::decide"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::decide"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::index"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::index"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::net_all"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::net_all"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::own"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::own"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::settle"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::settle"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::settle"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::short_banks"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::take_off"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::take_off"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::take_off"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::values"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "map_items"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "matching"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "range_pass"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "range_pass"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/store.rs"
+item = "Family::new"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/store.rs"
+item = "books"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/store.rs"
+item = "deposits_of"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/streams.rs"
+item = "Streams::new"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/streams.rs"
+item = "Streams::new"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/streams.rs"
+item = "Streams::new"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::claims"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::claims"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::refusals"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::refusals"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::refusals"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/units.rs"
+item = "issue_chain"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/units.rs"
+item = "wear"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel::new"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel::new"
+what = "`Vec::new`"
+count = 6
+
+[[site]]
+path = "crates/kernel/phx-exec/src/gather.rs"
+item = "IntentBuf::new"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/gather.rs"
+item = "gather"
+what = "`Vec::with_capacity`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/keyed.rs"
+item = "KeyedReduce::run"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/keyed.rs"
+item = "KeyedReduce::run"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/keyed.rs"
+item = "partition"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/keyed.rs"
+item = "partition"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/os.rs"
+item = "allowed_cores"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/partition.rs"
+item = "Partitioned::default"
+what = "`Vec::new`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-exec/src/partition.rs"
+item = "partition_map_into"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/partition.rs"
+item = "partition_map_into"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::for_each"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::map"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::map_items"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::new"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::new"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::new"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::new"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::new"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "Pool::worker_tids"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/pool.rs"
+item = "map"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "barrier"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "core_rates"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "core_rates"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "core_rates"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "core_rates"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "core_rates"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "filled_region"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/radix.rs"
+item = "radix_sort"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/radix.rs"
+item = "radix_sort"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/spec.rs"
+item = "PoolSpec::unpinned"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/spec.rs"
+item = "read_capacity"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/spec.rs"
+item = "select_cores"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-exec/src/spec.rs"
+item = "select_cores"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/trace.rs"
+item = "Spent::counts"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/traverse.rs"
+item = "agenda_units"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/traverse.rs"
+item = "for_agenda"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/catastrophe.rs"
+item = "distinct_picks"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/catastrophe.rs"
+item = "footprint"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/catastrophe.rs"
+item = "footprint"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/catastrophe.rs"
+item = "hazard_day"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/catastrophe.rs"
+item = "hazard_day"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/catastrophe.rs"
+item = "hazard_day"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/climate.rs"
+item = "ClimateRule::read"
+what = "`.clone()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/climate.rs"
+item = "regions"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/climate.rs"
+item = "regions"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/deposits.rs"
+item = "draw"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/deposits.rs"
+item = "everywhere"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/deposits.rs"
+item = "everywhere"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/deposits.rs"
+item = "resources"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "Land::build"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "Land::build"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "Land::build"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "ZoneDistances::measure"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "ZoneDistances::measure"
+what = "`Vec::with_capacity`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "ZoneDistances::measure"
+what = "`vec!`"
+count = 5
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "dijkstra"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "path_length"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/exposure.rs"
+item = "exposure"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "Ground::new"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "attempt"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "attempt"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "countries"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "countries"
+what = "`format!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "generate"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "places"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "places"
+what = "`.to_string()`"
+count = 6
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "places"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "places"
+what = "`format!`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "places"
+what = "`vec!`"
+count = 5
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "sea_distance"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "sea_distance"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "surface"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "surface"
+what = "`.to_owned()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "surface"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "surface"
+what = "`Vec::with_capacity`"
+count = 5
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "surface"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "terrain"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "tiles_by_part"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/hydrology.rs"
+item = "drainage"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/hydrology.rs"
+item = "drainage"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/hydrology.rs"
+item = "upstream"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "Network::lengths"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "Network::route"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "generate"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "generate"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/noise.rs"
+item = "Lattice::draw"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/noise.rs"
+item = "octaves"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "Marks::new"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "apportion"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "apportion"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "components"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "components"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "divide"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "divide"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "rank"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "rank"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "split"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "split"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "winds"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/prims.rs"
+item = "GeoPrims::declare"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/relief.rs"
+item = "Curve::new"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/relief.rs"
+item = "plates"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/relief.rs"
+item = "raw"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/relief.rs"
+item = "to_curve"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::build"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::build"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::build"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::build"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::market_zones"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::market_zones"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "count"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "curve"
+what = "`.to_vec()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "hazard"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "hazard"
+what = "`format!`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "hazard"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "params"
+what = "`.clone()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "params"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "params"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "params"
+what = "`.to_string()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "segment_tonnes"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "segment_tonnes"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "segment_tonnes"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/algebra.rs"
+item = "Leg::load"
+what = "`Box::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/algebra.rs"
+item = "Leg::load"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/algebra.rs"
+item = "Leg::save"
+what = "`.to_owned()`"
+count = 11
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/algebra.rs"
+item = "Terms::account"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/online.rs"
+item = "Online::new"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/online.rs"
+item = "Online::next"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/opening.rs"
+item = "plain_terms"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/shape.rs"
+item = "shape_of"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/shape.rs"
+item = "shape_of"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/shape.rs"
+item = "terms_of"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/between.rs"
+item = "between"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-market/src/between.rs"
+item = "between"
+what = "`Vec::new`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/carriage.rs"
+item = "carriage"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "Standing::new"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "Standing::new"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "answer"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "answer"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "pick"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "pick"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "search"
+what = "`.collect()`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "search"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "select"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "select"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Standing::of"
+what = "`.clone()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Standing::of"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "by_price"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "meet"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "meet"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "remake"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "remake"
+what = "`vec!`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "serve_round"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "serve_round"
+what = "`Vec::new`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "table"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "table"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "table"
+what = "`Vec::with_capacity`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "table"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/reach.rs"
+item = "Reach::of"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/retail.rs"
+item = "chances_at"
+what = "`.collect()`"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/retail.rs"
+item = "chances_at"
+what = "`vec!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/retail.rs"
+item = "price_chances"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/hazard.rs"
+item = "reached"
+what = "`vec!`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-pop/src/kind.rs"
+item = "PopKindDecl::compile"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/kind.rs"
+item = "PopKindDecl::compile"
+what = "`Vec::new`"
+count = 5
+
+[[site]]
+path = "crates/kernel/phx-pop/src/kind.rs"
+item = "PopKindDecl::compile"
+what = "`format!`"
+count = 7
+
+[[site]]
+path = "crates/kernel/phx-pop/src/kind.rs"
+item = "compile_kinds"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/kind.rs"
+item = "compile_kinds"
+what = "`Vec::with_capacity`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/person.rs"
+item = "unpack"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/persons.rs"
+item = "Persons::compact_due"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-pop/src/persons.rs"
+item = "Persons::new"
+what = "`Vec::new`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/persons.rs"
+item = "Persons::set"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/prims.rs"
+item = "Representation::name"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-store/src/arena.rs"
+item = "ChunkArena::load"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-store/src/column.rs"
+item = "Column::load_as"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-store/src/table.rs"
+item = "SlotAlloc::load"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-store/src/table.rs"
+item = "Table::load"
+what = "`.to_owned()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/prims.rs"
+item = "ValPrims::check"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/types.rs"
+item = "cut"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/types.rs"
+item = "cut"
+what = "`.to_string()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/types.rs"
+item = "windows"
+what = "`.to_vec()`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/types.rs"
+item = "windows"
+what = "`format!`"
+count = 1
+
+[[site]]
+path = "crates/systems/sys-cap/src/rules/wear.rs"
+item = "steady_units"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/systems/sys-cap/src/rules/wear.rs"
+item = "steady_weights"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/systems/sys-frm/src/rules/inputs.rs"
+item = "orders"
+what = "`.collect()`"
+count = 2
+
+[[site]]
+path = "crates/systems/sys-lab/src/rules/post.rs"
+item = "ranked"
+what = "`.collect()`"
+count = 1
+
+[[site]]
+path = "crates/systems/sys-lab/src/rules/select.rs"
+item = "select"
+what = "`.collect()`"
+count = 1

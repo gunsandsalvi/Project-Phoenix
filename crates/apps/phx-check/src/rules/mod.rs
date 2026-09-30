@@ -3,6 +3,7 @@ use std::fmt;
 use crate::workspace::Workspace;
 
 mod agent_writes;
+pub mod allocation;
 pub mod api_snapshot;
 mod audit_reads;
 mod batches;
@@ -200,6 +201,7 @@ pub const RULES: &[Rule] = &[
         since: "S1.123",
         run: names::run,
     },
+    Rule { id: "PC-99", title: "no allocation on the day's paths", since: "S1.124", run: allocation::run },
 ];
 
 /// Rules retired with what they guarded, their numbers kept and never reused.

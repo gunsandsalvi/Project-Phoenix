@@ -45,6 +45,15 @@ counter = "phx_check.exceptions_pc98"
 value = 89
 direction = "down"
 
+# PC-99's admitted sites (S1.124, 2026-09-30): the syntax of allocation on the day's paths as the code stood when the
+# rule came, 903 in all (309 collect, 251 Vec::new, 95 vec!, 95 format!, 62 clone, 27 to_owned, 26 with_capacity, 23
+# to_string, 14 to_vec, 1 Box::new). S1.160 (K-03) and each migration remove theirs; the count only falls, and S1.492
+# empties it.
+[[ratchet]]
+counter = "phx_check.exceptions_pc99"
+value = 903
+direction = "down"
+
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
 # the placeholders a stage brings for later systems. BNK's two loan terms and XB's closed borders (S0.18); a
 # searcher's reservation and an employee's price outlook (HH, S1.08) until households weigh their own; a firm loan's
