@@ -1,40 +1,40 @@
-pub mod if_pop
-pub mod if_pop::consts
+pub mod if_pop  // used by: phx-cli, phx-world, sys-bnk, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc
+pub mod if_pop::consts  // used by: if-base, if-labour, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const if_pop::consts::EDUCATION_VALUES: u32
 pub const if_pop::consts::IDEAL_VALUES: u32
-pub const if_pop::consts::REGIONS: u32
-pub mod if_pop::facts
-pub struct if_pop::facts::After
+pub const if_pop::consts::REGIONS: u32  // used by: phx-world, sys-frm
+pub mod if_pop::facts  // used by: phx-core, phx-macros, phx-world, sys-dem, sys-hh
+pub struct if_pop::facts::After  // used by: phx-world, sys-hh
 impl phx_core::facts::FactDef for if_pop::facts::After
-pub const if_pop::facts::After::ITEM: phx_core::facts::ItemDecl
-pub struct if_pop::facts::Income
+pub const if_pop::facts::After::ITEM: phx_core::facts::ItemDecl  // used by: phx-core, phx-world, sys-dem, sys-hh
+pub struct if_pop::facts::Income  // used by: phx-world, sys-dem, sys-hh
 impl phx_core::facts::FactDef for if_pop::facts::Income
-pub const if_pop::facts::Income::ITEM: phx_core::facts::ItemDecl
-pub struct if_pop::facts::Looked
+pub const if_pop::facts::Income::ITEM: phx_core::facts::ItemDecl  // used by: phx-core, phx-world, sys-dem, sys-hh
+pub struct if_pop::facts::Looked  // used by: phx-world, sys-hh
 impl phx_core::facts::FactDef for if_pop::facts::Looked
-pub const if_pop::facts::Looked::ITEM: phx_core::facts::ItemDecl
-pub struct if_pop::facts::Received
+pub const if_pop::facts::Looked::ITEM: phx_core::facts::ItemDecl  // used by: phx-core, phx-world, sys-dem, sys-hh
+pub struct if_pop::facts::Received  // used by: phx-world, sys-hh
 impl phx_core::facts::FactDef for if_pop::facts::Received
-pub const if_pop::facts::Received::ITEM: phx_core::facts::ItemDecl
-pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 4]
-pub mod if_pop::fertility
-pub const if_pop::fertility::IDEAL: phx_core::pop::AttrDecl
-pub const if_pop::fertility::IDEAL_UNDRAWN: u32
-pub const if_pop::fertility::NOT_TRYING: u32
-pub const if_pop::fertility::TRYING: phx_core::pop::AttrDecl
-pub const if_pop::fertility::TRYING_FOR_CHILD: u32
-pub const if_pop::ABLE: u32
-pub const if_pop::ADULT: phx_core::pop::RoleDecl
-pub const if_pop::CHILD: phx_core::pop::RoleDecl
-pub const if_pop::DISABLED: u32
-pub const if_pop::EDUCATION: phx_core::pop::PersonAttrDecl
-pub const if_pop::EDUCATION_UNRECORDED: u32
-pub const if_pop::FEMALE: u32
-pub const if_pop::HEAD: phx_core::pop::RoleDecl
-pub const if_pop::HEALTH: phx_core::pop::PersonAttrDecl
-pub const if_pop::HOUSEHOLD: &str
-pub const if_pop::ITEMS: &[phx_core::facts::ItemDecl]
-pub const if_pop::MALE: u32
-pub const if_pop::PARTNER: phx_core::pop::RoleDecl
-pub const if_pop::REGION: phx_core::pop::AttrDecl
-pub const if_pop::SEX: phx_core::pop::PersonAttrDecl
+pub const if_pop::facts::Received::ITEM: phx_core::facts::ItemDecl  // used by: phx-core, phx-world, sys-dem, sys-hh
+pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 4]  // used by: sys-hh
+pub mod if_pop::fertility  // used by: sys-dem
+pub const if_pop::fertility::IDEAL: phx_core::pop::AttrDecl  // used by: sys-dem
+pub const if_pop::fertility::IDEAL_UNDRAWN: u32  // used by: sys-dem
+pub const if_pop::fertility::NOT_TRYING: u32  // used by: sys-dem
+pub const if_pop::fertility::TRYING: phx_core::pop::AttrDecl  // used by: sys-dem
+pub const if_pop::fertility::TRYING_FOR_CHILD: u32  // used by: sys-dem
+pub const if_pop::ABLE: u32  // used by: phx-world, sys-dem
+pub const if_pop::ADULT: phx_core::pop::RoleDecl  // used by: sys-bnk, sys-dem, sys-lab, sys-soc
+pub const if_pop::CHILD: phx_core::pop::RoleDecl  // used by: phx-cli, phx-world, sys-dem, sys-lab
+pub const if_pop::DISABLED: u32  // used by: phx-world, sys-dem
+pub const if_pop::EDUCATION: phx_core::pop::PersonAttrDecl  // used by: sys-dem, sys-lab
+pub const if_pop::EDUCATION_UNRECORDED: u32  // used by: sys-dem
+pub const if_pop::FEMALE: u32  // used by: phx-cli, phx-world, sys-dem, sys-lab, sys-soc
+pub const if_pop::HEAD: phx_core::pop::RoleDecl  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub const if_pop::HEALTH: phx_core::pop::PersonAttrDecl  // used by: phx-world, sys-dem
+pub const if_pop::HOUSEHOLD: &str  // used by: phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
+pub const if_pop::ITEMS: &[phx_core::facts::ItemDecl]  // used by: phx-world
+pub const if_pop::MALE: u32  // used by: phx-world, sys-dem, sys-lab, sys-soc
+pub const if_pop::PARTNER: phx_core::pop::RoleDecl  // used by: sys-bnk, sys-dem, sys-lab, sys-soc
+pub const if_pop::REGION: phx_core::pop::AttrDecl  // used by: if-labour, phx-cli, phx-world, sys-dem, sys-frm, sys-lab
+pub const if_pop::SEX: phx_core::pop::PersonAttrDecl  // used by: phx-cli, phx-world, sys-dem, sys-lab, sys-soc

@@ -1,77 +1,77 @@
-pub mod phx_pop
-pub mod phx_pop::consts
+pub mod phx_pop  // used by: phx-cli, phx-world, sys-dem
+pub mod phx_pop::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_pop::consts::BIRTH_BITS: u32
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
 pub const phx_pop::consts::ROLE_BITS: u32
-pub mod phx_pop::hazard
-pub enum phx_pop::hazard::Booking
-pub phx_pop::hazard::Booking::Hit(phx_id::day::Day)
-pub phx_pop::hazard::Booking::Never
-pub phx_pop::hazard::Booking::Redraw(phx_id::day::Day)
-pub fn phx_pop::hazard::any_hit(&[f64]) -> f64
-pub fn phx_pop::hazard::next_booking(&mut phx_rand::draws::Draws, f64, phx_id::day::Day, phx_num::missing::Missing<phx_id::day::Day>) -> phx_pop::hazard::Booking
-pub fn phx_pop::hazard::reached(&mut phx_rand::draws::Draws, &[f64], &mut alloc::vec::Vec<usize>)
-pub mod phx_pop::kind
-pub struct phx_pop::kind::Declared<T>
-pub phx_pop::kind::Declared::item: T
-pub phx_pop::kind::Declared::system: &'static str
+pub mod phx_pop::hazard  // used by: phx-cli, phx-core, phx-geo, phx-macros, phx-world, sys-dem, sys-lab
+pub enum phx_pop::hazard::Booking  // used by: phx-world
+pub phx_pop::hazard::Booking::Hit(phx_id::day::Day)  // used by: phx-world
+pub phx_pop::hazard::Booking::Never  // used by: phx-core, phx-world
+pub phx_pop::hazard::Booking::Redraw(phx_id::day::Day)  // used by: phx-world
+pub fn phx_pop::hazard::any_hit(&[f64]) -> f64  // used by: phx-world
+pub fn phx_pop::hazard::next_booking(&mut phx_rand::draws::Draws, f64, phx_id::day::Day, phx_num::missing::Missing<phx_id::day::Day>) -> phx_pop::hazard::Booking  // used by: phx-world
+pub fn phx_pop::hazard::reached(&mut phx_rand::draws::Draws, &[f64], &mut alloc::vec::Vec<usize>)  // used by: phx-core, phx-geo, phx-world, sys-dem, sys-lab
+pub mod phx_pop::kind  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub struct phx_pop::kind::Declared<T>  // used by: phx-fin
+pub phx_pop::kind::Declared::item: T  // used by: phx-check, phx-core, phx-exec, phx-macros, phx-world, sys-dem
+pub phx_pop::kind::Declared::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_pop::kind::PersonField
-pub phx_pop::kind::PersonField::bits: u32
-pub phx_pop::kind::PersonField::decl: phx_core::pop::PersonAttrDecl
-pub phx_pop::kind::PersonField::shift: u32
-pub phx_pop::kind::PersonField::system: &'static str
-pub struct phx_pop::kind::PopKindDecl
-pub phx_pop::kind::PopKindDecl::attrs: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::AttrDecl>>
-pub phx_pop::kind::PopKindDecl::kind: &'static str
+pub phx_pop::kind::PersonField::bits: u32  // used by: phx-core, phx-num, phx-rand, phx-store, phx-world
+pub phx_pop::kind::PersonField::decl: phx_core::pop::PersonAttrDecl  // used by: phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
+pub phx_pop::kind::PersonField::shift: u32  // used by: phx-exec, phx-market, phx-num, phx-rand, phx-store, phx-world
+pub phx_pop::kind::PersonField::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_pop::kind::PopKindDecl  // used by: phx-world, sys-dem
+pub phx_pop::kind::PopKindDecl::attrs: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::AttrDecl>>  // used by: phx-check, phx-core, phx-macros, phx-world, sys-dem
+pub phx_pop::kind::PopKindDecl::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_pop::kind::PopKindDecl::person_attrs: alloc::vec::Vec<phx_pop::kind::PersonField>
-pub phx_pop::kind::PopKindDecl::positions: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::PositionDecl>>
+pub phx_pop::kind::PopKindDecl::positions: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::PositionDecl>>  // used by: phx-core, phx-world, sys-dem
 pub phx_pop::kind::PopKindDecl::roles: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::RoleDecl>>
-pub phx_pop::kind::PopKindDecl::sited_by: phx_num::missing::Missing<usize>
+pub phx_pop::kind::PopKindDecl::sited_by: phx_num::missing::Missing<usize>  // used by: phx-cli, phx-core, phx-world, sys-dem
 impl phx_pop::kind::PopKindDecl
-pub fn phx_pop::kind::PopKindDecl::attr(&self, &str) -> core::option::Option<usize>
-pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry]) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>
-pub fn phx_pop::kind::PopKindDecl::has_persons(&self) -> bool
-pub fn phx_pop::kind::PopKindDecl::person_attr(&self, &str) -> core::option::Option<usize>
-pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option<usize>
-pub fn phx_pop::kind::PopKindDecl::role(&self, &str) -> core::option::Option<usize>
+pub fn phx_pop::kind::PopKindDecl::attr(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-obs, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
+pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry]) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>  // used by: phx-core, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub fn phx_pop::kind::PopKindDecl::has_persons(&self) -> bool  // used by: phx-world
+pub fn phx_pop::kind::PopKindDecl::person_attr(&self, &str) -> core::option::Option<usize>  // used by: phx-core, sys-dem, sys-lab
+pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
+pub fn phx_pop::kind::PopKindDecl::role(&self, &str) -> core::option::Option<usize>  // used by: phx-cli, phx-core, phx-macros, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub fn phx_pop::kind::PopKindDecl::role_name(&self, usize) -> &'static str
-pub fn phx_pop::kind::compile_kinds(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>
-pub mod phx_pop::person
-pub fn phx_pop::person::pack(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Person) -> u64
-pub fn phx_pop::person::unpack(&phx_pop::kind::PopKindDecl, u64) -> phx_core::pop_process::Person
-pub mod phx_pop::persons
-pub struct phx_pop::persons::Held
-pub phx_pop::persons::Held::id: u64
-pub phx_pop::persons::Held::word: u64
-pub struct phx_pop::persons::Persons<B: phx_store::backing::Backing>
+pub fn phx_pop::kind::compile_kinds(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>  // used by: phx-world
+pub mod phx_pop::person  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
+pub fn phx_pop::person::pack(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Person) -> u64  // used by: phx-store, phx-world
+pub fn phx_pop::person::unpack(&phx_pop::kind::PopKindDecl, u64) -> phx_core::pop_process::Person  // used by: phx-cli, phx-store, phx-world
+pub mod phx_pop::persons  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub struct phx_pop::persons::Held  // used by: phx-cli, phx-core, phx-world
+pub phx_pop::persons::Held::id: u64  // used by: if-base, phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_pop::persons::Held::word: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-market, phx-rand, phx-store, phx-world
+pub struct phx_pop::persons::Persons<B: phx_store::backing::Backing>  // used by: phx-core, phx-macros, phx-obs, phx-world
 impl<B: phx_store::backing::Backing> phx_pop::persons::Persons<B>
-pub fn phx_pop::persons::Persons<B>::clear(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot)
-pub fn phx_pop::persons::Persons<B>::compact_due(&mut self, &mut phx_store::backing::AddressSpace) -> u64
-pub fn phx_pop::persons::Persons<B>::count(&self, phx_id::ids::Slot) -> usize
-pub fn phx_pop::persons::Persons<B>::held(&self) -> u64
-pub fn phx_pop::persons::Persons<B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_pop::persons::Persons<B>
-pub fn phx_pop::persons::Persons<B>::of(&self, phx_id::ids::Slot) -> impl core::iter::traits::exact_size::ExactSizeIterator<Item = phx_pop::persons::Held> + '_
-pub fn phx_pop::persons::Persons<B>::place_of(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>
-pub fn phx_pop::persons::Persons<B>::push(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, phx_pop::persons::Held)
-pub fn phx_pop::persons::Persons<B>::remove(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize)
-pub fn phx_pop::persons::Persons<B>::set(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, &[phx_pop::persons::Held])
-pub fn phx_pop::persons::Persons<B>::set_word(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize, u64)
+pub fn phx_pop::persons::Persons<B>::clear(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot)  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::compact_due(&mut self, &mut phx_store::backing::AddressSpace) -> u64  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::count(&self, phx_id::ids::Slot) -> usize  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::held(&self) -> u64  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_pop::persons::Persons<B>  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::of(&self, phx_id::ids::Slot) -> impl core::iter::traits::exact_size::ExactSizeIterator<Item = phx_pop::persons::Held> + '_  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::place_of(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::push(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, phx_pop::persons::Held)  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::remove(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize)  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::set(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, &[phx_pop::persons::Held])  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::set_word(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize, u64)  // used by: phx-core, phx-macros, phx-obs, phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::persons::Persons<B> where phx_store::column::Column<phx_store::arena::CellListRef, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u32: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_pop::persons::Persons<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_pop::persons::Persons<B>::rebuild_skipped(&mut self)
-pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_>)
-pub mod phx_pop::prims
-pub struct phx_pop::prims::RepPrims
-pub phx_pop::prims::RepPrims::persons: phx_core::register::Prim<phx_num::qty::Count>
+pub fn phx_pop::persons::Persons<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::rebuild_skipped(&mut self)  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-macros, phx-obs, phx-world
+pub mod phx_pop::prims  // used by: phx-cli, phx-core, phx-geo, phx-market, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
+pub struct phx_pop::prims::RepPrims  // used by: phx-world
+pub phx_pop::prims::RepPrims::persons: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 impl phx_pop::prims::RepPrims
-pub fn phx_pop::prims::RepPrims::declare(&mut phx_core::system::Declarations) -> phx_pop::prims::RepPrims
-pub struct phx_pop::prims::Representation
-pub phx_pop::prims::Representation::persons: u64
+pub fn phx_pop::prims::RepPrims::declare(&mut phx_core::system::Declarations) -> phx_pop::prims::RepPrims  // used by: phx-acct, phx-core, phx-geo, phx-market, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct phx_pop::prims::Representation  // used by: phx-cli, phx-world
+pub phx_pop::prims::Representation::persons: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 impl phx_pop::prims::Representation
-pub fn phx_pop::prims::Representation::name(self) -> alloc::string::String
-pub fn phx_pop::prims::Representation::of(&phx_pop::prims::RepPrims, &phx_core::register::Register) -> phx_pop::prims::Representation
+pub fn phx_pop::prims::Representation::name(self) -> alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_pop::prims::Representation::of(&phx_pop::prims::RepPrims, &phx_core::register::Register) -> phx_pop::prims::Representation  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-market, phx-obs, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 impl phx_store::save::Saved for phx_pop::prims::Representation where u64: phx_store::save::Saved
-pub fn phx_pop::prims::Representation::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_pop::prims::Representation::rebuild_skipped(&mut self)
-pub fn phx_pop::prims::Representation::save(&self, &mut phx_store::save::Writer<'_>)
-pub const phx_pop::prims::PERSONS: phx_core::register::PrimDecl
+pub fn phx_pop::prims::Representation::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_pop::prims::Representation::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_pop::prims::Representation::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub const phx_pop::prims::PERSONS: phx_core::register::PrimDecl  // used by: phx-core

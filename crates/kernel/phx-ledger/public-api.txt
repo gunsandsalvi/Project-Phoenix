@@ -1,263 +1,263 @@
-pub mod phx_ledger
-pub mod phx_ledger::algebra
-pub enum phx_ledger::algebra::Amount
+pub mod phx_ledger  // used by: phx-world, sys-bnk, sys-lab, sys-soc
+pub mod phx_ledger::algebra  // used by: phx-world
+pub enum phx_ledger::algebra::Amount  // used by: phx-core, phx-num, phx-store, phx-world
 pub phx_ledger::algebra::Amount::InKind
-pub phx_ledger::algebra::Amount::InKind::instrument: phx_id::ids::InstrumentId
-pub phx_ledger::algebra::Amount::InKind::units: i64
-pub phx_ledger::algebra::Amount::Money(phx_num::money::Money)
-pub phx_ledger::algebra::Amount::Units(phx_num::qty::Qty)
+pub phx_ledger::algebra::Amount::InKind::instrument: phx_id::ids::InstrumentId  // used by: phx-world
+pub phx_ledger::algebra::Amount::InKind::units: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
+pub phx_ledger::algebra::Amount::Money(phx_num::money::Money)  // used by: phx-core, phx-market, phx-num, phx-store, phx-val, phx-world
+pub phx_ledger::algebra::Amount::Units(phx_num::qty::Qty)  // used by: phx-core, phx-fin, phx-market, sys-tec
 pub phx_ledger::algebra::Amount::Valued
 pub phx_ledger::algebra::Amount::Valued::deductible: phx_num::money::Money
-pub phx_ledger::algebra::Amount::Valued::limit: phx_num::money::Money
+pub phx_ledger::algebra::Amount::Valued::limit: phx_num::money::Money  // used by: phx-core, phx-id, phx-market, phx-num, phx-rand, phx-world, sys-frm
 pub phx_ledger::algebra::Amount::Valued::valuer: u16
 pub enum phx_ledger::algebra::ContingentAmount
-pub phx_ledger::algebra::ContingentAmount::Fixed(phx_num::money::Money)
+pub phx_ledger::algebra::ContingentAmount::Fixed(phx_num::money::Money)  // used by: if-base, phx-core, phx-geo, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_ledger::algebra::ContingentAmount::ValuedLoss
 pub phx_ledger::algebra::ContingentAmount::ValuedLoss::deductible: phx_num::money::Money
-pub phx_ledger::algebra::ContingentAmount::ValuedLoss::limit: phx_num::money::Money
+pub phx_ledger::algebra::ContingentAmount::ValuedLoss::limit: phx_num::money::Money  // used by: phx-core, phx-id, phx-market, phx-num, phx-rand, phx-world, sys-frm
 pub phx_ledger::algebra::ContingentAmount::ValuedLoss::valuer: u16
 pub phx_ledger::algebra::ContingentAmount::WhileState
-pub phx_ledger::algebra::ContingentAmount::WhileState::benefit: phx_num::money::Money
-pub phx_ledger::algebra::ContingentAmount::WhileState::state: u16
-pub phx_ledger::algebra::ContingentAmount::WhileState::waiting: phx_core::calendar::period::Period
+pub phx_ledger::algebra::ContingentAmount::WhileState::benefit: phx_num::money::Money  // used by: phx-world, sys-soc
+pub phx_ledger::algebra::ContingentAmount::WhileState::state: u16  // used by: if-labour, phx-cli, phx-geo, phx-world, sys-lab
+pub phx_ledger::algebra::ContingentAmount::WhileState::waiting: phx_core::calendar::period::Period  // used by: phx-cli, phx-world, sys-cap
 impl phx_store::save::Saved for phx_ledger::algebra::ContingentAmount where phx_num::money::Money: phx_store::save::Saved, u16: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved
-pub fn phx_ledger::algebra::ContingentAmount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::ContingentAmount::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::ContingentAmount::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::ContingentAmount::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub enum phx_ledger::algebra::Conversion
 pub phx_ledger::algebra::Conversion::IntoShares
-pub phx_ledger::algebra::Conversion::IntoShares::instrument: phx_id::ids::InstrumentId
+pub phx_ledger::algebra::Conversion::IntoShares::instrument: phx_id::ids::InstrumentId  // used by: phx-world
 pub phx_ledger::algebra::Conversion::IntoShares::ratio_ppm: u64
 pub phx_ledger::algebra::Conversion::Trigger
 pub phx_ledger::algebra::Conversion::Trigger::level_ppm: i64
-pub phx_ledger::algebra::Conversion::Trigger::ratio: u16
+pub phx_ledger::algebra::Conversion::Trigger::ratio: u16  // used by: if-labour, phx-rand, phx-world, sys-bnk, sys-cap, sys-dem, sys-lab
 pub phx_ledger::algebra::Conversion::Trigger::write_down_ppm: u32
 impl phx_store::save::Saved for phx_ledger::algebra::Conversion where phx_id::ids::InstrumentId: phx_store::save::Saved, u64: phx_store::save::Saved, u16: phx_store::save::Saved, i64: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn phx_ledger::algebra::Conversion::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Conversion::save(&self, &mut phx_store::save::Writer<'_>)
-pub enum phx_ledger::algebra::Leg
-pub phx_ledger::algebra::Leg::Amortising
+pub fn phx_ledger::algebra::Conversion::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Conversion::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub enum phx_ledger::algebra::Leg  // used by: phx-world
+pub phx_ledger::algebra::Leg::Amortising  // used by: phx-world
 pub phx_ledger::algebra::Leg::Contingent
-pub phx_ledger::algebra::Leg::Contingent::amount: phx_ledger::algebra::ContingentAmount
-pub phx_ledger::algebra::Leg::Contingent::event: phx_ledger::algebra::EventRef
-pub phx_ledger::algebra::Leg::Delivery(phx_num::qty::Qty)
+pub phx_ledger::algebra::Leg::Contingent::amount: phx_ledger::algebra::ContingentAmount  // used by: phx-core, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-soc
+pub phx_ledger::algebra::Leg::Contingent::event: phx_ledger::algebra::EventRef  // used by: phx-cli, phx-core, phx-geo, phx-world, sys-dem, sys-lab
+pub phx_ledger::algebra::Leg::Delivery(phx_num::qty::Qty)  // used by: phx-world
 pub phx_ledger::algebra::Leg::Elective
-pub phx_ledger::algebra::Leg::Elective::legs: alloc::vec::Vec<phx_ledger::algebra::Leg>
-pub phx_ledger::algebra::Leg::Elective::schedule: phx_ledger::algebra::Schedule
-pub phx_ledger::algebra::Leg::Elective::side: phx_ledger::algebra::Side
+pub phx_ledger::algebra::Leg::Elective::legs: alloc::vec::Vec<phx_ledger::algebra::Leg>  // used by: phx-geo, phx-world
+pub phx_ledger::algebra::Leg::Elective::schedule: phx_ledger::algebra::Schedule  // used by: phx-cli, phx-core, phx-fin, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_ledger::algebra::Leg::Elective::side: phx_ledger::algebra::Side  // used by: phx-core, phx-geo, phx-obs, phx-store, phx-world
 pub phx_ledger::algebra::Leg::FixedAmount(phx_num::money::Money)
 pub phx_ledger::algebra::Leg::Indexed
-pub phx_ledger::algebra::Leg::Indexed::base: i64
-pub phx_ledger::algebra::Leg::Indexed::current: i64
-pub phx_ledger::algebra::Leg::Indexed::leg: alloc::boxed::Box<phx_ledger::algebra::Leg>
-pub phx_ledger::algebra::Leg::Indexed::series: phx_id::ids::SeriesId
+pub phx_ledger::algebra::Leg::Indexed::base: i64  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-pop, phx-rand, phx-store, phx-world, sys-idx
+pub phx_ledger::algebra::Leg::Indexed::current: i64  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-obs, phx-world, sys-frm
+pub phx_ledger::algebra::Leg::Indexed::leg: alloc::boxed::Box<phx_ledger::algebra::Leg>  // used by: phx-geo, phx-world
+pub phx_ledger::algebra::Leg::Indexed::series: phx_id::ids::SeriesId  // used by: if-state, phx-cli, phx-obs, phx-world, sys-sta
 pub phx_ledger::algebra::Leg::PayableInKind
-pub phx_ledger::algebra::Leg::PayableInKind::day_count: phx_core::calendar::daycount::DayCount
-pub phx_ledger::algebra::Leg::PayableInKind::instrument: phx_id::ids::InstrumentId
-pub phx_ledger::algebra::Leg::PayableInKind::rate: phx_num::rate::Rate
+pub phx_ledger::algebra::Leg::PayableInKind::day_count: phx_core::calendar::daycount::DayCount  // used by: phx-core
+pub phx_ledger::algebra::Leg::PayableInKind::instrument: phx_id::ids::InstrumentId  // used by: phx-world
+pub phx_ledger::algebra::Leg::PayableInKind::rate: phx_num::rate::Rate  // used by: if-state, phx-cli, phx-core, phx-geo, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 pub phx_ledger::algebra::Leg::PerTime
-pub phx_ledger::algebra::Leg::PerTime::amount: phx_num::money::Money
-pub phx_ledger::algebra::Leg::PerTime::per: phx_num::rate::RatePeriod
+pub phx_ledger::algebra::Leg::PerTime::amount: phx_num::money::Money  // used by: phx-core, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-soc
+pub phx_ledger::algebra::Leg::PerTime::per: phx_num::rate::RatePeriod  // used by: phx-cli, phx-core, phx-fin, phx-num, phx-pop, phx-store, phx-val, phx-world, sys-frm, sys-tec
 pub phx_ledger::algebra::Leg::Principal
-pub phx_ledger::algebra::Leg::Principal::amount: phx_num::money::Money
+pub phx_ledger::algebra::Leg::Principal::amount: phx_num::money::Money  // used by: phx-core, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-soc
 pub phx_ledger::algebra::Leg::Principal::repayment: phx_ledger::algebra::Repayment
-pub phx_ledger::algebra::Leg::RateOnNotional
-pub phx_ledger::algebra::Leg::RateOnNotional::day_count: phx_core::calendar::daycount::DayCount
+pub phx_ledger::algebra::Leg::RateOnNotional  // used by: phx-world
+pub phx_ledger::algebra::Leg::RateOnNotional::day_count: phx_core::calendar::daycount::DayCount  // used by: phx-core
 pub phx_ledger::algebra::Leg::RateOnNotional::reference: phx_ledger::algebra::Reference
 pub phx_ledger::algebra::Leg::StepSchedule
-pub phx_ledger::algebra::Leg::StepSchedule::day_count: phx_core::calendar::daycount::DayCount
-pub phx_ledger::algebra::Leg::StepSchedule::steps: alloc::vec::Vec<(phx_id::day::Day, phx_num::rate::Rate)>
+pub phx_ledger::algebra::Leg::StepSchedule::day_count: phx_core::calendar::daycount::DayCount  // used by: phx-core
+pub phx_ledger::algebra::Leg::StepSchedule::steps: alloc::vec::Vec<(phx_id::day::Day, phx_num::rate::Rate)>  // used by: phx-check, phx-geo, phx-market, phx-world
 impl phx_store::save::Saved for phx_ledger::algebra::Leg
-pub fn phx_ledger::algebra::Leg::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_ledger::algebra::Leg, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Leg::save(&self, &mut phx_store::save::Writer<'_>)
-pub enum phx_ledger::algebra::Reference
-pub phx_ledger::algebra::Reference::Fixed(phx_num::rate::Rate)
+pub fn phx_ledger::algebra::Leg::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_ledger::algebra::Leg, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Leg::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub enum phx_ledger::algebra::Reference  // used by: phx-check, phx-world
+pub phx_ledger::algebra::Reference::Fixed(phx_num::rate::Rate)  // used by: if-base, phx-core, phx-geo, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta
 pub phx_ledger::algebra::Reference::Floating(phx_ledger::algebra::Floating)
 impl phx_store::save::Saved for phx_ledger::algebra::Reference where phx_num::rate::Rate: phx_store::save::Saved, phx_ledger::algebra::Floating: phx_store::save::Saved
-pub fn phx_ledger::algebra::Reference::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Reference::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Reference::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Reference::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub enum phx_ledger::algebra::Repayment
 pub phx_ledger::algebra::Repayment::Bullet
 pub phx_ledger::algebra::Repayment::Linear
 impl phx_store::save::Saved for phx_ledger::algebra::Repayment
-pub fn phx_ledger::algebra::Repayment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Repayment::save(&self, &mut phx_store::save::Writer<'_>)
-pub enum phx_ledger::algebra::Side
+pub fn phx_ledger::algebra::Repayment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Repayment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub enum phx_ledger::algebra::Side  // used by: phx-num, phx-store
 pub phx_ledger::algebra::Side::Asset
 pub phx_ledger::algebra::Side::Liability
 impl phx_store::save::Saved for phx_ledger::algebra::Side
-pub fn phx_ledger::algebra::Side::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Side::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Side::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Side::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub enum phx_ledger::algebra::Termination
 pub phx_ledger::algebra::Termination::Callable
 pub phx_ledger::algebra::Termination::Callable::price_ppm: u32
-pub phx_ledger::algebra::Termination::Callable::schedule: phx_ledger::algebra::Schedule
+pub phx_ledger::algebra::Termination::Callable::schedule: phx_ledger::algebra::Schedule  // used by: phx-cli, phx-core, phx-fin, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub phx_ledger::algebra::Termination::MakeWhole
-pub phx_ledger::algebra::Termination::MakeWhole::series: phx_id::ids::SeriesId
-pub phx_ledger::algebra::Termination::MakeWhole::spread: phx_num::rate::Rate
-pub phx_ledger::algebra::Termination::None
+pub phx_ledger::algebra::Termination::MakeWhole::series: phx_id::ids::SeriesId  // used by: if-state, phx-cli, phx-obs, phx-world, sys-sta
+pub phx_ledger::algebra::Termination::MakeWhole::spread: phx_num::rate::Rate  // used by: phx-geo, phx-rand, phx-world, sys-dem
+pub phx_ledger::algebra::Termination::None  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-lab, sys-sov, sys-sta, sys-tec
 pub phx_ledger::algebra::Termination::Putable
 pub phx_ledger::algebra::Termination::Putable::price_ppm: u32
-pub phx_ledger::algebra::Termination::Putable::schedule: phx_ledger::algebra::Schedule
+pub phx_ledger::algebra::Termination::Putable::schedule: phx_ledger::algebra::Schedule  // used by: phx-cli, phx-core, phx-fin, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 impl phx_store::save::Saved for phx_ledger::algebra::Termination where phx_ledger::algebra::Schedule: phx_store::save::Saved, u32: phx_store::save::Saved, phx_id::ids::SeriesId: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved
-pub fn phx_ledger::algebra::Termination::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Termination::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Termination::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Termination::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub enum phx_ledger::algebra::Underlying
-pub phx_ledger::algebra::Underlying::Event(phx_ledger::algebra::EventRef)
-pub phx_ledger::algebra::Underlying::Series(phx_id::ids::SeriesId)
+pub phx_ledger::algebra::Underlying::Event(phx_ledger::algebra::EventRef)  // used by: phx-cli, phx-core
+pub phx_ledger::algebra::Underlying::Series(phx_id::ids::SeriesId)  // used by: phx-cli, phx-obs, phx-world
 impl phx_store::save::Saved for phx_ledger::algebra::Underlying where phx_id::ids::SeriesId: phx_store::save::Saved, phx_ledger::algebra::EventRef: phx_store::save::Saved
-pub fn phx_ledger::algebra::Underlying::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Underlying::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Underlying::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Underlying::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Collateral
-pub phx_ledger::algebra::Collateral::class: u16
-pub phx_ledger::algebra::Collateral::kind: u16
-pub phx_ledger::algebra::Collateral::zone: phx_num::missing::Missing<phx_id::ids::ZoneId>
+pub phx_ledger::algebra::Collateral::class: u16  // used by: if-credit, if-labour, phx-cli, phx-core, phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub phx_ledger::algebra::Collateral::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_ledger::algebra::Collateral::zone: phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-world
 impl phx_store::save::Saved for phx_ledger::algebra::Collateral where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::ZoneId>: phx_store::save::Saved
-pub fn phx_ledger::algebra::Collateral::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Collateral::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Collateral::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Collateral::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Collateral::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Collateral::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::DefaultDefinition
 pub phx_ledger::algebra::DefaultDefinition::grace_days: u16
 pub phx_ledger::algebra::DefaultDefinition::missed_payments: u16
 impl phx_store::save::Saved for phx_ledger::algebra::DefaultDefinition where u16: phx_store::save::Saved
-pub fn phx_ledger::algebra::DefaultDefinition::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::DefaultDefinition::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::DefaultDefinition::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_ledger::algebra::Due
-pub phx_ledger::algebra::Due::amount: phx_ledger::algebra::Amount
-pub phx_ledger::algebra::Due::leg: u16
-pub struct phx_ledger::algebra::DueBuf
+pub fn phx_ledger::algebra::DefaultDefinition::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::DefaultDefinition::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::DefaultDefinition::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub struct phx_ledger::algebra::Due  // used by: phx-world
+pub phx_ledger::algebra::Due::amount: phx_ledger::algebra::Amount  // used by: phx-core, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-soc
+pub phx_ledger::algebra::Due::leg: u16  // used by: phx-geo, phx-world
+pub struct phx_ledger::algebra::DueBuf  // used by: phx-world
 impl phx_ledger::algebra::DueBuf
-pub fn phx_ledger::algebra::DueBuf::clear(&mut self)
-pub fn phx_ledger::algebra::DueBuf::is_empty(&self) -> bool
-pub fn phx_ledger::algebra::DueBuf::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::algebra::Due> + '_
-pub fn phx_ledger::algebra::DueBuf::len(&self) -> usize
+pub fn phx_ledger::algebra::DueBuf::clear(&mut self)  // used by: if-state, phx-core, phx-exec, phx-geo, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
+pub fn phx_ledger::algebra::DueBuf::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_ledger::algebra::DueBuf::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::algebra::Due> + '_  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_ledger::algebra::DueBuf::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 impl core::default::Default for phx_ledger::algebra::DueBuf
-pub fn phx_ledger::algebra::DueBuf::default() -> Self
+pub fn phx_ledger::algebra::DueBuf::default() -> Self  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-market, phx-rand, phx-world, sys-lab, sys-tec
 pub struct phx_ledger::algebra::DuePlan
-pub phx_ledger::algebra::DuePlan::general: bool
+pub phx_ledger::algebra::DuePlan::general: bool  // used by: phx-world
 pub struct phx_ledger::algebra::DueState<'a>
-pub phx_ledger::algebra::DueState::calendar: &'a phx_core::calendar::Calendar
+pub phx_ledger::algebra::DueState::calendar: &'a phx_core::calendar::Calendar  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-pop, phx-val, phx-world, sys-dem
 pub phx_ledger::algebra::DueState::elected: &'a dyn core::ops::function::Fn(phx_ledger::algebra::Side, phx_id::day::Day) -> bool
 pub phx_ledger::algebra::DueState::in_state_since: &'a dyn core::ops::function::Fn(u16, phx_id::day::Day) -> phx_num::missing::Missing<phx_id::day::Day>
 pub phx_ledger::algebra::DueState::occurred: &'a dyn core::ops::function::Fn(phx_ledger::algebra::EventRef, phx_id::day::Day) -> bool
-pub phx_ledger::algebra::DueState::outstanding: phx_num::money::Money
+pub phx_ledger::algebra::DueState::outstanding: phx_num::money::Money  // used by: phx-world
 impl core::fmt::Debug for phx_ledger::algebra::DueState<'_>
 pub fn phx_ledger::algebra::DueState<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
 pub struct phx_ledger::algebra::EventRef
-pub phx_ledger::algebra::EventRef::kind: u16
-pub phx_ledger::algebra::EventRef::party: phx_num::missing::Missing<phx_id::ids::PartyId>
+pub phx_ledger::algebra::EventRef::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_ledger::algebra::EventRef::party: phx_num::missing::Missing<phx_id::ids::PartyId>  // used by: phx-core, phx-fin, phx-market, phx-obs, phx-store, phx-world
 impl phx_store::save::Saved for phx_ledger::algebra::EventRef where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::PartyId>: phx_store::save::Saved
-pub fn phx_ledger::algebra::EventRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::EventRef::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::EventRef::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::EventRef::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::EventRef::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::EventRef::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Facility
-pub phx_ledger::algebra::Facility::day_count: phx_core::calendar::daycount::DayCount
-pub phx_ledger::algebra::Facility::limit: phx_num::money::Money
-pub phx_ledger::algebra::Facility::rate: phx_num::rate::Rate
+pub phx_ledger::algebra::Facility::day_count: phx_core::calendar::daycount::DayCount  // used by: phx-core
+pub phx_ledger::algebra::Facility::limit: phx_num::money::Money  // used by: phx-core, phx-id, phx-market, phx-num, phx-rand, phx-world, sys-frm
+pub phx_ledger::algebra::Facility::rate: phx_num::rate::Rate  // used by: if-state, phx-cli, phx-core, phx-geo, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 impl phx_store::save::Saved for phx_ledger::algebra::Facility where phx_num::money::Money: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved, phx_core::calendar::daycount::DayCount: phx_store::save::Saved
-pub fn phx_ledger::algebra::Facility::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Facility::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Facility::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Facility::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Facility::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Facility::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Fixing
-pub phx_ledger::algebra::Fixing::on: phx_id::day::Day
-pub phx_ledger::algebra::Fixing::rate: phx_num::rate::Rate
+pub phx_ledger::algebra::Fixing::on: phx_id::day::Day  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-world, sys-lab
+pub phx_ledger::algebra::Fixing::rate: phx_num::rate::Rate  // used by: if-state, phx-cli, phx-core, phx-geo, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
 impl phx_store::save::Saved for phx_ledger::algebra::Fixing where phx_num::rate::Rate: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved
-pub fn phx_ledger::algebra::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Fixing::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Fixing::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Fixing::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Fixing::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Fixing::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Floating
 pub phx_ledger::algebra::Floating::fixing: phx_ledger::algebra::Fixing
-pub phx_ledger::algebra::Floating::reset: phx_core::calendar::period::Period
-pub phx_ledger::algebra::Floating::series: phx_id::ids::SeriesId
-pub phx_ledger::algebra::Floating::spread: phx_num::rate::Rate
+pub phx_ledger::algebra::Floating::reset: phx_core::calendar::period::Period  // used by: phx-core, phx-exec, phx-fin, phx-world
+pub phx_ledger::algebra::Floating::series: phx_id::ids::SeriesId  // used by: if-state, phx-cli, phx-obs, phx-world, sys-sta
+pub phx_ledger::algebra::Floating::spread: phx_num::rate::Rate  // used by: phx-geo, phx-rand, phx-world, sys-dem
 impl phx_store::save::Saved for phx_ledger::algebra::Floating where phx_id::ids::SeriesId: phx_store::save::Saved, phx_num::rate::Rate: phx_store::save::Saved, phx_core::calendar::period::Period: phx_store::save::Saved, phx_ledger::algebra::Fixing: phx_store::save::Saved
-pub fn phx_ledger::algebra::Floating::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Floating::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Floating::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_ledger::algebra::PaymentOrder(pub u8)
+pub fn phx_ledger::algebra::Floating::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Floating::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Floating::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub struct phx_ledger::algebra::PaymentOrder(pub u8)  // used by: if-state, phx-world, sys-trs
 impl phx_store::save::Saved for phx_ledger::algebra::PaymentOrder where u8: phx_store::save::Saved
-pub fn phx_ledger::algebra::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::PaymentOrder::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_ledger::algebra::Schedule
-pub phx_ledger::algebra::Schedule::count: phx_num::missing::Missing<u32>
-pub phx_ledger::algebra::Schedule::dates: phx_core::calendar::period::ScheduleDates
+pub fn phx_ledger::algebra::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::PaymentOrder::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub struct phx_ledger::algebra::Schedule  // used by: if-state, phx-val, phx-world, sys-sta
+pub phx_ledger::algebra::Schedule::count: phx_num::missing::Missing<u32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub phx_ledger::algebra::Schedule::dates: phx_core::calendar::period::ScheduleDates  // used by: phx-cli, phx-world
 impl phx_ledger::algebra::Schedule
 pub fn phx_ledger::algebra::Schedule::date_index(&self, &phx_core::calendar::Calendar, phx_id::day::Day) -> core::option::Option<u32>
-pub fn phx_ledger::algebra::Schedule::day(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day
+pub fn phx_ledger::algebra::Schedule::day(&self, &phx_core::calendar::Calendar, u32) -> phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub fn phx_ledger::algebra::Schedule::stated(&self, u32) -> phx_id::day::Date
 impl phx_store::save::Saved for phx_ledger::algebra::Schedule where phx_core::calendar::period::ScheduleDates: phx_store::save::Saved, phx_num::missing::Missing<u32>: phx_store::save::Saved
-pub fn phx_ledger::algebra::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Schedule::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Schedule::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Schedule::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Schedule::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Seniority(pub u8)
 impl phx_store::save::Saved for phx_ledger::algebra::Seniority where u8: phx_store::save::Saved
-pub fn phx_ledger::algebra::Seniority::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Seniority::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Seniority::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Seniority::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Seniority::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Seniority::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::ShapePlan
-pub phx_ledger::algebra::ShapePlan::general: bool
-pub struct phx_ledger::algebra::Terms
-pub phx_ledger::algebra::Terms::ccy: phx_num::money::Ccy
-pub phx_ledger::algebra::Terms::class: alloc::vec::Vec<u32>
-pub phx_ledger::algebra::Terms::collateral: phx_num::missing::Missing<phx_ledger::algebra::Collateral>
+pub phx_ledger::algebra::ShapePlan::general: bool  // used by: phx-world
+pub struct phx_ledger::algebra::Terms  // used by: phx-world
+pub phx_ledger::algebra::Terms::ccy: phx_num::money::Ccy  // used by: phx-cli, phx-core, phx-num, phx-store, phx-val, phx-world
+pub phx_ledger::algebra::Terms::class: alloc::vec::Vec<u32>  // used by: if-credit, if-labour, phx-cli, phx-core, phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub phx_ledger::algebra::Terms::collateral: phx_num::missing::Missing<phx_ledger::algebra::Collateral>  // used by: if-credit, phx-world, sys-bnk
 pub phx_ledger::algebra::Terms::conversion: phx_num::missing::Missing<phx_ledger::algebra::Conversion>
-pub phx_ledger::algebra::Terms::default: phx_ledger::algebra::DefaultDefinition
-pub phx_ledger::algebra::Terms::facility: phx_num::missing::Missing<phx_ledger::algebra::Facility>
-pub phx_ledger::algebra::Terms::legs: alloc::vec::Vec<phx_ledger::algebra::Leg>
-pub phx_ledger::algebra::Terms::payment_order: phx_ledger::algebra::PaymentOrder
-pub phx_ledger::algebra::Terms::schedule: phx_ledger::algebra::Schedule
+pub phx_ledger::algebra::Terms::default: phx_ledger::algebra::DefaultDefinition  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-market, phx-rand, phx-world, sys-lab, sys-tec
+pub phx_ledger::algebra::Terms::facility: phx_num::missing::Missing<phx_ledger::algebra::Facility>  // used by: phx-core, phx-fin, phx-world
+pub phx_ledger::algebra::Terms::legs: alloc::vec::Vec<phx_ledger::algebra::Leg>  // used by: phx-geo, phx-world
+pub phx_ledger::algebra::Terms::payment_order: phx_ledger::algebra::PaymentOrder  // used by: phx-world
+pub phx_ledger::algebra::Terms::schedule: phx_ledger::algebra::Schedule  // used by: phx-cli, phx-core, phx-fin, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub phx_ledger::algebra::Terms::seniority: phx_ledger::algebra::Seniority
 pub phx_ledger::algebra::Terms::stay: phx_num::missing::Missing<u16>
 pub phx_ledger::algebra::Terms::termination: phx_ledger::algebra::Termination
 pub phx_ledger::algebra::Terms::underlying: phx_num::missing::Missing<phx_ledger::algebra::Underlying>
 impl phx_ledger::algebra::Terms
-pub fn phx_ledger::algebra::Terms::account(phx_num::money::Ccy, phx_core::calendar::period::ScheduleDates) -> phx_ledger::algebra::Terms
+pub fn phx_ledger::algebra::Terms::account(phx_num::money::Ccy, phx_core::calendar::period::ScheduleDates) -> phx_ledger::algebra::Terms  // used by: phx-core, phx-fin, phx-world, sys-bnk
 impl phx_store::save::Saved for phx_ledger::algebra::Terms where phx_num::money::Ccy: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::algebra::Leg>: phx_store::save::Saved, phx_ledger::algebra::Schedule: phx_store::save::Saved, phx_ledger::algebra::Seniority: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Collateral>: phx_store::save::Saved, phx_ledger::algebra::PaymentOrder: phx_store::save::Saved, phx_ledger::algebra::Termination: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Conversion>: phx_store::save::Saved, phx_ledger::algebra::DefaultDefinition: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Underlying>: phx_store::save::Saved, phx_num::missing::Missing<phx_ledger::algebra::Facility>: phx_store::save::Saved, phx_num::missing::Missing<u16>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved
-pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::algebra::Terms::rebuild_skipped(&mut self)
-pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn phx_ledger::algebra::Terms::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::algebra::Terms::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::algebra::Terms::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
 pub fn phx_ledger::algebra::due_at(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_by_plan(&phx_ledger::algebra::DuePlan, phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)
-pub fn phx_ledger::algebra::due_by_shape(&phx_ledger::algebra::ShapePlan, &[phx_num::money::Money], phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)
+pub fn phx_ledger::algebra::due_by_shape(&phx_ledger::algebra::ShapePlan, &[phx_num::money::Money], phx_num::money::Money, &mut phx_ledger::algebra::DueBuf)  // used by: phx-world
 pub fn phx_ledger::algebra::due_on(&phx_ledger::algebra::Terms, phx_id::day::Day, &phx_ledger::algebra::DueState<'_>, &mut phx_ledger::algebra::DueBuf)
 pub fn phx_ledger::algebra::due_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::DuePlan
-pub fn phx_ledger::algebra::shape_of(&phx_ledger::algebra::Terms) -> (phx_ledger::algebra::Terms, alloc::vec::Vec<phx_num::money::Money>)
-pub fn phx_ledger::algebra::shape_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::ShapePlan
-pub fn phx_ledger::algebra::terms_of(&phx_ledger::algebra::Terms, &[phx_num::money::Money]) -> phx_ledger::algebra::Terms
-pub mod phx_ledger::consts
+pub fn phx_ledger::algebra::shape_of(&phx_ledger::algebra::Terms) -> (phx_ledger::algebra::Terms, alloc::vec::Vec<phx_num::money::Money>)  // used by: phx-world
+pub fn phx_ledger::algebra::shape_plan(&phx_ledger::algebra::Terms, core::option::Option<u32>, phx_id::day::Day, &phx_core::calendar::Calendar) -> phx_ledger::algebra::ShapePlan  // used by: phx-world
+pub fn phx_ledger::algebra::terms_of(&phx_ledger::algebra::Terms, &[phx_num::money::Money]) -> phx_ledger::algebra::Terms  // used by: phx-world
+pub mod phx_ledger::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_ledger::consts::DUES_PER_DAY: usize
-pub const phx_ledger::consts::MONTHS_A_YEAR: u8
-pub mod phx_ledger::levy
-pub struct phx_ledger::levy::Band
-pub phx_ledger::levy::Band::from: i64
-pub phx_ledger::levy::Band::share: i64
+pub const phx_ledger::consts::MONTHS_A_YEAR: u8  // used by: phx-exec, phx-world, sys-lab
+pub mod phx_ledger::levy  // used by: phx-world
+pub struct phx_ledger::levy::Band  // used by: phx-world
+pub phx_ledger::levy::Band::from: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_ledger::levy::Band::share: i64  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-val, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc, sys-sov
 impl phx_store::save::Saved for phx_ledger::levy::Band where i64: phx_store::save::Saved
-pub fn phx_ledger::levy::Band::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::levy::Band::rebuild_skipped(&mut self)
-pub fn phx_ledger::levy::Band::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_ledger::levy::Withholding
-pub phx_ledger::levy::Withholding::bands: alloc::vec::Vec<phx_ledger::levy::Band>
-pub phx_ledger::levy::Withholding::ccy: phx_num::money::Ccy
-pub phx_ledger::levy::Withholding::kind: u16
-pub phx_ledger::levy::Withholding::payee: phx_id::ids::PartyId
-pub phx_ledger::levy::Withholding::periods: i64
+pub fn phx_ledger::levy::Band::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::levy::Band::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::levy::Band::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub struct phx_ledger::levy::Withholding  // used by: phx-world
+pub phx_ledger::levy::Withholding::bands: alloc::vec::Vec<phx_ledger::levy::Band>  // used by: if-state, phx-cli, phx-world, sys-tax
+pub phx_ledger::levy::Withholding::ccy: phx_num::money::Ccy  // used by: phx-cli, phx-core, phx-num, phx-store, phx-val, phx-world
+pub phx_ledger::levy::Withholding::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_ledger::levy::Withholding::payee: phx_id::ids::PartyId  // used by: phx-core, phx-fin, phx-market, phx-world
+pub phx_ledger::levy::Withholding::periods: i64  // used by: phx-cli, phx-world
 impl phx_ledger::levy::Withholding
-pub fn phx_ledger::levy::Withholding::on_payment(&self, i64) -> i64
+pub fn phx_ledger::levy::Withholding::on_payment(&self, i64) -> i64  // used by: phx-world
 impl phx_store::save::Saved for phx_ledger::levy::Withholding where u16: phx_store::save::Saved, phx_num::money::Ccy: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, alloc::vec::Vec<phx_ledger::levy::Band>: phx_store::save::Saved, i64: phx_store::save::Saved
-pub fn phx_ledger::levy::Withholding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_ledger::levy::Withholding::rebuild_skipped(&mut self)
-pub fn phx_ledger::levy::Withholding::save(&self, &mut phx_store::save::Writer<'_>)
-pub mod phx_ledger::online
-pub struct phx_ledger::online::Online
+pub fn phx_ledger::levy::Withholding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_ledger::levy::Withholding::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_ledger::levy::Withholding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-store, phx-world
+pub mod phx_ledger::online  // used by: sys-bnk
+pub struct phx_ledger::online::Online  // used by: sys-bnk
 impl phx_ledger::online::Online
-pub fn phx_ledger::online::Online::new(alloc::vec::Vec<u64>) -> phx_ledger::online::Online
-pub fn phx_ledger::online::Online::next(&mut self, &mut phx_rand::draws::Draws) -> usize
-pub mod phx_ledger::opening
-pub fn phx_ledger::opening::currency(phx_id::ids::CountryId) -> phx_num::money::Ccy
-pub fn phx_ledger::opening::derived(&phx_core::contribution::OpeningCountry, &str) -> f64
-pub fn phx_ledger::opening::employed(&phx_core::contribution::OpeningCountry) -> f64
-pub fn phx_ledger::opening::mean_wage(&phx_core::contribution::OpeningCountry) -> f64
-pub fn phx_ledger::opening::monthly(phx_id::day::Date, phx_id::ids::CountryId) -> phx_core::calendar::period::ScheduleDates
-pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms
-pub fn phx_ledger::opening::whole(f64) -> i64
+pub fn phx_ledger::online::Online::new(alloc::vec::Vec<u64>) -> phx_ledger::online::Online  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_ledger::online::Online::next(&mut self, &mut phx_rand::draws::Draws) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-lab
+pub mod phx_ledger::opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-world, sys-bnk, sys-cb, sys-dem, sys-gds, sys-lab, sys-soc
+pub fn phx_ledger::opening::currency(phx_id::ids::CountryId) -> phx_num::money::Ccy  // used by: phx-world
+pub fn phx_ledger::opening::derived(&phx_core::contribution::OpeningCountry, &str) -> f64  // used by: phx-check, phx-core, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab
+pub fn phx_ledger::opening::employed(&phx_core::contribution::OpeningCountry) -> f64  // used by: phx-cli, phx-world, sys-hh, sys-lab
+pub fn phx_ledger::opening::mean_wage(&phx_core::contribution::OpeningCountry) -> f64  // used by: phx-world, sys-lab, sys-soc
+pub fn phx_ledger::opening::monthly(phx_id::day::Date, phx_id::ids::CountryId) -> phx_core::calendar::period::ScheduleDates  // used by: if-state, phx-world, sys-lab, sys-soc
+pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms  // used by: phx-world
+pub fn phx_ledger::opening::whole(f64) -> i64  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-store, phx-world, sys-bnk, sys-dem, sys-frt, sys-hh, sys-lab, sys-soc, sys-sta

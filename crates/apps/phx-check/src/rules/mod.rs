@@ -5,6 +5,7 @@ use crate::workspace::Workspace;
 mod agent_writes;
 pub mod allocation;
 pub mod api_snapshot;
+mod arch_names;
 mod audit_reads;
 mod batches;
 mod borders;
@@ -93,6 +94,7 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-08", title: "interface crates without behaviour", since: "S0.01", run: interfaces::run },
     Rule { id: "PC-09", title: "documents", since: "S0.01", run: documents::run },
     Rule { id: "PC-09", title: "the design point's figure set", since: "S1.113", run: design::run },
+    Rule { id: "PC-09", title: "the architecture names what the code has", since: "S1.131", run: arch_names::run },
     Rule {
         id: "PC-10",
         title: "allow and expect counts within their ratchets",

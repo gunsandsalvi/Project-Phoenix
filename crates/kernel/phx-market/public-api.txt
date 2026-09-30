@@ -1,165 +1,165 @@
-pub mod phx_market
-pub mod phx_market::between
+pub mod phx_market  // used by: phx-fin, phx-world, sys-frt, sys-lab
+pub mod phx_market::between  // used by: phx-exec, phx-fin, phx-geo
 pub struct phx_market::between::Between
-pub phx_market::between::Between::sales: alloc::vec::Vec<phx_market::meet::Sale>
-pub phx_market::between::Between::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, i64)>
-pub struct phx_market::between::Bid
-pub phx_market::between::Bid::buyer: phx_id::ids::PartyKey
-pub phx_market::between::Bid::limit: i64
-pub phx_market::between::Bid::lot: i64
-pub phx_market::between::Bid::units: i64
+pub phx_market::between::Between::sales: alloc::vec::Vec<phx_market::meet::Sale>  // used by: phx-cli, phx-fin, phx-world, sys-frm
+pub phx_market::between::Between::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, i64)>  // used by: phx-fin
+pub struct phx_market::between::Bid  // used by: if-state, phx-world, sys-sov
+pub phx_market::between::Bid::buyer: phx_id::ids::PartyKey  // used by: phx-world
+pub phx_market::between::Bid::limit: i64  // used by: phx-core, phx-id, phx-ledger, phx-num, phx-rand, phx-world, sys-frm
+pub phx_market::between::Bid::lot: i64  // used by: if-labour, phx-cli, phx-core, phx-fin, phx-geo, phx-world, sys-dem, sys-frm, sys-lab
+pub phx_market::between::Bid::units: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
 pub struct phx_market::between::Offer
-pub phx_market::between::Offer::lot: i64
-pub phx_market::between::Offer::price: i64
-pub phx_market::between::Offer::seller: phx_id::ids::PartyKey
-pub phx_market::between::Offer::units: i64
-pub fn phx_market::between::between(&[phx_market::between::Offer], &[phx_market::between::Bid], i64, &mut phx_rand::draws::Draws) -> phx_market::between::Between
-pub mod phx_market::carriage
+pub phx_market::between::Offer::lot: i64  // used by: if-labour, phx-cli, phx-core, phx-fin, phx-geo, phx-world, sys-dem, sys-frm, sys-lab
+pub phx_market::between::Offer::price: i64  // used by: if-labour, if-state, phx-cli, phx-fin, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub phx_market::between::Offer::seller: phx_id::ids::PartyKey  // used by: phx-fin, phx-world
+pub phx_market::between::Offer::units: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
+pub fn phx_market::between::between(&[phx_market::between::Offer], &[phx_market::between::Bid], i64, &mut phx_rand::draws::Draws) -> phx_market::between::Between  // used by: phx-exec, phx-fin, phx-geo
+pub mod phx_market::carriage  // used by: phx-world, sys-frt
 pub struct phx_market::carriage::CarriageDay
-pub phx_market::carriage::CarriageDay::booked: alloc::vec::Vec<(usize, usize)>
-pub phx_market::carriage::CarriageDay::no_room: alloc::vec::Vec<usize>
-pub phx_market::carriage::CarriageDay::over_capacity: alloc::vec::Vec<usize>
-pub struct phx_market::carriage::Carrier
-pub phx_market::carriage::Carrier::carrier: phx_id::ids::PartyId
-pub phx_market::carriage::Carrier::price: phx_num::price::PriceRaw
-pub phx_market::carriage::Carrier::room: i64
-pub struct phx_market::carriage::Consignment
-pub phx_market::carriage::Consignment::load: i64
-pub phx_market::carriage::Consignment::need: i64
-pub phx_market::carriage::Consignment::segments: alloc::vec::Vec<usize>
-pub phx_market::carriage::Consignment::shipper: phx_id::ids::PartyId
-pub struct phx_market::carriage::FreightTech
-pub phx_market::carriage::FreightTech::carriage_a_tonne_km: alloc::vec::Vec<f64>
-pub phx_market::carriage::FreightTech::carriage_product: u16
-pub phx_market::carriage::FreightTech::loading_days: alloc::vec::Vec<u32>
-pub phx_market::carriage::FreightTech::metres_a_day: alloc::vec::Vec<u64>
-pub phx_market::carriage::FreightTech::tonne_km: alloc::vec::Vec<f64>
-pub phx_market::carriage::FreightTech::units_a_tonne: alloc::vec::Vec<f64>
-pub phx_market::carriage::FreightTech::vehicles: u32
+pub phx_market::carriage::CarriageDay::booked: alloc::vec::Vec<(usize, usize)>  // used by: phx-cli, phx-world
+pub phx_market::carriage::CarriageDay::no_room: alloc::vec::Vec<usize>  // used by: phx-world
+pub phx_market::carriage::CarriageDay::over_capacity: alloc::vec::Vec<usize>  // used by: phx-world
+pub struct phx_market::carriage::Carrier  // used by: phx-world
+pub phx_market::carriage::Carrier::carrier: phx_id::ids::PartyId  // used by: phx-cli, phx-core, phx-world
+pub phx_market::carriage::Carrier::price: phx_num::price::PriceRaw  // used by: if-labour, if-state, phx-cli, phx-fin, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub phx_market::carriage::Carrier::room: i64  // used by: phx-store, phx-world, sys-lab
+pub struct phx_market::carriage::Consignment  // used by: phx-world
+pub phx_market::carriage::Consignment::load: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub phx_market::carriage::Consignment::need: i64  // used by: phx-world, sys-sov
+pub phx_market::carriage::Consignment::segments: alloc::vec::Vec<usize>  // used by: phx-check, phx-geo, phx-macros, phx-world
+pub phx_market::carriage::Consignment::shipper: phx_id::ids::PartyId  // used by: phx-world
+pub struct phx_market::carriage::FreightTech  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::carriage_a_tonne_km: alloc::vec::Vec<f64>  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::carriage_product: u16  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::loading_days: alloc::vec::Vec<u32>  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::metres_a_day: alloc::vec::Vec<u64>  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::tonne_km: alloc::vec::Vec<f64>  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::units_a_tonne: alloc::vec::Vec<f64>  // used by: phx-world, sys-frt
+pub phx_market::carriage::FreightTech::vehicles: u32  // used by: phx-world, sys-frt
 impl phx_store::save::Saved for phx_market::carriage::FreightTech where u32: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved, alloc::vec::Vec<u64>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, u16: phx_store::save::Saved
-pub fn phx_market::carriage::FreightTech::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::carriage::FreightTech::rebuild_skipped(&mut self)
-pub fn phx_market::carriage::FreightTech::save(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_market::carriage::carriage(&[phx_market::carriage::Carrier], &[phx_market::carriage::Consignment], &mut [i64], &mut phx_rand::draws::Draws) -> phx_market::carriage::CarriageDay
-pub fn phx_market::carriage::freight(&phx_market::carriage::FreightTech, (u16, i64), (u16, u64), (i64, f64)) -> core::option::Option<f64>
-pub fn phx_market::carriage::transit_days(u64, u64, u32) -> u32
-pub mod phx_market::consts
+pub fn phx_market::carriage::FreightTech::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::carriage::FreightTech::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_market::carriage::FreightTech::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::carriage::carriage(&[phx_market::carriage::Carrier], &[phx_market::carriage::Consignment], &mut [i64], &mut phx_rand::draws::Draws) -> phx_market::carriage::CarriageDay  // used by: phx-world, sys-frt
+pub fn phx_market::carriage::freight(&phx_market::carriage::FreightTech, (u16, i64), (u16, u64), (i64, f64)) -> core::option::Option<f64>  // used by: phx-cli, phx-world, sys-frt, sys-srv
+pub fn phx_market::carriage::transit_days(u64, u64, u32) -> u32  // used by: phx-world
+pub mod phx_market::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_market::consts::CHOICE_CHUNK: usize
-pub const phx_market::consts::METRES_A_KM: f64
+pub const phx_market::consts::METRES_A_KM: f64  // used by: phx-world
 pub const phx_market::consts::ROUND_BLOCKS: u32
 pub const phx_market::consts::SEARCH_CHUNK: usize
 pub const phx_market::consts::STALL_CHUNK: usize
 pub const phx_market::consts::STALL_DIGIT_BITS: u32
-pub mod phx_market::hiring
-pub struct phx_market::hiring::Applicant
-pub phx_market::hiring::Applicant::experience: u32
-pub phx_market::hiring::Applicant::lot: u64
-pub phx_market::hiring::Applicant::skill: u32
-pub struct phx_market::hiring::Application
-pub phx_market::hiring::Application::seeker: phx_market::hiring::Seeker
-pub phx_market::hiring::Application::vacancy: u32
+pub mod phx_market::hiring  // used by: phx-fin, phx-world, sys-lab
+pub struct phx_market::hiring::Applicant  // used by: if-labour, phx-world
+pub phx_market::hiring::Applicant::experience: u32  // used by: if-labour, phx-fin, phx-val, phx-world, sys-lab
+pub phx_market::hiring::Applicant::lot: u64  // used by: if-labour, phx-cli, phx-core, phx-fin, phx-geo, phx-world, sys-dem, sys-frm, sys-lab
+pub phx_market::hiring::Applicant::skill: u32  // used by: if-labour, phx-fin, phx-world, sys-lab
+pub struct phx_market::hiring::Application  // used by: phx-world
+pub phx_market::hiring::Application::seeker: phx_market::hiring::Seeker  // used by: phx-world
+pub phx_market::hiring::Application::vacancy: u32  // used by: phx-world
 impl phx_store::save::Saved for phx_market::hiring::Application where u32: phx_store::save::Saved, phx_market::hiring::Seeker: phx_store::save::Saved
-pub fn phx_market::hiring::Application::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::hiring::Application::rebuild_skipped(&mut self)
-pub fn phx_market::hiring::Application::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::hiring::Seeker
-pub phx_market::hiring::Seeker::experience: u32
-pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey
-pub phx_market::hiring::Seeker::occupation: u32
-pub phx_market::hiring::Seeker::person: u64
-pub phx_market::hiring::Seeker::region: u32
-pub phx_market::hiring::Seeker::reservation: f64
-pub phx_market::hiring::Seeker::skill: u32
-pub phx_market::hiring::Seeker::subject: u64
+pub fn phx_market::hiring::Application::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::Application::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::Application::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_market::hiring::Seeker  // used by: phx-fin, phx-world
+pub phx_market::hiring::Seeker::experience: u32  // used by: if-labour, phx-fin, phx-val, phx-world, sys-lab
+pub phx_market::hiring::Seeker::household: phx_id::ids::PartyKey  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
+pub phx_market::hiring::Seeker::occupation: u32  // used by: if-labour, phx-fin, phx-world, sys-lab, sys-soc
+pub phx_market::hiring::Seeker::person: u64  // used by: phx-cli, phx-core, phx-fin, phx-pop, phx-world, sys-dem
+pub phx_market::hiring::Seeker::region: u32  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
+pub phx_market::hiring::Seeker::reservation: f64  // used by: if-labour, phx-fin, phx-world, sys-lab
+pub phx_market::hiring::Seeker::skill: u32  // used by: if-labour, phx-fin, phx-world, sys-lab
+pub phx_market::hiring::Seeker::subject: u64  // used by: phx-cli, phx-core, phx-fin, phx-id, phx-rand, phx-world, sys-bnk, sys-dem
 impl phx_store::save::Saved for phx_market::hiring::Seeker where phx_id::ids::PartyKey: phx_store::save::Saved, u64: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved
-pub fn phx_market::hiring::Seeker::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::hiring::Seeker::rebuild_skipped(&mut self)
-pub fn phx_market::hiring::Seeker::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::hiring::Standing
+pub fn phx_market::hiring::Seeker::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::Seeker::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::Seeker::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_market::hiring::Standing  // used by: phx-cli, phx-core, phx-fin, phx-macros, phx-world
 impl phx_market::hiring::Standing
 pub fn phx_market::hiring::Standing::in_reach<'a>(&'a self, &[phx_market::hiring::Vacancy], &phx_market::hiring::Seeker) -> &'a [u32]
-pub fn phx_market::hiring::Standing::new(&[phx_market::hiring::Vacancy]) -> phx_market::hiring::Standing
-pub struct phx_market::hiring::Vacancy
-pub phx_market::hiring::Vacancy::employer: phx_id::ids::PartyKey
-pub phx_market::hiring::Vacancy::occupation: u32
-pub phx_market::hiring::Vacancy::open: u32
-pub phx_market::hiring::Vacancy::region: u32
-pub phx_market::hiring::Vacancy::skill: u32
-pub phx_market::hiring::Vacancy::wage: f64
+pub fn phx_market::hiring::Standing::new(&[phx_market::hiring::Vacancy]) -> phx_market::hiring::Standing  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct phx_market::hiring::Vacancy  // used by: phx-fin, phx-world
+pub phx_market::hiring::Vacancy::employer: phx_id::ids::PartyKey  // used by: phx-cli, phx-fin, phx-world
+pub phx_market::hiring::Vacancy::occupation: u32  // used by: if-labour, phx-fin, phx-world, sys-lab, sys-soc
+pub phx_market::hiring::Vacancy::open: u32  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-store, phx-world, sys-dem, sys-lab
+pub phx_market::hiring::Vacancy::region: u32  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
+pub phx_market::hiring::Vacancy::skill: u32  // used by: if-labour, phx-fin, phx-world, sys-lab
+pub phx_market::hiring::Vacancy::wage: f64  // used by: if-labour, phx-cli, phx-fin, phx-val, phx-world, sys-lab, sys-soc
 impl phx_store::save::Saved for phx_market::hiring::Vacancy where phx_id::ids::PartyKey: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved
-pub fn phx_market::hiring::Vacancy::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::hiring::Vacancy::rebuild_skipped(&mut self)
-pub fn phx_market::hiring::Vacancy::save(&self, &mut phx_store::save::Writer<'_>)
-pub fn phx_market::hiring::answer(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application, &phx_market::hiring::Vacancy) -> bool) -> alloc::vec::Vec<phx_market::hiring::Application>
-pub fn phx_market::hiring::pick(&[(u32, f64)], &[f64]) -> alloc::vec::Vec<u32>
-pub fn phx_market::hiring::search(core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::hiring::Vacancy], &phx_market::hiring::Standing), &[phx_market::hiring::Seeker], (f64, f64), (&impl core::ops::function::Fn(u64) -> phx_rand::draws::Draws + core::marker::Sync, &impl core::ops::function::Fn(&phx_market::hiring::Seeker, alloc::vec::Vec<(u32, f64)>, alloc::vec::Vec<f64>) -> alloc::vec::Vec<u32> + core::marker::Sync)) -> alloc::vec::Vec<phx_market::hiring::Application>
-pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application) -> bool, (impl core::ops::function::Fn(u32) -> phx_rand::draws::Draws, impl core::ops::function::Fn(&phx_market::hiring::Vacancy, &[phx_market::hiring::Applicant], u32) -> alloc::vec::Vec<u32>)) -> alloc::vec::Vec<phx_market::hiring::Application>
-pub mod phx_market::meet
-pub struct phx_market::meet::Buyer
-pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey
-pub phx_market::meet::Buyer::place: u32
-pub phx_market::meet::Buyer::subject: u64
-pub phx_market::meet::Buyer::want: phx_market::retail::Want
+pub fn phx_market::hiring::Vacancy::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::Vacancy::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::Vacancy::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::hiring::answer(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application, &phx_market::hiring::Vacancy) -> bool) -> alloc::vec::Vec<phx_market::hiring::Application>  // used by: if-labour, phx-world, sys-lab
+pub fn phx_market::hiring::pick(&[(u32, f64)], &[f64]) -> alloc::vec::Vec<u32>  // used by: phx-fin, phx-geo, phx-world, sys-lab
+pub fn phx_market::hiring::search(core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::hiring::Vacancy], &phx_market::hiring::Standing), &[phx_market::hiring::Seeker], (f64, f64), (&impl core::ops::function::Fn(u64) -> phx_rand::draws::Draws + core::marker::Sync, &impl core::ops::function::Fn(&phx_market::hiring::Seeker, alloc::vec::Vec<(u32, f64)>, alloc::vec::Vec<f64>) -> alloc::vec::Vec<u32> + core::marker::Sync)) -> alloc::vec::Vec<phx_market::hiring::Application>  // used by: if-labour, phx-fin, phx-world, sys-lab
+pub fn phx_market::hiring::select(&mut [phx_market::hiring::Vacancy], &[phx_market::hiring::Application], impl core::ops::function::Fn(&phx_market::hiring::Application) -> bool, (impl core::ops::function::Fn(u32) -> phx_rand::draws::Draws, impl core::ops::function::Fn(&phx_market::hiring::Vacancy, &[phx_market::hiring::Applicant], u32) -> alloc::vec::Vec<u32>)) -> alloc::vec::Vec<phx_market::hiring::Application>  // used by: if-labour, phx-world, sys-lab
+pub mod phx_market::meet  // used by: phx-fin, phx-world
+pub struct phx_market::meet::Buyer  // used by: phx-fin, phx-world
+pub phx_market::meet::Buyer::party: phx_id::ids::PartyKey  // used by: phx-core, phx-fin, phx-ledger, phx-obs, phx-store, phx-world
+pub phx_market::meet::Buyer::place: u32  // used by: if-credit, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_market::meet::Buyer::subject: u64  // used by: phx-cli, phx-core, phx-fin, phx-id, phx-rand, phx-world, sys-bnk, sys-dem
+pub phx_market::meet::Buyer::want: phx_market::retail::Want  // used by: phx-core, phx-fin, phx-world
 impl phx_store::save::Saved for phx_market::meet::Buyer where phx_id::ids::PartyKey: phx_store::save::Saved, u64: phx_store::save::Saved, phx_market::retail::Want: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn phx_market::meet::Buyer::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::meet::Buyer::rebuild_skipped(&mut self)
-pub fn phx_market::meet::Buyer::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::meet::GoodsLeg
-pub phx_market::meet::GoodsLeg::order: u8
-pub phx_market::meet::GoodsLeg::reason: u8
-pub phx_market::meet::GoodsLeg::unit: phx_core::flows::Denom
-pub phx_market::meet::GoodsLeg::used: bool
-pub struct phx_market::meet::Meeting
-pub phx_market::meet::Meeting::rounds: u64
-pub phx_market::meet::Meeting::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>
+pub fn phx_market::meet::Buyer::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::meet::Buyer::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_market::meet::Buyer::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_market::meet::GoodsLeg  // used by: phx-world
+pub phx_market::meet::GoodsLeg::order: u8  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
+pub phx_market::meet::GoodsLeg::reason: u8  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
+pub phx_market::meet::GoodsLeg::unit: phx_core::flows::Denom  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub phx_market::meet::GoodsLeg::used: bool  // used by: phx-check, phx-core, phx-world, sys-frm
+pub struct phx_market::meet::Meeting  // used by: phx-core, phx-fin, phx-world
+pub phx_market::meet::Meeting::rounds: u64  // used by: phx-core, phx-exec, phx-store, phx-world
+pub phx_market::meet::Meeting::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>  // used by: phx-fin
 impl phx_market::meet::Meeting
-pub fn phx_market::meet::Meeting::sales(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_market::meet::Sale>
+pub fn phx_market::meet::Meeting::sales(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_market::meet::Sale>  // used by: phx-cli, phx-fin, phx-world, sys-frm
 impl phx_store::save::Saved for phx_market::meet::Meeting where alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<phx_market::meet::Sale>>: core::default::Default, alloc::vec::Vec<Choosing>: core::default::Default, alloc::vec::Vec<alloc::vec::Vec<Choosing>>: core::default::Default, phx_exec::partition::Partitioned<Choosing>: core::default::Default, alloc::vec::Vec<i64>: core::default::Default, alloc::vec::Vec<core::option::Option<f64>>: core::default::Default
-pub fn phx_market::meet::Meeting::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::meet::Meeting::rebuild_skipped(&mut self)
-pub fn phx_market::meet::Meeting::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::meet::Place
-pub phx_market::meet::Place::near: alloc::vec::Vec<(u32, f64)>
-pub struct phx_market::meet::Sale
-pub phx_market::meet::Sale::buyer: phx_id::ids::PartyKey
-pub phx_market::meet::Sale::paid: i64
-pub phx_market::meet::Sale::seller: phx_id::ids::PartyKey
-pub phx_market::meet::Sale::units: i64
+pub fn phx_market::meet::Meeting::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::meet::Meeting::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn phx_market::meet::Meeting::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_market::meet::Place  // used by: phx-fin, phx-world, sys-dem
+pub phx_market::meet::Place::near: alloc::vec::Vec<(u32, f64)>  // used by: phx-fin, phx-geo, phx-world
+pub struct phx_market::meet::Sale  // used by: phx-world
+pub phx_market::meet::Sale::buyer: phx_id::ids::PartyKey  // used by: phx-world
+pub phx_market::meet::Sale::paid: i64  // used by: phx-cli, phx-core, phx-ledger, phx-world
+pub phx_market::meet::Sale::seller: phx_id::ids::PartyKey  // used by: phx-fin, phx-world
+pub phx_market::meet::Sale::units: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
 impl phx_market::meet::Sale
-pub fn phx_market::meet::Sale::flows(&self, (phx_core::flows::Denom, u8, u8), core::option::Option<phx_market::meet::GoodsLeg>, u32, &mut alloc::vec::Vec<phx_core::flows::Flow>)
-pub struct phx_market::meet::Stall
-pub phx_market::meet::Stall::price: i64
-pub phx_market::meet::Stall::seller: phx_id::ids::PartyKey
-pub phx_market::meet::Stall::units: i64
-pub struct phx_market::meet::Tastes
-pub phx_market::meet::Tastes::day: u32
-pub phx_market::meet::Tastes::key: phx_rand::key::StreamKey
-pub phx_market::meet::Tastes::substep: u8
-pub fn phx_market::meet::meet(&mut phx_market::meet::Meeting, core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::meet::Stall], &[phx_market::meet::Place], &[phx_market::meet::Buyer]), (i64, phx_market::retail::Weights), phx_market::meet::Tastes, &impl core::ops::function::Fn(phx_id::ids::PartyKey, u32) -> phx_rand::draws::Draws + core::marker::Sync)
-pub mod phx_market::reach
-pub struct phx_market::reach::MarketPrims
+pub fn phx_market::meet::Sale::flows(&self, (phx_core::flows::Denom, u8, u8), core::option::Option<phx_market::meet::GoodsLeg>, u32, &mut alloc::vec::Vec<phx_core::flows::Flow>)  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-val, phx-world
+pub struct phx_market::meet::Stall  // used by: phx-fin, phx-world
+pub phx_market::meet::Stall::price: i64  // used by: if-labour, if-state, phx-cli, phx-fin, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub phx_market::meet::Stall::seller: phx_id::ids::PartyKey  // used by: phx-fin, phx-world
+pub phx_market::meet::Stall::units: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
+pub struct phx_market::meet::Tastes  // used by: phx-fin, phx-world
+pub phx_market::meet::Tastes::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
+pub phx_market::meet::Tastes::key: phx_rand::key::StreamKey  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub phx_market::meet::Tastes::substep: u8  // used by: phx-core, phx-exec, phx-fin, phx-rand, phx-world
+pub fn phx_market::meet::meet(&mut phx_market::meet::Meeting, core::option::Option<&phx_exec::pool::Pool>, (&[phx_market::meet::Stall], &[phx_market::meet::Place], &[phx_market::meet::Buyer]), (i64, phx_market::retail::Weights), phx_market::meet::Tastes, &impl core::ops::function::Fn(phx_id::ids::PartyKey, u32) -> phx_rand::draws::Draws + core::marker::Sync)  // used by: phx-fin, phx-world
+pub mod phx_market::reach  // used by: if-labour, phx-fin, phx-geo, phx-world, sys-lab
+pub struct phx_market::reach::MarketPrims  // used by: phx-world
 pub phx_market::reach::MarketPrims::closed_borders: phx_core::register::Prim<phx_num::qty::Count>
 impl phx_market::reach::MarketPrims
-pub fn phx_market::reach::MarketPrims::declare(&mut phx_core::system::Declarations) -> phx_market::reach::MarketPrims
+pub fn phx_market::reach::MarketPrims::declare(&mut phx_core::system::Declarations) -> phx_market::reach::MarketPrims  // used by: phx-acct, phx-core, phx-geo, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct phx_market::reach::Reach
 impl phx_market::reach::Reach
-pub fn phx_market::reach::Reach::new(&phx_market::reach::MarketPrims, &phx_core::register::Register) -> phx_market::reach::Reach
-pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>
-pub struct phx_market::reach::Site
-pub phx_market::reach::Site::country: phx_id::ids::CountryId
-pub phx_market::reach::Site::zone: phx_id::ids::ZoneId
+pub fn phx_market::reach::Reach::new(&phx_market::reach::MarketPrims, &phx_core::register::Register) -> phx_market::reach::Reach  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_market::reach::Reach::of(&self, phx_market::reach::Site, u64, &[phx_market::reach::Site], &phx_geo::distance::ZoneDistances) -> alloc::vec::Vec<usize>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub struct phx_market::reach::Site  // used by: phx-check, phx-exec
+pub phx_market::reach::Site::country: phx_id::ids::CountryId  // used by: if-state, phx-cli, phx-core, phx-geo, phx-ledger, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub phx_market::reach::Site::zone: phx_id::ids::ZoneId  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-world
 pub const phx_market::reach::CLOSED_BORDERS: phx_core::register::PrimDecl
-pub mod phx_market::retail
-pub enum phx_market::retail::Want
-pub phx_market::retail::Want::Money(i64)
-pub phx_market::retail::Want::Units(i64)
-pub phx_market::retail::Want::UpTo(i64, i64)
+pub mod phx_market::retail  // used by: phx-fin, phx-world
+pub enum phx_market::retail::Want  // used by: phx-fin, phx-world
+pub phx_market::retail::Want::Money(i64)  // used by: phx-core, phx-ledger, phx-num, phx-store, phx-val, phx-world
+pub phx_market::retail::Want::Units(i64)  // used by: phx-core, phx-fin, phx-ledger, sys-tec
+pub phx_market::retail::Want::UpTo(i64, i64)  // used by: phx-world
 impl phx_store::save::Saved for phx_market::retail::Want where i64: phx_store::save::Saved
-pub fn phx_market::retail::Want::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn phx_market::retail::Want::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct phx_market::retail::Weights
-pub phx_market::retail::Weights::distance: f64
-pub phx_market::retail::Weights::price: f64
-pub fn phx_market::retail::chances_at(&[f64], f64) -> alloc::vec::Vec<f64>
-pub fn phx_market::retail::paid(i64, i64, i64) -> i64
-pub fn phx_market::retail::price_chances(&[i64], f64) -> alloc::vec::Vec<f64>
+pub fn phx_market::retail::Want::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub fn phx_market::retail::Want::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_market::retail::Weights  // used by: phx-fin, phx-world
+pub phx_market::retail::Weights::distance: f64  // used by: phx-cli, phx-fin, phx-geo, phx-obs, phx-world
+pub phx_market::retail::Weights::price: f64  // used by: if-labour, if-state, phx-cli, phx-fin, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub fn phx_market::retail::chances_at(&[f64], f64) -> alloc::vec::Vec<f64>  // used by: phx-world
+pub fn phx_market::retail::paid(i64, i64, i64) -> i64  // used by: phx-cli, phx-core, phx-ledger, phx-world
+pub fn phx_market::retail::price_chances(&[i64], f64) -> alloc::vec::Vec<f64>  // used by: phx-world

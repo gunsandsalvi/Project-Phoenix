@@ -4,6 +4,7 @@ mod coverage;
 mod docs;
 mod exceptions;
 mod git;
+mod names;
 mod ratchets;
 mod rules;
 mod workspace;
@@ -47,6 +48,9 @@ enum Command {
     PublicApi {
         #[arg(long)]
         write: bool,
+        /// Lists every item no crate outside its own names instead, a report of what is built before its users.
+        #[arg(long)]
+        unused: bool,
     },
     /// Lists every site a rule finds as it would admit them; `--write` records them as the rule's exceptions file,
     /// which is done once, when the rule is first widened over the code as it stands.
@@ -80,7 +84,7 @@ fn main() -> ExitCode {
         }
         Command::Clauses => clauses::run(&ws),
         Command::Coverage { write } => return coverage_command(&ws, write),
-        Command::PublicApi { write } => return public_api_command(&ws, write),
+        Command::PublicApi { write, unused } => return public_api_command(&ws, write, unused),
         Command::Exceptions { rule, write } => return exceptions_command(&ws, &rule, write),
     };
     report(&breaches)
@@ -141,7 +145,14 @@ fn public_api(nightly: &str, krate: &str) -> Result<String, String> {
     String::from_utf8(output.stdout).map_err(|e| format!("cargo public-api -p {krate}: {e}"))
 }
 
-fn public_api_command(ws: &Workspace, write: bool) -> ExitCode {
+fn public_api_command(ws: &Workspace, write: bool, unused: bool) -> ExitCode {
+    let usage = rules::api_snapshot::usage(ws);
+    if unused {
+        for (krate, line) in rules::api_snapshot::unused(ws, &usage) {
+            println!("{krate}: {line}");
+        }
+        return ExitCode::SUCCESS;
+    }
     let nightly = fs::read_to_string(ws.root.join(VERSIONS))
         .map_err(|e| format!("{VERSIONS}: {e}"))
         .and_then(|text| text.parse::<toml::Table>().map_err(|e| format!("{VERSIONS}: {e}")))
@@ -170,7 +181,8 @@ fn public_api_command(ws: &Workspace, write: bool) -> ExitCode {
         };
         let path = format!("{}/{API_SNAPSHOT}", c.dir);
         if write {
-            if let Err(error) = fs::write(ws.root.join(&path), &current) {
+            let annotated = rules::api_snapshot::annotate(&current, &c.name, &usage);
+            if let Err(error) = fs::write(ws.root.join(&path), annotated) {
                 eprintln!("phx-check: {path}: {error}");
                 return ExitCode::FAILURE;
             }

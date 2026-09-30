@@ -212,7 +212,7 @@ each side may hold, and assembly refuses a row of any other (derivatives: indivi
 decision point may have one rule per decider kind; each decision point's rule is registered by its owning system — the
 system that owns that kind's decision — except that a lender valuing a claim on its book does so through `sys-bnk`. An
 item that only one system may construct carries a **writer token** only that system can build: a lender's
-`LoanAssessment` (in `if-credit`) is built only by `sys-bnk`, so every price and provision on a lender's book comes
+`LoanAssessment` (planned, S2.102; in `if-credit`) is built only by `sys-bnk`, so every price and provision on a lender's book comes
 from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_claim_value`, never building one.
 Five interface crates stand: `if-base`, `if-pop`, `if-labour`, `if-credit` and `if-state`; the rest are created by
 the first step that needs them. Only `if-pop`'s items are `ItemDecl`s with a named writer that assembly checks
@@ -227,7 +227,7 @@ the first step that needs them. Only `if-pop`'s items are `ItemDecl`s with a nam
 | `if-property` | dwellings, land, tenancies, collateral descriptions, appraisals, sales |
 | `if-credit` | loan terms (interbank loans among them), applications and quotes, the lender's assessment, workouts and loan sales, credit-bureau records, trade credit; the decision points that need them (borrowing, where to live, financing, distress, answering a restructuring, arrears and filing, bidding for a failed bank) |
 | `if-banking` | deposit terms, banking arrangements and payment order; bank facts; the funding and capital rule handles (`marginal_cost_of_funds` over each lender's declared sources, `capital_charge` under its declared regime); licensing; resolution |
-| `if-securities` | bonds, shares, fund units, dealers, securities loans, prime brokerage, listed companies' reports, ratings (`RatingView`), indices, orders; the decision points on them — the depositor's bank choice, households' holdings, `place_cash`, bids, votes |
+| `if-securities` | bonds, shares, fund units, dealers, securities loans, prime brokerage, listed companies' reports, ratings (`RatingView` (planned, S3.207)), indices, orders; the decision points on them — the depositor's bank choice, households' holdings, `place_cash`, bids, votes |
 | `if-risk` | derivative, insurance and pension terms, and the rule handle `accrued_schedule` over a member's DB right; margin demands; close-outs; claims; the protection scheme and the guarantee fund; the decision points on them — positions, cover, collateral, schemes offered, trustees, repair, members' pensions, bids for an insurer's portfolio or a clearing house's service |
 | `if-state` | policy values, levies, benefits, agencies, budgets, elections, rule signatures of tax and benefit; the central bank's regimes, tenders and collateral framework, a bank's `fund_position`; the treasury's plan and payment priority |
 | `if-open` | currencies, regimes, trade, migration |
@@ -683,7 +683,7 @@ scheme's limit, an accrued pension under a guarantee fund's cap). A **stay** is 
 procedure's opening the debtor's rows move to **procedure lines** of the same kinds whose terms carry the stay, so a
 stay suspends only the debtor's dues and never a line other holders share.
 
-A `LineTransfer` moves a row's count with its balance pro rata, rounded by the transfer's declared convention.
+A line's transfer moves a row's count with its balance pro rata, rounded by the transfer's declared convention.
 `split_at_kink` takes a holder's rows in the declared coverage order, each row's part per member within what the
 per-person limit times the holder's persons has left, bound against the member's share, times the row's count, and the
 rest of the row's total beside it, so any total splits exactly.
@@ -710,7 +710,7 @@ decision and an effective day before the next business day of the policy's count
   A decision point's rule is one pure function and is its own evaluation form, so REP.15's estimates evaluate the
   function that decides. A point needs a schedule or wakes. `Ctx::decide` takes the player's queued intent for the
   point when one is queued; otherwise the rule decides only if the player's decider delegates, and else the decision
-  is not taken that day. `RuleTable::check` refuses a rule signature with no implementer or two, one implemented by
+  is not taken that day. The rule table's check refuses a rule signature with no implementer or two, one implemented by
   another system than its declared one, and an implementation of no declared signature.
 - A **rule handle** is a pure function declared in an interface crate and implemented by its owning system — the tax
   on a given income, a benefit entitlement, a lender's cap, a clearing house's margin for a trade, a platform's effect
@@ -738,12 +738,12 @@ compile and assembly time from declarations; `read-trace`, a run-time flag of re
 The sample is the first chunk of each (handler, table) in the run and every chunk whose index is congruent to the day
 modulo 64. A traced chunk's writes are stamped with their (sub-step, handler), and each read is checked
 against the reader's declaration and against a later stamp; every `Streams::open` is recorded unsampled, and at the
-close the day's opens are sorted and each repeated (stream, subject, sub-step) counted (`TraceLog`). What the trace
+close the day's opens are sorted and each repeated (stream, subject, sub-step) counted. What the trace
 finds is reported through the audit's Time family (§15); the stamps live for a day and the log is kept outside the
 world hash.
 
 A record kind declares its audience, its horizon and its writer; entries are dated by (day, sub-step) and are world
-state, hashed and saved. `RecordStore::read(kind, reader, calendar)` returns only entries whose audience includes the
+state, hashed and saved. A record store's read by kind, reader and calendar returns only entries whose audience includes the
 reader and that are dated before its own sub-step; a `PublicAfter(lag)` entry becomes visible to others on the day
 the calendar places at its date plus the lag. An event carries its kind, day and sub-step, its subjects and details
 (a subject with a size in the kind's declared unit — a catastrophe's struck tiles and severities) and may develop only
@@ -2186,17 +2186,17 @@ planned (S1.356).
   rationing by lot; bilateral quotes as a protocol over messages across days; administered facilities.
 - **The call** (`call::call`) finds its price on the tick grid among the prices that clear — something trades and every
   step strictly better than the price fits within what the other side brings at it, so those fill in full — chosen by
-  the operator's tie sequence on the `MarketDecl` (`TieRule`: most volume, least imbalance, nearest the last print,
+  the operator's tie sequence on the `MarketDecl` (planned, S1.347) (the tie rule: most volume, least imbalance, nearest the last print,
   skipped with none, then the lower price, which leaves no tie). Steps at the price share the rest pro rata by largest
   remainder with ties by lot, or by declared priority, pro rata within a priority. No overlap, no bid or no offer is a
   failure. **The book** keeps each side in priority order, better price then earlier arrival, a resting step placed by
   binary search; an incoming step trades at each resting step's price, passing over its poster's own; what rests and
-  the `AtTheClose` orders meet in the closing call. **A dealer request** trades on the best quote among the dealers
+  the `AtTheClose` (planned, S3.147) orders meet in the closing call. **A dealer request** trades on the best quote among the dealers
   asked, within the client's limit and the quote's size, equal quotes by lot; no dealer quoting that side is the
   dealers' failure, every quote beyond the limit the client's walking away. **The administered form** meets requests
   in their parties' order, each as far as the facility's registered quantity response grants, within its limit. **A
   linked call** drops the market nodes with no order that day, with their edges, before it meets. `posted::posted`
-  meets groups of buyers, whose demand at a price it reads through `phx_core::GroupDemand`, so `phx-market` depends on
+  meets groups of buyers, whose demand at a price it reads through the core's group demand, so `phx-market` depends on
   no population crate; a group turned away chooses again among the sellers left, wanting at the new price what its
   members want there less what they bought.
 
@@ -2217,7 +2217,7 @@ planned (S1.356).
 - Marks and fixings at 6b by each form's rule (MKT.12): an instrument's or a currency pair's fixing is made by
   `phx-market` by the pricing service's declared method (the volume-weighted mean of the day's trades, for dealer
   markets); with no trade there is none. **Benchmark reference rates** (IDX.2) are a different fact with one writer:
-  each administrator's 9d handler in `sys-idx` fixes them from 8b's match sets, the only input a `BenchmarkFixing` can
+  each administrator's 9d handler in `sys-idx` fixes them from 8b's match sets, the only input a `BenchmarkFixing` (planned, S3.203) can
   be built from (the plan's PC-56); a day without eligible matches has none. The curve and the day's discount-factor
   tables are fitted at 6c from the day's fixings by the curve publisher, labelled valuation inputs (MKT.20), never
   prints. Valuations (MKT.20) in `phx-acct` at 9a, as `Money` rounded by the valuer's convention, by valuers whose
@@ -2258,7 +2258,7 @@ print. The heuristic menu is one sealed trait (`Heuristic`, `MENU`: adaptive, tr
 other crate adds a way of forecasting; assembly refuses `VAL.heuristics_tracked` other than the menu's length. The
 world's methods are compiled at assembly, every heuristic on the menu by every memory type (a type of
 `VAL.adaptive_gain`'s distribution, its λ), each at every age class and at none; γ and κ are shared. The public
-series (`PublicSeries`) keeps its last and previous
+series keeps its last and previous
 print, their running sum and count and each method's outlook; an anchor's level is the mean of its prints.
 Attention is λ_k = g_k·sqrt(σ²_own + σ²_pub), g_k = ½·sqrt(ψ_k ÷ c_k), its daily chance −expm1(−λ_k), and the
 exposure over spans of constant public variance one term a span (`attention::exposure`); switching shares are the
@@ -2664,7 +2664,7 @@ never read as the world's. CI never runs the world.
   scratch) are empty at a close and are skipped too. A derived index is left out as `#[saved(skip, rebuild = path)]`:
   the derive's `Saved::rebuild_skipped` calls each such path after a load, in field order and through the saved fields
   that hold it, and the load calls it on the core once the world is rebound; `skip` alone is PC-101's to refuse, today's
-  sites admitted until each base names its rebuild (S1.162's `Rebuild` pass then runs them in canonical order). Every name a save holds — the kinds' and the families'
+  sites admitted until each base names its rebuild (S1.162's rebuild pass then runs them in canonical order). Every name a save holds — the kinds' and the families'
   (`consts::families`) — is read back as the build's own, and a name the build does not declare is refused.
 - **Every save is full** (SET.12, spec Appendix E 22): a restore reads one save. Allocator state (free slots, list
   links, released slots) is saved as it stands.
@@ -2722,11 +2722,11 @@ never read as the world's. CI never runs the world.
   world with it or without it. PC-20 refuses any `&mut` to the world's stores, and any naming of `World`, in
   `phx-obs`. On the phone the observer follows the measured turns, not settling, and the views are built twice, at
   settling's end and at the run's end, not at each turn's close.
-- **Two builds**: the participant's reads only through `ParticipantScope`, its party's scoped read; the inspector's
+- **Two builds**: the participant's reads only through `ParticipantScope` (planned, S6.131), its party's scoped read; the inspector's
   compiles only with the `inspector` feature, which the participant build refuses. As built at Stage 0 there is one
   build: no crate declares an `inspector` feature, `Inspector` and the `Recorder` are always compiled, and
-  `ParticipantScope` is not built. Every shown number is a
-  `Shown<T>`, built from a record entry, a read at the close, a published statistic, or a fixed-bin aggregate of
+  `ParticipantScope` (planned, S6.131) is not built. Every shown number is a
+  `Shown<T>` (planned, S6.131), built from a record entry, a read at the close, a published statistic, or a fixed-bin aggregate of
   reads; pages are generated from the interface crates' view schemas, and a decision
   page from its point's input view and intent.
 - **The representation**: the inspector's pages show REP.15's report — the representation, its factor and its
@@ -3119,29 +3119,29 @@ credited while the world holds it (GEN.10).
     | PC-06 | a numeric literal other than 0, 1, −1 and 2 in a world crate outside `consts.rs`, type positions, tests and benches, with the arguments of the assert, format, write, `vec!` and `violation!` macros parsed as expressions; a constant in `consts.rs` without a doc comment |
     | PC-07 | a comment matching a clause id, `Law n`, `Nn`, `§`, `spec`, a document's name, a plan step, `TODO` or `FIXME` |
     | PC-08 | a function in an interface crate other than a constructor or a field accessor |
-    | PC-09 | a crate missing from §3's lists; a plan step without a valid status or its sections in order (a retired one needs only its status); two steps building; a crate whose step, still in the plan, is not yet building |
+    | PC-09 | a crate missing from §3's lists; a plan step without a valid status or its sections in order (a retired one needs only its status); two steps building; a crate whose step, still in the plan, is not yet building; and a code name in this document the workspace lacks (`rules/arch_names.rs`, over `src/names.rs`, every item any crate declares outside its tests and every source file): a backticked CamelCase identifier, `snake_case(` call, `Type::item` or `crate::path`, or path ending `.rs`, outside a §7 subsection whose status reads planned or building and unless followed on its line by `(planned, S…)`; crate names, clause ids, config keys, `perf/` and `data/` paths and shell flags are no code names (S1.131) |
     | PC-10 | counts of `allow` and `expect` attributes in world crates above their ratchets |
     | PC-11 | an `#[expect]` without a reason |
     | PC-12 | a hand-written `impl Pod` or `Sealed` outside `phx-store/src/pod.rs`, and a float in a derived `Pod` |
     | PC-13 | a direct dependency of a world crate on `rand`, `rand_core`, `getrandom`, `ahash` or `fxhash` |
     | PC-14 | `Default` on an id of `phx-id` |
-    | PC-15 | a kernel or interface crate without a committed `public-api.txt`, or whose API differs from it |
+    | PC-15 | a kernel or interface crate without a committed `public-api.txt`, or whose API differs from it; `public-api --write` records beside each item the crates outside it that name it outside their tests (`// used by: …`, no part of the API compared), and `public-api --unused` lists the items none names — a report, since a base is built before its users, which S1.360 reads (S1.131) |
     | PC-16 | a per-crate `clippy.toml` other than the root file minus that crate's declared exemptions |
     | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day |
     | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `Streams`, `open_keyed` and `ObserverDraws` named outside their listed files (§5.3) |
-    | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, `KernelMap`, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
+    | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
     | PC-96 | in a hot module of `phx-world` or a system (PC-92's hot set; the kernel's crates implement the traversals and are not read), a whole-table walk: a call of `live_slots`, `live_every`, `open_slots`, `firm_slots`, `deposits_of`, `money_totals` or `issuer_held`, or of `all`, `totals` or `money` with no argument, or a range `0..x.len()`, `0..x.count()` or `0..x.rows()`; admitted inside what is handed to `for_chunks`, `for_agenda` or `apply_by_range`, in a function carrying `#[sweep(store, cycle = …)]` or `#[opening]`; a `#[sweep]` without its cycle is refused; its exceptions file admits today's sites (S1.121) |
-    | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs`, `IntentBuf`, `OptionSet`); tests are not read; its exceptions file admits today's sites (S1.122) |
+    | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs` (planned, S1.160), `IntentBuf`, `OptionSet` (planned, S1.154)); tests are not read; its exceptions file admits today's sites (S1.122) |
     | PC-98 | in PC-92's hot set, outside functions marked `#[opening]` (`phx-macros`: a marker on a function, emitted unchanged, refused on anything else), a read by name: a call of the register's readers (`count`, `fixed`, `table1`, `table2`, `products`, `stored_by_id`, `value`) or any method whose first argument is a string literal on a receiver held as `register` or `reg`; `==` or `!=` with a string literal; `.starts_with`, `.ends_with` or `.contains` of a string literal. A primitive, kind, family, reason or market is read by its handle, bound in the opening (Law 10); a literal in a message is no comparison; its exceptions file admits today's sites (S1.123) |
     | PC-99 | in PC-92's hot set, outside functions marked `#[cold]` (an error path) or `#[opening]`, the syntax of allocation: `Vec::new`, `Vec::with_capacity`, `Box::new`, `String::new`, `String::from`, `vec!`, `format!`, and `.collect()`, `.to_vec()`, `.to_owned()`, `.to_string()`, `.clone()`; a push into a kernel buffer is admitted, and the arguments of `violation!` and `capacity_exceeded!` are tokens, not calls; what the syntax cannot see the bench's allocation counter measures (K-15); its exceptions file admits today's sites (S1.124) |
-    | PC-100 | in a world crate, a field of a struct deriving `Saved` (not marked `#[saved(skip)]`) that names a party or row by where it is now: a map or set (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, `KernelMap`) keyed by `u32`, `PartyKey`, `PartyId`, `Slot` or an edge slot, or by a tuple they lead; a `PartyMap`; a `Vec<(PartyKey, _)>`. It keys by a generation-checked reference (`PartyRef`, `GenRef<T>`, `ContractRef`) or becomes its base's column (S1.125). And in a world crate outside tests, an absent value read as zero — `unwrap_or(0)`, `unwrap_or(0.0)`, `unwrap_or(…::ZERO)`, `map_or(0, …)`, `unwrap_or_default()` — outside a function marked `#[absent_is_zero(reason = "…")]` (`phx-macros`: a marker on a function whose reason is not empty, for an absence that truly is zero, a count of an entry not there) (S1.126); its exceptions file admits today's sites. And, with no exception, a literal capacity: a `const` named `*_ROWS`, `*_WORDS`, `*_CAPACITY` or `INSTRUMENTS` whose value is a shift of literals outside `phx-core`'s `capacity.rs`, or a shift of literals handed to a store's constructor (`Column`, `Parties`, `KindStore`, `Table`, `SlotAlloc`, `Region`, `EdgeTable`, `BlockPool`, `Persons`, `ChunkArena`); a chunk size stays an engineering constant (S1.127) |
+    | PC-100 | in a world crate, a field of a struct deriving `Saved` (not marked `#[saved(skip)]`) that names a party or row by where it is now: a map or set (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map) keyed by `u32`, `PartyKey`, `PartyId`, `Slot` or an edge slot, or by a tuple they lead; a `PartyMap`; a `Vec<(PartyKey, _)>`. It keys by a generation-checked reference (`PartyRef`, `GenRef<T>` (planned, S1.159), `ContractRef` (planned, S1.174)) or becomes its base's column (S1.125). And in a world crate outside tests, an absent value read as zero — `unwrap_or(0)`, `unwrap_or(0.0)`, `unwrap_or(…::ZERO)`, `map_or(0, …)`, `unwrap_or_default()` — outside a function marked `#[absent_is_zero(reason = "…")]` (`phx-macros`: a marker on a function whose reason is not empty, for an absence that truly is zero, a count of an entry not there) (S1.126); its exceptions file admits today's sites. And, with no exception, a literal capacity: a `const` named `*_ROWS`, `*_WORDS`, `*_CAPACITY` or `INSTRUMENTS` whose value is a shift of literals outside `phx-core`'s `capacity.rs`, or a shift of literals handed to a store's constructor (`Column`, `Parties`, `KindStore`, `Table`, `SlotAlloc`, `Region`, `EdgeTable`, `BlockPool`, `Persons`, `ChunkArena`); a chunk size stays an engineering constant (S1.127) |
     | PC-22 | in `phx-audit`, outside tests, a world store (`Column`, `Table`, `SlotAlloc`, `Parties`, `KindStore`, `EdgeTable`, `ChunkArena`, `BlockList`, `BlockPool`, `Region`, `Persons`, `DueWheel`, `EventStore`, `Register`, `Calendar`, `Core`, `World`) held by `&mut`: the audit holds the world by shared reference; its reads of maintained aggregates are PC-101's (re-aimed at S1.128, the family context it named gone) |
-    | PC-101 | a field marked `#[maintained(writer = path)]` (the `Maintained` derive of `phx-macros`, which refuses a missing writer or a type that is no integer) whose type is no integer (`i8`–`i64`, `u8`–`u64`, or `phx-num`'s `Amount`, `Count`, `Money`, `Qty`, `QtyRaw`, `PriceRaw`, `Fixed`); and in `phx-audit`, outside tests, a field access naming any maintained field, which the audit recounts from source rows instead (N1's independence), a clash of names resolved by renaming (S1.128); and in a world crate, outside tests, a call of a function marked `#[per_day]` (`phx-macros`: a marker on a function, emitted unchanged), which is only ever named as a path handed to the day's cache (`DayCached::get_or`, K-35), so a per-day value is computed once a day (S1.129); and a field marked `#[saved(skip)]` without `rebuild = path`, its exceptions file admitting today's sites (S1.130) |
+    | PC-101 | a field marked `#[maintained(writer = path)]` (the `Maintained` derive of `phx-macros`, which refuses a missing writer or a type that is no integer) whose type is no integer (`i8`–`i64`, `u8`–`u64`, or `phx-num`'s `Amount`, `Count`, `Money`, `Qty`, `QtyRaw`, `PriceRaw`, `Fixed`); and in `phx-audit`, outside tests, a field access naming any maintained field, which the audit recounts from source rows instead (N1's independence), a clash of names resolved by renaming (S1.128); and in a world crate, outside tests, a call of a function marked `#[per_day]` (`phx-macros`: a marker on a function, emitted unchanged), which is only ever named as a path handed to the day's cache (`DayCached::get_or` (planned, S1.211), K-35), so a per-day value is computed once a day (S1.129); and a field marked `#[saved(skip)]` without `rebuild = path`, its exceptions file admitting today's sites (S1.130) |
     | PC-94 | a name — an identifier, or a declared name in a string — in a world crate ending `_small` or `_large`: a mechanism split by size, where a firm is one kind whatever its size (S1.24) |
 
     **Exceptions** (`src/exceptions.rs`): a rule widened over code that does not yet keep it admits today's sites in
-    `crates/apps/phx-check/exceptions/<rule>.toml`, each `[[site]]` by path, enclosing item (`Type::fn`, a struct, a
+    `crates/apps/phx-check/exceptions/<rule>.toml`, each `[[site]]` by path, enclosing item (a type's function, a struct, a
     module) and what was found, with a count. A site found beyond its count is a breach; a listed site found fewer
     times is a stale exception, so the file only shrinks; the total is held to `phx_check.exceptions_pcNN` in
     `perf/ratchets.toml`, which only falls. `phx-check exceptions <rule> [--write]` lists what the rule finds, and
@@ -3250,7 +3250,7 @@ hashes read their bytes as little-endian.
     - indexed standing flows are tested against kinks on each day they post, with no envelope; the coupled call
       is an exact min-cost flow, the lines' losses bought outside it at balancing;
     - stage 9 applies its intents at 9e, and each test is one handler with the consequence it triggers (§6.1);
-    - a decision point lives in the decider's crate or the latest crate its types need; a lender's `LoanAssessment`
+    - a decision point lives in the decider's crate or the latest crate its types need; a lender's `LoanAssessment` (planned, S2.102)
       carries a writer token only `sys-bnk` can build (§3.1, §3.4);
     - MMK.1's bilateral term loans are brought forward to Stage 2 on one interbank loan line kind, which the money
       market extends at Stage 3.
@@ -3380,8 +3380,8 @@ hashes read their bytes as little-endian.
       drawn, and nothing but money and units adds (§9.1);
     - an adult leaving to move runs `migrate` before `where_to_live`, as any mover (§6.1);
     - POP.11 and POP.12 run on the audit's rolling cycle by region;
-    - two builds, the participant's through `ParticipantScope` and the inspector's behind a feature; every shown
-      number a `Shown<T>` from its source; views and pages on a turn's last day, tracers every day; tracers' older
+    - two builds, the participant's through `ParticipantScope` (planned, S6.131) and the inspector's behind a feature; every shown
+      number a `Shown<T>` (planned, S6.131) from its source; views and pages on a turn's last day, tracers every day; tracers' older
       histories as change entries in one store beside the saves (§11, §12).
 
     Through Stage 6, the whole world, the design point misses the median by 30%, a heavy Monday by 34% and memory by
@@ -3413,7 +3413,7 @@ hashes read their bytes as little-endian.
     - an intent applies at the first apply point at or after its sub-step; the kernel applies (2f, 4b, 5d, 6d, 7c,
       9e, 10b) are a sub-step kind of their own that runs every day its stage runs, and assembly refuses a system
       handler there (§5.4, §6.2);
-    - the audit sink is `phx-core`'s `AuditStream`, implemented by `phx-audit` and injected by `phx-world`, so the
+    - the audit's sink is declared by `phx-core`, implemented by `phx-audit` and injected by `phx-world`, so the
       ledger's apply feeds the audit from below it (§3.3, §6.4);
     - every state that carries across days and can change an outcome is saved or canonical: the linked call's basis
       is saved, and the valve changes only at a save boundary (§8, §11, §14.3);

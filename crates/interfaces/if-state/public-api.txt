@@ -1,140 +1,140 @@
-pub mod if_state
-pub mod if_state::consts
-pub const if_state::consts::ACCOUNTS: usize
-pub const if_state::consts::CPI: usize
+pub mod if_state  // used by: phx-cli, phx-world, sys-idx, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
+pub mod if_state::consts  // used by: if-base, if-labour, if-pop, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const if_state::consts::ACCOUNTS: usize  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-bnk
+pub const if_state::consts::CPI: usize  // used by: phx-cli, phx-world
 pub const if_state::consts::HOLDER_CLASSES: [&str; 2]
-pub const if_state::consts::LABOUR_FORCE: usize
-pub const if_state::consts::LABOUR_STATES: usize
-pub const if_state::consts::LIFE_ENTRY: usize
-pub const if_state::consts::LIFE_TABLE: usize
-pub const if_state::consts::MONEY: usize
-pub const if_state::consts::NAMES: [&str; 6]
-pub const if_state::consts::PLACES: [u8; 6]
-pub const if_state::consts::PPI: usize
-pub const if_state::consts::SERIES: usize
-pub mod if_state::kinds
-pub struct if_state::kinds::Allotment
-pub if_state::kinds::Allotment::price: f64
-pub if_state::kinds::Allotment::won: alloc::vec::Vec<(u32, i64)>
-pub struct if_state::kinds::BenefitKind
-pub if_state::kinds::BenefitKind::claim: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>
-pub if_state::kinds::BenefitKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BenefitLaw, alloc::string::String>
-pub struct if_state::kinds::BenefitLaw
-pub if_state::kinds::BenefitLaw::claim_hours: f64
-pub if_state::kinds::BenefitLaw::months: u32
-pub if_state::kinds::BenefitLaw::replacement: f64
+pub const if_state::consts::LABOUR_FORCE: usize  // used by: phx-world
+pub const if_state::consts::LABOUR_STATES: usize  // used by: phx-world
+pub const if_state::consts::LIFE_ENTRY: usize  // used by: phx-cli
+pub const if_state::consts::LIFE_TABLE: usize  // used by: phx-cli, phx-world
+pub const if_state::consts::MONEY: usize  // used by: phx-world
+pub const if_state::consts::NAMES: [&str; 6]  // used by: sys-sta
+pub const if_state::consts::PLACES: [u8; 6]  // used by: if-labour, phx-check, phx-cli, phx-world, sys-lab
+pub const if_state::consts::PPI: usize  // used by: phx-cli, phx-world
+pub const if_state::consts::SERIES: usize  // used by: sys-sta
+pub mod if_state::kinds  // used by: phx-cli, phx-core, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub struct if_state::kinds::Allotment  // used by: phx-geo, phx-world, sys-sov
+pub if_state::kinds::Allotment::price: f64  // used by: if-labour, phx-cli, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub if_state::kinds::Allotment::won: alloc::vec::Vec<(u32, i64)>  // used by: phx-world, sys-sov
+pub struct if_state::kinds::BenefitKind  // used by: phx-world, sys-soc
+pub if_state::kinds::BenefitKind::claim: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::ClaimIn, bool>  // used by: phx-core, phx-world, sys-hh, sys-soc
+pub if_state::kinds::BenefitKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BenefitLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub struct if_state::kinds::BenefitLaw  // used by: phx-world, sys-soc
+pub if_state::kinds::BenefitLaw::claim_hours: f64  // used by: phx-world, sys-soc
+pub if_state::kinds::BenefitLaw::months: u32  // used by: phx-cli, phx-core, phx-geo, phx-ledger, phx-world, sys-lab, sys-soc
+pub if_state::kinds::BenefitLaw::replacement: f64  // used by: phx-world, sys-soc
 impl phx_store::save::Saved for if_state::kinds::BenefitLaw where f64: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn if_state::kinds::BenefitLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_state::kinds::BenefitLaw::rebuild_skipped(&mut self)
-pub fn if_state::kinds::BenefitLaw::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct if_state::kinds::Bid
-pub if_state::kinds::Bid::bidder: u32
-pub if_state::kinds::Bid::face: i64
-pub if_state::kinds::Bid::price: f64
-pub struct if_state::kinds::BidIn
-pub if_state::kinds::BidIn::excess: f64
-pub if_state::kinds::BidIn::floor_price: f64
-pub struct if_state::kinds::BillKind
-pub if_state::kinds::BillKind::bid: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::BidIn, alloc::vec::Vec<(f64, f64)>>
-pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>
-pub if_state::kinds::BillKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BillLaw, alloc::string::String>
-pub if_state::kinds::BillKind::size: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::SizeIn, f64>
-pub struct if_state::kinds::BillLaw
-pub if_state::kinds::BillLaw::buffer_weeks: f64
-pub if_state::kinds::BillLaw::face: i64
-pub if_state::kinds::BillLaw::weekday: u32
-pub if_state::kinds::BillLaw::weeks: u16
+pub fn if_state::kinds::BenefitLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_state::kinds::BenefitLaw::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_state::kinds::BenefitLaw::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct if_state::kinds::Bid  // used by: phx-market, phx-world, sys-sov
+pub if_state::kinds::Bid::bidder: u32  // used by: phx-world, sys-sov
+pub if_state::kinds::Bid::face: i64  // used by: phx-world, sys-sov
+pub if_state::kinds::Bid::price: f64  // used by: if-labour, phx-cli, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub struct if_state::kinds::BidIn  // used by: phx-world, sys-sov
+pub if_state::kinds::BidIn::excess: f64  // used by: phx-core, phx-world, sys-sov
+pub if_state::kinds::BidIn::floor_price: f64  // used by: phx-world
+pub struct if_state::kinds::BillKind  // used by: phx-world, sys-sov
+pub if_state::kinds::BillKind::bid: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::BidIn, alloc::vec::Vec<(f64, f64)>>  // used by: phx-world, sys-sov
+pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>  // used by: phx-core, phx-exec, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
+pub if_state::kinds::BillKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BillLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub if_state::kinds::BillKind::size: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::SizeIn, f64>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
+pub struct if_state::kinds::BillLaw  // used by: phx-world, sys-sov
+pub if_state::kinds::BillLaw::buffer_weeks: f64  // used by: phx-world, sys-sov
+pub if_state::kinds::BillLaw::face: i64  // used by: phx-world, sys-sov
+pub if_state::kinds::BillLaw::weekday: u32  // used by: phx-core, phx-id, phx-world, sys-sov
+pub if_state::kinds::BillLaw::weeks: u16  // used by: phx-core, phx-world, sys-sov
 impl phx_store::save::Saved for if_state::kinds::BillLaw where i64: phx_store::save::Saved, u16: phx_store::save::Saved, u32: phx_store::save::Saved, f64: phx_store::save::Saved
-pub fn if_state::kinds::BillLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_state::kinds::BillLaw::rebuild_skipped(&mut self)
-pub fn if_state::kinds::BillLaw::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct if_state::kinds::ClaimIn
-pub if_state::kinds::ClaimIn::claiming_cost: f64
-pub if_state::kinds::ClaimIn::monthly: f64
-pub if_state::kinds::ClaimIn::months: f64
-pub struct if_state::kinds::PaymentOrder
-pub if_state::kinds::PaymentOrder::benefits: u8
-pub if_state::kinds::PaymentOrder::debt_service: u8
-pub if_state::kinds::PaymentOrder::pensions: u8
-pub if_state::kinds::PaymentOrder::purchases: u8
-pub if_state::kinds::PaymentOrder::wages: u8
+pub fn if_state::kinds::BillLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_state::kinds::BillLaw::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_state::kinds::BillLaw::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct if_state::kinds::ClaimIn  // used by: phx-world, sys-soc
+pub if_state::kinds::ClaimIn::claiming_cost: f64  // used by: phx-world, sys-soc
+pub if_state::kinds::ClaimIn::monthly: f64  // used by: phx-ledger, phx-world, sys-lab, sys-soc
+pub if_state::kinds::ClaimIn::months: f64  // used by: phx-cli, phx-core, phx-geo, phx-ledger, phx-world, sys-lab, sys-soc
+pub struct if_state::kinds::PaymentOrder  // used by: phx-ledger, phx-world, sys-trs
+pub if_state::kinds::PaymentOrder::benefits: u8  // used by: phx-world, sys-trs
+pub if_state::kinds::PaymentOrder::debt_service: u8  // used by: phx-world, sys-trs
+pub if_state::kinds::PaymentOrder::pensions: u8  // used by: phx-world, sys-soc, sys-trs
+pub if_state::kinds::PaymentOrder::purchases: u8  // used by: phx-world, sys-trs
+pub if_state::kinds::PaymentOrder::wages: u8  // used by: phx-cli, phx-world, sys-lab, sys-trs
 impl phx_store::save::Saved for if_state::kinds::PaymentOrder where u8: phx_store::save::Saved
-pub fn if_state::kinds::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_state::kinds::PaymentOrder::rebuild_skipped(&mut self)
-pub fn if_state::kinds::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct if_state::kinds::PensionKind
-pub if_state::kinds::PensionKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PensionLaw, alloc::string::String>
-pub struct if_state::kinds::PensionLaw
-pub if_state::kinds::PensionLaw::age: [f64; 2]
-pub if_state::kinds::PensionLaw::coverage: [f64; 2]
-pub if_state::kinds::PensionLaw::replacement: [f64; 2]
-pub struct if_state::kinds::SizeIn
-pub if_state::kinds::SizeIn::buffer_weeks: f64
-pub if_state::kinds::SizeIn::cash: f64
-pub if_state::kinds::SizeIn::maturing: f64
-pub if_state::kinds::SizeIn::outflow: f64
-pub struct if_state::kinds::TaxKind
-pub if_state::kinds::TaxKind::included: fn(f64, f64) -> f64
-pub if_state::kinds::TaxKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::TaxLaw, alloc::string::String>
-pub struct if_state::kinds::TaxLaw
-pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>
-pub if_state::kinds::TaxLaw::remit_day: u32
-pub struct if_state::kinds::TreasuryKind
-pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>
-pub mod if_state::stats
-pub struct if_state::stats::IndexKind
-pub if_state::stats::IndexKind::base: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<f64, alloc::string::String>
-pub if_state::stats::IndexKind::link: fn(&[if_state::stats::Priced]) -> core::option::Option<f64>
-pub struct if_state::stats::Priced
-pub if_state::stats::Priced::before: f64
-pub if_state::stats::Priced::now: f64
-pub if_state::stats::Priced::weight: f64
-pub struct if_state::stats::Release
-pub if_state::stats::Release::country: u8
-pub if_state::stats::Release::period: u32
-pub if_state::stats::Release::published: phx_id::day::Day
-pub if_state::stats::Release::series: u8
-pub if_state::stats::Release::values: alloc::vec::Vec<i64>
-pub if_state::stats::Release::vintage: u8
+pub fn if_state::kinds::PaymentOrder::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_state::kinds::PaymentOrder::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_state::kinds::PaymentOrder::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct if_state::kinds::PensionKind  // used by: phx-world, sys-soc
+pub if_state::kinds::PensionKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PensionLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub struct if_state::kinds::PensionLaw  // used by: sys-soc
+pub if_state::kinds::PensionLaw::age: [f64; 2]  // used by: phx-cli, phx-core, phx-val, phx-world, sys-cap, sys-dem, sys-lab, sys-soc
+pub if_state::kinds::PensionLaw::coverage: [f64; 2]  // used by: phx-check, phx-cli, phx-world, sys-soc
+pub if_state::kinds::PensionLaw::replacement: [f64; 2]  // used by: phx-world, sys-soc
+pub struct if_state::kinds::SizeIn  // used by: phx-world, sys-sov
+pub if_state::kinds::SizeIn::buffer_weeks: f64  // used by: phx-world, sys-sov
+pub if_state::kinds::SizeIn::cash: f64  // used by: phx-core, phx-world, sys-hh, sys-sov
+pub if_state::kinds::SizeIn::maturing: f64  // used by: phx-world, sys-sov
+pub if_state::kinds::SizeIn::outflow: f64  // used by: phx-world, sys-sov
+pub struct if_state::kinds::TaxKind  // used by: phx-world, sys-tax
+pub if_state::kinds::TaxKind::included: fn(f64, f64) -> f64  // used by: phx-world, sys-tax
+pub if_state::kinds::TaxKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::TaxLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub struct if_state::kinds::TaxLaw  // used by: phx-world, sys-tax
+pub if_state::kinds::TaxLaw::bands: alloc::vec::Vec<(f64, f64)>  // used by: phx-cli, phx-ledger, phx-world, sys-tax
+pub if_state::kinds::TaxLaw::remit_day: u32  // used by: phx-world, sys-tax
+pub struct if_state::kinds::TreasuryKind  // used by: phx-world, sys-trs
+pub if_state::kinds::TreasuryKind::order: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::PaymentOrder, alloc::string::String>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-world, sys-dem, sys-frm, sys-lab, sys-trs
+pub mod if_state::stats  // used by: phx-cli, phx-exec, phx-store, phx-world, sys-idx, sys-sta
+pub struct if_state::stats::IndexKind  // used by: phx-world, sys-idx
+pub if_state::stats::IndexKind::base: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-pop, phx-rand, phx-store, phx-world, sys-idx
+pub if_state::stats::IndexKind::link: fn(&[if_state::stats::Priced]) -> core::option::Option<f64>  // used by: phx-world, sys-idx
+pub struct if_state::stats::Priced  // used by: phx-world, sys-idx
+pub if_state::stats::Priced::before: f64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-idx
+pub if_state::stats::Priced::now: f64  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-store, phx-val, phx-world, sys-frm, sys-gds, sys-hh, sys-idx
+pub if_state::stats::Priced::weight: f64  // used by: phx-geo, phx-market, phx-val, phx-world, sys-bnk, sys-dem, sys-idx
+pub struct if_state::stats::Release  // used by: phx-world, sys-sta
+pub if_state::stats::Release::country: u8  // used by: phx-cli, phx-core, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub if_state::stats::Release::period: u32  // used by: phx-cli, phx-core, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta
+pub if_state::stats::Release::published: phx_id::day::Day  // used by: phx-cli, phx-world, sys-bnk, sys-sta
+pub if_state::stats::Release::series: u8  // used by: phx-cli, phx-ledger, phx-obs, phx-world, sys-sta
+pub if_state::stats::Release::values: alloc::vec::Vec<i64>  // used by: if-pop, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
+pub if_state::stats::Release::vintage: u8  // used by: phx-cli, phx-world, sys-sta
 impl phx_store::save::Saved for if_state::stats::Release where u8: phx_store::save::Saved, u32: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
-pub fn if_state::stats::Release::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_state::stats::Release::rebuild_skipped(&mut self)
-pub fn if_state::stats::Release::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct if_state::stats::Schedule
-pub if_state::stats::Schedule::day: u32
-pub if_state::stats::Schedule::lag: u32
-pub if_state::stats::Schedule::sample: f64
+pub fn if_state::stats::Release::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_state::stats::Release::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_state::stats::Release::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct if_state::stats::Schedule  // used by: phx-ledger, phx-val, phx-world, sys-sta
+pub if_state::stats::Schedule::day: u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
+pub if_state::stats::Schedule::lag: u32  // used by: phx-cli, phx-macros, phx-world, sys-sta
+pub if_state::stats::Schedule::sample: f64  // used by: phx-cli, phx-obs, phx-world, sys-sta
 impl phx_store::save::Saved for if_state::stats::Schedule where u32: phx_store::save::Saved, f64: phx_store::save::Saved
-pub fn if_state::stats::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_state::stats::Schedule::rebuild_skipped(&mut self)
-pub fn if_state::stats::Schedule::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct if_state::stats::StaKind
-pub if_state::stats::StaKind::classes: &'static str
-pub if_state::stats::StaKind::consumer: &'static [&'static str]
-pub if_state::stats::StaKind::latest: if_state::stats::Latest
-pub if_state::stats::StaKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::stats::StaLaw, alloc::string::String>
-pub if_state::stats::StaKind::producer: &'static [&'static str]
-pub if_state::stats::StaKind::rate: fn(f64, f64) -> core::option::Option<f64>
-pub if_state::stats::StaKind::returns: phx_core::streams::StreamDecl
-pub if_state::stats::StaKind::sample: phx_core::streams::StreamDecl
-pub struct if_state::stats::StaLaw
-pub if_state::stats::StaLaw::early: f64
-pub if_state::stats::StaLaw::revision: u32
-pub if_state::stats::StaLaw::series: alloc::vec::Vec<if_state::stats::Schedule>
+pub fn if_state::stats::Schedule::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_state::stats::Schedule::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_state::stats::Schedule::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct if_state::stats::StaKind  // used by: phx-world, sys-sta
+pub if_state::stats::StaKind::classes: &'static str  // used by: if-credit, phx-cli, phx-geo, phx-val, phx-world, sys-bnk, sys-cap, sys-frm, sys-sta
+pub if_state::stats::StaKind::consumer: &'static [&'static str]  // used by: sys-sta
+pub if_state::stats::StaKind::latest: if_state::stats::Latest  // used by: phx-obs, phx-world, sys-sta
+pub if_state::stats::StaKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::stats::StaLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub if_state::stats::StaKind::producer: &'static [&'static str]  // used by: phx-cli, phx-world, sys-sta
+pub if_state::stats::StaKind::rate: fn(f64, f64) -> core::option::Option<f64>  // used by: phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
+pub if_state::stats::StaKind::returns: phx_core::streams::StreamDecl  // used by: phx-world, sys-sta
+pub if_state::stats::StaKind::sample: phx_core::streams::StreamDecl  // used by: phx-cli, phx-obs, phx-world, sys-sta
+pub struct if_state::stats::StaLaw  // used by: phx-world, sys-sta
+pub if_state::stats::StaLaw::early: f64  // used by: sys-sta
+pub if_state::stats::StaLaw::revision: u32  // used by: sys-sta
+pub if_state::stats::StaLaw::series: alloc::vec::Vec<if_state::stats::Schedule>  // used by: phx-cli, phx-ledger, phx-obs, phx-world, sys-sta
 impl phx_store::save::Saved for if_state::stats::StaLaw where alloc::vec::Vec<if_state::stats::Schedule>: phx_store::save::Saved, f64: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn if_state::stats::StaLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_state::stats::StaLaw::rebuild_skipped(&mut self)
-pub fn if_state::stats::StaLaw::save(&self, &mut phx_store::save::Writer<'_>)
-pub const if_state::stats::ACCOUNTS: usize
-pub const if_state::stats::CPI: usize
+pub fn if_state::stats::StaLaw::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_state::stats::StaLaw::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_state::stats::StaLaw::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub const if_state::stats::ACCOUNTS: usize  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-bnk
+pub const if_state::stats::CPI: usize  // used by: phx-cli, phx-world
 pub const if_state::stats::HOLDER_CLASSES: [&str; 2]
-pub const if_state::stats::LABOUR_FORCE: usize
-pub const if_state::stats::LABOUR_STATES: usize
-pub const if_state::stats::LIFE_ENTRY: usize
-pub const if_state::stats::LIFE_TABLE: usize
-pub const if_state::stats::MONEY: usize
-pub const if_state::stats::NAMES: [&str; 6]
-pub const if_state::stats::PLACES: [u8; 6]
-pub const if_state::stats::PPI: usize
-pub const if_state::stats::SERIES: usize
+pub const if_state::stats::LABOUR_FORCE: usize  // used by: phx-world
+pub const if_state::stats::LABOUR_STATES: usize  // used by: phx-world
+pub const if_state::stats::LIFE_ENTRY: usize  // used by: phx-cli
+pub const if_state::stats::LIFE_TABLE: usize  // used by: phx-cli, phx-world
+pub const if_state::stats::MONEY: usize  // used by: phx-world
+pub const if_state::stats::NAMES: [&str; 6]  // used by: sys-sta
+pub const if_state::stats::PLACES: [u8; 6]  // used by: if-labour, phx-check, phx-cli, phx-world, sys-lab
+pub const if_state::stats::PPI: usize  // used by: phx-cli, phx-world
+pub const if_state::stats::SERIES: usize  // used by: sys-sta
 pub type if_state::stats::Latest = for<'a> fn(&'a [if_state::stats::Release], (u8, u8), phx_id::day::Day) -> core::option::Option<&'a if_state::stats::Release>

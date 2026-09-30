@@ -1,100 +1,100 @@
-pub mod phx_val
-pub mod phx_val::attention
-pub struct phx_val::attention::Span
-pub phx_val::attention::Span::days: u32
-pub phx_val::attention::Span::var_public: f64
-pub fn phx_val::attention::exposure(f64, f64, &[phx_val::attention::Span]) -> f64
-pub fn phx_val::attention::gain(f64, f64) -> f64
-pub fn phx_val::attention::intensity(f64, f64, f64) -> f64
-pub fn phx_val::attention::probability(f64) -> f64
-pub mod phx_val::consts
-pub const phx_val::consts::DECADE: f64
-pub mod phx_val::experience
-pub fn phx_val::experience::long_mean(&[f64], u32, f64) -> phx_num::missing::Missing<f64>
-pub fn phx_val::experience::weight(u32, u32, f64) -> f64
-pub mod phx_val::heuristic
+pub mod phx_val  // used by: phx-world, sys-frm, sys-hh
+pub mod phx_val::attention  // used by: sys-frm
+pub struct phx_val::attention::Span  // used by: phx-check, phx-cli, phx-macros
+pub phx_val::attention::Span::days: u32  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-obs, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_val::attention::Span::var_public: f64  // used by: sys-frm
+pub fn phx_val::attention::exposure(f64, f64, &[phx_val::attention::Span]) -> f64  // used by: phx-cli, phx-geo, sys-sta
+pub fn phx_val::attention::gain(f64, f64) -> f64  // used by: phx-world, sys-frm, sys-hh
+pub fn phx_val::attention::intensity(f64, f64, f64) -> f64  // used by: phx-world, sys-frm
+pub fn phx_val::attention::probability(f64) -> f64  // used by: sys-frm
+pub mod phx_val::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const phx_val::consts::DECADE: f64  // used by: phx-world, sys-frm
+pub mod phx_val::experience  // used by: if-labour, phx-fin, phx-market, phx-world, sys-lab
+pub fn phx_val::experience::long_mean(&[f64], u32, f64) -> phx_num::missing::Missing<f64>  // used by: phx-world
+pub fn phx_val::experience::weight(u32, u32, f64) -> f64  // used by: if-state, phx-geo, phx-market, phx-world, sys-bnk, sys-dem, sys-idx
+pub mod phx_val::heuristic  // used by: phx-world, sys-hh
 pub struct phx_val::heuristic::Adaptive
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Adaptive
-pub fn phx_val::heuristic::Adaptive::name(&self) -> &'static str
-pub fn phx_val::heuristic::Adaptive::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub fn phx_val::heuristic::Adaptive::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Adaptive::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
 pub struct phx_val::heuristic::Anchor
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Anchor
-pub fn phx_val::heuristic::Anchor::name(&self) -> &'static str
-pub fn phx_val::heuristic::Anchor::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
-pub struct phx_val::heuristic::Announcement
+pub fn phx_val::heuristic::Anchor::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Anchor::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
+pub struct phx_val::heuristic::Announcement  // used by: phx-core
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Announcement
-pub fn phx_val::heuristic::Announcement::name(&self) -> &'static str
-pub fn phx_val::heuristic::Announcement::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
-pub struct phx_val::heuristic::HeuristicId(_)
+pub fn phx_val::heuristic::Announcement::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Announcement::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
+pub struct phx_val::heuristic::HeuristicId(_)  // used by: phx-world
 impl phx_val::heuristic::HeuristicId
-pub const fn phx_val::heuristic::HeuristicId::index(self) -> u8
-pub fn phx_val::heuristic::HeuristicId::new(u8) -> phx_val::heuristic::HeuristicId
-pub fn phx_val::heuristic::HeuristicId::rule(self) -> &'static dyn phx_val::heuristic::Heuristic
-pub struct phx_val::heuristic::Params
-pub phx_val::heuristic::Params::gamma: f64
-pub phx_val::heuristic::Params::kappa: f64
-pub phx_val::heuristic::Params::lambda: f64
-pub struct phx_val::heuristic::Seen
-pub phx_val::heuristic::Seen::announced: phx_num::missing::Missing<phx_val::heuristics::Announced>
-pub phx_val::heuristic::Seen::before: f64
-pub phx_val::heuristic::Seen::horizon_end: phx_id::day::Day
-pub phx_val::heuristic::Seen::last: f64
-pub phx_val::heuristic::Seen::level: f64
-pub phx_val::heuristic::Seen::previous: f64
+pub const fn phx_val::heuristic::HeuristicId::index(self) -> u8  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-world, sys-cap, sys-dem, sys-tec
+pub fn phx_val::heuristic::HeuristicId::new(u8) -> phx_val::heuristic::HeuristicId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_val::heuristic::HeuristicId::rule(self) -> &'static dyn phx_val::heuristic::Heuristic  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_val::heuristic::Params  // used by: phx-world
+pub phx_val::heuristic::Params::gamma: f64  // used by: phx-rand, phx-world
+pub phx_val::heuristic::Params::kappa: f64  // used by: phx-world, sys-hh
+pub phx_val::heuristic::Params::lambda: f64  // used by: phx-cli, phx-core, phx-rand, phx-world
+pub struct phx_val::heuristic::Seen  // used by: phx-world
+pub phx_val::heuristic::Seen::announced: phx_num::missing::Missing<phx_val::heuristics::Announced>  // used by: phx-core, phx-world
+pub phx_val::heuristic::Seen::before: f64  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-idx
+pub phx_val::heuristic::Seen::horizon_end: phx_id::day::Day  // used by: phx-world
+pub phx_val::heuristic::Seen::last: f64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-world, sys-dem, sys-frm
+pub phx_val::heuristic::Seen::level: f64  // used by: phx-check, phx-core, phx-geo, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub phx_val::heuristic::Seen::previous: f64  // used by: phx-world
 pub struct phx_val::heuristic::Trend
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Trend
-pub fn phx_val::heuristic::Trend::name(&self) -> &'static str
-pub fn phx_val::heuristic::Trend::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
-pub const phx_val::heuristic::MENU: [&dyn phx_val::heuristic::Heuristic; 4]
+pub fn phx_val::heuristic::Trend::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Trend::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
+pub const phx_val::heuristic::MENU: [&dyn phx_val::heuristic::Heuristic; 4]  // used by: phx-world, sys-hh
 pub trait phx_val::heuristic::Heuristic: phx_val::heuristic::menu::OnTheMenu + core::marker::Sync + core::fmt::Debug
-pub fn phx_val::heuristic::Heuristic::name(&self) -> &'static str
-pub fn phx_val::heuristic::Heuristic::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub fn phx_val::heuristic::Heuristic::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Heuristic::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Adaptive
-pub fn phx_val::heuristic::Adaptive::name(&self) -> &'static str
-pub fn phx_val::heuristic::Adaptive::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub fn phx_val::heuristic::Adaptive::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Adaptive::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Anchor
-pub fn phx_val::heuristic::Anchor::name(&self) -> &'static str
-pub fn phx_val::heuristic::Anchor::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub fn phx_val::heuristic::Anchor::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Anchor::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Announcement
-pub fn phx_val::heuristic::Announcement::name(&self) -> &'static str
-pub fn phx_val::heuristic::Announcement::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
+pub fn phx_val::heuristic::Announcement::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Announcement::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Trend
-pub fn phx_val::heuristic::Trend::name(&self) -> &'static str
-pub fn phx_val::heuristic::Trend::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
-pub mod phx_val::heuristics
+pub fn phx_val::heuristic::Trend::name(&self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_val::heuristic::Trend::outlook(&self, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
+pub mod phx_val::heuristics  // used by: phx-world, sys-frm
 pub struct phx_val::heuristics::Announced
-pub phx_val::heuristics::Announced::effective: phx_id::day::Day
-pub phx_val::heuristics::Announced::level: f64
-pub fn phx_val::heuristics::adaptive(f64, f64, f64) -> f64
-pub fn phx_val::heuristics::anchor(f64, f64, f64) -> f64
-pub fn phx_val::heuristics::announcement(f64, phx_val::heuristics::Announced, phx_id::day::Day) -> f64
-pub fn phx_val::heuristics::trend(f64, f64, f64) -> f64
-pub mod phx_val::method
+pub phx_val::heuristics::Announced::effective: phx_id::day::Day  // used by: phx-core, phx-world
+pub phx_val::heuristics::Announced::level: f64  // used by: phx-check, phx-core, phx-geo, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub fn phx_val::heuristics::adaptive(f64, f64, f64) -> f64  // used by: phx-world, sys-frm
+pub fn phx_val::heuristics::anchor(f64, f64, f64) -> f64  // used by: phx-core, phx-geo, phx-ledger, phx-world
+pub fn phx_val::heuristics::announcement(f64, phx_val::heuristics::Announced, phx_id::day::Day) -> f64  // used by: phx-core
+pub fn phx_val::heuristics::trend(f64, f64, f64) -> f64  // used by: phx-world
+pub mod phx_val::method  // used by: phx-check
 pub struct phx_val::method::AgeWindow(pub u16)
 pub struct phx_val::method::MemoryType(pub u8)
 pub struct phx_val::method::Method
-pub phx_val::method::Method::heuristic: phx_val::heuristic::HeuristicId
-pub phx_val::method::Method::memory: phx_val::method::MemoryType
-pub phx_val::method::Method::window: phx_val::method::AgeWindow
-pub fn phx_val::method::outlook(phx_val::method::Method, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64
-pub mod phx_val::outlook
+pub phx_val::method::Method::heuristic: phx_val::heuristic::HeuristicId  // used by: phx-world, sys-hh
+pub phx_val::method::Method::memory: phx_val::method::MemoryType  // used by: phx-core, phx-world
+pub phx_val::method::Method::window: phx_val::method::AgeWindow  // used by: phx-core, phx-world
+pub fn phx_val::method::outlook(phx_val::method::Method, &phx_val::heuristic::Seen, &phx_val::heuristic::Params) -> f64  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
+pub mod phx_val::outlook  // used by: if-labour, phx-cli, phx-world, sys-gds, sys-lab
 pub struct phx_val::outlook::Outlook
-pub phx_val::outlook::Outlook::ccy: phx_num::missing::Missing<phx_num::money::Ccy>
-pub phx_val::outlook::Outlook::day: phx_id::day::Day
-pub phx_val::outlook::Outlook::horizon: phx_core::calendar::period::Period
-pub phx_val::outlook::Outlook::mean: phx_num::fixed::Fixed<6>
-pub phx_val::outlook::Outlook::unit: phx_num::qty::UnitId
-pub phx_val::outlook::Outlook::var: phx_val::outlook::VarId
-pub phx_val::outlook::Outlook::width: phx_num::fixed::Fixed<6>
+pub phx_val::outlook::Outlook::ccy: phx_num::missing::Missing<phx_num::money::Ccy>  // used by: phx-cli, phx-core, phx-ledger, phx-num, phx-store, phx-world
+pub phx_val::outlook::Outlook::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-world, sys-sta
+pub phx_val::outlook::Outlook::horizon: phx_core::calendar::period::Period  // used by: phx-core, phx-fin
+pub phx_val::outlook::Outlook::mean: phx_num::fixed::Fixed<6>  // used by: phx-cli, phx-core, phx-geo, phx-world, sys-dem, sys-lab
+pub phx_val::outlook::Outlook::unit: phx_num::qty::UnitId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-world, sys-cap, sys-frm, sys-tec
+pub phx_val::outlook::Outlook::var: phx_val::outlook::VarId  // used by: phx-cli, phx-geo, sys-cap
+pub phx_val::outlook::Outlook::width: phx_num::fixed::Fixed<6>  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-world
 impl phx_val::outlook::Outlook
 pub fn phx_val::outlook::Outlook::formed_by(&self, phx_id::day::Day) -> bool
 pub struct phx_val::outlook::VarId(_)
 impl phx_val::outlook::VarId
-pub const fn phx_val::outlook::VarId::get(self) -> u32
-pub const fn phx_val::outlook::VarId::new(u32) -> phx_val::outlook::VarId
-pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>
-pub mod phx_val::prims
-pub struct phx_val::prims::ValPrims
+pub const fn phx_val::outlook::VarId::get(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub const fn phx_val::outlook::VarId::new(u32) -> phx_val::outlook::VarId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>  // used by: phx-check, phx-core, phx-ledger, phx-num, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
+pub mod phx_val::prims  // used by: phx-cli, phx-core, phx-geo, phx-market, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
+pub struct phx_val::prims::ValPrims  // used by: phx-world
 pub phx_val::prims::ValPrims::adaptive_gain: phx_core::register::Prim<phx_core::register::values::Distribution>
 pub phx_val::prims::ValPrims::age_windows: phx_core::register::Prim<phx_core::register::values::Partition>
 pub phx_val::prims::ValPrims::anchor_kappa: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
@@ -102,13 +102,13 @@ pub phx_val::prims::ValPrims::attention_sensitivity: phx_core::register::Prim<ph
 pub phx_val::prims::ValPrims::experience_theta: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_val::prims::ValPrims::heuristics_tracked: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_val::prims::ValPrims::memory_types: phx_core::register::Prim<phx_num::qty::Count>
-pub phx_val::prims::ValPrims::performance_memory: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_val::prims::ValPrims::performance_memory: phx_core::register::Prim<phx_num::fixed::Fixed<2>>  // used by: phx-world
 pub phx_val::prims::ValPrims::switching_intensity: phx_core::register::Prim<phx_core::register::values::Distribution>
 pub phx_val::prims::ValPrims::switching_types: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_val::prims::ValPrims::trend_gamma: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 impl phx_val::prims::ValPrims
-pub fn phx_val::prims::ValPrims::check(&self, &phx_core::register::Register) -> core::result::Result<(), alloc::string::String>
-pub fn phx_val::prims::ValPrims::declare(&mut phx_core::system::Declarations) -> phx_val::prims::ValPrims
+pub fn phx_val::prims::ValPrims::check(&self, &phx_core::register::Register) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-store, phx-world
+pub fn phx_val::prims::ValPrims::declare(&mut phx_core::system::Declarations) -> phx_val::prims::ValPrims  // used by: phx-acct, phx-core, phx-geo, phx-market, phx-pop, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub const phx_val::prims::ADAPTIVE_GAIN: phx_core::register::PrimDecl
 pub const phx_val::prims::AGE_WINDOWS: phx_core::register::PrimDecl
 pub const phx_val::prims::ANCHOR_KAPPA: phx_core::register::PrimDecl
@@ -120,55 +120,55 @@ pub const phx_val::prims::PERFORMANCE_MEMORY: phx_core::register::PrimDecl
 pub const phx_val::prims::SWITCHING_INTENSITY: phx_core::register::PrimDecl
 pub const phx_val::prims::SWITCHING_TYPES: phx_core::register::PrimDecl
 pub const phx_val::prims::TREND_GAMMA: phx_core::register::PrimDecl
-pub mod phx_val::registered
+pub mod phx_val::registered  // used by: phx-check, phx-core, phx-world
 pub struct phx_val::registered::Registered
 impl phx_val::registered::Registered
-pub fn phx_val::registered::Registered::apply(&mut self, &[((phx_val::method::Method, phx_val::outlook::VarId), i64)])
-pub fn phx_val::registered::Registered::is_empty(&self) -> bool
-pub fn phx_val::registered::Registered::len(&self) -> usize
+pub fn phx_val::registered::Registered::apply(&mut self, &[((phx_val::method::Method, phx_val::outlook::VarId), i64)])  // used by: phx-core, phx-world
+pub fn phx_val::registered::Registered::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_val::registered::Registered::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_val::registered::Registered::methods_of(&self, phx_val::outlook::VarId) -> impl core::iter::traits::iterator::Iterator<Item = phx_val::method::Method> + '_
 pub fn phx_val::registered::deviation_after(f64, f64, u32) -> f64
-pub mod phx_val::schedule
-pub struct phx_val::schedule::Schedule
-pub phx_val::schedule::Schedule::orders: alloc::vec::Vec<(phx_num::price::PriceRaw, i64)>
-pub mod phx_val::surprise
-pub fn phx_val::surprise::surprise(f64, f64) -> f64
-pub fn phx_val::surprise::wakes(f64, f64, f64) -> bool
-pub fn phx_val::surprise::width(phx_num::missing::Missing<f64>, f64, f64) -> f64
-pub mod phx_val::switching
-pub struct phx_val::switching::StanceIn
-pub phx_val::switching::StanceIn::intensity: f64
-pub phx_val::switching::StanceIn::performance: [phx_num::missing::Missing<f64>; 4]
-pub phx_val::switching::StanceIn::taste: f64
-pub fn phx_val::switching::choose(&phx_val::switching::StanceIn) -> usize
-pub fn phx_val::switching::performance(phx_num::missing::Missing<f64>, f64, f64) -> f64
-pub fn phx_val::switching::shares(&[phx_num::missing::Missing<f64>], f64, &mut [f64])
-pub mod phx_val::types
-pub struct phx_val::types::Types
-pub phx_val::types::Types::anchor: f64
-pub phx_val::types::Types::gains: alloc::vec::Vec<f64>
-pub phx_val::types::Types::intensities: alloc::vec::Vec<f64>
-pub phx_val::types::Types::memory: phx_core::register::values::TypeSet
-pub phx_val::types::Types::performance_memory: f64
-pub phx_val::types::Types::switching: phx_core::register::values::TypeSet
-pub phx_val::types::Types::theta: f64
-pub phx_val::types::Types::trend: f64
-pub phx_val::types::Types::windows: alloc::vec::Vec<i64>
+pub mod phx_val::schedule  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_val::schedule::Schedule  // used by: if-state, phx-ledger, phx-world, sys-sta
+pub phx_val::schedule::Schedule::orders: alloc::vec::Vec<(phx_num::price::PriceRaw, i64)>  // used by: phx-market, phx-world, sys-frm
+pub mod phx_val::surprise  // used by: phx-world
+pub fn phx_val::surprise::surprise(f64, f64) -> f64  // used by: phx-world
+pub fn phx_val::surprise::wakes(f64, f64, f64) -> bool  // used by: phx-core, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub fn phx_val::surprise::width(phx_num::missing::Missing<f64>, f64, f64) -> f64  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-world
+pub mod phx_val::switching  // used by: phx-core, phx-world, sys-frm, sys-hh
+pub struct phx_val::switching::StanceIn  // used by: phx-world, sys-frm, sys-hh
+pub phx_val::switching::StanceIn::intensity: f64  // used by: phx-world, sys-frm
+pub phx_val::switching::StanceIn::performance: [phx_num::missing::Missing<f64>; 4]  // used by: phx-world
+pub phx_val::switching::StanceIn::taste: f64  // used by: if-labour, phx-fin, phx-world, sys-bnk, sys-dem, sys-lab
+pub fn phx_val::switching::choose(&phx_val::switching::StanceIn) -> usize  // used by: phx-acct, phx-fin, phx-market, phx-world, sys-bnk, sys-cap, sys-frm, sys-hh
+pub fn phx_val::switching::performance(phx_num::missing::Missing<f64>, f64, f64) -> f64  // used by: phx-world
+pub fn phx_val::switching::shares(&[phx_num::missing::Missing<f64>], f64, &mut [f64])  // used by: phx-cli, phx-geo, phx-rand, phx-world, sys-bnk, sys-dem, sys-frm, sys-hh, sys-soc, sys-sta
+pub mod phx_val::types  // used by: phx-core, phx-macros, phx-world, sys-dem, sys-frm, sys-hh
+pub struct phx_val::types::Types  // used by: phx-world, sys-dem, sys-frm, sys-hh
+pub phx_val::types::Types::anchor: f64  // used by: phx-core, phx-geo, phx-ledger, phx-world
+pub phx_val::types::Types::gains: alloc::vec::Vec<f64>  // used by: phx-world, sys-hh
+pub phx_val::types::Types::intensities: alloc::vec::Vec<f64>  // used by: phx-world, sys-hh
+pub phx_val::types::Types::memory: phx_core::register::values::TypeSet  // used by: phx-core, phx-world
+pub phx_val::types::Types::performance_memory: f64  // used by: phx-world
+pub phx_val::types::Types::switching: phx_core::register::values::TypeSet  // used by: phx-core, phx-world, sys-frm, sys-hh
+pub phx_val::types::Types::theta: f64  // used by: phx-world, sys-hh
+pub phx_val::types::Types::trend: f64  // used by: phx-world
+pub phx_val::types::Types::windows: alloc::vec::Vec<i64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-num, phx-obs, phx-world, sys-dem, sys-frm, sys-hh
 impl phx_val::types::Types
-pub fn phx_val::types::Types::compile(&phx_core::register::Register) -> core::result::Result<phx_val::types::Types, alloc::string::String>
-pub fn phx_val::types::Types::of_view(&self, usize) -> (usize, phx_num::missing::Missing<usize>)
-pub fn phx_val::types::Types::views(&self) -> usize
-pub fn phx_val::types::Types::window_of(&self, u32) -> phx_num::missing::Missing<u16>
-pub fn phx_val::types::view(usize, u16, phx_num::missing::Missing<u16>) -> usize
-pub mod phx_val::value
-pub struct phx_val::value::Flow
-pub phx_val::value::Flow::amount: f64
-pub phx_val::value::Flow::years: f64
-pub struct phx_val::value::Value
+pub fn phx_val::types::Types::compile(&phx_core::register::Register) -> core::result::Result<phx_val::types::Types, alloc::string::String>  // used by: phx-core, phx-pop, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub fn phx_val::types::Types::of_view(&self, usize) -> (usize, phx_num::missing::Missing<usize>)  // used by: phx-world
+pub fn phx_val::types::Types::views(&self) -> usize  // used by: phx-cli, phx-world
+pub fn phx_val::types::Types::window_of(&self, u32) -> phx_num::missing::Missing<u16>  // used by: phx-world
+pub fn phx_val::types::view(usize, u16, phx_num::missing::Missing<u16>) -> usize  // used by: phx-cli, phx-obs, phx-world
+pub mod phx_val::value  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
+pub struct phx_val::value::Flow  // used by: phx-core, phx-fin, phx-market, phx-world
+pub phx_val::value::Flow::amount: f64  // used by: phx-core, phx-fin, phx-ledger, phx-market, phx-num, phx-world, sys-soc
+pub phx_val::value::Flow::years: f64  // used by: if-credit, phx-cli, phx-exec, phx-world, sys-bnk, sys-dem, sys-gds, sys-lab
+pub struct phx_val::value::Value  // used by: phx-check, phx-cli, phx-core, phx-fin
 impl phx_val::value::Value
-pub fn phx_val::value::Value::of(phx_num::money::Ccy, f64) -> phx_val::value::Value
-pub fn phx_val::value::Value::worth(self) -> phx_num::money::Money
-pub fn phx_val::value::annuity(f64, u32, f64) -> f64
+pub fn phx_val::value::Value::of(phx_num::money::Ccy, f64) -> phx_val::value::Value  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-id, phx-market, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_val::value::Value::worth(self) -> phx_num::money::Money  // used by: phx-world, sys-cap, sys-frm, sys-lab
+pub fn phx_val::value::annuity(f64, u32, f64) -> f64  // used by: phx-world, sys-cap
 pub fn phx_val::value::claim_value(&[phx_val::value::Flow], f64) -> f64
 pub fn phx_val::value::comparable(&[f64], f64) -> phx_num::missing::Missing<f64>
 pub fn phx_val::value::dwelling_value(f64, u32, f64, f64) -> f64
@@ -176,4 +176,4 @@ pub fn phx_val::value::firm_value(f64, f64, f64) -> phx_num::missing::Missing<f6
 pub fn phx_val::value::offer_value(f64, f64, u32, f64, f64) -> f64
 pub fn phx_val::value::platform_value<P>(&P, impl core::ops::function::Fn(&P) -> f64) -> f64
 pub fn phx_val::value::project_value(f64, f64, f64, u32, f64) -> f64
-pub fn phx_val::value::required_return(f64, f64, f64) -> f64
+pub fn phx_val::value::required_return(f64, f64, f64) -> f64  // used by: if-credit, phx-core, phx-world, sys-bnk, sys-cap, sys-frm

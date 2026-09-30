@@ -1,64 +1,64 @@
-pub mod if_credit
-pub mod if_credit::central
-pub struct if_credit::central::Corridor
-pub if_credit::central::Corridor::deposit_rate: f64
-pub if_credit::central::Corridor::haircut: f64
-pub if_credit::central::Corridor::lending_rate: f64
+pub mod if_credit  // used by: phx-world, sys-bnk, sys-cb
+pub mod if_credit::central  // used by: phx-cli, phx-world, sys-bnk, sys-cb
+pub struct if_credit::central::Corridor  // used by: phx-world, sys-cb
+pub if_credit::central::Corridor::deposit_rate: f64  // used by: phx-world, sys-cb
+pub if_credit::central::Corridor::haircut: f64  // used by: phx-world, sys-cb
+pub if_credit::central::Corridor::lending_rate: f64  // used by: phx-world, sys-cb
 impl phx_store::save::Saved for if_credit::central::Corridor where f64: phx_store::save::Saved
-pub fn if_credit::central::Corridor::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_credit::central::Corridor::rebuild_skipped(&mut self)
-pub fn if_credit::central::Corridor::save(&self, &mut phx_store::save::Writer<'_>)
-pub struct if_credit::central::Request
-pub if_credit::central::Request::borrow: i64
-pub if_credit::central::Request::place: i64
-pub struct if_credit::central::RequestIn
-pub if_credit::central::RequestIn::collateral: i64
-pub if_credit::central::RequestIn::reserves: i64
-pub if_credit::central::RequestIn::target: i64
-pub mod if_credit::decisions
-pub struct if_credit::decisions::ChooseIn
-pub if_credit::decisions::ChooseIn::rate_step: f64
-pub if_credit::decisions::ChooseIn::rates: alloc::vec::Vec<f64>
-pub if_credit::decisions::ChooseIn::required_return: f64
-pub if_credit::decisions::ChooseIn::tastes: alloc::vec::Vec<f64>
-pub struct if_credit::decisions::DeclineIn
-pub if_credit::decisions::DeclineIn::capital: f64
-pub if_credit::decisions::DeclineIn::capital_requirement: f64
-pub if_credit::decisions::DeclineIn::class: u32
-pub if_credit::decisions::DeclineIn::standard: u32
-pub if_credit::decisions::DeclineIn::weighted: f64
-pub struct if_credit::decisions::QuoteIn
-pub if_credit::decisions::QuoteIn::capital_requirement: f64
-pub if_credit::decisions::QuoteIn::cost_of_funds: f64
-pub if_credit::decisions::QuoteIn::default_rate: f64
-pub if_credit::decisions::QuoteIn::loan_cost: f64
-pub if_credit::decisions::QuoteIn::loss_given_default: f64
-pub if_credit::decisions::QuoteIn::principal: f64
-pub if_credit::decisions::QuoteIn::rate_step: f64
-pub if_credit::decisions::QuoteIn::required_return: f64
-pub if_credit::decisions::QuoteIn::risk_weight: f64
-pub if_credit::decisions::QuoteIn::years: f64
-pub struct if_credit::decisions::StandardIn
-pub if_credit::decisions::StandardIn::classes: u32
-pub if_credit::decisions::StandardIn::priced_loss: f64
-pub if_credit::decisions::StandardIn::seen_loss: f64
-pub if_credit::decisions::StandardIn::standard: u32
-pub mod if_credit::law
-pub struct if_credit::law::Law
-pub if_credit::law::Law::capital_requirement: f64
-pub if_credit::law::Law::cost_of_funds: f64
-pub if_credit::law::Law::cover_bounds: alloc::vec::Vec<f64>
-pub if_credit::law::Law::default_rates: alloc::vec::Vec<f64>
-pub if_credit::law::Law::lead_days: u32
-pub if_credit::law::Law::lenders_asked: alloc::vec::Vec<f64>
-pub if_credit::law::Law::loan_cost: f64
-pub if_credit::law::Law::loss_given_default: f64
-pub if_credit::law::Law::prior_loan_years: f64
-pub if_credit::law::Law::prior_recoveries: f64
-pub if_credit::law::Law::rate_step: f64
-pub if_credit::law::Law::required_return: f64
-pub if_credit::law::Law::risk_weight: f64
+pub fn if_credit::central::Corridor::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_credit::central::Corridor::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_credit::central::Corridor::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
+pub struct if_credit::central::Request  // used by: sys-bnk
+pub if_credit::central::Request::borrow: i64  // used by: phx-world, sys-bnk
+pub if_credit::central::Request::place: i64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub struct if_credit::central::RequestIn  // used by: phx-world, sys-bnk
+pub if_credit::central::RequestIn::collateral: i64  // used by: phx-ledger, phx-world, sys-bnk
+pub if_credit::central::RequestIn::reserves: i64  // used by: phx-core, phx-fin, phx-world, sys-bnk
+pub if_credit::central::RequestIn::target: i64  // used by: phx-check, phx-geo, phx-rand, phx-world, sys-bnk, sys-frm, sys-hh
+pub mod if_credit::decisions  // used by: if-labour, if-state, phx-cli, phx-core, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct if_credit::decisions::ChooseIn  // used by: phx-world, sys-bnk
+pub if_credit::decisions::ChooseIn::rate_step: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::ChooseIn::rates: alloc::vec::Vec<f64>  // used by: phx-cli, phx-core, phx-world, sys-bnk, sys-tax
+pub if_credit::decisions::ChooseIn::required_return: f64  // used by: phx-core, phx-val, phx-world, sys-bnk, sys-cap, sys-frm
+pub if_credit::decisions::ChooseIn::tastes: alloc::vec::Vec<f64>  // used by: phx-fin, phx-market, phx-world, sys-bnk
+pub struct if_credit::decisions::DeclineIn  // used by: phx-world, sys-bnk
+pub if_credit::decisions::DeclineIn::capital: f64  // used by: if-base, phx-world, sys-bnk, sys-cap, sys-tec
+pub if_credit::decisions::DeclineIn::capital_requirement: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::DeclineIn::class: u32  // used by: if-labour, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub if_credit::decisions::DeclineIn::standard: u32  // used by: phx-world, sys-bnk, sys-dem
+pub if_credit::decisions::DeclineIn::weighted: f64  // used by: phx-geo, phx-world, sys-bnk, sys-dem
+pub struct if_credit::decisions::QuoteIn  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::capital_requirement: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::cost_of_funds: f64  // used by: phx-val, phx-world, sys-bnk, sys-cap
+pub if_credit::decisions::QuoteIn::default_rate: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::loan_cost: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::loss_given_default: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::principal: f64  // used by: phx-ledger, phx-num, phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::rate_step: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::required_return: f64  // used by: phx-core, phx-val, phx-world, sys-bnk, sys-cap, sys-frm
+pub if_credit::decisions::QuoteIn::risk_weight: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::QuoteIn::years: f64  // used by: phx-cli, phx-exec, phx-val, phx-world, sys-bnk, sys-dem, sys-gds, sys-lab
+pub struct if_credit::decisions::StandardIn  // used by: phx-world, sys-bnk
+pub if_credit::decisions::StandardIn::classes: u32  // used by: if-state, phx-cli, phx-geo, phx-val, phx-world, sys-bnk, sys-cap, sys-frm, sys-sta
+pub if_credit::decisions::StandardIn::priced_loss: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::StandardIn::seen_loss: f64  // used by: phx-world, sys-bnk
+pub if_credit::decisions::StandardIn::standard: u32  // used by: phx-world, sys-bnk, sys-dem
+pub mod if_credit::law  // used by: if-labour, if-state, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub struct if_credit::law::Law  // used by: if-labour, phx-world, sys-bnk, sys-lab
+pub if_credit::law::Law::capital_requirement: f64  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::cost_of_funds: f64  // used by: phx-val, phx-world, sys-bnk, sys-cap
+pub if_credit::law::Law::cover_bounds: alloc::vec::Vec<f64>  // used by: sys-bnk
+pub if_credit::law::Law::default_rates: alloc::vec::Vec<f64>  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::lead_days: u32  // used by: sys-bnk
+pub if_credit::law::Law::lenders_asked: alloc::vec::Vec<f64>  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::loan_cost: f64  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::loss_given_default: f64  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::prior_loan_years: f64  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::prior_recoveries: f64  // used by: sys-bnk
+pub if_credit::law::Law::rate_step: f64  // used by: phx-world, sys-bnk
+pub if_credit::law::Law::required_return: f64  // used by: phx-core, phx-val, phx-world, sys-bnk, sys-cap, sys-frm
+pub if_credit::law::Law::risk_weight: f64  // used by: phx-world, sys-bnk
 impl phx_store::save::Saved for if_credit::law::Law where f64: phx_store::save::Saved, alloc::vec::Vec<f64>: phx_store::save::Saved, u32: phx_store::save::Saved
-pub fn if_credit::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_credit::law::Law::rebuild_skipped(&mut self)
-pub fn if_credit::law::Law::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn if_credit::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_credit::law::Law::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_credit::law::Law::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world

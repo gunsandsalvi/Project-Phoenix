@@ -1,130 +1,130 @@
-pub mod if_labour
-pub mod if_labour::class
-pub const if_labour::class::BAND: usize
-pub const if_labour::class::HOURS: usize
-pub const if_labour::class::NOTICE: usize
-pub const if_labour::class::NOT_SEARCHING: u32
-pub const if_labour::class::NO_OCCUPATION: u32
-pub const if_labour::class::NO_POINT: u32
-pub const if_labour::class::OCCUPATION: usize
-pub const if_labour::class::OCCUPATIONS: u32
-pub const if_labour::class::PLACES: usize
-pub const if_labour::class::REGION: usize
-pub const if_labour::class::RETIRED: u32
-pub const if_labour::class::SEARCHING: u32
-pub const if_labour::class::SEVERANCE: usize
-pub const if_labour::class::SKILL: usize
-pub const if_labour::class::STATES: u32
-pub const if_labour::class::WAGE_POINTS: u32
-pub mod if_labour::consts
-pub const if_labour::consts::BAND: usize
-pub const if_labour::consts::HOURS: usize
-pub const if_labour::consts::NOTICE: usize
-pub const if_labour::consts::NOT_SEARCHING: u32
-pub const if_labour::consts::NO_OCCUPATION: u32
-pub const if_labour::consts::NO_POINT: u32
-pub const if_labour::consts::OCCUPATION: usize
-pub const if_labour::consts::OCCUPATIONS: u32
-pub const if_labour::consts::PLACES: usize
-pub const if_labour::consts::REGION: usize
-pub const if_labour::consts::RETIRED: u32
-pub const if_labour::consts::SEARCHING: u32
-pub const if_labour::consts::SEVERANCE: usize
-pub const if_labour::consts::SKILL: usize
-pub const if_labour::consts::STATES: u32
-pub const if_labour::consts::WAGE_POINTS: u32
-pub mod if_labour::decisions
-pub struct if_labour::decisions::AcceptIn
-pub if_labour::decisions::AcceptIn::reservation: f64
-pub if_labour::decisions::AcceptIn::taste: f64
-pub if_labour::decisions::AcceptIn::wage: f64
-pub if_labour::decisions::AcceptIn::wage_weight: f64
-pub struct if_labour::decisions::AnswerIn
-pub if_labour::decisions::AnswerIn::best: phx_num::missing::Missing<f64>
-pub if_labour::decisions::AnswerIn::offer: i64
-pub if_labour::decisions::AnswerIn::outlook: f64
-pub if_labour::decisions::AnswerIn::ratio: f64
-pub if_labour::decisions::AnswerIn::reservation: f64
-pub struct if_labour::decisions::Applicant
-pub if_labour::decisions::Applicant::experience: u32
-pub if_labour::decisions::Applicant::lot: u64
-pub if_labour::decisions::Applicant::skill: u32
-pub struct if_labour::decisions::Need
-pub if_labour::decisions::Need::hours_a_unit: f64
-pub if_labour::decisions::Need::job_hours: f64
-pub if_labour::decisions::Need::occupation: u32
-pub if_labour::decisions::Need::open_hours: f64
-pub if_labour::decisions::Need::staff_hours: f64
-pub if_labour::decisions::Need::wage_hour: f64
-pub struct if_labour::decisions::PostIn
-pub if_labour::decisions::PostIn::financing: f64
-pub if_labour::decisions::PostIn::minimum_hour: f64
-pub if_labour::decisions::PostIn::needs: alloc::vec::Vec<if_labour::decisions::Need>
-pub if_labour::decisions::PostIn::price: f64
-pub if_labour::decisions::PostIn::units_a_day: f64
-pub struct if_labour::decisions::PostOut
-pub if_labour::decisions::PostOut::layoff: alloc::vec::Vec<(u32, u32)>
-pub if_labour::decisions::PostOut::post: alloc::vec::Vec<(u32, u32)>
-pub if_labour::decisions::PostOut::withdraw: alloc::vec::Vec<(u32, u32)>
-pub struct if_labour::decisions::RetireIn
-pub if_labour::decisions::RetireIn::age_months: i64
-pub if_labour::decisions::RetireIn::pension_months: i64
-pub struct if_labour::decisions::ReviewIn
-pub if_labour::decisions::ReviewIn::current: i64
-pub if_labour::decisions::ReviewIn::least: phx_num::missing::Missing<i64>
-pub if_labour::decisions::ReviewIn::market: i64
-pub if_labour::decisions::ReviewIn::revenue: i64
-pub struct if_labour::decisions::SearchIn
-pub if_labour::decisions::SearchIn::draws: alloc::vec::Vec<f64>
-pub if_labour::decisions::SearchIn::reach: alloc::vec::Vec<(u32, f64)>
-pub struct if_labour::decisions::SelectIn
-pub if_labour::decisions::SelectIn::applicants: alloc::vec::Vec<if_labour::decisions::Applicant>
-pub if_labour::decisions::SelectIn::open: u32
-pub mod if_labour::kind
-pub struct if_labour::kind::LabourKind
-pub if_labour::kind::LabourKind::accept: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AcceptIn, bool>
-pub if_labour::kind::LabourKind::adapt: if_labour::kind::Adapt
-pub if_labour::kind::LabourKind::answer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AnswerIn, i64>
-pub if_labour::kind::LabourKind::conclude: fn(i64, i64, i64) -> phx_num::missing::Missing<i64>
-pub if_labour::kind::LabourKind::education: &'static str
-pub if_labour::kind::LabourKind::last_point: &'static str
-pub if_labour::kind::LabourKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_labour::law::Law, alloc::string::String>
-pub if_labour::kind::LabourKind::layoff_stream: &'static str
-pub if_labour::kind::LabourKind::least_point: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
-pub if_labour::kind::LabourKind::lot_stream: &'static str
-pub if_labour::kind::LabourKind::meeting_stream: &'static str
-pub if_labour::kind::LabourKind::occupation: &'static str
-pub if_labour::kind::LabourKind::offer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::ReviewIn, i64>
-pub if_labour::kind::LabourKind::owed: fn(&if_labour::law::Law, f64, u32, i64, u32) -> f64
-pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>
-pub if_labour::kind::LabourKind::post: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::PostIn, if_labour::decisions::PostOut>
-pub if_labour::kind::LabourKind::review_stream: &'static str
-pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>
-pub if_labour::kind::LabourKind::select: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SelectIn, alloc::vec::Vec<u32>>
-pub if_labour::kind::LabourKind::state: &'static str
-pub if_labour::kind::LabourKind::taste_stream: &'static str
-pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64
+pub mod if_labour  // used by: phx-world, sys-lab
+pub mod if_labour::class  // used by: if-credit, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub const if_labour::class::BAND: usize  // used by: phx-world, sys-lab
+pub const if_labour::class::HOURS: usize  // used by: phx-world, sys-lab
+pub const if_labour::class::NOTICE: usize  // used by: sys-lab
+pub const if_labour::class::NOT_SEARCHING: u32  // used by: phx-world, sys-lab
+pub const if_labour::class::NO_OCCUPATION: u32  // used by: phx-world, sys-lab
+pub const if_labour::class::NO_POINT: u32  // used by: phx-world, sys-lab
+pub const if_labour::class::OCCUPATION: usize  // used by: phx-world, sys-lab
+pub const if_labour::class::OCCUPATIONS: u32  // used by: phx-fin, phx-world, sys-lab
+pub const if_labour::class::PLACES: usize  // used by: if-state, phx-check, phx-cli, phx-world, sys-lab
+pub const if_labour::class::REGION: usize  // used by: if-pop, phx-cli, phx-world, sys-dem, sys-frm, sys-lab
+pub const if_labour::class::RETIRED: u32  // used by: phx-check, phx-world, sys-lab
+pub const if_labour::class::SEARCHING: u32  // used by: phx-world, sys-lab
+pub const if_labour::class::SEVERANCE: usize  // used by: phx-world, sys-lab
+pub const if_labour::class::SKILL: usize  // used by: sys-lab
+pub const if_labour::class::STATES: u32  // used by: sys-lab
+pub const if_labour::class::WAGE_POINTS: u32  // used by: sys-lab
+pub mod if_labour::consts  // used by: if-base, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const if_labour::consts::BAND: usize  // used by: phx-world, sys-lab
+pub const if_labour::consts::HOURS: usize  // used by: phx-world, sys-lab
+pub const if_labour::consts::NOTICE: usize  // used by: sys-lab
+pub const if_labour::consts::NOT_SEARCHING: u32  // used by: phx-world, sys-lab
+pub const if_labour::consts::NO_OCCUPATION: u32  // used by: phx-world, sys-lab
+pub const if_labour::consts::NO_POINT: u32  // used by: phx-world, sys-lab
+pub const if_labour::consts::OCCUPATION: usize  // used by: phx-world, sys-lab
+pub const if_labour::consts::OCCUPATIONS: u32  // used by: phx-fin, phx-world, sys-lab
+pub const if_labour::consts::PLACES: usize  // used by: if-state, phx-check, phx-cli, phx-world, sys-lab
+pub const if_labour::consts::REGION: usize  // used by: if-pop, phx-cli, phx-world, sys-dem, sys-frm, sys-lab
+pub const if_labour::consts::RETIRED: u32  // used by: phx-check, phx-world, sys-lab
+pub const if_labour::consts::SEARCHING: u32  // used by: phx-world, sys-lab
+pub const if_labour::consts::SEVERANCE: usize  // used by: phx-world, sys-lab
+pub const if_labour::consts::SKILL: usize  // used by: sys-lab
+pub const if_labour::consts::STATES: u32  // used by: sys-lab
+pub const if_labour::consts::WAGE_POINTS: u32  // used by: sys-lab
+pub mod if_labour::decisions  // used by: if-credit, if-state, phx-cli, phx-core, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct if_labour::decisions::AcceptIn  // used by: phx-world, sys-lab
+pub if_labour::decisions::AcceptIn::reservation: f64  // used by: phx-fin, phx-market, phx-world, sys-lab
+pub if_labour::decisions::AcceptIn::taste: f64  // used by: phx-fin, phx-val, phx-world, sys-bnk, sys-dem, sys-lab
+pub if_labour::decisions::AcceptIn::wage: f64  // used by: phx-cli, phx-fin, phx-market, phx-val, phx-world, sys-lab, sys-soc
+pub if_labour::decisions::AcceptIn::wage_weight: f64  // used by: phx-market, phx-world, sys-lab
+pub struct if_labour::decisions::AnswerIn  // used by: phx-world, sys-lab
+pub if_labour::decisions::AnswerIn::best: phx_num::missing::Missing<f64>  // used by: phx-check, phx-geo, phx-ledger, phx-market, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-lab, sys-sta
+pub if_labour::decisions::AnswerIn::offer: i64  // used by: phx-world, sys-lab
+pub if_labour::decisions::AnswerIn::outlook: f64  // used by: phx-cli, phx-val, phx-world, sys-gds, sys-lab
+pub if_labour::decisions::AnswerIn::ratio: f64  // used by: phx-ledger, phx-rand, phx-world, sys-bnk, sys-cap, sys-dem, sys-lab
+pub if_labour::decisions::AnswerIn::reservation: f64  // used by: phx-fin, phx-market, phx-world, sys-lab
+pub struct if_labour::decisions::Applicant  // used by: phx-market, phx-world
+pub if_labour::decisions::Applicant::experience: u32  // used by: phx-fin, phx-market, phx-val, phx-world, sys-lab
+pub if_labour::decisions::Applicant::lot: u64  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-world, sys-dem, sys-frm, sys-lab
+pub if_labour::decisions::Applicant::skill: u32  // used by: phx-fin, phx-market, phx-world, sys-lab
+pub struct if_labour::decisions::Need  // used by: phx-world, sys-lab
+pub if_labour::decisions::Need::hours_a_unit: f64  // used by: phx-world, sys-lab
+pub if_labour::decisions::Need::job_hours: f64  // used by: phx-world, sys-lab
+pub if_labour::decisions::Need::occupation: u32  // used by: phx-fin, phx-market, phx-world, sys-lab, sys-soc
+pub if_labour::decisions::Need::open_hours: f64  // used by: phx-world, sys-lab
+pub if_labour::decisions::Need::staff_hours: f64  // used by: phx-world, sys-lab
+pub if_labour::decisions::Need::wage_hour: f64  // used by: phx-world, sys-lab
+pub struct if_labour::decisions::PostIn  // used by: phx-world, sys-lab
+pub if_labour::decisions::PostIn::financing: f64  // used by: phx-world, sys-frm, sys-lab
+pub if_labour::decisions::PostIn::minimum_hour: f64  // used by: phx-world, sys-lab
+pub if_labour::decisions::PostIn::needs: alloc::vec::Vec<if_labour::decisions::Need>  // used by: phx-world, sys-cap, sys-dem, sys-lab
+pub if_labour::decisions::PostIn::price: f64  // used by: if-state, phx-cli, phx-fin, phx-market, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
+pub if_labour::decisions::PostIn::units_a_day: f64  // used by: phx-world, sys-lab
+pub struct if_labour::decisions::PostOut  // used by: sys-lab
+pub if_labour::decisions::PostOut::layoff: alloc::vec::Vec<(u32, u32)>  // used by: phx-world, sys-lab
+pub if_labour::decisions::PostOut::post: alloc::vec::Vec<(u32, u32)>  // used by: phx-core, phx-world, sys-lab
+pub if_labour::decisions::PostOut::withdraw: alloc::vec::Vec<(u32, u32)>  // used by: phx-world, sys-lab
+pub struct if_labour::decisions::RetireIn  // used by: sys-lab
+pub if_labour::decisions::RetireIn::age_months: i64  // used by: sys-lab
+pub if_labour::decisions::RetireIn::pension_months: i64  // used by: sys-lab
+pub struct if_labour::decisions::ReviewIn  // used by: phx-world, sys-frm, sys-lab
+pub if_labour::decisions::ReviewIn::current: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-obs, phx-world, sys-frm
+pub if_labour::decisions::ReviewIn::least: phx_num::missing::Missing<i64>  // used by: phx-world, sys-bnk, sys-cap, sys-frm, sys-lab
+pub if_labour::decisions::ReviewIn::market: i64  // used by: phx-check, phx-core, phx-geo, phx-world, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
+pub if_labour::decisions::ReviewIn::revenue: i64  // used by: phx-cli, phx-world, sys-frm, sys-lab
+pub struct if_labour::decisions::SearchIn  // used by: phx-world, sys-lab
+pub if_labour::decisions::SearchIn::draws: alloc::vec::Vec<f64>  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-market, phx-rand, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab, sys-tec
+pub if_labour::decisions::SearchIn::reach: alloc::vec::Vec<(u32, f64)>  // used by: phx-fin, phx-geo, phx-market, phx-world, sys-lab
+pub struct if_labour::decisions::SelectIn  // used by: phx-world, sys-lab
+pub if_labour::decisions::SelectIn::applicants: alloc::vec::Vec<if_labour::decisions::Applicant>  // used by: phx-world, sys-lab
+pub if_labour::decisions::SelectIn::open: u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub mod if_labour::kind  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub struct if_labour::kind::LabourKind  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::accept: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AcceptIn, bool>  // used by: phx-geo, phx-rand, phx-world, sys-lab
+pub if_labour::kind::LabourKind::adapt: if_labour::kind::Adapt  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::answer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AnswerIn, i64>  // used by: phx-market, phx-world, sys-lab
+pub if_labour::kind::LabourKind::conclude: fn(i64, i64, i64) -> phx_num::missing::Missing<i64>  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::education: &'static str  // used by: phx-world, sys-dem, sys-lab
+pub if_labour::kind::LabourKind::last_point: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_labour::law::Law, alloc::string::String>  // used by: if-credit, if-state, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub if_labour::kind::LabourKind::layoff_stream: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::least_point: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::lot_stream: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::meeting_stream: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::occupation: &'static str  // used by: phx-fin, phx-market, phx-world, sys-lab, sys-soc
+pub if_labour::kind::LabourKind::offer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::ReviewIn, i64>  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::owed: fn(&if_labour::law::Law, f64, u32, i64, u32) -> f64  // used by: phx-core, phx-world, sys-lab
+pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::post: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::PostIn, if_labour::decisions::PostOut>  // used by: phx-core, phx-world, sys-lab
+pub if_labour::kind::LabourKind::review_stream: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>  // used by: phx-fin, phx-market, phx-world, sys-lab
+pub if_labour::kind::LabourKind::select: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SelectIn, alloc::vec::Vec<u32>>  // used by: phx-market, phx-world, sys-lab
+pub if_labour::kind::LabourKind::state: &'static str  // used by: phx-cli, phx-geo, phx-ledger, phx-world, sys-lab
+pub if_labour::kind::LabourKind::taste_stream: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64  // used by: phx-world, sys-lab
 pub type if_labour::kind::Adapt = fn(phx_num::missing::Missing<(i64, u32)>, phx_num::missing::Missing<i64>, i64, u32) -> i64
-pub mod if_labour::law
-pub struct if_labour::law::Law
-pub if_labour::law::Law::applications_a_week: f64
-pub if_labour::law::Law::band_years: u32
-pub if_labour::law::Law::education_skill: alloc::vec::Vec<u32>
-pub if_labour::law::Law::full_time_hours: u32
-pub if_labour::law::Law::mean_monthly: f64
-pub if_labour::law::Law::minimum_monthly: phx_num::missing::Missing<f64>
-pub if_labour::law::Law::notice_days: u32
-pub if_labour::law::Law::occupation_skill: alloc::vec::Vec<u32>
-pub if_labour::law::Law::patience_days: u32
-pub if_labour::law::Law::pension_months: alloc::vec::Vec<i64>
-pub if_labour::law::Law::point_ratio: f64
-pub if_labour::law::Law::reservation_share: f64
-pub if_labour::law::Law::review_months: u32
-pub if_labour::law::Law::seen_chance: f64
-pub if_labour::law::Law::severance_days_a_year: u32
-pub if_labour::law::Law::wage_weight: f64
-pub if_labour::law::Law::weeks_a_month: f64
+pub mod if_labour::law  // used by: if-credit, if-state, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
+pub struct if_labour::law::Law  // used by: if-credit, phx-world, sys-bnk, sys-lab
+pub if_labour::law::Law::applications_a_week: f64  // used by: phx-world, sys-lab
+pub if_labour::law::Law::band_years: u32  // used by: sys-lab
+pub if_labour::law::Law::education_skill: alloc::vec::Vec<u32>  // used by: phx-world, sys-lab
+pub if_labour::law::Law::full_time_hours: u32  // used by: phx-world, sys-lab
+pub if_labour::law::Law::mean_monthly: f64  // used by: phx-world, sys-lab
+pub if_labour::law::Law::minimum_monthly: phx_num::missing::Missing<f64>  // used by: phx-world, sys-lab
+pub if_labour::law::Law::notice_days: u32  // used by: phx-world, sys-lab
+pub if_labour::law::Law::occupation_skill: alloc::vec::Vec<u32>  // used by: phx-world, sys-lab
+pub if_labour::law::Law::patience_days: u32  // used by: phx-world, sys-lab
+pub if_labour::law::Law::pension_months: alloc::vec::Vec<i64>  // used by: sys-lab
+pub if_labour::law::Law::point_ratio: f64  // used by: phx-world, sys-lab
+pub if_labour::law::Law::reservation_share: f64  // used by: phx-world, sys-lab
+pub if_labour::law::Law::review_months: u32  // used by: phx-world, sys-lab
+pub if_labour::law::Law::seen_chance: f64  // used by: phx-world, sys-lab
+pub if_labour::law::Law::severance_days_a_year: u32  // used by: phx-world, sys-lab
+pub if_labour::law::Law::wage_weight: f64  // used by: phx-market, phx-world, sys-lab
+pub if_labour::law::Law::weeks_a_month: f64  // used by: phx-world, sys-lab
 impl phx_store::save::Saved for if_labour::law::Law where u32: phx_store::save::Saved, f64: phx_store::save::Saved, phx_num::missing::Missing<f64>: phx_store::save::Saved, alloc::vec::Vec<u32>: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
-pub fn if_labour::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>
-pub fn if_labour::law::Law::rebuild_skipped(&mut self)
-pub fn if_labour::law::Law::save(&self, &mut phx_store::save::Writer<'_>)
+pub fn if_labour::law::Law::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn if_labour::law::Law::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
+pub fn if_labour::law::Law::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world

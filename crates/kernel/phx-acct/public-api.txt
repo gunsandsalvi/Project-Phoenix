@@ -1,9 +1,9 @@
-pub mod phx_acct
-pub mod phx_acct::basis
-pub struct phx_acct::basis::AcctPrims
-pub phx_acct::basis::AcctPrims::carrying_bases: phx_core::register::Prim<alloc::vec::Vec<phx_core::accounting::Permitted>>
+pub mod phx_acct  // used by: phx-world
+pub mod phx_acct::basis  // used by: phx-cli, phx-world
+pub struct phx_acct::basis::AcctPrims  // used by: phx-world
+pub phx_acct::basis::AcctPrims::carrying_bases: phx_core::register::Prim<alloc::vec::Vec<phx_core::accounting::Permitted>>  // used by: phx-core
 impl phx_acct::basis::AcctPrims
-pub fn phx_acct::basis::AcctPrims::declare(&mut phx_core::system::Declarations) -> phx_acct::basis::AcctPrims
+pub fn phx_acct::basis::AcctPrims::declare(&mut phx_core::system::Declarations) -> phx_acct::basis::AcctPrims  // used by: phx-core, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub const phx_acct::basis::CARRYING_BASES: phx_core::register::PrimDecl
 pub fn phx_acct::basis::at_opening(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor) -> phx_num::missing::Missing<phx_core::accounting::CarryingBasis>
-pub fn phx_acct::basis::choose(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor, phx_core::accounting::CarryingBasis) -> core::result::Result<phx_core::accounting::CarryingBasis, phx_core::accounting::CarryingBasis>
+pub fn phx_acct::basis::choose(&[phx_core::accounting::Permitted], &str, phx_core::accounting::HeldFor, phx_core::accounting::CarryingBasis) -> core::result::Result<phx_core::accounting::CarryingBasis, phx_core::accounting::CarryingBasis>  // used by: phx-fin, phx-market, phx-val, phx-world, sys-bnk, sys-cap, sys-frm, sys-hh

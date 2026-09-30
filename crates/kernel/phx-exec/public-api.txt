@@ -1,21 +1,21 @@
-pub mod phx_exec
-pub mod phx_exec::clock
-pub trait phx_exec::clock::Clock: core::marker::Sync
-pub fn phx_exec::clock::Clock::now_ns(&self) -> u64
-pub mod phx_exec::consts
+pub mod phx_exec  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world
+pub mod phx_exec::clock  // used by: phx-cli, phx-fin, phx-world
+pub trait phx_exec::clock::Clock: core::marker::Sync  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_exec::clock::Clock::now_ns(&self) -> u64  // used by: phx-cli, phx-fin, phx-world
+pub mod phx_exec::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_exec::consts::CAPACITY_PATH: [&str; 2]
 pub const phx_exec::consts::CHUNK_COST: u64
 pub const phx_exec::consts::GATHER_SERIAL_BELOW: usize
 pub const phx_exec::consts::KEYED_SHARDS: usize
 pub const phx_exec::consts::KEYED_SHARD_BITS: u32
 pub const phx_exec::consts::KIB: u64
-pub const phx_exec::consts::KINDS: usize
+pub const phx_exec::consts::KINDS: usize  // used by: phx-check, phx-world
 pub const phx_exec::consts::LITTLE_CORE_SHARE_DEN: u32
 pub const phx_exec::consts::LITTLE_CORE_SHARE_NUM: u32
 pub const phx_exec::consts::MAX_CPUS: usize
 pub const phx_exec::consts::MIX_MULTIPLIERS: [u64; 2]
 pub const phx_exec::consts::MIX_SHIFTS: [u32; 3]
-pub const phx_exec::consts::MONTHS_A_YEAR: usize
+pub const phx_exec::consts::MONTHS_A_YEAR: usize  // used by: phx-ledger, phx-world, sys-lab
 pub const phx_exec::consts::NS_PER_S: u64
 pub const phx_exec::consts::PREFETCH_DISTANCE: u64
 pub const phx_exec::consts::PROBE_GATHER_BYTES: u64
@@ -27,24 +27,24 @@ pub const phx_exec::consts::RADIX_BUCKETS: usize
 pub const phx_exec::consts::RADIX_CHUNK: usize
 pub const phx_exec::consts::RADIX_MIN: usize
 pub const phx_exec::consts::SPIN_ROUNDS: u64
-pub mod phx_exec::counters
+pub mod phx_exec::counters  // used by: phx-cli, phx-fin
 pub struct phx_exec::counters::ExecCounters
-pub phx_exec::counters::ExecCounters::barriers: u64
+pub phx_exec::counters::ExecCounters::barriers: u64  // used by: phx-cli
 pub phx_exec::counters::ExecCounters::buffer_bytes: u64
-pub phx_exec::counters::ExecCounters::bytes: u64
-pub phx_exec::counters::ExecCounters::chunks: u64
-pub phx_exec::counters::ExecCounters::rows: u64
-pub phx_exec::counters::ExecCounters::spun: u64
+pub phx_exec::counters::ExecCounters::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub phx_exec::counters::ExecCounters::chunks: u64  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
+pub phx_exec::counters::ExecCounters::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_exec::counters::ExecCounters::spun: u64  // used by: phx-cli
 pub phx_exec::counters::ExecCounters::visited: [u64; 32]
-pub phx_exec::counters::ExecCounters::wall_ns: u64
+pub phx_exec::counters::ExecCounters::wall_ns: u64  // used by: phx-cli, phx-fin, phx-world
 impl phx_exec::counters::ExecCounters
-pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters
+pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters  // used by: phx-check, phx-num
 pub fn phx_exec::counters::ExecCounters::buffered(&mut self, u64)
-pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)
+pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)  // used by: phx-core, phx-geo, phx-world
 pub fn phx_exec::counters::ExecCounters::spin(&mut self, u64)
-pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T
+pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T  // used by: phx-world
 pub fn phx_exec::counters::ExecCounters::visited(&mut self, usize, u64)
-pub mod phx_exec::gather
+pub mod phx_exec::gather  // used by: phx-cli, phx-fin, phx-world
 pub struct phx_exec::gather::IntentBuf<T>
 impl<T: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::gather::IntentBuf<T>
 pub fn phx_exec::gather::IntentBuf<T>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = &mut [alloc::vec::Vec<T>]>
@@ -52,8 +52,8 @@ pub fn phx_exec::gather::IntentBuf<T>::is_empty(&self) -> bool
 pub fn phx_exec::gather::IntentBuf<T>::len(&self) -> usize
 pub fn phx_exec::gather::IntentBuf<T>::new(usize) -> phx_exec::gather::IntentBuf<T>
 pub fn phx_exec::gather::IntentBuf<T>::reset(&mut self, usize)
-pub fn phx_exec::gather::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)
-pub mod phx_exec::hint
+pub fn phx_exec::gather::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)  // used by: phx-cli, phx-fin, phx-world
+pub mod phx_exec::hint  // used by: phx-fin
 pub struct phx_exec::hint::NoHint
 impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
 pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
@@ -64,186 +64,186 @@ pub fn phx_exec::hint::PerfHint::end_turn(&self, u64)
 impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
 pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
 pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
-pub mod phx_exec::keyed
+pub mod phx_exec::keyed  // used by: phx-check, phx-core, phx-geo, phx-macros, phx-world
 pub struct phx_exec::keyed::KeyedReduce<K, V>
 pub phx_exec::keyed::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>
 impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::keyed::KeyedReduce<K, V>
 pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
-pub mod phx_exec::mix
-pub fn phx_exec::mix::mix64(u64) -> u64
+pub mod phx_exec::mix  // used by: phx-fin
+pub fn phx_exec::mix::mix64(u64) -> u64  // used by: phx-fin, phx-world
 pub mod phx_exec::os
 pub fn phx_exec::os::allowed_cores() -> core::option::Option<alloc::vec::Vec<usize>>
 pub fn phx_exec::os::current_tid() -> i32
 pub fn phx_exec::os::page_size() -> core::option::Option<u64>
-pub fn phx_exec::os::peak_resident_bytes() -> core::option::Option<u64>
+pub fn phx_exec::os::peak_resident_bytes() -> core::option::Option<u64>  // used by: phx-cli
 pub fn phx_exec::os::pin_current(usize) -> bool
 pub fn phx_exec::os::prefetch<T>(*const T)
 pub fn phx_exec::os::process_cpu_ns() -> core::option::Option<u64>
 pub fn phx_exec::os::process_faults() -> core::option::Option<u64>
-pub fn phx_exec::os::resident_bytes() -> core::option::Option<u64>
-pub mod phx_exec::partition
-pub struct phx_exec::partition::Partitioned<T>
-pub phx_exec::partition::Partitioned::items: alloc::vec::Vec<T>
-pub phx_exec::partition::Partitioned::starts: alloc::vec::Vec<usize>
+pub fn phx_exec::os::resident_bytes() -> core::option::Option<u64>  // used by: phx-cli
+pub mod phx_exec::partition  // used by: phx-cli, phx-core, phx-geo, phx-market, phx-rand, phx-val, phx-world
+pub struct phx_exec::partition::Partitioned<T>  // used by: phx-market
+pub phx_exec::partition::Partitioned::items: alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-market, phx-num, phx-world
+pub phx_exec::partition::Partitioned::starts: alloc::vec::Vec<usize>  // used by: phx-core, phx-geo, phx-market, phx-world
 impl<T> phx_exec::partition::Partitioned<T>
-pub fn phx_exec::partition::Partitioned<T>::bucket(&self, usize) -> &[T]
+pub fn phx_exec::partition::Partitioned<T>::bucket(&self, usize) -> &[T]  // used by: phx-market
 impl<T> core::default::Default for phx_exec::partition::Partitioned<T>
-pub fn phx_exec::partition::Partitioned<T>::default() -> phx_exec::partition::Partitioned<T>
-pub fn phx_exec::partition::partition_into<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &[&[T]], usize, impl core::ops::function::Fn(&T) -> usize + core::marker::Sync, &mut phx_exec::partition::Partitioned<T>)
+pub fn phx_exec::partition::Partitioned<T>::default() -> phx_exec::partition::Partitioned<T>  // used by: phx-market
+pub fn phx_exec::partition::partition_into<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &[&[T]], usize, impl core::ops::function::Fn(&T) -> usize + core::marker::Sync, &mut phx_exec::partition::Partitioned<T>)  // used by: phx-market
 pub fn phx_exec::partition::partition_map_into<T: core::marker::Sync, U: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &[&[T]], usize, impl core::ops::function::Fn(&T) -> usize + core::marker::Sync, impl core::ops::function::Fn(&T) -> U + core::marker::Sync, &mut phx_exec::partition::Partitioned<U>)
-pub mod phx_exec::pool
-pub struct phx_exec::pool::Pool
+pub mod phx_exec::pool  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-dem
+pub struct phx_exec::pool::Pool  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
 impl phx_exec::pool::Pool
-pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)
-pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
+pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)  // used by: phx-check, phx-core, phx-id
+pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-core, phx-market
+pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::unpinned(&self) -> usize
 pub fn phx_exec::pool::Pool::worker_tids(&self) -> alloc::vec::Vec<i32>
-pub fn phx_exec::pool::Pool::workers(&self) -> usize
+pub fn phx_exec::pool::Pool::workers(&self) -> usize  // used by: phx-cli, phx-fin, phx-world
 impl core::fmt::Debug for phx_exec::pool::Pool
-pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-store, phx-val, phx-world
 pub struct phx_exec::pool::PoolError(pub alloc::string::String)
 pub struct phx_exec::pool::PoolUsage
-pub phx_exec::pool::PoolUsage::chunks: u64
-pub phx_exec::pool::PoolUsage::dispatches: u64
-pub phx_exec::pool::PoolUsage::spun: u64
-pub fn phx_exec::pool::counted_chunk(impl core::ops::function::FnOnce())
-pub fn phx_exec::pool::each<I: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, impl core::iter::traits::collect::IntoIterator<Item = I>, impl core::ops::function::Fn(I) + core::marker::Sync)
-pub fn phx_exec::pool::map<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::usage() -> phx_exec::pool::PoolUsage
-pub mod phx_exec::probe
+pub phx_exec::pool::PoolUsage::chunks: u64  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
+pub phx_exec::pool::PoolUsage::dispatches: u64  // used by: phx-fin
+pub phx_exec::pool::PoolUsage::spun: u64  // used by: phx-cli
+pub fn phx_exec::pool::counted_chunk(impl core::ops::function::FnOnce())  // used by: phx-fin
+pub fn phx_exec::pool::each<I: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, impl core::iter::traits::collect::IntoIterator<Item = I>, impl core::ops::function::Fn(I) + core::marker::Sync)  // used by: phx-core, phx-ledger, phx-market
+pub fn phx_exec::pool::map<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_exec::pool::usage() -> phx_exec::pool::PoolUsage  // used by: phx-check
+pub mod phx_exec::probe  // used by: phx-cli
 pub struct phx_exec::probe::Baseline
-pub phx_exec::probe::Baseline::gather: core::option::Option<phx_exec::probe::GatherRate>
+pub phx_exec::probe::Baseline::gather: core::option::Option<phx_exec::probe::GatherRate>  // used by: phx-cli, phx-fin, phx-world
 pub phx_exec::probe::Baseline::gather_prefetched: core::option::Option<phx_exec::probe::GatherRate>
-pub phx_exec::probe::Baseline::resident_bytes: core::option::Option<u64>
+pub phx_exec::probe::Baseline::resident_bytes: core::option::Option<u64>  // used by: phx-cli
 pub struct phx_exec::probe::CoreRate
 pub phx_exec::probe::CoreRate::alone_per_s: u64
-pub phx_exec::probe::CoreRate::capacity: core::option::Option<u32>
-pub phx_exec::probe::CoreRate::core: usize
+pub phx_exec::probe::CoreRate::capacity: core::option::Option<u32>  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-pop, phx-store, phx-world, sys-cap, sys-frm
+pub phx_exec::probe::CoreRate::core: usize  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-world, sys-hh
 pub phx_exec::probe::CoreRate::loaded_per_s: u64
-pub struct phx_exec::probe::GatherRate
-pub phx_exec::probe::GatherRate::bytes: u64
+pub struct phx_exec::probe::GatherRate  // used by: phx-cli
+pub phx_exec::probe::GatherRate::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub phx_exec::probe::GatherRate::core_ns_per_row: u64
 pub phx_exec::probe::GatherRate::ns_per_row: u64
 pub phx_exec::probe::GatherRate::page_size: core::option::Option<u64>
 pub phx_exec::probe::GatherRate::prefetch: bool
-pub phx_exec::probe::GatherRate::rows: u64
+pub phx_exec::probe::GatherRate::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub fn phx_exec::probe::barrier(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, u64) -> core::option::Option<u64>
-pub fn phx_exec::probe::baseline(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock) -> phx_exec::probe::Baseline
-pub fn phx_exec::probe::core_rates(&dyn phx_exec::clock::Clock, u64) -> core::result::Result<alloc::vec::Vec<phx_exec::probe::CoreRate>, phx_exec::pool::PoolError>
+pub fn phx_exec::probe::baseline(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock) -> phx_exec::probe::Baseline  // used by: phx-cli
+pub fn phx_exec::probe::core_rates(&dyn phx_exec::clock::Clock, u64) -> core::result::Result<alloc::vec::Vec<phx_exec::probe::CoreRate>, phx_exec::pool::PoolError>  // used by: phx-cli, phx-world
 pub fn phx_exec::probe::filled_region(&phx_exec::pool::Pool, u64) -> phx_store::region::Region<u64>
-pub fn phx_exec::probe::gather(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>, u64, bool) -> core::option::Option<phx_exec::probe::GatherRate>
-pub fn phx_exec::probe::sweep(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>) -> core::option::Option<u64>
+pub fn phx_exec::probe::gather(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>, u64, bool) -> core::option::Option<phx_exec::probe::GatherRate>  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_exec::probe::sweep(&phx_exec::pool::Pool, &dyn phx_exec::clock::Clock, &phx_store::region::Region<u64>) -> core::option::Option<u64>  // used by: phx-check
 pub mod phx_exec::radix
 pub trait phx_exec::radix::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
-pub const phx_exec::radix::RadixKey::BITS: u32
-pub fn phx_exec::radix::RadixKey::digit(self, u32) -> usize
-pub fn phx_exec::radix::RadixKey::word(self) -> u64
+pub const phx_exec::radix::RadixKey::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn phx_exec::radix::RadixKey::digit(self, u32) -> usize  // used by: phx-market
+pub fn phx_exec::radix::RadixKey::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u128
-pub const u128::BITS: u32
-pub fn u128::digit(self, u32) -> usize
-pub fn u128::word(self) -> u64
+pub const u128::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn u128::digit(self, u32) -> usize  // used by: phx-market
+pub fn u128::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u32
-pub const u32::BITS: u32
-pub fn u32::digit(self, u32) -> usize
-pub fn u32::word(self) -> u64
+pub const u32::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn u32::digit(self, u32) -> usize  // used by: phx-market
+pub fn u32::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u64
-pub const u64::BITS: u32
-pub fn u64::digit(self, u32) -> usize
-pub fn u64::word(self) -> u64
-pub fn phx_exec::radix::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)
-pub mod phx_exec::site
-pub struct phx_exec::site::Site
-pub phx_exec::site::Site::chunk: u32
-pub phx_exec::site::Site::day: u32
+pub const u64::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn u64::digit(self, u32) -> usize  // used by: phx-market
+pub fn u64::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub fn phx_exec::radix::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)  // used by: phx-core
+pub mod phx_exec::site  // used by: phx-check, phx-cli, phx-core, phx-world, sys-bnk, sys-cb
+pub struct phx_exec::site::Site  // used by: phx-check, phx-market
+pub phx_exec::site::Site::chunk: u32  // used by: phx-core, phx-market, phx-pop, phx-store, phx-world
+pub phx_exec::site::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_exec::site::Site::handler: u16
-pub phx_exec::site::Site::substep: u8
-pub fn phx_exec::site::current() -> core::option::Option<phx_exec::site::Site>
+pub phx_exec::site::Site::substep: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-world
+pub fn phx_exec::site::current() -> core::option::Option<phx_exec::site::Site>  // used by: if-labour, phx-check, phx-cli, phx-core, phx-ledger, phx-obs, phx-world, sys-frm
 pub fn phx_exec::site::enter(phx_exec::site::Site)
 pub fn phx_exec::site::leave()
-pub mod phx_exec::spec
-pub struct phx_exec::spec::PoolSpec
-pub phx_exec::spec::PoolSpec::cores: alloc::vec::Vec<usize>
-pub phx_exec::spec::PoolSpec::pin: bool
+pub mod phx_exec::spec  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-world
+pub struct phx_exec::spec::PoolSpec  // used by: phx-cli, phx-fin, phx-world
+pub phx_exec::spec::PoolSpec::cores: alloc::vec::Vec<usize>  // used by: phx-fin
+pub phx_exec::spec::PoolSpec::pin: bool  // used by: phx-core, phx-world
 impl phx_exec::spec::PoolSpec
-pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
-pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize
+pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::spec::read_capacity(usize) -> core::option::Option<u32>
 pub fn phx_exec::spec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>
-pub mod phx_exec::stats
-pub use phx_exec::stats::StoreStats
-pub struct phx_exec::stats::Sample
-pub phx_exec::stats::Sample::bytes: u64
-pub phx_exec::stats::Sample::rows_ever: u64
-pub phx_exec::stats::Sample::rows_live: u64
+pub mod phx_exec::stats  // used by: if-state, phx-cli, phx-store, phx-world, sys-idx, sys-sta
+pub use phx_exec::stats::StoreStats  // used by: phx-core, phx-store
+pub struct phx_exec::stats::Sample  // used by: phx-cli, phx-core
+pub phx_exec::stats::Sample::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub phx_exec::stats::Sample::rows_ever: u64  // used by: phx-core, phx-store
+pub phx_exec::stats::Sample::rows_live: u64  // used by: phx-cli, phx-core, phx-store
 impl phx_exec::stats::Sample
-pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample
-pub fn phx_exec::stats::growth_per_year(&[u64]) -> core::option::Option<i128>
-pub mod phx_exec::tally
-pub struct phx_exec::tally::Tally(_)
+pub fn phx_exec::stats::Sample::of(&dyn phx_store::stats::StoreStats) -> phx_exec::stats::Sample  // used by: phx-check, phx-cli, phx-core, phx-id, phx-market, phx-obs, phx-pop, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_exec::stats::growth_per_year(&[u64]) -> core::option::Option<i128>  // used by: phx-cli, phx-core
+pub mod phx_exec::tally  // used by: phx-world
+pub struct phx_exec::tally::Tally(_)  // used by: phx-world
 impl phx_exec::tally::Tally
-pub fn phx_exec::tally::Tally::add(&self, u64)
-pub fn phx_exec::tally::Tally::get(&self) -> u64
+pub fn phx_exec::tally::Tally::add(&self, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-obs, phx-store, phx-world
+pub fn phx_exec::tally::Tally::get(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl phx_store::save::Saved for phx_exec::tally::Tally
-pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>
-pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)
-pub mod phx_exec::trace
-pub enum phx_exec::trace::Mark<'a>
-pub phx_exec::trace::Mark::Begun(&'static str)
-pub phx_exec::trace::Mark::Ended(&'static str, core::option::Option<u64>, &'a [(&'static str, i64)])
-pub phx_exec::trace::Mark::Note(&'static str, &'a [(&'static str, i64)])
-pub struct phx_exec::trace::Reading
+pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-ledger, phx-macros, phx-store, phx-world
+pub mod phx_exec::trace  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world
+pub enum phx_exec::trace::Mark<'a>  // used by: phx-cli
+pub phx_exec::trace::Mark::Begun(&'static str)  // used by: phx-cli
+pub phx_exec::trace::Mark::Ended(&'static str, core::option::Option<u64>, &'a [(&'static str, i64)])  // used by: phx-cli, phx-obs
+pub phx_exec::trace::Mark::Note(&'static str, &'a [(&'static str, i64)])  // used by: phx-cli
+pub struct phx_exec::trace::Reading  // used by: phx-fin, phx-world
 pub phx_exec::trace::Reading::allocated: core::option::Option<(u64, u64)>
-pub phx_exec::trace::Reading::cpu_ns: core::option::Option<u64>
-pub phx_exec::trace::Reading::faults: core::option::Option<u64>
-pub phx_exec::trace::Reading::pool: phx_exec::pool::PoolUsage
+pub phx_exec::trace::Reading::cpu_ns: core::option::Option<u64>  // used by: phx-cli, phx-fin
+pub phx_exec::trace::Reading::faults: core::option::Option<u64>  // used by: phx-cli, phx-fin
+pub phx_exec::trace::Reading::pool: phx_exec::pool::PoolUsage  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-dem
 impl phx_exec::trace::Reading
-pub fn phx_exec::trace::Reading::now() -> phx_exec::trace::Reading
-pub struct phx_exec::trace::Spent
-pub phx_exec::trace::Spent::alloc_bytes: core::option::Option<u64>
-pub phx_exec::trace::Spent::allocs: core::option::Option<u64>
-pub phx_exec::trace::Spent::barriers: core::option::Option<u64>
-pub phx_exec::trace::Spent::chunks: core::option::Option<u64>
-pub phx_exec::trace::Spent::cpu_ns: core::option::Option<u64>
-pub phx_exec::trace::Spent::faults: core::option::Option<u64>
-pub phx_exec::trace::Spent::items: core::option::Option<u64>
-pub phx_exec::trace::Spent::spun: core::option::Option<u64>
+pub fn phx_exec::trace::Reading::now() -> phx_exec::trace::Reading  // used by: if-state, phx-cli, phx-fin, phx-geo, phx-obs, phx-store, phx-val, phx-world, sys-frm, sys-gds, sys-hh, sys-idx
+pub struct phx_exec::trace::Spent  // used by: phx-fin
+pub phx_exec::trace::Spent::alloc_bytes: core::option::Option<u64>  // used by: phx-cli
+pub phx_exec::trace::Spent::allocs: core::option::Option<u64>  // used by: phx-cli, phx-fin
+pub phx_exec::trace::Spent::barriers: core::option::Option<u64>  // used by: phx-cli
+pub phx_exec::trace::Spent::chunks: core::option::Option<u64>  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
+pub phx_exec::trace::Spent::cpu_ns: core::option::Option<u64>  // used by: phx-cli, phx-fin
+pub phx_exec::trace::Spent::faults: core::option::Option<u64>  // used by: phx-cli, phx-fin
+pub phx_exec::trace::Spent::items: core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-market, phx-num, phx-world
+pub phx_exec::trace::Spent::spun: core::option::Option<u64>  // used by: phx-cli
 impl phx_exec::trace::Spent
-pub fn phx_exec::trace::Spent::between(core::option::Option<u64>, &phx_exec::trace::Reading, &phx_exec::trace::Reading) -> phx_exec::trace::Spent
-pub fn phx_exec::trace::Spent::counts(&self) -> alloc::vec::Vec<(&'static str, i64)>
-pub trait phx_exec::trace::Tracer: phx_exec::clock::Clock
-pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)
-pub fn phx_exec::trace::count(usize) -> i64
-pub fn phx_exec::trace::doubling(u64) -> bool
-pub fn phx_exec::trace::note(&'static str, &[(&'static str, i64)])
-pub fn phx_exec::trace::on() -> bool
-pub fn phx_exec::trace::set(&'static dyn phx_exec::trace::Tracer)
-pub fn phx_exec::trace::span<T>(&'static str, impl core::ops::function::FnOnce() -> T) -> T
+pub fn phx_exec::trace::Spent::between(core::option::Option<u64>, &phx_exec::trace::Reading, &phx_exec::trace::Reading) -> phx_exec::trace::Spent  // used by: phx-fin, phx-geo, phx-market
+pub fn phx_exec::trace::Spent::counts(&self) -> alloc::vec::Vec<(&'static str, i64)>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-obs, phx-rand, sys-dem
+pub trait phx_exec::trace::Tracer: phx_exec::clock::Clock  // used by: phx-cli
+pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)  // used by: phx-cli, phx-core, phx-world
+pub fn phx_exec::trace::count(usize) -> i64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub fn phx_exec::trace::doubling(u64) -> bool  // used by: phx-core, phx-market
+pub fn phx_exec::trace::note(&'static str, &[(&'static str, i64)])  // used by: phx-core, phx-market, phx-world
+pub fn phx_exec::trace::on() -> bool  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-market, phx-world, sys-lab
+pub fn phx_exec::trace::set(&'static dyn phx_exec::trace::Tracer)  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_exec::trace::span<T>(&'static str, impl core::ops::function::FnOnce() -> T) -> T  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-dem
 pub fn phx_exec::trace::span_items<T>(&'static str, u64, impl core::ops::function::FnOnce() -> T) -> T
 pub mod phx_exec::traverse
 pub fn phx_exec::traverse::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
 pub fn phx_exec::traverse::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::traverse::for_chunks<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub mod phx_exec::tree
+pub mod phx_exec::tree  // used by: phx-check, phx-rand, sys-dem
 pub fn phx_exec::tree::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
 pub struct phx_exec::ExecCounters
-pub phx_exec::ExecCounters::barriers: u64
+pub phx_exec::ExecCounters::barriers: u64  // used by: phx-cli
 pub phx_exec::ExecCounters::buffer_bytes: u64
-pub phx_exec::ExecCounters::bytes: u64
-pub phx_exec::ExecCounters::chunks: u64
-pub phx_exec::ExecCounters::rows: u64
-pub phx_exec::ExecCounters::spun: u64
+pub phx_exec::ExecCounters::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub phx_exec::ExecCounters::chunks: u64  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
+pub phx_exec::ExecCounters::rows: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
+pub phx_exec::ExecCounters::spun: u64  // used by: phx-cli
 pub phx_exec::ExecCounters::visited: [u64; 32]
-pub phx_exec::ExecCounters::wall_ns: u64
+pub phx_exec::ExecCounters::wall_ns: u64  // used by: phx-cli, phx-fin, phx-world
 impl phx_exec::counters::ExecCounters
-pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters
+pub const phx_exec::counters::ExecCounters::ZERO: phx_exec::counters::ExecCounters  // used by: phx-check, phx-num
 pub fn phx_exec::counters::ExecCounters::buffered(&mut self, u64)
-pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)
+pub fn phx_exec::counters::ExecCounters::pass(&mut self, u64, &[&phx_store::descriptor::ColumnDescriptor], u64)  // used by: phx-core, phx-geo, phx-world
 pub fn phx_exec::counters::ExecCounters::spin(&mut self, u64)
-pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T
+pub fn phx_exec::counters::ExecCounters::timed<T>(&mut self, &dyn phx_exec::clock::Clock, impl core::ops::function::FnOnce() -> T) -> T  // used by: phx-world
 pub fn phx_exec::counters::ExecCounters::visited(&mut self, usize, u64)
 pub struct phx_exec::IntentBuf<T>
 impl<T: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::gather::IntentBuf<T>
@@ -260,40 +260,40 @@ pub struct phx_exec::NoHint
 impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
 pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
 pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
-pub struct phx_exec::Pool
+pub struct phx_exec::Pool  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
 impl phx_exec::pool::Pool
-pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)
-pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>
+pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)  // used by: phx-check, phx-core, phx-id
+pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-core, phx-market
+pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_exec::pool::Pool::on_every_worker<T: core::marker::Send>(&self, impl core::ops::function::Fn() -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::pool::Pool::unpinned(&self) -> usize
 pub fn phx_exec::pool::Pool::worker_tids(&self) -> alloc::vec::Vec<i32>
-pub fn phx_exec::pool::Pool::workers(&self) -> usize
+pub fn phx_exec::pool::Pool::workers(&self) -> usize  // used by: phx-cli, phx-fin, phx-world
 impl core::fmt::Debug for phx_exec::pool::Pool
-pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result
+pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-store, phx-val, phx-world
 pub struct phx_exec::PoolError(pub alloc::string::String)
-pub struct phx_exec::PoolSpec
-pub phx_exec::PoolSpec::cores: alloc::vec::Vec<usize>
-pub phx_exec::PoolSpec::pin: bool
+pub struct phx_exec::PoolSpec  // used by: phx-cli, phx-fin, phx-world
+pub phx_exec::PoolSpec::cores: alloc::vec::Vec<usize>  // used by: phx-fin
+pub phx_exec::PoolSpec::pin: bool  // used by: phx-core, phx-world
 impl phx_exec::spec::PoolSpec
-pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec
+pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
-pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize
-pub struct phx_exec::Site
-pub phx_exec::Site::chunk: u32
-pub phx_exec::Site::day: u32
+pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, phx-fin, phx-world
+pub struct phx_exec::Site  // used by: phx-check, phx-market
+pub phx_exec::Site::chunk: u32  // used by: phx-core, phx-market, phx-pop, phx-store, phx-world
+pub phx_exec::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_exec::Site::handler: u16
-pub phx_exec::Site::substep: u8
-pub struct phx_exec::Tally(_)
+pub phx_exec::Site::substep: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-world
+pub struct phx_exec::Tally(_)  // used by: phx-world
 impl phx_exec::tally::Tally
-pub fn phx_exec::tally::Tally::add(&self, u64)
-pub fn phx_exec::tally::Tally::get(&self) -> u64
+pub fn phx_exec::tally::Tally::add(&self, u64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-obs, phx-store, phx-world
+pub fn phx_exec::tally::Tally::get(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 impl phx_store::save::Saved for phx_exec::tally::Tally
-pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>
-pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)
-pub trait phx_exec::Clock: core::marker::Sync
-pub fn phx_exec::Clock::now_ns(&self) -> u64
+pub fn phx_exec::tally::Tally::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_exec::tally::Tally, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_exec::tally::Tally::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-ledger, phx-macros, phx-store, phx-world
+pub trait phx_exec::Clock: core::marker::Sync  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_exec::Clock::now_ns(&self) -> u64  // used by: phx-cli, phx-fin, phx-world
 pub trait phx_exec::PerfHint
 pub fn phx_exec::PerfHint::begin_turn(&self, u64)
 pub fn phx_exec::PerfHint::end_turn(&self, u64)
@@ -301,28 +301,28 @@ impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
 pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
 pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
 pub trait phx_exec::RadixKey: core::marker::Copy + core::cmp::Ord + core::marker::Send + core::marker::Sync
-pub const phx_exec::RadixKey::BITS: u32
-pub fn phx_exec::RadixKey::digit(self, u32) -> usize
-pub fn phx_exec::RadixKey::word(self) -> u64
+pub const phx_exec::RadixKey::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn phx_exec::RadixKey::digit(self, u32) -> usize  // used by: phx-market
+pub fn phx_exec::RadixKey::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u128
-pub const u128::BITS: u32
-pub fn u128::digit(self, u32) -> usize
-pub fn u128::word(self) -> u64
+pub const u128::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn u128::digit(self, u32) -> usize  // used by: phx-market
+pub fn u128::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u32
-pub const u32::BITS: u32
-pub fn u32::digit(self, u32) -> usize
-pub fn u32::word(self) -> u64
+pub const u32::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn u32::digit(self, u32) -> usize  // used by: phx-market
+pub fn u32::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 impl phx_exec::radix::RadixKey for u64
-pub const u64::BITS: u32
-pub fn u64::digit(self, u32) -> usize
-pub fn u64::word(self) -> u64
+pub const u64::BITS: u32  // used by: phx-core, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub fn u64::digit(self, u32) -> usize  // used by: phx-market
+pub fn u64::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub fn phx_exec::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
 pub fn phx_exec::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::for_chunks<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub fn phx_exec::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)
-pub fn phx_exec::mix64(u64) -> u64
+pub fn phx_exec::gather<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &phx_exec::gather::IntentBuf<T>, &mut alloc::vec::Vec<T>)  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_exec::mix64(u64) -> u64  // used by: phx-fin, phx-world
 pub fn phx_exec::prefetch<T>(*const T)
 pub fn phx_exec::process_cpu_ns() -> core::option::Option<u64>
-pub fn phx_exec::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)
+pub fn phx_exec::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)  // used by: phx-core
 pub fn phx_exec::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
 pub fn phx_exec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>

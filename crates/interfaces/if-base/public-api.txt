@@ -1,87 +1,87 @@
-pub mod if_base
-pub mod if_base::consts
-pub const if_base::consts::PER_UNIT_EXP: u8
-pub mod if_base::products
-pub struct if_base::products::IndustryId(_)
+pub mod if_base  // used by: phx-world, sys-cap, sys-tec
+pub mod if_base::consts  // used by: if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const if_base::consts::PER_UNIT_EXP: u8  // used by: sys-cap, sys-tec
+pub mod if_base::products  // used by: phx-core, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub struct if_base::products::IndustryId(_)  // used by: sys-tec
 impl if_base::products::IndustryId
-pub const fn if_base::products::IndustryId::index(self) -> u16
-pub const fn if_base::products::IndustryId::new(u16) -> if_base::products::IndustryId
-pub struct if_base::products::ProductDecl
-pub if_base::products::ProductDecl::delivered_at_once: bool
-pub if_base::products::ProductDecl::extracts: phx_num::missing::Missing<u16>
-pub if_base::products::ProductDecl::id: if_base::products::ProductId
-pub if_base::products::ProductDecl::industry: if_base::products::IndustryId
-pub if_base::products::ProductDecl::storable: bool
-pub if_base::products::ProductDecl::unit: phx_num::qty::UnitId
-pub struct if_base::products::ProductId(_)
+pub const fn if_base::products::IndustryId::index(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::products::IndustryId::new(u16) -> if_base::products::IndustryId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct if_base::products::ProductDecl  // used by: sys-tec
+pub if_base::products::ProductDecl::delivered_at_once: bool  // used by: phx-core, sys-tec
+pub if_base::products::ProductDecl::extracts: phx_num::missing::Missing<u16>  // used by: phx-core, sys-tec
+pub if_base::products::ProductDecl::id: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub if_base::products::ProductDecl::industry: if_base::products::IndustryId  // used by: phx-core, sys-frm, sys-tec
+pub if_base::products::ProductDecl::storable: bool  // used by: phx-core, phx-world, sys-frm, sys-tec
+pub if_base::products::ProductDecl::unit: phx_num::qty::UnitId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub struct if_base::products::ProductId(_)  // used by: sys-tec
 impl if_base::products::ProductId
-pub const fn if_base::products::ProductId::index(self) -> u16
-pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId
-pub struct if_base::products::Products
-pub if_base::products::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>
-pub if_base::products::Products::industries: alloc::vec::Vec<alloc::string::String>
-pub if_base::products::Products::names: alloc::vec::Vec<alloc::string::String>
-pub mod if_base::ways
-pub struct if_base::ways::CapKind(pub u8)
-pub struct if_base::ways::OccFamily(pub u8)
-pub struct if_base::ways::Way
-pub if_base::ways::Way::batch: phx_num::qty::QtyRaw
-pub if_base::ways::Way::by_products: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>
-pub if_base::ways::Way::capital: alloc::boxed::Box<[(if_base::ways::CapKind, if_base::ways::PerUnit)]>
-pub if_base::ways::Way::deposit: phx_num::missing::Missing<(u16, if_base::ways::PerUnit)>
-pub if_base::ways::Way::inputs: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>
-pub if_base::ways::Way::labour: alloc::boxed::Box<[(if_base::ways::OccFamily, if_base::ways::PerUnit)]>
-pub if_base::ways::Way::land: if_base::ways::PerUnit
-pub if_base::ways::Way::lead_time_days: u16
-pub if_base::ways::Way::product: if_base::products::ProductId
-pub if_base::ways::Way::yield_ppm: u32
-pub struct if_base::ways::WayId(_)
+pub const fn if_base::products::ProductId::index(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct if_base::products::Products  // used by: phx-core, sys-tec
+pub if_base::products::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>  // used by: phx-core, phx-obs, phx-world, sys-tec
+pub if_base::products::Products::industries: alloc::vec::Vec<alloc::string::String>  // used by: sys-tec
+pub if_base::products::Products::names: alloc::vec::Vec<alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-tec
+pub mod if_base::ways  // used by: phx-world, sys-frm, sys-lab, sys-tec
+pub struct if_base::ways::CapKind(pub u8)  // used by: sys-tec
+pub struct if_base::ways::OccFamily(pub u8)  // used by: sys-tec
+pub struct if_base::ways::Way  // used by: sys-tec
+pub if_base::ways::Way::batch: phx_num::qty::QtyRaw  // used by: sys-tec
+pub if_base::ways::Way::by_products: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>  // used by: sys-tec
+pub if_base::ways::Way::capital: alloc::boxed::Box<[(if_base::ways::CapKind, if_base::ways::PerUnit)]>  // used by: if-credit, phx-world, sys-bnk, sys-cap, sys-tec
+pub if_base::ways::Way::deposit: phx_num::missing::Missing<(u16, if_base::ways::PerUnit)>  // used by: phx-geo, phx-world, sys-bnk, sys-tec
+pub if_base::ways::Way::inputs: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>  // used by: phx-check, phx-exec, phx-world, sys-frm, sys-tec
+pub if_base::ways::Way::labour: alloc::boxed::Box<[(if_base::ways::OccFamily, if_base::ways::PerUnit)]>  // used by: phx-cli, phx-world, sys-frm, sys-tec
+pub if_base::ways::Way::land: if_base::ways::PerUnit  // used by: phx-cli, phx-geo, phx-world, sys-tec
+pub if_base::ways::Way::lead_time_days: u16  // used by: sys-tec
+pub if_base::ways::Way::product: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-market, phx-num, phx-world, sys-frm, sys-tec
+pub if_base::ways::Way::yield_ppm: u32  // used by: sys-frm, sys-tec
+pub struct if_base::ways::WayId(_)  // used by: sys-tec
 impl if_base::ways::WayId
-pub const fn if_base::ways::WayId::index(self) -> u32
-pub const fn if_base::ways::WayId::new(u32) -> if_base::ways::WayId
-pub struct if_base::ways::WaySetId(_)
+pub const fn if_base::ways::WayId::index(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::ways::WayId::new(u32) -> if_base::ways::WayId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct if_base::ways::WaySetId(_)  // used by: sys-tec
 impl if_base::ways::WaySetId
-pub const fn if_base::ways::WaySetId::index(self) -> u32
-pub const fn if_base::ways::WaySetId::new(u32) -> if_base::ways::WaySetId
-pub type if_base::ways::PerUnit = phx_num::fixed::Fixed<PER_UNIT_EXP>
-pub struct if_base::CapKind(pub u8)
-pub struct if_base::IndustryId(_)
+pub const fn if_base::ways::WaySetId::index(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::ways::WaySetId::new(u32) -> if_base::ways::WaySetId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub type if_base::ways::PerUnit = phx_num::fixed::Fixed<PER_UNIT_EXP>  // used by: phx-world, sys-tec
+pub struct if_base::CapKind(pub u8)  // used by: sys-tec
+pub struct if_base::IndustryId(_)  // used by: sys-tec
 impl if_base::products::IndustryId
-pub const fn if_base::products::IndustryId::index(self) -> u16
-pub const fn if_base::products::IndustryId::new(u16) -> if_base::products::IndustryId
-pub struct if_base::OccFamily(pub u8)
-pub struct if_base::ProductDecl
-pub if_base::ProductDecl::delivered_at_once: bool
-pub if_base::ProductDecl::extracts: phx_num::missing::Missing<u16>
-pub if_base::ProductDecl::id: if_base::products::ProductId
-pub if_base::ProductDecl::industry: if_base::products::IndustryId
-pub if_base::ProductDecl::storable: bool
-pub if_base::ProductDecl::unit: phx_num::qty::UnitId
-pub struct if_base::ProductId(_)
+pub const fn if_base::products::IndustryId::index(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::products::IndustryId::new(u16) -> if_base::products::IndustryId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct if_base::OccFamily(pub u8)  // used by: sys-tec
+pub struct if_base::ProductDecl  // used by: sys-tec
+pub if_base::ProductDecl::delivered_at_once: bool  // used by: phx-core, sys-tec
+pub if_base::ProductDecl::extracts: phx_num::missing::Missing<u16>  // used by: phx-core, sys-tec
+pub if_base::ProductDecl::id: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub if_base::ProductDecl::industry: if_base::products::IndustryId  // used by: phx-core, sys-frm, sys-tec
+pub if_base::ProductDecl::storable: bool  // used by: phx-core, phx-world, sys-frm, sys-tec
+pub if_base::ProductDecl::unit: phx_num::qty::UnitId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub struct if_base::ProductId(_)  // used by: sys-tec
 impl if_base::products::ProductId
-pub const fn if_base::products::ProductId::index(self) -> u16
-pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId
-pub struct if_base::Products
-pub if_base::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>
-pub if_base::Products::industries: alloc::vec::Vec<alloc::string::String>
-pub if_base::Products::names: alloc::vec::Vec<alloc::string::String>
-pub struct if_base::Way
-pub if_base::Way::batch: phx_num::qty::QtyRaw
-pub if_base::Way::by_products: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>
-pub if_base::Way::capital: alloc::boxed::Box<[(if_base::ways::CapKind, if_base::ways::PerUnit)]>
-pub if_base::Way::deposit: phx_num::missing::Missing<(u16, if_base::ways::PerUnit)>
-pub if_base::Way::inputs: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>
-pub if_base::Way::labour: alloc::boxed::Box<[(if_base::ways::OccFamily, if_base::ways::PerUnit)]>
-pub if_base::Way::land: if_base::ways::PerUnit
-pub if_base::Way::lead_time_days: u16
-pub if_base::Way::product: if_base::products::ProductId
-pub if_base::Way::yield_ppm: u32
-pub struct if_base::WayId(_)
+pub const fn if_base::products::ProductId::index(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::products::ProductId::new(u16) -> if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct if_base::Products  // used by: phx-core, sys-tec
+pub if_base::Products::decls: alloc::vec::Vec<if_base::products::ProductDecl>  // used by: phx-core, phx-obs, phx-world, sys-tec
+pub if_base::Products::industries: alloc::vec::Vec<alloc::string::String>  // used by: sys-tec
+pub if_base::Products::names: alloc::vec::Vec<alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-tec
+pub struct if_base::Way  // used by: sys-tec
+pub if_base::Way::batch: phx_num::qty::QtyRaw  // used by: sys-tec
+pub if_base::Way::by_products: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>  // used by: sys-tec
+pub if_base::Way::capital: alloc::boxed::Box<[(if_base::ways::CapKind, if_base::ways::PerUnit)]>  // used by: if-credit, phx-world, sys-bnk, sys-cap, sys-tec
+pub if_base::Way::deposit: phx_num::missing::Missing<(u16, if_base::ways::PerUnit)>  // used by: phx-geo, phx-world, sys-bnk, sys-tec
+pub if_base::Way::inputs: alloc::boxed::Box<[(if_base::products::ProductId, if_base::ways::PerUnit)]>  // used by: phx-check, phx-exec, phx-world, sys-frm, sys-tec
+pub if_base::Way::labour: alloc::boxed::Box<[(if_base::ways::OccFamily, if_base::ways::PerUnit)]>  // used by: phx-cli, phx-world, sys-frm, sys-tec
+pub if_base::Way::land: if_base::ways::PerUnit  // used by: phx-cli, phx-geo, phx-world, sys-tec
+pub if_base::Way::lead_time_days: u16  // used by: sys-tec
+pub if_base::Way::product: if_base::products::ProductId  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-market, phx-num, phx-world, sys-frm, sys-tec
+pub if_base::Way::yield_ppm: u32  // used by: sys-frm, sys-tec
+pub struct if_base::WayId(_)  // used by: sys-tec
 impl if_base::ways::WayId
-pub const fn if_base::ways::WayId::index(self) -> u32
-pub const fn if_base::ways::WayId::new(u32) -> if_base::ways::WayId
-pub struct if_base::WaySetId(_)
+pub const fn if_base::ways::WayId::index(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::ways::WayId::new(u32) -> if_base::ways::WayId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct if_base::WaySetId(_)  // used by: sys-tec
 impl if_base::ways::WaySetId
-pub const fn if_base::ways::WaySetId::index(self) -> u32
-pub const fn if_base::ways::WaySetId::new(u32) -> if_base::ways::WaySetId
-pub type if_base::PerUnit = phx_num::fixed::Fixed<PER_UNIT_EXP>
+pub const fn if_base::ways::WaySetId::index(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-cap, sys-dem, sys-tec
+pub const fn if_base::ways::WaySetId::new(u32) -> if_base::ways::WaySetId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub type if_base::PerUnit = phx_num::fixed::Fixed<PER_UNIT_EXP>  // used by: phx-world, sys-tec
