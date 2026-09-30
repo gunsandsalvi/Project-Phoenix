@@ -1,8 +1,22 @@
 pub mod phx_exec  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world
+pub mod phx_exec::apply  // used by: phx-core, phx-fin, phx-val, phx-world
+#[repr(C)] pub struct phx_exec::apply::Item
+pub phx_exec::apply::Item::amount: i64  // used by: phx-core, phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
+pub phx_exec::apply::Item::tag: u32  // used by: phx-cli, phx-core, phx-fin, phx-rand, phx-store, sys-cap
+pub phx_exec::apply::Item::target: u32  // used by: if-credit, phx-check, phx-fin, phx-geo, phx-rand, phx-world, sys-bnk, sys-frm, sys-hh
+pub struct phx_exec::apply::Shards  // used by: phx-fin
+impl phx_exec::apply::Shards
+pub fn phx_exec::apply::Shards::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_exec::apply::Shards::scatter_bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_exec::apply::Shards::waves(&self) -> u64  // used by: phx-fin
+pub fn phx_exec::apply::apply_by_range<R: core::marker::Send, H: phx_exec::hooks::SweepHooks>(core::option::Option<&phx_exec::pool::Pool>, (&[&[phx_exec::apply::Item]], u32, usize), &mut [(R, H)], &mut phx_exec::apply::Shards, impl core::ops::function::Fn(&mut R, &phx_exec::apply::Item) + core::marker::Sync)  // used by: phx-fin
+pub fn phx_exec::apply::ranges_of(u32, u32) -> usize
 pub mod phx_exec::clock  // used by: phx-cli, phx-fin, phx-world
 pub trait phx_exec::clock::Clock: core::marker::Sync  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_exec::clock::Clock::now_ns(&self) -> u64  // used by: phx-cli, phx-fin, phx-world
 pub mod phx_exec::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const phx_exec::consts::APPLY_ITEM_COST: u64
+pub const phx_exec::consts::APPLY_RANGE_SHIFT: u32  // used by: phx-fin
 pub const phx_exec::consts::CAPACITY_PATH: [&str; 2]
 pub const phx_exec::consts::CHUNKS_PER_MAX_WORKER: u32
 pub const phx_exec::consts::CHUNK_COST: u64
@@ -69,9 +83,36 @@ pub fn phx_exec::hint::PerfHint::end_turn(&self, u64)
 impl phx_exec::hint::PerfHint for phx_exec::hint::NoHint
 pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
 pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
+pub mod phx_exec::hooks
+pub trait phx_exec::hooks::RangeHook: core::marker::Send
+pub fn phx_exec::hooks::RangeHook::close_range(&mut self)
+pub fn phx_exec::hooks::RangeHook::item(&mut self, &phx_exec::apply::Item)  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-pop, phx-world, sys-dem
+pub fn phx_exec::hooks::RangeHook::open_range(&mut self, usize)
+impl phx_exec::hooks::RangeHook for ()
+pub fn ()::close_range(&mut self)
+pub fn ()::item(&mut self, &phx_exec::apply::Item)
+pub fn ()::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook, B: phx_exec::hooks::RangeHook, C: phx_exec::hooks::RangeHook, D: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A, B, C, D)
+pub fn (A, B, C, D)::close_range(&mut self)
+pub fn (A, B, C, D)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A, B, C, D)::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook, B: phx_exec::hooks::RangeHook, C: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A, B, C)
+pub fn (A, B, C)::close_range(&mut self)
+pub fn (A, B, C)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A, B, C)::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook, B: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A, B)
+pub fn (A, B)::close_range(&mut self)
+pub fn (A, B)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A, B)::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A)
+pub fn (A)::close_range(&mut self)
+pub fn (A)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A)::open_range(&mut self, usize)
+pub trait phx_exec::hooks::SweepHooks: phx_exec::hooks::RangeHook
+impl<T: phx_exec::hooks::RangeHook> phx_exec::hooks::SweepHooks for T
 pub mod phx_exec::keyed  // used by: phx-check, phx-core, phx-geo, phx-macros, phx-world
 pub struct phx_exec::keyed::KeyedReduce<K, V>
-pub phx_exec::keyed::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>
+pub phx_exec::keyed::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>  // used by: phx-fin
 impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::keyed::KeyedReduce<K, V>
 pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
 pub mod phx_exec::mix  // used by: phx-fin
@@ -92,6 +133,8 @@ pub phx_exec::partition::Partitioned::items: alloc::vec::Vec<T>  // used by: phx
 pub phx_exec::partition::Partitioned::starts: alloc::vec::Vec<usize>  // used by: phx-core, phx-geo, phx-market, phx-world
 impl<T> phx_exec::partition::Partitioned<T>
 pub fn phx_exec::partition::Partitioned<T>::bucket(&self, usize) -> &[T]  // used by: phx-market
+pub fn phx_exec::partition::Partitioned<T>::bytes(&self) -> usize  // used by: phx-market
+pub fn phx_exec::partition::Partitioned<T>::scatter_bytes(&self) -> usize  // used by: phx-market
 impl<T> core::default::Default for phx_exec::partition::Partitioned<T>
 pub fn phx_exec::partition::Partitioned<T>::default() -> phx_exec::partition::Partitioned<T>  // used by: phx-market
 pub fn phx_exec::partition::partition_into<T: core::marker::Copy + core::marker::Send + core::marker::Sync>(core::option::Option<&phx_exec::pool::Pool>, &[&[T]], usize, impl core::ops::function::Fn(&T) -> usize + core::marker::Sync, &mut phx_exec::partition::Partitioned<T>)  // used by: phx-market
@@ -283,8 +326,12 @@ pub fn phx_exec::gather::IntentBuf<T>::is_empty(&self) -> bool
 pub fn phx_exec::gather::IntentBuf<T>::len(&self) -> usize
 pub fn phx_exec::gather::IntentBuf<T>::new(usize) -> phx_exec::gather::IntentBuf<T>
 pub fn phx_exec::gather::IntentBuf<T>::reset(&mut self, usize)
+#[repr(C)] pub struct phx_exec::Item
+pub phx_exec::Item::amount: i64  // used by: phx-core, phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
+pub phx_exec::Item::tag: u32  // used by: phx-cli, phx-core, phx-fin, phx-rand, phx-store, sys-cap
+pub phx_exec::Item::target: u32  // used by: if-credit, phx-check, phx-fin, phx-geo, phx-rand, phx-world, sys-bnk, sys-frm, sys-hh
 pub struct phx_exec::KeyedReduce<K, V>
-pub phx_exec::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>
+pub phx_exec::KeyedReduce::shards: alloc::vec::Vec<alloc::vec::Vec<(K, V)>>  // used by: phx-fin
 impl<K: phx_exec::radix::RadixKey, V: core::marker::Copy + core::marker::Send + core::marker::Sync> phx_exec::keyed::KeyedReduce<K, V>
 pub fn phx_exec::keyed::KeyedReduce<K, V>::run(core::option::Option<&phx_exec::pool::Pool>, &[alloc::vec::Vec<(K, V)>], impl core::ops::function::Fn(&mut V, V) + core::marker::Sync) -> phx_exec::keyed::KeyedReduce<K, V>
 pub struct phx_exec::NoHint
@@ -309,6 +356,11 @@ impl phx_exec::spec::PoolSpec
 pub fn phx_exec::spec::PoolSpec::detect() -> phx_exec::spec::PoolSpec  // used by: phx-cli, phx-fin
 pub fn phx_exec::spec::PoolSpec::unpinned(usize) -> phx_exec::spec::PoolSpec
 pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, phx-fin, phx-world
+pub struct phx_exec::Shards  // used by: phx-fin
+impl phx_exec::apply::Shards
+pub fn phx_exec::apply::Shards::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_exec::apply::Shards::scatter_bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_exec::apply::Shards::waves(&self) -> u64  // used by: phx-fin
 pub struct phx_exec::Site  // used by: phx-check, phx-core, phx-market, phx-world
 pub phx_exec::Site::chunk: u32  // used by: phx-core, phx-fin, phx-market, phx-pop, phx-store, phx-world
 pub phx_exec::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
@@ -345,7 +397,34 @@ impl phx_exec::radix::RadixKey for u64
 pub const u64::BITS: u32  // used by: phx-core, phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
 pub fn u64::digit(self, u32) -> usize  // used by: phx-market
 pub fn u64::word(self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
+pub trait phx_exec::RangeHook: core::marker::Send
+pub fn phx_exec::RangeHook::close_range(&mut self)
+pub fn phx_exec::RangeHook::item(&mut self, &phx_exec::apply::Item)  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-pop, phx-world, sys-dem
+pub fn phx_exec::RangeHook::open_range(&mut self, usize)
+impl phx_exec::hooks::RangeHook for ()
+pub fn ()::close_range(&mut self)
+pub fn ()::item(&mut self, &phx_exec::apply::Item)
+pub fn ()::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook, B: phx_exec::hooks::RangeHook, C: phx_exec::hooks::RangeHook, D: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A, B, C, D)
+pub fn (A, B, C, D)::close_range(&mut self)
+pub fn (A, B, C, D)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A, B, C, D)::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook, B: phx_exec::hooks::RangeHook, C: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A, B, C)
+pub fn (A, B, C)::close_range(&mut self)
+pub fn (A, B, C)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A, B, C)::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook, B: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A, B)
+pub fn (A, B)::close_range(&mut self)
+pub fn (A, B)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A, B)::open_range(&mut self, usize)
+impl<A: phx_exec::hooks::RangeHook> phx_exec::hooks::RangeHook for (A)
+pub fn (A)::close_range(&mut self)
+pub fn (A)::item(&mut self, &phx_exec::apply::Item)
+pub fn (A)::open_range(&mut self, usize)
+pub trait phx_exec::SweepHooks: phx_exec::hooks::RangeHook
+impl<T: phx_exec::hooks::RangeHook> phx_exec::hooks::SweepHooks for T
 pub fn phx_exec::agenda_units(&[phx_id::ids::Slot], u32, u32) -> phx_exec::plan::ChunkPlan
+pub fn phx_exec::apply_by_range<R: core::marker::Send, H: phx_exec::hooks::SweepHooks>(core::option::Option<&phx_exec::pool::Pool>, (&[&[phx_exec::apply::Item]], u32, usize), &mut [(R, H)], &mut phx_exec::apply::Shards, impl core::ops::function::Fn(&mut R, &phx_exec::apply::Item) + core::marker::Sync)  // used by: phx-fin
 pub fn phx_exec::each_chunk<I: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, impl core::iter::traits::collect::IntoIterator<Item = I>, impl core::ops::function::Fn(I) + core::marker::Sync)  // used by: phx-core, phx-market
 pub fn phx_exec::for_agenda<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-world
 pub fn phx_exec::for_chunks<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-core, phx-fin, phx-market
@@ -358,5 +437,6 @@ pub fn phx_exec::mix64(u64) -> u64  // used by: phx-fin, phx-world
 pub fn phx_exec::prefetch<T>(*const T)
 pub fn phx_exec::process_cpu_ns() -> core::option::Option<u64>
 pub fn phx_exec::radix_sort<K: phx_exec::radix::RadixKey>(core::option::Option<&phx_exec::pool::Pool>, &mut alloc::vec::Vec<(K, u32)>, &mut alloc::vec::Vec<(K, u32)>)  // used by: phx-core
+pub fn phx_exec::ranges_of(u32, u32) -> usize
 pub fn phx_exec::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
 pub fn phx_exec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>

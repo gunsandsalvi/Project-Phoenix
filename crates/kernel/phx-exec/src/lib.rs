@@ -1,11 +1,13 @@
 #[cfg(feature = "bench")]
 pub mod alloc;
+pub mod apply;
 pub mod clock;
 pub mod consts;
 mod convert;
 pub mod counters;
 pub mod gather;
 pub mod hint;
+pub mod hooks;
 pub mod keyed;
 pub mod mix;
 pub mod os;
@@ -23,10 +25,12 @@ pub mod traverse;
 pub mod tree;
 mod unwind;
 
+pub use apply::{Item, Shards, apply_by_range, ranges_of};
 pub use clock::Clock;
 pub use counters::ExecCounters;
 pub use gather::{IntentBuf, gather};
 pub use hint::{NoHint, PerfHint};
+pub use hooks::{RangeHook, SweepHooks};
 pub use keyed::KeyedReduce;
 pub use mix::mix64;
 pub use os::{prefetch, process_cpu_ns};

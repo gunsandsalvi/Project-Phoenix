@@ -174,6 +174,18 @@ impl<T> Default for Partitioned<T> {
 }
 
 impl<T> Partitioned<T> {
+    /// The bytes it holds: its items' room and the scatter's counts and places.
+    #[must_use]
+    pub fn bytes(&self) -> usize {
+        self.items.capacity() * size_of::<T>() + self.scatter_bytes()
+    }
+
+    /// The bytes of the scatter's own counts, places and starts, beside the items it places.
+    #[must_use]
+    pub fn scatter_bytes(&self) -> usize {
+        (self.starts.capacity() + self.counts.capacity() + self.places.capacity()) * size_of::<usize>()
+    }
+
     /// The items of one bucket.
     #[must_use]
     pub fn bucket(&self, b: usize) -> &[T] {
@@ -191,6 +203,51 @@ struct Out<T>(*mut MaybeUninit<T>);
 unsafe impl<T: Send> Send for Out<T> {}
 // SAFETY: as above; no position is read during the scatter.
 unsafe impl<T: Send> Sync for Out<T> {}
+
+/// A piece of the inputs the scatter counts and places as one: `len` items from `input`'s `offset`th on, running on
+/// into the inputs after, so the scatter's counts follow the items and not how many inputs hold them.
+#[derive(Clone, Copy, Debug)]
+struct Piece {
+    input: usize,
+    offset: usize,
+    len: usize,
+}
+
+impl Piece {
+    /// The piece's items, in the inputs' order.
+    fn items<'a, T>(self, inputs: &'a [&'a [T]]) -> impl Iterator<Item = &'a T> {
+        let first = inputs.get(self.input).and_then(|i| i.get(self.offset..)).unwrap_or(&[]);
+        let rest = inputs.get(self.input + 1..).unwrap_or(&[]);
+        std::iter::once(first).chain(rest.iter().copied()).flatten().take(self.len)
+    }
+}
+
+/// The inputs cut into pieces of `RADIX_CHUNK` items, the last the rest.
+struct Pieces<'a, T> {
+    inputs: &'a [&'a [T]],
+    input: usize,
+    offset: usize,
+}
+
+impl<T> Iterator for Pieces<'_, T> {
+    type Item = Piece;
+
+    fn next(&mut self) -> Option<Piece> {
+        let (input, offset) = (self.input, self.offset);
+        let mut len = 0;
+        while len < RADIX_CHUNK {
+            let Some(here) = self.inputs.get(self.input).map(|i| i.len() - self.offset) else { break };
+            let take = if here < RADIX_CHUNK - len { here } else { RADIX_CHUNK - len };
+            len += take;
+            if take == here {
+                (self.input, self.offset) = (self.input + 1, 0);
+            } else {
+                self.offset += take;
+            }
+        }
+        (len > 0).then_some(Piece { input, offset, len })
+    }
+}
 
 /// Partitions every input's items into `buckets` by `key`, stably: bucket by bucket, and within a bucket in the order
 /// of the inputs and of their items.
@@ -217,12 +274,12 @@ pub fn partition_map_into<T: Sync, U: Copy + Send + Sync>(
     if buckets == 0 {
         violation!(clause = "TIME.6", "a partition into no buckets");
     }
-    let pieces: Vec<&[T]> = inputs.iter().flat_map(|i| i.chunks(RADIX_CHUNK)).collect();
+    let pieces: Vec<Piece> = Pieces { inputs, input: 0, offset: 0 }.collect();
     let cells = pieces.len() * buckets;
     out.counts.clear();
     out.counts.resize(cells, 0);
     each(pool, out.counts.chunks_mut(buckets).zip(&pieces), |(c, piece)| {
-        for item in *piece {
+        for item in piece.items(inputs) {
             let Some(n) = c.get_mut(key(item)) else {
                 violation!(clause = "TIME.6", "an item keyed outside the buckets", buckets = buckets);
             };
@@ -252,13 +309,13 @@ pub fn partition_map_into<T: Sync, U: Copy + Send + Sync>(
     // Each piece writes only below its own end in each bucket, which the counts give: a key that answers differently
     // the second time stops the run rather than writing another piece's places or past the reservation.
     let whole: Vec<bool> = map(pool, pieces.len(), |p| {
-        let (Some(piece), Some(first), Some(count)) =
+        let (Some(&piece), Some(first), Some(count)) =
             (pieces.get(p), out.places.get(p * buckets..(p + 1) * buckets), counts.get(p * buckets..(p + 1) * buckets))
         else {
             return false;
         };
         let mut next = first.to_vec();
-        for item in *piece {
+        for item in piece.items(inputs) {
             let b = key(item);
             let (Some(pos), Some(start), Some(n)) = (next.get_mut(b), first.get(b), count.get(b)) else {
                 violation!(clause = "TIME.6", "an item keyed outside the buckets", buckets = buckets);

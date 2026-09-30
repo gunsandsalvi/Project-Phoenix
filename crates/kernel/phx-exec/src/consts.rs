@@ -84,3 +84,9 @@ pub const MONTHS_A_YEAR: usize = 12;
 pub const PROBE_GATHER_BYTES: u64 = 64 << 20;
 /// Random rows each worker reads in the run's gather probe: about 25 ms of misses, twice over.
 pub const PROBE_GATHER_READS: u64 = 1 << 18;
+
+/// An item's scatter and sweep in a partitioned apply, in a plan's cost units: about 4 ns of phone core time.
+pub const APPLY_ITEM_COST: u64 = 4;
+
+/// A store's rows a partitioned apply's range holds, as a shift: 4 096 accounts, about 80 KB, an L2's share.
+pub const APPLY_RANGE_SHIFT: u32 = 12;

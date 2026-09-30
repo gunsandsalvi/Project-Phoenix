@@ -2,6 +2,7 @@
 //! on each day type, never a world; the day's and the turns' lines composed on the phone model and held to their
 //! ratchets. A base's driver lives in its own module and joins the registry.
 
+pub mod apply;
 pub mod budget;
 pub mod compose;
 pub mod counters;
@@ -145,6 +146,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(records::Records::default()),
     || Box::new(terms::Terms::default()),
     || Box::new(pool::PoolBase::default()),
+    || Box::new(apply::Apply::default()),
 ];
 
 /// What a run fills, runs and reads.

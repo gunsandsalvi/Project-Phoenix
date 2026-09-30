@@ -339,6 +339,29 @@ counter = "fin.pool.barriers_h"
 value = 48
 direction = "down"
 
+# Partitioned apply (S1.170, 2026-10-01; `tools/bench.sh -F apply`): each day's dues as payer and payee items and its
+# retail payee credits over the design point's 5.92 M accounts, in ranges of 4 096, the heavy day in waves of the dues'
+# lane (110 MiB, the 2b slot's room in the day plan: 6 waves, the step's 5 counting a lane of 144 MB). An item costs
+# 21–24 ns of CPU against the step's 3.8: the scatter writes each item to one of 1 446 ranges' places, a store that
+# misses on this machine's memory at about 10 ns a thread even alone, with the counts staged or on huge pages no
+# better; the sweep itself is 1–1.8 ns an item. The ratchet stands a quarter above the highest. The scatter's own counts
+# and places hold 4.87 MiB, the pieces spanning the producing chunks.
+
+[[ratchet]]
+counter = "fin.apply.item_ns"
+value = 30
+direction = "down"
+
+[[ratchet]]
+counter = "fin.apply.buffer_mb"
+value = 4.9
+direction = "down"
+
+[[ratchet]]
+counter = "fin.apply.waves_h"
+value = 6
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

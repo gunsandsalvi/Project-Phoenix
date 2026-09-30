@@ -1495,7 +1495,7 @@ workers (`hash_ms` 650, the step's bound on three phone cores).
 
 ### 7.2 phx-exec
 
-Status: K-11 built (S1.169); K-12 and K-14 planned (S1.170, S1.171)
+Status: K-11, K-12 built (S1.169, S1.170); K-14 planned (S1.171)
 
 #### K-11 Chunk plans
 
@@ -1556,8 +1556,43 @@ until their bases move (S1.248).
 
 #### K-12 Partitioned apply
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.170).
+Every per-item effect on party state — a due's two sides, a sale's payee credit, an intent's target — is scattered by
+its target's range and applied by one job a range, sweeping the range's shard with the range's columns in cache, so no
+write takes a lock and the result is the same for any workers.
+
+**Layout** (`apply.rs`): an `Item` is 16 bytes (`target: u32`, `tag: u32`, `amount: i64`). A store of `count` rows
+falls into `ranges_of(count, shift)` = ⌈count ÷ 2^shift⌉ ranges, so the dense index's high bits never collapse them;
+accounts take `APPLY_RANGE_SHIFT` 12, 4 096 accounts a range (1 446 at the design point). `Shards` keeps the scatter's
+output across days (`partition::Partitioned`), so a day scatters without allocating once its heaviest wave has sized it.
+
+**API**: `apply_by_range(pool, (inputs, shift, lane), ranges, shards, f)` takes the producing chunks' items as slices in
+chunk order, and one `(state, hooks)` a range — the range's own mutable view and its hooks — and calls its rule on
+the state and each item, then the hooks. `SweepHooks` (`hooks.rs`) is one `RangeHook` or a tuple of up to four, monomorphised:
+each is told `open_range(range)`, `item(&Item)` and `close_range()`, holding its own base's view of the range. The
+hooks are declared here, the lowest crate that runs a sweep; the concrete hooks (account lines, equity folds, carrying
+values, levies, book folds) live in their own crates and `phx-world`'s routing composes them, so a sweeping crate never
+names the crate that keeps the base (§3.1). The caller reports the items it applied through `ExecCounters::visited`.
+
+**Algorithm**: the inputs are cut into waves of whole chunks whose items fit `lane` (at least one chunk a wave); each
+wave is partitioned by `target >> shift`, stably — the pieces the scatter counts span the producing chunks, so its
+counts follow the items and not how many chunks hold them — and swept one job a range. A range's items come in
+(producing chunk, emission) order, and waves follow chunk order, so two effects on one target meet in the same order
+for any workers and any lane (`waves_equal_one_pass`); a rule needing another order sorts by a declared key within
+the shard. A two-sided item is two items, one a side. A target past the ranges stops the run (TIME.6); an item for a
+party that ended today still applies, its slot live until the close. A wave whose items declare less than
+`INLINE_BELOW` at `APPLY_ITEM_COST` (4 ns) is swept on the calling thread.
+
+**Volumes and ratchets** (`tools/bench.sh -F apply`): each day's dues as payer and payee items and its retail payee
+credits over the design point's 5.92 M accounts, from producing chunks of 8 192 events. The heavy day runs 6 waves of
+the dues' lane (110 MiB, the 2b slot's room in the day plan; `[fin.apply] waves_h` 6), and the scatter's counts and
+places hold 4.87 MiB (`buffer_mb` 4.9). An item costs 21–24 ns of CPU (`item_ns` 30) against the step's 3.8: the
+scatter's store to one of 1 446 ranges misses on this machine's memory at about 10 ns a thread even alone, and staging
+the counts or backing them with huge pages gives nothing; the sweep itself is 1–1.8 ns an item.
+
+**Extension points**: extractions by deposit range (S1.191); the dues' apply and its waves (S1.263); the flows'
+batches, settlement and books by range with their hooks (S1.245, S1.248, S1.267); the depreciation's posts (S1.285);
+the meetings' sale items by seller range (S1.296, S1.306, S1.309); account lines, equity, carrying values, books and
+linear aggregates as hooks (S1.328, S1.330, S1.332, S1.338, S1.341); the waterfall (S1.345); the intents (S1.348).
 
 #### K-13 Keyed reductions
 

@@ -37,6 +37,31 @@ pub struct DayBufs {
     plan: Option<DayRegion>,
 }
 
+/// The design point's day plan: each declared buffer at its MB × scale, or the lane the day's maximum leaves, over
+/// its life's slots.
+pub(crate) fn day_plan(design: &Design) -> Result<DayPlan, FinError> {
+    let declared = design.dayplan()?;
+    let slot = |name: &str| {
+        let at = declared.slots.iter().position(|s| s == name);
+        at.and_then(|a| u16::try_from(a).ok()).ok_or_else(|| FinError(format!("the day has no slot `{name}`")))
+    };
+    let mut decls = Vec::new();
+    for (name, mb, (fill, release)) in &declared.buffers {
+        let size = match mb {
+            Some(mb) => {
+                let bytes = format!("{:.0}", mb * MB * design.point.scale);
+                Size::Bytes(bytes.parse().map_err(|e| FinError(format!("{name}: {e}")))?)
+            }
+            None => Size::Rest,
+        };
+        // The declarations live as long as the run: the plan names each by its declared name.
+        let name: &'static str = Box::leak(name.clone().into_boxed_str());
+        decls.push(BufDecl { name, size, life: Life { fill: slot(fill)?, release: slot(release)? } });
+    }
+    let slots = u16::try_from(declared.slots.len()).map_err(|e| FinError(e.to_string()))?;
+    DayPlan::plan(&decls, slots).map_err(FinError)
+}
+
 impl FinBase for DayBufs {
     fn name(&self) -> &'static str {
         BASE
@@ -57,26 +82,7 @@ impl FinBase for DayBufs {
         for (key, n) in &heaviest {
             self.bufs.insert(key.clone(), DayBuf::new(&mut space, BASE, index(*n)?));
         }
-        let declared = design.dayplan()?;
-        let slot = |name: &str| {
-            let at = declared.slots.iter().position(|s| s == name);
-            at.and_then(|a| u16::try_from(a).ok()).ok_or_else(|| FinError(format!("the day has no slot `{name}`")))
-        };
-        let mut decls = Vec::new();
-        for (name, mb, (fill, release)) in &declared.buffers {
-            let size = match mb {
-                Some(mb) => {
-                    let bytes = format!("{:.0}", mb * MB * design.point.scale);
-                    Size::Bytes(bytes.parse().map_err(|e| FinError(format!("{name}: {e}")))?)
-                }
-                None => Size::Rest,
-            };
-            // The declarations live as long as the run: the plan names each by its declared name.
-            let name: &'static str = Box::leak(name.clone().into_boxed_str());
-            decls.push(BufDecl { name, size, life: Life { fill: slot(fill)?, release: slot(release)? } });
-        }
-        let slots = u16::try_from(declared.slots.len()).map_err(|e| FinError(e.to_string()))?;
-        let plan = DayPlan::plan(&decls, slots).map_err(FinError)?;
+        let plan = day_plan(design)?;
         self.plan = Some(DayRegion::new(&mut space, plan));
         Ok(Filled { rows: heaviest.values().sum() })
     }
