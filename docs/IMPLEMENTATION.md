@@ -2042,6 +2042,10 @@ workers spin at most 20 µs, and barriers and spin are counted. Results are bit-
 **Design**:
 - The families' dues, which S1.152 makes in turn into one chunk each (no traversal ran a closure per family), are
   made on the pool through `for_chunks`, each family its own chunk as before.
+- The day's flows are cut by the plan's cost, not only by their makers: S1.152 left the day's stages' flows in one
+  chunk, so grouping ran on one core and settlement gained nothing from the pool (1 000 000 persons, one day: the
+  settle span 1 251 ms on the pool against 1 112 ms on one worker, `settle.group` 0.98 busy cores). The plan splits
+  that chunk where its cost is, keeping the made order (grouping is stable, S1.152), so the outcome is unchanged.
 - **`ChunkPlan::new(rows, cost_per_row_ns, rows_per_chunk_of_table)`**: chunk bounds snap to the table's chunks (so
   arena writes stay chunk-local) and close once a chunk's declared cost reaches the target (`CHUNK_COST`, 50–200 µs);
   the plan has at least 4 × `POOL_MAX_WORKERS` chunks when the rows allow, so balance holds for any worker count while
@@ -2099,6 +2103,8 @@ per dispatch.
 - [ ] `StoreStats` (S1.117) implemented for its stores; its traversals report rows visited through
   `ExecCounters::visited`.
 - [ ] `tools/bench.sh -F pool` at the design point within `[fin.pool]`.
+- [ ] The settle span above one busy core and below its one-worker time at 1 000 000 persons over one day (the
+  5 000 000-person day needs about 18 GB, beyond the bench machine's 15 GB), the criterion S1.152 could not meet.
 - [ ] §7.2 "Chunk plans" written; the two reviews done; status `done` and the section removed.
 
 ---
