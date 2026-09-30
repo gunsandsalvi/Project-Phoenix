@@ -165,3 +165,19 @@ fn slots_same_for_any_workers() {
     assert_eq!(one, run(4));
     assert_eq!(one, run(7));
 }
+
+/// A table whose rows are named by holding references.
+struct Holdings;
+
+impl super::Referenced for Holdings {
+    type Ref = phx_id::HoldingRef;
+}
+
+#[test]
+fn typed_ref_round_trips() {
+    use phx_id::TableRef;
+    let h = phx_id::HoldingRef::from_parts(Slot::new(77), 5);
+    let g = GenRef::<Holdings>::of(h);
+    assert_eq!((g.slot().get(), g.generation()), (77, 5));
+    assert_eq!(g.typed(), h);
+}

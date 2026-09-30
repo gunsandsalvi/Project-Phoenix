@@ -5,6 +5,7 @@ pub mod subject;
 
 pub use day::{Date, Day, Weekday, civil_from_days, days_from_civil};
 pub use ids::{
-    CountryId, DayLocalId, InstrumentId, LineId, MarketId, MsgId, PartyId, PartyKey, PartyRef, RegionId, RowRef,
-    SeriesId, Slot, StreamId, SystemCode, TableId, TileId, ZoneId,
+    ContractLink, ContractRef, CountryId, DayLocalId, EstateRef, HoldingRef, InstrumentId, LineId, MarketId,
+    MessageRef, MsgId, OfferRef, PartyId, PartyKey, PartyRef, ProcessRef, RegionId, RowRef, SeriesId, Slot, StreamId,
+    SystemCode, TableId, TableRef, TileId, ZoneId,
 };

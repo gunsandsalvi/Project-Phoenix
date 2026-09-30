@@ -3,8 +3,11 @@ use std::fmt::{self, Write};
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 
+use phx_num::Missing;
+
 use crate::consts::{
-    GENERATION_BITS, GENERATION_SHIFT, KEY_KIND_BITS, KEY_SLOT_BITS, KIND_SHIFT, PARTY_ID_BITS, SYSTEM_CODE_MAX,
+    FAMILY_BITS, FAMILY_SLOT_BITS, GENERATION_BITS, GENERATION_SHIFT, KEY_KIND_BITS, KEY_SLOT_BITS, KIND_SHIFT,
+    PARTY_ID_BITS, SYSTEM_CODE_MAX,
 };
 
 /// An identifier over one raw width: comparable and hashable, never defaulted, never converted into another kind.
@@ -178,6 +181,146 @@ impl PartyKey {
     }
 }
 
+/// A party's reference names whose money a figure is.
+impl phx_num::Owner for PartyRef {}
+impl phx_num::Owner for PartyKey {}
+
+/// A contract row's link, as a person's chain and a wheel entry hold it: its family's code in the top byte and its
+/// slot in the family's table below, in one word.
+#[must_use]
+#[repr(transparent)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+pub struct ContractLink(u32);
+
+impl ContractLink {
+    /// A family's code below 2^8 and a slot below 2^24; a wider one stops the run.
+    pub fn new(family: u32, slot: Slot) -> ContractLink {
+        if family >> FAMILY_BITS != 0 {
+            capacity_exceeded!("contract families a link holds", 1_u64 << FAMILY_BITS, u64::from(family) + 1);
+        }
+        if slot.get() >> FAMILY_SLOT_BITS != 0 {
+            capacity_exceeded!("a family's rows a link holds", 1_u64 << FAMILY_SLOT_BITS, u64::from(slot.get()) + 1);
+        }
+        ContractLink(family << FAMILY_SLOT_BITS | slot.get())
+    }
+
+    /// The link held as one word, as a column stores it.
+    pub const fn from_word(word: u32) -> ContractLink {
+        ContractLink(word)
+    }
+
+    #[must_use]
+    pub const fn word(self) -> u32 {
+        self.0
+    }
+
+    #[must_use]
+    pub const fn family(self) -> u8 {
+        self.0.to_be_bytes()[0]
+    }
+
+    pub const fn slot(self) -> Slot {
+        Slot::new(self.0 & (u32::MAX >> FAMILY_BITS))
+    }
+}
+
+/// A contract row as a holder keeps it past a day: its link and the low byte of the row's generation when taken.
+#[must_use]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct ContractRef {
+    link: ContractLink,
+    generation: u8,
+}
+
+impl ContractRef {
+    pub const fn new(link: ContractLink, generation: u8) -> ContractRef {
+        ContractRef { link, generation }
+    }
+
+    pub const fn link(self) -> ContractLink {
+        self.link
+    }
+
+    #[must_use]
+    pub const fn generation(self) -> u8 {
+        self.generation
+    }
+
+    /// The row it names while its slot's generation is still the one it was taken at; once the slot holds another
+    /// row, none.
+    pub fn resolve(self, current: u8) -> Missing<ContractLink> {
+        if current == self.generation { Missing::Present(self.link) } else { Missing::Absent }
+    }
+}
+
+/// A typed reference to a row of one table: the slot and the slot's generation when the reference was taken.
+pub trait TableRef: Copy {
+    fn from_parts(slot: Slot, generation: u32) -> Self;
+    fn slot(self) -> Slot;
+    fn generation(self) -> u32;
+}
+
+/// A reference to a row of one table, its own type: the generation in the high half of its word and the slot in the
+/// low, with no conversion into another table's.
+macro_rules! table_ref {
+    ($(#[$doc:meta])* $name:ident(u64)) => {
+        $(#[$doc])*
+        #[must_use]
+        #[repr(transparent)]
+        #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
+        pub struct $name(u64);
+
+        impl $name {
+            /// The reference held as one word, as a column stores it.
+            pub const fn from_word(word: u64) -> $name {
+                $name(word)
+            }
+
+            #[must_use]
+            pub const fn word(self) -> u64 {
+                self.0
+            }
+        }
+
+        impl TableRef for $name {
+            fn from_parts(slot: Slot, generation: u32) -> $name {
+                $name(u64::from(generation) << u32::BITS | u64::from(slot.get()))
+            }
+
+            fn slot(self) -> Slot {
+                let [.., a, b, c, d] = self.0.to_be_bytes();
+                Slot::new(u32::from_be_bytes([a, b, c, d]))
+            }
+
+            fn generation(self) -> u32 {
+                let [a, b, c, d, ..] = self.0.to_be_bytes();
+                u32::from_be_bytes([a, b, c, d])
+            }
+        }
+    };
+}
+
+table_ref!(
+    /// A holding: a holder's position in one good, unit or instrument.
+    HoldingRef(u64)
+);
+table_ref!(
+    /// A standing offer on a market.
+    OfferRef(u64)
+);
+table_ref!(
+    /// A message: a notice, an application or an offer sent between parties.
+    MessageRef(u64)
+);
+table_ref!(
+    /// A process in progress: a shipment, a project, production in flight, a spell.
+    ProcessRef(u64)
+);
+table_ref!(
+    /// An estate: a party's end being settled.
+    EstateRef(u64)
+);
+
 /// A row: its table and its slot there.
 #[must_use]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
@@ -220,49 +363,5 @@ impl fmt::Display for SystemCode {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{PartyId, SystemCode};
-    use phx_num::{CapacityExceeded, Violation};
-
-    #[test]
-    fn party_id_refuses_2_pow_60() {
-        assert_eq!(PartyId::new((1 << 60) - 1).get(), (1 << 60) - 1);
-        let Err(payload) = std::panic::catch_unwind(|| PartyId::new(1 << 60)) else {
-            panic!("2^60 accepted");
-        };
-        let c = payload.downcast_ref::<CapacityExceeded>().expect("a capacity payload");
-        assert_eq!((c.declared, c.needed), (1 << 60, 1 << 60));
-        let Err(payload) = std::panic::catch_unwind(|| PartyId::new(0)) else {
-            panic!("zero accepted");
-        };
-        assert_eq!(payload.downcast_ref::<Violation>().expect("a violation").clause, "PTY.1");
-    }
-
-    #[test]
-    fn system_codes_are_two_to_four_capitals() {
-        assert_eq!(SystemCode::new("DEM").map(|c| c.to_string()).as_deref(), Some("DEM"));
-        assert_eq!(SystemCode::new("LABR").map(|c| c.to_string()).as_deref(), Some("LABR"));
-        for bad in ["", "D", "DEMOG", "dem", "DE1", "DÉ"] {
-            assert!(SystemCode::new(bad).is_none(), "{bad}");
-        }
-    }
-
-    #[test]
-    fn party_ref_packs_kind_generation_and_slot() {
-        let r = super::PartyRef::new(7, 0x00ab_cdef, crate::Slot::new(0xdead_beef));
-        assert_eq!((r.kind(), r.generation(), r.slot().get()), (7, 0x00ab_cdef, 0xdead_beef));
-        assert_eq!(super::PartyRef::from_word(r.word()), r);
-        let over = std::panic::catch_unwind(|| super::PartyRef::new(0, 1 << 24, crate::Slot::new(0)));
-        assert!(over.is_err(), "a generation past 24 bits is refused");
-    }
-
-    #[test]
-    fn party_key_packs_kind_and_slot() {
-        let k = super::PartyKey::new(21, crate::Slot::new(100_000_000));
-        assert_eq!((k.kind(), k.slot().get()), (21, 100_000_000));
-        assert!(std::panic::catch_unwind(|| super::PartyKey::new(32, crate::Slot::new(0))).is_err());
-        assert!(std::panic::catch_unwind(|| super::PartyKey::new(0, crate::Slot::new(1 << 27))).is_err());
-        let r = super::PartyRef::new(3, 9, crate::Slot::new(44));
-        assert_eq!(r.key(), super::PartyKey::new(3, crate::Slot::new(44)));
-    }
-}
+#[path = "ids_tests.rs"]
+mod tests;

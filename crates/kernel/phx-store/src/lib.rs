@@ -40,7 +40,7 @@ pub use descriptor::{ColumnDescriptor, FieldDescriptor, FieldTag, Transform};
 pub use edges::{EdgeTable, Pair, Row};
 pub use encode::{DecodeError, decode_column, decode_rows, encode_column, encode_rows, rows_in};
 pub use epoch::{DayStamps, EPOCH_CHUNK_ROWS, EpochBits, EpochChunk};
-pub use genref::{GenRef, Generations, Recheck, ShortRef, ShortRefs};
+pub use genref::{GenRef, Generations, Recheck, Referenced, ShortRef, ShortRefs};
 pub use hash::{LogicalHasher, Sip128};
 pub use index::Index;
 pub use index_decl::{IndexDecl, Keys, Mode};

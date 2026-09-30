@@ -3,13 +3,12 @@
 
 use std::marker::PhantomData;
 
-use phx_id::Slot;
+use phx_id::{ContractLink, Slot, TableRef};
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
 use crate::column::Column;
-use crate::consts::SHORT_LINK_SLOT_BITS;
 use crate::convert::to_usize;
 use crate::stats::StoreStats;
 use crate::table::{SlotAlloc, live_at};
@@ -39,6 +38,25 @@ impl<T> PartialEq for GenRef<T> {
 }
 
 impl<T> Eq for GenRef<T> {}
+
+/// A table whose rows other stores name by a typed reference of its own.
+pub trait Referenced {
+    type Ref: TableRef;
+}
+
+impl<T: Referenced> GenRef<T> {
+    /// The reference as its table's own type, which no other table's reference converts to.
+    #[must_use]
+    pub fn typed(self) -> T::Ref {
+        T::Ref::from_parts(Slot::new(self.slot), self.generation)
+    }
+
+    /// A typed reference to the table's row, as the table checks it.
+    #[must_use]
+    pub fn of(r: T::Ref) -> GenRef<T> {
+        GenRef { slot: r.slot().get(), generation: r.generation(), table: PhantomData }
+    }
+}
 
 impl<T> GenRef<T> {
     pub fn slot(self) -> Slot {
@@ -165,7 +183,7 @@ impl<B: Backing> StoreStats for SlotAlloc<B> {
 /// its re-read.
 #[derive(Debug)]
 pub struct ShortRef<T> {
-    link: u32,
+    link: ContractLink,
     generation: u8,
     table: PhantomData<fn() -> T>,
 }
@@ -190,19 +208,20 @@ impl<T> ShortRef<T> {
     /// A family's row at a slot and the low byte of its generation; a slot beyond the link's width stops the run.
     #[must_use]
     pub fn new(family: u8, slot: Slot, generation: u8) -> ShortRef<T> {
-        if slot.get() >> SHORT_LINK_SLOT_BITS != 0 {
-            capacity_exceeded!("a family's contract rows", 1_u64 << SHORT_LINK_SLOT_BITS, u64::from(slot.get()) + 1);
-        }
-        ShortRef { link: u32::from(family) << SHORT_LINK_SLOT_BITS | slot.get(), generation, table: PhantomData }
+        ShortRef { link: ContractLink::new(u32::from(family), slot), generation, table: PhantomData }
     }
 
     #[must_use]
     pub fn family(self) -> u8 {
-        self.link.to_be_bytes()[0]
+        self.link.family()
     }
 
     pub fn slot(self) -> Slot {
-        Slot::new(self.link & (u32::MAX >> (u32::BITS - SHORT_LINK_SLOT_BITS)))
+        self.link.slot()
+    }
+
+    pub fn link(self) -> ContractLink {
+        self.link
     }
 
     #[must_use]
@@ -227,7 +246,7 @@ pub trait Recheck {
 /// Short references a holder keeps, one to a row of its own, in two columns: the links and the generations' bytes.
 #[derive(Debug)]
 pub struct ShortRefs<T, H: Recheck, B: Backing = SystemBacking> {
-    links: Column<u32, B>,
+    links: Column<ContractLink, B>,
     generations: Column<u8, B>,
     table: PhantomData<fn() -> (T, H)>,
 }

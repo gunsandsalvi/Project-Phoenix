@@ -1,0 +1,13 @@
+error[E0308]: mismatched types
+ --> tests/ui/holding_ref_as_offer_ref.rs:6:11
+  |
+6 |     offer(HoldingRef::from_word(1));
+  |     ----- ^^^^^^^^^^^^^^^^^^^^^^^^ expected `OfferRef`, found `HoldingRef`
+  |     |
+  |     arguments to this function are incorrect
+  |
+note: function defined here
+ --> tests/ui/holding_ref_as_offer_ref.rs:3:4
+  |
+3 | fn offer(_: OfferRef) {}
+  |    ^^^^^ -----------

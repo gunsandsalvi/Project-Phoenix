@@ -58,3 +58,11 @@ pub const KEY_KIND_BITS: u32 = 5;
 pub const NATURE_KIND: u8 = 31;
 /// A party key's slot takes the other 27 bits: 134 million parties of one kind.
 pub const KEY_SLOT_BITS: u32 = 27;
+
+/// A contract link's family code, in bits: 255 families, the last code holdings'.
+pub const FAMILY_BITS: u32 = 8;
+/// A contract link's slot in its family's table, in bits: 16.7 M rows, past the largest family at the design point with
+/// two years' growth.
+pub const FAMILY_SLOT_BITS: u32 = 24;
+/// The family code reserved for holdings, the highest the code holds.
+pub const HOLDINGS_FAMILY: u8 = u8::MAX;

@@ -188,6 +188,20 @@ checked and `Day::earlier`/`Day::later` are the named comparisons. `Date` is pro
 Hinnant's algorithms over `i64` serials; a weekday is derived from the epoch's civil date, which the caller passes,
 since `phx-id` reads no data.
 
+**Identities and their widths** (`ids.rs`). Every reference the finished world keeps has its own type and a width
+fixed for the design point with two years' growth, and a width overflowed stops the run (`capacity_exceeded!`). A
+contract row's `ContractLink(u32)` is its family's code in the top 8 bits (`FAMILY_BITS`; 255 families, code 255
+`HOLDINGS_FAMILY`) and its slot in the family's table in the 24 below (`FAMILY_SLOT_BITS`, 16.7 M rows): the word a
+person's chain and a wheel entry hold, and the link `phx-store`'s `ShortRef` keeps beside its generation's low byte.
+`ContractRef { link, generation: u8 }` resolves to its link only while the slot's generation is still its own. The
+design point's families, each with two years' growth, fit the link, which `phx-core`'s capacity test reads from
+`perf/design.toml [store.contracts]`. A row of another table is named by that table's own reference — `HoldingRef`,
+`OfferRef`, `MessageRef`, `ProcessRef`, `EstateRef` — each `repr(transparent)` over one word (generation high, slot
+low), with no conversion between them (compile-fail `holding_ref_as_offer_ref`); a table marks its reference type by
+`phx_store::Referenced`, and its `GenRef<T>` converts only to and from that type. A party is a `PartyKey` (kind 5 bits,
+slot 27) within a day and a `PartyRef` (kind, 24-bit generation, slot) past it; both are `phx_num::Owner`s, so another
+party's money is `PartyMoney<PartyRef>`. An `InstrumentId(u32)` is never reused.
+
 **`phx-rand`'s addressing.** A stream's key is words 0 and 1 of `philox([fnv_lo, fnv_hi, seed_lo, seed_hi],
 fixed key)`, `fnv` being FNV-1a-64 of the stream's name, so a key depends on its name and the seed alone and adding a
 stream changes no other (CHN.1). The counter is `[subject_lo, subject_hi, day, (sub-step ordinal << 24) | block]`,

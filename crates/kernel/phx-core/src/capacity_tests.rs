@@ -5,7 +5,7 @@
 use phx_store::consts::VA_BUDGET;
 
 use super::{AGENT_ROWS, Growth, LINK_BITS, family_code, slot_fits, table};
-use crate::consts::{CHUNK_ROWS, GROWTH_YEARS, HOLDINGS_CODE, LONGEST_QUARTER_DAYS, WHEEL_DAYS};
+use crate::consts::{CHUNK_ROWS, GROWTH_DIVISOR, GROWTH_YEARS, HOLDINGS_CODE, LONGEST_QUARTER_DAYS, WHEEL_DAYS};
 
 #[test]
 fn capacity_rows_cover_growth() {
@@ -47,4 +47,18 @@ fn family_code_holds_255() {
     assert_eq!(HOLDINGS_CODE, u8::MAX);
     assert!(slot_fits((1 << 24) - 1) && !slot_fits(1 << 24));
     assert_eq!(std::hint::black_box(LINK_BITS), u32::BITS);
+}
+
+#[test]
+fn contract_families_fit_the_link() {
+    // The design point's contract families, each with two years' growth, within a link's slots, and their codes
+    // below the one holdings keep.
+    let design: toml::Table = include_str!("../../../../perf/design.toml").parse().unwrap();
+    let families = design["store"]["contracts"].as_table().unwrap();
+    assert!(families.len() < usize::from(HOLDINGS_CODE), "{} families", families.len());
+    for (name, rows) in families {
+        let rows = u32::try_from(rows.as_integer().unwrap()).unwrap();
+        let grown = rows + GROWTH_YEARS * rows.div_ceil(GROWTH_DIVISOR);
+        assert!(slot_fits(grown - 1), "{name}: {grown} rows past a link's slots");
+    }
 }

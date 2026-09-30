@@ -130,12 +130,12 @@ pub const HOUSEHOLD_WORDS: u32 = 1024;
 pub const WHEEL_DAYS: u32 = 128;
 /// The longest quarter, July to September or October to December.
 pub const LONGEST_QUARTER_DAYS: u32 = 92;
-/// A chain link's and a wheel entry's family code, and its slot, in bits.
-pub const FAMILY_BITS: u32 = 8;
+/// A chain link's and a wheel entry's family code, and its slot, in bits: a contract link's.
+pub const FAMILY_BITS: u32 = phx_id::consts::FAMILY_BITS;
 /// See `FAMILY_BITS`; a short reference's link is this same link.
-pub const SLOT_BITS: u32 = phx_store::consts::SHORT_LINK_SLOT_BITS;
+pub const SLOT_BITS: u32 = phx_id::consts::FAMILY_SLOT_BITS;
 /// The family code reserved for holdings, the highest the code holds.
-pub const HOLDINGS_CODE: u8 = 255;
+pub const HOLDINGS_CODE: u8 = phx_id::consts::HOLDINGS_FAMILY;
 
 /// The persons' store, which a constructor reads by name.
 pub const PERSONS: (&str, u32, u32, crate::capacity::Growth) =
