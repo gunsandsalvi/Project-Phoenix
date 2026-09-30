@@ -15,9 +15,9 @@ use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{pack, unpack};
 use phx_rand::{Subject, SubjectTag};
 
-use crate::consts::CORE_WHEEL_DAYS;
 use crate::core::Core;
 use crate::pop_rules::{Bound, Buffers, Reading, chances, follow};
+use phx_core::capacity::WHEEL_DAYS;
 
 /// One process's bookings on the core: its place among the world's processes, and each household's next booking on
 /// a wheel, with its day and whether it is a hit by slot, so an entry the household was booked past is skipped.
@@ -181,7 +181,7 @@ impl Core {
             .filter(|(_, b)| b.kind == pop_at)
             .map(|(process, _)| Hazard {
                 process,
-                wheel: DueWheel::new(from, CORE_WHEEL_DAYS),
+                wheel: DueWheel::new(from, WHEEL_DAYS),
                 next: vec![None; usize::try_from(high).unwrap_or(0)],
             })
             .collect();

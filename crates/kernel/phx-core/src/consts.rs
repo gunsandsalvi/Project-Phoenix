@@ -112,17 +112,17 @@ pub const NATURE_WORD: u32 = 0xF800_0000;
 pub const BIT_WORD: usize = 64;
 
 /// Rows a store's chunk holds; a capacity is rounded up to whole chunks, as the stores reserve them.
-pub const CHUNK_ROWS: u64 = 4096;
+pub const CHUNK_ROWS: u32 = 4096;
 /// The bound on a store's yearly growth that grows with the persons, as a divisor of its rows: a twenty-fifth, 4 % a
 /// year, above the fastest population growth any country in the sources shows, so two years' growth never meets the
 /// ceiling.
-pub const GROWTH_DIVISOR: u64 = 25;
+pub const GROWTH_DIVISOR: u32 = 25;
 /// Years of growth a capacity holds beyond the design point.
-pub const GROWTH_YEARS: u64 = 2;
+pub const GROWTH_YEARS: u32 = 2;
 /// The width a row is reserved at until its base lays it out: a cache line, the widest a hot row takes.
 pub const ROW_BYTES_UNLAID: u32 = 64;
 /// Words an event's subjects and details take at most in the events' arena.
-pub const EVENT_WORDS: u64 = 8;
+pub const EVENT_WORDS: u32 = 8;
 /// Days the due wheel files ahead: past a quarter, the longest period a bill or an anchor waits.
 pub const WHEEL_DAYS: u32 = 128;
 /// The longest quarter, July to September or October to December.
@@ -135,23 +135,35 @@ pub const SLOT_BITS: u32 = 24;
 pub const HOLDINGS_CODE: u8 = 255;
 
 /// The persons' store, which a constructor reads by name.
-pub const PERSONS: (&str, u64, u32, crate::capacity::Growth) =
+pub const PERSONS: (&str, u32, u32, crate::capacity::Growth) =
     ("persons", 6_000_000, 66, crate::capacity::Growth::Persons);
 /// The institutions' store, which a constructor reads by name.
-pub const INSTITUTIONS: (&str, u64, u32, crate::capacity::Growth) =
+pub const INSTITUTIONS: (&str, u32, u32, crate::capacity::Growth) =
     ("institutions", 16_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons);
 /// The events' store, which a constructor reads by name.
-pub const EVENTS: (&str, u64, u32, crate::capacity::Growth) =
+pub const EVENTS: (&str, u32, u32, crate::capacity::Growth) =
     ("events", 584_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons);
 /// The instruments' store, which a constructor reads by name.
-pub const INSTRUMENTS: (&str, u64, u32, crate::capacity::Growth) =
+pub const INSTRUMENTS: (&str, u32, u32, crate::capacity::Growth) =
     ("instruments", 61_600, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons);
+
+/// Events a day the event log records at the design point while it keeps every event of the run: the hazards'
+/// hits measured at the committed resolution, about 690 a day at 750 000 persons, scaled to the design point's
+/// persons, and the regions' weather.
+pub const EVENTS_A_DAY: u32 = 5_600;
+/// Days of the longest run the build makes while the event log keeps every event: a gate's, a year of settling and two
+/// years run.
+pub const EVENT_LOG_DAYS: u32 = 1_096;
+/// The event log as it stands, every event of the run resident, until the log keeps occurrences on storage within a
+/// horizon and this store goes.
+pub const EVENTS_UNPRUNED: (&str, u32, u32, crate::capacity::Growth) =
+    ("events_unpruned", EVENTS_A_DAY * EVENT_LOG_DAYS, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons);
 
 /// Every store the finished world holds, as the design point names it: its rows at the design point, a row's bytes
 /// (as its base lays it out, or reserved at a cache line until it does) and how it grows. The counts are the design
 /// point's (`perf/design.toml [store]`); a capacity changes no outcome, since it is address space committed only as
 /// rows are written.
-pub const STORES: &[(&str, u64, u32, crate::capacity::Growth)] = &[
+pub const STORES: &[(&str, u32, u32, crate::capacity::Growth)] = &[
     PERSONS,
     ("households", 1_768_000, 174, crate::capacity::Growth::Persons),
     ("firms", 921_600, 520, crate::capacity::Growth::Persons),
@@ -194,6 +206,7 @@ pub const STORES: &[(&str, u64, u32, crate::capacity::Growth)] = &[
     ("bureau_events", 560_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons),
     ("filed_statements", 736_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons),
     EVENTS,
+    EVENTS_UNPRUNED,
     ("segments", 500_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Fixed),
     ("segment_tiles", 1_000_000, 4, crate::capacity::Growth::Fixed),
     ("parcels", 800_000, 24, crate::capacity::Growth::Persons),

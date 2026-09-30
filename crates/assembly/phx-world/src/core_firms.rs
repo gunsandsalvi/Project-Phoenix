@@ -13,13 +13,14 @@ use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
 use phx_rand::{below_u64, normal};
 use phx_store::SystemBacking;
 
+use crate::consts::AGENT_ROWS_PER_CHUNK;
 use crate::consts::firm::{
     COMPENSATION, MANAGEMENT_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PUBLIC_ADMINISTRATION, PURPOSES, RECORD,
     SITE_PURPOSE,
 };
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK};
 use crate::core::Core;
 use crate::opening::economy::table;
+use phx_core::capacity::AGENT_ROWS;
 
 /// A country's firms of one product in one region.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

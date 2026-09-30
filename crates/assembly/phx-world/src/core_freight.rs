@@ -155,7 +155,7 @@ impl Core {
             routes,
             shipping_days,
             began: today.get(),
-            shipments: Some(Shipments::new(today.succ(), crate::consts::CORE_WHEEL_DAYS)),
+            shipments: Some(Shipments::new(today.succ(), phx_core::capacity::WHEEL_DAYS)),
             ..Freight::default()
         };
         Ok(())

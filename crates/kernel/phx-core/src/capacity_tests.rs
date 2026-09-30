@@ -28,7 +28,7 @@ fn capacity_rows_cover_growth() {
 
 #[test]
 fn reservations_fit_the_address_space() {
-    let reserved: u64 = table().map(|c| c.rows * u64::from(c.row_bytes) * 2).sum();
+    let reserved: u64 = table().map(|c| u64::from(c.rows) * u64::from(c.row_bytes) * 2).sum();
     assert!(reserved <= u64::try_from(VA_BUDGET).unwrap(), "{reserved} bytes reserved against {VA_BUDGET}");
 }
 

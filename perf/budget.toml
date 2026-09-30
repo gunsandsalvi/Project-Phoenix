@@ -10,6 +10,8 @@
 # the pool (S1.24, 2026-09-29): a median turn of 1 637 ms, a worst of 5 147 ms and 1.52 cores busy; the times stand a
 # quarter above them, as the noise asks — the same day's tightenings to the bare measures (1 674 and 5 158 ms) left
 # no room for it and are raised back to the margin — and the cores busy at 1.40, below the measure.
+# The capacities read from the declared table (S1.115, 2026-09-30): two smokes held 1 506 and 1 492 bytes a person,
+# the reservations shrunk to the design point; the bytes stand a tenth above the higher.
 
 [[ratchet]]
 counter = "phx_budget.turn_ms_median"
@@ -23,7 +25,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "phx_budget.bytes_per_person"
-value = 2643
+value = 1657
 direction = "down"
 
 [[ratchet]]

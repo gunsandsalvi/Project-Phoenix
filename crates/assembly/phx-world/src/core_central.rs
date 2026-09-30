@@ -21,9 +21,10 @@ use phx_num::{Missing, violation};
 use phx_rand::{Subject, SubjectTag};
 
 use crate::consts::reason::{LENT, REMITTED, REPAID};
-use crate::consts::{DAYS_A_YEAR, KIND_ROWS, KIND_ROWS_PER_CHUNK};
+use crate::consts::{DAYS_A_YEAR, KIND_ROWS_PER_CHUNK};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due};
+use phx_core::capacity::KIND_ROWS;
 
 /// The deposit facility's positions, each owed by a central bank to a bank.
 pub const DEPOSIT_FACILITY: &str = crate::consts::families::DEPOSIT_FACILITY;
@@ -111,7 +112,7 @@ impl Core {
                 (kinds, [KIND_ROWS, KIND_ROWS]),
                 (KIND_ROWS, KIND_ROWS_PER_CHUNK),
                 [true, true],
-                (today.succ(), crate::consts::CORE_WHEEL_DAYS),
+                (today.succ(), phx_core::capacity::WHEEL_DAYS),
             ),
             reason: REPAID,
             schedules: Vec::new(),

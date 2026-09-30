@@ -1,31 +1,18 @@
-/// Events the store reserves room for, in 768 MiB of address space, committed only as written: some fifty years of a
-/// world's persons' events.
-pub const EVENT_ROWS: u32 = 1 << 24;
 /// Events per chunk of their column.
 pub const EVENT_ROWS_PER_CHUNK: u32 = 1 << 14;
-/// Words of the events' arena, their subjects and details: 1 GiB of address space, committed as written.
-pub const STORE_ARENA_WORDS: u32 = 1 << 27;
 /// The world hash's key: any fixed value, so the same content always hashes the same.
 pub const HASH_KEY: [u64; 2] = [0x5048_5820_574f_524c, 0x4420_4841_5348_2031];
 
 /// The whole population, in the percent a setup's split is written in.
 pub const WHOLE: u64 = 100;
 
-/// Rows each kind table of individuals reserves: room for a kind's individuals across the three countries, beyond the
-/// firms the promotion rank admits, in address space committed only as rows are written.
-pub const KIND_ROWS: u32 = 1 << 18;
 /// Rows of a kind table per chunk, as the population's tables chunk theirs.
 pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
-/// Rows each population kind's agent table reserves, in address space committed only as rows are written: some
-/// thirty times the design point's households, under a million agents.
-pub const AGENT_ROWS: u32 = 1 << 25;
 /// Rows of an agent table per chunk.
 pub const AGENT_ROWS_PER_CHUNK: u32 = 1 << 12;
-/// Instruments the books reserve room for.
-pub const INSTRUMENTS: u32 = 1 << 20;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 21;
+pub const SAVE_FORMAT: u32 = 22;
 /// A save's tasks on the pool: the core's store, the run's record and the world's hash.
 pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.
@@ -166,8 +153,6 @@ pub mod sheet {
 pub const PERCENT: f64 = 100.0;
 /// The core's ranges of slots settlement nets by, 2^bits slots each.
 pub const CORE_RANGE_BITS: u32 = 12;
-/// The days the core's due wheels hold before their far list.
-pub const CORE_WHEEL_DAYS: u32 = 64;
 /// A core firm's record: its product, its region, the tile it is sited on, its productivity, the log of its factor
 /// over its way's, in billionths, its posted price of a lot, its output a year in units, its markup over its unit cost
 /// and the sales a day it expects in millionths, the units it sold since its last review and that review's day, its

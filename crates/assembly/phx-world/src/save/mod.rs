@@ -193,6 +193,18 @@ impl World {
     }
 }
 
+/// Whether this build reads a save of a format: only its own, since a format names what each store holds and how.
+///
+/// # Errors
+/// A save of another format.
+fn readable(format: u32) -> Result<(), String> {
+    if format == SAVE_FORMAT {
+        Ok(())
+    } else {
+        Err(format!("a save of format {format} where this build reads {SAVE_FORMAT}"))
+    }
+}
+
 /// A world read back from a save to continue from its close: the build and data assembled as the save's were, its
 /// opening not drawn, its core and day read from the save and held to the manifest's world hash, and the run's
 /// measures read back beside it. The save's format, build, register and seed must be this build's and run's.
@@ -209,9 +221,7 @@ pub fn load(
     build: &str,
 ) -> Result<World, String> {
     let manifest = Manifest::read(dir)?;
-    if manifest.format != SAVE_FORMAT {
-        return Err(format!("a save of format {} where this build reads {SAVE_FORMAT}", manifest.format));
-    }
+    readable(manifest.format)?;
     if manifest.build != build {
         return Err("a save another build wrote".to_owned());
     }
@@ -233,4 +243,17 @@ pub fn load(
     }
     world.metrics = read_store(dir, RUN, &mut |r| Metrics::load(r))?;
     Ok(world)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::readable;
+    use crate::consts::SAVE_FORMAT;
+
+    #[test]
+    fn save_format_rises_with_the_wheel() {
+        let before_the_wheel = SAVE_FORMAT - 1;
+        assert!(readable(before_the_wheel).is_err(), "a save whose wheels hold another horizon is refused");
+        assert!(readable(SAVE_FORMAT).is_ok());
+    }
 }

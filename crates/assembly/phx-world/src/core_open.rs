@@ -23,13 +23,12 @@ use phx_rand::float::len_u64;
 use phx_store::{AddressSpace, SystemBacking};
 
 use crate::consts::sheet::{BANKS, CURRENCY, DEPOSITS, GOVERNMENT, HOUSEHOLDS, RESERVES};
-use crate::consts::{
-    AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, CORE_WHEEL_DAYS, KIND_ROWS, KIND_ROWS_PER_CHUNK,
-};
+use crate::consts::{AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, KIND_ROWS_PER_CHUNK};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, PENSION};
 use crate::opening::asked::Asked;
 use crate::opening::sheet::Sheet;
+use phx_core::capacity::{AGENT_ROWS, KIND_ROWS, WHEEL_DAYS};
 
 use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, ESTATE, FIRM, HOUSEHOLD, KINDS, TREASURY};
 
@@ -171,9 +170,9 @@ impl Core {
         }
         let happened = phx_core::EventStore::new(
             &mut space,
-            crate::consts::EVENT_ROWS,
+            phx_core::capacity::EVENT_ROWS,
             crate::consts::EVENT_ROWS_PER_CHUNK,
-            crate::consts::STORE_ARENA_WORDS,
+            phx_core::capacity::ARENA_WORDS,
         );
         Core {
             space,
@@ -520,7 +519,7 @@ impl Core {
                 ([kind_number(TREASURY), kind_number(HOUSEHOLD)], [KIND_ROWS, AGENT_ROWS]),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [false, true],
-                (today.succ(), CORE_WHEEL_DAYS),
+                (today.succ(), WHEEL_DAYS),
             ),
             reason: PENSION,
             schedules: Vec::new(),

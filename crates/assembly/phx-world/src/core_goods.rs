@@ -30,11 +30,12 @@ use crate::consts::firm::{
     SEEN_SOLD, SOLD as SOLD_UNITS,
 };
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
-use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_accounts::Line;
 use crate::core_decide::Bound as Decided;
 use crate::opening::economy::table;
+use phx_core::capacity::WHEEL_DAYS;
 use sys_frm::rules::inputs::{Line as InputLine, OrdersIn};
 use sys_frm::rules::produce::{Produce, ProduceIn};
 
@@ -435,7 +436,7 @@ impl Core {
         self.open_markups(ctx, firm, &prices);
         self.open_expected(ctx, firm, today);
         self.open_stocks(ctx.regions, firm, &prices, today);
-        let mut wheel = DueWheel::new(today.succ(), CORE_WHEEL_DAYS);
+        let mut wheel = DueWheel::new(today.succ(), WHEEL_DAYS);
         let Some(stream) = ctx.streams.named(sys_hh::VisitStream::DECL.name) else {
             return Err("the households' visit stream is not declared".to_owned());
         };

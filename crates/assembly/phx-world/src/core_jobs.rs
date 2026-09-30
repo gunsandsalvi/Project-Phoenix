@@ -21,11 +21,12 @@ use crate::consts::firm::{
     COMPENSATION, JOBS_PURPOSE, OUTPUT, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, PUBLIC_ADMINISTRATION, PURPOSES,
     REGION,
 };
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_WHEEL_DAYS, MONTHS_A_YEAR, WEEKS_A_YEAR};
+use crate::consts::{AGENT_ROWS_PER_CHUNK, MONTHS_A_YEAR, WEEKS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, WAGE};
 use crate::opening::asked::Asked;
 use crate::opening::economy::table;
+use phx_core::capacity::{AGENT_ROWS, WHEEL_DAYS};
 
 /// A job as drawn: its household, its person, where its schedule is, its region, occupation, weekly hours and
 /// country.
@@ -232,7 +233,7 @@ impl Core {
                 ([kind_number(employer), kind_number(household)], [AGENT_ROWS, AGENT_ROWS]),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [true, true],
-                (today.succ(), CORE_WHEEL_DAYS),
+                (today.succ(), WHEEL_DAYS),
             ),
             reason: WAGE,
             schedules: Vec::new(),

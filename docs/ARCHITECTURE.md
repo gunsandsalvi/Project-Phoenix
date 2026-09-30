@@ -1141,15 +1141,17 @@ point's `[store]` does, with its rows at the design point, a row's bytes (its ba
 products). A store's capacity is its design rows plus two years' growth (`GROWTH_YEARS`), rounded up to whole chunks
 (`CHUNK_ROWS`); `table()` yields every store's, computed from the declarations and never stored apart. A constructor
 reads a named constant — `AGENT_ROWS` (the persons), `KIND_ROWS` (the institutions), `EVENT_ROWS` and `ARENA_WORDS`
-(the event log and its arena), `INSTRUMENT_ROWS` — computed at compile time from its store's own entry, so no store
+(the event log and its arena: today every event of a gate's run resident, the `events_unpruned` store, until K-36's
+log keeps occurrences on storage within a horizon), `INSTRUMENT_ROWS` — computed at compile time from its store's own entry, so no store
 stops the run at a literal ceiling. Capacities are address-space reservations committed only as rows are written:
 they change no outcome, and at twice the design point with growth they stay inside `phx-store`'s `VA_BUDGET`.
 
 The code widths: a chain link and a wheel entry carry a family code of `FAMILY_BITS` (8) and a slot of `SLOT_BITS`
 (24), one 32-bit word; `family_code` gives the codes below `HOLDINGS_CODE` (255, reserved for holdings) and refuses a
 family past them, and `slot_fits` a slot below 2²⁴. `WHEEL_DAYS` (128) files a quarter's dues ahead. The link's width
-and the wheel's horizon are refused at compile time if either falls short. The users of today's literal capacities
-move onto the table at S1.115; `phx-fin`'s `capacities_cover_the_design_point` (S1.116) holds it to `[store]`.
+and the wheel's horizon are refused at compile time if either falls short. `phx-world` reserves every store and
+wheel from these constants and holds no capacity of its own; `phx-fin`'s `capacities_cover_the_design_point` (S1.116)
+holds the table to `[store]`.
 
 ### 7.4 phx-geo
 

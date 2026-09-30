@@ -14,9 +14,10 @@ use phx_rand::float::{from_i64, len_u64};
 
 use crate::consts::firm::{LOANS_PURPOSE, OUTPUT, PRICE, PRODUCT, PURPOSES, REGION};
 use crate::consts::reason::REPAID;
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, CORE_WHEEL_DAYS, MONTHS};
+use crate::consts::{AGENT_ROWS_PER_CHUNK, MONTHS};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due};
+use phx_core::capacity::{AGENT_ROWS, WHEEL_DAYS};
 
 /// What the loans' opening reads besides the core.
 #[derive(Debug)]
@@ -120,7 +121,7 @@ impl Core {
                 ([kind_number(treasury), kind_number(household)], [AGENT_ROWS, AGENT_ROWS]),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [false, true],
-                (today.succ(), CORE_WHEEL_DAYS),
+                (today.succ(), WHEEL_DAYS),
             ),
             reason: crate::consts::reason::BENEFIT,
             schedules: Vec::new(),
@@ -145,7 +146,7 @@ impl Core {
                 ([kind_number(borrower), kind_number(bank)], [AGENT_ROWS, AGENT_ROWS]),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [true, true],
-                (today.succ(), CORE_WHEEL_DAYS),
+                (today.succ(), WHEEL_DAYS),
             ),
             reason: REPAID,
             schedules: Vec::new(),

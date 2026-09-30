@@ -15,11 +15,12 @@ use phx_ledger::algebra::{Leg, Schedule};
 use phx_macros::clause;
 use phx_num::Missing;
 
+use crate::consts::AGENT_ROWS_PER_CHUNK;
 use crate::consts::reason::TAXED;
-use crate::consts::{AGENT_ROWS, AGENT_ROWS_PER_CHUNK, KIND_ROWS};
 use crate::core::{Core, kind_number};
 use crate::core_accounts::Line;
 use crate::core_day::{DatedFamily, Due};
+use phx_core::capacity::{AGENT_ROWS, KIND_ROWS};
 
 /// The collectors' debts to their treasuries.
 pub const COLLECTED: &str = crate::consts::families::COLLECTED;
@@ -84,7 +85,7 @@ impl Core {
                 ([kind_number(firm), kind_number(treasury)], [AGENT_ROWS, KIND_ROWS]),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [true, true],
-                (today.succ(), crate::consts::CORE_WHEEL_DAYS),
+                (today.succ(), phx_core::capacity::WHEEL_DAYS),
             ),
             reason: TAXED,
             schedules: Vec::new(),

@@ -140,26 +140,27 @@ pub enum phx_core::capacity::Growth
 pub phx_core::capacity::Growth::Fixed
 pub phx_core::capacity::Growth::Persons
 pub struct phx_core::capacity::Capacity
-pub phx_core::capacity::Capacity::design_rows: u64
-pub phx_core::capacity::Capacity::growth_per_year: u64
+pub phx_core::capacity::Capacity::design_rows: u32
+pub phx_core::capacity::Capacity::growth_per_year: u32
 pub phx_core::capacity::Capacity::row_bytes: u32
-pub phx_core::capacity::Capacity::rows: u64
+pub phx_core::capacity::Capacity::rows: u32
 pub phx_core::capacity::Capacity::store: &'static str
-pub const phx_core::capacity::AGENT_ROWS: u64
-pub const phx_core::capacity::ARENA_WORDS: u64
-pub const phx_core::capacity::EVENT_ROWS: u64
-pub const phx_core::capacity::INSTRUMENT_ROWS: u64
-pub const phx_core::capacity::KIND_ROWS: u64
+pub const phx_core::capacity::AGENT_ROWS: u32
+pub const phx_core::capacity::ARENA_WORDS: u32
+pub const phx_core::capacity::EVENT_ROWS: u32
+pub const phx_core::capacity::INSTRUMENT_ROWS: u32
+pub const phx_core::capacity::KIND_ROWS: u32
 pub const phx_core::capacity::LINK_BITS: u32
+pub const phx_core::capacity::WHEEL_DAYS: u32
 pub fn phx_core::capacity::family_code(usize) -> core::option::Option<u8>
-pub const fn phx_core::capacity::slot_fits(u64) -> bool
+pub const fn phx_core::capacity::slot_fits(u32) -> bool
 pub fn phx_core::capacity::table() -> impl core::iter::traits::iterator::Iterator<Item = phx_core::capacity::Capacity>
 pub mod phx_core::consts
 pub const phx_core::consts::BIT_WORD: usize
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
 pub const phx_core::consts::CF_TINY: f64
-pub const phx_core::consts::CHUNK_ROWS: u64
+pub const phx_core::consts::CHUNK_ROWS: u32
 pub const phx_core::consts::COMMON_YEAR: i32
 pub const phx_core::consts::DAYS_30: i64
 pub const phx_core::consts::DAYS_360: i64
@@ -180,14 +181,17 @@ pub const phx_core::consts::EASTER_H: [i32; 2]
 pub const phx_core::consts::EASTER_L: [i32; 2]
 pub const phx_core::consts::EASTER_M: [i32; 3]
 pub const phx_core::consts::EASTER_MONTH: [i32; 3]
-pub const phx_core::consts::EVENTS: (&str, u64, u32, phx_core::capacity::Growth)
-pub const phx_core::consts::EVENT_WORDS: u64
+pub const phx_core::consts::EVENTS: (&str, u32, u32, phx_core::capacity::Growth)
+pub const phx_core::consts::EVENTS_A_DAY: u32
+pub const phx_core::consts::EVENTS_UNPRUNED: (&str, u32, u32, phx_core::capacity::Growth)
+pub const phx_core::consts::EVENT_LOG_DAYS: u32
+pub const phx_core::consts::EVENT_WORDS: u32
 pub const phx_core::consts::FAMILY_BITS: u32
-pub const phx_core::consts::GROWTH_DIVISOR: u64
-pub const phx_core::consts::GROWTH_YEARS: u64
+pub const phx_core::consts::GROWTH_DIVISOR: u32
+pub const phx_core::consts::GROWTH_YEARS: u32
 pub const phx_core::consts::HOLDINGS_CODE: u8
-pub const phx_core::consts::INSTITUTIONS: (&str, u64, u32, phx_core::capacity::Growth)
-pub const phx_core::consts::INSTRUMENTS: (&str, u64, u32, phx_core::capacity::Growth)
+pub const phx_core::consts::INSTITUTIONS: (&str, u32, u32, phx_core::capacity::Growth)
+pub const phx_core::consts::INSTRUMENTS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::KEYED_ORDINAL: u8
 pub const phx_core::consts::LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8)
 pub const phx_core::consts::LONGEST_QUARTER_DAYS: u32
@@ -207,13 +211,13 @@ pub const phx_core::consts::OPENING_PRESENT_VALUES: u8
 pub const phx_core::consts::PARAM_EXP: u8
 pub const phx_core::consts::PARAM_SCALE_F64: f64
 pub const phx_core::consts::PERCENT_F64: f64
-pub const phx_core::consts::PERSONS: (&str, u64, u32, phx_core::capacity::Growth)
+pub const phx_core::consts::PERSONS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::PPM: u32
 pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::ROW_BYTES_UNLAID: u32
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
 pub const phx_core::consts::SLOT_BITS: u32
-pub const phx_core::consts::STORES: &[(&str, u64, u32, phx_core::capacity::Growth)]
+pub const phx_core::consts::STORES: &[(&str, u32, u32, phx_core::capacity::Growth)]
 pub const phx_core::consts::UNITS_BIT: u16
 pub const phx_core::consts::WHEEL_DAYS: u32
 pub mod phx_core::contribution

@@ -27,10 +27,11 @@ use phx_rand::float::{from_i64, from_u64, len_u64};
 use phx_rand::{Draws, Subject, SubjectTag};
 
 use crate::consts::firm::{OUTPUT, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION};
-use crate::consts::{CORE_WHEEL_DAYS, DAYS_A_WEEK, DAYS_A_YEAR, LEAST_MATCH_DAYS, PERCENT, WEEKS_A_YEAR};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, LEAST_MATCH_DAYS, PERCENT, WEEKS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_day::Due;
 use crate::opening::economy::table;
+use phx_core::capacity::WHEEL_DAYS;
 
 /// A posted vacancy's own record beside the kernel's: its identity, its point, when it was first posted and when its
 /// point was last set, and its country.
@@ -316,7 +317,7 @@ impl Core {
             .collect();
         labour.production_days =
             u32::try_from(ctx.register.count("FRM.production_days")?).map_err(|e| e.to_string())?;
-        let mut wheel = DueWheel::new(today.succ(), CORE_WHEEL_DAYS);
+        let mut wheel = DueWheel::new(today.succ(), WHEEL_DAYS);
         for slot in slots {
             let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
             let mut d = ctx.draws(ctx.kind.review_stream, Subject::new(SubjectTag::Party, id.get()), today);

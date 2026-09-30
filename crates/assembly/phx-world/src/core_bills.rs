@@ -19,10 +19,11 @@ use phx_macros::clause;
 use phx_num::{Missing, violation};
 
 use crate::consts::reason::REPAID;
-use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, KIND_ROWS, KIND_ROWS_PER_CHUNK};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, KIND_ROWS_PER_CHUNK};
 use crate::core::Core;
 use crate::core_central::Step;
 use crate::core_day::{DatedFamily, Due};
+use phx_core::capacity::KIND_ROWS;
 
 /// The bills' family: each a treasury's debt to a bank.
 pub const BILLS: &str = crate::consts::families::BILLS;
@@ -132,7 +133,7 @@ impl Core {
                 ([crate::core::kind_number(treasury), bank], [KIND_ROWS, KIND_ROWS]),
                 (KIND_ROWS, KIND_ROWS_PER_CHUNK),
                 [true, true],
-                (today.succ(), crate::consts::CORE_WHEEL_DAYS),
+                (today.succ(), phx_core::capacity::WHEEL_DAYS),
             ),
             reason: REPAID,
             schedules: Vec::new(),
