@@ -692,8 +692,8 @@ exposure; it never writes an economic outcome.
 - **GEO.4 STATE** — **Infrastructure** — roads, rail, bridges, tunnels, ports, pipelines, power lines — is
   owned capital (CAP) with a site or a path, a capacity shared by everything using it in a day, a life, a
   maintenance need and a condition.
-- **GEO.19 STATE** — **Cells.** Each tile is divided into **cells**, the same map subdivided (a RESOLUTION set by the
-  budget, from a kilometre down): a cell's identity, coordinates, surface and terrain are read from its tile and its
+- **GEO.19 STATE** — **Cells.** Each tile is divided into **cells**, the same map subdivided (a RESOLUTION the owner
+  fixed, decision 29): a cell's identity, coordinates, surface and terrain are read from its tile and its
   place within it, and a cell is held only once something stands on it, it is owned or leased apart from its tile, or
   a path crosses it. Buildings, parcels of land, farms, forests and mines stand on cells.
 - **GEO.5 STATE** — **Land** is a tile's area, owned by a named party as a holding, with what stands on it.
@@ -736,7 +736,8 @@ exposure; it never writes an economic outcome.
 - **GEO.18 PRIMITIVE** — The world's size and its **latitude cycle** (ENDOWMENT, chosen by the owner): with no pole,
   the latitude a row's climate is read at runs evenly from a warm belt to a cool belt over half the world's height
   and back over the other half, so every latitude between them is present twice, and it changes along the way
-  faster than on the Earth; tile size and cell size (RESOLUTION: the same map subdivided); terrain generation
+  faster than on the Earth; tile size and cell size (RESOLUTION the owner fixed, decision 29: the same map
+  subdivided); terrain generation
   parameters (SHAPE,
   declared as such, with the reason no mechanism replaces them); deposits and opening infrastructure
   (ENDOWMENT); hazard exposure by terrain (TECHNOLOGY).
@@ -4811,6 +4812,11 @@ age, and a stream of news generated from real events.
   (PTY.16) or founded a firm, which are kept as the world's history for its declared horizon (SET.13).
 - **OBS.11 PROCESS** — **A biography.** The observer surface may write a person's life as prose from its record, by a
   language model on the device; it reads the record only, and nothing it writes enters the world (Law 17).
+- **OBS.12 PROCESS** — **The map.** The observer surface shows the world's map at any zoom: tiles and their terrain,
+  the cells held, what stands on each cell — every building, farm, forest and mine at its cell, with its owner, its
+  occupants or users and its value on selection — the land parcels, and the infrastructure (GEO.4) along its paths
+  with its use; aggregated by zone, region and country when zoomed out. It shows only what the world holds (OBS.6):
+  nothing is placed, drawn or filled in that the world does not record.
 
 **Forbids**
 
@@ -5044,8 +5050,8 @@ meet its purpose, so the budget is a requirement with the same standing as the a
   budget (initially 4.5 GB resident) and a declared storage budget for saves (initially 4 GB), and neither grows
   without bound — which is what SET.12–SET.16 exist for: each store's growth per simulated year, measured over the
   run, is what the population and the declared horizons (SET.13) explain.
-- **N8.5** — **The play resolution** is the setting of every RESOLUTION primitive but the map's grid, which the owner
-  fixed (decision 29) — among them the representation's size (REP.40), the number of types (NUM.4), each kind's
+- **N8.5** — **The play resolution** is the setting of every RESOLUTION primitive but the map's grid and its cells, which
+  the owner fixed (decision 29) — among them the representation's size (REP.40), the number of types (NUM.4), each kind's
   attribute classes, zones and age classes, history horizons and snapshot intervals (SET.13,
   SET.17), the full audit's cycle (N8.6) — that is finest while meeting N8.2–N8.4 on the target device, in the
   representation the build holds
@@ -5425,7 +5431,8 @@ Decisions taken in writing this version, and decisions still open.
     38).
 
 29. **The map** is about 40,000 tiles of 10 km across the three countries, with 25 regions in all, allotted to the
-    countries by their population shares with at least three each (GEO.3, decision 43).
+    countries by their population shares with at least three each (GEO.3, decision 43); each tile is divided into
+    cells of 100 m (GEO.19; owner, 2026-09-30), so a building, a parcel and a path are placed to a city block.
 30. _Retired_: there is no accuracy for play to set. The play resolution is set by the budget alone (N8.5), and
     whether the world makes sense is judged by its one run (decision 36).
 31. **The representation is coarsened for the phone.** Independent estimates put the fully exact representation at
@@ -5470,7 +5477,7 @@ Decisions taken in writing this version, and decisions still open.
 41. **The order of refinement** (N8.5; owner, 2026-09-29): when the budget allows a finer resolution, the
     representation's size (REP.40) is raised first, then the number of preference types (NUM.4), then each kind's
     attribute classes and zones, then history horizons and snapshot intervals (SET.13, SET.17), then age classes, the
-    full audit's cycle, the draw scheme (REP.7) and the map's cell size for buildings; when the budget calls
+    full audit's cycle and the draw scheme (REP.7); when the budget calls
     for a coarser one, the same order runs backwards. A miss is met by N8.7's remedies in their order — how the world
     is represented and traversed, then this valve — and no law, mechanism or requirement is weakened to meet it.
 42. **Public ways** (TEC.4): every firm knows its industry's ways that no patent covers and no firm keeps to itself,
@@ -5530,8 +5537,9 @@ Decisions taken in writing this version, and decisions still open.
     Stage 8 attaches persons to the offices and minds to the deciders, and no decision is moved then, since each
     already runs through the core.
 
-51. **The budget's measures, the design point and where markets meet** (N8.8, REP.24, GEO.3; owner, 2026-09-29).
-    - **The design point** of the finished-volume measure (N8.8) is **7.5 million persons**, with every count per
+51. **The budget's measures, the design point and where markets meet** (N8.8, REP.24, GEO.3; owner, 2026-09-29,
+    the persons 2026-09-30).
+    - **The design point** of the finished-volume measure (N8.8) is **6 million persons**, with every count per
       person the finished world is expected to hold — households, firms, contracts, accounts, holdings, the day's
       flows and purchases — raised by half again, so the finished world is measured with room above it. It measures
       the code, not the world: the play resolution is still set by the budget in the one run (N8.5, decisions 36,

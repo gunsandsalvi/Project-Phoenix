@@ -255,7 +255,7 @@ activates bases.
 | **8 Minds** (built after Stage 3) | S8.100–S8.202 | the mind kernel's rules, characters, households' and offices' minds, experience, aspirations and learning, the life record; the gate |
 | **4 Risk transfer** | S4.100–S4.185 | derivatives and their classes, insurance, pensions, securitisation, takeovers; the gate |
 | **5 The full state and the open world** | S5.100–S5.187 | taxes and social protection in full, politics, currencies, trade, finance and migration across borders; the gate |
-| **6 Growth and the full population** | S6.100–S6.141 | technology, demography and households in full, the observer and the app in full, the opening and the audit complete; the gate |
+| **6 Growth and the full population** | S6.100–S6.142 | technology, demography and households in full, the observer and the app in full, the opening and the audit complete; the gate |
 | **7 Realism** | S7.100–S7.106 | the stylised facts, the chain relationships, calibration; the realism gate |
 
 The steps of each stage, in build order:
@@ -276,7 +276,7 @@ The steps of each stage, in build order:
 - **Stage 8**: S8.100 Stage 8's macro reads committed · S8.101 Character types by country from the preference survey · S8.102 Characters drawn at birth, arrival and the opening · S8.103 Concerns declared and every decider handed its own mind · S8.104 An institution's founding preferences drawn as a character · S8.105 Aspirations formed and adapting · S8.106 A household decides as one · S8.107 Households' spending as their adults' choice · S8.108 Households' stance and attention as their adults' choice · S8.109 An adult's participation and hours by its own mind · S8.110 Households' borrowing as their adults' choice · S8.111 Households' holdings as their adults' choice · S8.112 Households' arrears actions, answers and insolvency filing as their adults' choice · S8.113 Where to live as the household's choice · S8.114 Bids, asks and answers on dwellings as the household's choice · S8.115 Vehicles and dwelling repair as the household's choice · S8.116 Trying for a child as the household's choice · S8.117 A person's search and acceptance by its own mind · S8.118 A person's answer at a pay round by its own mind; retirement as its own work choice · S8.119 A person's benefit and pension claims as its own choice · S8.120 A person founds a firm by its own choice · S8.121 Life-record entries written at their events · S8.122 The mandate through the holder's contracts · S8.123 An owner managing its own firm holds its offices · S8.124 A board chooses, reviews and removes its chief executive by its members' minds · S8.125 A chief executive appoints, reviews and removes line heads and loan officers by its own mind · S8.126 A board nominates candidates for its seats by its chair's mind · S8.127 Owners vote on board seats and resolutions by their own minds · S8.128 A line head's prices by its own mind · S8.129 A line head's stance and attention by its own mind · S8.130 A line head's production, inputs and way by its own mind · S8.131 Extraction and stockists by their heads' minds · S8.132 Shippers book room by their heads' minds · S8.133 Carriers' room and repositioning by their heads' minds · S8.134 An employer's postings and layoffs by its line head's mind · S8.135 An employer's selection and offers by its line head's mind · S8.136 An employer's pay-round and bargaining offers by its head's mind · S8.137 A union's offers and strike calls by its leader's mind · S8.138 Investment by the chief executive's mind · S8.139 Plant review and investment attention by the chief executive's mind · S8.140 Funding by the chief executive's mind · S8.141 A firm in distress and its answer to a lender by the chief executive's mind · S8.142 Procedures and plans by the debtor's and creditors' minds · S8.143 Payout and filing by the chief executive's mind · S8.144 Which lines to be in: entry, spin-off and the voluntary close by the chief executive's mind · S8.145 A fund backs a venture by its manager's mind · S8.146 A seller's trade-credit terms and factoring by its head's mind · S8.147 A buyer paying early for the discount by its head's mind · S8.148 Generators' offers, demand bids and storage by their heads' minds · S8.149 The consumer's choice of energy supplier by its own mind · S8.150 Energy investment by the chief executive's mind · S8.151 Landlords' rents, lettings, repairs and investments by their own minds · S8.152 Builders' projects, parcels and floors by the chief executive's mind · S8.153 Landowners' sales and leases and land bids by their own minds · S8.154 An issuer's debt, paper and consents by the chief executive's mind · S8.155 An underwriter's answer by the bank's chief executive's mind · S8.156 Investors' debt orders and holders' votes by their own minds · S8.157 A holder's conversion election by its own mind · S8.158 Share issues by the chief executive's mind · S8.159 Investors' equity orders by their own minds · S8.160 The exchange's listing decisions by its listing office's mind · S8.161 A loan officer's quotes and declines by its own mind · S8.162 A bank's standards, mortgage offers and line cuts by its head's mind · S8.163 A borrower's asks and choice among quotes by its own mind · S8.164 A lender's workouts and loan sales by its credit office's mind · S8.165 A lender's plan votes, failed-bank bids and syndicate joins by its office's mind · S8.166 A bank's liquidity buffer and deposit rates by its chief executive's mind · S8.167 A bank's shortfall actions and facility requests by its chief executive's mind · S8.168 A depositor's choice of bank by its own mind · S8.169 A bank's capital buffer and raise by its office's mind · S8.170 Lenders' limits and haircuts by their offices' minds · S8.171 Banks' overnight and term positions by their chief executives' minds · S8.172 A defaulted repo's collateral sold by the lender's office's mind · S8.173 The central bank's rate and framework by its committee's mind · S8.174 The central bank's operations and purchases by its committee's mind · S8.175 Bidders at sovereign auctions by their own minds · S8.176 Holders' answers to a sovereign exchange offer by their own minds · S8.177 The supervisor's limits, test consequences and licences by its head's mind · S8.178 The deposit insurer's premiums and paying bank by its head's mind · S8.179 The resolution authority's choice of route by its head's mind · S8.180 A founder's bank venture weighed by its own mind · S8.181 A fund's portfolio manager invests and tracks by its own mind · S8.182 Funds launched and closed by the manager's chief executive's mind · S8.183 A fund's liquidity by its manager's mind · S8.184 An authorised dealer's creations and redemptions by its desk's mind · S8.185 Investors' choice of fund by their own minds · S8.186 Private-equity capital calls by the manager's mind · S8.187 Dealers' quotes and interdealer schedules by their desks' minds · S8.188 Securities lent and recalled by the lender's desk's mind · S8.189 A prime broker's margin, relationships and close-outs by its risk office's mind · S8.190 A primary dealer's own bid by its desk's mind · S8.191 A borrower of securities chooses its lender by its own mind · S8.192 Ratings by the agency's committee's mind · S8.193 A listed company's report date and guidance by its chief executive's mind · S8.194 An index's constituent changes by the publisher's index office's mind · S8.195 Service purchases, restocking and staffing by the line head's mind · S8.196 An estate's administrator by its own mind · S8.197 Experience accrues and character drifts with age · S8.198 Goals formed at life events, pursued, reached or given up · S8.199 The reason recorded, goals' entries and the biography's hand-off · S8.200 Strategies, their records and learning from one's own and from those one knows · S8.201 No decision without its decider's mind · S8.202 The Stage 8 gate
 - **Stage 4**: S4.100 Stage 4's macro reads frozen · S4.101 Derivative contracts between named firms and institutions · S4.102 Clearing houses as parties, and cleared contracts by novation · S4.103 Clearing houses' rulebooks and bilateral margin rules · S4.104 The opening's clearing houses and members · S4.105 Client clearing, the derivative review, and the choice of how to clear · S4.106 Marks by named valuers: settlement prices, the swap curve, option premiums, calculation agents · S4.107 Variation margin · S4.108 Initial margin by filtered historical simulation · S4.109 Collateral posting and substitution · S4.110 Admission over a member's order set from its liquidity report · S4.111 The clearing house's waterfall and default fund · S4.112 A member's default: lots, auctions and porting · S4.113 Bilateral close-out · S4.114 A clearing house's recovery and resolution · S4.115 Derivative classes as declarations, legs from templates, series listing · S4.116 Taking a position: the option generator, and firms' and banks' positions · S4.117 Dealers' derivative quotes and hedges · S4.118 Interest-rate swaps in the dealer market · S4.119 Credit default swaps and credit-event auctions · S4.120 Futures: storage carry and delivery · S4.121 Options: own value and exercise · S4.122 Power contracts for difference · S4.123 Funds' derivative positions · S4.124 Implied reads, and views on both sides of every class · S4.125 Cover kinds, and the policy, annuity and treaty families · S4.126 The opening's insurers · S4.127 The opening's policies, annuities and treaties · S4.128 Premium dues and lapses · S4.129 Insurers' premiums by credibility from their own experience and public records · S4.130 Underwriting within capital and concentration · S4.131 Cover decisions: the shared `insure` generator, firms' exposure, and renewals · S4.132 Households' insurance decisions · S4.133 Claims opened from hazard events, adjusted and paid · S4.134 Harm to third parties and liability · S4.135 Reinsurance and recoveries · S4.136 Actuarial liabilities and the solvency test · S4.137 Insurers' investment and liability matching · S4.138 Insurers' cash in repo and short paper, and their mandates' rating references · S4.139 The policyholder protection scheme · S4.140 An insurer's resolution · S4.141 Insurance measures · S4.142 Pension schemes, rights and the accrued-pension unit declared · S4.143 Pension tallies, the pending pots' instance and the pension decision kinds declared · S4.144 Pension law mapped for the three countries · S4.145 Employers offer pensions; single-employer schemes established · S4.146 Defined-benefit rights accrue as revalued career-average slices · S4.147 The opening's pension rights and pots · S4.148 Defined-contribution contributions dealt at the next value · S4.149 Leaving and retiring: deferred rights, pensions in payment, deaths end them · S4.150 Members choose extra contributions and funds · S4.151 At retirement: an annuity or drawdown · S4.152 The scheme actuary values each scheme's liabilities on its work day · S4.153 The funding test, the recovery-plan demand, the schedule of contributions and the roll-forward · S4.154 Sponsors choose how fast to repair a deficit · S4.155 Trustees choose the scheme's assets and its liability hedge · S4.156 The scheme's collateral buffer and the margin calls rates bring · S4.157 A scheme winds up: the sponsor's claim and the members' rights in the law's order · S4.158 The pension guarantee fund: levies, and compensation up to the cap · S4.159 Pension forbids audited, pension measures published · S4.160 Pool kinds, vehicles and tranches declared · S4.161 A bank decides to securitise a pool · S4.162 The arranger structures tranches against the agencies' published methods · S4.163 Issue and sale as one instruction; the originator's retention · S4.164 The opening's outstanding securitisations · S4.165 Investors value tranches by projected waterfalls · S4.166 Servicing, collections and determinations through the waterfall · S4.167 Pool losses from named write-offs, allocated bottom-up · S4.168 Tranches traded and pledged · S4.169 Managed pools reinvest in eligible loans · S4.170 The clean-up call and the vehicle's end · S4.171 Securitisation measures published · S4.172 Takeover law; offers as public events to the holders of record · S4.173 The acquirer's bid · S4.174 Holders accept or refuse; tenders pinned until completion or lapse · S4.175 The target's management responds; rivals are invited · S4.176 Expiry, completion as one instruction, and squeeze-out · S4.177 Private equity buys firms with committed capital and the target's own debt · S4.178 Private equity recapitalises and exits · S4.179 A firm in distress seeks a buyer · S4.180 Deal measures published · S4.181 The supervisor tests insurers and clearing houses · S4.182 Insurers, multi-employer trusts and clearing houses founded and licensed · S4.183 Every resolution sums to its hole; the protection and guarantee funds reconciled · S4.184 Supervisory measures published · S4.185 The Stage 4 gate: risk transfer
 - **Stage 5**: S5.100 Stage 5's macro reads frozen · S5.101 Every tax's schedule a dated policy value read through its rule handle · S5.102 The tax law mapped from the sources in hand · S5.103 Payroll contributions fused with withholding · S5.104 Registration for value-added tax, compulsory and chosen · S5.105 Value-added or retail sales tax at the sale, exports zero-rated · S5.106 Value-added tax on invoices at their statement · S5.107 Collectors' payables by base, remitted net of input tax · S5.108 Capital income and realised gains per person · S5.109 The personal return, filed on the person's chosen day · S5.110 The corporate return and losses carried forward · S5.111 Corporate instalments on the basis the firm chooses · S5.112 The property assessor, a named valuer · S5.113 Property tax, a holding levy on the instalment dates · S5.114 Inheritance tax, a claim ranked in the estate · S5.115 Tax arrears, their penalties and the tax office's enforcement · S5.116 A consumption tax in the retail prices sellers post · S5.117 Corporate tax in a firm's values of projects · S5.118 Gains tax in when a household sells · S5.119 Property tax and interest relief in a dwelling's user cost · S5.120 Pension relief in a member's extra contribution · S5.121 Tax receipts and effective rates published · S5.122 Benefit and service rules and public technologies mapped · S5.123 Benefit kinds claimed and processed from the agency's queue · S5.124 Benefits paid on their dates and ended by events · S5.125 The state pension claimed at its age, or deferred · S5.126 Earnings-related state pension rights · S5.127 Public agencies and their appropriations · S5.128 Public services with capacity, waits and private alternatives · S5.129 Agencies' staffing and wages · S5.130 Agencies' purchases of their inputs · S5.131 Public capital and infrastructure built, kept and charged for · S5.132 Agencies' appropriation requests · S5.133 Automatic stabilisers measured · S5.134 The constitution, parties, party finance and municipal law mapped · S5.135 The constitution, the parliament and the one writer of its policy values · S5.136 Political parties, their platforms and their members · S5.137 Campaign intentions, formed on each household's scheduled occasions · S5.138 Pollsters and their polls · S5.139 A platform's value to a household, through the law's own handles · S5.140 The vote, each adult's own · S5.141 Party finance: public funding, deposits, staff and polls bought · S5.142 Election day: the tally, the allotment and the seats · S5.143 Coalitions, the government and the new mandate · S5.144 The offices of the state filled, vacated and filled again · S5.145 The treasury's answer to a failed auction, the finance minister's options · S5.146 The treasury's funding plan, the finance minister's options · S5.147 Making good a central bank's loss, the finance minister's options · S5.148 The sovereign's exchange offer, the finance minister's options · S5.149 Buybacks and switches, the finance minister's options · S5.150 The primary-dealer review, the debt office's options · S5.151 Parties adapt their platforms between elections · S5.152 Parties founded, split, merged and dissolved · S5.153 The annual budget, brought and voted · S5.154 Emergency measures between budgets · S5.155 Settlements incorporate as municipalities, merge or dissolve · S5.156 Municipalities: their offices, elected · S5.157 Municipalities: local taxes and zoning by the council's bill · S5.158 Political measures · S5.159 Foreign currency held at banks of its system, and nostros · S5.160 The opening's positions in foreign currencies and abroad · S5.161 Two-currency trades settle both legs together on a joint value date · S5.162 Banks' conversion quotes and the commitments behind them · S5.163 The dealer market per pair, and the currency markets opened · S5.164 Holders' currency positions · S5.165 The daily fixing and every foreign position revalued at it · S5.166 Exchange-rate regimes declared and mapped · S5.167 Managed intervention with the central bank's reserves · S5.168 Pegs held by reserves, and their breaks · S5.169 Reserve management and bids at foreign sovereigns' auctions · S5.170 Sovereign debt in a foreign currency, and its default · S5.171 Currency derivatives listed, cleared and marked · S5.172 Covered carry with limited balance sheet · S5.173 Currency measures · S5.174 Border policies, clearance hours and kin abroad mapped · S5.175 Crossings, and every search reaching across a border · S5.176 The seller chooses the currency it invoices in · S5.177 Trade through reach: buyers weigh delivered prices from abroad · S5.178 Freight across borders, customs and the tax collected there · S5.179 Finance across borders: every foreign payoff valued in the decider's money · S5.180 Capital-flow rules refuse, never scale · S5.181 Income across borders, and remittances to kin abroad · S5.182 Admission of migrants, by the destination's rules · S5.183 Migration between countries, the household's choice · S5.184 Swap lines between central banks, and the foreign-currency facility · S5.185 The balance of payments tallied from every cross-border leg · S5.186 The balance of payments published, and the open economy's reads · S5.187 The Stage 5 gate
-- **Stage 6**: S6.100 Stage 6's macro reads frozen · S6.101 Technology's primitives mapped · S6.102 Ways issued at runtime, each an improvement on its base · S6.103 Firms' known ways: the public set and each firm's own · S6.104 Cumulative output per way, and learning by doing · S6.105 Research and patent statistics published · S6.106 Research and imitation effort decided · S6.107 Discovery · S6.108 Patents: filing, grant, the register and expiry · S6.109 Imitation pools and imitation · S6.110 Licences · S6.111 Obsolescence through prices, and productivity measured · S6.112 Technology's provenance audited · S6.113 Technology at the opening · S6.114 Demography's primitives mapped · S6.115 The labour-market state and the employment history as reads · S6.116 Skill as a read with its clocks · S6.117 Where and whether the young are schooled · S6.118 Schooling by the education law, and stages completed on the school year's date · S6.119 Retraining · S6.120 A household formed: its party opened, its type drawn, its attributes set · S6.121 Leaving home, within a region, beyond it or abroad · S6.122 Singles counted, and meetings drawn · S6.123 Forming a household · S6.124 Separation, and division by the family law · S6.125 The population's families on the rolling cycle · S6.126 The population's measures published; no demographic rate stated · S6.127 Schooling at the opening: education records, pupils and courses · S6.128 Holdings over the whole balance sheet · S6.129 The propensity to consume by wealth and liquidity · S6.130 Income spread against defaults and spending · S6.131 Two views: the participant's scope and the inspector's surface · S6.132 Shown numbers: from a source, missing as missing, stale as stale · S6.133 Looking at a party · S6.134 Events that develop, and the news · S6.135 The player acts through every decision point, its minds advising · S6.136 The phone's play surface · S6.137 Every resolution setting, taste distribution and review cost registered and counted · S6.138 Every system opened: the GEN report · S6.139 Day zero complete, and the whole world clean on day one · S6.140 Every audit family mapped, and every injection lights its family alone · S6.141 The Stage 6 gate
+- **Stage 6**: S6.100 Stage 6's macro reads frozen · S6.101 Technology's primitives mapped · S6.102 Ways issued at runtime, each an improvement on its base · S6.103 Firms' known ways: the public set and each firm's own · S6.104 Cumulative output per way, and learning by doing · S6.105 Research and patent statistics published · S6.106 Research and imitation effort decided · S6.107 Discovery · S6.108 Patents: filing, grant, the register and expiry · S6.109 Imitation pools and imitation · S6.110 Licences · S6.111 Obsolescence through prices, and productivity measured · S6.112 Technology's provenance audited · S6.113 Technology at the opening · S6.114 Demography's primitives mapped · S6.115 The labour-market state and the employment history as reads · S6.116 Skill as a read with its clocks · S6.117 Where and whether the young are schooled · S6.118 Schooling by the education law, and stages completed on the school year's date · S6.119 Retraining · S6.120 A household formed: its party opened, its type drawn, its attributes set · S6.121 Leaving home, within a region, beyond it or abroad · S6.122 Singles counted, and meetings drawn · S6.123 Forming a household · S6.124 Separation, and division by the family law · S6.125 The population's families on the rolling cycle · S6.126 The population's measures published; no demographic rate stated · S6.127 Schooling at the opening: education records, pupils and courses · S6.128 Holdings over the whole balance sheet · S6.129 The propensity to consume by wealth and liquidity · S6.130 Income spread against defaults and spending · S6.131 Two views: the participant's scope and the inspector's surface · S6.132 Shown numbers: from a source, missing as missing, stale as stale · S6.133 Looking at a party · S6.134 The map · S6.135 Events that develop, and the news · S6.136 The player acts through every decision point, its minds advising · S6.137 The phone's play surface · S6.138 Every resolution setting, taste distribution and review cost registered and counted · S6.139 Every system opened: the GEN report · S6.140 Day zero complete, and the whole world clean on day one · S6.141 Every audit family mapped, and every injection lights its family alone · S6.142 The Stage 6 gate
 - **Stage 7**: S7.100 Stage 7's macro reads frozen · S7.101 Slow distributions credited while the whole world holds and moves them · S7.102 Every stylised fact read on the whole world · S7.103 Every chain's relationships read on the whole world · S7.104 Every silent break mapped to what refuses it · S7.105 The primitive register reported · S7.106 The realism gate
 
 §13 maps every spec clause to the step that completes it.
@@ -582,6 +582,13 @@ pub const LC_1_21: Check = live_check! {
   `[fin.fixed]`). A day's wall time is its core time over the phone's sustained cores; the day types' targets are
   set so that the worst calendar turn holds N8.2 with 10% headroom. Every step cites these keys and never restates
   their numbers; each per-item line carries a miss budget.
+- **The steps' figures and the design point.** A step states its volumes, counts, shares, calendar and event
+  core-ms, MB and MB-denominated ratchets at the counts of 7.5 million persons (`[point] steps_persons`); the design
+  point is 6.0 million (spec Appendix E 51, §12), so `perf/design.toml` holds its counts and every total at 0.8 of
+  the steps' statements (`[point] scale`), except what does not grow with the persons: the barriers, the process, the
+  institutions, the map and network, the save buffers and the parts that follow the zones or the segments. Unit
+  costs (ns an item or a row) and bytes a row are the same at either. S1.132 seeds a count's or a total's ratchet at
+  the scaled figure, and `-F` measures the real ones at the design point's counts.
 
 ### 2.12 Dependencies
 
@@ -867,7 +874,7 @@ before its code.
 
 **Design**:
 - **§1 Goals and forces.** The four goals stay. The forces are restated for the core: *scale* — the design point of
-  7.5 M persons and its counts (§13, E 51) and the play resolution as the valve (REP.40, N8.5); *cost follows events*
+  6.0 M persons and its counts (§13, E 51) and the play resolution as the valve (REP.40, N8.5); *cost follows events*
   — the due wheel, the agenda and the hazards drawn ahead, whole-store work only as declared sweeps (N8.6); *memory is
   set by the bases' rows* — bytes a row per base, the contract rows and the persons carrying it; *a phone is
   latency-bound* — work partitioned by target range and swept in cache, a miss budget per item; exactness; fifty
@@ -958,7 +965,7 @@ assembles and routes and holds no store or per-party pass.
   phx-geo → phx-pop → phx-record → phx-agenda → phx-ledger → phx-contract → phx-hold → phx-market → phx-acct → phx-val
   → phx-risk → phx-end → phx-mind → phx-audit`; IF in their order after L1; L2 `sys-*`; L3 `phx-world → phx-obs`; L4
   `phx-fin → phx-cli → phx-play`, `phx-check` apart. `phx-fin` depends on L0 and L1 only; `phx-play` (the bridge to
-  the Android app, created at S6.136) holds no world state and reads the world only through `phx-world`'s entry points
+  the Android app, created at S6.137) holds no world state and reads the world only through `phx-world`'s entry points
   and `phx-obs`. Only `phx-exec` uses rayon; `unsafe` as today. A crate is created when its first step starts; §3
   names crates before they exist.
 - **Sweep hooks**: a base maintained inside another base's sweep (income lines, levies, book folds posted during a
@@ -979,7 +986,7 @@ assembles and routes and holds no store or per-party pass.
   day runner walking the stage table (K-23), save orchestration (K-104), the inspector; no store and no per-party pass
   after S1.360; `party_map.rs` and every `core_*.rs` as a store holder are deleted by the migrations. `phx-obs` —
   read-only views. `phx-cli` — `run`, `inject`, `fin`, the live checks. `phx-fin` — the finished-volume measure, one
-  module per base (§14.7, S1.116). `phx-play` — the Android bridge (S6.136), no world state. `phx-check` — the
+  module per base (§14.7, S1.116). `phx-play` — the Android bridge (S6.137), no world state. `phx-check` — the
   rules, with the core's (S1.105–S1.131).
 - **§3.7 repository**: `perf/design.toml` (S1.113) beside `perf/budget.toml` and `perf/ratchets.toml`; the android
   bench's traces removed.
@@ -1101,7 +1108,7 @@ list.
 **Goal**: the architecture states the budget every base is held to: the design point's counts (E 51); the day types'
 and turns' time lines, stage by stage; every kind of work's unit target with its miss budget; the memory ledger line by
 line; the saves; the capacities; the valve and its order (E 41) — each by its `perf/design.toml` key. §13 no longer
-describes agents, cells or tolerance control.
+describes agents, the old representation's cells or tolerance control.
 
 **Files**:
 | path | purpose |
@@ -1112,8 +1119,10 @@ describes agents, cells or tolerance control.
 - **§13 cites, never restates.** Every figure of §13 is a key of `perf/design.toml` (S1.113), written there once;
   §13 says what each table means and how the budget is judged, and names the key. A figure in the plan or the
   architecture that differs from the file is a defect.
-- **§13.1 The design point** (E 51, §12): `[point]`, `[store]`, `[store.contracts]` and `[day.b|nb|h|bc]` — what each
-  count is and its basis; the play resolution is not the design point (N8.5, E 36).
+- **§13.1 The design point** (E 51, §12): 6.0 M persons (4 M × 1.5), every per-person count × 1.5 on top;
+  `[point]`, `[store]`, `[store.contracts]` and `[day.b|nb|h|bc]` — what each count is and its basis; the steps state
+  their figures at 7.5 M persons' counts and the design point is 0.8 of them (`[point] scale`), the parts that do not
+  grow with the persons excepted (§2.11); the play resolution is not the design point (N8.5, E 36).
 - **§13.2 Time.** Wall = core time ÷ `[phone] cores`; VM ns = phone ns ÷ k (`k_compute`, `k_gather`). The day lines with
   10 % headroom and the binding turns 4 NB + B′ and 3 NB + H ≤ `fin.turn.worst_ms`; the median B ≤
   `fin.turn.median_ms`; NB weighs four times on the worst turn. The four fused chains (a sale is its payment; a due is
@@ -1137,9 +1146,10 @@ describes agents, cells or tolerance control.
 - **§13.3 Memory**: the ledger's lines 1–25 (`[ledger]`), each with its owner bases and bytes a row (`[bytes]`), at
   the heaviest day, against `[phone] memory_mb` (4.5 GiB less 10 %, N8.4); how a step states its bytes ("ledger line
   n: +x MB resident", or "+0 B (inside S1.xxx)" where a base's figure holds it); each line the sum of its steps'
-  statements at `[resolution]`'s settings; the RESOLUTION settings the ledger forces (`[resolution]`, each with
-  `forced_by` and what it frees); the
-  remainder, S1.360's N8.7 finding. The sensitive lines are named (a contract row, a person, a firm).
+  statements at `[resolution]`'s settings, scaled to the design point (§2.11); the RESOLUTION settings
+  (`[resolution]`: each valve with its `forced_by` and what it frees or costs, and the settings the owner fixed —
+  the cell, the zones, the audit's cycle); the margins below each line, S1.360's reading. The sensitive lines are named
+  (a contract row, a person, a firm).
 - **§13.4 Saves** (N8.10): raw, on-disk, save and load time, two retained within the storage budget, the world hash a
   tree of per-frame hashes — the `fin.save.*` keys.
 - **§13.5 Capacity**: the widths at the design point with two years' growth (party slot 27 bits, kinds 5 bits, unit
@@ -1148,8 +1158,9 @@ describes agents, cells or tolerance control.
   holds (S1.114).
 - **§13.6 The valve**: the play resolution is set and reset by the budget's measure in the one run (N8.5, E 36);
   refined in E 41's order — persons, preference types, attribute classes and zones, horizons and snapshots, age
-  classes, the audit's cycle, the draw scheme, the map's cell size — and coarsened in its reverse; a miss is met by
-  representation and traversal first (N8.7); what neither closes is the owner's, with the numbers (§12).
+  classes, the audit's cycle, the draw scheme — and coarsened in its reverse; the map's grid and its 100 m cell are the
+  owner's (E 29, GEO.19) and no valve; a miss is met by representation and traversal first (N8.7); what neither closes
+  is the owner's, with the numbers (§12).
 - **§13.7 Risks**, each with the measure that tells it first (the non-business day, the retail chain, memory, rule
   costs, life records, heavy dues, the device's sustained speed, 16 KiB pages, surprise and wake days).
 - **§18** gains "the design point and the budget frame" (§12; E 51, E 41).
@@ -1172,7 +1183,8 @@ allocation per day; a measured narrative (a date, a run, "today it takes"); a fi
 `perf/design.toml` key.
 
 **Done when**:
-- [ ] §6.6 and §13 restated; nothing in §13 names agents, cells, parts or tolerance control; `phx-check all` clean.
+- [ ] §6.6 and §13 restated; nothing in §13 names agents, the old representation's cells, parts or tolerance control;
+  `phx-check all` clean.
 - [ ] The two reviews done; status `done` and the section removed.
 
 ---
@@ -1638,7 +1650,7 @@ PC-02 allows the external crates the harness needs.
   `phx-ledger` is legal today: neither depends on the other.
 - `APPS = ["phx-fin", "phx-cli", "phx-play", "phx-check"]`: an application may depend on one before it (so `phx-cli`
   runs `phx fin` from `phx-fin`); today `Layer::Apps` has no order and refuses any dependency within the layer.
-  `phx-play` (S6.136) is listed before it exists; its own reach (only `phx-world`'s entry points and `phx-obs`) is its
+  `phx-play` (S6.137) is listed before it exists; its own reach (only `phx-world`'s entry points and `phx-obs`) is its
   step's guard (PC-200).
 - `LOWER_ONLY = [("phx-fin", [Layer::Foundation, Layer::Kernel])]`: a dependency of `phx-fin` on an interface,
   system or assembly crate is refused ("`phx-fin` measures bases, never a world").
@@ -1696,41 +1708,56 @@ the memory ledger's lines and the RESOLUTION settings the design point is measur
 | `perf/design.toml` | the tables below |
 
 **Design**:
-- The file follows N8 (N8.8's finished-volume measure) and E 51's design point (§12). Its header: no count here is a
-  primitive and the world never reads this file; `phx-fin` and `phx-check` do.
+- The file follows N8 (N8.8's finished-volume measure) and E 51's design point (§12): 6.0 M persons (4 M × 1.5),
+  every per-person count × 1.5 on top. Its header: no count here is a primitive and the world never reads this file;
+  `phx-fin` and `phx-check` do.
+- **The steps' figures** (§2.11): every step states its volumes, counts, shares, calendar and event core-ms and MB at
+  the counts of 7.5 M persons (`[point] steps_persons`), and they are not restated there; this file holds the design
+  point at 0.8 of them (`[point] scale`): its counts, the stage lines, each fixed line's, calendar list's and ledger
+  line's total are the steps' statements × scale, while the shares, calendar entries and events stay as the steps state
+  them. What does not grow with the persons is not scaled: the barriers; ledger lines 1 (process), 6 (institutions),
+  19 (map and network) and 23 (save buffers); the parts that follow the zones or the segments; the world's own counts
+  (banks, institutions, deposits, ways, segments, tiles, regions, zones, products, unit ids, goods with stalls,
+  posted rates). Unit costs and bytes a
+  row are the same at either. `-F` fills every base at `[store]`'s counts and measures the real figures.
 - **The tables S1.113 writes** (each pasted as the budget's owner settles it; no other step restates a figure; every
   key a step cites is here with its value, the owning step named beside it):
-  - `[point]`, `[phone]`: persons 7 500 000, `per_person_margin` 1.5, seed 1; cores 3.0, `k_compute` 1.0, `k_gather`
-    1.3, `memory_mb` 4 349, `turn_ms` [1 000, 2 000], `save_s` 5, `load_s` 5.
-  - `[store]`: every store count, each from its owning step's figure (`side_rows` 9.37 M from S2.117's facilities and
-    S2.177's deposits, S1.241; `zones = 500`, `unit_ids = 55_000`, about 110 a zone).
-  - `[store.contracts]`: the rows of each family under S1.257's family names (43.2 M rows, 1 074.0 MB, 24.9 B a row);
-    a step cites a family's rows by its name there.
+  - `[point]`, `[phone]`: persons 6 000 000, `per_person_margin` 1.5, seed 1, `steps_persons` 7 500 000, `scale` 0.8;
+    cores 3.0, `k_compute` 1.0, `k_gather` 1.3, `memory_mb` 4 349, `turn_ms` [1 000, 2 000], `save_s` 5, `load_s` 5.
+  - `[store]`: every store count, each from its owning step's figure × scale (`side_rows` 7.5 M from S2.117's
+    facilities and S2.177's deposits, S1.241; `parcels` 0.8 M, S1.190), the world's own counts as they are (`zones =
+    1_000`, `segments = 500_000`, `segment_tiles = 1_000_000`, `unit_ids = 110_000`, about 110 a zone).
+  - `[store.contracts]`: the rows of each family under S1.257's family names (34.6 M rows, 859.2 MB, 24.9 B a row;
+    43.2 M and 1 074.0 MB at the steps' counts); a step cites a family's rows by its name there.
   - `[day.b]`, `[day.nb]`, `[day.h]`, `[day.bc]`: the daily volumes of each day type; the unit lines of `[stage]` are
     these counts × `[unit]`.
   - `[unit]`: phone ns a kind of work (VM = phone ÷ k), the kernels' own ratchets (search 300 and osearch 350, S1.321;
     a book order 130, S1.315; a quote 150, S1.316), each with its miss budget in `perf/budget.toml`.
   - `[bytes]`: the rows' bytes, as their bases state them (a household 174, S1.196; a contract 24.9, S1.257; side
-    slots by kind, S1.241).
+    slots by kind, S1.241; a parcel 24, S1.190).
   - `[stage]`, `[fin.decide.additions]`, each `[fin.fixed.<line>]` with its `.shares` table, `[fin.calendar.*]`,
     `[resolution]` and `[ledger]` 1–25: the block below, written verbatim. Each fixed line is the sum of its steps'
-    shares (B / NB / H core-ms), each step's share stated in its own Budget; a share a later step replaces is 0 here
-    with its replacement named; a step's items added to a unit are costed at that unit and itemised; each dated day
-    joins the turns its step names, and each event's worst day is composed by S1.360 (§13.2). The ledger's lines are MB
-    resident at the heaviest day, each the sum of its steps' own statements, at `[resolution]`'s settings (zones
-    stated at 1 000); their sum against `[phone] memory_mb` and what remains over is S1.360's N8.7 finding.
+    shares × scale (B / NB / H core-ms), each step's share stated in its own Budget; a share a later step replaces is 0
+    here with its replacement named; a step's items added to a unit are costed at that unit and itemised; each dated
+    day joins the turns its step names, and each event's worst day is composed by S1.360 (§13.2). The ledger's lines
+    are MB resident at the heaviest day, each the sum of its steps' own statements × scale, at `[resolution]`'s
+    settings; their sum is read against `[phone] memory_mb` and the owner's margin by S1.360.
   - `[save]`: `frames_per_worker = 4`, `frame_kib = 512` — the save and load buffers' representation (ledger line 23,
     13 MB), as the snapshot step S1.356 states it; not a valve.
-  - `[resolution]`: one row a valve in E 41's reverse order, each with its `forced_by` and the MB or core-ms it frees
-    against its finer setting (the horizons against 730 days, condition classes against 2); the committed resolution
-    is unchanged and the play resolution stays the run's (N8.5).
+  - `[resolution]`: one row a setting in E 41's reverse order — each valve with its `forced_by` and the MB or core-ms
+    it frees or costs against its neighbour, each setting the owner fixed (the cell 100 m, the audit's cycle 60 days,
+    the zones 1 000) named so; the valves are restored in E 41's order while the worst turn stays ≤ 1 700 ms and the
+    ledger ≤ 3 950 MB (§12): condition classes 2, every horizon at 730 days or 2 years but the events' at 365. The
+    committed resolution is unchanged and the play resolution stays the run's (N8.5).
 - **The block**, as written into `perf/design.toml`:
 
 ```toml
 [point]
-persons = 7_500_000
+persons = 6_000_000
 per_person_margin = 1.5
 seed = 1
+steps_persons = 7_500_000   # the counts every step states its figures at (§2.11)
+scale = 0.8                 # persons ÷ steps_persons: each total below is its steps' statements × scale, fixed parts excepted
 
 [phone]
 cores = 3.0
@@ -1741,172 +1768,174 @@ turn_ms = [1_000, 2_000]
 save_s = 5
 load_s = 5
 
-[store]   # each count with the step whose figure it is
-persons = 7_500_000              # S1.207
-households = 2_210_000           # S1.196
-firms = 1_152_000                # S1.196
+[store]   # each count with the step whose figure it is: the steps' counts × scale; the world's own counts as they are
+persons = 6_000_000              # S1.207
+households = 1_768_000           # S1.196
+firms = 921_600                  # S1.196
 firm_bytes = 520                 # S1.196 (hot 192)
 banks = 35                       # S1.407
 institutions = 16_000            # S1.196: PTY.1's kinds 15 k and the trade unions 1 k
-offices = 2_500_000              # S1.209
-estates = 90_000                 # S1.342
-directory_slots = 11_000_000     # S1.194
-tombstones = 840_000             # S1.194
-accounts = 7_400_000             # S1.240
-side_rows = 9_370_000            # S1.241, from S2.117's facilities and S2.177's deposits
+offices = 2_000_000              # S1.209
+estates = 72_000                 # S1.342
+directory_slots = 8_800_000      # S1.194
+tombstones = 672_000             # S1.194
+accounts = 5_920_000             # S1.240
+side_rows = 7_496_000            # S1.241, from S2.117's facilities and S2.177's deposits
 deposits = 50_000                # S1.191 (S1.437's count)
-holdings = 4_950_000             # S1.280
-lots = 1_100_000                 # S1.276
-instruments = 77_000             # S1.279
-unit_rows = 4_500_000            # S1.274
-physical_rows = 1_000_000        # S1.271
-plant_cells = 5_870_000          # S1.271: 1.15 M firms × 5.1 at one condition class
-named_units = 200_000            # S1.284
-buildings = 1_600_000            # S1.284, the count S2.171 derives
-processes = 1_000_000            # S1.287
-liens = 1_200_000                # S1.277
-terms = 800_000                  # S1.168
+holdings = 3_960_000             # S1.280
+lots = 880_000                   # S1.276
+instruments = 61_600             # S1.279
+unit_rows = 3_600_000            # S1.274
+physical_rows = 800_000          # S1.271
+plant_cells = 9_400_000          # S1.271: 0.92 M firms × 5.1 at two condition classes ([resolution])
+named_units = 160_000            # S1.284
+buildings = 1_280_000            # S1.284, the count S2.171 derives
+processes = 800_000              # S1.287
+liens = 960_000                  # S1.277
+terms = 640_000                  # S1.168
 ways = 50_000                    # S6.102
-stalls = 1_700_000               # S1.299
+stalls = 1_360_000               # S1.299
 goods_with_stalls = 60_000       # S1.299
-vacancies = 200_000              # S1.296
-standing_orders = 200_000        # S1.296
-dealer_quotes = 50_000           # S1.296
-listings = 45_000                # S1.296
+vacancies = 160_000              # S1.296
+standing_orders = 160_000        # S1.296
+dealer_quotes = 40_000           # S1.296
+listings = 36_000                # S1.296
 posted_rates = 5_000             # S1.296
-market_instances = 58_000        # S1.296
-capacity_resources = 1_152_000   # S1.324
-wheel_rows = 31_500_000          # S1.225
-wheel_far = 1_200_000            # S1.225
+market_instances = 46_400        # S1.296
+capacity_resources = 921_600     # S1.324
+wheel_rows = 25_200_000          # S1.225
+wheel_far = 960_000              # S1.225
 wheel_days = 128                 # S1.225
-agenda_entries = 3_350_000       # S1.227
-messages_live = 500_000          # S1.237
-thresholds = 600_000             # S1.239
-bureau_borrowers = 500_000       # S1.217
-bureau_events = 700_000          # S1.217
-filed_statements = 460_000       # S1.216, at the one-year horizon
-events = 730_000                 # S1.213, at the 365-day horizon
-segments = 250_000               # S1.187, at 500 zones
-zones = 500                      # [resolution]
+agenda_entries = 2_680_000       # S1.227
+messages_live = 400_000          # S1.237
+thresholds = 480_000             # S1.239
+bureau_borrowers = 400_000       # S1.217
+bureau_events = 560_000          # S1.217
+filed_statements = 736_000       # S1.216, at the two-year horizon
+events = 584_000                 # S1.213, at the 365-day horizon
+segments = 500_000               # S1.187, at 1 000 zones
+segment_tiles = 1_000_000        # S1.190: the per-tile segment index, a segment crossing ≈ 2 tiles
+parcels = 800_000                # S1.190: ≤ 1.0 M at the steps' counts (S2.140)
+zones = 1_000                    # [resolution]
 regions = 25                     # E 29
 tiles = 40_000                   # E 29
 products = 250
-unit_ids = 55_000                # S1.183: about 110 a zone
+unit_ids = 110_000               # S1.183: about 110 a zone
 
-[store.contracts]   # S1.257's families (codes S1.181's), rows at the design point; 43.2 M rows, 1 074.0 MB
-"LAB.employment" = 3_800_000
-"LAB.public_employment" = 700_000
-"BNK.household_loan" = 1_800_000
-"BNK.firm_loan" = 450_000
-"SOC.benefit" = 750_000
-"SOC.benefit_flat" = 750_000
-"SOC.pension" = 2_250_000
-"invoices" = 5_000_000
-"statements" = 500_000
-"tax_payables" = 900_000
-"FRM.appointment" = 1_400_000
-"pension_rights" = 4_500_000
-"FRM.owner_liability" = 50_000
-"DEM.kin" = 1_200_000
-"HSG.tenancy" = 1_125_000
-"HSG.land_lease" = 200_000
-"SRV.storage" = 200_000
-"FRT.pass" = 1_500_000
-"term_deposits" = 300_000
-"ENE.supply" = 4_950_000
-"ENE.wholesale_supply" = 300_000
-"DRV.contract" = 675_000
-"INS.policy" = 6_250_000   # with INS.annuity
-"INS.firm_policy" = 500_000
-"TAX.corporate_due" = 460_000
-"TAX.arrear" = 200_000
-"POL.membership" = 300_000
-"TEC.licence" = 300_000
-"DEM.schooling" = 1_600_000
-"the small families together" = 300_000
-# rows 43.210 M
+[store.contracts]   # S1.257's families (codes S1.181's), rows at the design point; 34.6 M rows, 859.2 MB (43.2 M, 1 074.0 at the steps' counts)
+"LAB.employment" = 3_040_000
+"LAB.public_employment" = 560_000
+"BNK.household_loan" = 1_440_000
+"BNK.firm_loan" = 360_000
+"SOC.benefit" = 600_000
+"SOC.benefit_flat" = 600_000
+"SOC.pension" = 1_800_000
+"invoices" = 4_000_000
+"statements" = 400_000
+"tax_payables" = 720_000
+"FRM.appointment" = 1_120_000
+"pension_rights" = 3_600_000
+"FRM.owner_liability" = 40_000
+"DEM.kin" = 960_000
+"HSG.tenancy" = 900_000
+"HSG.land_lease" = 160_000
+"SRV.storage" = 160_000
+"FRT.pass" = 1_200_000
+"term_deposits" = 240_000
+"ENE.supply" = 3_960_000
+"ENE.wholesale_supply" = 240_000
+"DRV.contract" = 540_000
+"INS.policy" = 5_000_000   # with INS.annuity
+"INS.firm_policy" = 400_000
+"TAX.corporate_due" = 368_000
+"TAX.arrear" = 160_000
+"POL.membership" = 240_000
+"TEC.licence" = 240_000
+"DEM.schooling" = 1_280_000
+"the small families together" = 240_000
+# rows 34.568 M
 
 [day.b]   # an ordinary business day
-retail = 6_750_000
-b2b = 3_300_000
-batches = 1_200_000
-production = 400_000
-dues = 3_000_000
-flows = 450_000
-applies = 4_500_000
-short = 20_000
-row_life = 580_000
-interns = 580_000
-spending = 472_000
-visits = 246_000
-reviews = 338_000
-attention = 246_000
-searches = 90_000
-selections = 50_000
-posts = 150_000
-hits = 68_000
-redraws = 75_000
-entries = 4_600_000
-capacity_uses = 5_000_000
-reprices = 100_000
-removals = 500_000
-life_records = 1_600_000
-touched = 2_000_000
+retail = 5_400_000
+b2b = 2_640_000
+batches = 960_000
+production = 320_000
+dues = 2_400_000
+flows = 360_000
+applies = 3_600_000
+short = 16_000
+row_life = 464_000
+interns = 464_000
+spending = 377_600
+visits = 196_800
+reviews = 270_400
+attention = 196_800
+searches = 72_000
+selections = 40_000
+posts = 120_000
+hits = 54_400
+redraws = 60_000
+entries = 3_680_000
+capacity_uses = 4_000_000
+reprices = 80_000
+removals = 400_000
+life_records = 1_280_000
+touched = 1_600_000
 barriers = 40
 
 [day.nb]   # a non-business day (TIME.8)
-retail = 6_750_000
-b2b = 300_000
-batches = 900_000
-production = 100_000
-pending = 1_000_000
-row_life = 30_000
-interns = 30_000
-spending = 472_000
-visits = 30_000
-reviews = 165_000
-hits = 68_000
-redraws = 75_000
-entries = 950_000
-reprices = 50_000
-removals = 500_000
-life_records = 800_000
-touched = 1_000_000
+retail = 5_400_000
+b2b = 240_000
+batches = 720_000
+production = 80_000
+pending = 800_000
+row_life = 24_000
+interns = 24_000
+spending = 377_600
+visits = 24_000
+reviews = 132_000
+hits = 54_400
+redraws = 60_000
+entries = 760_000
+reprices = 40_000
+removals = 400_000
+life_records = 640_000
+touched = 800_000
 barriers = 20
 
 [day.h]   # a quarter-end payday after three closed days
-retail = 6_750_000
-b2b = 3_300_000
-batches = 1_200_000
-production = 400_000
-dues = 22_500_000
-flows = 600_000
-applies = 11_000_000
-short = 150_000
-row_life = 2_300_000
-interns = 2_300_000
-spending = 472_000
-visits = 246_000
-reviews = 338_000
-attention = 246_000
-searches = 90_000
-selections = 50_000
-posts = 150_000
-hits = 68_000
-redraws = 75_000
-entries = 24_100_000
-capacity_uses = 5_000_000
-reprices = 100_000
-removals = 500_000
-life_records = 1_600_000
-touched = 5_000_000
+retail = 5_400_000
+b2b = 2_640_000
+batches = 960_000
+production = 320_000
+dues = 18_000_000
+flows = 480_000
+applies = 8_800_000
+short = 120_000
+row_life = 1_840_000
+interns = 1_840_000
+spending = 377_600
+visits = 196_800
+reviews = 270_400
+attention = 196_800
+searches = 72_000
+selections = 40_000
+posts = 120_000
+hits = 54_400
+redraws = 60_000
+entries = 19_280_000
+capacity_uses = 4_000_000
+reprices = 80_000
+removals = 400_000
+life_records = 1_280_000
+touched = 4_000_000
 barriers = 48
 
-[day.bc]   # the business day after four closed days: [day.b] with these (+47 core-ms)
-applies = 7_500_000
-short = 60_000
-pending_settled = 1_250_000
-touched = 3_000_000
+[day.bc]   # the business day after four closed days: [day.b] with these (+37.6 core-ms; +47 at the steps' counts)
+applies = 6_000_000
+short = 48_000
+pending_settled = 1_000_000
+touched = 2_400_000
 
 [unit]   # phone ns a kind of work (VM = phone ÷ k); each with its miss budget in perf/budget.toml
 retail = 31      # match 21 + apply 10
@@ -1954,30 +1983,34 @@ lot = 20
 wheel_entry = 4
 agenda_entry = 8
 estate = 256
+parcel = 24
+segment_tile = 4
 
 [stage]
-#### ---- the day by stage, core-ms B / NB / H at the design point, before the valves ----
+#### ---- the day by stage, core-ms B / NB / H at the design point, at [resolution]'s settings ----
 #### unit lines at [day.*] counts × [unit] costs; fixed lines = the sum of [fin.fixed.<line>]; per-item additions
-#### beyond the unit leaves are [fin.decide.additions] (not split by stage).
-"1 Open" = [15.3, 4, 73.8]
-"2 Resolve" = [79.4, 7.4, 389.8]
-"3 Nature" = [60.4, 60.4, 60.4]
-"4 Real work" = [75.4, 17.6, 75.4]
-"5 Decide" = [980.1, 238.5, 1020.5]
-"6 Prices" = [596.2, 271.9, 619.7]
-"7 Settle" = [95.5, 5.2, 249.5]
-"8 Fund" = [24.4, 0, 26.4]
-"9 Value" = [71.8, 10, 199.5]
-"10 Close" = [115, 47.5, 161.7]
+#### beyond the unit leaves are [fin.decide.additions] (not split by stage). The steps' counts × scale, the barriers
+#### as they are; two condition classes (S1.285's close twice: 9 Value +0.24 / 0 / +46.4) and the audit at 60 days
+#### (10 Close −14 / −6 / −14 against 30).
+"1 Open" = [12.24, 3.2, 59.04]
+"2 Resolve" = [63.52, 5.92, 311.84]
+"3 Nature" = [48.32, 48.32, 48.32]
+"4 Real work" = [60.32, 14.08, 60.32]
+"5 Decide" = [784.08, 190.8, 816.4]
+"6 Prices" = [476.96, 217.52, 495.76]
+"7 Settle" = [76.4, 4.16, 199.6]
+"8 Fund" = [19.52, 0, 21.12]
+"9 Value" = [57.68, 8, 206]
+"10 Close" = [78, 32, 115.36]
 "Barriers" = [92, 47, 112]
-"additions beyond the unit leaves" = [237.3, 24.6, 366.4]
-"day" = [2442.7, 734.1, 3355.1]   # B′ = B + 47 ([day.bc]) = 2489.7
+"additions beyond the unit leaves" = [189.84, 19.68, 293.12]
+"day" = [1958.88, 590.68, 2738.88]   # B′ = B + 37.6 ([day.bc]) = 1996.48
 
-[fin.decide.additions]   # per-item work beyond the leaves, by part, core-ms B / NB / H (steps state ns × items)
-"core and Stage 1 (S1.330 per-party deltas, S1.338, S1.415, S1.268, visit leaf 804)" = [26, 7, 53]
-"Stages 2, 3, 8 (S2.118 190 ns × 75 k, S2.163, S2.149, S8.117 +45 × 90 k, S8.103/S8.197 handler, S8.122 +40, S8.129)" = [107, 12, 171]
-"Stages 4-7 (the table below)" = [104.31, 5.64, 142.43]
-[fin.decide.additions.stages_4_7]   # each step's items at its unit's cost plus its stated ns × items; book orders are
+[fin.decide.additions]   # per-item work beyond the leaves, by part, core-ms B / NB / H at the design point (steps state ns × items)
+"core and Stage 1 (S1.330 per-party deltas, S1.338, S1.415, S1.268, visit leaf 804)" = [20.8, 5.6, 42.4]
+"Stages 2, 3, 8 (S2.118 190 ns × 75 k, S2.163, S2.149, S8.117 +45 × 90 k, S8.103/S8.197 handler, S8.122 +40, S8.129)" = [85.6, 9.6, 136.8]
+"Stages 4-7 (the table below × scale)" = [83.45, 4.51, 113.95]
+[fin.decide.additions.stages_4_7]   # at the steps' counts: each step's items at its unit's cost plus its stated ns × items; book orders are
 #### fin.fixed.securities'; units: rowlife 40, dues 15, flow 25, mark 10, vm 13, margin 3 000, hit 800, redraw 80,
 #### attend 120, review 550, handler 30, tally 2, index insert 20 phone-ns
 "S4.101" = [1.25, 0, 2.5]
@@ -2031,22 +2064,23 @@ estate = 256
 "S6.122" = [1.242, 1.222, 1.242]
 "S6.123" = [1.17, 1.17, 1.17]
 
-#### [fin.fixed.<line>]: each shared stage line is the sum of its steps' shares (core-ms B / NB / H at the
-#### design point). A step's share is stated in its Budget; `tools/bench.sh -F all -D B,NB,H,BC,turn` reads each
-#### line against its measured span, and S1.360 and every gate sum the table against `fin.turn.worst_ms`.
+#### [fin.fixed.<line>]: each shared stage line is the sum of its steps' shares × scale (core-ms B / NB / H at the
+#### design point; the shares as the steps state them, at their counts; the barriers unscaled). A step's share is
+#### stated in its Budget; `tools/bench.sh -F all -D B,NB,H,BC,turn` reads each line against its measured span, and
+#### S1.360 and every gate sum the table against `fin.turn.worst_ms`.
 [fin.fixed.open]
-b_core_ms = 1.5
-nb_core_ms = 1.1
-h_core_ms = 1.5
+b_core_ms = 1.2
+nb_core_ms = 0.88
+h_core_ms = 1.2
 [fin.fixed.open.shares]
 "S1.178" = [0.003, 0.003, 0.003]
 "S1.179" = [1, 1, 1]
 "S1.237" = [0.5, 0.1, 0.5]
 
 [fin.fixed.resolve]
-b_core_ms = 34.37
-nb_core_ms = 7.4
-h_core_ms = 52.27
+b_core_ms = 27.5
+nb_core_ms = 5.92
+h_core_ms = 41.82
 [fin.fixed.resolve.shares]
 "S1.194" = [0.2, 0.2, 0.2]
 "S1.239" = [0.6, 0, 0.6]
@@ -2079,9 +2113,9 @@ h_core_ms = 52.27
 "S8.197" = [0.3, 0, 0.3]
 
 [fin.fixed.kinks]
-b_core_ms = 16.45
-nb_core_ms = 7.25
-h_core_ms = 16.45
+b_core_ms = 13.16
+nb_core_ms = 5.8
+h_core_ms = 13.16
 [fin.fixed.kinks.shares]
 "S1.284" = [1, 0, 1]
 "S1.285" = [0, 0, 0]
@@ -2094,17 +2128,17 @@ h_core_ms = 16.45
 "S6.104" = [0.8, 0.8, 0.8]
 
 [fin.fixed.day_use]
-b_core_ms = 8
-nb_core_ms = 2.3
-h_core_ms = 8
+b_core_ms = 6.4
+nb_core_ms = 1.84
+h_core_ms = 6.4
 [fin.fixed.day_use.shares]
 "S2.172" = [6, 2.3, 6]
 "S2.174" = [2, 0, 2]
 
 [fin.fixed.real]
-b_core_ms = 44.96
-nb_core_ms = 6.56
-h_core_ms = 44.96
+b_core_ms = 35.97
+nb_core_ms = 5.25
+h_core_ms = 35.97
 [fin.fixed.real.shares]
 "S1.274" = [1, 1, 1]
 "S1.192" = [0.03, 0.03, 0.03]
@@ -2125,9 +2159,9 @@ h_core_ms = 44.96
 "S8.133" = [0.3, 0.15, 0.3]
 
 [fin.fixed.pay_rounds]
-b_core_ms = 20.5
+b_core_ms = 16.4
 nb_core_ms = 0
-h_core_ms = 20.6
+h_core_ms = 16.48
 [fin.fixed.pay_rounds.shares]
 "S1.296" = [1.8, 0, 1.8]
 "S1.416" = [15, 0, 15]
@@ -2137,9 +2171,9 @@ h_core_ms = 20.6
 "S8.136" = [0.7, 0, 0.7]
 
 [fin.fixed.osearch]
-b_core_ms = 49.25
+b_core_ms = 39.4
 nb_core_ms = 0
-h_core_ms = 49.25
+h_core_ms = 39.4
 [fin.fixed.osearch.shares]
 "S1.461" = [8, 0, 8]
 "S2.146" = [0, 0, 0]   # replaced by S8.113
@@ -2158,9 +2192,9 @@ h_core_ms = 49.25
 "S8.168" = [0.4, 0, 0.4]
 
 [fin.fixed.household_reviews]
-b_core_ms = 105.22
-nb_core_ms = 11.6
-h_core_ms = 105.22
+b_core_ms = 84.18
+nb_core_ms = 9.28
+h_core_ms = 84.18
 [fin.fixed.household_reviews.shares]
 "S1.435" = [5, 0, 5]
 "S1.452" = [5, 5, 5]
@@ -2203,9 +2237,9 @@ h_core_ms = 105.22
 "S8.200" = [5, 0, 5]
 
 [fin.fixed.institutions]
-b_core_ms = 246.88
-nb_core_ms = 10.7
-h_core_ms = 287.28
+b_core_ms = 197.5
+nb_core_ms = 8.56
+h_core_ms = 229.82
 [fin.fixed.institutions.shares]
 "S1.279" = [1, 0, 1]
 "S1.420" = [0.3, 0.3, 0.3]
@@ -2371,9 +2405,9 @@ h_core_ms = 287.28
 "S8.200" = [5, 0, 5]
 
 [fin.fixed.securities]
-b_core_ms = 69.9
+b_core_ms = 55.92
 nb_core_ms = 0
-h_core_ms = 85.7
+h_core_ms = 68.56
 [fin.fixed.securities.shares]
 "S1.277" = [0, 0, 0]
 "S1.280" = [12, 0, 15]
@@ -2401,9 +2435,9 @@ h_core_ms = 85.7
 "S8.191" = [0.02, 0, 0.02]
 
 [fin.fixed.calls]
-b_core_ms = 77.01
-nb_core_ms = 13.1
-h_core_ms = 84.71
+b_core_ms = 61.61
+nb_core_ms = 10.48
+h_core_ms = 67.77
 [fin.fixed.calls.shares]
 "S1.326" = [0.2, 0.1, 0.2]
 "S1.449" = [4, 4, 4]
@@ -2432,17 +2466,17 @@ h_core_ms = 84.71
 "S5.168" = [0.01, 0, 0.01]
 
 [fin.fixed.fixed_point]
-b_core_ms = 15
+b_core_ms = 12
 nb_core_ms = 0
-h_core_ms = 25
+h_core_ms = 20
 [fin.fixed.fixed_point.shares]
 "S1.248" = [15, 0, 25]
 "S1.250" = [0, 0, 0]
 
 [fin.fixed.fund]
-b_core_ms = 24.42
+b_core_ms = 19.54
 nb_core_ms = 0
-h_core_ms = 26.43
+h_core_ms = 21.14
 [fin.fixed.fund.shares]
 "S1.320" = [0.1, 0, 0.1]
 "S1.429" = [2, 0, 3]
@@ -2463,20 +2497,20 @@ h_core_ms = 26.43
 "S8.171" = [0.01, 0, 0.01]
 
 [fin.fixed.close_books]
-b_core_ms = 0.3
+b_core_ms = 0.48
 nb_core_ms = 0
-h_core_ms = 97.7
+h_core_ms = 124.56
 [fin.fixed.close_books.shares]
-"S1.285" = [0.3, 0, 58]
+"S1.285" = [0.6, 0, 116]   # at two condition classes
 "S1.328" = [0, 0, 34]
 "S1.333" = [0, 0, 0]
 "S3.157" = [0, 0, 2.5]
 "S5.104" = [0, 0, 3.2]
 
 [fin.fixed.holder_rows]
-b_core_ms = 0.42
+b_core_ms = 0.34
 nb_core_ms = 0
-h_core_ms = 3.42
+h_core_ms = 2.74
 [fin.fixed.holder_rows.shares]
 "S1.281" = [0.34, 0, 0.34]
 "S2.119" = [0, 0, 1]
@@ -2485,9 +2519,9 @@ h_core_ms = 3.42
 "S8.127" = [0, 0, 2]
 
 [fin.fixed.valuation]
-b_core_ms = 37.33
-nb_core_ms = 2
-h_core_ms = 64.57
+b_core_ms = 29.87
+nb_core_ms = 1.6
+h_core_ms = 51.66
 [fin.fixed.valuation.shares]
 "S1.251" = [0.2, 0, 0.2]
 "S1.330" = [5, 2, 10]
@@ -2524,9 +2558,9 @@ h_core_ms = 64.57
 "S8.193" = [0.01, 0, 0.01]
 
 [fin.fixed.outlooks]
-b_core_ms = 33.77
-nb_core_ms = 8
-h_core_ms = 33.77
+b_core_ms = 27.02
+nb_core_ms = 6.4
+h_core_ms = 27.02
 [fin.fixed.outlooks.shares]
 "S1.336" = [30, 8, 30]
 "S1.454" = [1, 0, 1]
@@ -2542,13 +2576,13 @@ h_core_ms = 33.77
 "S8.194" = [0.001, 0, 0.001]
 
 [fin.fixed.recount]
-b_core_ms = 59.45
-nb_core_ms = 27.51
-h_core_ms = 89.45
+b_core_ms = 33.56
+nb_core_ms = 16.01
+h_core_ms = 57.56
 [fin.fixed.recount.shares]
 "S1.243" = [0, 0, 0]   # inside S1.353's whole audit
 "S1.331" = [0, 0, 0]
-"S1.353" = [55, 25, 85]
+"S1.353" = [37.5, 17.5, 67.5]   # the audit at 60 days
 "S1.354" = [0, 0, 0]
 "S1.442" = [0, 0, 0]   # inside S1.353's whole audit
 "S1.448" = [0, 0, 0]   # inside S1.353's whole audit
@@ -2566,9 +2600,9 @@ h_core_ms = 89.45
 "S8.201" = [2, 1, 2]
 
 [fin.fixed.stats]
-b_core_ms = 23.38
-nb_core_ms = 2.01
-h_core_ms = 33.68
+b_core_ms = 18.7
+nb_core_ms = 1.61
+h_core_ms = 26.94
 [fin.fixed.stats.shares]
 "S1.221" = [0.5, 0.2, 0.5]
 "S1.254" = [2.5, 1.8, 2.5]
@@ -2597,9 +2631,9 @@ h_core_ms = 33.68
 "S8.122" = [0.1, 0, 0.1]
 
 [fin.fixed.observer]
-b_core_ms = 32.16
-nb_core_ms = 18
-h_core_ms = 38.56
+b_core_ms = 25.73
+nb_core_ms = 14.4
+h_core_ms = 30.85
 [fin.fixed.observer.shares]
 "S1.213" = [3, 2, 3]
 "S1.223" = [18, 12, 18]
@@ -2610,7 +2644,7 @@ h_core_ms = 38.56
 "S3.109" = [0.11, 0, 0.11]
 "S3.128" = [0.1, 0, 0.1]
 "S3.141" = [0.15, 0, 0.15]
-"S6.134" = [0, 0, 0]
+"S6.135" = [0, 0, 0]
 "S8.121" = [0.3, 0.1, 0.3]
 "S8.199" = [6.6, 3.6, 6.6]
 
@@ -2622,7 +2656,8 @@ h_core_ms = 112
 "S1.169" = [90, 45, 110]
 "S1.185" = [2, 2, 2]
 
-[fin.calendar]   # dated days: extra core-ms on the turn they join (steps state each as fin.calendar.<event>)
+[fin.calendar]   # dated days: extra core-ms on the turn they join (steps state each as fin.calendar.<event>, at their
+#### counts); each list's `sum` is its entries', its `core_ms` the sum × scale, what the turn carries at the design point
 [fin.calendar.joins_h]   # every dated day a step says can fall on the quarter-end payday, all on one H (the worst)
 "S1.242 crediting" = 6
 "S1.270 tax_period_close" = 38
@@ -2677,6 +2712,7 @@ h_core_ms = 112
 "S8.177 bank_reporting" = 0.01
 "S8.178 deposit_premiums" = 0.001
 sum = 279.59
+core_ms = 223.67
 [fin.calendar.joins_bprime]   # every dated day a step says can fall on the business day after four closed days
 "S1.281 record_peak" = 1.6
 "S1.334 consolidation" = 5
@@ -2723,6 +2759,7 @@ sum = 279.59
 "S8.173 cb_meeting and review" = 0.011
 "S8.174 cb_tender" = 0.001
 sum = 171.74
+core_ms = 137.39
 [fin.calendar.campaign]   # a campaign business day, national and local at once, on its opening day; joins H and B′
 "S5.140 campaign_day" = 110
 "S5.156 local_campaign_day" = 21
@@ -2730,11 +2767,14 @@ sum = 171.74
 "S5.152 campaign_day" = 0.5
 "S5.137 campaign_opening" = 11
 sum = 144.5
+core_ms = 115.6
 [fin.calendar.mass_default]   # E1: S1.345's table, the sum of the shares on the day; S1.345's one ratchet
-core_ms = 221.5
+sum = 221.5
+core_ms = 177.2
 ratchet = 225
 [fin.calendar.events]   # each event's worst day (its own shares, the tails of its cause that fall there), composed
-#### by S1.360 with the worst calendar set and a campaign day it can join (§13.2); core-ms
+#### by S1.360 with the worst calendar set and a campaign day it can join (§13.2); core-ms at the steps' counts,
+#### composed × scale (E1's next day 213.52 at the design point)
 "mass_default D+1 (E1 tails 153.8: S1.267, S1.342, S1.345, S2.103, S2.104, S2.109, S2.121, S2.123, S2.133, S8.112, S8.141, S8.142; its bank's resolution_d1 113.1: S2.196–S2.199)" = 266.9
 "mass_default (S1.345's table)" = 221.5
 "bank_run D+1 (S2.195 90, S3.190 27, S8.168 23)" = 140
@@ -2748,53 +2788,55 @@ ratchet = 225
 "wind_up (S4.157)" = 7
 "fund_run (S3.192, S8.183)" = 5.1
 "crash_day D+1 (S3.191's spread 4.5, S3.180's slices 0.1; the day itself 1.1)" = 4.6
-"day_one (S6.139; its B turn, once)" = 300
+"day_one (S6.140; its B turn, once)" = 300
 
-[resolution]   # E 41 backwards, each with its forced_by and what it frees against its finer setting; the committed
-#### (play) resolution is unchanged (N8.5). The ledger below is at these settings, zones excepted (stated at 1 000).
-cell_m = "1 000 m, the coarsest GEO.19 admits"   # forced_by: —; frees 0 MB, 0 / 0 / 0 core-ms at the design point
+[resolution]   # E 41 backwards: each valve's setting at the design point, its forced_by and what it frees or costs;
+#### the settings the owner fixed say so; the play resolution stays the run's (N8.5). The stage lines and the ledger
+#### are at these settings. Restored in E 41's order (the horizons from the bottom of their rows up) while the worst
+#### turn stays ≤ 1 700 ms and the ledger ≤ 3 950 MB, the owner's margins (§12).
+cell_m = 100   # the owner's (E 29, GEO.19; 2026-09-30), no valve: 10 000 cells a tile; land held apart as parcels and paths through a per-tile segment index (S1.190): ledger line 12 +24.8 MB against the 1 km cell, 0 core-ms on the day
 draw_scheme = "as committed"   # forced_by: —; no resident memory and no measurable time to free
-audit_cycle_days = "30 → 365"   # forced_by: the worst turn; the rolling part 35 / 15 / 35 → 2.9 / 1.2 / 2.9: frees 32.1 / 13.8 / 32.1 core-ms; 365 keeps every party recounted in each measured year (N8.3)
+audit_cycle_days = 60   # the owner's (2026-09-30); the rolling part 28 / 12 / 28 core-ms at 30 days → 14 / 6 / 14; every party recounted six times a year
 age_classes = "as committed"   # forced_by: —; no resident memory, redraws ≈ 0
-horizon_events_days = "730 → 365"   # forced_by: ledger line 18 (S1.213); frees 18.5 MB
-horizon_series_days = "730 → 365"   # forced_by: ledger line 18 (S1.215); frees 3.5 MB
-horizon_filings_years = "2 → 1"   # forced_by: ledger line 18 (S1.216); frees 22 MB
-horizon_day_ledger_days = "730 → 365"   # forced_by: ledger line 18 (S1.219); frees 1 MB
-horizon_marks_goods_labour_days = "730 → 182"   # forced_by: ledger line 17 (S1.326: 13 k × 548 days × 4.05 B); frees 28.9 MB
-horizon_marks_instruments_days = "730 → 250, DRV.10's floor"   # forced_by: ledger line 17 (S1.326: 11.5 k × 480 × 30 % × 4.05 B); frees 6.7 MB
-horizon_life_records_days = "730"   # forced_by: —; on storage, 0 MB resident (S1.223)
-condition_classes = "2 → 1"   # forced_by: ledger line 24 (S1.271: 90 MB at 2); frees 43 MB; the committed resolution keeps 4 (196 MB at the design point)
-zones = "1 000 → 500"   # forced_by: lines 19 −15.2, 12 −2.5, 17 −2.5, 16 −1.75 (S1.273); day_use −0.6 / −0.2 / −0.6; frees 21.75 MB, 0.6 / 0.2 / 0.6 core-ms; no floor declared: each further halving frees ≈ 11 MB and ≈ 0.3 core-ms, and E 51's nearness within a region needs zones in it
+horizon_events_days = "730 → 365"   # forced_by: the memory margin: 730 (+14.8 MB, S1.213) would bring the ledger to 3 960.7 MB
+horizon_series_days = 730   # restored: +2.8 MB (S1.215)
+horizon_filings_years = 2   # restored: +17.6 MB (S1.216)
+horizon_day_ledger_days = 730   # restored: +0.8 MB (S1.219)
+horizon_marks_goods_labour_days = 730   # restored: +23.1 MB (S1.326)
+horizon_marks_instruments_days = 730   # restored: +5.4 MB (S1.326)
+horizon_life_records_days = 730   # on storage, 0 MB resident (S1.223)
+condition_classes = 2   # restored from 1: +34.4 MB (ledger line 24, S1.271) and S1.285's close twice, +0.24 / 0 / +46.4 core-ms (+15.5 ms on 3 NB + H); 4, the committed resolution's, would cost ≈ +119 MB and +139 core-ms on H (+46 ms), past both margins
+zones = 1_000   # the owner's (2026-09-30; the valve to 500 withdrawn): against 500, +21.75 MB (lines 19, 12, 17, 16) and ≈ 0.6 / 0.2 / 0.6 core-ms
 preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 MB and ≈ 0 ms
-#### before the horizon and class valves the ledger would be 123.6 MB higher (4 812.5 MB)
 
-[ledger]   # ARCHITECTURE §13 lines, MB resident at the heaviest day, the sum of the steps' own statements by line
+[ledger]   # ARCHITECTURE §13 lines, MB resident at the heaviest day at the design point: the steps' own statements
+#### summed by line × scale; lines 1, 6, 19 and 23 and the parts that follow the zones or the segments as they are
 1 = { name = "process", mb = 300.0 }
-2 = { name = "persons", mb = 503.0 }   # S1.207 495, S4.142 8
-3 = { name = "directory", mb = 63.2 }
-4 = { name = "households", mb = 384.5 }   # S1.196: 2.21 M × 174 B
-5 = { name = "firms", mb = 599.6 }   # S1.196 599, S5.176 0.6
+2 = { name = "persons", mb = 402.4 }   # S1.207 495, S4.142 8 (503.0 at the steps' counts)
+3 = { name = "directory", mb = 50.6 }
+4 = { name = "households", mb = 307.6 }   # S1.196: 1.77 M × 174 B
+5 = { name = "firms", mb = 479.7 }   # S1.196 599, S5.176 0.6 (599.6)
 6 = { name = "institutions", mb = 78.1 }
-7 = { name = "offices", mb = 40.0 }
-8 = { name = "accounts and side rows", mb = 285.2 }   # S1.240 148, S1.241 134.2 (9.37 M slots by kind), S5.159 3
-9 = { name = "contracts", mb = 1082.0 }   # S1.257 1 074.0, S4.150 8
-10 = { name = "terms", mb = 41.4 }
-11 = { name = "holdings", mb = 187.7 }   # S1.276 22, S1.280 165, S4.115 0.7
-12 = { name = "units, cells, owner index", mb = 115.3 }
-13 = { name = "liens and processes", mb = 72.7 }   # S1.277 30, S1.287 40, S1.332 1, S3.106 0.1, S3.195 0.6, S4.109 0.04, S5.131 0.1, S5.178 0.6, S6.119 0.24
-14 = { name = "wheel and agenda", mb = 151.0 }
-15 = { name = "hazards", mb = 1.7 }
-16 = { name = "small-bases pool", mb = 216.5 }
-17 = { name = "markets", mb = 93.9 }
-18 = { name = "records", mb = 123.7 }   # every step's line-18 figure at the horizons above
-19 = { name = "map and network", mb = 30.5 }
-20 = { name = "estates", mb = 23.0 }
-21 = { name = "day buffers", mb = 160.1 }   # the live set at the heaviest sub-step
-22 = { name = "slack", mb = 57.0 }
+7 = { name = "offices", mb = 32.0 }
+8 = { name = "accounts and side rows", mb = 228.2 }   # S1.240 148, S1.241 134.2 (9.37 M slots by kind), S5.159 3 (285.2)
+9 = { name = "contracts", mb = 865.6 }   # S1.257 1 074.0, S4.150 8 (1 082.0)
+10 = { name = "terms", mb = 33.1 }
+11 = { name = "holdings", mb = 150.2 }   # S1.276 22, S1.280 165, S4.115 0.7 (187.7)
+12 = { name = "units, cells, owner index", mb = 117.5 }   # 144.8 at the steps' counts, S1.190's cells 37.7 of it (parcels 32.0; segment index 5.3 and directories 0.4, unscaled); the zones' 2.5 unscaled
+13 = { name = "liens and processes", mb = 58.2 }   # S1.277 30, S1.287 40, S1.332 1, S3.106 0.1, S3.195 0.6, S4.109 0.04, S5.131 0.1, S5.178 0.6, S6.119 0.24 (72.7)
+14 = { name = "wheel and agenda", mb = 120.8 }
+15 = { name = "hazards", mb = 1.4 }
+16 = { name = "small-bases pool", mb = 173.6 }   # the zones' 1.75 unscaled
+17 = { name = "markets", mb = 104.1 }   # 129.5 at the steps' counts, the marks at 730 days; the zones' 2.5 unscaled
+18 = { name = "records", mb = 120.2 }   # 150.2 at the steps' counts: every step's line-18 figure at the horizons above
+19 = { name = "map and network", mb = 30.5 }   # at 1 000 zones
+20 = { name = "estates", mb = 18.4 }
+21 = { name = "day buffers", mb = 128.1 }   # the live set at the heaviest sub-step
+22 = { name = "slack", mb = 45.6 }
 23 = { name = "save buffers", mb = 13.0 }
-24 = { name = "plant cells", mb = 53.8 }
-25 = { name = "windows", mb = 12.0 }
-total_mb = 4688.9   # at 1 000 zones; after the zone valve 4 667.1, against fin.mem.peak_mb 4 349
+24 = { name = "plant cells", mb = 77.4 }   # 96.8 at the steps' counts, at two condition classes
+25 = { name = "windows", mb = 9.6 }
+total_mb = 3945.9   # 4 823.5 at the steps' counts; against fin.mem.peak_mb 4 349: 403 MB (9.3 %) below, 4 below the owner's 3 950
 ```
 
 
@@ -2808,8 +2850,9 @@ table), S1.132 (the ratchets seeded from it); a step restating a slot's table na
 `[resolution]` with `forced_by`.
 
 **Unit tests**: `design_file_parses` (in `phx-check`: every table present, every key typed, every `[store]`,
-`[store.contracts]`, `[day.*]` and `[unit]` key a step cites present, each `[fin.fixed.<line>]`'s shares summing to its
-totals, each `[fin.decide.additions]` table and `[fin.calendar]` list to its `sum`, `[ledger]` to `total_mb`).
+`[store.contracts]`, `[day.*]` and `[unit]` key a step cites present, each `[fin.fixed.<line>]`'s shares × `scale`
+equal to its totals within 0.01 (the barriers' unscaled), each `[fin.decide.additions]` table and `[fin.calendar]` list
+to its `sum` and each `core_ms` to `sum` × `scale`, `[ledger]` to `total_mb`).
 
 **Live checks**: none.
 
@@ -3911,6 +3954,8 @@ ratchets stay as they are.
   `[fin.hazards]`, `[fin.records]`, `[fin.stats]`, `[fin.audit]`, `[fin.pool]`, `[fin.daybuf]`, `[fin.save]`) — unit
   keys from `[unit]`, bytes and MB from `[bytes]` and `[ledger]`; `[fin.contracts]` and one `[fin.contracts.<family>]`
   a family of `[store.contracts]`. Directions: times, bytes, faults and allocations down; `busy_hundredths` up.
+- **The steps' counts** (§2.11): a key a step states in counts, core-ms or MB at 7.5 M persons' counts is seeded ×
+  `[point] scale`, the parts that do not grow with the persons as stated; unit keys and bytes a row as stated.
 - **Tightening**: a key once measured below its seed is restated at the measure plus the margin (a quarter above for
   times, a tenth for bytes and faults); `fin_within_design` refuses a key looser than its seed.
 - **Frame keys**: `[fin.kept]` as S1.119 set them; `[fin.counters]` as S1.117 sets them. Each base step adds its own
@@ -4731,7 +4776,7 @@ which kind the player is — is read from the declarations of S1.141–S1.143 (L
   exception entry for them.
 - Replaced later by S1.180 and S1.182 (the kind catalogue, K-21), which compile these declarations into handles.
 - It carries PTY.4 (done at S0.09), MON.7 and MON.9 (done at S0.15), and serves ACC.4 (completed at S1.330), MON.10
-  (completed at S1.243), PTY.5 (completed at S1.274) and OBS.4 (completed at S6.135).
+  (completed at S1.243), PTY.5 (completed at S1.274) and OBS.4 (completed at S6.136).
 
 **Edge cases**:
 - E13: a legal form in no holder class is counted in the "all others" class — `form_outside_holder_classes_counts_other`.
@@ -5440,7 +5485,7 @@ allocation per day; a floor, cap or clamp by comparison; an exception by pattern
 - The deleted test's cases (the rule decides; a queued intent is the output; delegation; a kept decision not taken) move
   onto `Say::take`.
 - Replaced later by S1.348 and S1.349 (the decision core, K-100), which take the kept runtime into `phx-mind`.
-- It carries MND.20 (done at S1.26) and serves OBS.4 (completed at S6.135).
+- It carries MND.20 (done at S1.26) and serves OBS.4 (completed at S6.136).
 
 **Edge cases**:
 - E12: a queued intent that does not decode stops the run (OBS.4), as `Say::take` does — `undecodable_intent_stops`.
@@ -5585,7 +5630,7 @@ exist.
 `GoodIds`, the day's hand sequence (`day.rs`), the 46 old sub-steps, the kinds table of
 `phx-world/src/consts.rs`, freight's route maps and the weather's own stores deleted; the memory this group states
 within ARCHITECTURE §13's lines: line 21 (day buffers) 160.1 MB at the day's maximum (S1.161), line 22 (slack) 57 MB
-(S1.160), line 19 (map and network) ≈ 15.3 MB by its parts at 500 zones (`[fin.geo] mb`), line 12's cells 8.2 MB
+(S1.160), line 19 (map and network) ≈ 30.5 MB by its parts at 1 000 zones (`[fin.geo] mb`), line 12's cells 37.7 MB
 (S1.190), line 16's index instances 50 MB (S1.165) and schedules 0.4 MB (S1.179); the interner states its unit bytes
 only (S1.168), the terms' MB being S1.263's.
 
@@ -6109,13 +6154,13 @@ draw, built for the event and released at the close); S6.122 (sum-trees: a unifo
 `total_overflow_stops`, `class_growth_keeps_sums`, `removal_keeps_positions`, `rebuild_equals_incremental`.
 **Live checks**: none.
 **Budget**:
-- Volumes: the stalls of `perf/design.toml [store] stalls` in trees per (good, zone): ≈ 125 k keys at `[resolution]
-  zones` 500 (250 k at 1 000, 500 k at 2 000); reprices and sold-out removals `[day.*] reprices`, `removals`; finds
+- Volumes: the stalls of `perf/design.toml [store] stalls` in trees per (good, zone): ≈ 250 k keys at `[resolution]
+  zones` 1 000 (500 k at 2 000); reprices and sold-out removals `[day.*] reprices`, `removals`; finds
   inside the retail match (`[day.*] retail`).
 - Access: event-driven (a reprice, a sale that sells out, a draw).
 - Unit targets: update ≤ 46 VM ns (k 1.3, miss budget ≤ 0.3); find inside `fin.retail.match_ns`.
-- Bytes: 8 B a weight at ≤ 1.4 class slack, 16 B a tree header (`[fin.sumtree] bytes_per_weight`), so ≈ 2 MB of headers
-  at 500 zones (4 at 1 000, 8 at 2 000); the stalls' MB is S1.301's line-17 figure, not stated here.
+- Bytes: 8 B a weight at ≤ 1.4 class slack, 16 B a tree header (`[fin.sumtree] bytes_per_weight`), so ≈ 4 MB of headers
+  at 1 000 zones (8 at 2 000); the stalls' MB is S1.301's line-17 figure, not stated here.
 - Ratchets: `[fin.stalls] update_ns` 46; `[fin.sumtree]` (added) `find_ns` 15, `bytes_per_weight` 12.
 **Guards**: none new (PC-92 covers `phx-store`).
 **Not allowed**: a table of weights rebuilt per round or per call; floating weights; a removal that shifts positions.
@@ -6189,12 +6234,12 @@ lazily and rebuilt at load in slot order; no index is rebuilt per call or per da
 
 | Instance (declaring step) | Key | Mode | Members | Ledger line |
 | --- | --- | --- | --- | --- |
-| owners of physical units (S1.271; read by S1.274, S1.253, S1.294, S4.134, S5.113) | zone | lazy | ≈ 2.2 M at 500 zones (≈ 2.6 M at 1 000) | 12 |
+| owners of physical units (S1.271; read by S1.274, S1.253, S1.294, S4.134, S5.113) | zone | lazy | ≈ 2.6 M at 1 000 zones | 12 |
 | rows by holder (S1.271) | holder | lazy | ≈ 0.6 M | 11 |
 | holders by instrument (S1.280) | instrument | lazy | ≈ 3.4 M | 11 |
 | named units by tile (S1.284; read by S1.190, S8.200) | tile | lazy | ≈ 1.4 M | 12 |
 | offers by poster (S1.296) | poster | lazy | ≈ 2.2 M | 17 |
-| stalls (S1.301) | (good, zone): ≈ 125 k keys at 500 zones | weighted | ≈ 1.7 M | 17 |
+| stalls (S1.301) | (good, zone): ≈ 250 k keys at 1 000 zones | weighted | ≈ 1.7 M | 17 |
 | vacancy runs (S1.304) | (labour instance, skill) | lazy | ≈ 0.2 M | 17 |
 | parties by zone and kind (S1.404; read by S1.221 frames, S1.224 electorates, S1.293, S1.294, S4.134, S5.155, S6.122) | (zone, kind) | lazy, with counts | ≈ 3.35 M | 16 |
 | searchers by region (S1.304) | region | lazy | ≈ 0.2 M | 16 |
@@ -6259,7 +6304,7 @@ events, rebuilt at load).
   (`fin.units.draw_ns`, the cumulative of a struck (zone, class) built once from the zone's walk and shared by its
   draws).
 - `ledger line 16 (small-bases pool): +50 MB resident (≈ 6.2 M lazy entries × 5.33 B + singles 1.7 M × 8 B + imitation
-  weights 2 MB + counts 1 MB)`; the owners' (≈ 12 MB at 500 zones, ≈ 14 at 1 000) and named units' (≈ 7.5 MB) instances
+  weights 2 MB + counts 1 MB)`; the owners' (≈ 14 MB at 1 000 zones) and named units' (≈ 7.5 MB) instances
   are line 12's, holders by instrument and rows by holder line 11's, offers, stalls and vacancy runs line 17's, each
   stated in its declaring step.
 - Ratchets: `[fin.units] draw_ns` 38; `[fin.index]` (added) `insert_ns` 15.4, `walk_ns` 2.3, `entry_bytes` 5.4,
@@ -7351,7 +7396,7 @@ solvency and reserving rules as dated POLICY with owners); S4.144 (dated POLICY 
 `PolicySchedule<T>` with owner, announced and effective day; rule handles taking their schedule); S5.116 (K-20: dated
 schedules with their announced and effective days); S5.135 (K-20); S5.174 (K-20); S6.101 (dated policy schedules: patent
 law's life and fees are POLICY with an owner); S6.114 (dated policy schedules: education and family law are POLICY with
-an owner); S6.129 (dated policy schedules); S6.137 (the register); S8.101 (K-20: register handles).
+an owner); S6.129 (dated policy schedules); S6.138 (the register); S8.101 (K-20: register handles).
 **Unit tests**: `in_force_is_last_effective`, `announced_by_hides_future_announcements`,
 `segments_split_at_effective_day`, `effective_too_soon_refused`, `non_owner_refused`, `owner_succession_moves_schedule`,
 `absent_policy_refused`, `schedule_roundtrip`, `day_zero_reads_opening`.
@@ -7486,7 +7531,7 @@ S4.160 (kinds, families, reasons); S5.101 (K-21: a reason's tax base and levy se
 agency legal form, its offices and what it may hold); S5.135 (K-21); S5.159 (K-21: account kinds); S5.161 (K-21: the
 pair market's settlement convention); S5.180 (K-21 refusal predicates on reasons); S5.185 (K-21: reasons declare their
 category); S6.101 (the kind catalogue: industries and plant kinds the tables key on); S6.102 (plant kinds and products a
-way names); S6.114 (occupation families, age classes and fields the tables key on); S6.137 (the kind catalogue); S8.103
+way names); S6.114 (occupation families, age classes and fields the tables key on); S6.138 (the kind catalogue); S8.103
 (K-21: `ConcernH`, `DecisionH`).
 **Unit tests**: `handles_independent_of_order`, `every_reference_resolved`,
 `market_declares_form_days_convention_participants`,
@@ -7752,9 +7797,8 @@ ids are resolved into party records when they change and never looked up on a da
   a unit reads it after it retired). Goods and capital classes are issued the first time something names them and are
   not retired (their count is bounded by the declared keys); an instrument's unit retires with its instrument (K-64); a
   special unit when its issuer declares; a right with its deposit's end.
-- **Land**: land is counted by (zone, land class) like dwellings; a parcel owned apart is its cell's row (S1.190), read
-  as
-  a holding of place kind cell (S1.271), not a registry id per cell.
+- **Land**: land is counted by (zone, land class) like dwellings; land owned apart is a parcel's row (S1.190), read as a
+  holding of place kind parcel (S1.271), not a registry id per parcel or cell.
 - **Parallel**: issues come from applies in range order and assembly; ids depend on the order of issue only (E7).
 - **Save/load**: rows saved; the key indexes rebuilt at load eagerly (`#[saved(skip, rebuild = …)]`, S1.162), unlike
   today's lazy `UnitIds::plain` (`goods.rs`).
@@ -7779,14 +7823,14 @@ content per unit); S2.139 (K-22 classes with condition and age classes); S2.202 
 `age_class_in_capital_key`, `ids_same_for_any_workers`, `index_rebuild_equals`, `retired_row_still_reads`.
 **Live checks**: none.
 **Budget**:
-- Volumes: `perf/design.toml [store] unit_ids` (≈ 55 k at `[resolution] zones` 500: ≈ 60 product-grades and ≈ 50 capital
-  classes a zone, with instruments, special units and rights; 110 k at 1 000 zones, 220 k at 2 000); a few thousand
+- Volumes: `perf/design.toml [store] unit_ids` (≈ 110 k at `[resolution] zones` 1 000: ≈ 60 product-grades and ≈ 50
+  capital classes a zone, with instruments, special units and rights; 220 k at 2 000); a few thousand
   issues a day at most after the opening.
 - Access: on change only; never on a day path.
 - Unit targets: issue ≤ 200 VM ns; a row read 1 VM ns.
-- `ledger line 19 (map and network): +1.5 MB resident (≈ 55 k × 16 B rows + ≈ 0.6 MB key indexes)`; 3 MB at 1 000 zones,
-  6 at 2 000.
-- Ratchets: `[fin.units]` (added) `ids_mb` 1.5 (3 at 1 000 zones, 6 at 2 000), `issue_ns` 200.
+- `ledger line 19 (map and network): +3 MB resident (≈ 110 k × 16 B rows + ≈ 1.2 MB key indexes)`; 6 at 2 000
+  zones.
+- Ratchets: `[fin.units]` (added) `ids_mb` 3 (6 at 2 000 zones), `issue_ns` 200.
 **Guards**: PC-92 extended by S1.120 refuses `UnitIds::find`/`unit` on day paths; the rule then names `Units::issue`.
 **Not allowed**: a unit looked up on a day path; a unit id reused; content stored per holding; a default id for a
 missing
@@ -7916,7 +7960,7 @@ follows, in three modes — ordinary, day zero, settling; a slot that reads a la
 - 4b's loads complete before 4c reads any — `trips_read_all_loads`.
 
 **Extension points**: S1.186 (the stage table); S1.188 (stage 4's slots 4b and 4c); S1.491 (the stage table's day-zero
-mode: stage 5 only); S2.172 (K-23: stage 4 split into 4a, 4b, 4c); S3.101 (K-23: stage 8's slots); S6.139 (the stage
+mode: stage 5 only); S2.172 (K-23: stage 4 split into 4a, 4b, 4c); S3.101 (K-23: stage 8's slots); S6.140 (the stage
 table).
 **Unit tests**: `slots_in_time6_order`, `non_business_runs_time8_list`, `later_read_refused`,
 `day_zero_runs_stage_five_only`,
@@ -8041,12 +8085,14 @@ region whose segment closes or opens.
   unit: tonnes, vehicles, MW for a line), closed-until day u32 (or none), named unit u32 (the segment as owned capital,
   S1.284: its owner is its unit's holder, one writer; GEO.4), pad.
 - **Routes**: per mode, a dense table over (origin, destination) at **region** resolution (25 × 25: freight, crossings)
-  and, for the regions a travel rule declares, at **zone** resolution within a region (≈ 20 × 20 at `[resolution] zones`
-  500; 40 × 40 at 1 000); an entry is (offset u32, length u16, metres u32, free-flow s u32) into a path arena of segment
+  and, for the regions a travel rule declares, at **zone** resolution within a region (≈ 40 × 40 at `[resolution] zones`
+  1 000); an entry is (offset u32, length u16, metres u32, free-flow s u32) into a path arena of segment
   ids (u32). `route(mode, o, d)` is two reads; a pair with no path is `Missing` (E2). Paths are Dijkstra over the open
   segments (the opening's generation, `network.rs`, kept), recomputed at 3a for a region one of whose segments closed
   or reopened (a catastrophe's closure, FRT.7, GEO.8), over that region's segments only.
 - **Use**: a segment's use on a day is S1.188's; this step keeps no load.
+- **Change hook**: a segment opened or removed calls the hooks declared on `Segments` in the same apply (S1.190's
+  per-tile segment index), so what is derived from the segments' lines is never stale.
 - **Save/load**: segments and their closures are saved (state: condition, closures, owners' units); routes are rebuilt
   at load from the open segments (`#[saved(skip, rebuild = …)]`, S1.162).
 - Replaces (S1.189): `core_freight.rs`'s `lengths` and `routes` maps (`core_freight.rs`), route clones
@@ -8058,22 +8104,22 @@ region whose segment closes or opens.
 - E6: routes rebuilt at load equal the saved world's — `routes_rebuild_equals`.
 - E7: a recompute's paths do not depend on the worker count — `recompute_same_for_any_workers`.
 
-**Extension points**: S1.188 (segments, capacities and routes); S1.189 (the route table); S1.284 (K-26: the path a line
+**Extension points**: S1.188 (segments, capacities and routes); S1.189 (the route table); S1.190 (K-28's per-tile
+segment index, fed at a segment's opening and removal through the segments' change hook); S1.284 (K-26: the path a line
 or road follows); S1.314 (lines as segments with capacity); S2.160 (K-26 segments with capacity and condition); S2.172
 (K-26 routes, segment capacity, daily use by epoch); S2.202 (K-26: power lines as network segments with capacity);
-S5.131 (K-26); S5.175 (K-26).
+S5.131 (K-26); S5.175 (K-26); S6.134 (the map: segments along their cells, their capacity, condition and closure).
 **Unit tests**: `route_is_shortest_open_path`, `no_route_is_missing`, `closure_recomputes_region_routes`,
-`recompute_same_for_any_workers`, `routes_rebuild_equals`.
+`recompute_same_for_any_workers`, `routes_rebuild_equals`, `change_hook_called_on_open_and_remove`.
 **Live checks**: none.
 **Budget**:
-- Volumes: `perf/design.toml [store] segments` (≈ 0.25 M at `[resolution] zones` 500; ≤ 0.5 M at 1 000, ≈ 1 M at 2 000);
-  routes 3 modes × 625 region pairs + ≤ 25 regions × 400 zone pairs × 2 modes at 500 zones (1 600 at 1 000, 6 400 at
-  2 000).
+- Volumes: `perf/design.toml [store] segments` (≤ 0.5 M at `[resolution] zones` 1 000, ≈ 1 M at 2 000); routes 3
+  modes × 625 region pairs + ≤ 25 regions × 1 600 zone pairs × 2 modes at 1 000 zones (6 400 at 2 000).
 - Access: route reads at decisions and meetings; 3a recomputes the struck regions' routes only.
 - Unit targets: a route read 2 VM ns; a region's recompute ≤ 10 ms.
-- `ledger line 19 (map and network): +8.8 MB resident (≈ 0.25 M segments × 32 B = 8 MB + routes' tables and arena ≈ 0.8
-  MB)`; 19 MB at 1 000 zones (16 + 3), ≈ 42 at 2 000 (32 + 10).
-- Ratchets: `[fin.routes]` (added) `route_ns` 2, `recompute_ms` 10, `mb` 9 (19 at 1 000 zones, 42 at 2 000).
+- `ledger line 19 (map and network): +19 MB resident (≤ 0.5 M segments × 32 B = 16 MB + routes' tables and arena ≈ 3
+  MB)`; ≈ 42 at 2 000 zones (32 + 10).
+- Ratchets: `[fin.routes]` (added) `route_ns` 2, `recompute_ms` 10, `mb` 19 (42 at 2 000 zones).
 **Guards**: PC-23 (places belong to phx-geo) holds.
 **Not allowed**: a route found by search on a day path; a route map keyed by a tuple; a route recomputed outside its
 region's closure or reopening.
@@ -8130,7 +8176,7 @@ on its legs; the kernel's cost follows the active pairs, not the trips.
 - **Save/load**: nothing saved (a save is at a close; loads are the day's).
 
 **Edge cases**:
-- E5: a working day's trips as ≈ 15 k active pairs in one apply — `pair_flows_sum_exactly`.
+- E5: a working day's trips as ≈ 40 k active pairs in one apply — `pair_flows_sum_exactly`.
 - E7: loads summed as integers by range; times read after all sums — `use_same_for_any_workers`, `trips_read_all_loads`.
 - E13: a day with no trips reads zero loads by stamp — `stale_stamp_reads_zero`.
 - GEO.13: a segment's load past capacity admits by lot up to capacity, the refused leaving the pair's other legs —
@@ -8138,19 +8184,18 @@ on its legs; the kernel's cost follows the active pairs, not the trips.
 
 **Extension points**: S1.189 (the day's use, on which carriage books its flows); S1.314 (the day's use of lines and
 segments); S2.172 (the day's use: trips as counts per (origin zone, destination zone, mode), maintained by job and home
-events).
+events); S6.134 (the map: a segment's use today, read by its stamp).
 **Unit tests**: `pair_flows_sum_exactly`, `trips_read_all_loads`, `use_same_for_any_workers`, `stale_stamp_reads_zero`,
 `over_capacity_admits_by_lot`, `congestion_time_rises_with_load`.
 **Live checks**: none (LC-2's travel checks arrive with S2.172).
 **Budget**:
-- Volumes: ≈ 15 k active (origin zone, destination zone, mode) pairs on a working day at `[resolution] zones` 500
-  (≈ 40 k at 1 000, ≈ 100 k at 2 000), ≈ 10 legs a route (≈ 0.15 M load items); carriage bookings ≈ 0.1 M a business
-  day.
+- Volumes: ≈ 40 k active (origin zone, destination zone, mode) pairs on a working day at `[resolution] zones` 1 000
+  (≈ 100 k at 2 000), ≈ 10 legs a route (≈ 0.4 M load items); carriage bookings ≈ 0.1 M a business day.
 - Access: 4b/4c on days with trips.
-- Unit targets: a load item scattered and summed ≤ 2.3 VM ns; a pair's time ≤ 10 VM ns a leg; ≈ 0.4 core-ms a working
-  day at the count above (≈ 1 at 1 000 zones, ≈ 2.5 at 2 000), S2.172 stating the share of `fin.fixed.day_use` it calls.
-- `ledger line 19 (map and network): +2 MB resident (≈ 0.25 M segments × 8 B load and stamp)`; 4 MB at 1 000 zones, 8 at
-  2 000; the pair flows are a day buffer at 4b–4c (≤ 1 MB, below the day's maximum, S1.161).
+- Unit targets: a load item scattered and summed ≤ 2.3 VM ns; a pair's time ≤ 10 VM ns a leg; ≈ 1 core-ms a working
+  day at the count above (≈ 2.5 at 2 000 zones), S2.172 stating the share of `fin.fixed.day_use` it calls.
+- `ledger line 19 (map and network): +4 MB resident (≤ 0.5 M segments × 8 B load and stamp)`; 8 at 2 000 zones; the
+  pair flows are a day buffer at 4b–4c (≤ 1 MB, below the day's maximum, S1.161).
 - Ratchets: `[fin.day_use]` (added) `load_ns` 2.3, `pair_time_ns` 10.
 **Guards**: PC-99 refuses a per-meeting segment array.
 **Not allowed**: a load per trip; a trip reading only the loads placed before it; loads reset by a pass; a segment's use
@@ -8221,88 +8266,110 @@ allocation per day; a route cloned per consignment.
 
 **Status**: planned
 **Kind**: base
-**Clauses**: GEO.19 STATE; GEO.5 STATE *(part: the cell owned apart, its owner and cost; the holding at S1.271)*
+**Clauses**: GEO.19 STATE; GEO.5 STATE *(part: land held apart as parcels, their owner and cost; the holding at S1.271)*
 **Architecture**: §7.4 (phx-geo), "Cells", written.
-**Depends on**: S1.162 (the tile directory rebuilt at load; the round-trip harness).
-**Goal**: every tile is divided into cells whose identity, coordinates, surface and terrain are arithmetic on the
-tile's;
-a cell takes a row only when it is owned or leased apart from its tile or a path crosses it; a building's cell is its
-named unit's site, so empty land and land under buildings cost no cell row.
+**Depends on**: S1.162 (the tile directory rebuilt at load; the round-trip harness); S1.187 (K-26 segments, whose
+lines the per-tile segment index lists); S1.172 (a split parcel's cost apportioned with a named residue).
+**Goal**: every tile is divided into 100 m cells whose identity, coordinates, surface and terrain are arithmetic on the
+tile's; land held apart from its tile is stored as parcels, one row per rectangle of cells; a path's cells are computed
+from its segment's line through a per-tile segment index; a building's cell is its named unit's site. No row is kept
+per cell, so empty land, land under buildings and the ground under a road cost nothing.
 
 **Files**:
 
 | path | purpose |
 | --- | --- |
-| `crates/kernel/phx-geo/src/cells.rs` | `CellId` (tile × cells a tile + index), cell arithmetic; `Cells`: per-tile sorted runs of the cells held apart or crossed by a path |
+| `crates/kernel/phx-geo/src/cells.rs` | `CellId` (tile × cells a tile + index, u32), cell arithmetic; `Parcels`: per-tile sorted runs of rectangles held apart; `SegmentIndex`: per-tile segment lists; `parcel_at`, `held`, `crossing`, `cells_of` |
 | `crates/kernel/phx-geo/src/cells_tests.rs` | unit tests |
-| `crates/apps/phx-fin/src/cells.rs` | the `-F` driver (S2.140's owned cells and a path's cells inserted and looked up) |
-| `data/shared/GEO.toml` | `cell_m` (RESOLUTION, owner GEO) declared |
-| `perf/design.toml` | `[resolution] cell_m` set from `"Missing"` |
+| `crates/apps/phx-fin/src/cells.rs` | the `-F` driver (`[store] parcels` inserted, split and looked up; `segment_tiles` built; crossings read) |
+| `data/shared/GEO.toml` | `GEO.cell_m` = 100 (RESOLUTION the owner fixed, E 29; no valve) declared |
+| `perf/design.toml` | `[resolution] cell_m`; `[store] parcels`, `segment_tiles`; `[bytes] parcel` |
 | `perf/budget.toml` | `[fin.cells]` (added) |
 | `docs/ARCHITECTURE.md` | §7.4 "Cells" |
 
 **Design**:
-- **The cell size** is a RESOLUTION primitive (GEO.18, GEO.19: the same map subdivided, from a kilometre down; E 41
-  puts it last in the refinement order): `cell_m` in the register at the coarsest GEO.19 admits, 1 000 m, which the
-  design point's `[resolution] cell_m` reads; a finer value is the owner's (N8.5).
-- **Arithmetic**: cells a tile = (tile side ÷ `cell_m`)² ≤ 2¹⁶; `CellId(u64)` = tile × cells a tile + index; a cell's
-  coordinates (its tile's origin + its offset), surface and terrain (its tile's) are computed, never stored (GEO.14: no
-  second map). Distance between cells is the closed surface's (GEO.2), from the coordinates.
+- **The cell size** is the owner's (GEO.18, GEO.19, E 29; §12): `GEO.cell_m` 100 in the register, fixed like the 10 km
+  grid and no RESOLUTION valve (N8.5); the design point's `[resolution] cell_m` reads it.
+- **Arithmetic**: cells a tile = (tile side ÷ `cell_m`)² = 10 000 ≤ 2¹⁶; `CellId(u32)` = tile × cells a tile + index,
+  tiles × cells a tile < 2³² checked at assembly; a cell's row and column in its tile are index ÷ and mod the side's
+  cells, its coordinates its tile's origin plus its offset, its surface and terrain its tile's — computed, never stored
+  (GEO.14: no second map). Distance between cells is the closed surface's (GEO.2), from the coordinates.
 - **A building's cell is its site** (HSG.21): a named unit that stands on a cell — a building, a mine, a farm's plant —
-  carries its `CellId` in its own row (S1.284); no cell row is kept for it. What stands on a cell or tile is read
+  carries its `CellId` in its own row (S1.284); nothing is kept here for it. What stands on a cell or tile is read
   through S1.284's named units by tile.
-- **Cell rows**: a directory of the tiles × u32 (each tile's run offset in a chunk arena); each run a sorted list of
-  rows: cell index u16, why held u16 (owned apart, leased apart, path — declared flags), then either path u32 (the first
-  segment crossing it; 12 B) or, for a cell **owned apart** (GEO.5), owner u32 + cost i64 + path u32 (20 B, +8 B on
-  those cells only). A lookup (tile, index) is a binary search in the tile's run (≤ 40 ns); an insert keeps the run
-  sorted (O(run), runs ≤ a few hundred rows).
-- **Owned apart** (GEO.5): the cell row is where land held apart lives; the holdings read it as a holding of place kind
-  cell and write its owner and cost only through their transfer (S1.271), so the owner has one writer (Law 4). A lease
-  is a land-lease contract on that holding (S2.139); the cell stores no lessee. No named unit is kept for a parcel.
-- **Release**: a row is released when its land is no longer held apart and no path crosses it.
-- **Paths**: a segment at cell resolution marks the cells it crosses with the path flag. At the 1 km cell no segment
-  is at cell resolution (routes run between zone nodes and access legs are coordinate distances, S2.172), so the flag
-  holds no row at the design point; it is there for a finer `cell_m`.
-- **Save/load**: held cells saved (state); the tile directory rebuilt from the runs (S1.162).
+- **Parcels** (GEO.5): land held apart — owned or leased apart from its tile — is one row per parcel, a rectangle of
+  cells within one tile: a directory of the tiles × u32 (each tile's run offset in a chunk arena, K-04, with the run's
+  tallest parcel u8), each run sorted by origin: cost i64 · owner u32 · origin cell index u16 · width u8 · height u8
+  (≤ the side's 100 cells) · why held u16 (owned apart, leased apart: declared flags) = 18 B, 24 B aligned. Parcels in
+  a tile never overlap. `parcel_at(cell)`: a binary search to the last origin row at or before the cell's, then back
+  while origin row + the tallest height passes it, a rectangle test each (≤ 60 ns). The writer lays a holding of n
+  cells as at most two rectangles in a tile (full rows of a width and one row of the rest); a part sold or leased
+  apart is cut out by guillotine cuts, the part and at most three rectangles left, each its own row, the cost
+  apportioned by cells with the named residue (S1.172).
+- **Owned apart** (GEO.5): the parcel row is where land held apart lives; the holdings read it as a holding of place
+  kind "parcel" (S1.271) and write its owner and cost only through their transfer, so the owner has one writer (Law 4).
+  A lease is a land-lease contract on that holding (S2.139); the parcel stores no lessee. No named unit is kept for a
+  parcel.
+- **Paths** (GEO.19): a path's cells are not stored. Each K-26 segment's ends have coordinates (its zones' nodes or a
+  cell's end, S1.187); the **segment index** — a directory of the tiles × u32 into a chunk arena of segment ids u32,
+  each tile listing the segments whose line crosses it — is fed at a segment's opening and removal through K-26's
+  change hook (S1.187's extension point; `index_segment`, `unindex_segment`) and rebuilt at load. `crossing(cell)` reads its tile's list and tests
+  each segment's line against the cell (the line's supercover in integer arithmetic); `cells_of(segment)` walks the
+  cells its line crosses.
+- **Held** (GEO.19): `held(cell)` — a named unit's site, a parcel covering it or a segment crossing it — is a read of
+  the three; no cell is held without one of them, and none is held by a row of its own.
+- **Release**: a parcel row goes when its land is no longer held apart; a segment's entries go with it.
+- **Save/load**: parcels saved (state); both directories and the segment index rebuilt (S1.162), the index from K-26's
+  segments.
 
 **Edge cases**:
-- E13: a tile with no held cell costs one directory word — `empty_tile_costs_nothing`.
-- E10: a building demolished: its site goes with its unit; a cell row released when no owner apart or path holds it —
-  `release_when_nothing_holds`.
-- E6: rebuilt directory equals — `cells_roundtrip`.
-- E9: rows grow with parcels and paths and are released with them — `cell_rows_bounded_by_reasons`.
-- GEO.19: a cell held without a reason is refused at the apply — `held_without_reason_refused`.
-- GEO.5: a cell owned apart carries its owner and cost, written only by the holdings' transfer —
-  `owned_cell_written_by_transfer_only`.
+- E13: a tile with nothing held costs its two directory words — `empty_tile_costs_nothing`.
+- E10: a building demolished: its site goes with its unit; a parcel no longer held apart released —
+  `release_when_not_held_apart`.
+- E6: parcels round-trip; the directories and the segment index rebuilt equal — `cells_roundtrip`,
+  `segment_index_rebuilt_equal`.
+- E8: a split keeps the parcel's cells and cost exactly, the residue named — `split_keeps_cells_and_cost`; tiles × cells
+  a tile past u32 refused at assembly — `cell_id_fits_u32`.
+- E9: parcels grow with land held apart and go with it; index entries with segments — `rows_bounded_by_holdings`.
+- GEO.19: a parcel overlapping another or leaving its tile refused at the apply — `overlapping_parcel_refused`; a path's
+  cells are its segment's line's — `path_cells_from_segment_line`.
+- GEO.5: a parcel carries its owner and cost, written only by the holdings' transfer —
+  `parcel_written_by_transfer_only`.
 
-**Extension points**: S1.274 (recorded cells: a unit on one is not in the counted stock); S1.271 (K-28: a cell owned
-apart, its owner and cost); S1.284 (K-28: the cell a unit stands on; a parcel's cell row); S1.287 (K-28: a process's own
-site cell); S2.139 (K-28 cells owned apart); S2.140 (cells owned apart); S2.155 (K-28 cells owned apart); S2.169 (K-28
-cells held only when something stands on them); S2.203 (K-28: sites on cells).
-**Unit tests**: `cell_arithmetic_from_tile`, `lookup_in_sorted_run`, `insert_keeps_run_sorted`,
-`empty_tile_costs_nothing`,
-`release_when_nothing_holds`, `cell_rows_bounded_by_reasons`, `held_without_reason_refused`,
-`owned_cell_written_by_transfer_only`, `cells_roundtrip`.
-**Live checks**: none (LC-2-52 — every unit in a building on a held cell, every held cell with a reason — arrives with
+**Extension points**: S1.274 (recorded cells: a unit on one is not in the counted stock); S1.271 (K-28: a parcel, its owner and cost); S1.284 (K-28:
+the cell a unit stands on); S1.287 (K-28: a process's own site cell); S2.139 (K-28 parcels leased apart); S2.140 (the
+opening's parcels); S2.155 (K-28 parcels sold, leased and split); S2.169 (K-28 cells held only when something stands on
+them); S2.175 (parcels as the land market's items); S2.203 (K-28: sites on cells); S6.134 (the map: sites, parcels and
+paths' cells by tile).
+**Unit tests**: `cell_arithmetic_from_tile`, `cell_id_fits_u32`, `parcel_lookup_in_sorted_run`,
+`insert_keeps_run_sorted`, `overlapping_parcel_refused`, `split_keeps_cells_and_cost`, `path_cells_from_segment_line`,
+`crossing_reads_tile_index`, `empty_tile_costs_nothing`, `release_when_not_held_apart`, `rows_bounded_by_holdings`,
+`parcel_written_by_transfer_only`, `cells_roundtrip`, `segment_index_rebuilt_equal`.
+**Live checks**: none (LC-2-52 — every unit in a building on its cell, every parcel with a reason — arrives with
 S2.169).
 **Budget**:
-- Volumes: owned cells ≈ 0.3 M at the design point (S2.140's count, farms' land by size class at the 1 km cell); no
-  path cells at the 1 km cell; inserts and releases with land sales and construction (a few thousand a day).
-- Access: event-driven; lookups at decisions that read a place (a builder's parcels, a commute).
-- Unit targets: a lookup ≤ 40 VM ns; an insert ≤ 1 VM µs.
-- `ledger line 12 (physical units, cells, owner index): +8.2 MB resident (≈ 0.3 M owned cells × 20 B at three-quarters
-  fill ≈ 8 MB, of which the +8 B owner and cost are 2.4 MB; tile directory 0.2 MB)`; buildings and leases add no row
-  (a building's cell is its unit's site; a lease is a contract on the owned cell's holding), and paths none at the 1 km
-  cell.
-- Ratchets: `[fin.cells]` (added) `lookup_ns` 40, `mb` 9.
+- Volumes: parcels ≤ 1.0 M (S2.140: the land holdings held apart, ≤ 0.3 M farms and land-using firms and ≈ 0.2 M
+  leased shares, each at most two rectangles); the segment index ≈ 1.0 M entries (≤ 0.5 M segments at 1 000 zones ×
+  ≈ 2 tiles, `[store] segment_tiles`); inserts, splits and releases with land sales and construction (a few thousand a
+  day).
+- Access: event-driven; parcel lookups at decisions that read a place (a builder's parcels, a sale, a strike's
+  footprint); `crossing` and `cells_of` at a footprint's reach and the map (S6.134), never on a pass.
+- Unit targets: a parcel lookup ≤ 60 VM ns; an insert or split ≤ 1 VM µs; `crossing(cell)` ≤ 150 VM ns (≈ 25
+  segments a tile, a line test each); a segment's index update ≤ 1 VM µs. No share of its own on the day: its users'
+  shares carry their reads.
+- `ledger line 12 (physical units, cells, owner index): +37.7 MB resident (≤ 1.0 M parcels × 24 B at three-quarters
+  fill = 32.0 MB; the segment index ≈ 1.0 M × 4 B at three-quarters fill = 5.3 MB and the two tile directories 0.4 MB,
+  which follow the segments and tiles, not the persons)`; buildings and leases add no row, and paths none. saved: +24 MB
+  (the parcels; the index and directories rebuilt).
+- Ratchets: `[fin.cells]` (added) `lookup_ns` 60, `crossing_ns` 150, `mb` 38.
 **Guards**: PC-23 (places belong to phx-geo) holds; GEO.14's "no second map": no cell geometry stored.
-**Not allowed**: a dense cell grid; a cell's coordinates or terrain stored; a lessee stored on the cell; an owner
-written
-other than by the holdings' transfer; a cell row beside a building's site; a named unit per parcel; a cell held for no
-reason.
+**Not allowed**: a dense cell grid; a row per cell; a path's cells stored; a cell's coordinates or terrain stored; a
+lessee stored on a parcel; an owner written other than by the holdings' transfer; a row beside a building's site; a
+named unit per parcel; overlapping parcels; a parcel held for no reason.
 **Done when**:
-- [ ] `CellId`, `Cells`, `cell_m` and their tests; the fast checks pass.
-- [ ] `StoreStats` (S1.117) implemented for held cells; lookups report rows through `ExecCounters::visited`.
+- [ ] `CellId`, `Parcels`, `SegmentIndex`, `GEO.cell_m` and their tests; the fast checks pass.
+- [ ] `StoreStats` (S1.117) implemented for parcels and the segment index; lookups report rows through
+  `ExecCounters::visited`.
 - [ ] `tools/bench.sh -F cells` at the design point within `[fin.cells]`.
 - [ ] §7.4 "Cells" written; GEO.19's row in §13; the two reviews done; status `done` and the section removed.
 
@@ -8447,12 +8514,11 @@ region per day, with their running sum); S2.210 (K-30: the day's weather, stage 
 - its share of fin.fixed.real: 0.03 / 0.03 / 0.03 core-ms (B / NB / H)
 - `ledger line 19 (map and network): +0.4 MB resident (≈ 18 k rows × 20 B)`; the footprint is a day buffer at 3a (< 0.01
   MB, below the day's maximum, S1.161).
-- Line 19's parts at the design point (`[resolution] zones` 500), each stated by its step: tiles 0.5 and zone distances
-  0.5 (today's; 2 at 1 000 zones, 8 at 2 000), segments and routes 8.8 (S1.187), loads 2 (S1.188), the units registry
-  1.5 (S1.183), deposits 1.6 (S1.191), weather 0.4 — ≈ 15.3 MB (≈ 30.5 at 1 000 zones, ≈ 66.5 at 2 000), read together
-  by `-F all` against `[fin.geo] mb`.
-- Ratchets: `[fin.weather]` (added) `region_day_us` 1, `footprint_us` 1; `[fin.geo]` (added) `mb` 16 (31 at 1 000 zones,
-  67 at 2 000).
+- Line 19's parts at the design point (`[resolution] zones` 1 000), each stated by its step: tiles 0.5 and zone
+  distances 2 (8 at 2 000 zones), segments and routes 19 (S1.187), loads 4 (S1.188), the units registry 3 (S1.183),
+  deposits 1.6 (S1.191), weather 0.4 — ≈ 30.5 MB (≈ 66.5 at 2 000), read together by `-F all` against `[fin.geo] mb`.
+- Ratchets: `[fin.weather]` (added) `region_day_us` 1, `footprint_us` 1; `[fin.geo]` (added) `mb` 31 (67 at 2 000
+  zones).
 **Guards**: PC-100 (S1.125) refuses a saved unbounded `Vec` of dated rows (the old `Weather::shocks` form) once the
 horizons are in.
 **Not allowed**: weather kept without a horizon; a float in a store; a footprint's tiles found by scanning parties.
@@ -9383,7 +9449,7 @@ unlink, a link and one column write, and everything the person owns names the pe
 | `crates/kernel/phx-pop/src/person_kind.rs` | the person kind: groups, household threading, moves |
 | `crates/kernel/phx-pop/src/person_word.rs` | `PersonWord` bit fields and `PersonView` |
 | `crates/kernel/phx-pop/src/person_kind_tests.rs` | logic-level tests |
-| `crates/apps/phx-fin/src/parties.rs` | -F driver: 7.5 M persons in 2.21 M households (1–8 a household, mean 3.4) |
+| `crates/apps/phx-fin/src/parties.rs` | -F driver: `[store] persons` in `[store] households` (1–8 a household, mean 3.4) |
 | `docs/ARCHITECTURE.md` | §7.5 "Persons" with the byte map |
 | `perf/budget.toml` | `[fin.parties]` keys below |
 
@@ -9878,7 +9944,7 @@ develop over days; the rest go to the stored tier. No fixed row cap exists. Toda
 **Extension points**: S1.214 (today's users and weather's public events from the day's footprint); S1.235; S2.128;
 S2.182; S2.185; S2.192; S2.195; S2.211; S3.102; S3.109; S3.121; S3.123; S3.135; S3.137; S3.186; S8.121; S8.122; S8.197;
 S8.198; S8.199; S8.200; S4.101; S4.111; S4.112; S4.113; S4.129; S4.131; S4.132; S4.133; S4.135; S4.165; S4.166; S4.172;
-S4.175; S4.179; S5.142; S5.154; S5.168; S6.105; S6.107; S6.125; S6.130; S6.133; S6.134 (events that develop, and the
+S4.175; S4.179; S5.142; S5.154; S5.168; S6.105; S6.107; S6.125; S6.130; S6.133; S6.135 (events that develop, and the
 news).
 
 **Unit tests**: `record_before_reaction_readable_same_day`; `rule_marks_public_at_close`; `one_event_many_subjects`;
@@ -9891,7 +9957,8 @@ S1.214 on.
 **Budget**: volumes: public events 2 k a day (B, NB, H), 0.73 M at `horizon_events_days`; occurrences and fails ≈ 100 k
 a day stored. Units: append 3.8 ns VM. its share of fin.fixed.observer: 3 / 2 / 3 core-ms (B / NB / H) (the 10a pass
 over ≈ 100 k / 70 k / 100 k events and their stored flush; hazards run on every day). ledger line 18 (records): +18.5 MB
-resident (0.73 M × 24 B + subjects) at the declared 365-day horizon, forced by the ledger (37 MB at 730 days). saved: ≈
+resident (0.73 M × 24 B + subjects) at the declared 365-day horizon, forced by the owner's memory margin (§12; 37 MB
+at 730 days). saved: ≈
 300 MB a simulated year of stored segments. Ratchets `[fin.records]`: `append_ns` 3.8, `events_mb` 18.5 (added),
 `stored_mb_per_year` 300 (added), `flush_core_ms` 3 (added).
 
@@ -9992,7 +10059,7 @@ Filed accounts (S1.216) and the credit bureau (S1.217) are its two encoded kinds
 | `crates/kernel/phx-record/src/records_tests.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/records.rs` | -F driver: 6 k series × 12 months × 3 vintages at `horizon_series_days` |
 | `docs/ARCHITECTURE.md` | §7.6 "The records store" |
-| `perf/budget.toml`, `perf/design.toml` | `[fin.records]` keys below; `[resolution] horizon_series_days = 365` |
+| `perf/budget.toml`, `perf/design.toml` | `[fin.records]` keys below; `[resolution] horizon_series_days = 730` |
 
 **Design**:
 - Record kinds are declared (K-21): publisher kind, subject kind, series key type, value columns with units (Law 8),
@@ -10034,8 +10101,8 @@ against each record's publication), from the first release.
 
 **Budget**: volumes: ≈ 0.2 M series records at `horizon_series_days`; appends ≈ 3 k a day; as-published reads ≈ 0.5 M
 a business day inside `fin.decide` units and `fin.fixed.outlooks` (≤ 100 ns each; no ns added to their units). Units:
-append ≤ 3.8 ns VM; as-published ≤ 100 ns. ledger line 18 (records): +3.5 MB resident (series and small kinds at the
-declared 365-day horizon, forced by the ledger; 7 MB at 730 days). Ratchets `[fin.records]`: `series_mb` 3.5 (added),
+append ≤ 3.8 ns VM; as-published ≤ 100 ns. ledger line 18 (records): +7 MB resident (series and small kinds at the
+declared 730-day horizon; 3.5 MB at 365 days). Ratchets `[fin.records]`: `series_mb` 7 (added),
 `published_ns` 100 (added).
 
 **Guards**: the as-published read is the only read of a series record (PC-15 snapshot).
@@ -10069,9 +10136,9 @@ published by day d.
 | --- | --- |
 | `crates/kernel/phx-record/src/filings.rs` | `Filings`: append by filing day, block encoding, per-filer lookup, pruning |
 | `crates/kernel/phx-record/src/filings_tests.rs` | logic-level tests |
-| `crates/apps/phx-fin/src/records.rs` | -F driver: 0.46 M statements at `horizon_filings_years` |
+| `crates/apps/phx-fin/src/records.rs` | -F driver: `[store] filed_statements` at `horizon_filings_years` |
 | `docs/ARCHITECTURE.md` | §7.6 "Filed accounts" |
-| `perf/budget.toml`, `perf/design.toml` | `[fin.records]` keys below; `[resolution] horizon_filings_years = 1` |
+| `perf/budget.toml`, `perf/design.toml` | `[fin.records]` keys below; `[resolution] horizon_filings_years = 2` |
 
 **Design**:
 - A statement is (filer, period end, filed day, vintage, the ten lines). Rows are appended per filing day and packed
@@ -10097,10 +10164,10 @@ S3.207; S4.102 (members' filed accounts); S4.105.
 
 **Live checks**: LC-1-100 applies.
 
-**Budget**: volumes: 0.46 M statements at the 1-year horizon (0.92 M at two years); appends ≈ 2.5 k a day, ≈ 30 k on a
+**Budget**: volumes: 0.92 M statements at the two-year horizon (0.46 M at one year); appends ≈ 2.5 k a day, ≈ 30 k on a
 filing window's last days. Units: append ≤ 50 ns a statement; a block decode ≤ 2 µs. Its callers (S2.108) carry the
-shares, ≤ 2 core-ms on a filing window's last day. ledger line 18 (records): +22 MB resident (0.46 M × 48 B at the
-declared 1-year horizon, forced by the ledger; 44 MB at two years). Ratchets `[fin.records]`: `filings_mb` 22 (added),
+shares, ≤ 2 core-ms on a filing window's last day. ledger line 18 (records): +44 MB resident (0.92 M × 48 B at the
+declared two-year horizon; 22 MB at one year). Ratchets `[fin.records]`: `filings_mb` 44 (added),
 `filing_bytes` 48 (added).
 
 **Guards**: none new.
@@ -10257,7 +10324,7 @@ party — from counters the bases maintain, never from a pass over the parties.
 | `crates/kernel/phx-record/src/daylog_tests.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/records.rs` | -F driver: 20 day-record kinds × 3 countries × 365 days |
 | `docs/ARCHITECTURE.md` | §7.6 "The day ledger" |
-| `perf/budget.toml`, `perf/design.toml` | `[fin.records] daylog_mb`, `day_row_us` (added); `[resolution] horizon_day_ledger_days = 365` |
+| `perf/budget.toml`, `perf/design.toml` | `[fin.records] daylog_mb`, `day_row_us` (added); `[resolution] horizon_day_ledger_days = 730` |
 
 **Design**:
 - A day-record kind is declared (K-21) by its system: columns of i64 counts and sums with their units, keyed by
@@ -10288,9 +10355,9 @@ it).
 counts equal the directory's and families' counts at the close (REP.15; applicable from this step).
 
 **Budget**: volumes: ≤ 20 kinds × 3 countries a day. Access: 10d, serial, small. Units: ≤ 1 µs a row. its share of
-fin.fixed.observer: 0.1 / 0.1 / 0.1 core-ms (B / NB / H). ledger line 18 (records): +1 MB resident (≤ 60 rows a day × ≤
-32 B at the declared 365-day `horizon_day_ledger_days`, forced by the ledger; 2 MB at 730 days). Ratchets:
-`fin.records.daylog_mb` 1 (added), `fin.records.day_row_us` 1 (added).
+fin.fixed.observer: 0.1 / 0.1 / 0.1 core-ms (B / NB / H). ledger line 18 (records): +2 MB resident (≤ 60 rows a day × ≤
+32 B at the declared 730-day `horizon_day_ledger_days`; 1 MB at 365 days). Ratchets:
+`fin.records.daylog_mb` 2 (added), `fin.records.day_row_us` 1 (added).
 
 **Guards**: none new.
 
@@ -10416,7 +10483,7 @@ samples are S1.222's.
 (the recorder reads cells and day rows); S1.402; S1.453; S1.477; S1.478 (population and labour counts); S1.479; S1.480;
 S2.128; S2.161; S2.174; S2.175; S2.176; S2.215; S8.122; S4.124; S4.159 (pension measures); S4.171; S4.180; S4.184;
 S5.121 (tax receipts); S5.133; S5.137; S5.138; S5.142 (the election's counts); S5.158; S5.186; S6.105; S6.111; S6.115
-(research, productivity, labour state); S6.118; S6.126; S6.129; S6.130.
+(research, productivity, labour state); S6.118; S6.126; S6.129; S6.130; S6.134 (the map's sums by zone).
 
 **Unit tests**: `flow_accumulator_refused`; `merge_order_free`; `death_moves_count_and_exposure`;
 `age_crossing_moves_class`; `exposure_integral_exact`; `period_close_resets_by_stamp`; `heavy_day_merge_bounded`;
@@ -13932,7 +13999,7 @@ them rebuilt at load with the hash equal; `tools/bench.sh -F holdings,units,batc
 **Architecture**: writes §7.10 phx-hold and §7.10.1 "Holdings of goods and physical units".
 **Depends on**: S1.183 (K-22: 24-bit `UnitId`s, each unit's kind, grade, zone and content per unit); S1.196 (K-32:
 the declared inline columns of the firm and household records); S1.207 (K-33: a holding names a person, E 46);
-S1.268 (K-58: a group holds jointly); S1.190 (K-28: a cell owned apart, its owner and cost); S1.165 (K-06: the
+S1.268 (K-58: a group holds jointly); S1.190 (K-28: a parcel held apart, its owner and cost); S1.165 (K-06: the
 rows-by-holder instance, the index hooks); S1.159 (K-02: row generations); S1.160 (K-03: batch buffers).
 **Goal**: every good and counted capital unit is a holding (holder, unit, place, units, cost) whose holder is a
 person, a participation group or a firm — never a household (PTY.3, E 46): a firm's own stock and four inputs
@@ -13962,12 +14029,12 @@ Instrument holdings are S1.280's.
 
 - **Words.** `UnitWord` = unit id 24 bits + flags 8 (lots, bound, basis code 3 bits, wide, whole pledge, residence).
   `CostWord` = the cost at weighted average, or the lot run's ref (S1.276). `HoldingRef` u64 = holder + place (3 bits:
-  goods slot, household slot, plant cell, row, owned cell, S1.280's instrument row), with the generation where it
+  goods slot, household slot, plant cell, row, parcel, S1.280's instrument row), with the generation where it
   outlives a day.
 - **Holders** (PTY.3, E 46): a household slot stores a unit its person or group owns; what the household holds is a
   read, the sum over its slots and its members' rows. A person leaving (REP.26) takes its units to rows or its new
-  household's slots. **Land** (GEO.5): land held apart is S1.190's owned cell (its owner and cost), read here as a
-  holding of place kind "cell". **Place**: a unit in a building names it (REP.24, HSG.21) — a slot's dwelling by the
+  household's slots. **Land** (GEO.5): land held apart is S1.190's parcel (its owner and cost), read here as a
+  holding of place kind "parcel". **Place**: a unit in a building names it (REP.24, HSG.21) — a slot's dwelling by the
   flag "residence", its place the household's residence (S1.196); a dwelling held elsewhere is a row with its
   place; a vehicle has none — so a building's composition is read from the holdings placed in it (S1.284), never
   stored.
@@ -14009,12 +14076,12 @@ losses); S6.133 (looking at a party).
 - ledger line 4 (households): +0 B (named slot household slots: 2 × 20 B inside the 174 B household record, S1.196)
 - ledger line 5 (firms): +0 B (named slot firm goods words and plant mask, inside `[store] firm_bytes`)
 - ledger line 12 (physical units, cells, owner index): +28 MB resident (1.0 M × 28 B)
-- ledger line 24 (plant cells): +47 MB resident (1.15 M × 5.1 cells × 8 B at A = 1, where `perf/design.toml` measures
-  the design point; 90 MB at A = 2, 196 MB at the committed 4) and +6 MB (≤ 0.24 M wide cells × 24 B)
+- ledger line 24 (plant cells): +90 MB resident (1.15 M × 5.1 cells × 2 × 8 B at A = 2, where `perf/design.toml`
+  measures the design point; 47 MB at A = 1, 196 MB at the committed 4) and +6 MB (≤ 0.24 M wide cells × 24 B)
 - adds 0 phone-ns to fin.batches.batch_ns at 1.2 M / 0.9 M / 1.2 M items (the inline move, ≤ 6 ns VM, is inside it)
 - on fin.calendar.catastrophe (a day a footprint strikes): 10 core-ms (0.2 M losses); joins H and B′ (an event, composed by S1.360); saved: +81 MB
 - `[fin.units]` (added): `rows_mb` 28, `row_bytes` 28, `rows` 1 000 000, `inline_move_ns` 6, `row_move_ns` 40,
-  `plant_cell_bytes` 8, `plant_mb` 47, `wide_cells` 240 000, `faults_per_day` 0.
+  `plant_cell_bytes` 8, `plant_mb` 90, `wide_cells` 240 000, `faults_per_day` 0.
 
 **Guards**: PC-92 covers `phx-hold`; only the batch entry points are public (R6); PC-24: `phx-hold` alone writes.
 **Not allowed**: a per-item public mutator; a list walk to find a holding; a cost kept beside its lots; a household as
@@ -14113,7 +14180,7 @@ it actually consumed (TEC.9).
 | `docs/ARCHITECTURE.md` | §7.10.2 |
 
 **Design**:
-- **Columns** by `UnitId` (dense, `[store] unit_ids` ≈ 55 k at `[resolution] zones` 500; 110 k at 1 000): held i64; opening i64
+- **Columns** by `UnitId` (dense, `[store] unit_ids` ≈ 110 k at `[resolution] zones` 1 000): held i64; opening i64
   (copied for units touched today at the day's first write, K-07 stamp); nature in and out by source kind as i64 pairs,
   laid out only for the source kinds a unit's kind can have (a good: way, deposit, purchase used, spoilage, hazard,
   departure, arrival; a capital class: completion, wear, hazard) — ≈ 32 B a unit on average. `#[maintained(writer =
@@ -14137,14 +14204,15 @@ reaches has no pair: `unit_without_source_kind`); E6 (columns saved, slice total
 `two_groups_one_day`).
 
 **Extension points**: S1.275 (the goods identity read from it); S1.274 (the place index's stock by (zone, class));
-S1.289 (making groups from realisations); S1.330 (net assets' deltas from the batch apply).
+S1.289 (making groups from realisations); S1.330 (net assets' deltas from the batch apply); S6.134 (the map's units
+held by (zone, class)).
 
 **Unit tests**: `totals_follow_batch`, `opening_copied_once`, `identity_exact`, `making_group_checks_coefficient`,
 `unknown_way_is_finding`, `content_floor_difference_exact`, `day_zero_opening_is_held`, `unit_without_source_kind`,
 `slices_rebuilt_equal`, `two_groups_one_day`.
 **Live checks**: none (the audit's Units family reads it on every run).
 **Budget**:
-- ledger line 16 (small-bases pool): +1.75 MB resident (55 k units × ≈ 32 B; 3.5 MB at 1 000 zones)
+- ledger line 16 (small-bases pool): +3.5 MB resident (110 k units × ≈ 32 B at 1 000 zones)
 - adds 1 phone-ns to fin.batches.batch_ns at 1.2 M / 0.9 M / 1.2 M items and to fin.b2b.all_in_ns at 1.0 M / 0.1 M /
   1.0 M items (deltas fused into the apply)
 - Making groups (24 B + 12 B an input) live in the day buffers (line 21's 6a set).
@@ -14189,7 +14257,7 @@ undrawn units; no draw visits a party that holds nothing there.
 **Design**:
 - **Stock**: a (zone, class) pair's stock U is its registry unit's held total, maintained by the unit totals (S1.273 —
   one writer). Its tiles T are the zone's land tiles (K-25, `phx-geo`, read-only). A unit on a recorded cell (in a
-  building, on a cell owned apart; S1.190, S2.169) leaves its zone's counted stock, and a strike on that tile reaches it
+  building, on a parcel held apart; S1.190, S2.169) leaves its zone's counted stock, and a strike on that tile reaches it
   through `standing` and its holdings' place, not through the draw.
 - **Counted per tile**: tiles with a recorded count (exceptions: a sparse sorted column of (tile u32, count u32) per
   pair) keep it; the rest share R = U − Σ recorded, split over them by largest remainder in tile-id order (S1.172),
@@ -14229,9 +14297,9 @@ units leave the counted stock); S4.134 (a victim's units drawn from a pair).
 **Live checks**: none (LC-0-13, LC-0-14 read the losses at owners from S1.294).
 
 **Budget**:
-- ledger line 12 (physical units, cells, owner index): +12 MB resident (the owners-by-zone instance, ≈ 2.2 M members ×
-  5.33 B at 500 zones; 14 MB at 1 000), +5.2 MB (≈ 25 k (zone, class) pairs × 8 B headers, 0.2 MB, 0.4 at 1 000 zones,
-  + exceptions and drawn rows ≤ 5 MB after two years); saved: +5 MB
+- ledger line 12 (physical units, cells, owner index): +14 MB resident (the owners-by-zone instance, ≈ 2.6 M members ×
+  5.33 B at 1 000 zones), +5.4 MB (≈ 50 k (zone, class) pairs × 8 B headers, 0.4 MB, + exceptions and drawn rows ≤ 5
+  MB after two years); saved: +5 MB
 - on fin.calendar.catastrophe (a day a footprint strikes): 8 core-ms (≈ 0.2 M draws × 38 ns VM); joins H and B′ (an event, composed by S1.360)
 - ordinary days: ≈ 20 k draws (sales naming units) × 38 ns VM ≈ 1 core-ms, its share of fin.fixed.real: 1 / 1 / 1
   core-ms (B / NB / H)
@@ -14872,13 +14940,13 @@ allocation per day; a household holding shares (E 46).
 **Clauses**: GEO.4 STATE
 **Architecture**: writes §7.10.7 "Named units".
 **Depends on**: S1.271 (holdings and their place key: a building's composition is read from the holdings placed in
-it); S1.190 (K-28: the cell a unit stands on; a parcel's cell row); S1.187 (K-26: the path a line or road follows);
+it); S1.190 (K-28: the cell a unit stands on, a `CellId` u32; a parcel's row); S1.187 (K-26: the path a line or road follows);
 S1.180 (K-21: unit kinds and their declared columns); S1.165 (K-06: the by-tile instance); S1.274 (the owner index a
 building's composition is read through); S1.159 (K-02: generations).
 **Goal**: every unit the spec names one by one — an institution's plant and dwellings (REG.9), infrastructure
 (GEO.4), buildings (HSG.21), power plants and lines, schools and clinics — is a row with its kind, owner, site or
 path, condition, age class and cost, and the columns its kind declares; what stands on a tile and what a building
-holds are reads; counted units stay holdings by (zone, class); land held apart is S1.190's owned cell.
+holds are reads; counted units stay holdings by (zone, class); land held apart is S1.190's parcel.
 
 **Files**:
 
@@ -14894,7 +14962,7 @@ holds are reads; counted units stay holdings by (zone, class); land held apart i
 
 | Columns | Layout |
 | --- | --- |
-| Core (every named unit) | kind `KindH` u16 · condition u8 · age class u8 · owner `PartyKey` u32 · site u32 (a K-28 cell or a K-26 path, as the kind declares) · cost i64 (at cost, ACC.2) = 20 B |
+| Core (every named unit) | kind `KindH` u16 · condition u8 · age class u8 · owner `PartyKey` u32 · site u32 (a K-28 `CellId`, or a K-26 path, as the kind declares) · cost i64 (at cost, ACC.2) = 20 B |
 | Kind-declared | SoA columns a kind declares in K-21, laid out per kind, never a union: a building's floors u8, position in its cell u8, floor area u16 (24 B a building in all); infrastructure's capacity u32, service day u32, maintenance state u8 (GEO.4); a plant's technology, efficiency, fuel, ramp limit, running cost (ENE.1) |
 
 - A kind's table is a K-02 slot table with generations (`NamedRef`); a unit is created by its completion (a project,
@@ -14920,7 +14988,8 @@ rows: `kind_without_rows`); E6 (`named_round_trip`); a sale of a building keeps 
 
 **Extension points**: S1.294 (strikes read `standing`); S2.160 (infrastructure owned privately); S2.169 (buildings on
 held cells, their composition read); S2.202, S2.212 (power plants, storage, lines and investment in them); S8.200
-(strategies read named units); S5.128, S5.131 (public services' and public capital's units).
+(strategies read named units); S5.128, S5.131 (public services' and public capital's units); S6.134 (the map: units
+by tile, their sites, owners and `in_building`).
 
 **Unit tests**: the edge cases' tests, and `create_on_completion`, `remaining_life_is_read`, `kind_columns_per_kind`,
 `building_composition_is_read`.
@@ -14939,7 +15008,7 @@ held cells, their composition read); S2.202, S2.212 (power plants, storage, line
 **Not allowed**: a union row for every kind; a stored remaining life; a building's composition stored; a scan of all
 units to find a tile's; an allocation per day.
 **Done when**:
-- [ ] Tables, core and kind columns, parcels, `standing` and `in_building` with tests; fast checks pass.
+- [ ] Tables, core and kind columns, sites, `standing` and `in_building` with tests; fast checks pass.
 - [ ] `tools/bench.sh -F units` within the `named_*` keys.
 - [ ] §7.10.7 written; both reviews' findings fixed; status `done` and the section removed.
 
@@ -15022,8 +15091,8 @@ kinks, with use); S1.484, S1.487 (the opening's plant, the dwelling kind); S2.11
 - ledger line 24 (plant cells): +0.8 MB resident (≈ 0.1 M failed-band cells × 8 B: failures ≈ 3 k a day, live until
   repaired or scrapped); the cells themselves are S1.271's line (47 MB at A = 1, 90 at 2, 196 at 4); the step is
   parametric in A
-- its share of fin.fixed.close_books: 0.3 / 0 / 58 core-ms (B / NB / H) (1.15 M firms × 5 cells × 10 ns at the
-  quarter end; ≈ 5.5 k a business day on other fiscal calendars; twice at A = 2)
+- its share of fin.fixed.close_books: 0.6 / 0 / 116 core-ms (B / NB / H) at A = 2, the design point's (1.15 M firms ×
+  5 cells × 2 × 10 ns at the quarter end; ≈ 5.5 k a business day on other fiscal calendars; half at A = 1)
 - adds 10 phone-ns to fin.decide.visit_ns at 246 k / 30 k / 246 k items (capacity's closed form at the visit)
 - its share of fin.fixed.kinks: 0 / 0 / 0 core-ms (B / NB / H) (no walk)
 - ledger line 5 (firms): +0 B (named slot plant capacity, inside `[store] firm_bytes`)
@@ -15869,7 +15938,7 @@ good, so a good's stalls are contiguous for the stall book, a stall's ref never 
 `ending_finds_stalls_through_goods`.
 **Live checks**: none (a base).
 **Budget**: 1.7 M stalls; posts, reprices and withdrawals at S1.296's `fin.offers.post_ns` 60. At the design point's
-declared settings (`perf/design.toml` `[store] zones` 1 000, forced by ledger lines 17/19): ledger line 17 (markets):
+declared settings (`perf/design.toml` `[store] zones` 1 000, the owner's): ledger line 17 (markets):
 +17.4 MB resident (1.94 M positions × 8 B + 242 k blocks × 8 B; 19.6 MB at 2 000 zones), inside `fin.stalls.mb` 23 with
 S1.301. saved: +17.4 MB.
 **Guards**: `phx_market::offers::stalls` on PC-92's hot list.
@@ -16021,7 +16090,7 @@ one weight table per class, never a tree per buyer.
 50 k / 0.1 M items (inside the review's 550). Closes 0.5 M a day at ≤ 15 ns (`fin.stalls.close_ns` 15, added): adds
 0 phone-ns to fin.retail.all_in_ns at 6.75 M / 6.75 M / 6.75 M items (0.07 a sale × 15, inside the serve's share,
 S1.306). Reopens ride the batch: adds 0 phone-ns to fin.batches.batch_ns (≤ 2 of its 35, S1.309). At the design
-point's declared settings (`perf/design.toml` `[store] zones` 1 000, forced by ledger lines 17/19): ledger line 17
+point's declared settings (`perf/design.toml` `[store] zones` 1 000, the owner's): ledger line 17
 (markets): +5.3 MB resident (trees 242 k × 8 B, block least points 242 k × 4 B, goods' headers and index 1.1 MB, block
 lists 1.0 MB, zone factors 0.3 MB); with S1.299's 17.4 MB, `fin.stalls.mb` 23 (22.7). At 2 000 zones: 8.0 + 19.6 =
 27.6 MB. saved: +0 B (rebuilt).
@@ -17584,7 +17653,7 @@ method, from the day's individual prints where a method names the market.
 | `crates/kernel/phx-market/src/prints/tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/marks.rs` | -F driver: `fin.valuation.mark_ns`, `fin.marks` |
 | `perf/budget.toml` | `[fin.valuation]` `mark_ns` 7.7; `[fin.marks]` `mb` 27, `bytes_per_day` 4.05 (added) |
-| `perf/design.toml` | cites `perf/design.toml`'s `[resolution]` `horizon_marks_instruments_days` (250, DRV.10's floor) and `horizon_marks_goods_labour_days` |
+| `perf/design.toml` | cites `perf/design.toml`'s `[resolution]` `horizon_marks_instruments_days` and `horizon_marks_goods_labour_days` (730 each; DRV.10's floor 250) |
 | `docs/ARCHITECTURE.md` | §7.11 "Prints, marks and fixings (K-86)" |
 
 **Design**:
@@ -17643,14 +17712,13 @@ S3.203, S8.105, S4.101, S4.106, S4.115, S4.122, S4.131, S4.132, S4.161, S4.162, 
 **Budget**: prints and marks formed at 6c for the instances that met, 21 k / 13 k / 21 k (B / NB / H: goods and labour
 every day, ≈ 30 % of printing instruments and series on business days) at ≤ 7.7 ns VM with measures
 (`fin.valuation.mark_ns` 7.7): its share of fin.fixed.calls: 0.2 / 0.1 / 0.2 core-ms (B / NB / H). At the design
-point's declared settings (`perf/design.toml` `[resolution]` `horizon_marks_instruments_days` 250, DRV.10's floor, and
-`horizon_marks_goods_labour_days` 182, forced by ledger lines 17/19; `DRX.series_mark_days` 20): ledger line 17
-(markets): +26.7 MB resident (live rows 58 k × 64 B = 3.7 MB; staging 58 k × 64 B = 3.7 MB; histories 4.58 M
-market-days × ≤ 4.05 B = 18.6 MB — goods and labour 13 k × (182 + 32) = 2.78 M, register instruments 11.5 k × (250 +
-32) × 30 % = 0.97 M, listed series 16 k × (20 + 32) = 0.83 M, each horizon with its mean half frame; fixings 0.7 MB) —
-`fin.marks.mb` 27, `fin.marks.bytes_per_day` 4.05 (added); the listed series' marks are these, none kept elsewhere.
-Beside it, at the full horizons (500 and 365 days): histories 7.83 M × 4.05 B = 31.7 MB, 39.8 MB in all. saved: +26.7
-MB. ledger line 21 (day buffers): the day's fixing prints ≤ 0.5 M × 16 B = 8 MB on a busy day, released at 10e.
+point's declared settings (`perf/design.toml` `[resolution]` `horizon_marks_instruments_days` and
+`horizon_marks_goods_labour_days` 730, restored; `DRX.series_mark_days` 20): ledger line 17 (markets): +62.3 MB
+resident (live rows 58 k × 64 B = 3.7 MB; staging 58 k × 64 B = 3.7 MB; histories 13.37 M market-days × ≤ 4.05 B =
+54.1 MB — goods and labour 13 k × (730 + 32) = 9.91 M, register instruments 11.5 k × (730 + 32) × 30 % = 2.63 M,
+listed series 16 k × (20 + 32) = 0.83 M, each horizon with its mean half frame; fixings 0.7 MB) — `fin.marks.mb` 63,
+`fin.marks.bytes_per_day` 4.05 (added); the listed series' marks are these, none kept elsewhere. At the keepers'
+floors (goods and labour 182, instruments 250, DRV.10's): 26.7 MB. saved: +62.3 MB. ledger line 21 (day buffers): the day's fixing prints ≤ 0.5 M × 16 B = 8 MB on a busy day, released at 10e.
 **Guards**: `phx_market::prints` on PC-92's hot list; PC-28 (re-aimed at S1.158) guards the live `Print`; no `Print`
 from a quote, rate or valuation (compile level).
 **Not allowed**: a mark averaged over posted prices not sold at; a print kept beyond the day except as the mark and
@@ -19399,7 +19467,7 @@ to at Stage 8 already in place, so no decision moves then.
   `day_zero_through_core`.
 - E12 a player that queued nothing for a decision it keeps: none taken that day, counted — `player_keeps_none_queued`.
 
-**Extension points**: a new decision is a point and a register row; hooks: `mind_view` (S8.103), the household form (S8.106), the mandate transform (S8.122), post-decision hooks (first user S8.106); minds attach in Stage 8 without a decision moving. Steps that depend on it: S1.349, S1.350, S1.352, S1.402, S2.103, S2.108, S2.112, S2.113, S2.115, S2.123, S2.138, S2.145, S2.146, S2.151, S2.166, S2.167, S2.180, S2.181, S2.183, S2.184, S2.188, S2.191, S2.192, S2.195, S2.197, S2.198, S2.200, S2.201, S2.204, S2.208, S2.213, S3.102, S3.104, S3.108, S3.111, S3.119, S3.120, S3.126, S3.130, S3.134, S3.148, S3.151, S3.156, S3.165, S3.207, S3.209, S3.211, S8.103, S8.105, S8.106, S8.122, S8.199, S4.105, S4.109, S4.112, S4.114, S4.116, S4.129, S4.130, S4.131, S4.135, S4.137, S4.140, S4.143, S4.145, S5.104, S5.109, S5.111, S5.115, S5.128, S5.129, S5.130, S5.132, S5.138, S5.140, S5.143, S5.145, S5.146, S5.147, S5.148, S5.149, S5.150, S5.151, S5.152, S5.153, S5.154, S5.155, S5.162, S5.164, S5.167, S5.168, S5.169, S5.172, S5.176, S6.131, S6.135, S6.137, S6.139.
+**Extension points**: a new decision is a point and a register row; hooks: `mind_view` (S8.103), the household form (S8.106), the mandate transform (S8.122), post-decision hooks (first user S8.106); minds attach in Stage 8 without a decision moving. Steps that depend on it: S1.349, S1.350, S1.352, S1.402, S2.103, S2.108, S2.112, S2.113, S2.115, S2.123, S2.138, S2.145, S2.146, S2.151, S2.166, S2.167, S2.180, S2.181, S2.183, S2.184, S2.188, S2.191, S2.192, S2.195, S2.197, S2.198, S2.200, S2.201, S2.204, S2.208, S2.213, S3.102, S3.104, S3.108, S3.111, S3.119, S3.120, S3.126, S3.130, S3.134, S3.148, S3.151, S3.156, S3.165, S3.207, S3.209, S3.211, S8.103, S8.105, S8.106, S8.122, S8.199, S4.105, S4.109, S4.112, S4.114, S4.116, S4.129, S4.130, S4.131, S4.135, S4.137, S4.140, S4.143, S4.145, S5.104, S5.109, S5.111, S5.115, S5.128, S5.129, S5.130, S5.132, S5.138, S5.140, S5.143, S5.145, S5.146, S5.147, S5.148, S5.149, S5.150, S5.151, S5.152, S5.153, S5.154, S5.155, S5.162, S5.164, S5.167, S5.168, S5.169, S5.172, S5.176, S6.131, S6.136, S6.138, S6.140.
 **Unit tests**: `kinds_checked_both_ways`, `resolution_order`, `office_not_declared_stops`, `vacant_office_reads_founding`,
 `missing_founding_row_refused`, `same_day_decisions_read_start_state`, `counts_same_for_any_chunking`,
 `player_keeps_none_queued`, `hooks_called_in_order`, `intent_carries_tipping`, `day_zero_through_core`,
@@ -19648,7 +19716,7 @@ aspirations; the base exists and is measured before Stage 8 activates it.
 | `crates/kernel/phx-mind/src/mind.rs` | `Mind` (13 B, bit-field accessors), `GoalHandle` (2 B), `TypeRow`, `TypeTable`, `GoalRow`, `realise` |
 | `crates/kernel/phx-mind/src/weigh.rs` | `TermForm`, `choose`, `satisfice`, `choose_household`, `explain` |
 | `crates/kernel/phx-mind/src/mind_tests.rs` | unit tests |
-| `crates/apps/phx-fin/src/minds.rs` | -F module: 7.5 M minds, 3 M goal rows, options weighed at the decisions' counts |
+| `crates/apps/phx-fin/src/minds.rs` | -F module: a mind for each of `[store] persons`, their goal rows, options weighed at the decisions' counts |
 | `data/shared/MND.toml` | `[points]`: each decision point's declared concerns (the count `mind_ns` is read at) |
 | `perf/budget.toml` | `[fin.decide] term_ns = 2`, `option_fixed_ns = 3` (added); `[fin.minds] goal_mb = 12` (added) |
 | `docs/ARCHITECTURE.md` | §7.16 "Minds" |
@@ -19692,7 +19760,7 @@ aspirations; the base exists and is measured before Stage 8 activates it.
 - E14 two decisions of one person the same day: both read the stage's start mind; writes apply at 5d in kind order —
   `same_day_decisions_read_start_mind`, `mind_writes_apply_in_kind_order`.
 
-**Extension points**: `MindView`, `choose`, `satisfice`, `choose_household`, `explain`, `realise`, the goal row (4 B, the date folded into the target) and the type table; every decision from Stage 4 on is an option generator for `choose`, declaring its concerns in `MND.toml`'s `[points]`. A new concern is a `MND.concerns` row within the concern capacity; a new term form is a kernel step. Steps that depend on it: S4.105, S4.109, S4.112, S4.114, S4.116, S4.129, S4.130, S4.131, S4.135, S4.137, S4.140, S4.145, S6.135, S8.101, S8.102, S8.103, S8.105, S8.106, S8.197, S8.198, S8.200.
+**Extension points**: `MindView`, `choose`, `satisfice`, `choose_household`, `explain`, `realise`, the goal row (4 B, the date folded into the target) and the type table; every decision from Stage 4 on is an option generator for `choose`, declaring its concerns in `MND.toml`'s `[points]`. A new concern is a `MND.concerns` row within the concern capacity; a new term form is a kernel step. Steps that depend on it: S4.105, S4.109, S4.112, S4.114, S4.116, S4.129, S4.130, S4.131, S4.135, S4.137, S4.140, S4.145, S6.136, S8.101, S8.102, S8.103, S8.105, S8.106, S8.197, S8.198, S8.200.
 **Unit tests**: `mind_is_13_bytes`, `goal_handle_finds_row`, `type_and_stamp_share_word`, `loss_aversion_on_shortfall`, `best_takes_max_with_taste`,
 `satisfice_takes_first_good_enough`, `attention_limits_options`, `tipping_is_most_separating_term`,
 `household_sums_weighted_adults`, `own_best_differs_bit`, `realise_is_pure`, `no_goal_no_row`, `minds_round_trip`,
@@ -19748,7 +19816,7 @@ never writes the world.
 | `crates/kernel/phx-audit/Cargo.toml` | re-created (L1.17) |
 | `data/shared/SET.toml` | `SET.audit_cycle_days` (RESOLUTION, N8.6, N8.5; Appendix C listed in the same change) |
 | `crates/apps/phx-fin/src/audit.rs` | -F module: every base filled; B / NB / H change sets |
-| `perf/budget.toml` | `[fin.audit] ident_ns = 7.7`, `recount_ns_per_row = 0.4`; `[fin.fixed] recount = [55, 25, 85]` |
+| `perf/budget.toml` | `[fin.audit] ident_ns = 7.7`, `recount_ns_per_row = 0.4`; `[fin.fixed] recount` at S1.353's share × scale |
 | `docs/ARCHITECTURE.md` | §7.17 "phx-audit" |
 
 **Design**:
@@ -19779,7 +19847,7 @@ never writes the world.
 - E7 slices on the pool; findings sorted by (family, owner) before append — `findings_same_for_any_chunking`.
 - E11 the opening passes every family (GEN.7) — `opening_clean`.
 
-**Extension points**: `Family` and its `AuditView`: every base supplies its view; a new invariant is a declared (clause → family) row with its view, never a new family (N1's ten are closed). Steps that depend on it: S1.354, S1.442, S1.448, S2.104, S2.111, S2.162, S2.185, S2.196, S2.210, S3.106, S3.149, S3.157, S3.184, S3.204, S8.201, S4.107, S4.128, S4.159, S4.167, S4.176, S4.183, S5.161, S5.185, S6.112, S6.125, S6.139, S6.140.
+**Extension points**: `Family` and its `AuditView`: every base supplies its view; a new invariant is a declared (clause → family) row with its view, never a new family (N1's ten are closed). Steps that depend on it: S1.354, S1.442, S1.448, S2.104, S2.111, S2.162, S2.185, S2.196, S2.210, S3.106, S3.149, S3.157, S3.184, S3.204, S8.201, S4.107, S4.128, S4.159, S4.167, S4.176, S4.183, S5.161, S5.185, S6.112, S6.125, S6.140, S6.141.
 **Unit tests**: `each_family_pure_over_handed`, `injection_lights_one_family_each`, `owner_family_reports_first`,
 `recount_never_reads_maintained` (compile-fail), `nb_day_recounts_pending_and_units`, `cycle_continues_after_load`,
 `findings_same_for_any_chunking`, `opening_clean`, `violation_is_not_a_finding`, `dense_change_set_sweeps_words`,
@@ -19787,12 +19855,12 @@ never writes the world.
 **Live checks**: LC-0-09 (every close ran every declared family and found nothing) and LC-0-10 (each family's injection
 lights that family alone) re-aimed at the engine.
 **Budget**:
-- its share of fin.fixed.recount: 55 / 25 / 85 core-ms (B / NB / H) — the whole line, the audit being the core day's own
-  work: identities of the parties touched 20 / 10 / 50 (2.0 M / 1.0 M / 5.0 M at 7.7 VM-ns, `fin.audit.ident_ns`) plus
-  column recounts and the rolling cycle 35 / 15 / 35 (≤ 0.4 VM-ns a row, `recount_ns_per_row`; one
-  `audit_cycle_days`-th of the parties, ≈ 0.36 M at a 30-day cycle, and their rows a day; the design point's valve,
-  `[resolution] audit_cycle_days` 365, leaves 2.9 / 1.2 / 2.9). A non-business day recounts `pending` and
-  units only.
+- its share of fin.fixed.recount: 37.5 / 17.5 / 67.5 core-ms (B / NB / H) — the whole line, the audit being the core
+  day's own work: identities of the parties touched 20 / 10 / 50 (2.0 M / 1.0 M / 5.0 M at 7.7 VM-ns,
+  `fin.audit.ident_ns`) plus column recounts and the rolling cycle 17.5 / 7.5 / 17.5 (≤ 0.4 VM-ns a row,
+  `recount_ns_per_row`; one `audit_cycle_days`-th of the parties and their rows a day, ≈ 0.18 M at the owner's 60-day
+  cycle, `[resolution] audit_cycle_days`; 35 / 15 / 35 at 30 days). A non-business day recounts `pending` and units
+  only.
 - ledger line 21 (day buffers): +0 B (named slot: the slice totals and change-set bitmaps inside the day buffers'
   11 MB, K-03); ledger line 18 (records): +0 B (the findings ring is the run's record beside the save, not world state).
 - `StoreStats` implemented for the findings ring; every pass reports rows through `ExecCounters::visited` and the sweep
@@ -19804,7 +19872,7 @@ a full per-party recount every day.
 - [ ] `phx-audit` with the engine, the ten families, the harness and their tests; `SET.audit_cycle_days` registered; the
   fast checks pass.
 - [ ] `tools/bench.sh -F audit` at the design point: `ident_ns` ≤ 7.7, `recount_ns_per_row` ≤ 0.4, the audit's spans
-  within `fin.fixed.recount` 55 / 25 / 85 core-ms.
+  within `fin.fixed.recount` (its share × scale).
 - [ ] §7.17 written, §15 restated; the two reviews done; status `done` and the section removed.
 
 ---
@@ -20006,7 +20074,7 @@ two retained saves and the history they share fit the 4 GB storage budget.
 - E10 references in saved rows carry their generations; a load resolves them against the saved directory —
   `stale_generation_resolved_at_load`.
 
-**Extension points**: every core base declares its saved columns, its rebuild and its saved bytes; later bases' additions are declarations within them; the device's save (N8.10) is measured when the owner calls the device run. Steps that depend on it: S1.358, S6.136, S6.140.
+**Extension points**: every core base declares its saved columns, its rebuild and its saved bytes; later bases' additions are declarations within them; the device's save (N8.10) is measured when the owner calls the device run. Steps that depend on it: S1.358, S6.137, S6.141.
 **Unit tests**: `every_base_round_trips` (the K-10 harness over each base's hand-built fixture), `hash_tree_order_fixed`,
 `hash_same_for_any_workers`, `other_build_refused`, `partial_save_never_retained`, `history_segments_shared`,
 `rebuild_equals_maintained_everywhere`, `frame_buffers_bounded_by_frames_per_worker`, `raw_bytes_per_base_named_against_declared`,
@@ -20251,8 +20319,8 @@ restated with the measured units) written.
 **Depends on**: every step S1.100–S1.358, S1.334, S1.355 and S1.359 included (the whole core).
 **Goal**: the core is closed: every core base (K-01–K-106) exists, is saved and rebuilt, is audited by its family and
 meets its ratchets at the design point; the stage lines, the turns, the memory ledger and the saves are summed from
-every step's own figures and read against their budgets; what does not fit is stated as N8.7's finding and put to
-the owner, and nothing is lowered to make it fit.
+every step's own figures and read against their budgets and the owner's margins; a miss is met by N8.7's remedies in
+their order and what they cannot close is put to the owner, and nothing is lowered to make it fit.
 
 **Files**:
 
@@ -20261,7 +20329,7 @@ the owner, and nothing is lowered to make it fit.
 | `perf/budget.toml` | every `[fin.*]` ratchet restated at its measure plus the file's margin; `[fin.fixed]`, `[fin.decide]`, `[fin.calendar]`, `[fin.day]`, `[fin.turn]`, `[fin.mem]`, `[fin.save]` |
 | `perf/bench/<report>.json` | the close's `-F all` and `-g` reports kept (`-k`) |
 | `docs/ARCHITECTURE.md` | §3, §7, §13 (the memory ledger by line, the stage lines' tables) |
-| `docs/IMPLEMENTATION.md` | §12: the owner question this close states, if the sums miss |
+| `docs/IMPLEMENTATION.md` | §12: an owner question, only if a measured sum misses what N8.7's remedies can close |
 
 **Design**:
 - **The exception files** (PC-92, PC-96–PC-100, PC-102): each holds only sites a named Stage 1 step retires, every
@@ -20274,61 +20342,59 @@ the owner, and nothing is lowered to make it fit.
   each with every dated day that can fall on it and a campaign day, are read against `fin.turn.worst_ms` 1 800, and
   the composites against `fin.day`; each event of `[fin.calendar.events]` is composed on them one at a time on its
   worst day (§13.2, §2.24). E1's shares are summed against `fin.waterfall.mass_failure_core_ms` 225 (S1.345).
-  At the design point, from the steps' shares (`perf/design.toml [stage]`, `[fin.fixed]`, `[fin.decide.additions]`,
-  `[fin.calendar]`): the day before the valves is B 2 442.7, NB 734.1, H 3 355.1 and B′ 2 489.7 core-ms (`[stage]`
-  "day"); after the valves below, B 2 410.0, NB 720.2, H 3 322.4 and B′ 2 457.0. The calendar sets are 279.6
-  (`joins_h`) and 171.7 (`joins_bprime`) core-ms, a campaign day 144.5. The worst turns against `fin.turn.worst_ms`
-  1 800 (10 % headroom below the 2 000 line):
+  At the design point, 6.0 M persons (E 51), from the steps' shares × scale with the barriers unscaled (§2.11;
+  `perf/design.toml [stage]`, `[fin.fixed]`, `[fin.decide.additions]`, `[fin.calendar]`) and at `[resolution]`'s
+  settings: the day is B 1 958.9, NB 590.7, H 2 738.9 and B′ 1 996.5 core-ms (`[stage]` "day"). The calendar sets are
+  223.7 (`joins_h`) and 137.4 (`joins_bprime`) core-ms, a campaign day 115.6. The worst turns against
+  `fin.turn.worst_ms` 1 800 (10 % headroom below the 2 000 line):
 
   | turn | standing | + its calendar set | + a campaign day | + the worst event |
   | --- | --- | --- | --- | --- |
-  | 3 NB + H | 1 828 ms | 1 921 ms | 1 969 ms | 2 058 ms |
-  | 4 NB + B′ | 1 779 ms | 1 837 ms | 1 885 ms | 1 974 ms |
+  | 3 NB + H | 1 504 ms | 1 578 ms | 1 617 ms | 1 688 ms |
+  | 4 NB + B′ | 1 453 ms | 1 499 ms | 1 537 ms | 1 609 ms |
 
-  The worst event is E1's next day, 266.9 core-ms: its tails' first day (153.8) and its bank's
-  `fin.calendar.resolution_d1` (113.1). On the 3 NB + H turn with its calendar set and a campaign day, the other events
-  give: E1's own day (221.5) 2 043 ms, a bank run's next day (140) 2 016, a bank's resolution alone (113.1) 2 007, a
-  tax announcement (88) 1 998, an offer's first day (43) 1 983, a catastrophe (33.5) 1 980, each smaller one below. Day
-  one's full check (300) on its B turn is 903 ms. E1's day, 221.5 core-ms, is within its 225 (S1.345).
+  The worst event is E1's next day, 213.5 core-ms: its tails' first day (123.0) and its bank's
+  `fin.calendar.resolution_d1` (90.5). On the 3 NB + H turn with its calendar set and a campaign day, the other events
+  give: E1's own day (177.2) 1 676 ms, a bank run's next day (112.0) 1 654, a bank's resolution alone (90.5) 1 647, a
+  tax announcement (70.4) 1 640, an offer's first day (34.4) 1 628, a catastrophe (26.8) 1 626, each smaller one below.
+  Day one's full check (240) on its B turn is 733 ms. E1's day, 177.2 core-ms, is within its 225 (S1.345).
 - **Memory, summed** (N8.4, N8.7): every step's `ledger line <n>` figure is summed by line, a step whose bytes sit in a
   base's figure stating +0 B, with one day-buffer figure (line 21: the live set at the day's heaviest sub-step),
   against `fin.mem.peak_mb` 4 349 (4.5 GiB less its headroom); `-F all` measures each line beside the sum.
-  At the design point (`perf/design.toml [ledger]`, lines 1–25, at `[resolution]`'s settings): 4 688.9 MB with zones
-  at 1 000, 4 667.1 MB after the zone valve, against 4 349: +318.1 MB (7.3 %). The largest lines are `[ledger]` 9
-  (contracts), 5 (firms), 2 (persons), 4 (households), 1 (process), 8 (accounts and side rows), 16 (the small-bases
-  pool), 11 (holdings) and 21 (day buffers). Of the 4 667.1, ≈ 4 244 MB scale with the persons (≈ 566 B a person); the
-  rest (process, save buffers, column tails, map, institutions, ≈ 423 MB) is fixed.
+  At the design point (`perf/design.toml [ledger]`, lines 1–25, the steps' statements × scale at `[resolution]`'s
+  settings): 3 945.9 MB. The largest lines are `[ledger]` 9 (contracts), 5 (firms), 2 (persons), 4 (households), 1
+  (process), 8 (accounts and side rows), 16 (the small-bases pool), 11 (holdings) and 21 (day buffers). Of it, ≈ 3 512
+  MB scale with the persons (≈ 585 B a person); the rest (process, institutions, map and network, save buffers and the
+  parts that follow the zones and the segments, ≈ 434 MB) is fixed.
 - **Representation first** (N8.7): the figures carry the representation the steps state (the four fused chains, the
   network call per country, book orders, quotes and searches at their kernels' units, E1 folded into one ratchet with
-  its work spread, record days spread, the labour line at its rules' counts, the rows at their families' widths). This
-  close adds one: account side slots sized by kind rather than 16 B each (S1.241), −16.4 MB. No other change of
-  representation found removes work from the worst turn without changing a mechanism: its lines are the dated days'
-  own work (the laws' dates are causal, N8.9) and E1's recognitions, re-pointings and identities.
-- **The valves in force** (`perf/design.toml [resolution]`, each with its `forced_by` and what it frees), in E 41's
-  reverse order: the map's cell at its coarsest 1 km; the draw scheme as committed (no memory or time to free); the
-  audit's cycle 30 → 365 days, every party recounted once in each measured year (N8.3) (−32.1 / −13.8 / −32.1
-  core-ms); age classes as committed (≈ 0 to free); the horizons at their keepers' floors against 730 days (events
-  365, series 365, filings 1 year, day ledger 365, goods' and labour's marks 182, instruments' marks 250 at DRV.10's
-  floor: −80.6 MB); condition classes 2 → 1 (−43 MB); zones 1 000 → 500 (−21.75 MB, −0.6 / −0.2 / −0.6 core-ms; no
-  floor is declared, and each further halving frees ≈ 11 MB and ≈ 0.3 core-ms); preference types at the data's count
-  (one type frees ≈ 0). The persons are the owner's (below).
+  its work spread, record days spread, the labour line at its rules' counts, the rows at their families' widths,
+  account side slots sized by kind rather than 16 B each (S1.241, −16.4 MB at the steps' counts), land held apart as
+  parcels and paths' cells computed from a per-tile segment index rather than a row per cell (S1.190)). No other
+  change of representation found removes work from the worst turn without changing a mechanism: its lines are the
+  dated days' own work (the laws' dates are causal, N8.9) and E1's recognitions, re-pointings and identities.
+- **The settings** (`perf/design.toml [resolution]`), in E 41's reverse order: the map's cell 100 m and the full
+  audit's cycle 60 days, the owner's (§12; the audit's rolling part 14 / 6 / 14 core-ms); the draw scheme and age
+  classes as committed (nothing to free); the horizons at 730 days or 2 years, restored, but the events' at 365 (730
+  would cost +14.8 MB, past the owner's 3 950 MB); condition classes 2, restored (+34.4 MB and S1.285's close twice,
+  +46.4 core-ms on H, +15.5 ms on the worst turn; 4 would cost ≈ +119 MB and +46 ms, past both margins); zones 1 000,
+  the owner's; preference types at the data's count (one type frees ≈ 0). The persons are the owner's (§12).
 - **Saves, summed** (N8.4, N8.10): retention of two saves — the latest and the one being written — plus history once,
   within `fin.save.storage_mb` 3 866 MB (S1.356); save and load each ≤ 5 s (§12); read here and at every gate's `-g`
-  run.
-- **N8.7's finding** (stated only if a sum misses after representation and the declared valves): the miss in its unit
-  and its lines; the persons at which the design point fits (the remaining MB ÷ bytes a person, or the core-ms ÷ the
-  per-person cost of the turn it misses); and that figure against the committed play resolution of 750 000 persons
-  (§12). The design point keeps 7.5 M persons: the finding is put to the owner as a question recorded in §12 — the
-  design point's persons, or the budget line — and no text here or elsewhere lowers either.
-  At the design point time binds. The worst turn, E1's next day on a campaign business day that is the quarter-end
-  payday after three closed days with every dated day that can fall there, is ≈ 2 058 ms: past the 2 000 line
-  itself. With the barriers fixed (253 core-ms of the turn) and every other line scaling with the persons, time fits
-  the 1 800 line at ≈ 6.52 M persons (the 2 000 line at ≈ 7.28 M; without an event ≈ 6.83 M, the standing turn
-  ≈ 7.38 M), and memory fits at ≈ 6.94 M. The design point's per-person counts therefore fit at ≈ 6.52 M persons:
-  86.9 % of 7.5 M, and 8.7 × the committed 750 000 (§12). The owner question recorded in §12: the design point's
-  persons (≈ 6.52 M at these counts), or the worst turn's line — its headroom, or whether an event is composed with
-  every dated day and a campaign at once.
-  Until it is answered the design point stays 7.5 M persons and every ratchet stays as measured.
+  run. At the design point: raw ≈ 2 480 MB (S1.356's 2 950 at the steps' counts × scale, ≈ 100 MB of institutions and
+  map unscaled, plus the parcels +14 MB, the restored horizons +50 MB and the second condition class +34 MB), on disk
+  ≈ 1 140 MB a save at 0.46; retention ≈ 2 280 MB + history ≈ 880 MB at a two-year horizon ≈ 3 160 MB, ≈ 700 MB below
+  3 866; save ≈ 2.9 s and load ≈ 1.7 s on the phone (S1.356's 3.45 s and 2.05 s by the raw bytes), each within 5 s.
+- **The margins at the design point** (N8.7, E 51; owner, 2026-09-30): the worst turn, E1's next day on a campaign
+  business day that is the quarter-end payday after three closed days with every dated day that can fall there, is
+  ≈ 1 688 ms: 112 ms (6.2 %) below the 1 800 line and 12 ms below the owner's 1 700; without an event ≈ 1 617 ms.
+  Memory is 3 945.9 MB: 403 MB (9.3 %) below 4 349 and 4 MB below the owner's 3 950. Saves ≈ 3 160 MB, ≈ 700 MB below
+  3 866. The design point fits, and no owner question stands.
+- **N8.7's finding** (stated only if a measured sum misses after representation and the declared valves): the miss in
+  its unit and its lines; the persons at which the design point fits (the remaining MB ÷ bytes a person, or the
+  core-ms ÷ the per-person cost of the turn it misses); and that figure against the committed play resolution of
+  750 000 persons (§12). The design point's persons are the owner's (E 51): a miss is put to the owner as a question
+  recorded in §12, and no text here or elsewhere lowers them or the budget line.
 - **`tools/bench.sh -g`** at the committed resolution: settled, two years, the audit every day, every live check; a
   save and a load mid-run with the hash equal (LC-0-35).
 - **Independent reviews** (a major step, §12): the spec-and-laws review and the architecture-budget-shortcuts review
@@ -20344,24 +20410,23 @@ days, the save mid-run with every index rebuilt, 1 to N workers giving the same 
 **Live checks**: every live check of Stages 0–1 applicable at the close, on the `-g` run; LC-0-09 and LC-0-10 (every
 family ran clean; each injection lights its family alone).
 **Budget**:
-- the sums above, from every step's own figures: the worst turn 3 NB + H with its calendar set, a campaign day and
-  E1's next day ≈ 2 058 ms against `fin.turn.worst_ms` 1 800 (≈ 1 969 ms without an event); the memory ledger
-  4 667.1 MB against `fin.mem.peak_mb` 4 349; saves within `fin.save.storage_mb` 3 866 and 5 s; E1 221.5 core-ms
-  within 225.
-- N8.7's finding: the design point fits at ≈ 6.52 M persons (time binds; memory ≈ 6.94 M), 8.7 × the committed
-  750 000; put to the owner in §12, nothing lowered.
+- the sums above, from every step's own figures × scale: the worst turn 3 NB + H with its calendar set, a campaign day
+  and E1's next day ≈ 1 688 ms against `fin.turn.worst_ms` 1 800 and the owner's 1 700 (≈ 1 617 ms without an event);
+  the memory ledger 3 945.9 MB against `fin.mem.peak_mb` 4 349 and the owner's 3 950; saves ≈ 3 160 MB within
+  `fin.save.storage_mb` 3 866, ≈ 2.9 s and ≈ 1.7 s within 5 s; E1 177.2 core-ms within 225.
 **Guards**: the exception files' entries each carry `retired_by` (S1.355); no rule added here.
 **Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a ratchet loosened; a mechanism changed to meet the budget; the design point's persons lowered
-without the owner's answer.
+allocation per day; a ratchet loosened; a mechanism changed to meet the budget; the design point's persons or a
+setting the owner fixed moved without the owner's answer.
 **Done when**:
 - [ ] `tools/bench.sh -F all` at the design point: every `[fin.*]` ratchet met; the stage lines' sums and the two worst
   turns, each with its calendar set, a campaign day and each event of `[fin.calendar.events]`, measured against
-  `fin.turn.worst_ms` 1 800 and the memory ledger per line against 4 349 MB, each beside the sums above; saves within
-  3 866 MB and 5 s; reports kept with `-k`.
+  `fin.turn.worst_ms` 1 800 (and the owner's 1 700) and the memory ledger per line against 4 349 MB (and the owner's
+  3 950), each beside the sums above; saves within 3 866 MB and 5 s; reports kept with `-k`.
 - [ ] `tools/bench.sh -g` at the committed resolution: settled, two years, the audit clean, every live check, the save
   and load hash equal.
-- [ ] Any miss stated as N8.7's finding and its owner question recorded in §12.
+- [ ] Any measured miss met by N8.7's remedies in order, and what they cannot close stated as N8.7's finding with its
+  owner question recorded in §12.
 - [ ] §3, §7 and §13 written with the measured units; the two independent reviews done and their findings fixed; status
   `done` and the section removed.
 
@@ -20399,7 +20464,7 @@ opening, founding and day zero (S1.481–S1.491); routing only (S1.492, S1.493);
 | --- | --- | --- | --- | --- |
 | `LAB.reservation_share` (placeholder:HH) | a searcher's reservation from its household's outside option | S1.414 | LAB.5 (part; completed at S6.119) | S2.138 |
 | `LAB.no_pension_terms` (placeholder:PEN) | an employer with no pension terms posts a job with none | S1.413 | LAB.1 (done at S1.08) | S4.145 |
-| `BNK.household_loan_years` (placeholder:HSG) | the opening household loans' terms | S1.405 | GEN.2 (part; completed at S6.138) | S2.142 |
+| `BNK.household_loan_years` (placeholder:HSG) | the opening household loans' terms | S1.405 | GEN.2 (part; completed at S6.139) | S2.142 |
 | `SOC.pension_flat` (placeholder:SOC) | the state pension paid flat, with no earnings-related part | S1.420 | SOC.3 (part; completed at S5.126) | S5.126 |
 | `SOC.appropriation` (placeholder:POL) | an agency's appropriation at its opening wage bill | S1.423 | SOC.8 (part; completed at S5.153) | S5.153 |
 | `SOC.state_purchases` (placeholder:POL) | the state's purchases at the accounts' final uses | S1.424 | SOC.2 (part; completed at S5.130) | S5.130 |
@@ -20804,7 +20869,7 @@ are drawn there too.
 | `crates/assembly/phx-world/src/core_open.rs` | the households' half removed (`open`'s household loop, `Drawn`'s household maps) |
 
 **Design**:
-- Carries PTY.2 (done at S1.13) and REP.26 (done at S0.28); serves GEN.3 (completed at S6.138) and POP.2 (completed at
+- Carries PTY.2 (done at S1.13) and REP.26 (done at S0.28); serves GEN.3 (completed at S6.139) and POP.2 (completed at
   S6.120), whose opening draws these are.
 - `draw_country(prims, region, streams) -> DrawnHouseholds`: households by type from `DEM.household_types`, members by
   `DEM.household_members`, ages, sexes, education and skills by occupation family (POP.1), health; each household's
@@ -25349,7 +25414,7 @@ schemes' decisions.
 | `data/inventory.toml`, `data/sources/raw/manifest.json` | `markets/pension_main_2019` (5100, 5300, 4000, 1000–1290 for DB and DBH), `markets/pension_structure` → the primitives, this step |
 
 **Design**:
-- Serves Part O's Stage 0 exit (pensions in payment paying as their terms say) and GEN.4 (completed at S6.138: balanced
+- Serves Part O's Stage 0 exit (pensions in payment paying as their terms say) and GEN.4 (completed at S6.139: balanced
   opening sheets); PEN.2 (completed at S4.158) builds on the kind declared here.
 - Derivation (declared procedure): per country, occupational DB and DBH passive members (5300) and benefits paid (4000)
   give the pensioners' count and the mean benefit; active DB members (5100) over employment give the share of staff
@@ -25432,7 +25497,7 @@ and a management drawn at founding (its offices held by persons are Stage 3's).
 - E11: day zero: every firm has one statement; no earlier history (GEN.5) — `one_statement_per_firm`.
 - E3: a firm with no loan: interest line 0 as a recorded fact — `no_loan_interest_recorded_zero`.
 
-**Extension points**: S1.491, S2.108, S3.146, S3.208, S6.138.
+**Extension points**: S1.491, S2.108, S3.146, S3.208, S6.139.
 **Unit tests**: `statement_balances`, `turnover_is_output_at_price`, `one_statement_per_firm`,
 `no_loan_interest_recorded_zero`.
 **Live checks**: LC-1-40 (day one passes every family), LC-1-25 (banks read covers) at day one.
@@ -25741,7 +25806,7 @@ prices, employers post vacancies and wage offers, banks set their rates and stan
   `no_stock_still_posts_price`.
 - E6: a save of day zero's close loads with the posted offers standing — `day_zero_save_keeps_offers`.
 
-**Extension points**: S8.128, S6.113, S6.136, S6.138, S6.139.
+**Extension points**: S8.128, S6.113, S6.137, S6.139, S6.140.
 **Unit tests**: `each_opening_kind_once_per_party`, `day_zero_reads_snapshot_only`,
 `opening_price_equals_day_zero_rule`, `no_stock_still_posts_price`, `day_zero_save_keeps_offers`.
 **Live checks**: LC-1-40 (day one passes every family) at day one.
@@ -25985,7 +26050,7 @@ every series it read descends from its definition's registration.
 - E13: a fact whose systems do not exist yet (housing, markets of Stage 3): listed as not yet applicable at Stage 1 —
   `fact_without_systems_not_applicable`.
 
-**Extension points**: S1.497, S1.498, S6.141, S7.101, S7.102.
+**Extension points**: S1.497, S1.498, S6.142, S7.101, S7.102.
 **Unit tests**: `held_only_while_in_range_every_year_end`, `drift_trend_on_given_distances`, `window_never_before_play`,
 `verdict_rule_reproduced_missed_inconclusive`, `series_stamp_descends_from_registration`, `definition_hash_canonical`,
 `fact_without_systems_not_applicable`.
@@ -26036,7 +26101,7 @@ with the run's length.
 **Edge cases**:
 - E11: no occurrence of a first link: not yet tested, with the run's length — `untested_without_first_link`.
 
-**Extension points**: S1.498, S2.216, S3.219, S8.202, S4.185, S5.187, S6.141, S7.103.
+**Extension points**: S1.498, S2.216, S3.219, S8.202, S4.185, S5.187, S6.142, S7.103.
 **Unit tests**: `event_window_from_given_dates`, `lead_lag_peak_on_given_series`,
 `order_of_first_responses_from_given_series`, `untested_without_first_link`.
 **Live checks**: LC-1-55: every chain has its report, and every chain whose first link occurred was read over every
@@ -26216,8 +26281,8 @@ stands in (a clause completes at the step that retires the last placeholder stan
 Moved by that rule: BNK.9 completes at S2.158 (mortgages' enforcement), HSG.1 and HSG.10 at S2.152 (the composite sale),
 POP.9 at S3.166 (estates' bonds), FRM.9 at S8.140 and CAP.13 at S8.138; the steps before them carry parts.
 
-**Owner decisions it reads**: the cell size, `cell_m` (S1.190: GEO.19's coarsest, 1 km, a RESOLUTION valve, E 41), read,
-never declared here; congestion is the fixed point of the day's trips (K-23's stages 4b–4c); a posted-price market's
+**Owner decisions it reads**: the cell size, `GEO.cell_m` 100 m (S1.190: the owner's, E 29, no valve), read, never
+declared here; congestion is the fixed point of the day's trips (K-23's stages 4b–4c); a posted-price market's
 mark is revenue ÷ units of the day's sales; each grade declares its content per unit. Values no source in
 `data/sources/raw/` gives — urbanisation shares, city-size law, density gradients, agglomeration and height
 elasticities, the value of travel time, the Degree of Urbanisation's thresholds, residential depreciation, personal
@@ -26921,8 +26986,8 @@ valve (E 41).
   (S1.216's `published_ns`) → ≈ 2 / 0 / 2 core-ms.
 - adds 1.8 k / 0 / 1.8 k items to fin.decide.attend_ns
 - on fin.calendar.filing_window_end (the busiest filing day, 50 k firms at one deadline): 55 core-ms; joins H
-- ledger line 18 (records within horizons): +0 MB — inside S1.216's filings 22 MB (0.46 M statements × 48 B, encoded,
-  at the one-year `horizon_filings_years`)
+- ledger line 18 (records within horizons): +0 MB — inside S1.216's filings 44 MB (0.92 M statements × 48 B, encoded,
+  at the two-year `horizon_filings_years`)
 - Counters: `sys_frm.filings`, `sys_frm.late_filings`.
 
 **Guards**: none new.
@@ -29079,7 +29144,7 @@ allocation per day; a participation rate; a reservation as a share of the last w
 HSG.2 STATE; HSG.19 STATE
 **Architecture**: §7.10 (K-60 dwellings by (holder, zone, class)), §7.4 (K-27 place index), §7.9 (families)
 **Depends on**: S1.488 (the opening dwellings held without a housing market), S1.271 (K-60; a parcel as a holding of
-place kind "cell", GEO.5), S1.274 (K-27), S1.190 (K-28 cells owned apart), S1.257 (K-53 families), S1.183 (K-22 classes
+place kind "parcel", GEO.5), S1.274 (K-27), S1.190 (K-28 parcels held apart), S1.257 (K-53 families), S1.183 (K-22 classes
 with condition and age classes)
 **Goal**: a dwelling is a unit with a size, a quality and a condition, owned by a named party and occupied by one
 household, which may let rooms to lodgers; a tenancy is a contract with rent, term, notice and deposit; a land lease a
@@ -29146,7 +29211,7 @@ allocation per day; a dwelling without an owner; a household occupying two dwell
 apart)*
 **Architecture**: §10 (the opening's drawing)
 **Depends on**: S2.139 (the families and classes), S1.488 (the opening dwellings and tenure), S1.482 (farms), S1.271
-(parcels as holdings), S1.190 (cells owned apart)
+(parcels as holdings), S1.190 (K-28 parcels)
 **Goal**: the opening draws owner-occupiers, household and firm landlords, their tenancies, lodgers, land leases and the
 land parcels held apart from the data in hand, so every tenancy and lease names its parties and terms from day zero.
 
@@ -29162,26 +29227,29 @@ land parcels held apart from the data in hand, so every tenancy and lease names 
   level per (region, class) (GEN.5), terms from the law's defaults of the tenancy family.
 - **Lodgers** (HSG.1): the share of households letting a room, from the tenure tables' lodger share where given.
 - **Parcels and land leases** (HSG.19): each farm (S1.482) and land-using firm holds its utilised land as parcels held
-  apart — ⌈its area ÷ the cell's area⌉ cells owned apart (S1.190), by its size class in `eurostat_farms_by_size` — and
-  leases the tenure tables' leased share of it from household or firm landowners.
+  apart — n = ⌈its area ÷ the cell's area⌉ cells by its size class in `eurostat_farms_by_size`, laid on cells of its
+  site's tile and its neighbours as at most two rectangles a tile (S1.190: full rows of ⌈√n⌉ cells and one row of the
+  rest) on the stream `HSG.opening` — and leases the tenure tables' leased share of it from household or firm
+  landowners, that share a parcel of its landowner's.
 
 **Edge cases**:
 - E12: a region's tenure table missing a class: refused at assembly (`tenure_table_complete`).
 - E13: a region with no farms: no farm parcels (`no_farms_no_parcels`).
-- E8: owned cells within K-28's capacity at the opening (`owned_cells_capacity`).
+- E8: parcels within K-28's capacity at the opening, none overlapping (`parcels_capacity`).
 
 **Extension points**: none.
 
 **Unit tests**: `opening_tenure_shares`; `landlords_from_scf_shares`; `parcels_from_farm_sizes`;
-`tenure_table_complete`; `no_farms_no_parcels`; `owned_cells_capacity`.
+`tenure_table_complete`; `no_farms_no_parcels`; `parcels_capacity`.
 
 **Live checks**: none (LC-2-10 at S2.162 reads the state).
 
 **Budget**:
 - Opening only: ≈ 2.2 M households placed, ≈ 1.13 M tenancies and ≈ 0.2 M land leases opened at 60 ns → ≈ 80 core-ms of
   the opening's span; no daily cost.
-- ledger line 12 (cells owned apart): +0 B (inside S1.190's owned cells, count 0.3 M: the farms' and land-using firms'
-  land at the committed cell size by the derivation above; the count is restated from the opening's draw)
+- ledger line 12 (parcels): +0 B (inside S1.190's parcels, ≤ 1.0 M: the ≤ 0.3 M farms' and land-using firms' land and
+  ≈ 0.2 M leased shares, at most two rectangles each by the derivation above; the count is restated from the opening's
+  draw)
 - Counter: `sys_hsg.parcels_opened`.
 
 **Guards**: none new.
@@ -30057,7 +30125,7 @@ allocation per day; a yield target imposed.
 **Clauses**: HSG.3 STATE; HSG.18 DECISION; HSG.20 PROCESS
 **Architecture**: §7.4 (K-28 parcels), §7.11 (K-76 call auction, K-80 bilateral), §7.3 (K-20 zoning as POLICY)
 **Depends on**: S2.133 (retires its "estates' land waits" placeholder), S2.139 (land leases), S1.271 (a parcel as a
-holding of place kind "cell", GEO.5), S1.190 (K-28 cells owned apart), S1.312 (K-76), S1.317 (K-80), S2.141 (valuations
+holding of place kind "parcel", GEO.5), S1.190 (K-28 parcels held apart), S1.312 (K-76), S1.317 (K-80), S2.141 (valuations
 labelled), S2.152 (the composite instruction without a mortgage)
 **Goal**: land is owned, zoned and traded; a landowner sells, leases or holds by its own value of the land, and buyers
 or tenants bid up to what the land is worth to them for their own use; land changes hands by negotiation or by the
@@ -30079,7 +30147,8 @@ region's auction, and its price is a read of those sales, absent where none happ
 - **Bidders** (farmers, builders, firms, public agencies) bid up to the land's value to them for their own use.
 - **Trade**: by negotiation (S2.151's protocol over a land listing) or by the region's land auction on its declared days
   (K-76: schedules, a clearing price, ties by `HSG.land_lot`); a sale moves the parcel's holding (K-28) against the
-  price in one link group (S2.152's instruction, no mortgage leg).
+  price in one link group (S2.152's instruction, no mortgage leg); a sale or lease of part of a parcel first cuts it
+  (S1.190's split: the part and the rectangles left, the cost apportioned by cells).
 - **Price** (HSG.20): the land market's prints (K-86); a (region, zone) with no sale has no price (Law 8); a tax or
   lender needing a figure reads a labelled valuation (MKT.20). **Zoning** changes what a parcel is worth to bidders, not
   its price directly; a rezoning is its owner's (the municipality's or the state's) dated POLICY change (K-20).
@@ -30104,7 +30173,7 @@ by municipalities), S5.113 (property tax reads valuations).
 - its share of fin.fixed.household_reviews: 2 / 0 / 2 core-ms (B / NB / H)
 - Land calls: 25 regions on their declared days, ≈ 1 k orders each (K-76).
 - its share of fin.fixed.calls: 1 / 0 / 1 core-ms (B / NB / H) (the land calls)
-- ledger line 12 (cells owned apart): +0 MB — parcels are S2.140's
+- ledger line 12 (parcels): +0 MB — parcels are S1.190's rows, their count S2.140's; a split adds at most three rows
 - Counters: `sys_hsg.land_trades`, `sys_hsg.land_leases`.
 
 **Guards**: none new.
@@ -30899,14 +30968,14 @@ allocation per day; exemptions applied to a household's total instead of per per
 **Status**: planned
 **Kind**: mechanism
 **Clauses**: HSG.21 STATE
-**Architecture**: §7.4 (K-28 held cells), §7.10 (K-66 named units: buildings), §7.4 (K-27 a unit's place)
-**Depends on**: S1.190 (K-28 cells and `cell_m`; a building's cell is its site, no cell row), S1.284 (K-66 named units
-with site and kind-declared columns; `in_building`), S1.271 (a holding's place key: the building), S1.274 (K-27 place
+**Architecture**: §7.4 (K-28 cells), §7.10 (K-66 named units: buildings), §7.4 (K-27 a unit's place)
+**Depends on**: S1.190 (K-28 cells and `GEO.cell_m`; a building's cell is its site, no row of its own), S1.284 (K-66
+named units with site and kind-declared columns; `in_building`), S1.271 (a holding's place key: the building), S1.274 (K-27 place
 index), S2.139 (dwellings and their owners), S2.156 (construction completes units)
 **Goal**: a building is a unit of capital on a cell, owned by a named party, with a kind, floors, floor area, footprint
 and position within its cell, condition and age; dwellings, shops, offices and plant are units within buildings and
-stand on their building's cell, which is recorded; a building's cell is its site, and a cell row exists only for a cell
-owned or leased apart from its tile or crossed by a path (S1.190).
+stand on their building's cell, which is recorded; a building's cell is its site, and no row is kept per cell: land
+owned or leased apart is a parcel and a path's cells are its segment's (S1.190).
 
 **Files**:
 | path | purpose |
@@ -30914,8 +30983,8 @@ owned or leased apart from its tile or crossed by a path (S1.190).
 | `crates/interfaces/if-property/src/buildings.rs` | building kinds (house, apartment block, shop, office, factory, warehouse, farm building, school, clinic, town hall) as declared data; the building's kind-declared columns on K-66 (floors u8, position in its cell u8, floor area u16: S1.284's 24 B a building); its composition is never stored, read by `in_building` (S1.284) |
 | `crates/systems/sys-hsg/src/declare.rs` | the building kind on K-66; a unit's place as its building (the holding's place key, S1.271; K-27's recorded site) |
 
-**Design**: a building is a K-66 named unit whose site is a cell (read at S1.190's `cell_m`; no cell row for a
-building's site); its owner is a party; its composition — the units within it by class — is read by `in_building` (the
+**Design**: a building is a K-66 named unit whose site is a 100 m cell (its `CellId` in its row, S1.190; nothing kept
+per cell); its owner is a party; its composition — the units within it by class — is read by `in_building` (the
 holdings whose place key is the building, ≈ 13 µs a read, on its completion, demolition or a strike), never stored. A
 unit within a building — a dwelling, a shop, an office, a plant — is held by its owner as a holding whose place is the
 building (so its tile is recorded, never drawn: REP.23's draw applies only to units in no building). Buildings wear and
@@ -30926,20 +30995,21 @@ for display).
 **Edge cases**:
 - E1: a catastrophe over tiles: struck buildings by their cells, K-27, not per party (`struck_buildings_by_cell`).
 - E6: cells and buildings saved, the place indexes rebuilt (`buildings_round_trip`).
-- E8: buildings ≈ 1.6 M at the design point (S2.171's count) within K-66's declared capacity, cell rows ≈ 0.8 M within
-  K-28's (`buildings_capacity`).
+- E8: buildings ≈ 1.6 M at the steps' counts (S2.171's count) within K-66's declared capacity, parcels within K-28's
+  (`buildings_capacity`).
 - E9: buildings grow with construction and fall with scrapping; reported per year (`buildings_growth_reported`).
 
 **Extension points**: S2.170 (floors), S2.172 (trips between buildings' cells), S2.176 (population per cell), S2.171
-(the opening's buildings), S8.200 (households by building for MND.11's neighbours).
+(the opening's buildings), S8.200 (households by building for MND.11's neighbours), S6.134 (the map: buildings at
+their cells).
 
-**Unit tests**: `building_site_needs_no_cell_row`; `unit_in_building_takes_its_cell`; `composition_read_not_stored`;
+**Unit tests**: `building_site_needs_no_row`; `unit_in_building_takes_its_cell`; `composition_read_not_stored`;
 `scrapped_building_releases_site`. Edge cases: `struck_buildings_by_cell`; `buildings_round_trip`; `buildings_capacity`;
 `buildings_growth_reported`.
 
 **Live checks**:
-- `LC-2-52`: GEO.19, HSG.21 — every unit in a building stands on its building's cell; every cell row holds a parcel
-  apart from its tile or a path; no building without an owner.
+- `LC-2-52`: GEO.19, HSG.21 — every unit in a building stands on its building's cell; every parcel is held apart by
+  its owner or a lease, none overlapping; no building without an owner.
 
 **Budget**:
 - Building changes B / NB / H 2 k / 0 / 2 k (completions, scrapping, owner changes) at 50 ns plus `in_building` reads on
@@ -30947,13 +31017,13 @@ for display).
 - its share of fin.fixed.real: 13 / 0 / 13 core-ms (B / NB / H)
 - ledger line 12 (physical units, cells, owner index): +0 MB here — the buildings are S1.284's rows (24 B each), their
   count restated by S2.171; a unit's building is S1.271's place key (+0 B)
-- Counters: `sys_hsg.buildings`, `sys_hsg.cells_held`.
+- Counters: `sys_hsg.buildings`, `sys_hsg.parcels`.
 
 **Guards**: none new.
 
 **Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a building kept for display alone; a cell row for a building's site; a building's composition
-stored; a second declaration of the cell size.
+allocation per day; a building kept for display alone; a row for a building's site beside its unit; a building's
+composition stored; a second declaration of the cell size.
 
 **Done when**:
 - [ ] Declarations, rules and unit tests written; fast checks pass.
@@ -31152,9 +31222,9 @@ S6.118 (school trips).
 - Freight: ≈ 0.3 M shipments in transit on a business day (0.1 M on a closed day) × ≈ 3 congestible legs at 5 ns (add
   and read), and ≈ 10 k arrival kinks re-dated at 50 ns → 5 / 2 / 5 core-ms.
 - its share of fin.fixed.day_use: 6 / 2.3 / 6 core-ms (B / NB / H)
-- ledger line 12 (path cells): +0 MB — paths hold no cells at the 1 km cell: a route runs between zones' nodes on K-26
-  segments and a trip's access legs within zones are cell distances computed from coordinates, so no rule of this stage
-  reads a cell's crossing path
+- ledger line 12 (path cells): +0 MB — a path's cells are computed from its segment's line (S1.190), never stored: a
+  route runs between zones' nodes on K-26 segments and a trip's access legs within zones are distances between 100 m
+  cells computed from coordinates, so no rule of this stage reads a cell's crossing path
 - ledger line 9 (contracts): +0 B (the `passes` rows inside S1.257's transit passes, 1.5 M × 12 B); the commute mode is
   the employment's start word (0 B); the counts are S1.188's
 - Counters: `sys_frt.od_pairs`, `sys_frt.congested_segments`, `sys_frt.shipments_delayed`.
@@ -31298,7 +31368,7 @@ allocation per day; a productivity bonus by city size declared.
 **Kind**: mechanism
 **Clauses**: HSG.22 PROCESS
 **Architecture**: §6 (stage 5c bids), §7.6 (K-39 accumulators of jobs and population by zone)
-**Depends on**: S2.155 (land's sales and leases), S1.271 (a parcel as a holding of place kind "cell", GEO.5), S2.169
+**Depends on**: S2.155 (land's sales and leases), S1.271 (a parcel as a holding of place kind "parcel", GEO.5), S2.169
 (buildings on cells), S2.172 (travel times and costs), S2.174 (the per-day zone cache of jobs in reach), S2.151 (the bid
 protocol), S1.221 (K-39 accumulators: population and employment by zone and industry)
 **Goal**: land is sold and leased parcel by parcel, each bidder bidding what the parcel is worth to it — a household for
@@ -31309,10 +31379,10 @@ land is dearer where activity is, because that is what the bids say.
 | path | purpose |
 | --- | --- |
 | `crates/systems/sys-hsg/src/rules/parcel_bid.rs` | `household_value(commute_saved, services_saved)`; `firm_value(customers_in_reach, staff_in_reach)`; `builder_value(project)` |
-| `crates/systems/sys-hsg/src/declare.rs` | parcels as the land market's items (S2.155) per cell; the reach reads: population and employment by zone (K-39) within the travel times of S2.172 |
+| `crates/systems/sys-hsg/src/declare.rs` | parcels as the land market's items (S2.155), each a K-28 parcel; the reach reads: population and employment by zone (K-39) within the travel times of S2.172 |
 | `crates/apps/phx-cli/src/checks/lc_2_53.rs` | LC-2-53 |
 
-**Design**: each land listing or lease is one parcel (a cell's land or a declared part, K-28); bidders' values: a
+**Design**: each land listing or lease is one parcel (a K-28 parcel or a part cut from it, S1.190's split); bidders' values: a
 household's — the time and money its adults' commutes and its shopping trips would save there against its present
 dwelling (S2.146's values, S2.172's times); a firm's — the customers and staff within reach of the parcel (population
 and employment by zone within its reach, K-39) valued by its own margins and wages; a builder's — its best project there
@@ -31335,7 +31405,7 @@ and employment by zone within its reach, K-39) valued by its own margins and wag
 - Parcel bids B / NB / H 2 k / 0 / 2 k at 1 µs (reach sums per zone read from S2.174's per-day cache) → 2 / 0 / 2
   core-ms.
 - its share of fin.fixed.osearch: 2 / 0 / 2 core-ms (B / NB / H)
-- +0 B (parcels are S2.140's cells owned apart)
+- +0 B (parcels are S1.190's rows, their count S2.140's)
 - Counter: `sys_hsg.parcel_trades`.
 
 **Guards**: none new.
@@ -33189,7 +33259,7 @@ availability drawn rather than read from the weather.
 **Clauses**: GEN.2 STATE *(part: the power plants, storage and lines, and their owners)*
 **Architecture**: §5 (the opening), §7.10 (named units).
 **Depends on**: S2.202 (the plant, storage and line kinds, the operator); S1.483 (the opening's firms, among them
-generators and grid firms); S1.407 (institutions opened); S1.190 (K-28: sites on cells).
+generators and grid firms); S1.407 (institutions opened); S1.190 (K-28: a plant's site, a `CellId` in its unit row).
 **Goal**: each country opens with the plants its sources list, sited in their regions and owned by named generator
 firms, its storage, and its lines between regions with their capacities and named owners.
 
@@ -62896,7 +62966,7 @@ stage's measured lines.
 
 **Exit** (spec Part O): TEC's research and diffusion, POP in full (formation, education and retraining, migration
 between regions) and HH in full run in all three countries; the run grows through discovered improvements; the
-population's size and shape are outcomes. The gate (S6.141) also judges GEN complete and balanced on day one, every
+population's size and shape are outcomes. The gate (S6.142) also judges GEN complete and balanced on day one, every
 audit family lit alone by its injection (N1), REP.18 complete and no placeholder left, by §2.24's gate template.
 
 **What the stage builds**, in five groups after its reads (S6.100), every step an activation of the core's bases
@@ -62910,9 +62980,9 @@ audit family lit alone by its injection (N1), REP.18 complete and no placeholder
   opening.
 - **6C Households in full** (S6.128–S6.130): holdings over the whole balance sheet (banknotes among them), the
   propensity to consume by wealth and liquidity, and income spread against defaults and spending.
-- **6D Observation** (S6.131–S6.136): two views, shown numbers, looking at a party, events that develop, the player
+- **6D Observation** (S6.131–S6.137): two views, shown numbers, looking at a party, events that develop, the player
   acting through every decision point with its minds advising, and the phone's play surface.
-- **6E The whole world** (S6.137–S6.141): REP.18 complete, GEN complete, day zero and day one, the audit's families
+- **6E The whole world** (S6.138–S6.142): REP.18 complete, GEN complete, day zero and day one, the audit's families
   mapped with every injection, and the gate.
 
 **Decisions.** Minds are attached (Stage 8), so every decision this stage adds is an option generator: its rule
@@ -62928,7 +62998,7 @@ No rule reads a preference. Every review costs its declared hours (§2.21).
 | --- | --- | --- | --- |
 | Leaving school at the statutory age into the adult roles (SHAPE naming POP) | POP.6, POP.18, POP.1, POP.12 | S1.13 | S6.118 |
 
-The stage introduces none. After S6.141 no placeholder names any system (NUM.7): the count is zero.
+The stage introduces none. After S6.142 no placeholder names any system (NUM.7): the count is zero.
 
 **The stage's budget lines.** Each step states its share of the shared stage line it runs in (the itemised tables
 `[fin.decide]`, `[fin.hazards]`, `[fin.stats]`, `[fin.audit]` and `[fin.fixed]` of `perf/design.toml`, B / NB / H
@@ -62952,7 +63022,7 @@ family mix (line 9); the small-bases pool (line 16) about 24.5 MB; patents insid
 Stage 1's model).
 **Goal**: before any Stage 6 code, the stage's macro reads — each with its declared relationship, benchmark and
 source — are committed to `data/observer/READS.toml`, which this step owns for the stage; each later step makes its
-read live and the gate (S6.141) reads the file, never writes it.
+read live and the gate (S6.142) reads the file, never writes it.
 
 **Files**:
 
@@ -65462,7 +65532,7 @@ compiles only where the participant's build refuses it.
 - E10: the player's household ending (its last person dies): the scope reads its estate's public records only
   (`ended_player_scope_reads_estate_public`).
 
-**Extension points**: S6.132–S6.136 build on the scope and the label.
+**Extension points**: S6.132–S6.137 and S6.134 build on the scope and the label.
 
 **Unit tests**: `participant_scope_refuses_private` (compile-fail: no accessor of another party's columns);
 `page_without_label_refused`; `day_zero_scope_reads_opening_public`; `ended_player_scope_reads_estate_public`.
@@ -65529,7 +65599,7 @@ instrument by the name its market uses.
 - E2: a market with no print since the opening shows the opening's present value with its age (GEN.5)
   (`no_print_shows_opening_with_age`).
 
-**Extension points**: every page of S6.133–S6.136 displays through it.
+**Extension points**: every page of S6.133–S6.137 and the map, S6.134, displays through it.
 
 **Unit tests**: `shown_only_from_sources` (compile-fail); `missing_shows_missing`; `stale_price_shows_age`;
 `change_shown_with_levels`; `instrument_named_by_market`; `no_print_shows_opening_with_age`.
@@ -65622,7 +65692,103 @@ file).
 
 ---
 
-### S6.134 — Events that develop, and the news
+### S6.134 — The map
+
+**Status**: planned
+**Kind**: mechanism
+**Clauses**: OBS.12 PROCESS
+**Architecture**: §12 observation (writes the map); §7.4 phx-geo (follows: tiles, cells, parcels, the segment index).
+**Depends on**: S6.131 (the two views and the participant's scope); S6.132 (shown numbers); S6.133 (the party page a
+selection opens); S1.190 (K-28: cells, parcels, `crossing`, `cells_of`); S1.284 (K-66: named units by tile, a unit's
+kind, owner and site, `in_building`); S1.187 (K-26: segments, the infrastructure's paths); S1.188 (a segment's use
+today); S1.221 (K-39: population and employment by zone); S1.273 (K-61: units held by (zone, class)); S2.169
+(buildings on cells).
+**Goal**: the observer shows the world's map at any zoom — tiles and their terrain, the cells held, every building,
+farm, forest and mine at its cell with its owner, occupants or users and value on selection, the land parcels and the
+infrastructure along its paths with its use — aggregated by zone, region and country when zoomed out, built from what
+the world holds and nothing else, and building it leaves the world exactly as it was.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-obs/src/pages/map.rs` | the map page: its levels (cells and tiles, zones, regions, countries), the tiles in view, sites, parcels, paths with their use, a selection opening the party page; the zoomed-out sums per zone, region and country |
+| `crates/assembly/phx-obs/src/pages/map_tests.rs` | unit tests over hand-built tiles, parcels, sites and segments |
+| `data/shared/OBS.toml` | `OBS.map_detail_tiles` (SHAPE: the most tiles drawn cell by cell at once, the screen's legibility its reason) |
+| `crates/apps/phx-cli/src/checks/obs.rs` | `LC-6-28` |
+| `docs/ARCHITECTURE.md` | §12: the map |
+
+**Design**:
+- **Levels** (OBS.12): while the tiles in view are at most `OBS.map_detail_tiles`, each is drawn cell by cell; beyond
+  it, the view is the sums of the zones, regions or countries it covers, the coarsest whose count in view is within the
+  same setting.
+- **Tiles and terrain**: each tile's surface, terrain, elevation and relief read from the map's tiles (K-25).
+- **The cells held** (GEO.19): per tile in view, S1.284's named units by tile give every site's cell and kind — each
+  building, farm, forest and mine at its cell, a building at its position within the cell (S2.169's column); S1.190's
+  parcels give their rectangles; the tile's segment index and `cells_of` give the cells each path crosses. A cell none
+  of them holds shows its tile's land.
+- **Infrastructure** (GEO.4): each segment in view along its cells, with its mode, capacity, condition and closure, and
+  its use today — S1.188's day-stamped load against its capacity, a stale stamp read as no trip that day, never as a
+  default.
+- **Selection**: a unit shows its owner (its K-66 owner, opening S6.133's page), its occupants or users (the holdings
+  placed in it through `in_building` and their holders — a dwelling's household, a shop's firm; a segment's day's use)
+  and its value (its cost for its owner's own books, the latest print or labelled valuation, MKT.20), each a `Shown<T>`
+  (S6.132). In the participant's build every read goes through its scope (S6.131): the player's own units in full,
+  others' as public records give them.
+- **Zoomed out**: per zone, the population and employment (K-39), the units held by (zone, class) (K-61) and the named
+  units by kind counted over the zone's tiles; regions and countries sum their zones. The counts are built from the
+  close's state the first time they are asked and kept in the observer's buffer until the next close.
+- **Only what the world holds** (OBS.6, Law 17): the map reads `&World` through the scope or the inspector's surface
+  (PC-20, PC-85); it places nothing the world does not record — a unit held by (zone, class) in no building has no
+  cell and appears only in its zone's sums, since drawing its tile is the world's own draw (REP.23) and the observer
+  never calls it — and it opens no world stream.
+
+**Edge cases**:
+- E13: a tile with nothing held shows its terrain only (`empty_tile_shows_terrain`).
+- E12: a unit with no print or valuation shows its value missing, never zero (`unvalued_unit_shows_missing`).
+- E10: a segment closed shows closed until its reopening day; a scrapped building is gone at the next close
+  (`closed_segment_shown_closed`).
+- E3: a unit counted by (zone, class) in no building is never placed on a cell (`counted_units_not_placed`).
+- E2: a segment with no trip today shows no use (`no_trip_no_use`).
+- OBS.2: the participant's map shows another party's unit only as public records give it (`participant_map_scope`).
+
+**Extension points**: none.
+
+**Unit tests**: `site_placed_at_its_cell`; `parcel_drawn_as_rectangle`; `path_drawn_along_cells_of_segment`;
+`level_by_tiles_in_view`; `zones_sum_to_regions_and_countries`. Edge cases: `empty_tile_shows_terrain`;
+`unvalued_unit_shows_missing`; `closed_segment_shown_closed`; `counted_units_not_placed`; `no_trip_no_use`;
+`participant_map_scope`.
+
+**Live checks**:
+- `LC-6-28`: Law 17, OBS.6, OBS.12 — at closes of the gate's run sampled on the observer's stream, the world hash is
+  taken before the map is built, the map is then built at every level over sampled tiles, zones and regions, and the
+  hash taken again before the next day equals it; every site, parcel and path drawn names the world row it came from.
+
+**Budget**:
+- no share of any turn line: the map builds only when looked at, between turns, outside the turn's measured work.
+- a detail view: per tile its named units, parcels and segments (≈ 35, 20 and 25 on average, a city's tile ≈ 2 k
+  buildings) at ≤ 50 ns each and ≈ 100 cells a segment's `cells_of` at ≤ 5 ns → ≤ 20 ms for 400 tiles; the zoomed-out
+  sums once a close, ≈ 1.6 M sites at ≤ 5 ns ≈ 8 ms, then reads.
+- ledger: `+0 B` resident in the world (the view in the observer's transient buffer, ≤ 4 MB, inside ledger line 1's
+  process).
+
+**Guards**: PC-85 holds (`phx-obs` imports no mutable accessor of the world); none new.
+
+**Not allowed**:
+- a store, index, map or per-party pass outside the core bases; a pass over every party every day; an allocation per
+  day;
+- a view that draws, writes or opens a world stream; a unit placed on a cell the world does not record; a use, value
+  or count filled in where the world holds none; a cell grid kept for display.
+
+**Done when**:
+- [ ] Code, the declared setting and unit tests; `LC-6-28` registered (read at the gate).
+- [ ] ARCHITECTURE §12 written (the map).
+- [ ] Fast checks pass; the bench at the committed resolution within `perf/budget.toml`.
+- [ ] Both reviews are done; status `done` and the section removed.
+
+---
+
+### S6.135 — Events that develop, and the news
 
 **Status**: planned
 **Kind**: mechanism
@@ -65682,7 +65848,7 @@ those chains; no news the state did not produce exists, and nothing written move
 
 ---
 
-### S6.135 — The player acts through every decision point, its minds advising
+### S6.136 — The player acts through every decision point, its minds advising
 
 **Status**: planned
 **Kind**: mechanism
@@ -65751,13 +65917,13 @@ decision to them.
 
 ---
 
-### S6.136 — The phone's play surface
+### S6.137 — The phone's play surface
 
 **Status**: planned
 **Kind**: mechanism
 **Clauses**: none
 **Architecture**: §12 observation and the player (writes the phone's surface); §17 build and target (follows).
-**Depends on**: S6.131, S6.132, S6.133, S6.134, S6.135 (scope, shown numbers, pages, news, decisions); S1.356 (saves
+**Depends on**: S6.131, S6.132, S6.133, S6.135, S6.136 (scope, shown numbers, pages, news, decisions); S1.356 (saves
 and loads); S1.491 (the setup and day zero).
 **Goal**: the phone app's bridge and screens exist and build: create a world from a setup, load, step a turn, read a
 page, submit an intent, save, and in the inspector's build export the recorder's series. No device run is part of this
@@ -65819,7 +65985,7 @@ step: the first run of the world on the phone is the owner's call.
 
 ---
 
-### S6.137 — Every resolution setting, taste distribution and review cost registered and counted
+### S6.138 — Every resolution setting, taste distribution and review cost registered and counted
 
 **Status**: planned
 **Kind**: tool
@@ -65829,8 +65995,8 @@ the static checks (follows).
 **Depends on**: S1.179 (the register); S1.180 (the kind catalogue); S1.348 (decisions counted by kind and standing);
 every decision step of Stages 1–6 (their review costs and tastes declared).
 **Goal**: the register holds every RESOLUTION setting — the representation's size, each kind's attribute classes,
-zones, age classes, horizons, the audit's cycle, the draw scheme, the map's cell size — each with its place in the
-owner's order of refinement; every taste distribution per preference type; each kind's payment order; what reviewing
+zones, age classes, horizons, the audit's cycle, the draw scheme — each with its place in the owner's order of
+refinement, and the map's grid and cell size marked as the owner fixed them (N8.5); every taste distribution per preference type; each kind's payment order; what reviewing
 and changing each kind of decision costs; and each trade's price points; and every review cost is counted per decision
 kind in the run.
 
@@ -65838,8 +66004,8 @@ kind in the run.
 
 | path | purpose |
 | --- | --- |
-| `crates/apps/phx-check/src/rules/register_completeness.rs` | PC-192, a declaration check over the systems' declarations and the register's data: a decision kind with no review cost; a taste stream with no distribution for some type; a kind with a declared attribute but no classes; a trade with posted prices but no price points; a RESOLUTION entry with no place in the refinement order |
-| `data/shared/REP.toml` | `refine_rank` per RESOLUTION entry by the owner's order (§12: persons, preference types, attribute classes and zones, horizons and snapshot intervals, age classes, the audit's cycle, the draw scheme, the map's cell size) |
+| `crates/apps/phx-check/src/rules/register_completeness.rs` | PC-192, a declaration check over the systems' declarations and the register's data: a decision kind with no review cost; a taste stream with no distribution for some type; a kind with a declared attribute but no classes; a trade with posted prices but no price points; a RESOLUTION entry with no place in the refinement order, but the grid and the cell size the owner fixed |
+| `data/shared/REP.toml` | `refine_rank` per RESOLUTION entry by the owner's order (§12: persons, preference types, attribute classes and zones, horizons and snapshot intervals, age classes, the audit's cycle, the draw scheme); the map's grid and `GEO.cell_m` marked `owner_fixed` |
 | `crates/apps/phx-cli/src/checks/rep.rs` | `LC-6-24` |
 
 **Design**:
@@ -65886,7 +66052,7 @@ RESOLUTION entry without its `refine_rank`.
 
 ---
 
-### S6.138 — Every system opened: the GEN report
+### S6.139 — Every system opened: the GEN report
 
 **Status**: planned
 **Kind**: mechanism
@@ -65959,14 +66125,14 @@ with its source, every balancing change and every apportionment difference; no c
 
 ---
 
-### S6.139 — Day zero complete, and the whole world clean on day one
+### S6.140 — Day zero complete, and the whole world clean on day one
 
 **Status**: planned
 **Kind**: tool
 **Clauses**: GEN.13 PROCESS; GEN.7 INVARIANT
 **Architecture**: §10.4 the snapshot, day zero and settling (follows).
 **Depends on**: S1.491 (day zero's mode of the stage table); S1.185 (the stage table); S1.348 (the decision core);
-S1.353 (every family); S6.138 (the opened world); every decision step that declares an opening decision.
+S1.353 (every family); S6.139 (the opened world); every decision step that declares an opening decision.
 **Goal**: on day zero every party takes each decision kind declared as an opening decision once, by its own rule, from
 its own drawn state and the snapshot — sellers post prices, employers post wage offers, banks set rates and standards,
 the central bank applies its rule, agencies confirm ratings, holders place orders, firms set their research effort —
@@ -66023,7 +66189,7 @@ decision whose rule meets or settles.
 
 ---
 
-### S6.140 — Every audit family mapped, and every injection lights its family alone
+### S6.141 — Every audit family mapped, and every injection lights its family alone
 
 **Status**: planned
 **Kind**: mechanism
@@ -66084,13 +66250,13 @@ family reports first); `indexes_rebuilt_before_injection`; `family_lights_withou
 
 ---
 
-### S6.141 — The Stage 6 gate
+### S6.142 — The Stage 6 gate
 
 **Status**: planned
 **Kind**: gate
 **Clauses**: none
 **Architecture**: §13 budgets (writes Stage 6's measured lines); §14.5 gates (follows).
-**Depends on**: every step S6.100–S6.140; S5.187 (the Stage 5 gate: the world this one runs on); S1.496, S1.497 (the
+**Depends on**: every step S6.100–S6.141; S5.187 (the Stage 5 gate: the world this one runs on); S1.496, S1.497 (the
 verdicts and chain reads each gate reports for the facts and chains whose systems exist).
 **Goal**: the exit, the budget and the stage's reads are judged on the settled run of the whole world at the committed
 resolution: the run grows through discovered improvements, the population's size and shape are outcomes, GEN is
@@ -66101,7 +66267,7 @@ complete and clean on day one, every audit family lights alone, REP.18 is comple
 | path | purpose |
 | --- | --- |
 | `perf/bench/<commit>-committed-gate.json` | the gate run's report kept by the bench (`-k`), with the independence report and the GEN report |
-| `perf/reads/S6.141-*.json` | Stage 6's macro reads from the run |
+| `perf/reads/S6.142-*.json` | Stage 6's macro reads from the run |
 | `perf/budget.toml` | Stage 6's ratchets at their measured values (they only tighten) |
 | `docs/ARCHITECTURE.md` | §13 with Stage 6's measured lines |
 
@@ -66110,7 +66276,7 @@ complete and clean on day one, every audit family lights alone, REP.18 is comple
 - **Stage 6's heavy days**, each named with its turn and read from the run: each country's school-year date (S6.118;
   it joins B′ where a four-day closure precedes it); the
   enrolment window's business days (S6.117) and the consumption survey's fieldwork days (S6.129), each on the
-  quarter-end payday it can meet; day one's full check (S6.139); a mass layoff's retraining wakes (S6.119). A heavy
+  quarter-end payday it can meet; day one's full check (S6.140); a mass layoff's retraining wakes (S6.119). A heavy
   day the run has not had is listed with the run's length.
 - **Stage 6's macro reads**: those S6.100 froze in `data/observer/READS.toml` (technology, population, households),
   read against their benchmarks; with them, the N3 facts and N4 relationships whose systems exist, with their
@@ -66189,7 +66355,7 @@ steps it changes. Never: a primitive, a rule's form or parameters, an opening di
 close a miss (N7, GEN.11; PC-90, PC-91). A reset of the play resolution is representation, set by measuring the budget
 (N8.5), cited as such.
 
-**Placeholders**: none introduced; none remain (S6.141).
+**Placeholders**: none introduced; none remain (S6.142).
 
 **The stage's budget lines.** The wealth survey's fieldwork window (S7.101) is Stage 7's one line in the turn: about
 11 core-ms on each of its business days, which can meet the quarter-end payday; the recorder's lines are S1.358's.
@@ -66203,7 +66369,7 @@ Every other step runs outside the turn.
 **Kind**: docs
 **Clauses**: none
 **Architecture**: §14.8 the realism reads (follows).
-**Depends on**: S6.141 (the Stage 6 gate: Stage 7 begins after it); S1.498 (the reads' file and its freezing rule);
+**Depends on**: S6.142 (the Stage 6 gate: Stage 7 begins after it); S1.498 (the reads' file and its freezing rule);
 S6.100 (Stage 6's reads, which stand).
 **Goal**: before any Stage 7 code, the stage's macro reads — each with its declared relationship, benchmark and
 source — are committed to `data/observer/READS.toml`, which this step owns for the stage; each later step makes its
@@ -66525,7 +66691,7 @@ resolvable; an item nothing refuses is a finding written into the step that will
 **Kind**: tool
 **Clauses**: N7
 **Architecture**: §16.7 primitives' sources (follows).
-**Depends on**: S6.137 (the register complete); S1.01 (PC-91: every change cites its source); S1.358 (the read-trace
+**Depends on**: S6.138 (the register complete); S1.01 (PC-91: every change cites its source); S1.358 (the read-trace
 of the run).
 **Goal**: every primitive is traced to its source, or labelled estimated (with its estimation) or assumed (with its
 reason), and the shares of assumed and estimated primitives are published by kind, system and country; outcomes are
@@ -66592,7 +66758,7 @@ compared with real data only through the facts' and chains' benchmarks, and noth
 **Kind**: gate
 **Clauses**: none
 **Architecture**: §13 budgets (writes the final build's measured lines); §14.5 gates (follows).
-**Depends on**: every step S7.100–S7.105; S6.141 (the whole world's gate).
+**Depends on**: every step S7.100–S7.105; S6.142 (the whole world's gate).
 **Goal**: the run of one build is measured — facts, chains, silent breaks and the register — every miss recorded
 against a mechanism, and the final build within the budget with the recorder running.
 
@@ -66854,11 +67020,11 @@ row of §13.
 
 ### S6.04 — `phx-obs` and the app in full
 
-**Status**: retired. Dealt out to S1.212, S6.131–S6.136.
+**Status**: retired. Dealt out to S1.212, S6.131–S6.137.
 
 ### S6.05 — GEN complete, the audit complete, and the Stage 6 gate
 
-**Status**: retired. Dealt out to S6.100, S6.137–S6.141.
+**Status**: retired. Dealt out to S6.100, S6.138–S6.142.
 
 ### S7.01 — The stylised facts
 
@@ -66904,12 +67070,12 @@ row of §13.
 | Budget stance and the worst turn (N8, N8.2, spec Appendix E 41) | 1 s median and 2 s worst a business day, sustained, and 4.5 GB stand; a miss is met by changing how the world is represented and traversed, then by the play resolution, never by a mechanism or the population; where these cannot meet the worst turn, the owner decides on the gate's measured numbers, coarsening the spec in its own change before relaxing the budget | 2026-09-23 |
 | Cost bounds (N8.6) | every operation a day performs costs at most O(log n) in the size of any store of the world — sublinear, never a walk over a world-sized collection to do one thing; a day's cost is the sum of its events', and a world-sized pass only a declared rolling slice | 2026-09-25 |
 | Reading the budget | the budget is read at every step, never only at gates | 2026-09-28 |
-| The budget's remainder (N8.7) | a miss at the design point is met strictly in N8.7's order: representation first, then E 41's valves in reverse order, each declared in `perf/design.toml` with its `forced_by` and the MB or ms it frees; what remains is neither hidden nor closed by moving persons: the core's close (S1.360) records it as N8.7's finding with its exact numbers — the persons at which the design point's per-person counts fit — and puts it to the owner, whose design point it is; no step lowers 7.5 million persons on its own | 2026-09-29 |
-| The design point at the finished plan (N8.7, spec Appendix E 51) | the plan's steps sum, at 7.5 million persons after representation and the valves (the full audit's cycle 365 days, the horizons at their keepers' floors, one condition class, zones 500), to a worst turn of 2 058 ms — E1's next day on a campaign quarter-end payday with every dated day that can fall there (1 969 ms without an event) — and 4 667.1 MB; the design point fits the 1 800 ms line at about 6.52 million persons (the 2 000 ms line at about 7.28 million) and the 4 349 MB line at about 6.94 million; it stays at 7.5 million until the owner answers at S1.360 (an open question: the persons, or the worst turn's line — its headroom, or whether an event is composed with every dated day and a campaign at once) | 2026-09-30 |
+| The budget's remainder (N8.7) | at the design point of 6.0 million persons the plan's steps fit with margin: the worst turn ≈ 1 688 ms (E1's next day on a campaign quarter-end payday with every dated day that can fall there; ≈ 1 617 ms without an event) against 1 800 and the owner's ≤ about 1 700; memory ≈ 3 946 MB against 4 349 and the owner's ≤ about 3 950; saves ≈ 3 160 MB against 3 866 (S1.360). A future miss is met strictly in N8.7's order — representation first, then E 41's valves in reverse order, each declared in `perf/design.toml` with its `forced_by` and what it frees — and what remains is recorded by the step that finds it as N8.7's finding with its exact numbers and put to the owner; no step moves the persons or an owner's setting on its own | 2026-09-30 |
+| The design point at the finished plan (N8.7, spec Appendix E 51, N8.5, E 41) | 6.0 million persons, the steps' per-person figures (stated at 7.5 million persons' counts) × 0.8; the full audit's cycle 60 days; zones 1 000 (the valve to 500 withdrawn); the map's cells 100 m, fixed like the grid; within the margins — the worst turn ≤ about 1 700 ms and memory ≤ about 3 950 MB — E 41's valves restored in its order: two condition classes and every history horizon at 730 days or two years but the events', kept at 365 (730 would pass 3 950 MB) | 2026-09-30 |
 | The core's close (S1.360) | a major step: independent reviews and `tools/bench.sh -g` | 2026-09-29 |
 | The contract-family and due-wheel code | 8 bits, room for every family and dated reason the finished world declares; the byte found in the row layout or accounted in the memory ledger | 2026-09-29 |
-| The design point (N8, spec Appendix E 51) | 7.5 million persons (5 million × 1.5), with every per-person count × 1.5 on top; its counts and volumes are `perf/design.toml`'s one figure set; the whole core at the design point meets N8.2 and N8.4 on the bench's phone model; a miss is met by representation and traversal (N8.7), never by a mechanism | 2026-09-29 |
-| Order of refinement (N8.5, spec Appendix E 41) | persons (REP.40) first, then preference types (NUM.4), then attribute classes and zones, then history horizons and snapshot intervals, then age classes, the full audit's cycle, the draw scheme and the map's cell size; a forced coarsening takes them in reverse order | 2026-09-29 |
+| The design point (N8, spec Appendix E 51) | 6.0 million persons, with every per-person count × 1.5 on top; its counts and volumes are `perf/design.toml`'s one figure set; the whole core at the design point meets N8.2 and N8.4 on the bench's phone model; a miss is met by representation and traversal (N8.7), never by a mechanism | 2026-09-29 |
+| Order of refinement (N8.5, spec Appendix E 41) | persons (REP.40) first, then preference types (NUM.4), then attribute classes and zones, then history horizons and snapshot intervals, then age classes, the full audit's cycle and the draw scheme; a forced coarsening takes them in reverse order; the map's cell size left the order on 2026-09-30, fixed by the owner | 2026-09-29 |
 | Resolution | a valve, adjusted by measurement of the budget whenever it calls for it; cut only as far as needed | 2026-09-23 |
 | The play resolution (REP.40, spec Appendix E 44) | the world holds a declared number of the setup's persons, `REP.persons`, every household and firm they form a party of its own; the input is the persons, not a divisor; it is set by measuring the day, 750 000 until a measure resets it; `tools/bench.sh -p` sets another for one run | 2026-09-27 |
 | What a resolution's change cites (PC-91) | a resolution changed by the owner's decision cites the decision's row in this section (`Resolution-Change: <id> — plan §12, <decision>`), as well as a budget report | 2026-09-25 |
@@ -66923,6 +67089,8 @@ row of §13.
 | What the run has not produced (spec Appendix E 39) | never blocks a gate: listed as not yet seen with the run's length, its mechanism shown at logic level; only the budget blocks | 2026-09-23 |
 | Measuring the representation (spec Appendix E 40) | only at the play resolution, in the one run; the valve's effect measured in the running world | 2026-09-23 |
 | Map (spec Appendix E 29) | about 40,000 tiles of 10 km; 25 regions, allotted by the population split with at least three per country | 2026-09-23 |
+| The map's cells (GEO.18, GEO.19, spec Appendix E 29, N8.5) | 100 m, fixed by the owner like the 10 km grid and no RESOLUTION valve: 10 000 cells a tile, a building, a parcel and a path placed to a city block; land held apart stored as parcels (rectangles of cells) and a path's cells computed from a per-tile segment index (S1.190) | 2026-09-30 |
+| The map view (OBS.12) | the observer shows the world's map at any zoom — tiles and terrain, the cells held, what stands on each with its owner, occupants or users and value on selection, the parcels, the infrastructure along its paths with its use — aggregated by zone, region and country when zoomed out, from what the world holds only (S6.134) | 2026-09-30 |
 | The world's shape and its latitude cycle (GEO.18) | a closed world of the same size (2,590 km each way), wrapping east to west and north to south, with no edge and no pole; a row's climate is read at a latitude that climbs evenly from 35°N at the first row to 58.3°N half the world away and falls evenly back: a temperate continent like Europe's | 2026-09-24 |
 | Where local markets meet (REP.24, GEO.3, MKT.1) | a local market meets per region; within a region a buyer's choice weighs distance at zone resolution | 2026-09-29 |
 | Congestion within a day (GEO.20) | the fixed point of the day's trips: every trip reads the load all that day's trips put on its legs | 2026-09-29 |
@@ -66945,7 +67113,7 @@ row of §13.
 | Office holders and household budgets (spec Appendix E 47, 48) | an institution's rule reads its office holders' own preferences and outlooks, so a new chief executive, governor or minister changes how it decides; a household's shared payments are drawn from its members' accounts in proportion to what each holds, each income paid to its earner's own account and a person's own debts paid from its own first | 2026-09-28 |
 | Office holders' weighing (CAP.3, CAP.13, FRM.9) | the spec states a hurdle, a horizon and the leverage tolerated as the deciding office holder's own weighing, from its mind | 2026-09-30 |
 | Households' patience and risk aversion (HH.3) | the spec states them as the household's adults' own | 2026-09-30 |
-| Minds and places (spec MND, Appendix E 49) | a mind for every person (eight concerns, weights simulated from the GPS, character by country, experience, aspirations, goals, learning from own record and peers), built in its own stage after Stage 3 (Stage 8), replacing each decision's rule one by one; office holders under their contracts and removal, self-interest within the law; everyone's life recorded compactly and deleted at death except office holders'; a narrator on the phone; places (cells at a budget-set resolution, buildings with position, commuting with congestion and transit, agglomeration, municipalities, farms on cells) built right after housing, in Stage 2 | 2026-09-28 |
+| Minds and places (spec MND, Appendix E 49) | a mind for every person (eight concerns, weights simulated from the GPS, character by country, experience, aspirations, goals, learning from own record and peers), built in its own stage after Stage 3 (Stage 8), replacing each decision's rule one by one; office holders under their contracts and removal, self-interest within the law; everyone's life recorded compactly and deleted at death except office holders'; a narrator on the phone; places (cells — of 100 m, the owner's since 2026-09-30 — buildings with position, commuting with congestion and transit, agglomeration, municipalities, farms on cells) built right after housing, in Stage 2 | 2026-09-28 |
 | The voluntary close (FRM.11) | blocked until the Stage 8 step that gives chief executives and owners their minds builds it: until then no firm winds down by choice (a placeholder naming MND), and `sys-frm`'s close point and rule stay declared | 2026-09-29 |
 | Public ways (TEC.4, spec Appendix E 42) | every firm knows its industry's ways no patent covers and no firm keeps private; only discovered improvements are assets | 2026-09-23 |
 | Pension accrual (PEN.2, spec Appendix E 32) | career-average revalued amounts; final-salary schemes carried as their equivalents | 2026-09-23 |
@@ -67028,14 +67196,14 @@ REP.37, REP.39, SET.14, PTY.12, GEN.9, N6) keep their numbers and are not mapped
 | REP | S1.458 | 38 |
 | REP | S1.490 | 5 |
 | REP | S2.173 | 24 |
-| REP | S6.137 | 18 |
+| REP | S6.138 | 18 |
 | GEN | S0.25 | 6 |
 | GEN | S0.26 | 8 |
 | GEN | S0.27 | 14 |
 | GEN | S1.01 | 11 |
 | GEN | S2.171 | 16 |
-| GEN | S6.138 | 1, 2, 3, 4, 5, 12, 15 |
-| GEN | S6.139 | 7, 13 |
+| GEN | S6.139 | 1, 2, 3, 4, 5, 12, 15 |
+| GEN | S6.140 | 7, 13 |
 | GEN | S7.101 | 10 |
 | MON | S0.15 | 1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 16 |
 | MON | S0.17 | 5 |
@@ -67426,14 +67594,15 @@ REP.37, REP.39, SET.14, PTY.12, GEN.9, N6) keep their numbers and are not mapped
 | OBS | S6.131 | 2 |
 | OBS | S6.132 | 6, 7 |
 | OBS | S6.133 | 8 |
-| OBS | S6.134 | 5 |
-| OBS | S6.135 | 4 |
+| OBS | S6.134 | 12 |
+| OBS | S6.135 | 5 |
+| OBS | S6.136 | 4 |
 | STA | S1.14 | 2, 4, 5 |
 | STA | S1.477 | 3 |
 | STA | S2.176 | 6 |
 | STA | S6.105 | 1 |
 | L | S7.103 | 1–12 |
-| N | S6.140 | 1 |
+| N | S6.141 | 1 |
 | N | S0.26 | 2, 8 |
 | N | S7.102 | 3 |
 | N | S7.103 | 4 |

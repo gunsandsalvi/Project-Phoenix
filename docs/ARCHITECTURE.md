@@ -21,7 +21,7 @@ The architecture serves four goals, in this order when they conflict:
 
 The forces:
 
-- **Scale.** The design point is 7.5 million persons and the counts that follow from them (§13, spec Appendix E 51):
+- **Scale.** The design point is 6 million persons and the counts that follow from them (§13, spec Appendix E 51):
   their households, the firms and institutions of three countries, and the contracts, holdings and records between
   them. The world holds a declared number of the setup's persons, every household and firm they form one party
   (REP.40); the play resolution is the valve, set and reset by measuring the budget (N8.5, §13).
