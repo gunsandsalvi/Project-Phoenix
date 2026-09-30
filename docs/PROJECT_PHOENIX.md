@@ -2213,8 +2213,8 @@ to owners, can belong to a group, and can be born and die.
   (GDS, TCR).
 - **FRM.8 DECISION** — **Whether to invest**, in what, and how to fund it (CAP).
 - **FRM.9 DECISION** — **How to fund itself**: retained cash, trade credit, a bank loan, a bond, commercial
-  paper, new shares; by what each costs it now and how close it is to the leverage its management will
-  tolerate.
+  paper, new shares; by what each costs it now and how close each takes it to distress, as the office holder
+  deciding it weighs that risk (MND.7, MND.9).
 - **FRM.10 DECISION** — **What to pay out**: dividends and buybacks from cash after what is due, by its
   management's policy and what the owners expect.
 - **FRM.11 DECISION** — **Which lines to be in**: enter a product by investing in the plant and knowing a way
@@ -2294,8 +2294,8 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
 
 - **CAP.3 DECISION** — A firm **invests** when its own value of the project (VAL.8) — the output it expects
   to sell over the plant's life, at the prices it expects, less running costs — beats what the money costs
-  it **at the margin now** (its borrowing rate for new debt and its shareholders' required return), by at
-  least its management's own hurdle, and when it can fund it. A firm running full has a reason to expand;
+  it **at the margin now** (its borrowing rate for new debt and its shareholders' required return), by as much as
+  the office holder deciding it asks, by its own weighing (MND.7, MND.9), and when it can fund it. A firm running full has a reason to expand;
   uncertainty about demand is a reason to wait.
 - **CAP.4 DECISION** — An owner **maintains, repairs, sells or scraps** a unit when doing so is worth more to
   it than keeping it as it is.
@@ -2327,8 +2327,9 @@ worn, maintained, repaired, sold and scrapped, so that investment is where finan
 
 **Primitives**
 
-- **CAP.13 PRIMITIVE** — Capital kinds, lives, lead times and wear curves (TECHNOLOGY); hurdle and horizon
-  distributions of managements (PREFERENCE).
+- **CAP.13 PRIMITIVE** — Capital kinds, lives, lead times and wear curves (TECHNOLOGY); horizon distributions of
+  managements (PREFERENCE), read as the investment decision's horizon. The hurdle a project must clear is the
+  deciding holder's own weighing (MND.7, MND.9, MND.19), not a primitive.
 
 **Out of scope**
 
