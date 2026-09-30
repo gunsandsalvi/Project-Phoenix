@@ -45,7 +45,7 @@ The forces:
 | Engine | **Rust**, stable, pinned in `rust-toolchain.toml`, edition 2024 | Layout and allocation control, no GC pauses, data-race freedom, Android and Linux targets, crates as compiler-enforced boundaries. |
 | World mathematics | **`libm`** (pure Rust) for transcendental functions in world code | Platform-independent results. |
 | Parallelism | **Own pool** in `phx-exec` over **rayon-core**, pinned to fast and medium cores, with Android performance-hint sessions | Cost-sized fixed chunks, no little cores, few barriers. Only `phx-exec` depends on rayon. The world's meetings, making and input orders run on the pool; performance-hint sessions are not built (`PerfHint` has only `NoHint`, called by nothing), and come with the phone's run of the world. |
-| Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type iterated in key order where order matters (`sorted`) and in no set order only for order-free reads such as sums (`each`), sharded where written in parallel | Fast lookups; no outcome depends on hash order. |
+| Hash maps | **hashbrown** + fixed-seed **foldhash**, behind a kernel map type iterated in key order where order matters (`sorted`) and in no set order only for order-free reads such as sums (`each`), sharded where written in parallel; off the day's paths only: the core's stores, indexes and passes hold none (PC-92) | Fast lookups at assembly and in reports; no outcome depends on hash order. |
 | Randomness | **Own Philox4x32-10** in `phx-rand`, batch-first, NEON-vectorised samplers | Draws addressable by (stream, identity, day, index): parallel, order-free, reproducible (CHN.1, CHN.6). |
 | Compression | **zstd** level 1 after per-column transforms (delta, zigzag, bit-packing) | Fast; transforms double the ratio on integer columns. |
 | Declared data | **TOML** + **serde**, at assembly only | Diffable, never on a hot path. |
@@ -54,7 +54,7 @@ The forces:
 | Interface | **Kotlin + Jetpack Compose** | Native; off the hot path. |
 | Command line | **clap** in `phx-cli` | Runs, measurements, reports. |
 | Checks | **`phx-check`** (`syn`, `cargo metadata`) + **clippy** `disallowed-*` lists | Structural and type-aware rules (§16). |
-| Counters | **The bench** (`tools/bench.sh`): the world run, each stage of its day timed by the run's clock; the engine's own counters | One tool for every measure; the kernels' micro-benchmarks were deleted at S1.24 (owner, 2026-09-29). |
+| Counters | **The bench** (`tools/bench.sh`): the world run, each stage of its day timed by the run's clock, and its `-F` mode, the finished-volume measure (`phx-fin`, §14.7), each base filled at the design point; the engine's own counters | One tool for every measure (owner). |
 | API snapshots | **cargo-public-api** for kernel and interface crates | Kernel surfaces change only on purpose. |
 | CI | **GitHub Actions** on x86-64 Linux, with an Android build job. The world runs on the build machine, never in CI | See §14.7. |
 
@@ -65,14 +65,14 @@ External crates are an allow-list in `phx-check`; adding one is recorded in §18
 ## 3. Layers and crates
 
 ```text
-L4 apps            phx-cli · phx-check  (android/: the game's interface)
+L4 apps            phx-fin · phx-cli · phx-play · phx-check  (android/: the game's interface)
 L3 assembly        phx-world · phx-obs
 L2 systems         sys-dem sys-hh sys-est ... sys-sta                    (depend on L0, L1, IF only)
 IF interfaces      if-base if-pop if-labour if-property if-firm if-banking if-credit
                    if-securities if-risk if-energy if-open if-state      (data and pure rule signatures only)
-L1 kernel          phx-store phx-exec phx-core phx-geo phx-ledger phx-pop
-                   phx-market phx-acct phx-val
-L0 foundation      phx-num phx-rand phx-id phx-macros
+L1 kernel (core)   phx-store phx-exec phx-core phx-geo phx-pop phx-record phx-agenda phx-ledger
+                   phx-contract phx-hold phx-market phx-acct phx-val phx-risk phx-end phx-mind phx-audit
+L0 foundation      phx-macros phx-num phx-rand phx-id
 ```
 
 ### 3.1 Dependency rules (checked by `phx-check`)
@@ -80,7 +80,10 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
 - A crate depends only on lower layers. Inside L0 the order is `phx-macros → phx-num → phx-rand → phx-id`; inside L3
   it is `phx-world → phx-obs`, so the observer reads the world through its inspector and the world never reads the
   observer; inside L1
-  it is `phx-store → phx-exec → phx-core → phx-geo → phx-ledger → phx-pop → phx-market → phx-acct → phx-val`. Interface crates may depend on L0, L1 and the interface crates before them in the order `if-base →
+  it is `phx-store → phx-exec → phx-core → phx-geo → phx-pop → phx-record → phx-agenda → phx-ledger → phx-contract →
+  phx-hold → phx-market → phx-acct → phx-val → phx-risk → phx-end → phx-mind → phx-audit`, each crate owning the bases
+  §7 gives it; inside L4 it is `phx-fin → phx-cli → phx-play`, `phx-check` apart, and `phx-fin` depends on L0 and L1
+  only. Interface crates may depend on L0, L1 and the interface crates before them in the order `if-base →
   if-pop → if-labour → if-property → if-firm → if-banking → if-credit → if-securities → if-risk → if-energy → if-open
   → if-state`. `if-base` holds the vocabulary several domains share — product, occupation-family, skill, capital-kind
   and way identifiers and their declared data, rating scales and notches, money-market tenors, segments and collateral
@@ -102,7 +105,12 @@ L0 foundation      phx-num phx-rand phx-id phx-macros
   `phx-exec` depends on rayon. Only `phx-store` and `phx-exec` may use `unsafe`; the one other `unsafe` is the `unsafe impl`
   that `#[derive(Pod)]` expands to, whose layout the derive has checked, and no source outside those three crates
   may write `allow(unsafe_code)`.
-- A crate is created when its first step starts, never in advance.
+- A crate is created when its first step starts, never in advance; this section names the planned crates before
+  they exist, each with the step that creates it.
+- **Sweep hooks.** A base maintained inside another base's sweep — income lines, levies, book folds posted during a
+  lower crate's apply — is reached through the sweep's hook parameter: a generic `H: SweepHooks` declared by the
+  lowest crate that runs the sweep, monomorphised with no `dyn`, the concrete hooks composed by `phx-world`'s routing
+  at the slot. A lower crate never names a higher one.
 
 ### 3.2 Foundation
 
@@ -171,18 +179,29 @@ blocks at once from one block index (`philox_x4`, the four chains' rounds side b
 
 ### 3.3 Kernel
 
-| Crate | Carries | Owns |
-| --- | --- | --- |
-| `phx-store` | SET.12, SET.15 | Paged columns in reserved address space; **chunk-local arenas** compacted in place; slot allocators with recycling; column descriptors; save encoding. |
-| `phx-exec` | TIME.6 mechanics, N5 | The pinned pool; cost-sized chunked traversals over the day's **agenda** or a whole table; gathers by prefix sum keyed (chunk, handler); sharded `KeyedReduce`; fixed-tree reductions; radix sorts. The world's meetings, making and input orders run on the pool; the crates' tests exercise the rest. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | The **vocabulary every system and kernel crate declares with** — the `System` trait and `Declarations` (primitives, kinds, claims of interface items, streams, hazards, decision points, event kinds, the kinds of market and of law a system declares, population items and processes, setup values, compiled state), the facts' interface items and their claims, kinds and legal forms, the sub-step table, hazard and event declarations and the public events' rule, findings; the calendar and conventions, decision schedules and phases; the primitive register, `DeclaredLimit` and **policy values** (§4.6); the opening's context and countries (`contribution`); the decision core (§7.16); and **the core** (§7): the kinds' stores and families' contracts (`store`), the due wheel, flows and their grouping, settlement, goods and capital units with their wear and spoilage. The old kernel's handlers, their contexts and columns, the kind tables of individuals, messages, records, kinks, the agenda, the directory and the audit families were deleted at S1.24. |
-| `phx-geo` | GEO | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure, **physical stock per (tile, class)** and the (zone, class) index of holdings (§7.4). |
-| `phx-ledger` | REG.5, TAX.2, TAX.7 | The **contract algebra** the core reads (§4.4): terms, legs and schedules, and the dues they give, whole (`due_at`) or by shape (`shape_plan`, `due_by_shape`, §7.9); the reasons and line kinds systems declare (`ReasonDecl`, `LineKindDecl`, `name_code`); the withholding levy's bands (`levy::Withholding`, §4.3); the opening's helpers (`opening`); and the online choice of a household's bank (`online::Online`). The old kernel's books — lines, rows, instruments, holdings, liens, commitments, instructions and their settlement, transfers, estates and the waterfall — were deleted at S1.24: the core keeps the parties, contracts, flows, settlement and goods (`phx-core`, §7). |
-| `phx-pop` | REP | The population kinds compiled from the systems' items (`kind::compile_kinds`); each person packed into its word and the core's store of every household's persons (`persons::Persons`), a person keeping its identity; hazards drawn ahead per household and the persons a hit reaches (§7.7); the representation (§13). The agent tables, their attachments and their explicit households were deleted at S1.24 with the old kernel. |
-| `phx-market` | MKT | On the core: the posted-price meeting (`meet`), the between-firms meeting, the hiring kernel, carriage, and reach. The market kinds' declared data (`market`, `RetailKind`, `FreightKind`), which nothing on the core read, were deleted at S1.24; S2.09 declares markets as their operators' data again with the commodity call (MKT.21). The calls — the plain, coupled and linked call, with the simplex they solved by — their orders, prints and failures, the administered, book, bilateral and dealer forms, admission, grants, the markets' instances and their audit, which only the old kernel ran, were deleted at S1.24 and are rebuilt on the core with the steps whose markets need them (S2.09, S3.01, S3.06, S4). |
-| `phx-acct` | ACC, MKT.20 | Valuations and valuers; statements; a group's consolidated statement as a pure read; carrying bases and unrealised differences; equity accounts, with the receivables and payables of dues as they fall, posted from the day's settled records by the kernel's own work at 9b on a business day and, on a day with no 9b, at the audit's sub-step (10d) before the close reads them. The ledger's apply raises an equity effect for a money leg, a row leg that adjusts a balance, and a move of a holder's cost of lots, each signed by the leg's move of its party's net assets, so a leg passing through a party moves its equity by nothing; an instruction's money effects are taken on each party's net money in it, so a bank through which two customers pay each other, one deposit down and another up, neither pays nor is paid. On the core it declares the accounting bases alone: the valuations, statements, consolidation and equity accounts read the old kernel's books, were deleted at S1.24 with them, and are rebuilt on the core's contracts in its part h. |
-| `phx-val` | VAL | Outlook methods as pure functions; public-series outlooks once per method per day, and for registered series only per registered pair on days with a new print; surprise and confidence arithmetic; the investor schedule. |
-| `phx-audit` | — | Deleted at S1.24 with the old kernel, whose books, apply routine and records it checked: the audit's families run on the core (`phx_world::core_audit`, §7.17). |
+The kernel is the core (§7): every store, index, traversal and kernel the finished world needs, one crate for each
+group of bases, designed at the design point (§13) before anything is built on it. A crate's bases are its §7
+subsection's; a crate not yet in the workspace is created by the first step named.
+
+| Crate | Carries | Bases (§7) | Today, and what moves |
+| --- | --- | --- | --- |
+| `phx-store` | SET.12, SET.15 | §7.1: columns in reserved address space, slots and generations, day buffers and the day plan, chunk arenas, sum-trees, keyed indexes, epoch flags, horizon rings, the interner, the save contract and the world hash, `StoreStats` (K-01–K-10; S1.159–S1.168) | Paged columns, arenas, slot allocators, column descriptors, save encoding. |
+| `phx-exec` | TIME.6 mechanics, N5 | §7.2: chunk plans, partitioned apply, keyed reductions, declared sweeps and rolling cursors, the measurement counters (K-11–K-15; S1.117, S1.169–S1.171) | The pinned pool, chunked traversals, gathers, sharded `KeyedReduce`, fixed-tree reductions, radix sorts. |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | §7.3: streams, the calendar's day facts, the register with handles and policy schedules, the kind catalogue, the units registry, the stage table, the capacity table (K-19–K-24; S1.114, S1.177–S1.185) | The vocabulary every system and kernel crate declares with (§5); and, until their migrations, the core's stores: `store.rs` (kind stores → `phx-pop` K-32, families → `phx-contract` K-53, accounts → `phx-ledger` K-47), `wheel.rs` (→ `phx-agenda` K-42), `flows.rs` and `settle.rs` (→ `phx-ledger` K-48, K-49), `goods.rs` and `units.rs` (→ `phx-hold` K-60, K-66–K-68; `UnitIds` → K-22), `events.rs` (→ `phx-record` K-36), the runtime half of `decisions.rs` (→ `phx-mind` K-100). |
+| `phx-geo` | GEO | §7.4: tiles, zones and distances, networks and routes, cells, deposits, weather and catastrophes (K-25, K-26, K-28–K-30; S1.187–S1.193) | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure. |
+| `phx-pop` | REP | §7.5: the directory, kind stores and windowed groups, persons, offices, the per-day party cache (K-31–K-35; S1.194–S1.211) | The population kinds compiled from the systems' items; each person packed into its word (`persons::Persons`); `hazard.rs` (→ `phx-agenda` K-44). |
+| `phx-record` | — | §7.6: the stored log and the event log, the records store, the day ledger, statistics accumulators and sample frames, life records, tallies and votes, the recorder (K-36–K-41, K-106; created at S1.212) | Planned. |
+| `phx-agenda` | — | §7.7: the due wheel, the decision agenda, hazards drawn ahead, messages and notices, the trigger index (K-42–K-46; created at S1.225) | Planned. |
+| `phx-ledger` | REG.5, TAX.2, TAX.7 | §7.8: money accounts, flow batches, settlement, dated commitments, the levy engine, settlement tallies (K-47–K-52; S1.240–S1.256) | The contract algebra (`algebra.rs`, `shape.rs` → `phx-contract` K-55), the reasons and line kinds systems declare, the withholding levy's bands, `opening.rs` (→ `phx-world`'s opening), the online choice of a household's bank (`online.rs` → `sys-bnk`, a rule). |
+| `phx-contract` | — | §7.9: the contract store, side aggregates, terms, shapes and due plans, status and arrears, books, participations, accruing statement contracts (K-53–K-59; created at S1.257) | Planned. |
+| `phx-hold` | — | §7.10: holdings, unit totals and nature's net, the place index, lots and cost flows, bounds and liens, instruments and their holdings and events, named units, capital classes, standing rates, processes in progress (K-27, K-60–K-69; created at S1.271) | Planned. |
+| `phx-market` | MKT | §7.11: standing offers, the stall and vacancy books, the posted-price meeting, the sales batch, between firms, the call auction, the network call, the continuous book, the dealer market, the bilateral protocol, the administered form, search and match, carriage, rationed queues, perishable capacity, prints and marks (K-70–K-86; S1.296–S1.327) | The posted-price meeting, the between-firms meeting, the hiring kernel, carriage and reach, on the core. |
+| `phx-acct` | ACC, MKT.20 | §7.12: account lines, equity and net assets, carrying values, statements and consolidation, valuations and curves (K-87–K-91; S1.328–S1.335) | The accounting bases' declarations. |
+| `phx-val` | VAL | §7.13: public series, the investor schedule (K-92, K-105; S1.336, S1.337, S1.357) | Outlook methods as pure functions, surprise and confidence arithmetic, the investor schedule. |
+| `phx-risk` | — | §7.14: books and limits, margin and collateral, exact linear aggregates (K-93–K-95; created at S1.338) | Planned. |
+| `phx-end` | — | §7.15: estates, the ending kernel, the waterfall, resolution (K-96–K-99; created at S1.342) | Planned; estates run in `phx-world` until S1.344. |
+| `phx-mind` | — | §7.16: the decision core, attention, minds (K-100–K-102; created at S1.348) | Planned; the decision core is `phx-core`'s until S1.349. |
+| `phx-audit` | — | §7.17: the audit engine and injection (K-103; created at S1.353) | Planned; the audit's families run in `phx_world::core_audit` until S1.354. |
 
 ### 3.4 Interfaces
 
@@ -195,9 +214,9 @@ system that owns that kind's decision — except that a lender valuing a claim o
 item that only one system may construct carries a **writer token** only that system can build: a lender's
 `LoanAssessment` (in `if-credit`) is built only by `sys-bnk`, so every price and provision on a lender's book comes
 from it; other systems read it by handle and call `sys-bnk`'s rule handle `loan_claim_value`, never building one.
-As built at Stage 0, `if-pop` is the one interface crate: plain constants (roles, attributes, person attributes)
-that `sys-dem` declares and the other systems read, not `ItemDecl`s, so assembly checks no writer for them; the
-interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx-geo` being registered as a system.
+Five interface crates stand: `if-base`, `if-pop`, `if-labour`, `if-credit` and `if-state`; the rest are created by
+the first step that needs them. Only `if-pop`'s items are `ItemDecl`s with a named writer that assembly checks
+(`phx-world/src/systems.rs`, `INTERFACES`); the others hold constants, kinds and decision types the systems read.
 
 | Crate | Domain |
 | --- | --- |
@@ -221,7 +240,10 @@ interfaces' list in `phx-world/src/systems.rs` holds only `phx_geo::ITEMS`, `phx
 `sys-crd`, `sys-eqy`, `sys-mna`, `sys-fnd`, `sys-dlr`, `sys-idx`, `sys-rat`, `sys-drv`, `sys-drx`, `sys-ins`,
 `sys-pen`, `sys-trs`, `sys-tax`, `sys-soc`, `sys-cb`, `sys-sup`, `sys-pol`, `sys-fx`, `sys-xb`, `sys-sta`.
 
-The rules each system holds on the core, one paragraph a system that owns one:
+A system crate holds rules and declarations only: rules are pure functions over the views handed in, and
+declarations are its kinds, attributes, families, reasons, levies, markets, hazards, decisions, index instances and
+sweeps. It holds no store, no per-party pass and no `&mut` world state (PC-97); each system's mechanism steps write
+its paragraph below. The rules each system holds on the core, one paragraph a system that owns one:
 
 **`sys-hh`** (HH.4, HH.5). A household decides its spending every `HH.spending_days` business days from its money, its
 country and four positions: `HH.income`, the outlook of its permanent income a year; `HH.after`, what it held after
@@ -490,11 +512,13 @@ ranks.
 
 | Crate or project | Owns |
 | --- | --- |
-| `phx-world` | Registry and schema compilation (§5.3); stages and sub-steps (§6); GEN (§10); saving (§11); the player's decider (§12); metrics. |
-| `phx-obs` | Views, the agent's view (OBS.8), and in the inspector build the realism recorder (§14.8); read-only. |
-| `phx-cli` | `run` (with its report, each day's stages timed, which `tools/bench.sh` reads) and `inject`; the live-check suite. `realism`, `chains` and `register-report` arrive with Stage 7 (§14.4). |
+| `phx-world` | The registry and schema compilation (§5.3); the opening's orchestration (§10); the day runner walking the stage table (K-23, §7.18); save orchestration (K-104, §11); the player's decider (§12); the inspector. It assembles and routes: once the core closes (S1.360) it holds no store and no per-party pass, `party_map.rs` and every `core_*.rs` store holder having been deleted by the migrations. |
+| `phx-obs` | Read-only views: a party (OBS.8), the map (OBS.12), and in the inspector build the realism recorder (§14.8). |
+| `phx-fin` | The finished-volume measure: one module per base, each filling its base at the design point (`perf/design.toml`) and timing it (§14.7; created at S1.116). |
+| `phx-cli` | `run` (with its report, each day's stages timed, which `tools/bench.sh` reads), `inject` and `fin`; the live-check suite. `realism`, `chains` and `register-report` arrive with Stage 7 (§14.4). |
+| `phx-play` | The bridge to the Android app: create, load, step a turn, read a page, submit, save; no world state, reading the world only through `phx-world`'s entry points and `phx-obs` (created at S6.137). |
 | `android/` | The Compose app, its `play` flavour. |
-| `phx-check` | Law, layering and document checks (§16). |
+| `phx-check` | Law, layering and document checks (§16), the core's among them. |
 
 The `android/` app's AGP, Gradle and Kotlin versions are pinned in `gradle/libs.versions.toml` and the wrapper. The
 engine has no Android library: the one bench (§14.7) measures on this machine, and the phone's run of the world is
@@ -527,7 +551,9 @@ committed. `data/measure/` holds the realism reads' registered definitions, whic
 uses them: N3's facts `N3/F01.toml` to `F28.toml`, N4's chains `N4/L01.toml` to `L12.toml`, and the shared
 `CREDIT.toml`; later work adds estimators, never edits a definition. `phx-check`'s `preregistration` and `no_tuning`
 rules guard them (§16 item 10). `perf/budget.toml` holds the budget's ratchets, `perf/ratchets.toml` the counters',
-and `perf/bench/` the bench's kept reports (§14.7), which a resolution change cites.
+`perf/design.toml` (written at S1.113) the design point — its counts, daily volumes, the phone model and the RESOLUTION settings it is
+measured at, which the world never reads (§13) — and `perf/bench/` the bench's kept reports (§14.7), which a
+resolution change cites.
 
 ---
 
@@ -3589,6 +3615,12 @@ hashes read their bytes as little-endian.
     instruction ratchets, their CI job and `phx-check`'s `bench-ratchets`, and `phx measure`. Superseded: items 30 and
     33's device-report and phone-library provisions. The phone's run of the world is rebuilt on the bench's report
     when the owner calls the device run.
+38. **The core first** (2026-09-29, the owner; spec N8.7, N8.8, Appendix E 51): every base the finished world needs —
+    every store, index, traversal and kernel — is designed at the design point and built in the kernel crates of §3.3,
+    in the order of §3.1, before any behaviour is put on it; each base is followed by the migration of its current
+    users, and every later step activates bases. `phx-world` assembles and routes and, once the core closes, holds no
+    store and no per-party pass; systems hold rules and declarations. Supersedes the kernel's crate list of decision 36.
+
 ---
 
 ## 19. Coverage
