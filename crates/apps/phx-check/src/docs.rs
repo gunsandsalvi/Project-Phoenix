@@ -349,6 +349,48 @@ fn numbers(cell: &str) -> Result<Vec<u32>, String> {
     Ok(found)
 }
 
+/// The stages in the order the plan builds them: the section `## 1.`'s table rows, each row's first cell's first
+/// number, a stage named by several rows counted once where it first appears.
+///
+/// # Errors
+/// When the table names no stage.
+pub fn build_order(plan: &str) -> Result<Vec<u32>, String> {
+    let row = regex(r"^\|[^|\d]*(\d+)")?;
+    let mut order: Vec<u32> = Vec::new();
+    for line in section(plan, "1").lines().filter(|l| l.starts_with('|')) {
+        if let Some(stage) = number::<u32>(row.captures(line).and_then(|c| c.get(1)))
+            && !order.contains(&stage)
+        {
+            order.push(stage);
+        }
+    }
+    if order.is_empty() {
+        return Err("the plan's build table names no stage".to_owned());
+    }
+    Ok(order)
+}
+
+/// The chain and measurement items a cell lists, each an item or a range of items, comma-separated; `None` when the
+/// cell is anything else.
+pub fn items_of(cell: &str) -> Option<Vec<(String, u32)>> {
+    let mut found = Vec::new();
+    for entry in cell.split(',').map(str::trim) {
+        let mut ends = entry.split(['–', '-']).map(str::trim);
+        let first = ends.next()?;
+        let system = first.get(..1).filter(|s| matches!(*s, "L" | "N"))?;
+        let from: u32 = first.get(1..)?.parse().ok()?;
+        let to = match ends.next() {
+            Some(last) => last.strip_prefix(system)?.parse().ok()?,
+            None => from,
+        };
+        if ends.next().is_some() || to < from {
+            return None;
+        }
+        found.extend((from..=to).map(|n| (system.to_owned(), n)));
+    }
+    Some(found)
+}
+
 /// The text of the section headed `## <number>.`, up to the next top-level heading.
 pub fn section<'a>(text: &'a str, number: &str) -> &'a str {
     let start = format!("## {number}. ");
