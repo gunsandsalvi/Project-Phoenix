@@ -2970,7 +2970,10 @@ credited while the world holds it (GEN.10).
    refusal; PRIMITIVE → register entries — is not checked: `#[clause]` checks only that each name is a clause
    identifier, and there is no `phx dump-registry`.
 6. **Documents**: the coverage table (§19) regenerated and matching; every step with all its sections and a status;
-   this document's crate lists matching the workspace.
+   this document's crate lists matching the workspace; no document naming a working paper of the plan's writing or,
+   in the plan, a writer's name for a range of steps (PC-09's `SCRATCH` and `WRITERS`, whole words); every clause the
+   plan cites as completed at a step completed there by the clause map; every step cited as retiring a placeholder
+   register id naming it in its own text.
 7. **Process**: live-check identifiers never disappear; a primitive's value in `data/` changes only with its `source`
    in the same diff; the placeholder count only falls except by placeholders a stage introduces, and no system is done
    while a placeholder naming it remains; public-API snapshots of kernel and interface crates change only with the

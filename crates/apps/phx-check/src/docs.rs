@@ -391,6 +391,166 @@ pub fn items_of(cell: &str) -> Option<Vec<(String, u32)>> {
     Some(found)
 }
 
+/// Names of the working papers the plan was written from, which a builder does not have; refused in every document.
+pub const SCRATCH: &[&str] = &[
+    "design-point",
+    "harmony",
+    "DESIGN §",
+    "BRIEF",
+    "catalogue §",
+    "code audit",
+    "perf-model",
+    "perf model",
+    "H-core",
+    "H-stages",
+];
+
+/// The writers' names for their ranges of steps; refused in the plan alone, since the world's document numbers its
+/// sections with codes of the same form.
+pub const WRITERS: &[&str] =
+    &["S2a", "S2b", "S3a", "S3b", "S4a", "S4b", "S67", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"];
+
+/// Each whole occurrence of a word in a text, by line: the word not joined to a letter or digit on either side.
+pub fn whole_words<'a>(text: &str, words: &[&'a str]) -> Vec<(usize, &'a str)> {
+    let mut found = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        for word in words {
+            let joined = |c: Option<char>| c.is_some_and(char::is_alphanumeric);
+            let whole = line.match_indices(word).any(|(at, _)| {
+                !joined(line.get(..at).and_then(|b| b.chars().next_back()))
+                    && !joined(line.get(at + word.len()..).and_then(|a| a.chars().next()))
+            });
+            if whole {
+                found.push((index + 1, *word));
+            }
+        }
+    }
+    found
+}
+
+/// A text with what stands inside parentheses removed.
+fn outside(text: &str) -> String {
+    let mut depth = 0_usize;
+    let mut out = String::new();
+    for c in text.chars() {
+        match c {
+            '(' => depth += 1,
+            ')' => {
+                if let Some(less) = depth.checked_sub(1) {
+                    depth = less;
+                }
+            }
+            _ if depth == 0 => out.push(c),
+            _ => {}
+        }
+    }
+    out
+}
+
+/// Each place the plan says where a clause is completed — `SYS.n (completed at S…)`, `completes at`, `done at`, a
+/// list of clauses before one parenthesis, several steps inside it — by line: the clause and the steps named.
+pub fn completion_citations(plan: &str) -> Result<Vec<(usize, String, Vec<String>)>, String> {
+    let cited = regex(
+        r"((?:\b[A-Z]{2,4}\.\d+\b(?:,\s*|\s+and\s+)?)+)\s*\([^()]*?\b(?:completed at|completes at|done at)\s+([^()]*)\)",
+    )?;
+    let clause = regex(r"[A-Z]{2,4}\.\d+")?;
+    let step = regex(r"S\d\.\d{2,3}")?;
+    let mut found = Vec::new();
+    for (index, line) in plan.lines().enumerate() {
+        for caps in cited.captures_iter(line) {
+            let (Some(clauses), Some(tail)) = (caps.get(1), caps.get(2)) else {
+                continue;
+            };
+            let steps: Vec<String> = step.find_iter(tail.as_str()).map(|m| m.as_str().to_owned()).collect();
+            if steps.is_empty() {
+                continue;
+            }
+            for c in clause.find_iter(clauses.as_str()) {
+                found.push((index + 1, c.as_str().to_owned(), steps.clone()));
+            }
+        }
+    }
+    Ok(found)
+}
+
+/// Each place the plan names a step as retiring placeholders, by line: the step and the placeholders' register ids.
+/// A placeholder table is one whose header has a `Retired by` column; a row counts its first cell's register ids and
+/// the steps its `Retired by` cell names, each outside parentheses. An Extension points entry `S… (retires X)` counts
+/// X's backticked names.
+pub fn retirer_citations(plan: &str) -> Result<Vec<(usize, String, Vec<String>)>, String> {
+    let register = regex(r"`([A-Z]{2,4}\.[a-z0-9_]+)`")?;
+    let step = regex(r"S\d\.\d{2,3}")?;
+    let retires = regex(r"(S\d\.\d{2,3}) \(retires ([^)]*)\)")?;
+    let named = regex(r"`([^`]+)`")?;
+    let cells =
+        |line: &str| -> Vec<String> { line.trim().trim_matches('|').split('|').map(|c| c.trim().to_owned()).collect() };
+    let mut found = Vec::new();
+    let mut column: Option<usize> = None;
+    let mut extension = false;
+    for (index, line) in plan.lines().enumerate() {
+        if line.starts_with('|') {
+            let row = cells(line);
+            if let Some(at) = row.iter().position(|c| c.starts_with("Retired by")) {
+                column = Some(at);
+                continue;
+            }
+            if let (Some(at), Some(first)) = (column, row.first()) {
+                let ids: Vec<String> = register
+                    .captures_iter(&outside(first))
+                    .filter_map(|c| c.get(1))
+                    .map(|m| m.as_str().to_owned())
+                    .collect();
+                if let Some(by) = row.get(at).filter(|_| !ids.is_empty()) {
+                    for s in step.find_iter(&outside(by)) {
+                        found.push((index + 1, s.as_str().to_owned(), ids.clone()));
+                    }
+                }
+            }
+            continue;
+        }
+        column = None;
+        if line.starts_with("**") {
+            extension = line.starts_with("**Extension points**");
+        }
+        if extension {
+            for caps in retires.captures_iter(line) {
+                let (Some(s), Some(what)) = (caps.get(1), caps.get(2)) else {
+                    continue;
+                };
+                let ids: Vec<String> = named
+                    .captures_iter(what.as_str())
+                    .filter_map(|c| c.get(1))
+                    .map(|m| m.as_str().to_owned())
+                    .collect();
+                if !ids.is_empty() {
+                    found.push((index + 1, s.as_str().to_owned(), ids));
+                }
+            }
+        }
+    }
+    Ok(found)
+}
+
+/// Each step's whole text, by its id.
+pub fn step_texts(plan: &str) -> Result<std::collections::BTreeMap<String, String>, String> {
+    let heading = regex(r"^### (S\d+\.\d{2,3}) — ")?;
+    let mut texts = std::collections::BTreeMap::new();
+    let mut current: Option<String> = None;
+    for line in plan.lines() {
+        if let Some(id) = heading.captures(line).and_then(|c| c.get(1)) {
+            current = Some(id.as_str().to_owned());
+        } else if line.starts_with("## ") {
+            current = None;
+        }
+        if let Some(id) = &current {
+            let text: &mut String = texts.entry(id.clone()).or_default();
+            text.push_str(line);
+            text.push('\n');
+        }
+    }
+    Ok(texts)
+}
+
 /// The text of the section headed `## <number>.`, up to the next top-level heading.
 pub fn section<'a>(text: &'a str, number: &str) -> &'a str {
     let start = format!("## {number}. ");

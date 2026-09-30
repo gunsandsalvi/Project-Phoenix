@@ -1,6 +1,6 @@
 use super::Breach;
-use crate::docs::{self, KINDS, SECTIONS, STATUSES, Step};
-use crate::workspace::{ARCHITECTURE, PLAN, Workspace};
+use crate::docs::{self, KINDS, SCRATCH, SECTIONS, STATUSES, Step, WRITERS};
+use crate::workspace::{ARCHITECTURE, PLAN, SPEC, Workspace};
 
 const RULE: &str = "PC-09";
 
@@ -33,6 +33,77 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             if building > 1 {
                 breaches.push(Breach::new(RULE, PLAN, step.line, format!("{} is a second step building", step.id)));
             }
+        }
+    }
+    breaches.extend(texts(ws));
+    breaches
+}
+
+/// The documents name only what a builder has: no working paper, no writer's name for a range of steps; and a step
+/// cited as completing a clause or retiring a placeholder is the one that does.
+fn texts(ws: &Workspace) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    for (path, text) in [(SPEC, &ws.spec), (ARCHITECTURE, &ws.architecture), (PLAN, &ws.plan)] {
+        if text.trim().is_empty() {
+            breaches.push(Breach::new(RULE, path, 1, "the document is missing or empty"));
+            continue;
+        }
+        let words: Vec<&str> =
+            if path == PLAN { SCRATCH.iter().chain(WRITERS).copied().collect() } else { SCRATCH.to_vec() };
+        for (line, word) in docs::whole_words(text, &words) {
+            breaches.push(Breach::new(
+                RULE,
+                path,
+                line,
+                format!("`{word}` names a working paper of the plan's writing"),
+            ));
+        }
+    }
+    match (
+        docs::map(&ws.plan),
+        docs::completion_citations(&ws.plan),
+        docs::retirer_citations(&ws.plan),
+        docs::step_texts(&ws.plan),
+    ) {
+        (Ok(map), Ok(completions), Ok(retirers), Ok(steps)) => {
+            breaches.extend(completions_match(&map, &completions));
+            breaches.extend(retirers_name(&steps, &retirers));
+        }
+        (Err(error), ..) | (_, Err(error), ..) | (_, _, Err(error), _) | (.., Err(error)) => {
+            breaches.push(Breach::new(RULE, PLAN, 1, error));
+        }
+    }
+    breaches
+}
+
+/// Each clause cited as completed at steps that the clause map does not give it to.
+fn completions_match(map: &[docs::MapRow], cited: &[(usize, String, Vec<String>)]) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    for (line, clause, steps) in cited {
+        let completing =
+            map.iter().find(|r| r.numbers.iter().any(|n| docs::clause_id(&r.system, *n) == *clause)).map(|r| &r.step);
+        if completing.is_none_or(|s| !steps.contains(s)) {
+            let at = completing.map_or("no step", String::as_str);
+            let message =
+                format!("{clause} is cited as completed at {}; the clause map completes it at {at}", steps.join(", "));
+            breaches.push(Breach::new(RULE, PLAN, *line, message));
+        }
+    }
+    breaches
+}
+
+/// Each step cited as retiring placeholders whose own text names none of them; a step done and gone is not read.
+fn retirers_name(
+    steps: &std::collections::BTreeMap<String, String>,
+    cited: &[(usize, String, Vec<String>)],
+) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    for (line, step, names) in cited {
+        if let Some(text) = steps.get(step)
+            && !names.iter().any(|n| text.contains(n.as_str()))
+        {
+            let message = format!("{step} is cited as retiring {} and its text names none of them", names.join(", "));
+            breaches.push(Breach::new(RULE, PLAN, *line, message));
         }
     }
     breaches
@@ -107,6 +178,7 @@ mod tests {
     fn ws(plan: String, crates: &[&str]) -> Workspace {
         let mut ws = Workspace::new(crates.iter().map(|c| krate(c, Layer::Apps)).collect());
         ws.architecture = ARCH.to_owned();
+        ws.spec = "- **ABC.1 STATE** — a\n".to_owned();
         ws.plan = plan;
         ws
     }
@@ -165,5 +237,71 @@ mod tests {
     fn docs_accept_retired_step_with_status_only() {
         let plan = "### S7.03 — x\n\n**Status**: retired. The world runs once.\n".to_owned();
         assert!(run(&ws(plan, &[])).is_empty());
+    }
+
+    fn messages(ws: &Workspace) -> Vec<String> {
+        run(ws).into_iter().map(|b| b.message).collect()
+    }
+
+    #[test]
+    fn scratch_names_are_refused() {
+        let mut w = ws(String::new(), &[]);
+        let mut plan = "### S1.01 — x\n".to_owned();
+        for n in crate::docs::SCRATCH.iter().chain(crate::docs::WRITERS) {
+            let _ = writeln!(plan, "cites {n} here");
+        }
+        w.plan = plan;
+        let found = messages(&w);
+        let refused = found.iter().filter(|m| m.contains("names a working paper")).count();
+        assert_eq!(refused, crate::docs::SCRATCH.len() + crate::docs::WRITERS.len(), "{found:?}");
+        w.plan = "### S1.01 — x\n".to_owned();
+        w.spec = "## C1. MKT — market forms\n".to_owned();
+        assert!(
+            messages(&w).iter().all(|m| !m.contains("working paper")),
+            "a writer's id is refused in the plan alone"
+        );
+    }
+
+    #[test]
+    fn scratch_words_are_whole() {
+        let mut w = ws(String::new(), &[]);
+        w.plan = "### S1.01 — x\nthe S2accrual and the kind catalogue, BRIEFLY, C10\n".to_owned();
+        assert!(messages(&w).iter().all(|m| !m.contains("working paper")));
+    }
+
+    #[test]
+    fn a_missing_document_is_refused() {
+        let mut w = ws(String::new(), &[]);
+        w.spec = String::new();
+        assert!(messages(&w).contains(&"the document is missing or empty".to_owned()));
+    }
+
+    #[test]
+    fn completion_citation_matches_map() {
+        let mut w = ws(String::new(), &[]);
+        w.plan = "### S1.01 — x\nIt carries ABC.1 (done at S0.02) and ABC.2, ABC.3 (completed at S2.01, S2.02); ABC.4 (done at\n\
+                  earlier steps).\n## 13. The clause map\n| ABC | S0.02 | 1, 3 |\n| ABC | S2.02 | 2 |"
+            .to_owned();
+        let found: Vec<String> = messages(&w).into_iter().filter(|m| m.contains("is cited as completed")).collect();
+        assert_eq!(found, ["ABC.3 is cited as completed at S2.01, S2.02; the clause map completes it at S0.02"]);
+    }
+
+    #[test]
+    fn retirer_names_its_placeholder() {
+        let mut w = ws(String::new(), &[]);
+        w.plan = "### S1.01 — a\n| Placeholder | Introduced | Retired by |\n| --- | --- | --- |\n\
+                  | `ABC.held` (placeholder:ABC) | S1.01 | S2.01 (the rest at S2.03) |\n| `ABC.flat` | S1.01 | S2.02 |\n\
+                  **Extension points**: S2.02 (retires `ABC.late`).\n\
+                  ### S2.01 — b\nRetires `ABC.held`.\n### S2.02 — c\nReads the market.\n"
+            .to_owned();
+        let found: Vec<String> = messages(&w).into_iter().filter(|m| m.contains("is cited as retiring")).collect();
+        assert_eq!(
+            found,
+            [
+                "S2.02 is cited as retiring ABC.flat and its text names none of them",
+                "S2.02 is cited as retiring ABC.late and its text names none of them"
+            ],
+            "a retirer in parentheses is text"
+        );
     }
 }
