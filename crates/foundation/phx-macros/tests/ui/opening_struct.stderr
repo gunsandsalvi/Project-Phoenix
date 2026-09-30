@@ -1,0 +1,5 @@
+error: `#[opening]` marks only a function
+ --> tests/ui/opening_struct.rs:4:1
+  |
+4 | struct NotAFunction;
+  | ^^^^^^^^^^^^^^^^^^^^

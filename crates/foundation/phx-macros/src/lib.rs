@@ -1,6 +1,7 @@
 mod clause;
 mod consts;
 mod decl;
+mod opening;
 mod pod;
 mod saved;
 
@@ -10,6 +11,13 @@ use proc_macro::TokenStream;
 #[proc_macro_attribute]
 pub fn clause(args: TokenStream, item: TokenStream) -> TokenStream {
     clause::expand(args.into(), item.into()).into()
+}
+
+/// Marks a function that runs only while the world is assembled or opened, where names are bound to handles; the
+/// function is emitted unchanged, and the checks admit its reads by name.
+#[proc_macro_attribute]
+pub fn opening(args: TokenStream, item: TokenStream) -> TokenStream {
+    opening::expand(args.into(), item.into()).into()
 }
 
 /// Makes a `#[repr(C)]` struct of storable fields, with no padding and no float, storable itself.

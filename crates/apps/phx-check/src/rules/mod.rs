@@ -28,6 +28,7 @@ mod ledger_writes;
 mod literals;
 mod live_checks;
 mod money_moves;
+pub mod names;
 mod no_tuning;
 mod opening_writes;
 mod places;
@@ -192,6 +193,12 @@ pub const RULES: &[Rule] = &[
         title: "dispatch only through the kernel's traversals; no absent pool; rules hold no world state",
         since: "S1.122",
         run: dispatch::run,
+    },
+    Rule {
+        id: "PC-98",
+        title: "no register, kind or family read by name on the day's paths",
+        since: "S1.123",
+        run: names::run,
     },
 ];
 

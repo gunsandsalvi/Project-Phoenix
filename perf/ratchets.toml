@@ -37,6 +37,14 @@ counter = "phx_check.exceptions_pc97"
 value = 24
 direction = "down"
 
+# PC-98's admitted sites (S1.123, 2026-09-30): the register read by name and names compared on the day's paths,
+# as the code stood when the rule came, 89 in all (56 comparisons with a name, 32 register reads, one prefix test).
+# S1.141–S1.146 and S1.180 (K-21) remove them; the count only falls, and S1.492 empties it.
+[[ratchet]]
+counter = "phx_check.exceptions_pc98"
+value = 89
+direction = "down"
+
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
 # the placeholders a stage brings for later systems. BNK's two loan terms and XB's closed borders (S0.18); a
 # searcher's reservation and an employee's price outlook (HH, S1.08) until households weigh their own; a firm loan's

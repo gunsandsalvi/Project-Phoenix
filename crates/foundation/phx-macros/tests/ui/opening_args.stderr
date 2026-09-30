@@ -1,0 +1,5 @@
+error: `#[opening]` takes no arguments
+ --> tests/ui/opening_args.rs:3:11
+  |
+3 | #[opening(early)]
+  |           ^^^^^

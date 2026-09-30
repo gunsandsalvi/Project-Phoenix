@@ -1,0 +1,451 @@
+# The sites PC-98 admits for now, 89 in all, held to `phx_check.exceptions_pc98`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::owned"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::posts_held"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Core::audit"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bills"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::issuer_held"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::money_class"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::open_central"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::firm_loans"
+what = "`register.count`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::lend_shortfalls"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_loans"
+what = "`register.count`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_loans"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::open_state"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Core::open_decisions"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::end_defaulted"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::open_insolvency"
+what = "`register.counts_per_country`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "`register.count`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::open_rights"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Core::review_extraction"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::drafts"
+what = "`register.fixed_in`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::open_firms"
+what = "`register.fixed`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::open_firms"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::persons_by_region"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "Core::price_drafts"
+what = "`register.fixed`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::cover_by_place"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "`register.count`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "`register.table1`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::open_freight"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::ship"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::attend"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_inputs"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_services"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::cheapest"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::close_services"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::count_stances"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::decide_spending"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::make"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::mark_surprised"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::move_price"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`register.count`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`register.products`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "`register.table1`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_goods"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::opening_spending"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::region_shares"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::review_prices"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::reviewing_today"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::open_jobs"
+what = "a comparison with a name"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::age_of"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::hire"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::leave_jobs"
+what = "`.starts_with` of a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "`register.count`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post_one"
+what = "`register.table1`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::searches_again"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::searching_persons"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::seekers"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::set_last_point"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::open_credit"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "`register.count_in`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::price_owners"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::investment_wants"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "`register.products`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::open_plant"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::household"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Core::measure_rates"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::exposed"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::labour_force"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::record_sale"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::open_taxes"
+what = "a comparison with a name"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::destroy"
+what = "a comparison with a name"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/types.rs"
+item = "Types::compile"
+what = "`register.fixed`"
+count = 4
+
+[[site]]
+path = "crates/kernel/phx-val/src/types.rs"
+item = "cut"
+what = "`register.count`"
+count = 1
