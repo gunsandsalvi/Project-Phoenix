@@ -369,8 +369,10 @@ fn a_day(chunks: usize, workers: Option<usize>) -> Settled {
     let edges: Vec<(usize, usize, i64)> =
         (0..300_usize).map(|i| (i * 5 % 19, i * 13 % 19, i64::try_from(i % 29 + 1).unwrap())).collect();
     let funds: Vec<i64> = (0..19).map(|i| i64::from(i % 4) * 30).collect();
+    // Two ranks only, so most of a payer's flows tie and their order falls to the lots.
+    let made: Vec<Flow> = flows(&edges).into_iter().map(|f| Flow { order: u8::from(f.source % 2 == 1), ..f }).collect();
     let mut w = Fixture::new(&funds, [40, 10]);
-    let out = settle_chunked(&mut w, &flows(&edges), (chunks, workers));
+    let out = settle_chunked(&mut w, &made, (chunks, workers));
     (w.balance, w.reserves, out.settled, out.failed.iter().map(|(f, c)| (f.source, *c)).collect())
 }
 

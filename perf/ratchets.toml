@@ -60,7 +60,7 @@ direction = "down"
 # S1.136–S1.139, S1.159 (K-02) and the migrations remove them; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc100"
-value = 245
+value = 244
 direction = "down"
 
 # PC-101's admitted sites (S1.130, 2026-09-30): fields left out of a save without naming their rebuild, which today's

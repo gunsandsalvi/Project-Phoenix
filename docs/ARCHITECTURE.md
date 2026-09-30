@@ -918,9 +918,10 @@ ids a registration list yields are the same for every order of it (§14.3). Noth
 
 Today's settlement runs on the world's pool: its grouping, its passes, a closed day's commitments, the fund stage and
 the families' wheel takes (`Core::run_day`, `pay_currencies`, `fund_stage`). The day's flows are in one chunk for each
-family's dues, in the families' order, then one for what the day's stages made; a payer's flows are ordered by (order,
-lot, chunk, place in its chunk), so the chunks, fixed by their makers and never by the workers, keep the order one
-buffer had and the outcome is the same for any number of workers. The families make their dues in turn until the
+family's dues, in the families' order, then one for what the day's stages made. Grouping places each chunk's flows by
+their payers' ranges stably (`FlowBufs::group`, a counting sort), so a payer's flows, read chunk by chunk, are in the
+order they were made however the day is cut into chunks; its lots are drawn in that order and its payments ranked by
+(order, lot, place). The outcome is the same for any chunking and any number of workers. The families make their dues in turn until the
 kernel's chunk plans (S1.169) give a traversal to make them on the pool.
 
 ### 6.3 Traversals

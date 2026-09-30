@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 245 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 244 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -898,7 +898,7 @@ count = 1
 path = "crates/kernel/phx-core/src/flows.rs"
 item = "FlowBufs::group"
 what = "`.unwrap_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/kernel/phx-core/src/flows.rs"

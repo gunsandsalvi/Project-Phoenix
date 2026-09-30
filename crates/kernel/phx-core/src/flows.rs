@@ -85,6 +85,8 @@ struct ChunkGroups {
     starts: Vec<usize>,
     credits: Vec<Credit>,
     credit_starts: Vec<usize>,
+    /// The chunk's flows as made, kept across days, from which they are placed by range.
+    made: Vec<Flow>,
 }
 
 impl FlowBufs {
@@ -121,10 +123,11 @@ impl FlowBufs {
         self.len() == 0
     }
 
-    /// Groups each chunk's flows of `denom` by their payers' ranges, in place, and makes their credits by their payees'
-    /// ranges; a flow of another denomination goes to a last range of its own, which no range reads. Chunks are grouped
-    /// on the pool, each by itself, so the result is the same whatever the workers; within a range a chunk's flows are
-    /// in an order its own made, since a payer's ties are drawn by lot.
+    /// Groups each chunk's flows of `denom` by their payers' ranges and makes their credits by their payees' ranges; a
+    /// flow of another denomination goes to a last range of its own, which no range reads. Chunks are grouped on the
+    /// pool, each by itself, and stably: within a range a chunk's flows keep the order they were made in, so a payer's
+    /// flows, read chunk by chunk, are in their made order however the day's flows are cut into chunks, and the lots
+    /// that break a payer's ties are drawn in that order.
     #[clause("SET.4")]
     pub fn group(&mut self, pool: Option<&phx_exec::Pool>, ranges: &Ranges, denom: Denom) {
         let used = self.used;
@@ -135,20 +138,16 @@ impl FlowBufs {
         phx_exec::pool::each(pool, jobs, |(flows, g)| {
             let paying = |f: &Flow| if f.denomination == denom { ranges.of(f.payer) } else { n };
             counting_places(flows.iter().map(paying), n + 1, &mut g.starts);
-            // In place, each flow swapped into its range's next free place until every place holds its range's.
+            // Each flow placed at its range's next place, in the order made: a stable counting sort.
+            g.made.clear();
+            g.made.extend_from_slice(flows);
             let mut next = g.starts.clone();
-            for b in 0..=n {
-                let end = g.starts.get(b + 1).copied().unwrap_or(0);
-                while let Some(at) = next.get(b).copied().filter(|at| *at < end) {
-                    let Some(to) = flows.get(at).map(&paying) else { break };
-                    if to == b {
-                        if let Some(x) = next.get_mut(b) {
-                            *x += 1;
-                        }
-                    } else if let Some(there) = next.get_mut(to) {
-                        flows.swap(at, *there);
-                        *there += 1;
-                    }
+            for f in &g.made {
+                if let Some(at) = next.get_mut(paying(f))
+                    && let Some(cell) = flows.get_mut(*at)
+                {
+                    *cell = *f;
+                    *at += 1;
                 }
             }
             // Credits only of the denomination's flows, which lead the chunk: no range reads another's.
