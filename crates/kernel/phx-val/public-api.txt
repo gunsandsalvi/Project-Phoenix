@@ -11,7 +11,7 @@ pub mod phx_val::consts  // used by: if-base, if-labour, if-pop, if-state, phx-c
 pub const phx_val::consts::DECADE: f64  // used by: phx-world, sys-frm
 pub mod phx_val::experience  // used by: if-labour, phx-fin, phx-market, phx-world, sys-lab
 pub fn phx_val::experience::long_mean(&[f64], u32, f64) -> phx_num::missing::Missing<f64>  // used by: phx-world
-pub fn phx_val::experience::weight(u32, u32, f64) -> f64  // used by: if-state, phx-geo, phx-market, phx-world, sys-bnk, sys-dem, sys-idx
+pub fn phx_val::experience::weight(u32, u32, f64) -> f64  // used by: if-state, phx-geo, phx-market, phx-store, phx-world, sys-bnk, sys-dem, sys-idx
 pub mod phx_val::heuristic  // used by: phx-world, sys-hh
 pub struct phx_val::heuristic::Adaptive
 impl phx_val::heuristic::Heuristic for phx_val::heuristic::Adaptive

@@ -24,7 +24,7 @@ pub if_credit::decisions::ChooseIn::tastes: alloc::vec::Vec<f64>  // used by: ph
 pub struct if_credit::decisions::DeclineIn  // used by: phx-world, sys-bnk
 pub if_credit::decisions::DeclineIn::capital: f64  // used by: if-base, phx-world, sys-bnk, sys-cap, sys-tec
 pub if_credit::decisions::DeclineIn::capital_requirement: f64  // used by: phx-world, sys-bnk
-pub if_credit::decisions::DeclineIn::class: u32  // used by: if-labour, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub if_credit::decisions::DeclineIn::class: u32  // used by: if-labour, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
 pub if_credit::decisions::DeclineIn::standard: u32  // used by: phx-world, sys-bnk, sys-dem
 pub if_credit::decisions::DeclineIn::weighted: f64  // used by: phx-geo, phx-world, sys-bnk, sys-dem
 pub struct if_credit::decisions::QuoteIn  // used by: phx-world, sys-bnk

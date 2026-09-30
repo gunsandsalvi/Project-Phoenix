@@ -108,7 +108,7 @@ impl phx_store::save::Saved for phx_ledger::algebra::Underlying where phx_id::id
 pub fn phx_ledger::algebra::Underlying::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_ledger::algebra::Underlying::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-store, phx-world
 pub struct phx_ledger::algebra::Collateral
-pub phx_ledger::algebra::Collateral::class: u16  // used by: if-credit, if-labour, phx-cli, phx-core, phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub phx_ledger::algebra::Collateral::class: u16  // used by: if-credit, if-labour, phx-cli, phx-core, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
 pub phx_ledger::algebra::Collateral::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_ledger::algebra::Collateral::zone: phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-world
 impl phx_store::save::Saved for phx_ledger::algebra::Collateral where u16: phx_store::save::Saved, phx_num::missing::Missing<phx_id::ids::ZoneId>: phx_store::save::Saved
@@ -199,7 +199,7 @@ pub struct phx_ledger::algebra::ShapePlan
 pub phx_ledger::algebra::ShapePlan::general: bool  // used by: phx-world
 pub struct phx_ledger::algebra::Terms  // used by: phx-world
 pub phx_ledger::algebra::Terms::ccy: phx_num::money::Ccy  // used by: phx-cli, phx-core, phx-num, phx-store, phx-val, phx-world
-pub phx_ledger::algebra::Terms::class: alloc::vec::Vec<u32>  // used by: if-credit, if-labour, phx-cli, phx-core, phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub phx_ledger::algebra::Terms::class: alloc::vec::Vec<u32>  // used by: if-credit, if-labour, phx-cli, phx-core, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
 pub phx_ledger::algebra::Terms::collateral: phx_num::missing::Missing<phx_ledger::algebra::Collateral>  // used by: if-credit, phx-world, sys-bnk
 pub phx_ledger::algebra::Terms::conversion: phx_num::missing::Missing<phx_ledger::algebra::Conversion>
 pub phx_ledger::algebra::Terms::default: phx_ledger::algebra::DefaultDefinition  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-market, phx-rand, phx-store, phx-world, sys-lab, sys-tec

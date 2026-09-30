@@ -30,7 +30,7 @@ pub fn phx_geo::climate::Marginal::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_geo::climate::Marginal::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::climate::ClimateRule
 impl phx_geo::climate::ClimateRule
-pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8  // used by: if-credit, if-labour, phx-cli, phx-core, phx-ledger, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub fn phx_geo::climate::ClimateRule::class(&self, phx_geo::generate::ClimateInput) -> u8  // used by: if-credit, if-labour, phx-cli, phx-core, phx-ledger, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
 pub fn phx_geo::climate::ClimateRule::latitude_tenths(&self, u32) -> i64
 pub fn phx_geo::climate::ClimateRule::read(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> phx_geo::climate::ClimateRule  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
 pub struct phx_geo::climate::RegionClimate

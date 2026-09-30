@@ -22,6 +22,7 @@ pub mod roundtrip;
 pub mod save;
 mod save_values;
 pub mod stats;
+pub mod sumtree;
 pub mod table;
 
 pub use arena::{ArenaLists, CellListRef, CellLists, ChunkArena, ListRef};
@@ -42,4 +43,5 @@ pub use region::Region;
 pub use roundtrip::roundtrip;
 pub use save::{LoadError, Reader, Saved, Writer, hash_saved, narrow};
 pub use stats::StoreStats;
+pub use sumtree::SumTrees;
 pub use table::{SlotAlloc, Table, TableChunk, TableChunks};

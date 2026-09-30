@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02, K-03 and K-10 built (S1.159–S1.163); the rest planned (S1.164–S1.168)
+Status: K-02, K-03, K-05 and K-10 built (S1.159–S1.164); the rest planned (S1.165–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1154,8 +1154,42 @@ occupancy; adding a present entry or removing an absent one is a violation.
 
 #### K-05 Sum-trees
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.164).
+**Layout** (`sumtree.rs`): `SumTrees` is a pool of Fenwick trees over integer weights: one `Column<u64>` holds every
+tree's Fenwick array in an extent of its capacity class (4 · 2ᵏ entries), and a `Column<TreeHeader>` holds each
+tree's extent offset, its length (the low 24 bits) and class in one word, and its total — 16 B a tree. A tree that
+fills moves to an extent of the next class, the copy amortised O(1) a push, and its old extent is chained to its
+class's free extents — each freed extent holding in its first two cells whether another follows and where, so the chain
+costs no memory — and taken first by the next tree that needs one.
+
+**API**: `make` a tree; `push(tree, w)` a member at the end, its node summing its own weight and those its span
+covers; `update(tree, i, Δ)` the Fenwick walk, checked, a weight below nought a violation and a total past `u64::MAX`
+a capacity stop; `set(tree, i, w)` an update by the difference from the weight, read in one short walk; `total` one
+read; `prefix_before`; `find(tree, x)` by binary lifting from the highest power of two at or below the length: the
+least member whose weights through its own exceed `x`. With `x` drawn below the total from the caller's stream, `find`
+draws a member in proportion to its weight; a tree of total nought draws none (`Missing`), which the caller records
+as a failed meeting, and `x` at or past the total is a violation. A removal is `set(i, 0)`: every member keeps its
+place, so a stored position stays valid; re-packing a tree whose zeros pass half its length is its owner's, at an
+apply point, rewriting its members' positions (K-06's weighted mode).
+
+**Algorithms and bounds**: update, set and find O(log n); weights are integers the owner declares (a stall's weight its
+price term quantised by the market's scale), so sums are exact and order-free and any worker count draws alike. A tree
+is written by one worker at a time — its market key's job — and a meeting reads its own updates only.
+
+**Save and load**: derived: its owner marks it `#[saved(skip, rebuild = …)]` and rebuilds it from its rows at load,
+tree after tree in key order, which also leaves no extent stranded; equality is by members and weights, wherever the
+extents lie (`rebuild_equals_incremental`, through the round-trip harness).
+
+**Capacity**: the owner's declared weights and trees; the length is below 2²⁴.
+
+**Volumes and ratchets** (`tools/bench.sh -F stalls`): the design point's 1.36 M stalls in 250 k trees, one per
+(good, zone) at 1 000 zones (`[store] stall_keys`), built key by key; each day's reprices and sell-outs set in key
+order as each key's job does, 16–17 ns each (`[fin.stalls] update_ns` 46); the day's retail wants, bucketed by key,
+drawing a stall each, 7 ns a find (`[fin.sumtree] find_ns` 15); and 10 bytes of extents a stall at the classes' slack
+(`bytes_per_weight` 12), the headers 16 B a tree besides (4 MB).
+
+**Extension points**: keyed indexes' weighted mode (S1.165); the lot's draws over crossing pairs (S1.188); the
+stalls' trees and the posted meeting's draws, retiring the per-round alias tables of `phx-market/src/meet.rs` (S1.301,
+S1.306, S1.307); a catastrophe's draw (S2.211); a uniform member drawn (S6.122).
 
 #### K-06 Keyed indexes
 

@@ -23,6 +23,7 @@ pub mod save;
 pub mod seed;
 #[path = "seed_tests.rs"]
 mod seed_tests;
+pub mod stalls;
 #[path = "tests.rs"]
 mod tests;
 
@@ -133,6 +134,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(refs::Refs::default()),
     || Box::new(daybuf::DayBufs::default()),
     || Box::new(save::Save::default()),
+    || Box::new(stalls::Stalls::default()),
 ];
 
 /// What a run fills, runs and reads.
@@ -190,7 +192,10 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
             driver.day(*day, counts, &mut Measures::new(clock))?;
             driver.day(*day, counts, &mut measures)?;
         }
-        figures.extend(driver.figures().into_iter().map(|(key, v)| (format!("fin.{}.{key}", driver.name()), v)));
+        // A figure keyed with its own base is another base's, which this driver measures beside its own.
+        figures.extend(driver.figures().into_iter().map(|(key, v)| {
+            if key.contains('.') { (format!("fin.{key}"), v) } else { (format!("fin.{}.{key}", driver.name()), v) }
+        }));
     }
     let mut per_op: BTreeMap<String, f64> = measures
         .iter()

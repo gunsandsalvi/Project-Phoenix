@@ -82,3 +82,16 @@ pub const SHORT_LINK_SLOT_BITS: u32 = 24;
 /// The kinds of day a day buffer records its longest length on: a business day, a day no market opens, a heavy day,
 /// and the business day after closed days.
 pub const DAY_KINDS: usize = 4;
+
+/// A sum-tree's first class holds four members, and each class twice the one before, so a tree that grows moves a
+/// logarithmic number of times.
+pub const SUMTREE_BASE_CAPACITY: usize = 4;
+
+/// A sum-tree's length takes the low 24 bits of its header's word, its class the rest.
+pub const SUMTREE_LEN_BITS: u32 = 24;
+
+/// Sum-trees' columns chunk as the tables' do; no traversal walks them by chunk.
+pub const SUMTREE_ROWS_PER_CHUNK: u32 = 1 << 12;
+
+/// Sum-tree classes: the base capacity doubled until a class holds every length a header's 24 bits count.
+pub const SUMTREE_CLASSES: usize = 23;

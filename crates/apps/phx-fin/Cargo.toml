@@ -11,6 +11,7 @@ phx-core = { path = "../../kernel/phx-core" }
 phx-exec = { path = "../../kernel/phx-exec" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-market = { path = "../../kernel/phx-market" }
+phx-num = { path = "../../foundation/phx-num" }
 phx-rand = { path = "../../foundation/phx-rand" }
 phx-store = { path = "../../kernel/phx-store" }
 serde.workspace = true

@@ -88,7 +88,7 @@ pub if_state::stats::IndexKind::link: fn(&[if_state::stats::Priced]) -> core::op
 pub struct if_state::stats::Priced  // used by: phx-world, sys-idx
 pub if_state::stats::Priced::before: f64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-idx
 pub if_state::stats::Priced::now: f64  // used by: phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-store, phx-val, phx-world, sys-frm, sys-gds, sys-hh, sys-idx
-pub if_state::stats::Priced::weight: f64  // used by: phx-geo, phx-market, phx-val, phx-world, sys-bnk, sys-dem, sys-idx
+pub if_state::stats::Priced::weight: f64  // used by: phx-geo, phx-market, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-idx
 pub struct if_state::stats::Release  // used by: phx-world, sys-sta
 pub if_state::stats::Release::country: u8  // used by: phx-cli, phx-core, phx-geo, phx-ledger, phx-market, phx-world, sys-bnk, sys-dem, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
 pub if_state::stats::Release::period: u32  // used by: phx-cli, phx-core, phx-ledger, phx-macros, phx-val, phx-world, sys-hh, sys-sta

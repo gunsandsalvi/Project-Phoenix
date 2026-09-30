@@ -1,5 +1,5 @@
 pub mod if_labour  // used by: phx-world, sys-lab
-pub mod if_labour::class  // used by: if-credit, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub mod if_labour::class  // used by: if-credit, phx-cli, phx-core, phx-geo, phx-ledger, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
 pub const if_labour::class::BAND: usize  // used by: phx-world, sys-lab
 pub const if_labour::class::HOURS: usize  // used by: phx-world, sys-lab
 pub const if_labour::class::NOTICE: usize  // used by: sys-lab

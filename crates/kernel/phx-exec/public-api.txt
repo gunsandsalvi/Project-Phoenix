@@ -220,14 +220,14 @@ pub fn phx_exec::trace::count(usize) -> i64  // used by: phx-check, phx-cli, phx
 pub fn phx_exec::trace::doubling(u64) -> bool  // used by: phx-core, phx-market
 pub fn phx_exec::trace::note(&'static str, &[(&'static str, i64)])  // used by: phx-core, phx-market, phx-world
 pub fn phx_exec::trace::on() -> bool  // used by: phx-cli, phx-core, phx-fin, phx-ledger, phx-market, phx-world, sys-lab
-pub fn phx_exec::trace::set(&'static dyn phx_exec::trace::Tracer)  // used by: phx-check, phx-cli, phx-core, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_exec::trace::set(&'static dyn phx_exec::trace::Tracer)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem
 pub fn phx_exec::trace::span<T>(&'static str, impl core::ops::function::FnOnce() -> T) -> T  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-bnk, sys-dem
 pub fn phx_exec::trace::span_items<T>(&'static str, u64, impl core::ops::function::FnOnce() -> T) -> T
 pub mod phx_exec::traverse
 pub fn phx_exec::traverse::agenda_units(&[phx_id::ids::Slot], u32, u32) -> alloc::vec::Vec<core::ops::range::Range<usize>>
 pub fn phx_exec::traverse::for_agenda<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, &[phx_id::ids::Slot], u32, u32, impl core::ops::function::Fn(&[phx_id::ids::Slot]) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
 pub fn phx_exec::traverse::for_chunks<T: core::marker::Send>(&phx_exec::pool::Pool, phx_exec::site::Site, u32, impl core::ops::function::Fn(u32) -> T + core::marker::Sync) -> alloc::vec::Vec<T>
-pub mod phx_exec::tree  // used by: phx-check, phx-rand, sys-dem
+pub mod phx_exec::tree  // used by: phx-check, phx-fin, phx-rand, phx-store, sys-dem
 pub fn phx_exec::tree::reduce_tree<T>(alloc::vec::Vec<T>, impl core::ops::function::Fn(T, T) -> T) -> core::option::Option<T>
 pub struct phx_exec::ExecCounters
 pub phx_exec::ExecCounters::barriers: u64  // used by: phx-cli

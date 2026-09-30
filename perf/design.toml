@@ -49,6 +49,7 @@ terms = 640_000                  # S1.168
 ways = 50_000                    # S6.102
 stalls = 1_360_000               # S1.299
 goods_with_stalls = 60_000       # S1.299
+stall_keys = 250_000             # S1.164: the stalls' sum-trees, one per (good, zone) at 1 000 zones
 vacancies = 160_000              # S1.296
 standing_orders = 160_000        # S1.296
 dealer_quotes = 40_000           # S1.296

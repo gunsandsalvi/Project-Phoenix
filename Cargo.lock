@@ -416,6 +416,7 @@ dependencies = [
  "phx-exec",
  "phx-id",
  "phx-market",
+ "phx-num",
  "phx-rand",
  "phx-store",
  "serde",
