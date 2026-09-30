@@ -1,6 +1,7 @@
 pub mod apportion;
 pub mod consts;
 pub mod error;
+pub mod exchange;
 pub mod fixed;
 pub mod missing;
 pub mod money;
@@ -13,9 +14,10 @@ pub mod violation;
 
 pub use apportion::{Residue, Ties, apportion};
 pub use error::NumError;
+pub use exchange::{ExchangesTo, Quote, QuoteSource, Viewpoint, exchange, exchange_where};
 pub use fixed::Fixed;
 pub use missing::{MaybeI64, Missing};
-pub use money::{Amount, Ccy, Money, Reported};
+pub use money::{Amount, Ccy, HomeMoney, Money, NamedMoney, NumeraireMoney, Owner, PartyMoney};
 pub use points::{PointIdx, PointTable};
 pub use price::{Price, PriceRaw, UnitTable, value_of};
 pub use qty::{Count, Qty, QtyRaw, UnitId};

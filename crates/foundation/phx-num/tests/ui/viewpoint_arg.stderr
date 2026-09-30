@@ -1,0 +1,13 @@
+error[E0308]: mismatched types
+ --> tests/ui/viewpoint_arg.rs:6:11
+  |
+6 |     books(NamedMoney::new(Money::new(1, Ccy::new(0))));
+  |     ----- ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `HomeMoney`, found `NamedMoney`
+  |     |
+  |     arguments to this function are incorrect
+  |
+note: function defined here
+ --> tests/ui/viewpoint_arg.rs:3:4
+  |
+3 | fn books(_: HomeMoney) {}
+  |    ^^^^^ ------------

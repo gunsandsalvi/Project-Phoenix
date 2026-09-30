@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use std::ops::{Add, Neg, Sub};
 
 use phx_macros::clause;
@@ -130,16 +131,156 @@ impl Neg for Money {
     }
 }
 
-/// A figure in the reporting numéraire, a different number from any currency's money; built only by exchange.
-#[clause("NUM.2")]
-#[must_use]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Reported<M> {
-    value: M,
+/// A viewpoint's arithmetic, with its own kind only: a figure of one is never added to, passed as or turned into
+/// another's but by an exchange at a stated quote.
+macro_rules! viewpoint {
+    ($name:ident) => {
+        impl $name {
+            pub const fn zero(ccy: Ccy) -> $name {
+                $name(Money::zero(ccy))
+            }
+
+            /// The figure as the column form a store holds.
+            pub const fn money(self) -> Money {
+                self.0
+            }
+        }
+
+        impl Add for $name {
+            type Output = $name;
+
+            fn add(self, other: $name) -> $name {
+                $name(self.0 + other.0)
+            }
+        }
+
+        impl Sub for $name {
+            type Output = $name;
+
+            fn sub(self, other: $name) -> $name {
+                $name(self.0 - other.0)
+            }
+        }
+
+        impl Neg for $name {
+            type Output = $name;
+
+            fn neg(self) -> $name {
+                $name(-self.0)
+            }
+        }
+
+        impl crate::exchange::sealed::Made for $name {
+            fn made(m: Money) -> $name {
+                $name(m)
+            }
+        }
+
+        impl crate::exchange::Viewpoint for $name {
+            fn money(self) -> Money {
+                self.0
+            }
+        }
+    };
 }
 
-impl<M: Copy> Reported<M> {
-    pub const fn value(&self) -> M {
+/// A party's figure in its home currency, the currency its books are kept in.
+#[clause("NUM.2")]
+#[must_use]
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HomeMoney(Money);
+
+/// A figure in a currency named beside the owner's home currency: a foreign deposit, a loan in another currency.
+#[clause("NUM.2")]
+#[must_use]
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NamedMoney(Money);
+
+/// A figure in the reporting numéraire, which the observer reads across countries; built only by exchange at a
+/// declared rate, and never written into the world.
+#[clause("NUM.2")]
+#[must_use]
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NumeraireMoney(Money);
+
+viewpoint!(HomeMoney);
+viewpoint!(NamedMoney);
+viewpoint!(NumeraireMoney);
+
+impl HomeMoney {
+    /// A figure its owner keeps in its home currency.
+    pub const fn new(m: Money) -> HomeMoney {
+        HomeMoney(m)
+    }
+}
+
+impl NamedMoney {
+    /// A figure its owner holds in a currency named beside its home one.
+    pub const fn new(m: Money) -> NamedMoney {
+        NamedMoney(m)
+    }
+}
+
+/// The owner a party's money is told by: a typed reference to a party, which the identifiers supply.
+pub trait Owner {}
+
+/// Another named party's money — a subsidiary's figure in its parent's money, a counterparty's exposure in its own
+/// currency — its owner's reference the type `P`.
+#[clause("NUM.2")]
+#[must_use]
+#[repr(transparent)]
+#[derive(Debug, PartialEq, Eq)]
+pub struct PartyMoney<P: Owner> {
+    value: Money,
+    owner: PhantomData<P>,
+}
+
+impl<P: Owner> Clone for PartyMoney<P> {
+    fn clone(&self) -> PartyMoney<P> {
+        *self
+    }
+}
+
+impl<P: Owner> Copy for PartyMoney<P> {}
+
+impl<P: Owner> PartyMoney<P> {
+    /// A figure in `P`'s money.
+    pub const fn new(m: Money) -> PartyMoney<P> {
+        PartyMoney { value: m, owner: PhantomData }
+    }
+
+    pub const fn money(self) -> Money {
+        self.value
+    }
+}
+
+impl<P: Owner> Add for PartyMoney<P> {
+    type Output = PartyMoney<P>;
+
+    fn add(self, other: PartyMoney<P>) -> PartyMoney<P> {
+        PartyMoney::new(self.value + other.value)
+    }
+}
+
+impl<P: Owner> Sub for PartyMoney<P> {
+    type Output = PartyMoney<P>;
+
+    fn sub(self, other: PartyMoney<P>) -> PartyMoney<P> {
+        PartyMoney::new(self.value - other.value)
+    }
+}
+
+impl<P: Owner> crate::exchange::sealed::Made for PartyMoney<P> {
+    fn made(m: Money) -> PartyMoney<P> {
+        PartyMoney::new(m)
+    }
+}
+
+impl<P: Owner> crate::exchange::Viewpoint for PartyMoney<P> {
+    fn money(self) -> Money {
         self.value
     }
 }

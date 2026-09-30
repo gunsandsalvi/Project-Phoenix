@@ -1,0 +1,7 @@
+error[E0308]: mismatched types
+ --> tests/ui/viewpoint_add.rs:6:20
+  |
+6 |     let _ = home + named;
+  |             ----   ^^^^^ expected `HomeMoney`, found `NamedMoney`
+  |             |
+  |             expected because this is `HomeMoney`

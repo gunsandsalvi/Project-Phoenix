@@ -1,0 +1,13 @@
+error[E0308]: mismatched types
+ --> tests/ui/viewpoint_from.rs:4:34
+  |
+4 |     let _ = NumeraireMoney::from(Money::new(1, Ccy::new(0)));
+  |             -------------------- ^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `NumeraireMoney`, found `Money`
+  |             |
+  |             arguments to this function are incorrect
+  |
+note: associated function defined here
+ --> $RUST/core/src/convert/mod.rs
+  |
+  |     fn from(value: T) -> Self;
+  |        ^^^^
