@@ -30,7 +30,7 @@ use crate::consts::firm::{
     SEEN_SOLD, SOLD as SOLD_UNITS,
 };
 use crate::consts::reason::{DELIVERED, MADE, PERISHED, SOLD, SPOILED, USED};
-use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, MONTHS, MONTHS_A_YEAR};
+use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, FIRM_VISIT_COST, KIND_ROWS_PER_CHUNK, MONTHS, MONTHS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_accounts::Line;
 use crate::core_decide::Bound as Decided;
@@ -892,10 +892,10 @@ impl Core {
         let Some(firm) = self.bound.kinds.firm else { return 0 };
         let slots = self.firm_slots(firm);
         let producing = self.point(|p| p.produce, &sys_frm::points::PRODUCE);
-        let plans: Vec<Option<(Firm, i64)>> = match ctx.pool {
-            Some(pool) => pool.map(slots.len(), |i| slots.get(i).and_then(|s| self.making(ctx, (firm, *s), producing))),
-            None => slots.iter().map(|s| self.making(ctx, (firm, *s), producing)).collect(),
-        };
+        let plans = phx_exec::for_agenda(ctx.pool, &slots, KIND_ROWS_PER_CHUNK, FIRM_VISIT_COST, |rows| {
+            rows.iter().map(|s| self.making(ctx, (firm, *s), producing)).collect::<Vec<Option<(Firm, i64)>>>()
+        });
+        let plans = plans.into_iter().flatten();
         let mut made = 0;
         for (slot, (f, today)) in slots.into_iter().zip(plans).filter_map(|(s, p)| p.map(|p| (s, p))) {
             self.take_from_deposits(f.key, f.product, today);
@@ -1165,12 +1165,10 @@ impl Core {
         let Some(firm) = self.bound.kinds.firm else { return 0 };
         let slots = self.firm_slots(firm);
         let ordering = self.point(|p| p.inputs, &sys_frm::points::INPUTS);
-        let orders: Vec<Vec<(u16, Buyer)>> = match ctx.pool {
-            Some(pool) => pool.map(slots.len(), |i| {
-                slots.get(i).map_or_else(Vec::new, |s| self.input_orders(ctx, (firm, *s), (day, ordering)))
-            }),
-            None => slots.iter().map(|s| self.input_orders(ctx, (firm, *s), (day, ordering))).collect(),
-        };
+        let orders: Vec<Vec<(u16, Buyer)>> =
+            phx_exec::for_agenda(ctx.pool, &slots, KIND_ROWS_PER_CHUNK, FIRM_VISIT_COST, |rows| {
+                rows.iter().flat_map(|s| self.input_orders(ctx, (firm, *s), (day, ordering))).collect::<Vec<_>>()
+            });
         let wants: Vec<(u16, Buyer)> = orders.into_iter().flatten().collect();
         let n = len_u64(wants.len());
         let leg = |_: u16, unit: u16| GoodsLeg { unit: Denom::units(unit), reason: DELIVERED, order: 0, used: false };

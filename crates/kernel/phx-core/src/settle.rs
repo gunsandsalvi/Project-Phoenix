@@ -222,6 +222,14 @@ fn to_usize(n: u32) -> usize {
     usize::try_from(n).unwrap_or(usize::MAX)
 }
 
+/// A count of the day's groups or ranges as a traversal's chunks.
+fn to_u32(n: usize) -> u32 {
+    match u32::try_from(n) {
+        Ok(n) => n,
+        Err(_) => phx_num::capacity_exceeded!("a traversal's chunks", u32::MAX, n),
+    }
+}
+
 fn cell(v: &mut [i64], i: usize) -> &mut i64 {
     let Some(c) = v.get_mut(i) else {
         violation!(clause = "Law 5", "a flow names a party its kind's accounts do not hold", slot = i);
@@ -301,8 +309,8 @@ impl Settle {
                 }
                 out.visits += groups.iter().map(|g| u64::try_from(g.len()).unwrap_or(u64::MAX)).sum::<u64>();
                 let this: &Settle = self;
-                let decided = phx_exec::pool::map(pool, groups.len(), |i| {
-                    groups.get(i).map_or_else(Vec::new, |g| {
+                let decided = phx_exec::for_chunks(pool, to_u32(groups.len()), |i| {
+                    groups.get(to_usize(i)).map_or_else(Vec::new, |g| {
                         g.iter().flat_map(|p| this.decide(*p, books, grouped, ranges, lot)).collect::<Vec<_>>()
                     })
                 });
@@ -424,12 +432,8 @@ impl Settle {
             }
         }
         let (issuer, banks) = (books.issuer, books.banks);
-        let done: Vec<(Vec<i64>, Vec<PartyKey>)> = match pool {
-            Some(p) => p.map_items(jobs, |j| range_pass(j, grouped, ranges, (issuer, banks, n_banks), settle)),
-            None => {
-                jobs.into_iter().map(|j| range_pass(j, grouped, ranges, (issuer, banks, n_banks), settle)).collect()
-            }
-        };
+        let done: Vec<(Vec<i64>, Vec<PartyKey>)> =
+            phx_exec::map_chunks(pool, jobs, |j| range_pass(j, grouped, ranges, (issuer, banks, n_banks), settle));
         self.cust.clear();
         self.cust.resize(n_banks, 0);
         let mut shorts = Vec::new();
@@ -533,7 +537,7 @@ impl Settle {
             .filter_map(|(r, (c, side))| c.map(|c| (r, c, side)))
             .collect();
         let n_banks = self.cust.len();
-        let done = map_items(pool, jobs, |(r, net, side)| {
+        let done = phx_exec::map_chunks(pool, jobs, |(r, net, side)| {
             let (_, first) = ranges.start(r);
             let mut cust = vec![0_i64; n_banks];
             let mut short = Vec::new();
@@ -649,7 +653,7 @@ impl Settle {
         let mut jobs: Vec<(usize, &mut ByPayer)> =
             self.by_payer.iter_mut().enumerate().filter(|(r, b)| !b.built && todo.binary_search(r).is_ok()).collect();
         jobs.sort_unstable_by_key(|(r, _)| *r);
-        phx_exec::pool::each(pool, jobs, |(r, by)| {
+        phx_exec::each_chunk(pool, jobs, |(r, by)| {
             let (_, first) = ranges.start(r);
             let start = grouped.first(r);
             let count = grouped.first(r + 1) - start;
@@ -706,7 +710,7 @@ impl Settle {
             }
         }
         let removed = &self.removed;
-        let parts = map_items(pool, jobs, |(range, debits, nets)| {
+        let parts = phx_exec::map_chunks(pool, jobs, |(range, debits, nets)| {
             let (kind, first) = ranges.start(range);
             let mut v = Values::default();
             let base = grouped.first(range);
@@ -761,7 +765,7 @@ impl Settle {
                 jobs.push((balance, net, m));
             }
         }
-        phx_exec::pool::each(pool, jobs, |(balance, net, moves)| {
+        phx_exec::each_chunk(pool, jobs, |(balance, net, moves)| {
             for (i, (a, n)) in balance.iter_mut().zip(net).enumerate() {
                 *a += n + moves.get(i).copied().unwrap_or(0);
             }
@@ -785,14 +789,6 @@ fn unsettled(books: &mut Books<'_>, out: &Outcome) {
             let line = words.get(usize::from(f.reason)).copied().flatten();
             Lines::post(l.amounts, l.width, slot(p), line, -f.amount);
         }
-    }
-}
-
-/// `f` of every item, on the pool when one is given and on the calling thread otherwise, results in the items' order.
-fn map_items<I: Send, T: Send>(pool: Option<&Pool>, items: Vec<I>, f: impl Fn(I) -> T + Sync) -> Vec<T> {
-    match pool {
-        Some(p) => p.map_items(items, f),
-        None => items.into_iter().map(f).collect(),
     }
 }
 
@@ -886,7 +882,8 @@ fn matching(
     ranges: &Ranges,
     hit: impl Fn(&Flow) -> bool + Sync,
 ) -> Vec<usize> {
-    let found = phx_exec::pool::map(pool, ranges.count(), |r| {
+    let found = phx_exec::for_chunks(pool, to_u32(ranges.count()), |r| {
+        let r = to_usize(r);
         let start = grouped.first(r);
         grouped.payers(r).enumerate().filter(|(_, f)| hit(f)).map(|(i, _)| start + i).collect::<Vec<usize>>()
     });

@@ -28,6 +28,8 @@ pub struct WorldConfig {
     pub setup: PathBuf,
     pub run_dir: PathBuf,
     pub representation: Missing<phx_pop::prims::Representation>,
+    /// The cores the world's pool runs on.
+    pub pool: phx_exec::PoolSpec,
 }
 
 fn read(path: &Path, country: Missing<CountryId>) -> Result<DataFile, String> {
@@ -643,7 +645,11 @@ fn parts(
 }
 
 /// The world of its parts and its core, at the day given.
-fn world_of(parts: Parts, core: crate::core::Core, (today, seed): (phx_id::Day, u64)) -> World {
+fn world_of(
+    parts: Parts,
+    core: crate::core::Core,
+    (today, seed, pool): (phx_id::Day, u64, &phx_exec::PoolSpec),
+) -> World {
     let Parts { p, geo, own, labour, news, .. } = parts;
     let regions: Vec<CountryId> = geo.map.regions.iter().map(|r| r.country).collect();
     let event_kinds = p.d.events.iter().map(|(_, e)| e.name).collect();
@@ -676,7 +682,7 @@ fn world_of(parts: Parts, core: crate::core::Core, (today, seed): (phx_id::Day, 
         seed,
         loaded: false,
         persons: p.representation.persons,
-        pool: pool_of(&phx_exec::PoolSpec::detect()),
+        pool: pool_of(pool),
     }
 }
 
@@ -706,7 +712,7 @@ pub fn assemble(
     core.seat_player((&parts.p.c.streams, today), (country, player.delegate), &regions)
         .map_err(|e| AssemblyErrors(vec![e]))?;
     let opened = opened(&core, &parts.p.c.register);
-    let mut world = world_of(parts, core, (today, config.seed));
+    let mut world = world_of(parts, core, (today, config.seed, &config.pool));
     world.metrics.opened = opened;
     Ok(world)
 }
@@ -755,7 +761,7 @@ pub(crate) fn assemble_loaded(
     let declared = declared_kinds(&parts.p)?;
     core.rebind((household, declared), &parts.state, (sta.map(|s| s.rate), index));
     core.bind_points(parts.labour.as_ref());
-    let mut world = world_of(parts, core, (today, config.seed));
+    let mut world = world_of(parts, core, (today, config.seed, &config.pool));
     let (start, now) = (world.calendar.date(world.day_zero).year(), world.calendar.date(today).year());
     if now > start {
         world.calendar.move_window(now);

@@ -64,9 +64,9 @@ impl ExecCounters {
         add(&mut self.buffer_bytes, bytes);
     }
 
-    /// Rounds the workers spun waiting between dispatches.
-    pub fn spin(&mut self, rounds: u64) {
-        add(&mut self.spun, rounds);
+    /// Nanoseconds the workers spun waiting between dispatches.
+    pub fn spin(&mut self, ns: u64) {
+        add(&mut self.spun, ns);
     }
 
     /// Runs `f`, adding its wall time; a clock that runs backwards adds nothing.

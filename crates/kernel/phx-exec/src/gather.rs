@@ -57,7 +57,7 @@ pub fn gather<T: Copy + Send + Sync>(pool: Option<&Pool>, intents: &IntentBuf<T>
         intents.bufs.iter().for_each(|b| out.extend_from_slice(b));
         return;
     };
-    // One task per chunk, copying that chunk's buffers into their places in turn.
+    // One chunk a buffer chunk, copying that chunk's buffers into their places in turn.
     let mut rest = out.as_mut_slice();
     let mut chunks: Vec<Vec<(&mut [T], &[T])>> = Vec::with_capacity(intents.bufs.len() / intents.handlers);
     for chunk in intents.bufs.chunks(intents.handlers) {
@@ -69,8 +69,8 @@ pub fn gather<T: Copy + Send + Sync>(pool: Option<&Pool>, intents: &IntentBuf<T>
         }
         chunks.push(pieces);
     }
-    pool.for_each(chunks, |pieces| {
-        for (dst, src) in pieces {
+    pool.run_into(&mut chunks, |_, pieces| {
+        for (dst, src) in pieces.iter_mut() {
             dst.copy_from_slice(src);
         }
     });

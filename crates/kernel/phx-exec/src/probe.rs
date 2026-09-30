@@ -94,10 +94,10 @@ pub fn filled_region(pool: &Pool, bytes: u64) -> Region<u64> {
     let mut region: Region<u64> = Region::reserve(&mut space, words);
     region.ensure(words);
     let piece_words = PROBE_PIECE_BYTES / size_of::<u64>();
-    let pieces: Vec<(u64, &mut [u64])> =
+    let mut pieces: Vec<(u64, &mut [u64])> =
         (0_u64..).step_by(piece_words).zip(region.slice_mut(words).chunks_mut(piece_words)).collect();
-    pool.for_each(pieces, |(base, piece)| {
-        for (i, w) in (base..).zip(piece.iter_mut()) {
+    pool.run_into(&mut pieces, |_, (base, piece)| {
+        for (i, w) in (*base..).zip(piece.iter_mut()) {
             *w = i;
         }
     });
@@ -200,11 +200,11 @@ pub fn sweep(pool: &Pool, clock: &dyn Clock, region: &Region<u64>) -> Option<u64
 /// Wall nanoseconds of one empty dispatch and join of every worker, hot, over `rounds` in a row.
 #[must_use]
 pub fn barrier(pool: &Pool, clock: &dyn Clock, rounds: u64) -> Option<u64> {
-    let items: Vec<usize> = (0..pool.workers()).collect();
+    let mut items: Vec<usize> = (0..pool.workers()).collect();
     let start = clock.now_ns();
     for _ in 0..rounds {
-        pool.for_each(items.iter().copied(), |i| {
-            black_box(i);
+        pool.run_into(&mut items, |_, i| {
+            black_box(*i);
         });
     }
     since(clock, start)?.checked_div(rounds)

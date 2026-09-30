@@ -21,7 +21,7 @@ pub const RADIX_MIN: usize = 1 << 11;
 /// Gathers below this many intents copy on the calling thread: a dispatch costs more than copying them.
 pub const GATHER_SERIAL_BELOW: usize = 1 << 16;
 
-/// Declared cost an agenda unit accumulates before it may close, in the cost units handlers declare per row (about a
+/// Declared cost a plan's chunk accumulates before it may close, in the cost units handlers declare per row (about a
 /// nanosecond of phone core time): 200 µs of work amortises a dispatch several times over.
 pub const CHUNK_COST: u64 = 200_000;
 
@@ -31,9 +31,23 @@ pub const LITTLE_CORE_SHARE_NUM: u32 = 1;
 /// See `LITTLE_CORE_SHARE_NUM`.
 pub const LITTLE_CORE_SHARE_DEN: u32 = 2;
 
-/// Rounds an idle worker spins after a dispatch before parking, so back-to-back sub-steps skip a wake-up: about
-/// 50 µs on a phone core at a few nanoseconds a round; the bench measures the barrier it buys.
-pub const SPIN_ROUNDS: u64 = 16_384;
+/// Microseconds an idle worker spins after a dispatch before it parks, so back-to-back dispatches skip a wake-up
+/// without a worker burning a core between sub-steps.
+pub const SPIN_US: u64 = 20;
+
+/// Rounds of spinning timed once at a pool's start to learn what a microsecond of spin is on its cores.
+pub const SPIN_CALIBRATION_ROUNDS: u64 = 1 << 16;
+
+/// The most workers a pool runs: the phone's performance cores and a margin. A plan's chunks never depend on it but
+/// are at least four for each of them, so any count of workers up to it finds work to balance.
+pub const POOL_MAX_WORKERS: u32 = 8;
+
+/// A plan has at least this many chunks for each of the most workers, where its rows allow.
+pub const CHUNKS_PER_MAX_WORKER: u32 = 4;
+
+/// A plan whose declared cost is below this many cost units (about 100 µs of phone core time) runs on the calling
+/// thread, over the same chunks in order: a dispatch would cost more than it saves.
+pub const INLINE_BELOW: u64 = 100_000;
 
 /// The `SplitMix64` finaliser: the shift and multiplier constants of Steele, Lea and Flood (2014).
 pub const MIX_SHIFTS: [u32; 3] = [30, 27, 31];
@@ -48,6 +62,9 @@ pub const PREFETCH_DISTANCE: u64 = 16;
 
 /// Nanoseconds in a second, for rates per second.
 pub const NS_PER_S: u64 = 1_000_000_000;
+
+/// Microseconds a second.
+pub const US_PER_S: u64 = 1_000_000;
 
 /// Bytes each worker fills or sweeps as one piece of a probe region.
 pub const PROBE_PIECE_BYTES: usize = 1 << 20;

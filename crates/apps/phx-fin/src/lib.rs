@@ -19,6 +19,7 @@ pub mod kept_search;
 mod kept_tests;
 pub mod kept_wheel;
 pub mod measure;
+pub mod pool;
 pub mod records;
 pub mod refs;
 pub mod report;
@@ -143,6 +144,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(epoch::Epoch::default()),
     || Box::new(records::Records::default()),
     || Box::new(terms::Terms::default()),
+    || Box::new(pool::PoolBase::default()),
 ];
 
 /// What a run fills, runs and reads.

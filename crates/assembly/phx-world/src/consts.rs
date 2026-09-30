@@ -8,13 +8,16 @@ pub const WHOLE: u64 = 100;
 
 /// Rows of a kind table per chunk, as the population's tables chunk theirs.
 pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
+/// A firm's making or its input orders, declared at a production visit's cost: about 800 ns of phone core time.
+pub const FIRM_VISIT_COST: u32 = 800;
+/// A hazard's follow of a household from its booking to today, declared at a hit's cost: about 800 ns of phone core
+/// time.
+pub const HAZARD_FOLLOW_COST: u64 = 800;
 /// Rows of an agent table per chunk.
 pub const AGENT_ROWS_PER_CHUNK: u32 = 1 << 12;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
 pub const SAVE_FORMAT: u32 = 25;
-/// A save's tasks on the pool: the core's store, whose frames' root is the world hash, and the run's record.
-pub const SAVE_TASKS: usize = 2;
 /// The file every save writes last, which makes it complete.
 pub const SAVE_MANIFEST: &str = "manifest.json";
 /// The suffix a save's directory carries until it is complete.

@@ -31,10 +31,11 @@ direction = "down"
 
 # PC-97's admitted sites (S1.122, 2026-09-30): literal `None` handed to a kernel's pool and work run on a pool
 # outside the kernel's traversals, as the code stood when the rule came, 24 in all. Each migration removes its own
-# (the absent pools S1.152 and S1.153, the dispatches K-11 and K-12); the count only falls, and S1.492 empties it.
+# (the absent pools S1.152 and S1.153, the dispatches K-11 and K-12); the count only falls. S1.169 (K-11) moved the
+# last dispatches onto the kernel's traversals, so none is admitted.
 [[ratchet]]
 counter = "phx_check.exceptions_pc97"
-value = 13
+value = 0
 direction = "down"
 
 # PC-98's admitted sites (S1.123, 2026-09-30): the register read by name and names compared on the day's paths,
@@ -51,7 +52,7 @@ direction = "down"
 # empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 811
+value = 807
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and

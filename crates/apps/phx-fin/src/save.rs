@@ -79,8 +79,12 @@ impl Save {
         let saved = format!("{:.0}", self.saved_mb * MB).parse::<u64>().map_err(|e| FinError(e.to_string()))?;
         let count = crate::kept::index(saved.div_ceil(crate::kept::wide(SAVE_FRAME_BYTES)))?;
         let pool = self.pool.as_ref();
+        let chunks = crate::kept::slots(crate::kept::wide(count))?;
         let root = m.read(BASE, "hash", 1, || {
-            let leaves = phx_exec::pool::map(pool, count, |i| frames.get(i % frames.len()).map(|f| frame_hash(KEY, f)));
+            let leaves = phx_exec::for_chunks(pool, chunks, |i| {
+                let at = crate::kept::index(u64::from(i)).ok()?;
+                frames.get(at % frames.len()).map(|f| frame_hash(KEY, f))
+            });
             let leaves: Option<Vec<u128>> = leaves.into_iter().collect();
             leaves.map(|l| frame_root(KEY, &l))
         });

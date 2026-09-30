@@ -27,8 +27,8 @@ mod tests {
         // Float addition is not associative: equal bits need the same tree and the same inputs in the same places.
         let sum = |workers: usize| {
             let pool = Pool::new(&PoolSpec::unpinned(workers)).unwrap();
-            let parts = pool.map(1000, |i| {
-                let x = f64::from(u32::try_from(i).unwrap());
+            let parts = crate::traverse::for_chunks(Some(&pool), 1000, |i| {
+                let x = f64::from(i);
                 (0..100).map(|k| (x * 1e-3 + f64::from(k)).sin() * 1e10).sum::<f64>()
             });
             reduce_tree(parts, |a, b| a + b).unwrap().to_bits()

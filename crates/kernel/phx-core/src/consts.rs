@@ -219,3 +219,6 @@ pub const STORES: &[(&str, u32, u32, crate::capacity::Growth)] = &[
     ("products", 250, ROW_BYTES_UNLAID, crate::capacity::Growth::Fixed),
     ("unit_ids", 110_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons),
 ];
+
+/// A flow's grouping by its payer's range, declared at a flow's cost: about 25 ns of phone core time.
+pub const FLOW_GROUP_COST: u64 = 25;

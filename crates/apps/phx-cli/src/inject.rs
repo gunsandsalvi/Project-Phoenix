@@ -29,6 +29,7 @@ pub fn injections(
         setup: setup.to_path_buf(),
         run_dir: run_dir.to_path_buf(),
         representation: phx_num::Missing::Present(crate::run::representation(manifest.persons)?),
+        pool: crate::run::pool_spec(None),
     };
     let build = crate::run::build_id()?;
     let clock = WallClock::new();

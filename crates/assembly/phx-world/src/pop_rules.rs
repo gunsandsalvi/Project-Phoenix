@@ -149,7 +149,31 @@ pub(crate) struct Buffers {
     out: Vec<usize>,
 }
 
+/// A chunk of the day's follows: its household read, its chance buffers and what its follows came to.
+#[derive(Debug, Default)]
+pub(crate) struct FollowChunk {
+    pub h: Household,
+    pub buffers: Buffers,
+    pub out: Vec<Followed>,
+}
+
+/// The day's follows — each booking due, the plan that chunks them, each chunk's own buffers — kept from day to day,
+/// so a day allocates nothing once the heaviest has sized them.
+#[derive(Debug, Default)]
+pub(crate) struct Follows {
+    pub todo: Vec<(phx_id::Slot, usize, (Day, bool))>,
+    pub plan: phx_exec::ChunkPlan,
+    pub chunks: Vec<FollowChunk>,
+}
+
+/// The day's follows put in the order their outcomes are applied: household by household in slot order, each
+/// household's processes in their order, whatever order the processes' wheels gave them in.
+pub(crate) fn in_apply_order<T>(todo: &mut [(phx_id::Slot, usize, T)]) {
+    todo.sort_by_key(|(slot, process, _)| (slot.get(), *process));
+}
+
 /// What following a household's booking came to: the persons its hits reached, and its next booking after today.
+#[derive(Debug)]
 pub(crate) struct Followed {
     pub reached: Vec<usize>,
     pub next: Booking,
@@ -223,7 +247,11 @@ mod tests {
     };
     use phx_pop::kind::PopKindDecl;
 
-    use super::bind_one;
+    use phx_core::Household;
+    use phx_id::{Day, PartyId};
+    use phx_rand::{Draws, Subject, SubjectTag};
+
+    use super::{Buffers, Reading, bind_one, follow};
 
     /// A process as a system would declare it, of a hazard by name.
     struct Proc(&'static str);
@@ -279,6 +307,78 @@ mod tests {
             item: PopItem::Role(RoleDecl { name: "head", clause: "x" }),
         }];
         vec![PopKindDecl::compile("household", &entries).unwrap()]
+    }
+
+    /// A process whose persons each face a fixed daily chance.
+    struct Rated(f64);
+
+    impl PopProcess for Rated {
+        fn bind(&mut self, _: &Register) {}
+        fn hazard(&self) -> &'static str {
+            "DEM.death"
+        }
+        fn kind(&self) -> &'static str {
+            "household"
+        }
+        fn rate(&self, _: &Register, _: &AgentView<'_>, _: &phx_core::Person) -> f64 {
+            self.0
+        }
+        fn changes_after(&self, _: &phx_core::Person, _: phx_id::Date) -> Option<phx_id::Date> {
+            None
+        }
+        fn outcome(&self, _: &Register, _: &AgentView<'_>, _: &mut phx_core::Household, _: &[usize], _: &mut Draws) {}
+    }
+
+    #[test]
+    fn follow_same_for_any_chunking() {
+        let mut d = Declarations::new();
+        declare_system::<Dem>(&mut d);
+        let bound = bind_one("DEM", Box::new(Rated(0.02)), &d, &kinds()).unwrap();
+        let register = phx_core::register::RegisterBuilder::new().build(&[], 1).unwrap();
+        let calendar = phx_core::Calendar::new(phx_id::Date::new(2000, 1, 1).unwrap(), vec![], 2000).unwrap();
+        let country_of = |_: u32| None;
+        let reading = Reading { register: &register, calendar: &calendar, country_of: &country_of };
+        let born = phx_id::Date::new(1960, 1, 1).unwrap();
+        let person = || phx_core::Person { role: "head", born, attrs: Vec::new(), gone: false };
+        let households: Vec<Household> = (0..40)
+            .map(|i| Household {
+                attrs: Vec::new(),
+                persons: (0..=i % 5).map(|_| person()).collect(),
+                positions: Vec::new(),
+            })
+            .collect();
+        let today = Day::new(400);
+        let key = phx_rand::key::stream_key(phx_rand::key::Seed::new(7), "DEM.mortality");
+        // Each household booked some days back, as a hit or a redraw, and followed to today.
+        let follow_in_runs = |run: usize| {
+            let mut out = Vec::new();
+            for chunk in households.iter().enumerate().collect::<Vec<_>>().chunks(run) {
+                let mut buffers = Buffers::default();
+                for (k, h) in chunk {
+                    let k = u32::try_from(*k).unwrap();
+                    let start = (Day::new(400 - k * 7), k % 2 == 0);
+                    let id = PartyId::new(u64::from(k) + 1);
+                    let mut draws = Draws::new(key, Subject::new(SubjectTag::Party, id.get()), today.get(), 0);
+                    let f = follow(&reading, ("household", id), &bound, (h, &mut buffers), (today, start), &mut draws);
+                    out.push((f.reached, f.next));
+                }
+            }
+            out
+        };
+        let whole = follow_in_runs(households.len());
+        assert!(whole.iter().any(|(r, _)| !r.is_empty()), "some hits reach persons");
+        for run in [1, 3, 7] {
+            assert_eq!(follow_in_runs(run), whole, "buffers reused over runs of {run}");
+        }
+    }
+
+    #[test]
+    fn apply_order_is_slot_then_process() {
+        let slot = phx_id::Slot::new;
+        let mut todo =
+            vec![(slot(9), 0, 'a'), (slot(3), 1, 'b'), (slot(9), 1, 'c'), (slot(3), 0, 'd'), (slot(5), 2, 'e')];
+        super::in_apply_order(&mut todo);
+        assert_eq!(todo.iter().map(|t| t.2).collect::<String>(), "dbeac");
     }
 
     #[test]

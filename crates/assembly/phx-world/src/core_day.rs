@@ -191,7 +191,13 @@ pub struct Work {
     /// The fund stage's flows, apart from the day's, which the day's reads still read after it.
     pub fund: FlowBufs,
     pub settle: Settle,
+    /// The families' contracts due today, one family after another, each ending where `due_ends` says; the take's
+    /// own buffer they are copied from.
     pub due: Vec<u32>,
+    pub due_ends: Vec<usize>,
+    pub taken: Vec<u32>,
+    /// The hazards' follows of the day.
+    pub(crate) follows: crate::pop_rules::Follows,
 }
 
 /// A loan's due on its `k`th date, by its terms' shape: what it pays, and of that what repays its balance.
@@ -917,6 +923,48 @@ impl Core {
         failed
     }
 
+    /// Each family's contracts due today taken, then its dues made into its own chunk of the day's flows, a family a
+    /// chunk on the pool, and the wages among them withheld.
+    fn make_dues(
+        &mut self,
+        work: &mut Work,
+        (day, calendar, pool): (Day, &Calendar, Option<&phx_exec::Pool>),
+        record: &mut CoreDay,
+    ) {
+        let families = self.families.len();
+        work.due.clear();
+        work.due_ends.clear();
+        for family in &mut self.families {
+            family.store.wheel.take(day, &mut work.taken, pool);
+            work.due.extend_from_slice(&work.taken);
+            work.due_ends.push(work.due.len());
+        }
+        // Each family makes its dues into its own chunk of the day's flows, a family a chunk on the pool.
+        let (due, ends, flows) = (&work.due, &work.due_ends, work.flows.chunks_mut());
+        let Some(bufs) = flows.get_mut(..families) else {
+            violation!(clause = "SET.4", "a day's flows with no chunk for a family's dues", families = families);
+        };
+        phx_exec::for_each_pair(pool, (self.families.as_mut_slice(), bufs), |i, family, buf| {
+            let from = match i.checked_sub(1) {
+                Some(before) => ends.get(before).copied(),
+                None => Some(0),
+            };
+            let Some(due) = from.zip(ends.get(i)).and_then(|(from, to)| due.get(from..*to)) else {
+                violation!(clause = "TIME.4", "a family with no dues taken", family = i);
+            };
+            let _ = family.dues(day, calendar, due, buf);
+        });
+        // A family's chunk begins the day empty, so what it holds is what it made.
+        for (family, buf) in self.families.iter().zip(work.flows.slices()) {
+            let n = u64::try_from(buf.len()).unwrap_or(u64::MAX);
+            phx_exec::trace::note(family.name, &[("dues", i64::try_from(n).unwrap_or(i64::MAX))]);
+            record.flows += n;
+        }
+        for buf in work.flows.chunks_mut().iter_mut().take(families) {
+            self.withhold(buf);
+        }
+    }
+
     /// Runs the core's day: every family's dues made flows, then each currency's flows settled on its country's
     /// business day or committed on its closed day.
     #[clause("SET.4", "SET.6", "MON.5")]
@@ -955,20 +1003,11 @@ impl Core {
         if self.central.recorded.is_none() {
             self.central.recorded = Some(self.issuer_held());
         }
-        self.timed(clock, "settle.dues", |c| {
-            for (family, buf) in c.families.iter_mut().zip(work.flows.chunks_mut().iter_mut()) {
-                family.store.wheel.take(day, &mut work.due, pool);
-                let n = family.dues(day, calendar, &work.due, buf);
-                phx_exec::trace::note(family.name, &[("dues", i64::try_from(n).unwrap_or(i64::MAX))]);
-                record.flows += n;
-            }
-            for buf in work.flows.chunks_mut().iter_mut().take(families) {
-                c.withhold(buf);
-            }
-        });
+        self.timed(clock, "settle.dues", |c| c.make_dues(&mut work, (day, calendar, pool), &mut record));
         let settling = self.timed(clock, "settle.gather", |c| {
             c.gather((day, calendar, streams), (&mut work.flows, families), &mut record)
         });
+        work.flows.split_last(phx_core::consts::FLOW_GROUP_COST);
         let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
         let ranges = Ranges::new(self.range_bits, &high);
         let banks = self.bank_kind.map_or(0, |b| {

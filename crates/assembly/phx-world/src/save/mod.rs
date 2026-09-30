@@ -71,10 +71,7 @@ fn write_store(
     let file = std::fs::File::create(&path).map_err(|e| io_err(&path, &e))?;
     let mut out = BufWriter::new(file);
     let compress = |frames: &[Vec<u8>]| {
-        phx_exec::pool::map(pool, frames.len(), |i| match frames.get(i) {
-            Some(f) => phx_store::save::seal_frame(HASH_KEY, f),
-            None => Err(std::io::Error::other("a frame of the wave that was never cut")),
-        })
+        phx_exec::map_chunks(pool, frames.iter().collect(), |f| phx_store::save::seal_frame(HASH_KEY, f))
     };
     let mut w = Writer::framed(&mut out, &compress);
     write(&mut w);
@@ -124,17 +121,12 @@ impl World {
     pub fn save(&self, root: &Path, build: &str) -> Result<SaveRecord, String> {
         let dir = retention::begin(root, self.today)?;
         let pool = self.pool.as_ref();
-        let done = phx_exec::pool::map(pool, crate::consts::SAVE_TASKS, |i| match i {
-            0 => write_store(&dir, CORE, pool, &|w| {
-                self.today.save(w);
-                self.core.save(w);
-            }),
-            _ => write_store(&dir, RUN, pool, &|w| self.metrics.save(w)),
-        });
-        let mut done = done.into_iter().collect::<Result<Vec<_>, String>>()?.into_iter();
-        let (Some((bytes, raw_bytes, hash)), Some((run_bytes, run_raw, _))) = (done.next(), done.next()) else {
-            return Err("a save task that never ran".to_owned());
-        };
+        // Each store's frames are sealed on the pool as it writes them, so the stores are written one after the other.
+        let (bytes, raw_bytes, hash) = write_store(&dir, CORE, pool, &|w| {
+            self.today.save(w);
+            self.core.save(w);
+        })?;
+        let (run_bytes, run_raw, _) = write_store(&dir, RUN, pool, &|w| self.metrics.save(w))?;
         let stores = vec![StoreRecord { name: CORE, bytes, raw_bytes, hash }];
         let entry = |name: &str, bytes: u64, raw_bytes: u64, hash: String| StoreEntry {
             name: name.to_owned(),

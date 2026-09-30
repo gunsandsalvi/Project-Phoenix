@@ -103,7 +103,7 @@ impl Person {
 /// kind holds, as read. An outcome changes its attributes and persons; the kernel then writes them back to its agent,
 /// or ends the agent when no one is left. Its positions are handlers' to write, so they are never written back.
 #[clause("REP.26", "REP.41")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Household {
     pub attrs: Vec<(&'static str, u32)>,
     pub persons: Vec<Person>,

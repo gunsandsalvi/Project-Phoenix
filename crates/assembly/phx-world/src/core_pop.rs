@@ -15,8 +15,9 @@ use phx_pop::kind::PopKindDecl;
 use phx_pop::person::{pack, unpack};
 use phx_rand::{Subject, SubjectTag};
 
+use crate::consts::HAZARD_FOLLOW_COST;
 use crate::core::Core;
-use crate::pop_rules::{Bound, Buffers, Reading, chances, follow};
+use crate::pop_rules::{Bound, Buffers, FollowChunk, Follows, Reading, chances, follow, in_apply_order};
 use phx_core::capacity::WHEEL_DAYS;
 
 /// One process's bookings on the core: its place among the world's processes, and each household's next booking on
@@ -240,37 +241,75 @@ impl Core {
             self.read_household((place, decl), slot, &mut h);
             self.book_all(ctx, (place, decl), slot, (&h, &mut buffers), day);
         }
+        // Every process's bookings due today, taken in process order.
+        let mut follows = std::mem::take(&mut self.work.follows);
+        follows.todo.clear();
         for at in 0..self.hazards.len() {
             let Some(hz) = self.hazards.get_mut(at) else { continue };
             hz.wheel.take(day, &mut due, ctx.pool);
-            let process = hz.process;
             for slot in due.iter().copied().map(Slot::new) {
                 let booked = self.hazards.get(at).and_then(|hz| hz.next.get(index(slot)).copied().flatten());
-                let Some((booked_day, hit)) = booked.filter(|(d, _)| *d == day) else { continue };
+                let Some(start) = booked.filter(|(d, _)| *d == day) else { continue };
                 if self.kinds.get(place).and_then(|k| k.parties.at(slot)).is_none() {
                     continue;
                 }
-                let Some(id) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { continue };
-                let Some(b) = ctx.processes.get(process) else { continue };
-                self.read_household((place, decl), slot, &mut h);
-                let subject = Subject::new(SubjectTag::Party, id.get());
-                let mut d = ctx.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
-                let f = follow(&reading, (decl.kind, id), b, (&h, &mut buffers), (day, (booked_day, hit)), &mut d);
-                record.followed += 1;
-                if let Some(hz) = self.hazards.get_mut(at) {
-                    book(hz, slot, f.next);
-                }
-                if !f.reached.is_empty() {
-                    record.hits += 1;
-                    self.count_event(b.event, phx_rand::float::len_u64(f.reached.len()));
-                    self.record_event(b.event, (place, slot, id.get()), &f.reached, day);
-                    if crate::core_rates::sampled(id) {
-                        self.rates.realised(process, &h, &f.reached, ctx.calendar.date(day));
-                    }
-                    hits.push((slot, process, f.reached));
-                }
+                follows.todo.push((slot, at, start));
             }
         }
+        // Each followed on the pool by runs of households in slot order, reading only; what it came to is applied
+        // after, household by household and each household's processes in order.
+        in_apply_order(&mut follows.todo);
+        follows.plan.cut_rows(follows.todo.len(), HAZARD_FOLLOW_COST);
+        follows.chunks.resize_with(follows.plan.len(), FollowChunk::default);
+        let Follows { todo, plan, chunks } = &mut follows;
+        let Some(chunks) = chunks.get_mut(..plan.len()) else {
+            violation!(clause = "REP.7", "a plan of follows past its chunks' buffers", chunks = plan.len());
+        };
+        let this = &*self;
+        phx_exec::for_plan(ctx.pool, plan, chunks, |rows, chunk| {
+            chunk.out.clear();
+            let Some(rows) = todo.get(rows) else {
+                violation!(clause = "REP.7", "a chunk of follows past the day's bookings");
+            };
+            for &(slot, at, start) in rows {
+                let process = this.hazards.get(at).map(|hz| hz.process);
+                let (Some(id), Some(b)) = (
+                    this.kinds.get(place).and_then(|k| k.parties.id(slot)),
+                    process.and_then(|p| ctx.processes.get(p)),
+                ) else {
+                    violation!(clause = "REP.7", "a booking due for no household or process", slot = slot.get());
+                };
+                this.read_household((place, decl), slot, &mut chunk.h);
+                let subject = Subject::new(SubjectTag::Party, id.get());
+                let mut d = ctx.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
+                let f = follow(&reading, (decl.kind, id), b, (&chunk.h, &mut chunk.buffers), (day, start), &mut d);
+                chunk.out.push(f);
+            }
+        });
+        let followed = chunks.iter_mut().flat_map(|c| c.out.drain(..));
+        for ((slot, at, _), f) in todo.iter().copied().zip(followed) {
+            let (Some(process), Some(id)) =
+                (self.hazards.get(at).map(|hz| hz.process), self.kinds.get(place).and_then(|k| k.parties.id(slot)))
+            else {
+                continue;
+            };
+            let Some(b) = ctx.processes.get(process) else { continue };
+            record.followed += 1;
+            if let Some(hz) = self.hazards.get_mut(at) {
+                book(hz, slot, f.next);
+            }
+            if !f.reached.is_empty() {
+                record.hits += 1;
+                self.count_event(b.event, phx_rand::float::len_u64(f.reached.len()));
+                self.record_event(b.event, (place, slot, id.get()), &f.reached, day);
+                if crate::core_rates::sampled(id) {
+                    self.read_household((place, decl), slot, &mut h);
+                    self.rates.realised(process, &h, &f.reached, ctx.calendar.date(day));
+                }
+                hits.push((slot, process, f.reached));
+            }
+        }
+        self.work.follows = follows;
         hits.sort_by_key(|(slot, process, _)| (slot.get(), *process));
         let mut i = 0;
         while let Some((slot, _, _)) = hits.get(i) {

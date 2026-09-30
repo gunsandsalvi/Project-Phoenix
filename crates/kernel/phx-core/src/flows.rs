@@ -107,6 +107,31 @@ impl FlowBufs {
         self.chunks.get_mut(..used).unwrap_or_default()
     }
 
+    /// The last chunk — what the day made beside the chunks before it — cut into later chunks by its flows' declared
+    /// grouping cost, each a run of it in the order made, so grouping shares it across the pool and a payer's flows,
+    /// read chunk by chunk, stay in their made order.
+    pub fn split_last(&mut self, cost_per_flow: u64) {
+        let Some(last) = self.used.checked_sub(1) else { return };
+        let Some(n) = self.chunks.get(last).map(Vec::len) else { return };
+        let plan = phx_exec::ChunkPlan::of_rows(n, cost_per_flow);
+        if plan.len() <= 1 {
+            return;
+        }
+        if self.chunks.len() < last + plan.len() {
+            self.chunks.resize_with(last + plan.len(), Vec::new);
+        }
+        let (head, tail) = self.chunks.split_at_mut(last + 1);
+        let Some(made) = head.last_mut() else { return };
+        for (k, dst) in (1..plan.len()).zip(tail.iter_mut()) {
+            dst.clear();
+            if let Some(run) = made.get(plan.chunk(k)) {
+                dst.extend_from_slice(run);
+            }
+        }
+        made.truncate(plan.chunk(0).end);
+        self.used = last + plan.len();
+    }
+
     /// The buffers in chunk order.
     pub fn slices(&self) -> impl Iterator<Item = &[Flow]> {
         self.chunks.iter().take(self.used).map(Vec::as_slice)
@@ -135,7 +160,7 @@ impl FlowBufs {
         let n = ranges.count();
         let jobs: Vec<(&mut Vec<Flow>, &mut ChunkGroups)> =
             self.chunks.iter_mut().take(used).zip(self.groups.iter_mut()).collect();
-        phx_exec::pool::each(pool, jobs, |(flows, g)| {
+        phx_exec::each_chunk(pool, jobs, |(flows, g)| {
             let paying = |f: &Flow| if f.denomination == denom { ranges.of(f.payer) } else { n };
             counting_places(flows.iter().map(paying), n + 1, &mut g.starts);
             // Each flow placed at its range's next place, in the order made: a stable counting sort.
@@ -431,6 +456,33 @@ mod tests {
         assert_eq!(out, [0, 13, 0, 0], "slot 9 is the second of the third range");
         g.net(3, &ranges, &mut out);
         assert_eq!(out, [0, 0, 30, 0]);
+    }
+
+    #[test]
+    fn split_keeps_made_order_and_nets() {
+        let ranges = Ranges::new(4, &[64]);
+        let made = |split: bool| {
+            let mut bufs = FlowBufs::default();
+            bufs.reset(2);
+            bufs.chunks_mut()[0].push(flow((0, 3), (0, 4), 1));
+            // The day's own chunk: a payer's flows interleaved with others', as the stages made them.
+            bufs.chunks_mut()[1].extend((0..20_000_u32).map(|i| flow((0, i % 64), (0, (i * 7) % 64), i64::from(i))));
+            if split {
+                bufs.split_last(super::super::consts::FLOW_GROUP_COST);
+            }
+            bufs
+        };
+        let (whole, cut) = (made(false), made(true));
+        assert!(cut.slices().count() > 2, "the day's chunk is cut by its cost");
+        assert_eq!(cut.slices().flatten().collect::<Vec<_>>(), whole.slices().flatten().collect::<Vec<_>>());
+        let mut grouped = [whole, cut];
+        for b in &mut grouped {
+            b.group(None, &ranges, Denom::money(0));
+        }
+        let [a, b] = [&grouped[0], &grouped[1]].map(|g| Grouped::new(&[g], &ranges));
+        for r in 0..ranges.count() {
+            assert!(a.payers(r).eq(b.payers(r)), "range {r}'s payers in their made order");
+        }
     }
 
     #[test]

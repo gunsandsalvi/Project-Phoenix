@@ -241,8 +241,8 @@ pub fn meet(
     }));
     // Each place's sellers by price once for the meeting, and the places each seller stands in: a place's table is
     // kept from round to round and made again only once a seller in it has sold out and a buyer stands there.
-    let orders: Vec<Order> = phx_exec::pool::map(pool, places.len(), |p| {
-        places.get(p).map_or_else(Vec::new, |place| by_price(place, stalls))
+    let orders: Vec<Order> = phx_exec::for_chunks(pool, to_u32(places.len()), |p| {
+        places.get(to_usize(p)).map_or_else(Vec::new, |place| by_price(place, stalls))
     });
     let standing = Standing::of(places, stalls.len());
     let mut tables: Vec<Option<Table>> = std::iter::repeat_with(|| None).take(places.len()).collect();
@@ -267,7 +267,7 @@ pub fn meet(
         let open = (out.left.as_slice(), out.log_prices.as_slice());
         out.weighed += remake(pool, (places, &orders), (open, weights), &out.choosing, (&mut tables, &mut stale));
         let jobs: Vec<&mut [Choosing]> = out.choosing.chunks_mut(CHOICE_CHUNK).collect();
-        phx_exec::pool::each(pool, jobs, |chunk| choose(chunk, &tables, (tastes, lot, round)));
+        phx_exec::each_chunk(pool, jobs, |chunk| choose(chunk, &tables, (tastes, lot, round)));
         for c in out.choosing.iter().filter(|c| c.stall.is_none()) {
             // A buyer with money that has bought keeps its change; any other goes without what it still wants.
             if !(c.bought && matches!(c.want, Want::Money(_))) {
@@ -398,7 +398,7 @@ fn remake(
     };
     let made: Vec<(usize, &mut Option<Table>)> =
         tables.iter_mut().enumerate().filter(|(p, _)| todo.get(*p).is_some_and(|t| *t)).collect();
-    phx_exec::pool::each(pool, made, |(p, slot)| {
+    phx_exec::each_chunk(pool, made, |(p, slot)| {
         let kept = slot.take().and_then(|t| t.without_sold_out(open.0));
         *slot = kept.or_else(|| table((places.get(p)?, orders.get(p)?), open, w));
         if units.get(p).is_some_and(|u| *u)
@@ -558,10 +558,7 @@ fn serve_round(
         }
         sold_out
     };
-    let sold_out: Vec<Vec<u32>> = match pool {
-        Some(p) => p.map_items(jobs, serve_job),
-        None => jobs.into_iter().map(serve_job).collect(),
-    };
+    let sold_out: Vec<Vec<u32>> = phx_exec::map_chunks(pool, jobs, serve_job);
     sold_out.into_iter().flatten().collect()
 }
 
@@ -611,6 +608,14 @@ fn serve(
 
 fn to_usize(n: u32) -> usize {
     usize::try_from(n).unwrap_or(usize::MAX)
+}
+
+/// A count of places or buyers as a traversal's chunks.
+fn to_u32(n: usize) -> u32 {
+    match u32::try_from(n) {
+        Ok(n) => n,
+        Err(_) => phx_num::capacity_exceeded!("a traversal's chunks", u32::MAX, n),
+    }
 }
 
 #[path = "meet_tests.rs"]

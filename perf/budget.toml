@@ -302,6 +302,43 @@ counter = "fin.terms.bytes_per_id"
 value = 51
 direction = "down"
 
+# Chunk plans (S1.169, 2026-10-01; `tools/bench.sh -F pool`): each day type's dispatches (`[day.*] barriers`) back to
+# back, each handing out 32 chunks, then a plan of real work over 4 M rows. A dispatch is one broadcast of the work to
+# the workers, the caller working beside them and spinning for the runs still inside rather than sleeping: 4.4–5.8 µs
+# on the wall, a quarter above the highest (the step's 5 is the middle of what this machine gives; before, the caller
+# slept on the pool's lock and a dispatch cost 111 µs). Workers spin 0.14–0.17 µs a dispatch between back-to-back ones,
+# within the 20 µs bound; the work keeps 3.0–3.3 of the four cores busy.
+
+[[ratchet]]
+counter = "fin.pool.dispatch_us"
+value = 7.3
+direction = "down"
+
+[[ratchet]]
+counter = "fin.pool.spin_us"
+value = 20
+direction = "down"
+
+[[ratchet]]
+counter = "fin.pool.busy_hundredths"
+value = 270
+direction = "up"
+
+[[ratchet]]
+counter = "fin.pool.barriers_b"
+value = 40
+direction = "down"
+
+[[ratchet]]
+counter = "fin.pool.barriers_nb"
+value = 20
+direction = "down"
+
+[[ratchet]]
+counter = "fin.pool.barriers_h"
+value = 48
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

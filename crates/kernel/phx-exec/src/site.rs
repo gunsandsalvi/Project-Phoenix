@@ -12,6 +12,18 @@ pub struct Site {
 
 thread_local! {
     static CURRENT: Cell<Option<Site>> = const { Cell::new(None) };
+    /// Whether this thread is running a chunk, when a dispatch from it would wait on the workers it occupies.
+    static IN_CHUNK: Cell<bool> = const { Cell::new(false) };
+}
+
+/// Marks this thread as running a chunk, or no longer.
+pub(crate) fn set_in_chunk(running: bool) {
+    IN_CHUNK.with(|c| c.set(running));
+}
+
+/// Whether this thread is running a chunk.
+pub(crate) fn in_chunk() -> bool {
+    IN_CHUNK.with(Cell::get)
 }
 
 /// Records what this thread is about to run.
@@ -21,6 +33,11 @@ pub fn enter(site: Site) {
 
 pub fn leave() {
     CURRENT.with(|c| c.set(None));
+}
+
+/// Restores what this thread was running before a chunk, or nothing.
+pub(crate) fn enter_or_leave(site: Option<Site>) {
+    CURRENT.with(|c| c.set(site));
 }
 
 /// What this thread was running, read by the application's panic hook and nothing else.

@@ -4,12 +4,157 @@
 //! each, so each range's worker reads only its own. Pieces are fixed by the inputs' lengths, counted and scattered in
 //! parallel into disjoint positions, so the result is the same whatever the workers.
 
+use std::marker::PhantomData;
 use std::mem::MaybeUninit;
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering};
 
 use phx_num::violation;
 
 use crate::consts::RADIX_CHUNK;
 use crate::pool::{Pool, each, map};
+use crate::unwind::Payload;
+
+/// Two slices of one length, their items at each index handed out once, to whichever thread asks next: a dispatch's
+/// chunks, each writing only the items at its own index. The cursor gives each index once, so each pair of
+/// references it returns is the only one to its items.
+pub(crate) struct Cursor<'a, A, B> {
+    left: *mut A,
+    right: *mut B,
+    len: usize,
+    taken: AtomicUsize,
+    slices: PhantomData<(&'a mut [A], &'a mut [B])>,
+}
+
+// SAFETY: an item is reached only through its index, which the cursor hands to one thread; the items are `Send`.
+unsafe impl<A: Send, B: Send> Sync for Cursor<'_, A, B> {}
+
+impl<'a, A> Cursor<'a, A, ()> {
+    /// A cursor over one slice, its other side holding nothing.
+    pub(crate) fn one(items: &'a mut [A]) -> Cursor<'a, A, ()> {
+        // Zero-sized items need no storage: a dangling, aligned pointer reaches every index.
+        let right = std::ptr::NonNull::<()>::dangling().as_ptr();
+        Cursor { left: items.as_mut_ptr(), right, len: items.len(), taken: AtomicUsize::new(0), slices: PhantomData }
+    }
+}
+
+impl<'a, A, B> Cursor<'a, A, B> {
+    /// A cursor over two slices of one length, borrowed mutably for as long as it lives.
+    pub(crate) fn new(left: &'a mut [A], right: &'a mut [B]) -> Cursor<'a, A, B> {
+        if left.len() != right.len() {
+            violation!(clause = "TIME.6", "a cursor over slices of two lengths", left = left.len());
+        }
+        let len = left.len();
+        Cursor {
+            left: left.as_mut_ptr(),
+            right: right.as_mut_ptr(),
+            len,
+            taken: AtomicUsize::new(0),
+            slices: PhantomData,
+        }
+    }
+
+    /// The next index not yet handed out and its items, or none once every index has been.
+    pub(crate) fn next(&self) -> Option<(usize, &'a mut A, &'a mut B)> {
+        let at = self.taken.fetch_add(1, Ordering::Relaxed);
+        if at >= self.len {
+            return None;
+        }
+        // SAFETY: `at` is below both slices' length and handed out once, so these are the only references to its
+        // items, and the slices stay borrowed mutably for `'a`.
+        Some(unsafe { (at, &mut *self.left.add(at), &mut *self.right.add(at)) })
+    }
+}
+
+/// A dispatch's state its workers share: whether it has closed, the workers inside it, and the first panic any run
+/// raised.
+struct Latch {
+    closed: AtomicBool,
+    active: AtomicUsize,
+    panic: AtomicPtr<Payload>,
+}
+
+impl Latch {
+    /// Keeps the first panic raised; a later one is dropped, as the run stops with the first.
+    fn hold(&self, payload: Payload) {
+        let boxed = crate::unwind::held(payload);
+        if self.panic.compare_exchange(std::ptr::null_mut(), boxed, Ordering::AcqRel, Ordering::Acquire).is_err() {
+            // SAFETY: `boxed` came from `Box::into_raw` just above and was never shared.
+            drop(unsafe { Box::from_raw(boxed) });
+        }
+    }
+}
+
+/// The work a dispatch hands its workers: where it lies and the function that runs it, followed only while the
+/// dispatch is open.
+struct Work {
+    data: *const (),
+    call: unsafe fn(*const ()),
+}
+
+// SAFETY: the work is `Sync`, and a worker follows the pointer only between counting itself in and out of a dispatch
+// that was open when it counted in, while its caller waits.
+unsafe impl Send for Work {}
+// SAFETY: as above.
+unsafe impl Sync for Work {}
+
+/// Runs the work `data` points to.
+///
+/// # Safety
+/// `data` points to an `F` alive for the call.
+unsafe fn call<F: Fn() + Sync>(data: *const ()) {
+    // SAFETY: the caller's promise.
+    unsafe { (*data.cast::<F>())() }
+}
+
+/// `each` run on the calling thread and on whichever workers of `threads` wake while there is work, returning once no
+/// run is left inside it. The caller works beside the workers, closes the dispatch once `each` returns to it — the
+/// work is then all taken — and spins for the runs still inside rather than sleeping on a lock, whose waking costs a
+/// dispatch tens of microseconds; a worker that wakes after the close leaves without running. A panic in any run is
+/// raised in the caller once no run is inside. Each worker runs `after` once out of the dispatch: the pool's spin.
+pub(crate) fn run_everywhere<F: Fn() + Sync>(
+    threads: &rayon_core::ThreadPool,
+    each: &F,
+    after: impl Fn() + Send + Sync + 'static,
+) {
+    let latch = Arc::new(Latch {
+        closed: AtomicBool::new(false),
+        active: AtomicUsize::new(0),
+        panic: AtomicPtr::new(std::ptr::null_mut()),
+    });
+    // The work is kept as a pointer with no lifetime; the caller does not return, and so `each` stays borrowed, until
+    // the dispatch has closed and no worker is inside it.
+    let work = Work { data: std::ptr::from_ref(each).cast::<()>(), call: call::<F> };
+    let theirs = Arc::clone(&latch);
+    threads.spawn_broadcast(move |_| {
+        let work = &work;
+        theirs.active.fetch_add(1, Ordering::SeqCst);
+        if !theirs.closed.load(Ordering::SeqCst) {
+            // SAFETY: the dispatch was open after this worker counted itself in, so its caller is still waiting and
+            // the work it points to is alive.
+            let run = || unsafe { (work.call)(work.data) };
+            if let Err(payload) = catch_unwind(AssertUnwindSafe(run)) {
+                theirs.hold(payload);
+            }
+        }
+        theirs.active.fetch_sub(1, Ordering::SeqCst);
+        after();
+    });
+    let mine = catch_unwind(AssertUnwindSafe(each));
+    latch.closed.store(true, Ordering::SeqCst);
+    while latch.active.load(Ordering::SeqCst) > 0 {
+        std::hint::spin_loop();
+    }
+    if let Err(payload) = mine {
+        resume_unwind(payload);
+    }
+    let raised = latch.panic.swap(std::ptr::null_mut(), Ordering::AcqRel);
+    if !raised.is_null() {
+        // SAFETY: a non-null pointer on the latch came from `Box::into_raw` in `hold` and is taken once, here.
+        resume_unwind(*unsafe { Box::from_raw(raised) });
+    }
+}
 
 /// Items grouped by bucket, each bucket's items in input order, with where each bucket starts; kept across days so
 /// a day partitions without allocating once the heaviest day has sized it.

@@ -925,8 +925,11 @@ their payers' ranges stably (`FlowBufs::group`, a counting sort), so a payer's f
 order they were made however the day is cut into chunks; its lots are drawn in that order and its payments ranked by
 (order, lot, place). The outcome is the same for any chunking and any number of workers. The employers', spenders' and hazards' wheels are taken on the
 pool and hiring's searches run on it in fixed chunks (`SEARCH_CHUNK`), each returning in its items' order. The families
-make their dues, and the hazards' bookings are followed, in turn until the kernel's chunk plans (S1.169) give a
-traversal to run them on the pool.
+make their dues on the pool, a family a chunk into its own chunk of the day's flows, each family's contracts due
+taken first; what the day's stages made after them is cut into later chunks by its flows' declared grouping cost
+(`FlowBufs::split_last`), in the order made, so grouping spreads over the pool. The hazards' bookings due are taken
+process by process, followed on the pool by runs of households in slot order (`Follows`, kept from day to day), and
+their bookings, events and outcomes applied after, household by household and each household's processes in order.
 
 ### 6.3 Traversals
 
@@ -942,8 +945,8 @@ left-balanced pairwise tree whose shape depends only on the number of results. R
 11-bit digits, skipping a digit every key shares, with a stable comparison sort below 2 048 pairs. `gather`,
 `KeyedReduce` and `radix_sort` take the pool as an option and give the same result without one. The pool pins each
 worker to a core whose `cpu_capacity` is at least half the largest (all allowed cores when capacities cannot be
-read; a pin refused leaves the worker unpinned and counted); idle workers spin a bounded number of rounds before
-parking. Only `pool.rs` and `site.rs` read a worker's index; atomics and threads exist only inside `phx-exec` and
+read; a pin refused leaves the worker unpinned and counted); idle workers spin 20 µs before parking (K-11). Only
+`pool.rs` and `site.rs` read a worker's index; atomics and threads exist only inside `phx-exec` and
 never appear in its API. Wall time comes from an injected `Clock` and reaches counters and the application only
 (TIME.11).
 
@@ -1462,7 +1465,7 @@ reads only primary columns and the indexes rebuilt before it; one that reads ano
 returns its rows, or, where it can fail, its rows or why (`RebuildRows`); a failure stops the load naming the store and
 field (`RebuildError`, `failed_rebuild_names_store`). The pass reports each index's rows (`Rebuilt`, a `StoreStats`).
 A large rebuild cuts its rows into slot ranges and joins them in range order (`by_ranges`), the same for any workers
-(`rebuild_same_for_any_workers`), until the chunk plans take it (S1.169).
+(`rebuild_same_for_any_workers`); `phx-store` sits below the pool, so the owners run the ranges on K-11's `for_plan`.
 
 **The round-trip harness** (`roundtrip.rs`): `roundtrip(&store)` saves a store, reads it back, runs the pass, and
 holds the copy's logical hash to the store's and the copy to the store: each index the day kept is equal to the one
@@ -1492,14 +1495,64 @@ workers (`hash_ms` 650, the step's bound on three phone cores).
 
 ### 7.2 phx-exec
 
-Status: planned (S1.169–S1.171)
+Status: K-11 built (S1.169); K-12 and K-14 planned (S1.170, S1.171)
 
 #### K-11 Chunk plans
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.169).
+Every traversal of the day is one dispatch over chunks whose bounds depend only on rows and declared costs, run inline
+when small, each chunk's result at its index; there is no task per item, idle workers spin at most 20 µs, and barriers
+and spin are counted. Results are the same for one to eight workers.
 
-**Today** (`pool.rs`, `traverse.rs`, `gather.rs`, `tree.rs`, `radix.rs`): the pool and the traversals of §6.3.
+**Plans** (`plan.rs`): a `ChunkPlan` is the bounds of its chunks over a traversal's rows and the cost they declare.
+`new(rows, cost_per_row, rows_per_chunk)` closes a chunk only where a table chunk ends, so writes stay chunk-local;
+`over_slots` does so over sorted slots (an agenda's rows); `of_rows` cuts a buffer of no table into even runs. A chunk
+closes once its cost reaches `CHUNK_COST` (200 µs of declared cost), or the share of the whole that gives each of
+`POOL_MAX_WORKERS` (8) four chunks where that is smaller, so a plan balances on any worker count while its bounds never
+read one. `cut`, `cut_slots` and `cut_rows` cut a kept plan again without allocating.
+
+**Dispatch** (`pool.rs`): one broadcast a dispatch; each worker takes the next index from a shared cursor
+(`partition::Cursor`, which hands each index to one thread and so the only reference to its items) until none is
+left, and writes only that index's slot of the caller's buffer, so results lie at their chunk's index whichever worker
+made them. A dispatch from inside a chunk is refused (TIME.6): it would wait on the workers its own dispatch holds.
+A chunk's thread names the chunk in its site (`site::current`), inherited from the caller's, for a violation's report.
+After a dispatch idle workers spin for `SPIN_US` (20 µs), the rounds timed once at the pool's start on the CPU clock,
+then park; the spin is counted in nanoseconds (`PoolUsage::spun`). Where the system gives no CPU clock, workers park
+at once.
+
+**Traversals** (`traverse.rs`): `for_each_chunk(pool, items, f)` and `for_each_pair(pool, (a, b), f)` run a chunk an
+item (or a pair of items at one index) of the caller's own slices, allocating nothing; `for_plan(pool, plan, out, f)`
+runs a plan's chunks into the caller's buffer, inline on the calling thread over the same chunks in order when no pool
+is given or the plan declares less than `INLINE_BELOW` (100 µs), so the result is the same either way;
+`for_agenda` runs a plan over an agenda's slots. `for_chunks`, `map_chunks` and `each_chunk` return or take owned
+values and allocate their results a dispatch; the kernels that still use them (settlement's passes, the meetings,
+hiring's search) move to kept buffers with their bases (S1.248, S1.306, S1.321). No world crate reaches the pool but
+through these (PC-97, now with no admitted site); `phx-exec` alone holds threads and atomics (PC-04).
+
+**Users today**: the families' dues, a family a chunk (`for_each_pair` over the families and their flows' chunks);
+the day's own flows split by their grouping cost (`FlowBufs::split_last`) and grouped a chunk each; the hazards'
+follows over a kept plan of the day's bookings (`for_plan`); firms' making and input orders over their slots
+(`for_agenda`, declared at a production visit's cost); the save's frames sealed a frame a chunk, its two stores written
+one after the other since each seals on the pool. The large rebuilds (links, wheel, agenda, terms index) run their
+ranges on `for_plan` when their bases come; `phx-store`'s `by_ranges` cuts them below the pool.
+
+**Waiting**: rayon's own broadcast puts the caller to sleep on a lock and wakes it when the last worker ends, which
+cost 45–110 µs a dispatch on the bench machine. A dispatch instead hands the workers one job each without waiting
+(`partition::run_everywhere`), works its chunks on the calling thread beside them, then closes the dispatch and spins
+only for the workers still inside a chunk; a worker whose job starts after the close leaves without running, and a
+worker's spin is the tail of its job, so a dispatch injects one job a worker. A panic in any chunk is raised in the
+caller once no worker is inside, and a chunk's thread leaves its site and chunk mark on the way out, even unwinding.
+
+**Volumes and ratchets** (`tools/bench.sh -F pool`): each day type's dispatches (`[day.*] barriers`, 40 / 20 / 48)
+back to back, each handing out 32 chunks, then a plan of real work over 4 M rows. A dispatch costs 4.4–5.8 µs on the
+wall (`[fin.pool] dispatch_us` 7.3; the step's 5 sits within what this machine gives); workers spin 0.14–0.17 µs a
+dispatch between back-to-back ones (`spin_us` 20, the bound); the work keeps 3.0–3.3 of four cores busy
+(`busy_hundredths` 270, only rises); `barriers_b` 40, `barriers_nb` 20, `barriers_h` 48. At 1 000 000 persons over one
+day, settlement's span is 384 ms on four workers against 436 ms on one (the second day 595 against 624), 1.06–1.12
+busy cores: its grouping went from 9.7 ms on one core to 3.4 ms on 3.8, and its passes that follow run on one thread
+until their bases move (S1.248).
+
+**Extension points**: one dispatch per pass over a chunk plan (S1.170); a sweep is a chunk plan over its slice
+(S1.171); the wheel's takes (S1.225); settlement (S1.248); meeting jobs (S1.306); the searchers' draws (S1.321).
 
 #### K-12 Partitioned apply
 
@@ -1523,10 +1576,10 @@ planned (S1.171).
 The counters measure the run and never reach the world: nothing the world decides reads them. A span of the trace
 (§14.7) reads the process at its two ends (`trace::Reading`) and marks its end with what it spent (`trace::Spent`):
 its items where it has them (`span_items`), every thread's CPU (`CLOCK_PROCESS_CPUTIME_ID`) and page faults
-(`getrusage(RUSAGE_SELF)`), the pools' chunks, dispatches and spin, and its allocations. CPU and faults are read for
+(`getrusage` of `RUSAGE_SELF`), the pools' chunks, dispatches and spin, and its allocations. CPU and faults are read for
 the whole process at the span's ends, never at a chunk's: that sum is every worker's work and its spin between
 dispatches, the same for any number of workers, and a chunk pays only one relaxed add to the process's chunk count
-(`pool::counted_chunk`, around every item `for_each` runs). Reading each worker's own clock at each chunk's ends
+(`pool::counted_chunk`, around every chunk a dispatch runs). Reading each worker's own clock at each chunk's ends
 (two `CLOCK_THREAD_CPUTIME_ID` and two `RUSAGE_THREAD` reads) cost about 900 ns a chunk on the build machine, since
 none of them is served without a system call. A count the system does not give is missing, never zero. When nothing is
 traced, a span reads nothing.
@@ -3599,7 +3652,7 @@ credited while the world holds it (GEN.10).
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `Streams`, `open_keyed` and `ObserverDraws` named outside their listed files (§5.3) |
     | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
     | PC-96 | in a hot module of `phx-world` or a system (PC-92's hot set; the kernel's crates implement the traversals and are not read), a whole-table walk: a call of `live_slots`, `live_every`, `open_slots`, `firm_slots`, `deposits_of`, `money_totals` or `issuer_held`, or of `all`, `totals` or `money` with no argument, or a range `0..x.len()`, `0..x.count()` or `0..x.rows()`; admitted inside what is handed to `for_chunks`, `for_agenda` or `apply_by_range`, in a function carrying `#[sweep(store, cycle = …)]` or `#[opening]`; a `#[sweep]` without its cycle is refused; its exceptions file admits today's sites (S1.121) |
-    | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs` (planned, S1.160), `IntentBuf`, `OptionSet` (planned, S1.154)); tests are not read; its exceptions file admits today's sites (S1.122) |
+    | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs` (planned, S1.160), `IntentBuf`, `OptionSet` (planned, S1.154)); tests are not read; its exceptions file admits no site since S1.169 |
     | PC-98 | in PC-92's hot set, outside functions marked `#[opening]` (`phx-macros`: a marker on a function, emitted unchanged, refused on anything else), a read by name: a call of the register's readers (`count`, `fixed`, `table1`, `table2`, `products`, `stored_by_id`, `value`) or any method whose first argument is a string literal on a receiver held as `register` or `reg`; `==` or `!=` with a string literal; `.starts_with`, `.ends_with` or `.contains` of a string literal. A primitive, kind, family, reason or market is read by its handle, bound in the opening (Law 10); a literal in a message is no comparison; its exceptions file admits today's sites (S1.123) |
     | PC-99 | in PC-92's hot set, outside functions marked `#[cold]` (an error path) or `#[opening]`, the syntax of allocation: `Vec::new`, `Vec::with_capacity`, `Box::new`, `String::new`, `String::from`, `vec!`, `format!`, and `.collect()`, `.to_vec()`, `.to_owned()`, `.to_string()`, `.clone()`; a push into a kernel buffer is admitted, and the arguments of `violation!` and `capacity_exceeded!` are tokens, not calls; what the syntax cannot see the bench's allocation counter measures (K-15); its exceptions file admits today's sites (S1.124) |
     | PC-100 | in a world crate, a field of a struct deriving `Saved` (not marked `#[saved(skip)]`) that names a party or row by where it is now: a map or set (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map) keyed by `u32`, `PartyKey`, `PartyId`, `Slot` or an edge slot, or by a tuple they lead; a `PartyMap`; a `Vec<(PartyKey, _)>`. It keys by a generation-checked reference (`PartyRef`, `GenRef<T>` (planned, S1.159), `ContractRef` (planned, S1.174)) or becomes its base's column (S1.125). And in a world crate outside tests, an absent value read as zero — `unwrap_or(0)`, `unwrap_or(0.0)`, `unwrap_or(…::ZERO)`, `map_or(0, …)`, `unwrap_or_default()` — outside a function marked `#[absent_is_zero(reason = "…")]` (`phx-macros`: a marker on a function whose reason is not empty, for an absence that truly is zero, a count of an entry not there) (S1.126); its exceptions file admits today's sites. And, with no exception, a literal capacity: a `const` named `*_ROWS`, `*_WORDS`, `*_CAPACITY` or `INSTRUMENTS` whose value is a shift of literals outside `phx-core`'s `capacity.rs`, or a shift of literals handed to a store's constructor (`Column`, `Parties`, `KindStore`, `Table`, `SlotAlloc`, `Region`, `EdgeTable`, `BlockPool`, `Persons`, `ChunkArena`); a chunk size stays an engineering constant (S1.127) |

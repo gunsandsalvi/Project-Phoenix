@@ -132,7 +132,17 @@ fn config(args: &RunArgs) -> Result<WorldConfig, String> {
             Some(n) => phx_num::Missing::Present(representation(n)?),
             None => phx_num::Missing::Absent,
         },
+        pool: pool_spec(args.workers),
     })
+}
+
+/// The cores the world's pool runs on: the device's, or the first of them where a run asks for fewer workers.
+pub(crate) fn pool_spec(workers: Option<usize>) -> phx_exec::PoolSpec {
+    let mut spec = phx_exec::PoolSpec::detect();
+    if let Some(n) = workers {
+        spec.cores.truncate(n);
+    }
+    spec
 }
 
 /// The representation of so many persons.

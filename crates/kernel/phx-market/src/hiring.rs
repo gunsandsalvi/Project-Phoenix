@@ -152,9 +152,9 @@ pub fn search(
     // A vacancy's pull is its wage to the weight, reckoned once for every seeker who sees it.
     let pull: Vec<f64> = vacancies.iter().map(|v| libm::pow(v.wage, wage_weight)).collect();
     let chunks: Vec<&[Seeker]> = seekers.chunks(SEARCH_CHUNK).collect();
-    phx_exec::pool::map(pool, chunks.len(), |c| {
+    phx_exec::map_chunks(pool, chunks, |chunk| {
         let mut out = Vec::new();
-        for s in chunks.get(c).copied().unwrap_or(&[]) {
+        for s in chunk {
             let mut d = draws(s.subject);
             let sends = whole + u64::from(open_unit(&mut d) < rest);
             let reach: Vec<(u32, f64)> = standing
