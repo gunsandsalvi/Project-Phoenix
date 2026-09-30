@@ -247,8 +247,9 @@ activates bases.
 | **0 Foundations** | S0.01–S0.28 | done: the workspace, the foundation and kernel crates, the map, the setup and the persistence |
 | **1 The circular flow**, done | S1.01–S1.14, S1.17–S1.23, S1.26 | done: the Stage 1 systems' declarations and rules, the meter, one representation, the core and the bench, money and settlement, markets and goods on the core, one opening dataset per profile, Stage 0's world on the core, the decision core |
 | **1 The core: frame and tools** | none (S1.100–S1.133 done) | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
-| **1 The core: repairs** | S1.135–S1.158 (S1.134 done) | defects that stand apart from any base |
+| **1 The core: what the bases stand on** | S1.137, S1.141–S1.146, S1.152, S1.153, S1.156 | the repairs a base depends on, built first: kinds' declared features, handles bound at assembly, the pool in settlement and the wheel takes, one decision runtime |
 | **1 The core: bases** | S1.159–S1.360 | every store, kernel and index the finished world needs, each designed for its last user and measured at the design point, each followed by the migration of its current users |
+| **1 The core: repairs** | S1.135–S1.158 but those above (S1.134 done) | defects that stand apart from any base, repaired after the bases where a base has not already fixed them |
 | **1 Stage 1 on the core** | S1.400–S1.499 | Stage 0's and Stage 1's mechanisms as rules over the bases, Stage 1's remaining clauses, the opening's derivations, and the Stage 1 gate |
 | **2 Credit and failure** | S2.100–S2.216 | losses and provisions, trade credit, the firm's lifecycle, estates in kind, housing and places, bank funding, capital and supervision, energy, the credit bureau and filed accounts, personal insolvency; the gate |
 | **3 Money and capital markets** | S3.100–S3.219 | the money market, the central bank and the treasury in full, sovereign and corporate debt, equity, dealers, funds, non-bank lenders, indices, ratings; the gate |
@@ -288,8 +289,9 @@ The steps of each stage, in build order:
   point's ratchets in `perf/budget.toml` · S1.133 the world run's counters for the core's rules · S1.134 an
   agency's withheld tax opens in its collector's family.
 - **Stage 1, the core: frame and tools**: none left
-- **Stage 1, the core: repairs**: S1.135 A firm estate's project completes at its own site · S1.136 A failed goods move stops the run or fails whole, never a zero cost · S1.137 Missing technology, law or price refused, never zero · S1.138 Impossible values stop the run at the conversion · S1.139 Absent preferences, standings, standards and accounts matched · S1.140 Balances written at endings become flows · S1.141 Legal forms declare whether they have owners and who owns them · S1.142 Kinds declare their place · S1.143 The heirless destination declared by each country's law · S1.144 Kinds' features read as declared · S1.145 Families and kinds bound to handles at assembly · S1.146 The register read by handles on day paths · S1.147 The activity the state's agencies produce declared · S1.148 Numeric literals in mechanisms declared · S1.149 An employment's notice cleared on every close · S1.150 Measurement histories held by declared horizons · S1.151 Dates placed by the calendar, not counted · S1.152 Settlement and the day's flows on the pool · S1.153 Wheel takes, hiring's search and hazards' follow on the pool · S1.154 Production, orders and the opening's needs return actions, not floors · S1.155 The bill offer returns an action; no floor by comparison · S1.156 The duplicated decision runtime deleted · S1.157 Stale comments corrected · S1.158 Vacuous `phx-check` rules re-aimed
+- **Stage 1, the core: what the bases stand on**: S1.137 Missing technology, law or price refused, never zero · S1.141 Legal forms declare whether they have owners and who owns them · S1.142 Kinds declare their place · S1.143 The heirless destination declared by each country's law · S1.144 Kinds' features read as declared · S1.145 Families and kinds bound to handles at assembly · S1.146 The register read by handles on day paths · S1.152 Settlement and the day's flows on the pool · S1.153 Wheel takes, hiring's search and hazards' follow on the pool · S1.156 The duplicated decision runtime deleted
 - **Stage 1, the core: bases**: S1.159 Generation references for every table · S1.160 Day buffers · S1.161 The day plan: buffers' lives and shared pages · S1.162 The save contract: the rebuild pass and the round-trip harness · S1.163 The world hash as a tree of frame hashes · S1.164 The sum-tree · S1.165 Keyed indexes maintained by events · S1.166 Epoch flags and change sets · S1.167 Horizon rings · S1.168 The interner with reference counts · S1.169 Chunk plans and bounded spin · S1.170 Partitioned apply with its sweep hooks · S1.171 Declared sweeps and rolling cursors · S1.172 Apportionment with a named residue · S1.173 The four money viewpoints · S1.174 Typed references and the contract link's widths · S1.175 24-bit unit ids · S1.176 Stream families in the key, slot ordinals in the counter · S1.177 Stream declarations by family, and the families' draw types · S1.178 The calendar's day facts · S1.179 Dated policy schedules and rule handles · S1.180 The kind catalogue · S1.181 The family codes of the finished world · S1.182 Kinds, families and capacities read from the catalogue · S1.183 The units registry · S1.184 Goods and capital classes issued by the registry · S1.185 The stage table · S1.186 The day runner walks the stage table · S1.187 Networks and routes · S1.188 The day's use of the network as pair flows · S1.189 Freight's routes onto the route table · S1.190 Cells and the ground things stand on · S1.191 The deposits register · S1.192 Weather history and catastrophe footprints · S1.193 The weather's stores onto the ring and the footprint · S1.194 The party directory: generations, tombstones and successors · S1.195 The world's parties onto the directory · S1.196 Kind stores with typed columns at fixed byte maps · S1.197 Windowed groups: columns that exist only within a dated window · S1.198 Firms' record words to typed columns · S1.199 Households' record words to typed columns · S1.200 Equity and income lines onto kind columns · S1.201 Banks onto the bank kind: lending records and loan books · S1.202 Banks' reserve targets onto the bank kind · S1.203 The extraction flag as a firm flag bit · S1.204 Carriers' modes read from their ways · S1.205 Agencies onto the agency kind: staff targets and budgets · S1.206 The remaining kinds onto phx-pop; phx-core's KindStore deleted · S1.207 Persons as parties in their households · S1.208 Persons onto the person kind · S1.209 Offices and founding preferences · S1.210 Office holders and founding preferences onto offices · S1.211 The per-day party cache · S1.212 The stored log: immutable day segments on storage · S1.213 The event log: public events resident, occurrences stored · S1.214 Hazard events, weather records and deaths onto the event log · S1.215 The records store: series records by vintage, as published · S1.216 Filed accounts encoded per block · S1.217 The credit bureau's records: sparse summaries and adverse events · S1.218 Releases, filed earnings, auction history and the opening's present values onto records · S1.219 The day ledger: the representation reported every day · S1.220 The per-day records onto the day ledger · S1.221 Statistics accumulators · S1.222 Sample frames and saved samples · S1.223 Life records on storage within their horizon · S1.224 Tallies and votes · S1.225 The due wheel in phx-agenda with due-day runs · S1.226 Dated families' takes onto the phx-agenda wheel · S1.227 The decision agenda: one entry a party, a next day a reason · S1.228 Firms' production visits onto the decision agenda · S1.229 Extraction reviews onto the decision agenda · S1.230 Shipping onto the decision agenda · S1.231 Investment reviews onto the decision agenda · S1.232 Employers' postings onto the decision agenda · S1.233 Households' spending onto the decision agenda · S1.234 Employers' pay rounds onto the decision agenda · S1.235 Hazards drawn ahead on the agenda · S1.236 Today's hazards onto the agenda · S1.237 Messages and notices · S1.238 Notices, applications and offers onto messages · S1.239 The trigger index · S1.240 Money accounts: one 20-byte row, no owner column, banknotes · S1.241 Account side slots: facilities, held amounts, links and statements · S1.242 Exact interest on accounts by Abel summation · S1.243 Money totals maintained in the settlement sweep · S1.244 Accounts and money passes moved onto the ledger · S1.245 Flow batches: 16-byte items, 24-bit denominations, link groups, the chains' entry points · S1.246 Card authorization and reason gates · S1.247 Flows moved from `phx-core` with their producers · S1.248 Settlement in `phx-ledger`: the `pending` sweep, short payers re-derived, outcome by place · S1.249 Settlement routed onto the ledger; failure maps onto the outcome by place · S1.250 Linked legs across currencies and correspondent settlement · S1.251 Dated commitments on both books · S1.252 Pending flows moved onto commitments and accounts' `pending` · S1.253 The levy engine: declared levy sets fused at emission, accrued by collector · S1.254 Settlement tallies by reason, fused in the sweeps · S1.255 Per-flow passes moved onto tallies and the declared payment order · S1.256 The agency's statistics passes moved onto accumulators · S1.257 The contract store: declared families, compact rows, codes and runs · S1.258 Chains and lazy block lists: the walked sides · S1.259 Column sweeps and book sides · S1.260 Dated families moved onto the contract store · S1.261 Side aggregates maintained on row events · S1.262 Staff, wage bills, owed balances and collateral moved onto side aggregates · S1.263 Terms, shapes and the day's due plans · S1.264 Reckoning and schedules moved onto shared plans · S1.265 Status, arrears and the day's transitions · S1.266 Arrears, grace, closes and default moved onto status · S1.267 Books, bulk side moves and the rows of a book · S1.268 Participations: sides held in shares · S1.269 Accruing statement contracts: invoice pairs, open and closed periods, carving · S1.270 Taxes moved onto the levy engine and collectors' payables · S1.271 Holdings of goods and physical units by holder · S1.272 Stocks' users moved onto holdings · S1.273 Unit totals and nature's net, maintained · S1.274 The place index · S1.275 The goods identity read from maintained totals · S1.276 Lots and cost flows, with realised gains · S1.277 Bounds and liens: committed, pledged, received under title · S1.278 Sales' covers and carriers' pledges moved onto bounds · S1.279 The instruments register · S1.280 Instrument holdings and holders by instrument · S1.281 The instrument events engine · S1.282 Bills moved onto instruments and their events · S1.283 Owners moved onto equity holdings · S1.284 Named units and what stands on a tile · S1.285 Capital classes: wear and maintained capacity · S1.286 Plant's wear and capacity moved onto capital classes · S1.287 Processes in progress: shipments, projects, production in flight, spells · S1.288 Shipments moved onto processes · S1.289 Standing rates realised lazily · S1.290 Cumulative output per way and its thresholds · S1.291 Production and spoilage moved onto standing rates · S1.292 Projects moved onto processes · S1.293 Deposits and extraction rights moved onto the register and holdings · S1.294 Catastrophes' losses found by place · S1.295 A firm's unit cost read once a day from the bases · S1.296 Standing offers and market instances · S1.297 Price points and ladders · S1.298 The shared admission hook · S1.299 The stall family in good-major blocks · S1.300 Posted prices onto standing offers · S1.301 The stall book: a sum-tree per good at its zone · S1.302 Closed borders read as a declared scope · S1.303 Stalls and the cheapest price onto the stall book · S1.304 The vacancy book and searchers · S1.305 Vacancies and searchers onto the vacancy book · S1.306 The posted-price meeting on the stall book's sum-trees · S1.307 The between-firm meeting on price levels from the stall book · S1.308 The world's purchases onto the meetings · S1.309 The sale as its payment: seller-range sweep and the (seller, good) batch · S1.310 Failed between-firm sales reversed before the close · S1.311 Booking and delivery onto the sales batch · S1.312 The call auction · S1.313 The bill auction onto the call auction · S1.314 The network call: a transport model over lines · S1.315 The continuous book with its closing call · S1.316 The dealer market · S1.317 The bilateral protocol · S1.318 The lending round onto the bilateral protocol · S1.319 The administered form · S1.320 The central bank's facilities onto the administered form · S1.321 Search and match · S1.322 Labour's rounds onto search and match · S1.323 Rationed queues · S1.324 Perishable daily capacity · S1.325 Services' capacity onto perishable capacity · S1.326 Prints, marks, fixings and market measures · S1.327 Traded sums and marks onto prints and marks · S1.328 Account lines (K-87) · S1.329 Income recognition onto lines · S1.330 Equity accounts and maintained net assets (K-88) · S1.331 The accounts audit onto recounts · S1.332 Carrying values, provisions and unrealised differences (K-89) · S1.333 Statements (K-90) · S1.334 Consolidation (K-90) · S1.335 Valuations and curves (K-91) · S1.336 Public series and methods (K-92) · S1.337 Public series onto the store · S1.338 Books and declared limits (K-93) · S1.339 Loan books and lenders' classes onto books · S1.340 Netting sets, margin and collateral (K-94) · S1.341 Exact linear aggregates (K-95) · S1.342 Estates' lifecycle (K-96) · S1.343 The ending kernel (K-97) · S1.344 Endings onto the ending kernel and estates' lifecycle · S1.345 Claims and the priority waterfall (K-98) · S1.346 Estates' payments onto the waterfall · S1.347 The resolution engine (K-99) · S1.348 The decision core (K-100) · S1.349 Decisions onto the decision core · S1.350 The attention kernel (K-101) · S1.351 Attention onto the kernel and the agenda · S1.352 Minds (K-102) · S1.353 The audit engine (K-103) · S1.354 Audit families onto the engine · S1.355 `phx-world` refuses stores and per-party passes · S1.356 Snapshots of every base (K-104) · S1.357 The investor schedule and position rule (K-105) · S1.358 The measurement recorder (K-106) · S1.359 The recorder routed at the day's close · S1.360 The core's close
+- **Stage 1, the core: repairs**, after the bases: S1.135 A firm estate's project completes at its own site · S1.136 A failed goods move stops the run or fails whole, never a zero cost · S1.138 Impossible values stop the run at the conversion · S1.139 Absent preferences, standings, standards and accounts matched · S1.140 Balances written at endings become flows · S1.147 The activity the state's agencies produce declared · S1.148 Numeric literals in mechanisms declared · S1.149 An employment's notice cleared on every close · S1.150 Measurement histories held by declared horizons · S1.151 Dates placed by the calendar, not counted · S1.154 Production, orders and the opening's needs return actions, not floors · S1.155 The bill offer returns an action; no floor by comparison · S1.157 Stale comments corrected · S1.158 Vacuous `phx-check` rules re-aimed
 - **Stage 1 on the core**: S1.400 Stage 1's macro reads frozen · S1.401 Hazards' chances and their following in sys-dem · S1.402 Outcomes on persons and households in sys-dem · S1.403 Extended households' members from the DHS · S1.404 Households and persons drawn by sys-dem · S1.405 Persons own their accounts and debts at the opening · S1.406 A household's payments drawn from its persons · S1.407 Banks opened by sys-bnk · S1.408 The central bank opened by sys-cb · S1.409 The treasury opened by sys-trs · S1.410 Agencies and the state pensions in payment opened by sys-soc · S1.411 The developing group's job tenure · S1.412 Jobs and working owners dealt by sys-lab at the opening · S1.413 Vacancies posted from the employer's own state · S1.414 Searchers apply from their own reservation · S1.415 Selection, offers and hires · S1.416 Pay rounds at contracts' review dates · S1.417 Layoffs, notice and separations · S1.418 SOC.3 pays the named person · S1.419 Retirement closes jobs · S1.420 The state pension claimed at retirement · S1.421 The benefit claimed on a lost job · S1.422 Working owners' hours, pay and leaving · S1.423 Public agencies' appropriation, funding and staff · S1.424 The state's purchases through its agencies · S1.425 The lending round · S1.426 A firm's rate for new debt as its own position · S1.427 A firm's shortfall borrowed from its own bank · S1.428 Default after grace · S1.429 The central bank's facilities and remittance · S1.430 A bank's request of the facilities · S1.431 The treasury's position and cash buffer · S1.432 Bills at auction · S1.433 Sovereign debt's maturities and holders at the opening · S1.434 A bill's discount accrued over its life · S1.435 Income and consumption tax rules in sys-tax · S1.436 Mining divisions apart · S1.437 Coal deposits' sizes and grades · S1.438 A way's graded inputs declared in content · S1.439 Graded inputs used and valued by content · S1.440 A firm's unit cost as a sys-frm rule · S1.441 Which way to run · S1.442 Capacity's check declared in the Units family · S1.443 Production on the firm's schedule · S1.444 Input orders against the stall book · S1.445 Services bought for what was made · S1.446 Spoilage on standing rates · S1.447 Extraction on its schedule · S1.448 Household spending on its schedule · S1.449 Posted-price marks by units sold · S1.450 Price reviews · S1.451 Firms' attention, and reviews paid in hours · S1.452 Households' attention to their stances · S1.453 Firms' outlooks and stances · S1.454 Households' outlooks and experience weights · S1.455 Management types' spread from the SCE panel · S1.456 Surveyed expectations at the snapshot · S1.457 Wear by use and age, on its kinks · S1.458 Investment on its occasion · S1.459 Projects bought from named producers, paid in stages · S1.460 How an investment is funded · S1.461 A firm enters a line by investing · S1.462 Hazards' damage from the damage functions · S1.463 Crops' yield response to weather · S1.464 Weather and catastrophes destroy crops and stocks at named places · S1.465 Coastal vessels from the IMO, MARAD and shipbuilding · S1.466 Carriers' room and empty repositioning · S1.467 Sellers ship when the gap pays · S1.468 Buyers ship when origin plus freight beats home · S1.469 Freight, basis and supply-shock reads · S1.470 The trade ways declared · S1.471 The trade firms' products at the opening · S1.472 Stockists and merchants · S1.473 Distributors between makers and households · S1.474 The price indices' accumulators and records declared · S1.475 Price indices chained and released · S1.476 Labour force, life table and money released · S1.477 National accounts by three measures · S1.478 Labour's reads · S1.479 Capital's reads · S1.480 Realised rates on the observer's panel · S1.481 Firms' ages at the opening · S1.482 Farms over the size classes · S1.483 Firms drawn at the opening by sys-frm · S1.484 The opening's plant on the steady path · S1.485 Defined-benefit pensions in payment at the opening · S1.486 Each firm's latest filed accounts at the opening · S1.487 The dwelling capital kind declared · S1.488 The opening dwellings held without a housing market · S1.489 Founding reviewed at the adults' attention · S1.490 Firm births · S1.491 Day zero: each party's opening decisions once · S1.492 `phx-world` holds routing only · S1.493 PC-107: rules live in their systems · S1.494 Estimators I: filters, dating, tails · S1.495 Estimators II: survival, regressions, spells, forecasts · S1.496 Credit, verdicts and fact reports · S1.497 Chain relationships computed and reported · S1.498 Stage 1's liveness checks and live reads · S1.499 The Stage 1 gate
 - **Stage 2**: S2.100 Stage 2's macro reads frozen · S2.101 Arrears notices and workout wakes · S2.102 Provisions from the pricing assessment · S2.103 The workout decision and restructuring offers · S2.104 Enforcement, collection and write-offs · S2.105 Covenant tests on received statements · S2.106 The loan-book valuer · S2.107 Loan sales and quotes on a loan side · S2.108 Filing decisions and the registry's filed accounts · S2.109 The credit bureau's records and the credit-record stage · S2.110 Bought records read by lenders' assessments · S2.111 Invoices on terms · S2.112 A seller's terms per buyer · S2.113 Paying early for the discount · S2.114 Overdue invoices and losses on named sellers · S2.115 Factoring closed invoices · S2.116 Write-downs of inventory and plant · S2.117 Credit lines drawn, repaid and cut · S2.118 A firm's funding decision · S2.119 A firm's payout · S2.120 A buyer's time request wakes its seller's terms review · S2.121 A firm in distress · S2.122 Insolvency tests and the duty to file · S2.123 Insolvency procedures: liquidation, or restructuring under a stay · S2.124 The plan, the creditors' votes by class and confirmation · S2.125 A firm's answer to a lender's offer · S2.126 Owners who answer without limit · S2.127 Goods aboard a failed carrier · S2.128 Trade-credit and firm measures · S2.129 Plant failures by age · S2.130 The plant review and its resale market · S2.131 Investment at the cost of money, and projects drawn in stages · S2.132 The insolvency law's classes, the owners' residual and the heirless destination · S2.133 Estate administration: what to sell and the descending ask · S2.134 Kin of adult children living elsewhere at the opening · S2.135 Inheritance in kind · S2.136 Holdings resolved and the estate's end · S2.137 Households' preference types, complete · S2.138 Whether and how much to work · S2.139 Dwellings, tenancies, land leases and landlords · S2.140 The opening's tenancies, lodgers, land leases and parcels · S2.141 The dwelling appraiser · S2.142 The opening's household loans' terms from the SCF · S2.143 Mortgage standards and offers as commitments · S2.144 Households borrow · S2.145 Sellers' listings and asks · S2.146 Where to live · S2.147 The decision to have a child reads the dwelling gap · S2.148 Moving within a country · S2.149 Job search in other regions · S2.150 Searching for a dwelling · S2.151 Bids and the negotiation · S2.152 The composite dwelling sale · S2.153 Lettings and rents · S2.154 Landlords buy and sell · S2.155 Land: sales, leases and auctions · S2.156 Builders and construction projects · S2.157 Commodities by grade: crops on land and their call · S2.158 Foreclosure · S2.159 Dwellings' wear and repair · S2.160 Infrastructure owned privately · S2.161 Housing's price and rent series · S2.162 Housing's invariants and measures · S2.163 Distributors' stock and storage bought as a service · S2.164 A household in arrears acts · S2.165 A household's answer to a lender's offer · S2.166 Entering personal insolvency · S2.167 A creditor's petition among the workout's options · S2.168 The personal insolvency procedure · S2.169 Buildings on held cells · S2.170 A builder's parcel and floors · S2.171 The opening's cities · S2.172 Travel: congestion and transit · S2.173 Households' vehicles · S2.174 Agglomeration in ways' yields · S2.175 Land by the parcel · S2.176 Settlements recognised · S2.177 Deposits by holder class, sight and term, each with its rate and terms · S2.178 The opening's deposits by holder class and product, and their rates · S2.179 The marginal cost of funds and the shadow cost of cash · S2.180 The liquidity buffer each bank chooses · S2.181 Deposit rates set by each bank · S2.182 Banks classed as borrowers in the lending round · S2.183 Interbank term loans asked for and chosen · S2.184 A bank short of funding acts in order of cost · S2.185 The facility request, reserves as the residue of payments, and failure for liquidity · S2.186 Capital in layers, and requirements computed from each bank's books · S2.187 The opening's bank capital: subordinated debt and its holders · S2.188 The capital buffer each bank chooses, and what it does near its line · S2.189 The capital a loan consumes · S2.190 Quotes, declines and standards read capital and liquidity · S2.191 A bank's decision to raise capital, recorded · S2.192 The supervisor and the resolution authority; tests, consequences and the solvency fact · S2.193 Deposit insurance and the resolution fund · S2.194 The opening's deposit-insurance and resolution funds · S2.195 Banks' safety as depositors see it, their choice of bank, and runs · S2.196 Resolution opened: the bank closed, its book valued, the hole written down by layer · S2.197 The acquirer's bid for a failed bank · S2.198 Invitations, the insurer's paying bank, and the authority's least-cost choice · S2.199 The transfer: insured deposits to a successor, the rest to an estate, the insurer and compensation paid · S2.200 Banks founded and licensed · S2.201 Macroprudential limits set by the supervisor · S2.202 Power plants, storage, fuels, the grid and its system operator · S2.203 The opening's power fleet, grid and owners · S2.204 The retail supply contract and the consumer's choice of supplier · S2.205 Retail suppliers post their tariffs · S2.206 Access to supply at the opening · S2.207 Supply begins: energy as an input in every way that uses it, and a household good driven by the weather · S2.208 Generators' offers, storage, and demand bids for the next day · S2.209 The wholesale market: one call a day per grid · S2.210 Delivery, balancing, losses and imbalances · S2.211 Load shedding with named losers · S2.212 Investment in plants, storage and lines · S2.213 Collective bargaining, unions and strikes · S2.214 The opening's unions, their members and their agreements · S2.215 Quarterly national accounts, with the financial and government sectors' value added · S2.216 The Stage 2 gate
 - **Stage 3**: S3.100 Stage 3's macro reads frozen · S3.101 The money market's markets and its network call at stage 8 · S3.102 Lenders' limits and spreads per counterparty · S3.103 Non-banks' counterparty outlooks and every lender's haircuts · S3.104 Banks' overnight reserve orders · S3.105 Term bids and offers in the money market · S3.106 Repo contracts: title, income passed back and re-use chains · S3.107 Repo margin calls and a defaulted repo's collateral sold · S3.108 Non-banks' cash placement · S3.109 A doubted name pays more or finds no lender; the money market's measures · S3.110 The market before the facility, and the bank that cannot pay · S3.111 The central bank's committee sets its rate · S3.112 The corridor follows the rate; the central bank's collateral framework · S3.113 The central bank's tenders inside the money market's call · S3.114 Reserve requirements held on average · S3.115 The lender of last resort · S3.116 The financing regime and the treasury's direct borrowing · S3.117 The central bank's income and its remittance · S3.118 Sovereign lines, tranches and indexed bonds · S3.119 The treasury's forward funding plan and its auction calendar · S3.120 Bidders' own schedules at sovereign auctions · S3.121 Bond auctions and the auction that fails · S3.122 The treasury's answer to a failed auction · S3.123 Debt service in the declared payment priority, and sovereign default · S3.124 The exchange offer after a default, holdouts and collective action · S3.125 Buybacks and switches · S3.126 The treasury makes good a central bank's loss · S3.127 The curve publisher and the day's discount-factor tables · S3.128 The treasury's and the sovereign debt's measures · S3.129 Debt instruments of every form, with covenants and seniority · S3.130 The issuer decides: size, tenor, form, walk-away and refinancing · S3.131 Bonds and paper among a firm's funding sources · S3.132 Banks' certificates, subordinated debt and contingent capital · S3.133 Underwriters and syndicates choose their risk · S3.134 Investors value debt and post their orders · S3.135 Book-built issues and taps · S3.136 Commercial paper rolled or not · S3.137 Missed payments and covenant breaches as events holders see · S3.138 Holders vote: acceleration and waivers · S3.139 Contingent capital converts or writes down at its trigger · S3.140 Syndicated loans: one set of terms, a contract for each lender · S3.141 Corporate and bank debt's measures · S3.142 The opening's sovereign bond lines, their holders and the curve publisher · S3.143 The opening's corporate and bank debt, paper and syndicated loans · S3.144 The opening's money market and the central bank's declared policy · S3.145 Share classes, free float and listing · S3.146 The opening's listed shares, their free floats and last closes · S3.147 Share books and the closing call · S3.148 Investors' equity values and orders · S3.149 Shorts only on covered units · S3.150 Equity events and shareholders last · S3.151 Payouts gain buybacks and record dates · S3.152 Share offerings: initial, secondary and pre-emptive · S3.153 Shares among a firm's funding sources · S3.154 A bank raises capital by issuing shares · S3.155 Shareholder meetings and votes · S3.156 Boards and chief executives appointed · S3.157 Groups: control, intra-group contracts and limited liability · S3.158 Households choose holdings · S3.159 Households' direct holdings at the opening · S3.160 A convertible's holder elects to convert · S3.161 Conversions into shares · S3.162 Equity measures · S3.163 Dealer desks as parties · S3.164 The opening's dealer desks and the pricing service · S3.165 Dealers' quotes · S3.166 The dealer markets for bonds, bills and paper · S3.167 Paper sold through dealers · S3.168 Interdealer calls · S3.169 Fixings of dealer markets · S3.170 The curve read from the day's fixings · S3.171 Primary dealers' agreements and bids · S3.172 The treasury reviews its primary dealers · S3.173 The opening's primary-dealer agreements · S3.174 Market makers on share books · S3.175 Securities lending · S3.176 Recall and buy-in · S3.177 Securities' depth in banks' liquid assets · S3.178 The central bank's asset purchases · S3.179 Prime brokerage: accounts, margin and calls · S3.180 Close-out of an unmet margin call · S3.181 Dealer measures · S3.182 Fund kinds, mandates and managers · S3.183 The opening's funds, their holdings and their investors · S3.184 Net asset value · S3.185 Dealing at the next value · S3.186 Stable-price money funds · S3.187 Investors choose funds · S3.188 Households hold funds · S3.189 Money funds among firms' cash placements · S3.190 Money funds among a depositor's choices · S3.191 Managers invest: active funds and hedge funds · S3.192 Redemptions, buffers and gates · S3.193 A fund's ending and liquidation · S3.194 Exchange-traded funds and authorised dealers · S3.195 Private equity: commitments, capital calls and distributions · S3.196 Launching and closing funds · S3.197 Funds found firms · S3.198 Fund measures · S3.199 Funding sources declared for non-bank lenders · S3.200 Capital regimes declared for non-bank lenders · S3.201 Non-bank lenders lend through the banks' decisions · S3.202 The opening's finance companies · S3.203 Benchmark fixings from transactions · S3.204 Market indices as reads · S3.205 Index changes, announced and chained · S3.206 Funds that track an index · S3.207 Rating agencies and their ratings · S3.208 The opening's rating agencies and their scorecards · S3.209 Listed companies' reports and restatements · S3.210 Listing requires published reports · S3.211 Guidance and analysts' estimates · S3.212 Rules refer to ratings: references, unrated rows and the binding wake · S3.213 Funds' mandates refer to ratings · S3.214 Capital risk weights refer to ratings · S3.215 The central bank's collateral refers to ratings · S3.216 Lenders' haircuts and limits refer to ratings · S3.217 Debt terms' rating triggers and debt investors' classes · S3.218 Reports settle expectations; nothing reacts but through parties · S3.219 The Stage 3 gate
@@ -875,194 +877,45 @@ unchanged.
 
 ---
 
-### The core: repairs (S1.134–S1.158)
+### The core: what the bases stand on (S1.137, S1.141–S1.146, S1.152, S1.153, S1.156)
 
-Before the bases are built, the code's defects that stand apart from any base are repaired in place, in today's
-`phx-world` and kernel code: the two run stoppers (an agency's withheld tax, a firm estate's project), sales and losses
-booked at zero cost when goods fail to move, absent values read as zero, conversions that swallow impossible values,
-balances written outside settlement, kinds and families told apart by their names, the register read by name on day
-paths, numeric literals standing for declared data, a slot-keyed notice left behind on a reused contract, measurement
-histories that grow without bound, dates counted instead of placed, the pool switched off where the kernel takes it,
-floors with no clause behind them, a duplicated decision runtime, stale comments and `phx-check` rules that guard
-nothing.
+These repairs are built before the bases because the bases stand on them: each is named in a base's **Depends on**.
+The kinds' declared features and places and the heirless destination (S1.141–S1.144) are what the kind catalogue
+compiles (S1.180) and what the equity, ledger, audit and estates' migrations read (S1.200, S1.244, S1.331, S1.346); the
+handles kinds, families and the register are bound to at assembly (S1.145, S1.146, with the compiled primitives of
+S1.137 that S1.146 binds) are what the policy schedules, the catalogue and the stage table join (S1.179, S1.180,
+S1.186); the pool threaded through settlement and the wheel takes (S1.152, S1.153) is what the chunk plans measure
+(S1.169); and the one decision runtime (S1.156) is what the decision core builds on (S1.348, S1.349). They are built
+first, in this order; the other repairs wait until the bases are built.
 
-Each repair touches code a later migration moves onto a base; each names that base step, so the migration knows the
-repaired site and claims no exception entry for it. None adds a store, a base or a memory line; none changes what the
-world decides except where the code decided wrongly. Each removes the sites it repairs from the rules' exception files
-(`crates/apps/phx-check/exceptions/PC-92.toml`, `PC-96.toml` … `PC-100.toml`, written by S1.120–S1.125), whose counts
-the down-ratchets `phx_check.exceptions_pcNN` in `perf/ratchets.toml` hold. Code sites are cited by file and function.
+Each is repaired in place, in today's `phx-world` and kernel code. None adds a store, a base or a memory line; none
+changes what the world decides except where the code decided wrongly. Each removes the sites it repairs from the rules'
+exception files (`crates/apps/phx-check/exceptions/PC-92.toml`, `PC-96.toml` … `PC-100.toml`, written by
+S1.120–S1.125), whose counts the down-ratchets `phx_check.exceptions_pcNN` in `perf/ratchets.toml` hold. Code sites are
+cited by file and function.
 
-**The bench's run at fewer persons** every repair keeps passing: `tools/bench.sh -p 150000 -d 20 -c all` runs to its
-end with no violation, every live check it reads passing, and reads the budget with no `perf/budget.toml` ratchet
-broken; a repair whose path first runs later in a month names a longer `-d`. Its numbers test the code and are never
-read as the world's.
+**The bench's run at fewer persons** every one keeps passing: `tools/bench.sh -p 150000 -d 20 -c all` runs to its end
+with no violation, every live check it reads passing, and reads the budget with no `perf/budget.toml` ratchet broken.
+Its numbers test the code and are never read as the world's.
 
-**Exit**: `phx-check` passes with the exception files lowered by every site listed below; the bench's run at fewer
-persons passes; the two run stoppers, the zero-cost moves, the unwrapped absences and the vacuous rules are gone.
+**Exit**: `phx-check` passes with the exception files lowered by every site listed below; kinds, families and the
+register are read by handles on day paths; settlement and the wheel takes run on the pool; the decision runtime exists
+once.
 
 **Placeholders**: none introduced or retired.
 
 | Id | Kind | Title |
 | --- | --- | --- |
-| S1.135 | repair | A firm estate's project completes at its own site |
-| S1.136 | repair | A failed goods move stops the run or fails whole, never a zero cost |
 | S1.137 | repair | Missing technology, law or price refused, never zero |
-| S1.138 | repair | Impossible values stop the run at the conversion |
-| S1.139 | repair | Absent preferences, standings, standards and accounts matched |
-| S1.140 | repair | Balances written at endings become flows |
 | S1.141 | data | Legal forms declare whether they have owners and who owns them |
 | S1.142 | data | Kinds declare their place |
 | S1.143 | data | The heirless destination declared by each country's law |
 | S1.144 | repair | Kinds' features read as declared |
 | S1.145 | repair | Families and kinds bound to handles at assembly |
 | S1.146 | repair | The register read by handles on day paths |
-| S1.147 | data | The activity the state's agencies produce declared |
-| S1.148 | repair | Numeric literals in mechanisms declared |
-| S1.149 | repair | An employment's notice cleared on every close |
-| S1.150 | repair | Measurement histories held by declared horizons |
-| S1.151 | repair | Dates placed by the calendar, not counted |
 | S1.152 | repair | Settlement and the day's flows on the pool |
 | S1.153 | repair | Wheel takes, hiring's search and hazards' follow on the pool |
-| S1.154 | repair | Production, orders and the opening's needs return actions, not floors |
-| S1.155 | repair | The bill offer returns an action; no floor by comparison |
 | S1.156 | repair | The duplicated decision runtime deleted |
-| S1.157 | repair | Stale comments corrected |
-| S1.158 | tool | Vacuous `phx-check` rules re-aimed |
-
----
-
-### S1.135 — A firm estate's project completes at its own site
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §9.1 (endings) followed.
-**Depends on**: none.
-**Goal**: a construction project records its own site's region when it begins, and enters service there whoever holds
-it by then. A defaulted firm's project, passed to its estate, completes instead of stopping the run.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_plant.rs` | `Project::region`; `start_project` sets it; `complete_projects` reads it; `pass_projects` a pure function |
-| `crates/assembly/phx-world/src/consts.rs` | `SAVE_FORMAT` + 1 |
-| `crates/assembly/phx-world/src/core_plant_tests.rs` | the unit tests below |
-
-**Design**:
-- The defect: `close_ended` (`core_default.rs`) passes an ended firm's projects to its estate through
-  `pass_projects_of` (`core_plant.rs`); the estate kind's record is one word (`Core::empty`, `core_open.rs`, stride 1);
-  `region_of` reads the firm's `REGION` word beyond it and finds none, and `complete_projects` stops the run with
-  CAP.5.
-- CAP.2: a project has an owner and a **site**. `Project` gains `region: u32`, the region of the buyer's site read once
-  when the delivered capital good becomes its project (`start_project`); a buyer standing in no region there is a
-  violation (CAP.2) at the start, where the buyer is the firm that bought.
-- `complete_projects` issues the new plant's class at the project's region; `region_of` is no longer read for a
-  completion. The site does not move when the project passes: `pass_projects(projects: &mut [Project], successors)`
-  changes only the holder.
-- The estate then holds the new plant units at cost (CAP.8's transfers in); it waits, as it waits for goods, until
-  liquidation exists (S2.135).
-- Replaced later by S1.292 (projects onto processes, K-69, whose row carries the site); S1.287 and S1.292 cite this
-  step as the fix.
-- It carries CAP.8 (done at S1.04) and serves CAP.5 (completed at S1.459) and CAP.2 (completed at S2.156).
-
-**Edge cases**:
-- E10: a holder ending mid-build passes the project with its site — `passed_project_keeps_its_site`.
-- E4: an estate that never liquidates holds the completed plant — `estate_holds_completed_plant`; counted by LC-0-53.
-- E1: many firms ending on one day pass their projects in one pass over the projects —
-  `many_holders_pass_in_one_pass`.
-- E6: the region is saved with the project — `project_region_round_trips`.
-
-**Extension points**: none; S1.292 moves the field into K-69's process row.
-**Unit tests**: `passed_project_keeps_its_site`, `project_class_at_its_own_region`, `start_without_region_stops` (a
-CAP.2 violation), `estate_holds_completed_plant`, `many_holders_pass_in_one_pass`, `project_region_round_trips`.
-**Live checks**: LC-1-12 (projects started and completed, CAP.5) and LC-1-11 (CAP.9) keep passing; applicable once a
-project completes.
-**Budget**: no share of any `[fin.*]` line (today's code; S1.287 carries projects at the design point); resident
-bytes: none at the design point (4 B a live project today).
-**Guards**: none.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; placing a project by where its holder stands when it completes; a project with no site.
-**Done when**:
-- [ ] The fix and its tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.136 — A failed goods move stops the run or fails whole, never a zero cost
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §7.18 followed.
-**Depends on**: S1.125 (PC-100's exception file, which this step lowers).
-**Goal**: every goods move whose failure today becomes a silent zero line of income is either a loss that cannot be
-short (it goes through the loss kernel) or a move that cannot be short by construction (a short is a contract
-violation naming its clause). No revenue is recognised on a delivery that did not happen.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/kernel/phx-core/src/goods.rs` | `Stocks::lose_flow` (a loss to nature as a flow, units whatever binds them); `Stocks::apply_whole` (a move that stops the run with its clause when short); the comments of `Short` and `lose` corrected |
-| `crates/kernel/phx-core/src/goods_tests.rs` | the kernel's tests below |
-| `crates/assembly/phx-world/src/core_goods.rs` | `spoil`, `close_services`, `make`, `deliver_sales` call the two |
-| `crates/assembly/phx-world/src/core_weather.rs` | `destroy` calls `lose_flow` |
-| `crates/kernel/phx-core/public-api.txt` | the snapshot with the two functions |
-
-**Design**:
-- The defect: `move_goods` and `move_goods_from` (`core_goods.rs`) return `None` when the payer is short; six sites then
-  recognise `cost.unwrap_or(0)`: `spoil`, `close_services` (the inputs a service's sales use, and its perished
-  capacity), `deliver_sales` (an unpaid service's capacity lost, and a delivery) and `destroy` (`core_weather.rs`). In
-  `deliver_sales` a sale's revenue is recognised although its goods never moved (ACC.13).
-- **Losses** (GDS.8, GDS.9 — physical transformations, Law 5): `Stocks::lose_flow(&mut self, flow: &Flow) -> i64`
-  takes the units from the holding whatever binds them, cutting pledges as `lose` does, and returns the cost lost; more
-  units than held is a GDS.12 violation; a payee other than nature is a Law 5 violation. `spoil` reckons spoilage on
-  all units held (`phx_core::goods::spoil`) while the move took free units only, so goods in transit made the whole
-  spoilage fail silently; through `lose_flow` they spoil. `destroy` and the perished capacity go through it too. Each
-  flow still enters the day's moves for GDS.10.
-- **Moves that cannot be short by construction** — `Stocks::apply_whole(flow, bound, cost, day, clause) -> i64` stops
-  the run with `clause` on `Short`:
-  - a delivery from committed units in `deliver_sales` (GDS.2): the cover is committed at the sale (`cover_sale`) and
-    delivered the same day; no loss runs between the meetings and settlement (losses run in the day's stock stage,
-    before any sale), and wear takes only plant in service, which is never offered;
-  - inputs used by a service sold (`close_services`) and by making (`make`, its `fed = false` arm), TEC.9: making's
-    capacity is bounded by each input's free units the same day (`making`), and nothing else takes a maker's inputs
-    before its close.
-- The day record's `unfed` count and LC-1-05 stay; the violation now stops the run before one can be counted.
-- The comments of `Short` ("a sale's goods lost after they were committed fail this way") and `lose` ("a cover left
-  beyond the units fails its sale") become true to the kernel: a loss cuts pledges; a committed cover is delivered or
-  released the day it is made.
-- Replaced later by S1.272 (stocks' users onto holdings), S1.278 (sales' cover onto bounds and liens), S1.291
-  (production and spoilage onto standing rates) and S1.294 (catastrophes' losses by place).
-- It carries GDS.2, GDS.8, GDS.12 (done at S1.05), GDS.10 (done at S1.07) and SET.3 (done at S0.15), and serves
-  TEC.9 (completed at S1.273), ACC.13 (completed at S1.329) and GDS.9 (completed at S1.464).
-
-**Edge cases**:
-- E1: a catastrophe striking goods in transit loses them and cuts the carrier's pledge — `lose_flow_cuts_pledges`.
-- E3: a holder with no holding of a spoiling good loses nothing and issues no flow — `lose_flow_of_nothing_issues_none`.
-- E14: spoilage and a catastrophe on one holding the same day apply in the stock stage's order, each on what is left —
-  `two_losses_one_day_each_on_what_is_left`.
-- E12: no absent cost: every site recognises the cost the kernel returns — `apply_whole_returns_carried_cost`.
-
-**Extension points**: none.
-**Unit tests**: `lose_flow_takes_units_whatever_binds_them`, `lose_flow_cuts_pledges`, `lose_flow_refuses_more_than_held`
-(GDS.12), `lose_flow_refuses_a_party_payee` (Law 5), `lose_flow_of_nothing_issues_none`,
-`two_losses_one_day_each_on_what_is_left`, `apply_whole_short_stops_with_its_clause`, `apply_whole_returns_carried_cost`
-— hand-built `Stocks` fixtures of a few holdings.
-**Live checks**: LC-1-05 (TEC.9), LC-1-15 (GDS.11), LC-1-46 (GDS.9) and the goods identity (GDS.10) keep passing;
-from the first day.
-**Budget**: no share of any `[fin.*]` line (today's code; S1.272 and S1.291 carry holdings at the design point);
-resident bytes: none. `lose_flow` is one holding row write, as `apply` is.
-**Guards**: removes its six `unwrap_or(0)` sites from `exceptions/PC-100.toml`.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a zero cost standing for a move that did not happen; catching a violation to continue.
-**Done when**:
-- [ ] The kernel functions, the call sites and the tests; the public-API snapshot updated; the fast checks pass.
-- [ ] The bench's run at fewer persons passes with LC-1-05 and the goods identity read, and reads the budget with no
-  ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
 
 ---
 
@@ -1132,211 +985,6 @@ allocation per day; a default for an absent primitive; `#[absent_is_zero]` on an
 - [ ] The bench's run at fewer persons passes, the committed setup opening without a refusal, and reads the budget
   with no ratchet broken.
 - [ ] §5.4 lists the new refusals; the two reviews done; status `done` and the section removed.
-
----
-
-### S1.138 — Impossible values stop the run at the conversion
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §7.18 followed.
-**Depends on**: S1.125 (PC-100's exception file, which this step lowers).
-**Goal**: every conversion that today turns a negative, not-a-number or out-of-range value into zero either converts
-without loss (a signed value that may be negative) or stops the run with the clause the impossible value breaks, as a
-contract violation does (II.5).
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_labour.rs` | experience, a job's year, days a posting stood, a price's conversion |
-| `crates/assembly/phx-world/src/core_default.rs` | a claim's share of the pool |
-| `crates/assembly/phx-world/src/core_credit.rs` | a household loan's weight at the opening |
-| `crates/assembly/phx-world/src/core_goods.rs` | a making's whole units |
-| `crates/assembly/phx-world/src/core_bills.rs` | bids' and the offer's whole bills |
-| `crates/assembly/phx-world/src/core_central.rs` | a facility position's opening day |
-
-**Design**: each site, what it swallows today and what it becomes:
-- `seekers` (`core_labour.rs`), `u32::try_from(p.age_on(date)).unwrap_or(0)`: a searcher born after today → violation
-  (POP.1).
-- `hire` (`core_labour.rs`), the job's year `unwrap_or(0)`: a date before year zero → violation (TIME.4); the posting's
-  days stood, `days_between(p.first, day).unwrap_or(0)`: a posting first seen after today → violation (TIME.4).
-- `price_expected` (`core_labour.rs`), `u64::try_from(price).unwrap_or(0)`: a posted price is signed and may be
-  negative (Law 6, Law 8); read with `from_i64`, no violation, no zero.
-- `shares` (`core_default.rs`), a claim's paid share `unwrap_or(0)`: paid ≤ its claim's i64 amount by construction →
-  violation (SET.7) if not.
-- `household_loans` (`core_credit.rs`), a borrowing household's negative income `unwrap_or(0)` weight → violation
-  (GEN.2): the opening draws no borrower with a negative income.
-- `making` (`core_goods.rs`), `floor_to_i64(units.floor()).unwrap_or(0)`: a not-a-number or unbounded decision →
-  violation (NUM.6).
-- `auctions` and `offer` (`core_bills.rs`), `floor_to_i64(…).unwrap_or(0)` of a bid's and the offer's bills:
-  not-a-number → violation (NUM.6); a negative size stays a negative number, and the treasury offers nothing when it is
-  not positive (S1.155 states it as an action).
-- `returns` (`core_central.rs`), `opened.get(…).unwrap_or(day)`: every position records the day it opened; one without
-  → violation (CB.7).
-- Each violation names the party or contract. A pure helper `whole_or_stop(x: f64, clause) -> i64` in the module
-  carries the float cases.
-- Replaced later by S1.208 (persons' ages from the person kind), S1.305 (vacancies), S1.313 (the bill auction), S1.320
-  (facilities) and S1.346 (estates' payments), which keep these contracts.
-- It carries NUM.6 (done at S0.03), TIME.4 (done at S0.08) and SET.7 (done at S0.15).
-
-**Edge cases**:
-- E8: an out-of-range conversion is a violation, never a wrap or a zero — `whole_or_stop_refuses_nan`,
-  `whole_or_stop_refuses_beyond_i64`.
-- E12: an absent opening day is a violation, not today — `position_without_opening_day_stops`.
-- E11: a searcher's age on day zero is its drawn age — `age_on_opening_day_is_drawn_age`.
-
-**Extension points**: none.
-**Unit tests**: `whole_or_stop_refuses_nan`, `whole_or_stop_refuses_beyond_i64`, `whole_or_stop_floors_finite`,
-`negative_price_converts_signed`, `claim_share_within_its_amount`, `position_without_opening_day_stops`,
-`age_on_opening_day_is_drawn_age`.
-**Live checks**: none new; the checks of the bench's run keep passing.
-**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
-**Guards**: removes the ten sites from `exceptions/PC-100.toml`.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a zero, `u64::MAX` or today standing for an impossible value; a violation caught and continued.
-**Done when**:
-- [ ] The conversions and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.139 — Absent preferences, standings, standards and accounts matched
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §4.7 (decision points, deciders and rule handles) followed.
-**Depends on**: S1.125 (PC-100's exception file, which this step lowers).
-**Goal**: where a decider's preferences, a standing's place, a bank's standard, an account's row or an estate's money
-is absent, the code says what the absence is — a recorded "none", a standard that admits no class, or a state that
-cannot exist and stops the run — instead of reading a default.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_decide.rs` | `founding_of` returns `Option<Prefs>`; `found` pads with none; `standing_at` replaced |
-| `crates/kernel/phx-core/src/decisions.rs` | `Standing::ordinal(self) -> usize`, an exhaustive match |
-| `crates/assembly/phx-world/src/core_open.rs` | treasuries, agencies and central banks founded with their declared preferences |
-| `crates/assembly/phx-world/src/core_lending.rs` | a bank's opening standard with no admitted class |
-| `crates/assembly/phx-world/src/core_accounts.rs` | a money-holding party's account row read or stopped |
-| `crates/assembly/phx-world/src/core_day.rs` | an estate's money read or stopped; withholding above the gross stops the run |
-
-**Design**: each site:
-- `founding_of` (`core_decide.rs`) reads `Prefs::NONE` for a party never founded. Every party whose legal form
-  declares offices is founded at its beginning: firms (`core_firms.rs`, `open_firms`) and banks (`core_lending.rs`,
-  `open_credit`) today; treasuries, agencies and central banks are founded at the opening (`Core::open`) with the
-  preferences their forms declare (none a Stage 1 rule reads, recorded as such). `founding_of` then returns
-  `Option<Prefs>`; `in_office` for an office no one holds of a party with no founding record is a contract violation
-  (MND.16) naming the party. `found` pads skipped slots with `None`, never with `NONE`. A working owner's preferences
-  (`core_owners.rs`, the owner's appointment and `stop_working`) read the firm's founding record, present by
-  construction.
-- `standing_at` (`core_decide.rs`) `.unwrap_or(0)`: replaced by `Standing::ordinal`, an exhaustive match; a new standing
-  without a place does not compile.
-- A bank's opening standard (`open_credit`) `.unwrap_or(0)` admits the worst class when every class is in default. The
-  standard is the lowest class admitted (`sys-bnk::credit::decline`: `class < standard` declines), so a book with no
-  class below default opens at the class count, which admits none — stated by its meaning, not a default.
-- `net_assets` (`core_accounts.rs`): a kind with no accounts holds no money (its declared form, S1.144); a party of a
-  money-holding kind with no row stops the run (MON.11).
-- `estates_pay` (`core_day.rs`) `held.unwrap_or(0)`: an estate is opened with an account (S1.140); none → violation
-  (PTY.9).
-- `withhold` (`core_day.rs`): a levy of none is no tax; a levy below none or above the gross it is taken from cannot
-  exist and stops the run (TAX.2) instead of being skipped.
-- Replaced later by S1.210 (founding preferences onto offices, K-34), S1.339 (lenders' classes onto books), S1.244
-  (accounts onto the ledger) and S1.346 (estates' payments), which keep these meanings.
-- It carries NUM.8 (done at S0.09), PTY.9 (done at S0.25) and SET.7 (done at S0.15), and serves MND.16 (completed at S8.201),
-  TAX.2 (completed at S5.178) and BNK.5 (completed at S2.190).
-
-**Edge cases**:
-- E3: a household with no account opens no estate — `accountless_household_opens_no_estate`; a money-holding party with
-  no row is a violation — `account_row_missing_stops`.
-- E12: every absence named above is matched, none read as a value — `unfounded_office_stops`,
-  `no_admitted_class_admits_none`.
-- E11: day zero's decisions read the opening's founding records — `institutions_founded_at_opening`.
-- E6: founding records are saved; the padding `None` survives a load — `founding_padding_round_trips`.
-
-**Extension points**: none.
-**Unit tests**: `unfounded_office_stops`, `standing_ordinals_are_their_places`, `no_admitted_class_admits_none`
-(`sys-bnk::credit::decline` over the class count), `account_row_missing_stops`, `accountless_household_opens_no_estate`,
-`levy_above_gross_stops`, `levy_of_none_is_no_tax`, `institutions_founded_at_opening`, `founding_padding_round_trips`.
-**Live checks**: none new; LC-1-25 (lending) and LC-1-28 (TAX.5) keep passing.
-**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
-**Guards**: removes its six sites from `exceptions/PC-100.toml`.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; `Prefs::NONE` standing for a party never founded; a skipped flow where the state cannot exist.
-**Done when**:
-- [ ] The matches and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.140 — Balances written at endings become flows
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §9.1 (endings) followed.
-**Depends on**: none.
-**Goal**: when a firm or a household ends, the money in its account moves to its estate by a flow that settlement
-applies (Law 5), never by writing both balances; the estate opens with an empty account at the same bank.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_default.rs` | `end_firm` issues the passing flow |
-| `crates/assembly/phx-world/src/core_pop.rs` | `end_household` issues the passing flow |
-| `crates/assembly/phx-world/src/core_day.rs` | `open_estate` begins the estate with an empty account; the day's close checks no ended account holds a residue |
-| `crates/assembly/phx-world/src/consts.rs` | `reason::PASSED`, a flow reason |
-
-**Design**:
-- The defect: `end_firm` (`core_default.rs`) and `end_household` (`core_pop.rs`) read the ended party's balance and
-  pending, begin the estate with that balance (`open_estate`, `core_day.rs`, `store.begin(…, Opening { bank, balance:
-  money })`) and set the ended account to zero — money moved with no instruction (SET.11) and no flow the money audit
-  reads (MON.8).
-- `passing_flow(ended, estate, (balance, pending), ccy) -> Option<Flow>`: a pure function; the whole money the ended
-  party holds at its ending, payer the ended party, payee its estate, reason `PASSED`, in its currency; none when it
-  holds none. It is pushed onto the day's pending flows. Both endings run before the day's settlement (hazards at stage
-  3, defaults in labour), so it settles that day (on a closed day it is committed, as every flow is); SET.7: an
-  instruction naming a party that ended during the day is settled against its estate.
-- The flow carries the highest payment order (`Flow::order`), so any other flow naming the payer that day settles or
-  fails first (SET.6).
-- `open_estate` begins the estate with `Opening { bank, balance: 0 }`.
-- At the day's close, before the slots of the day's endings are released, an ended party's account holding anything
-  is a contract violation (SET.7) naming it and the amount — the check that the flow carried all of it.
-- The direct balance writers left in `phx-world` after this step: none (the save's fault-injection test harness,
-  `save/inject.rs`, is test-only); S1.158 re-aims PC-25 at settlement's apply.
-- Replaced later by S1.344 (endings onto the ending kernel, K-97, which moves every row naming the party).
-- It carries SET.11, MON.8, SET.7 (done at S0.15) and PTY.9 (done at S0.25).
-
-**Edge cases**:
-- E3: a household with no money and no shares opens no estate and issues no flow — `zero_money_passes_nothing`.
-- E1: many endings on one day each issue one flow, grouped like any other — `many_endings_one_flow_each`.
-- E14: an ending and a wage due to the same household the same day: the wage settles to the household's account and
-  the passing flow, ordered last, carries it on — `passing_ordered_last`.
-- E10: the ended slot is released only after the day's settlement, so the flow never names a reused slot —
-  `residue_after_close_stops`.
-- E5: on a closed day the flow is committed with the day's others and final on the next business day — LC-0-18 (the
-  money identity) over a run crossing a weekend.
-
-**Extension points**: none.
-**Unit tests**: `ending_money_passes_by_flow`, `zero_money_passes_nothing`, `many_endings_one_flow_each`,
-`passing_ordered_last` (the flow's payment order), `residue_after_close_stops`.
-**Live checks**: LC-0-18 (the money identity) and LC-0-53 (estates' standing) keep passing; from the first ending.
-**Budget**: no share of any `[fin.*]` line (today's code; S1.344 carries endings at the design point); resident bytes:
-none. One flow an ending.
-**Guards**: none here; S1.158 re-aims PC-25 at the writers that remain.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a balance or pending written outside settlement's apply or the opening; an estate begun with money.
-**Done when**:
-- [ ] The flow, the check and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes with LC-0-18 and LC-0-53 read and at least one ending of each kind, and
-  reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
 
 ---
 
@@ -1686,299 +1334,6 @@ allocation per day; a register or point read by name on a day path; a clone of a
 
 ---
 
-### S1.147 — The activity the state's agencies produce declared
-
-**Status**: planned
-**Kind**: data
-**Clauses**: none
-**Architecture**: §10.0a (the opening dataset) followed.
-**Depends on**: none.
-**Goal**: which activity of the national accounts the state's public agencies produce is declared data of the agency's
-system, named by the activity's code in the accounts' classification, so no mechanism reads a dataset's column by its
-position.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/systems/sys-soc/src/lib.rs` | `SOC.agency_activity`: the activity code (the classification's public administration) the state's agencies produce, POLICY of the state (what its agencies do), with its source |
-| `data/shared/SOC.toml` | its value: public administration's code in the accounts' activity list |
-
-**Design**:
-- `PUBLIC_ADMINISTRATION = 21` (`consts.rs`) is the position of public administration's column in the accounts the
-  opening derives. The code of that activity is the declared fact; its column is found by the code in the accounts'
-  activity list where the opening reads it (S1.148).
-- No mechanism reads it here.
-- It serves SOC.2 (completed at S5.130).
-
-**Edge cases**:
-- E12: an absent value is refused at assembly — `agency_activity_missing_refused`.
-- E13: a code the classification does not hold is refused — `agency_activity_unknown_code_refused`.
-
-**Extension points**: S1.148 reads it; S1.410 and S1.423, which open the agencies' staff and purchases, read the same.
-**Unit tests**: `agency_activity_read`, `agency_activity_missing_refused`, `agency_activity_unknown_code_refused`.
-**Live checks**: none.
-**Budget**: no share of any `[fin.*]` line; resident bytes: none.
-**Guards**: none.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a dataset column by position.
-**Done when**:
-- [ ] The primitive, its data and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.148 — Numeric literals in mechanisms declared
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §16 (drift guards) written: PC-06 no longer exempts array lengths and indices.
-**Depends on**: S1.147 (the agencies' declared activity); S1.144 (the issuer's classes read by form).
-**Goal**: no mechanism carries as a literal a count of money classes, a labour state's place, a dataset's column or an
-iteration count; each is a typed enumeration of what the spec names or is read from its declaration, and the opening's
-fixed point is solved exactly rather than iterated to a hidden bound.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_central.rs`, `core_day.rs` | the issuer's money classes as `IssuerClass` |
-| `crates/interfaces/if-state/src/consts.rs` | `LabourState` (employed; unemployed and searching; out of the labour force), replacing `LABOUR_STATES` |
-| `crates/assembly/phx-world/src/core_stats.rs` | `labour_force` counts by `LabourState` |
-| `crates/assembly/phx-world/src/consts.rs`, `core_firms.rs`, `core_jobs.rs`, `core_goods.rs`, `opening/asked.rs` | public administration's column found by `SOC.agency_activity`; `PUBLIC_ADMINISTRATION` deleted |
-| `crates/assembly/phx-world/src/opening/leontief.rs` | `solve(inputs, finals) -> Result<Vec<f64>, Refusal>`, the exact solution of x = A·x + f |
-| `crates/apps/phx-check/src/rules/literals.rs` | PC-06 without the array-length and index exemption |
-
-**Design**:
-- The issuer's money classes: `[i128; 3]` in `Central::recorded`, `issuer_held` (`core_central.rs`) and `money_breaks`
-  (`core_day.rs`), with its names array and `if class == NOTES { "MON.9" } else { "MON.7" }`, become
-  `IssuerClass { Reserves, StateAccounts, Notes }` — the three MON.7 and MON.9 name — with `ALL`, `COUNT`, `name()` and
-  the clause its identity checks; arrays are `[i128; IssuerClass::COUNT]`, indexed by the class.
-- Labour states at literal places 0, 1, 2 (`labour_force`, `core_stats.rs`): `if-state`'s `LabourState`, a person's
-  state counted at its variant.
-- `PUBLIC_ADMINISTRATION = 21` (`consts.rs`), read by `open_firms`, `open_jobs`, `open_goods` and `Asked`
-  (`opening/asked.rs`): the column found by `SOC.agency_activity`'s code in the accounts' activity list at the opening,
-  refused where absent.
-- The opening's fixed point `for _ in 0..n * n` (`open_expected`, `core_goods.rs`): what the ways use to make the final
-  demand is x = (I − A)⁻¹ f, solved by Gaussian elimination with partial pivoting over the n products (at the opening
-  only); a matrix with no non-negative solution (not productive) is refused at the opening naming the country. No
-  iteration count, no tolerance.
-- PC-06 today exempts array lengths and indices; it refuses them above 2 in mechanism code, with the engineering
-  constants of a crate's `consts` item exempt as today.
-- Replaced later by S1.243 (maintained money totals, K-47), S1.221 (statistics accumulators) and the steps opening
-  firms and jobs (S1.483, S1.412), which keep the enumerations and the declared column.
-- It carries NUM.3 (done at S0.09), MON.7 and MON.9 (done at S0.15).
-
-**Edge cases**:
-- E13: a country whose accounts lack the declared activity is refused — `agency_activity_column_missing_refused`.
-- E12: a singular or non-productive input matrix is refused, never iterated — `non_productive_matrix_refused`.
-- E11: the opening solves once and no day reads the solver — `leontief_solves_exactly`.
-
-**Extension points**: a later money class (a foreign issuer's deposits, S5.159) is an `IssuerClass` variant with its clause;
-a later labour state (S6.115) a `LabourState` variant.
-**Unit tests**: `leontief_solves_exactly` (a 2×2 and a 3×3 with known inverses), `non_productive_matrix_refused`,
-`issuer_classes_indexed_by_variant`, `labour_state_counted_at_its_variant`, `agency_activity_column_missing_refused`,
-`pc06_refuses_array_length_three`.
-**Live checks**: LC-1-26 (the issuers' money classes) and LC-1-37 keep passing with the same values.
-**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none. The opening's fixed point falls from up
-to n² sweeps to one solve.
-**Guards**: PC-06 extended as above; the sites removed.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; an iteration bound or tolerance standing for an exact solution; a dataset column by position.
-**Done when**:
-- [ ] The enumerations, the solver, PC-06 and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes, the committed setup opening with the same expected demands to the
-  solver's rounding, and reads the budget with no ratchet broken.
-- [ ] §16 states PC-06's reach; the two reviews done; status `done` and the section removed.
-
----
-
-### S1.149 — An employment's notice cleared on every close
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §7.18 followed.
-**Depends on**: S1.145 (the jobs families by their declared flag).
-**Goal**: a job under notice that closes by any path — separation, the employer's ending, quitting, retirement, the
-person leaving or its household ending — leaves no notice behind, so a later hire into the reused contract slot is seen
-by `staff_of` and `lay_off`.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_labour.rs` | `close_job`, the one closing path of a job; `hire` refuses a slot under notice |
-| `crates/assembly/phx-world/src/core_pop.rs`, `core_default.rs`, `core_agencies.rs` | their job closes go through `close_job` |
-| `crates/assembly/phx-world/src/core_labour_tests.rs` | the unit tests below |
-
-**Design**:
-- The defect: `labour.noticed: BTreeSet<u32>` (`core_labour.rs`) holds the edge slots of jobs under notice; `separate`,
-  `close_contracts` (`core_default.rs`) and `quit_jobs` (`core_agencies.rs`) remove them, but `leave_jobs`,
-  `person_left` and `end_household` (`core_pop.rs`) close jobs under notice and leave the slot in the set. The edge
-  slot is reused by a later hire, which `staff_of`, `review_wages` and `lay_off` then skip until the old separation
-  date.
-- `close_job(&mut self, family: FamilyH, edge: Slot)`: removes the notice and closes the contract; every close of a
-  contract in a jobs family goes through it (the loops of `person_left` and `end_household` over every family call it
-  for jobs families by S1.145's flag).
-- `hire` opening a job in a slot still in `noticed` is a contract violation (LAB.16) naming the slot: the check that no
-  path is missed.
-- Replaced later by S1.266 (arrears, grace and notice onto status, K-56: notice a contract's own status, gone with its
-  row).
-- It serves LAB.1 (done at S1.08; S4.145 retires its placeholder) and carries LAB.16 (done at S1.08).
-
-**Edge cases**:
-- E10: a slot closed and reused on the same day starts with no notice — `close_job_clears_notice`,
-  `hire_into_noticed_slot_stops`.
-- E14: a notice given and the person retiring the same day close the job once, through one path —
-  `notice_and_retirement_close_once`.
-- E6: `noticed` is saved as it is; no index to rebuild — `noticed_round_trips`.
-
-**Extension points**: none.
-**Unit tests**: `close_job_clears_notice` and `hire_into_noticed_slot_stops` (a hand-built jobs `Family` fixture of a
-few contracts and a notice set), `every_jobs_close_goes_through_close_job` (the closers' family filter by flag),
-`notice_and_retirement_close_once`, `noticed_round_trips`.
-**Live checks**: LC-1-21 (LAB.13's employment identity) and LC-1-22 (LAB.14) keep passing; from the first separation.
-**Budget**: no share of any `[fin.*]` line (today's code; S1.266 carries notice at the design point); resident bytes:
-none.
-**Guards**: none.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a second path that closes a job.
-**Done when**:
-- [ ] The path, the check and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons at `-d 60` (retirements and separations under notice both reached) passes and
-  reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.150 — Measurement histories held by declared horizons
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §11 (persistence) followed: what is saved stays within its horizon.
-**Depends on**: none.
-**Goal**: five histories that grow without bound over a run — the tax sample, the surprise responses, the deaths, the
-followed catastrophes and the published releases — each keep only the records within a declared horizon (RESOLUTION),
-and each reader reads within it.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `data/shared/SET.toml` | `SET.horizon_days` per history: tax sample, surprise responses, deaths, shocks, releases |
-| `crates/assembly/phx-world/src/core_taxes.rs`, `core_outlooks.rs`, `core_pop.rs`, `core_weather.rs`, `core_stats.rs` | each history dated and pruned at the day's close |
-| `crates/assembly/phx-world/src/horizon.rs` | `expired(dates, today, horizon) -> usize` and the amortised prune |
-| `crates/apps/phx-cli/src/checks/{core,outlooks,geo,lives}.rs` | their reads stated over the horizon |
-
-**Design**:
-- The stores: `Taxes::sample` (one row a sampled wage, written by `withhold`), `Outlooks::responses` (written in
-  `core_goods.rs` after a surprise), `Core::deaths` (`core_pop.rs`), `Weather::shocks` (`weather_day`,
-  `core_weather.rs`, each with a clone of the day's marks, and walked by `note_rises` every day for every shock ever),
-  `CoreStats::published` (`stats_day`, `core_stats.rs`).
-- Each record carries its day (the sample and the responses gain it); each history declares its horizon in days, a
-  RESOLUTION primitive (SET.17), set at two years, and never shorter than what its readers compare (none follows a
-  POLICY). At the day's close records older than the horizon are dropped: the history is appended in day order, so they
-  are a prefix, found by binary search; the prefix is drained once it is at least half the store, so each record moves
-  at most once on average and no day moves the whole store.
-- `note_rises` walks only the shocks within their horizon; a shock's base marks stay those of its day (GDS.11 follows
-  every market's rise).
-- The live checks reading them (`deaths_destined`, `responses_by_size`, the tax sample check, the shocks' reads, the
-  life tables) read the records within the horizon; a gate run's reads are over its last two years.
-- Replaced later by S1.167 (the horizon ring, K-08), S1.214 (deaths and weather records onto the event log), S1.218
-  (releases onto records) and S1.221 (samples in statistics' frames), whose horizons these declarations become.
-- It carries SET.13 and SET.17 (done at S0.20).
-
-**Edge cases**:
-- E9: over a run longer than a horizon each store stays flat at its horizon — `pruned_store_flat_after_horizon`, and
-  the bench's `StoreStats` rows ever against rows live.
-- E6: a save holds the records within the horizon and the load prunes nothing more —
-  `saved_history_within_horizon_round_trips`.
-- E11: an empty history on day zero prunes nothing — `expired_of_empty_is_none`.
-
-**Extension points**: S1.167's ring takes these horizons as its capacity by days.
-**Unit tests**: `expired_counts_the_old_prefix`, `expired_of_empty_is_none`, `prune_moves_each_record_once_amortised`,
-`pruned_store_flat_after_horizon`, `saved_history_within_horizon_round_trips`, `horizon_read_from_register`.
-**Live checks**: LC-0-53, LC-1-15, LC-1-44 and LC-1-51 read within the horizon and keep passing.
-**Budget**: no share of any `[fin.*]` line (today's code; S1.167 and S1.214–S1.221 carry histories at the design
-point); resident bytes: bounded by the horizons, none added. A binary search a history a day; drains amortised O(1) a
-record.
-**Guards**: none.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a history with no declared horizon; a daily walk of every record ever kept.
-**Done when**:
-- [ ] The horizons, the pruning and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken; a run past a horizon shows
-  the five stores' `StoreStats` rows ever and live apart.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.151 — Dates placed by the calendar, not counted
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §6.6 (cost bounds) followed: O(log n) per operation.
-**Depends on**: none.
-**Goal**: every date the day's code finds by counting from the start — a hire's first pay date, a project's ready day,
-a release's business day, a bill issue's place, the audit's births and deaths — is placed by the calendar or an index
-in O(log n) or O(1), whatever the run's length.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/kernel/phx-core/src/calendar/period.rs` | `ScheduleDates::first_after(calendar, day) -> u32` |
-| `crates/kernel/phx-core/src/calendar/mod.rs` | `Calendar::nth_business(country, from, k)` over a per-country business-day ordinal of the window |
-| `crates/assembly/phx-world/src/core_labour.rs`, `core_plant.rs`, `core_stats.rs`, `core_bills.rs`, `core_audit.rs` | the sites below |
-| `crates/kernel/phx-core/public-api.txt` | the snapshot |
-
-**Design**:
-- `hire` (`core_labour.rs`) counts dates from the schedule's first (`while dates.nth(…, nth) <= day { nth += 1 }`),
-  linear in the schedule's age. `first_after`: `nth` is non-decreasing in n, so an exponential then binary search finds
-  the first date after `day` in O(log n).
-- `start_project` (`core_plant.rs`) adds the lead one day at a time: `calendar.plus(day, Period::days(lead))`.
-- `release_day` (`core_stats.rs`) steps business days one by one: `nth_business` reads the k-th business day from a
-  per-country ordinal of the calendar's window (2 bytes a day a country, built with the window, rebuilt at load, moved
-  with `move_window`).
-- `Bills::issues` is searched linearly by `open_bill` and summed by filter for what matures by `offer`
-  (`core_bills.rs`), and grows forever: issues are kept per country sorted by maturity (binary insertion among the live
-  issues, about a year's weekly issues a country), the day's issue found at its place, what matures in (day, next]
-  summed over the range found by binary search, and an issue leaves on its maturity (the live check reads only live
-  issues).
-- `audit` (`core_audit.rs`) folds every day's births and deaths: running totals of born and gone, advanced where the
-  day's record is written.
-- Replaced later by S1.178 (the calendar's per-day facts, K-19), S1.264 (reckoning onto shared plans), S1.282 (bills
-  onto instruments) and S1.220 (per-day records onto the day ledger).
-- It carries TIME.4 (done at S0.08).
-
-**Edge cases**:
-- E11: a schedule whose first date is after today gives n = 0 — `first_after_before_first_date`.
-- E5: a release on a month opening with closed days lands on its k-th business day — `nth_business_skips_closed_days`.
-- E9: a two-year run's hire costs the same as day one's — `first_after_is_logarithmic` (counts the `nth` calls).
-- E6: the ordinal is rebuilt at load and the calendar hashes equal — `ordinal_rebuilt_equal`.
-
-**Extension points**: `first_after` and `nth_business` serve every schedule of K-55 (S1.263) and K-19 (S1.178).
-**Unit tests**: `first_after_before_first_date`, `first_after_matches_linear_count`, `first_after_is_logarithmic`,
-`nth_business_skips_closed_days`, `ordinal_rebuilt_equal`, `issues_sorted_by_maturity`, `maturing_sum_over_range`,
-`running_totals_equal_fold`.
-**Live checks**: LC-1-29 (TRS.6's bills), LC-1-37 (release days) and LC-0-63 (persons reconciled) keep passing.
-**Budget**: no share of any `[fin.*]` line (today's code; S1.178 carries the calendar's facts at the design point);
-resident bytes: a 2 B-a-day ordinal a country over the calendar's window, rebuilt at load. Each site O(log n) or O(1).
-**Guards**: PC-17 (days placed only by the calendar) keeps passing with the loops gone.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a loop whose length grows with the run.
-**Done when**:
-- [ ] The functions, the sites and the tests; the public-API snapshot; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
 ### S1.152 — Settlement and the day's flows on the pool
 
 **Status**: planned
@@ -2105,113 +1460,6 @@ allocation per day; a write to the world inside the pool's closures; a draw that
 
 ---
 
-### S1.154 — Production, orders and the opening's needs return actions, not floors
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §7.18 followed.
-**Depends on**: none.
-**Goal**: where a firm's making, a buyer's order or the opening's dealing of jobs can be "nothing", the rule returns
-that action instead of flooring a number at zero by comparison.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_goods.rs` | `planned` returns `Plan::{Make(q), Rest}` |
-| `crates/systems/sys-frm/src/rules/inputs.rs` | `order` returns `Order::{Buy(units), None}` |
-| `crates/assembly/phx-world/src/core_jobs.rs` | `net_needs` returns each firm's `Need::{Jobs(x), MetByOwners}` |
-
-**Design**:
-- The sites, each `if x > 0.0 { x } else { 0.0 }`: `planned` (`core_goods.rs`), `order` (`sys-frm`'s inputs rule),
-  `net_needs` (`core_jobs.rs`). Clippy already refuses `min`, `max` and `clamp`; these are the same floor written as a
-  comparison.
-- None of FRM.4, FRM.7 or GDS.5 states a floor. What each decides is a choice among actions, one of which is to do
-  nothing: a firm makes some quantity or rests (FRM.4; a stock above its aim is run down by selling, the price review's
-  clearing, FRM.5); a buyer orders some units of an input or none (GDS.5; stock above the plan is held, and a
-  stockist's sale is GDS.6's); a firm's owners meet its need or it takes jobs (the opening's dealing, a count of jobs).
-  Each returns its action as an enum variant; the caller matches it.
-- Replaced later by the production and input-order rules of S1.443 and S1.444, which keep the action enums ("doing
-  nothing is the rule's action").
-- It carries FRM.7 (done at S1.08) and NUM.8 (done at S0.09), and serves FRM.4 (completed at S1.443) and GDS.5
-  (completed at S1.444).
-
-**Edge cases**:
-- E2: a market with no buyer leaves a firm's stock above its aim; it rests, and the price review clears it —
-  `overstocked_firm_rests`.
-- E12: an action is never read as a number where the rule rests — `rest_is_not_zero_units`.
-- E11: day zero's first plans are the same actions — `opening_plan_is_an_action`.
-
-**Extension points**: every later decision states "nothing" as an action of its option set (Stage 4 on, K-100/K-102's
-`OptionSet`).
-**Unit tests**: `overstocked_firm_rests`, `rest_is_not_zero_units`, `order_none_when_covered`, `owners_meet_need`,
-`opening_plan_is_an_action`.
-**Live checks**: LC-1-05 and LC-1-07 keep passing with the same values.
-**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
-**Guards**: none here; S1.155 adds PC-110.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a floor, cap or clamp by comparison.
-**Done when**:
-- [ ] The actions and the tests; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.155 — The bill offer returns an action; no floor by comparison
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: §16 (drift guards) written: PC-110.
-**Depends on**: S1.154 (the other floors gone, so PC-110 passes on the tree).
-**Goal**: the treasury's bill offer returns "no offer" as an action; the one floor left, inside a declared placeholder,
-is listed by name; and `phx-check` refuses any new floor or cap by comparison in mechanisms.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/systems/sys-sov/src/rules.rs` | `size` returns `Offer::{Face(f), None}`; its outflow floor listed as the placeholder's |
-| `crates/apps/phx-check/src/rules/floors.rs` | PC-110 and its tests |
-| `crates/apps/phx-check/exceptions/PC-110.toml` | the named placeholder floor |
-| `perf/ratchets.toml` | `phx_check.exceptions_pc110` |
-
-**Design**:
-- `size` (`sys-sov`'s rules) floors the offered face at zero and its week's outflow at zero. SOV.3 states no floor: the
-  treasury offers some face or none, `Offer::None` when nothing is needed.
-- The outflow floor (a week of net inflow read as no outflow) is part of the rule the code declares a placeholder naming
-  TRS; it stays, listed by name in `exceptions/PC-110.toml` with "placeholder naming TRS, retired by the treasury's
-  funding plan (S3.119)".
-- **PC-110** — no floor or cap by comparison in mechanisms: in mechanism code (`sys-*`, `phx-world`, the kernel
-  crates), refuses an `if`/`else` whose one arm is the compared value and whose other is a literal zero (`0`, `0.0`;
-  `>`, `>=`, `<`, `<=`; either order of the comparison), and the same with the arms swapped. It does not match an arm
-  that builds an enum variant: a function returning a declared option or action enum states that doing nothing is an
-  action. Exceptions are listed by function in `exceptions/PC-110.toml`, each with its clause or placeholder, never
-  exempt by pattern; the file's count is the down-ratchet `phx_check.exceptions_pc110`.
-- Replaced later by the bill auction's sizing (S3.119), which retires the placeholder and its exception.
-- It serves SOV.3 (completed at S3.119).
-
-**Edge cases**:
-- E2: a treasury whose cash covers its buffer offers nothing — `offer_none_when_cash_suffices`.
-- E12: an exception without its clause or placeholder is refused — `pc110_exception_needs_its_clause`.
-
-**Extension points**: every later mechanism is held to PC-110.
-**Unit tests**: `offer_none_when_cash_suffices`, `pc110_refuses_value_or_zero`, `pc110_refuses_swapped_arms`,
-`pc110_passes_action_enum`, `pc110_exception_needs_its_clause`.
-**Live checks**: LC-1-29 keeps passing with the same values.
-**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
-**Guards**: PC-110; `exceptions/PC-110.toml` holds one entry.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a floor, cap or clamp by comparison; an exception by pattern.
-**Done when**:
-- [ ] The action, PC-110, its exception file, its ratchet and the tests; the fast checks pass on the current tree.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] §16 states PC-110; the two reviews done; status `done` and the section removed.
-
----
-
 ### S1.156 — The duplicated decision runtime deleted
 
 **Status**: planned
@@ -2260,111 +1508,6 @@ allocation per day; a second path from a player's intent to a decision.
 - [ ] The deletions and the moved tests; the public-API snapshot; the fast checks pass.
 - [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
 - [ ] §4.7 names the one runtime; the two reviews done; status `done` and the section removed.
-
----
-
-### S1.157 — Stale comments corrected
-
-**Status**: planned
-**Kind**: repair
-**Clauses**: none
-**Architecture**: none.
-**Depends on**: S1.153 (which makes `pop_rules.rs`' comment on following true).
-**Goal**: the false comments say what the code does, and a comment explaining code that is not there is gone.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/assembly/phx-world/src/core_goods.rs` | `review_prices`' comment |
-| `crates/assembly/phx-world/src/core_labour.rs` | the comment on the voluntary close removed from `post` |
-
-**Design**:
-- `review_prices` (`core_goods.rs`): "the firms whose production schedule came today review their price" — the
-  reviewing firms are those whose attention drew a review today (`reviewing_today`, `attend`); the comment says so.
-- `post` (`core_labour.rs`): a comment explains an owner's winding down that no code does and names a later system;
-  removed. The voluntary close's absence is a declared placeholder (`FRM.voluntary_close`, placeholder naming MND),
-  declared as data by the default step (S1.428), not a comment.
-- `follow`'s comment (`pop_rules.rs`) is made true by S1.153 and is left as it is.
-- Comments say why, in a sentence or two, and name no document, clause, step or system (PC-07 for clause identifiers).
-
-**Edge cases**: n/a: no behaviour changes, and PC-07 runs over the comments.
-**Extension points**: none.
-**Unit tests**: none (comments only; PC-07 runs over them).
-**Live checks**: none.
-**Budget**: no share of any `[fin.*]` line; resident bytes: none.
-**Guards**: none.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a comment that names a system, a step or history.
-**Done when**:
-- [ ] The comments corrected; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] The two reviews done; status `done` and the section removed.
-
----
-
-### S1.158 — Vacuous `phx-check` rules re-aimed
-
-**Status**: planned
-**Kind**: tool
-**Clauses**: none
-**Architecture**: §16 (drift guards) written: each rule's target as it now is.
-**Depends on**: S1.140 (no balance is written outside settlement's apply, so PC-25's re-aim passes).
-**Goal**: every `phx-check` rule guards something that exists. PC-24, PC-25, PC-28 and PC-29 are re-aimed at today's
-writers of what they protect; PC-27 loses its entry for deleted files; each base step that later moves a target
-carries the rule with it.
-
-**Files**:
-
-| path | purpose |
-| --- | --- |
-| `crates/apps/phx-check/src/rules/ledger_writes.rs` | PC-24 re-aimed |
-| `crates/apps/phx-check/src/rules/money_moves.rs` | PC-25 re-aimed |
-| `crates/apps/phx-check/src/rules/batches.rs` | PC-27's first entry removed |
-| `crates/apps/phx-check/src/rules/prints.rs` | PC-28 re-aimed |
-| `crates/apps/phx-check/src/rules/equity.rs` | PC-29 re-aimed |
-| `crates/apps/phx-check/src/rules/mod.rs` | the rules' titles |
-
-**Design**: each rule, what it names today (none of which exists) and what it guards after:
-- **PC-24** (`ledger_writes.rs`: `RelationshipRows`, `Lots`, `NamedUnits`, `phx-pop/src/holder.rs`): holdings are
-  written by the goods kernel alone — no code outside `phx-core/src/goods.rs` and `units.rs` assigns a `Holding`'s
-  fields or builds a `Holding`; world code changes holdings only through `Stocks`' methods. S1.271 and S1.272
-  (holdings, K-60) move the target to `phx-hold`.
-- **PC-25** (`money_moves.rs`: the ledger's `add_row`, `set_count` …, `LegDigest`): balances and pending are written by
-  settlement's apply (`phx-core/src/settle.rs`) and by an account's opening (`KindStore::begin`, `open_account`, from
-  opening code) alone; refuses `.balance.set(`, `.pending.set(` and a mutable slice of either elsewhere in world
-  crates. The save's fault-injection harness (`save/inject.rs`, test-only) is outside world code. S1.240 and S1.244
-  (money accounts, K-47) move the target to `phx-ledger`.
-- **PC-27** (`batches.rs`: `phx-ledger`'s `stream.rs`, `fixed_point.rs`, `apply_batch.rs`, `batch.rs`): the entry is
-  removed; the `phx-core/settle.rs` entry stays live. S1.245 (flow batches, K-48) adds its own entry.
-- **PC-28** (`prints.rs`: a `Print` type in `phx-market`): a market's mark is written by its meeting's `mark` alone
-  (`core_goods.rs`, `goods.marks`); nothing else inserts a mark or converts a valuation or quote into one. S1.326 and
-  S1.327 (prints and marks, K-86) move the target to `phx-market`'s prints.
-- **PC-29** (`equity.rs`: `phx-acct/src/equity.rs`, `EquityEvent`, `EquityAccounts`): equity accounts
-  (`accounts.opening`, `accounts.income`) are written by `recognise`, the opening's `open_accounts` and a party's
-  ending alone, and no statement is stored. S1.330 and S1.331 (K-88) move the target to `phx-acct`.
-- PC-22 is not touched here: S1.128 re-aims it, and S1.354 makes the audit families pure checks it guards.
-- Each rule keeps its number and its title's substance; its test is rewritten over a hand-built source of the new
-  target (one refused write, one allowed).
-- It carries SET.11 (done at S0.15), ACC.9 (done at S0.19) and MKT.18 (done at S0.18), and serves ACC.4 (completed at
-  S1.330).
-
-**Edge cases**: none apply (a code rule); the current tree passes each re-aimed rule after S1.140 —
-`pc25_allows_opening_account`.
-**Extension points**: S1.244, S1.245, S1.272, S1.327 and S1.331 each move one rule's target in their Guards.
-**Unit tests**: `pc24_refuses_holding_field_write_outside_goods`, `pc25_refuses_balance_set_outside_apply`,
-`pc25_allows_opening_account`, `pc27_has_no_deleted_file`, `pc28_refuses_mark_insert_outside_mark`,
-`pc29_refuses_income_write_outside_recognise`.
-**Live checks**: none.
-**Budget**: no share of any `[fin.*]` line; resident bytes: none.
-**Guards**: PC-24, PC-25, PC-27, PC-28, PC-29 as above.
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; a rule naming a file, type or function that does not exist; a rule passing vacuously; a new rule
-number for an old rule's substance.
-**Done when**:
-- [ ] The rules re-aimed and their tests; `phx-check` passes on the current tree; the fast checks pass.
-- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
-- [ ] §16 lists each rule's target; the two reviews done; status `done` and the section removed.
 
 ---
 
@@ -5201,7 +4344,7 @@ deposits register: per deposit its grade and opening size); S8.131 (K-29: deposi
 - Unit targets: an extraction ≤ 7.7 VM ns (10 phone-ns) fused into its batch.
 - `ledger line 19 (map and network): +1.6 MB resident (≈ 50 k × 32 B)`.
 - Ratchets: `[fin.deposits]` (added) `extract_ns` 7.7, `row_bytes` 32.
-**Guards**: PC-25 re-aimed by S1.158: extracted written only by `extract_batch`.
+**Guards**: PC-25 re-aimed here: `extracted` written only by `extract_batch`.
 **Not allowed**: a remaining column beside extracted; extraction beyond a deposit; a daily pass over every deposit; an
 unbounded deposit given a number.
 **Done when**:
@@ -8324,8 +7467,8 @@ notice state from the contract's status.
 - Users by function: a layoff posts a notice to the employee with the employment row's `ContractRef` (generation
   checked) in its payload, due when the notice runs; the separation happens when it falls due (no daily partition of
   every pending separation); an application is a message to the employer, an offer a message to the applicant, each
-  answered at the addressee's occasion; `staff_of` keeps reading today's `noticed` set (cleaned on
-  every close since S1.149) until S1.266 reads the notice state through the contract's status (K-56).
+  answered at the addressee's occasion; `staff_of` keeps reading today's `noticed` set, which this
+  step clears on every close it moves (the site S1.149 names), until S1.266 reads the notice state through the contract's status (K-56).
 - A notice names its contract with generation and lapses with it, so a reused edge slot never reads as under notice.
 - Bench line expected to fall: the daily partition of separations and the daily remap of applications and offers.
 
@@ -11951,7 +11094,7 @@ in progress is read from its rows at cost.
   project's plant into class 0 of its kind at its own site; a batch's output at its yield), each leg with nature and
   the process as source (SET.9), carrying the cost; a spell's end is a wake of its person (K-43).
 - **Its own site**: a project keeps its site cell, so an owner ending mid-process passes the row to its estate at cost
-  and completion reads the row, never the owner's record (the run stopper repaired at S1.135 cannot return).
+  and completion reads the row, never the owner's record (so the run stopper S1.135 names cannot happen).
 - **WIP** (FRM.1, CAP.2 "an asset of its owner at cost"): an owner's WIP is the sum of its rows' cost, maintained in the
   firm's hot record (8 B, `#[maintained]`), recounted by the audit from the rows.
 - **Delays and losses** (FRT.7, FRT.8, GEO.8): a closure or breakdown moves the completion day (the row copied to its
@@ -12243,7 +11386,7 @@ kind's lead passes; no pass over every project runs, and an estate completes its
 **Design**: `start_project` opens a project row (subject the kind, units, cost paid, site the buyer's site cell or
 zone, completion = `Calendar::plus(lead)`, PC-17); completion at 4a issues plant into class 0 of the kind at the row's
 site (S1.285's capacity re-maintained); the balance sheet reads WIP from the owner's word; an ended owner's rows pass
-to its estate with the ending kernel (the estate's completion, repaired at S1.135, reads the row's site).
+to its estate with the ending kernel (the estate's completion reads the row's site, fixing the run stopper S1.135 names).
 **Edge cases**: E10 (`estate_completes_project`, S1.287's test on the world's path); E5 (a month-end's completions in
 one wheel bucket: `many_completions_one_day`, S1.287's test on the world's path).
 **Extension points**: none.
@@ -14482,7 +13625,7 @@ resident (live rows 58 k × 64 B = 3.7 MB; staging 58 k × 64 B = 3.7 MB; histor
 listed series 16 k × (20 + 32) = 0.83 M, each horizon with its mean half frame; fixings 0.7 MB) — `fin.marks.mb` 63,
 `fin.marks.bytes_per_day` 4.05 (added); the listed series' marks are these, none kept elsewhere. At the keepers'
 floors (goods and labour 182, instruments 250, DRV.10's): 26.7 MB. saved: +62.3 MB. ledger line 21 (day buffers): the day's fixing prints ≤ 0.5 M × 16 B = 8 MB on a busy day, released at 10e.
-**Guards**: `phx_market::prints` on PC-92's hot list; PC-28 (re-aimed at S1.158) guards the live `Print`; no `Print`
+**Guards**: `phx_market::prints` on PC-92's hot list; PC-28, re-aimed here, guards the live `Print`; no `Print`
 from a quote, rate or valuation (compile level).
 **Not allowed**: a mark averaged over posted prices not sold at; a print kept beyond the day except as the mark and
 the fixings' inputs; a zero for an absent print.
@@ -15727,7 +14870,7 @@ reported, and an estate that never liquidates costs nothing while it waits.
 - **Record** (256 B, K-32 columns by slot): the ended party's reference (key + generation) and the ending's kind;
   opened day; the governing law (a K-20 handle: the country's insolvency or inheritance law); the country, region and
   zone of the ended party (where its administration's sales meet, read by S2.133's descent rule; a project it inherits
-  carries its own site, S1.135); successor or heirs' group ref (K-58); state (administering, distributing, closed); its account and side rows
+  carries its own site, S1.287); successor or heirs' group ref (K-58); state (administering, distributing, closed); its account and side rows
   (K-47); inline stocks and plant classes as a firm's (K-60 inline, so goods held at cost stay reconciled); list headers
   for claims (K-98's rows) and for contract sides; the administration's standing offers (K-70 refs); proceeds realised
   per currency and distributions made; the next distribution day lives in K-43.
@@ -15819,7 +14962,7 @@ ended-party range; the same day's instructions naming it settle against its esta
   (K-98's claims family). On a mass-ending day (E1) the sides are not walked: every row naming an ended party resolves
   through its tombstone's successor (S1.194) until S1.267's rolling cursor re-points it after D+1, applying this
   destination then; its books by one K-57 book move; its offers lapsed (K-70); its messages to the estate or
-  lapsed (K-45); its processes to the estate (K-69: goods in transit recovered, FRT.8; a project completes at its own site, S1.135); its offices vacated (K-34); its index memberships dropped by generation bump (K-06).
+  lapsed (K-45); its processes to the estate (K-69: goods in transit recovered, FRT.8; a project completes at its own site, S1.287); its offices vacated (K-34); its index memberships dropped by generation bump (K-06).
 - **Same-day instructions** (SET.7): the directory's tombstone names the estate from the ending; settlement (K-49)
   resolves any payer or payee of the day's items through it, so they settle or fail by name against the estate.
 - **Names**: after the pass, any live reference to the ended party is a Names finding (N1) — the family reads the
@@ -15893,7 +15036,7 @@ leaving person, the sorted identity insert and the balances written to zero are 
 - Slot-keyed leftovers cannot outlive their party: `labour.noticed` (not cleaned by `leave_jobs` or `person_left`) is
   gone with S1.238; every per-party column is rewritten in full at a new party's `begin` (K-32), and each remaining
   slot-keyed map is retired by its own step.
-- A project an estate inherits carries its own site (S1.135).
+- A project an estate inherits carries its own site (S1.287).
 - Bench: `close_ended`'s daily scans and the per-leaving-person family walks fall; `tools/bench.sh` at the committed resolution
   shows the endings' spans within the ending kernel's per-row cost.
 
@@ -17196,6 +16339,900 @@ setting the owner fixed moved without the owner's answer.
   owner question recorded in §12.
 - [ ] §3, §7 and §13 written with the measured units; the two independent reviews done and their findings fixed; status
   `done` and the section removed.
+
+---
+
+### The core: repairs (S1.134–S1.158)
+
+After the bases (S1.360), the code's defects that stand apart from any base are repaired: a firm estate's project that
+stops the run, sales and losses booked at zero cost when goods fail to move, absent values read as zero, conversions
+that swallow impossible values, balances written outside settlement, numeric literals standing for declared data, a
+slot-keyed notice left behind on a reused contract, measurement histories that grow without bound, dates counted
+instead of placed, floors with no clause behind them, stale comments and `phx-check` rules that guard nothing. S1.134 is
+done; S1.137, S1.141–S1.146, S1.152, S1.153 and S1.156, which the bases stand on, are built before them.
+
+The bases come first. Each repair's **Moved first by** line names the bases whose migrations move its sites before it;
+a migration moves such a site as its base's design reads it — never carrying the defect onto the base — and names in
+its commit the repair whose site it fixed. Each repair then begins by reading which of its sites still stand: a site a
+base fixed is done by that base; a repair none of whose sites stands is `done`, naming the bases that fixed them, whose
+tests are its evidence. What stands is repaired in place, in the code the bases left. None adds a store, a base or a
+memory line; none changes what the world decides except where the code decided wrongly. Each removes the sites it
+repairs from the rules' exception files (`crates/apps/phx-check/exceptions/PC-92.toml`, `PC-96.toml` …
+`PC-100.toml`), whose counts the down-ratchets `phx_check.exceptions_pcNN` in `perf/ratchets.toml` hold. Code sites
+are cited by file and function as they stand today.
+
+**The bench's run at fewer persons** every repair keeps passing: `tools/bench.sh -p 150000 -d 20 -c all` runs to its
+end with no violation, every live check it reads passing, and reads the budget with no `perf/budget.toml` ratchet
+broken; a repair whose path first runs later in a month names a longer `-d`. Its numbers test the code and are never
+read as the world's.
+
+**Exit**: `phx-check` passes with the exception files lowered by every site listed below; the bench's run at fewer
+persons passes; the run stopper, the zero-cost moves, the unwrapped absences and the vacuous rules are gone.
+
+**Placeholders**: none introduced or retired.
+
+| Id | Kind | Title |
+| --- | --- | --- |
+| S1.135 | repair | A firm estate's project completes at its own site |
+| S1.136 | repair | A failed goods move stops the run or fails whole, never a zero cost |
+| S1.138 | repair | Impossible values stop the run at the conversion |
+| S1.139 | repair | Absent preferences, standings, standards and accounts matched |
+| S1.140 | repair | Balances written at endings become flows |
+| S1.147 | data | The activity the state's agencies produce declared |
+| S1.148 | repair | Numeric literals in mechanisms declared |
+| S1.149 | repair | An employment's notice cleared on every close |
+| S1.150 | repair | Measurement histories held by declared horizons |
+| S1.151 | repair | Dates placed by the calendar, not counted |
+| S1.154 | repair | Production, orders and the opening's needs return actions, not floors |
+| S1.155 | repair | The bill offer returns an action; no floor by comparison |
+| S1.157 | repair | Stale comments corrected |
+| S1.158 | tool | Vacuous `phx-check` rules re-aimed |
+
+---
+
+### S1.135 — A firm estate's project completes at its own site
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §9.1 (endings) followed.
+**Depends on**: none.
+**Goal**: a construction project records its own site's region when it begins, and enters service there whoever holds
+it by then. A defaulted firm's project, passed to its estate, completes instead of stopping the run.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_plant.rs` | `Project::region`; `start_project` sets it; `complete_projects` reads it; `pass_projects` a pure function |
+| `crates/assembly/phx-world/src/consts.rs` | `SAVE_FORMAT` + 1 |
+| `crates/assembly/phx-world/src/core_plant_tests.rs` | the unit tests below |
+
+**Design**:
+- The defect: `close_ended` (`core_default.rs`) passes an ended firm's projects to its estate through
+  `pass_projects_of` (`core_plant.rs`); the estate kind's record is one word (`Core::empty`, `core_open.rs`, stride 1);
+  `region_of` reads the firm's `REGION` word beyond it and finds none, and `complete_projects` stops the run with
+  CAP.5.
+- CAP.2: a project has an owner and a **site**. `Project` gains `region: u32`, the region of the buyer's site read once
+  when the delivered capital good becomes its project (`start_project`); a buyer standing in no region there is a
+  violation (CAP.2) at the start, where the buyer is the firm that bought.
+- `complete_projects` issues the new plant's class at the project's region; `region_of` is no longer read for a
+  completion. The site does not move when the project passes: `pass_projects(projects: &mut [Project], successors)`
+  changes only the holder.
+- The estate then holds the new plant units at cost (CAP.8's transfers in); it waits, as it waits for goods, until
+  liquidation exists (S2.135).
+- Moved first by S1.292 (projects onto processes, K-69, whose row carries the site); S1.287 and S1.292 fix the
+  site as they move projects.
+- It carries CAP.8 (done at S1.04) and serves CAP.5 (completed at S1.459) and CAP.2 (completed at S2.156).
+
+**Edge cases**:
+- E10: a holder ending mid-build passes the project with its site — `passed_project_keeps_its_site`.
+- E4: an estate that never liquidates holds the completed plant — `estate_holds_completed_plant`; counted by LC-0-53.
+- E1: many firms ending on one day pass their projects in one pass over the projects —
+  `many_holders_pass_in_one_pass`.
+- E6: the region is saved with the project — `project_region_round_trips`.
+
+**Extension points**: none; S1.292 moves the field into K-69's process row.
+**Unit tests**: `passed_project_keeps_its_site`, `project_class_at_its_own_region`, `start_without_region_stops` (a
+CAP.2 violation), `estate_holds_completed_plant`, `many_holders_pass_in_one_pass`, `project_region_round_trips`.
+**Live checks**: LC-1-12 (projects started and completed, CAP.5) and LC-1-11 (CAP.9) keep passing; applicable once a
+project completes.
+**Budget**: no share of any `[fin.*]` line (today's code; S1.287 carries projects at the design point); resident
+bytes: none at the design point (4 B a live project today).
+**Guards**: none.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; placing a project by where its holder stands when it completes; a project with no site.
+**Done when**:
+- [ ] The fix and its tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.136 — A failed goods move stops the run or fails whole, never a zero cost
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §7.18 followed.
+**Depends on**: S1.125 (PC-100's exception file, which this step lowers).
+**Goal**: every goods move whose failure today becomes a silent zero line of income is either a loss that cannot be
+short (it goes through the loss kernel) or a move that cannot be short by construction (a short is a contract
+violation naming its clause). No revenue is recognised on a delivery that did not happen.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/kernel/phx-core/src/goods.rs` | `Stocks::lose_flow` (a loss to nature as a flow, units whatever binds them); `Stocks::apply_whole` (a move that stops the run with its clause when short); the comments of `Short` and `lose` corrected |
+| `crates/kernel/phx-core/src/goods_tests.rs` | the kernel's tests below |
+| `crates/assembly/phx-world/src/core_goods.rs` | `spoil`, `close_services`, `make`, `deliver_sales` call the two |
+| `crates/assembly/phx-world/src/core_weather.rs` | `destroy` calls `lose_flow` |
+| `crates/kernel/phx-core/public-api.txt` | the snapshot with the two functions |
+
+**Design**:
+- The defect: `move_goods` and `move_goods_from` (`core_goods.rs`) return `None` when the payer is short; six sites then
+  recognise `cost.unwrap_or(0)`: `spoil`, `close_services` (the inputs a service's sales use, and its perished
+  capacity), `deliver_sales` (an unpaid service's capacity lost, and a delivery) and `destroy` (`core_weather.rs`). In
+  `deliver_sales` a sale's revenue is recognised although its goods never moved (ACC.13).
+- **Losses** (GDS.8, GDS.9 — physical transformations, Law 5): `Stocks::lose_flow(&mut self, flow: &Flow) -> i64`
+  takes the units from the holding whatever binds them, cutting pledges as `lose` does, and returns the cost lost; more
+  units than held is a GDS.12 violation; a payee other than nature is a Law 5 violation. `spoil` reckons spoilage on
+  all units held (`phx_core::goods::spoil`) while the move took free units only, so goods in transit made the whole
+  spoilage fail silently; through `lose_flow` they spoil. `destroy` and the perished capacity go through it too. Each
+  flow still enters the day's moves for GDS.10.
+- **Moves that cannot be short by construction** — `Stocks::apply_whole(flow, bound, cost, day, clause) -> i64` stops
+  the run with `clause` on `Short`:
+  - a delivery from committed units in `deliver_sales` (GDS.2): the cover is committed at the sale (`cover_sale`) and
+    delivered the same day; no loss runs between the meetings and settlement (losses run in the day's stock stage,
+    before any sale), and wear takes only plant in service, which is never offered;
+  - inputs used by a service sold (`close_services`) and by making (`make`, its `fed = false` arm), TEC.9: making's
+    capacity is bounded by each input's free units the same day (`making`), and nothing else takes a maker's inputs
+    before its close.
+- The day record's `unfed` count and LC-1-05 stay; the violation now stops the run before one can be counted.
+- The comments of `Short` ("a sale's goods lost after they were committed fail this way") and `lose` ("a cover left
+  beyond the units fails its sale") become true to the kernel: a loss cuts pledges; a committed cover is delivered or
+  released the day it is made.
+- Moved first by S1.272 (stocks' users onto holdings), S1.278 (sales' cover onto bounds and liens), S1.291
+  (production and spoilage onto standing rates) and S1.294 (catastrophes' losses by place).
+- It carries GDS.2, GDS.8, GDS.12 (done at S1.05), GDS.10 (done at S1.07) and SET.3 (done at S0.15), and serves
+  TEC.9 (completed at S1.273), ACC.13 (completed at S1.329) and GDS.9 (completed at S1.464).
+
+**Edge cases**:
+- E1: a catastrophe striking goods in transit loses them and cuts the carrier's pledge — `lose_flow_cuts_pledges`.
+- E3: a holder with no holding of a spoiling good loses nothing and issues no flow — `lose_flow_of_nothing_issues_none`.
+- E14: spoilage and a catastrophe on one holding the same day apply in the stock stage's order, each on what is left —
+  `two_losses_one_day_each_on_what_is_left`.
+- E12: no absent cost: every site recognises the cost the kernel returns — `apply_whole_returns_carried_cost`.
+
+**Extension points**: none.
+**Unit tests**: `lose_flow_takes_units_whatever_binds_them`, `lose_flow_cuts_pledges`, `lose_flow_refuses_more_than_held`
+(GDS.12), `lose_flow_refuses_a_party_payee` (Law 5), `lose_flow_of_nothing_issues_none`,
+`two_losses_one_day_each_on_what_is_left`, `apply_whole_short_stops_with_its_clause`, `apply_whole_returns_carried_cost`
+— hand-built `Stocks` fixtures of a few holdings.
+**Live checks**: LC-1-05 (TEC.9), LC-1-15 (GDS.11), LC-1-46 (GDS.9) and the goods identity (GDS.10) keep passing;
+from the first day.
+**Budget**: no share of any `[fin.*]` line (today's code; S1.272 and S1.291 carry holdings at the design point);
+resident bytes: none. `lose_flow` is one holding row write, as `apply` is.
+**Guards**: removes its six `unwrap_or(0)` sites from `exceptions/PC-100.toml`.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a zero cost standing for a move that did not happen; catching a violation to continue.
+**Done when**:
+- [ ] The kernel functions, the call sites and the tests; the public-API snapshot updated; the fast checks pass.
+- [ ] The bench's run at fewer persons passes with LC-1-05 and the goods identity read, and reads the budget with no
+  ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.138 — Impossible values stop the run at the conversion
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §7.18 followed.
+**Depends on**: S1.125 (PC-100's exception file, which this step lowers).
+**Goal**: every conversion that today turns a negative, not-a-number or out-of-range value into zero either converts
+without loss (a signed value that may be negative) or stops the run with the clause the impossible value breaks, as a
+contract violation does (II.5).
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_labour.rs` | experience, a job's year, days a posting stood, a price's conversion |
+| `crates/assembly/phx-world/src/core_default.rs` | a claim's share of the pool |
+| `crates/assembly/phx-world/src/core_credit.rs` | a household loan's weight at the opening |
+| `crates/assembly/phx-world/src/core_goods.rs` | a making's whole units |
+| `crates/assembly/phx-world/src/core_bills.rs` | bids' and the offer's whole bills |
+| `crates/assembly/phx-world/src/core_central.rs` | a facility position's opening day |
+
+**Design**: each site, what it swallows today and what it becomes:
+- `seekers` (`core_labour.rs`), `u32::try_from(p.age_on(date)).unwrap_or(0)`: a searcher born after today → violation
+  (POP.1).
+- `hire` (`core_labour.rs`), the job's year `unwrap_or(0)`: a date before year zero → violation (TIME.4); the posting's
+  days stood, `days_between(p.first, day).unwrap_or(0)`: a posting first seen after today → violation (TIME.4).
+- `price_expected` (`core_labour.rs`), `u64::try_from(price).unwrap_or(0)`: a posted price is signed and may be
+  negative (Law 6, Law 8); read with `from_i64`, no violation, no zero.
+- `shares` (`core_default.rs`), a claim's paid share `unwrap_or(0)`: paid ≤ its claim's i64 amount by construction →
+  violation (SET.7) if not.
+- `household_loans` (`core_credit.rs`), a borrowing household's negative income `unwrap_or(0)` weight → violation
+  (GEN.2): the opening draws no borrower with a negative income.
+- `making` (`core_goods.rs`), `floor_to_i64(units.floor()).unwrap_or(0)`: a not-a-number or unbounded decision →
+  violation (NUM.6).
+- `auctions` and `offer` (`core_bills.rs`), `floor_to_i64(…).unwrap_or(0)` of a bid's and the offer's bills:
+  not-a-number → violation (NUM.6); a negative size stays a negative number, and the treasury offers nothing when it is
+  not positive (S1.155 states it as an action).
+- `returns` (`core_central.rs`), `opened.get(…).unwrap_or(day)`: every position records the day it opened; one without
+  → violation (CB.7).
+- Each violation names the party or contract. A pure helper `whole_or_stop(x: f64, clause) -> i64` in the module
+  carries the float cases.
+- Moved first by S1.208 (persons' ages from the person kind), S1.305 (vacancies), S1.313 (the bill auction), S1.320
+  (facilities) and S1.346 (estates' payments), which keep these contracts.
+- It carries NUM.6 (done at S0.03), TIME.4 (done at S0.08) and SET.7 (done at S0.15).
+
+**Edge cases**:
+- E8: an out-of-range conversion is a violation, never a wrap or a zero — `whole_or_stop_refuses_nan`,
+  `whole_or_stop_refuses_beyond_i64`.
+- E12: an absent opening day is a violation, not today — `position_without_opening_day_stops`.
+- E11: a searcher's age on day zero is its drawn age — `age_on_opening_day_is_drawn_age`.
+
+**Extension points**: none.
+**Unit tests**: `whole_or_stop_refuses_nan`, `whole_or_stop_refuses_beyond_i64`, `whole_or_stop_floors_finite`,
+`negative_price_converts_signed`, `claim_share_within_its_amount`, `position_without_opening_day_stops`,
+`age_on_opening_day_is_drawn_age`.
+**Live checks**: none new; the checks of the bench's run keep passing.
+**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
+**Guards**: removes the ten sites from `exceptions/PC-100.toml`.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a zero, `u64::MAX` or today standing for an impossible value; a violation caught and continued.
+**Done when**:
+- [ ] The conversions and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.139 — Absent preferences, standings, standards and accounts matched
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §4.7 (decision points, deciders and rule handles) followed.
+**Depends on**: S1.125 (PC-100's exception file, which this step lowers).
+**Goal**: where a decider's preferences, a standing's place, a bank's standard, an account's row or an estate's money
+is absent, the code says what the absence is — a recorded "none", a standard that admits no class, or a state that
+cannot exist and stops the run — instead of reading a default.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_decide.rs` | `founding_of` returns `Option<Prefs>`; `found` pads with none; `standing_at` replaced |
+| `crates/kernel/phx-core/src/decisions.rs` | `Standing::ordinal(self) -> usize`, an exhaustive match |
+| `crates/assembly/phx-world/src/core_open.rs` | treasuries, agencies and central banks founded with their declared preferences |
+| `crates/assembly/phx-world/src/core_lending.rs` | a bank's opening standard with no admitted class |
+| `crates/assembly/phx-world/src/core_accounts.rs` | a money-holding party's account row read or stopped |
+| `crates/assembly/phx-world/src/core_day.rs` | an estate's money read or stopped; withholding above the gross stops the run |
+
+**Design**: each site:
+- `founding_of` (`core_decide.rs`) reads `Prefs::NONE` for a party never founded. Every party whose legal form
+  declares offices is founded at its beginning: firms (`core_firms.rs`, `open_firms`) and banks (`core_lending.rs`,
+  `open_credit`) today; treasuries, agencies and central banks are founded at the opening (`Core::open`) with the
+  preferences their forms declare (none a Stage 1 rule reads, recorded as such). `founding_of` then returns
+  `Option<Prefs>`; `in_office` for an office no one holds of a party with no founding record is a contract violation
+  (MND.16) naming the party. `found` pads skipped slots with `None`, never with `NONE`. A working owner's preferences
+  (`core_owners.rs`, the owner's appointment and `stop_working`) read the firm's founding record, present by
+  construction.
+- `standing_at` (`core_decide.rs`) `.unwrap_or(0)`: replaced by `Standing::ordinal`, an exhaustive match; a new standing
+  without a place does not compile.
+- A bank's opening standard (`open_credit`) `.unwrap_or(0)` admits the worst class when every class is in default. The
+  standard is the lowest class admitted (`sys-bnk::credit::decline`: `class < standard` declines), so a book with no
+  class below default opens at the class count, which admits none — stated by its meaning, not a default.
+- `net_assets` (`core_accounts.rs`): a kind with no accounts holds no money (its declared form, S1.144); a party of a
+  money-holding kind with no row stops the run (MON.11).
+- `estates_pay` (`core_day.rs`) `held.unwrap_or(0)`: an estate is opened with an account (S1.140); none → violation
+  (PTY.9).
+- `withhold` (`core_day.rs`): a levy of none is no tax; a levy below none or above the gross it is taken from cannot
+  exist and stops the run (TAX.2) instead of being skipped.
+- Moved first by S1.210 (founding preferences onto offices, K-34), S1.339 (lenders' classes onto books), S1.244
+  (accounts onto the ledger) and S1.346 (estates' payments), which keep these meanings.
+- It carries NUM.8 (done at S0.09), PTY.9 (done at S0.25) and SET.7 (done at S0.15), and serves MND.16 (completed at S8.201),
+  TAX.2 (completed at S5.178) and BNK.5 (completed at S2.190).
+
+**Edge cases**:
+- E3: a household with no account opens no estate — `accountless_household_opens_no_estate`; a money-holding party with
+  no row is a violation — `account_row_missing_stops`.
+- E12: every absence named above is matched, none read as a value — `unfounded_office_stops`,
+  `no_admitted_class_admits_none`.
+- E11: day zero's decisions read the opening's founding records — `institutions_founded_at_opening`.
+- E6: founding records are saved; the padding `None` survives a load — `founding_padding_round_trips`.
+
+**Extension points**: none.
+**Unit tests**: `unfounded_office_stops`, `standing_ordinals_are_their_places`, `no_admitted_class_admits_none`
+(`sys-bnk::credit::decline` over the class count), `account_row_missing_stops`, `accountless_household_opens_no_estate`,
+`levy_above_gross_stops`, `levy_of_none_is_no_tax`, `institutions_founded_at_opening`, `founding_padding_round_trips`.
+**Live checks**: none new; LC-1-25 (lending) and LC-1-28 (TAX.5) keep passing.
+**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
+**Guards**: removes its six sites from `exceptions/PC-100.toml`.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; `Prefs::NONE` standing for a party never founded; a skipped flow where the state cannot exist.
+**Done when**:
+- [ ] The matches and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.140 — Balances written at endings become flows
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §9.1 (endings) followed.
+**Depends on**: none.
+**Goal**: when a firm or a household ends, the money in its account moves to its estate by a flow that settlement
+applies (Law 5), never by writing both balances; the estate opens with an empty account at the same bank.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_default.rs` | `end_firm` issues the passing flow |
+| `crates/assembly/phx-world/src/core_pop.rs` | `end_household` issues the passing flow |
+| `crates/assembly/phx-world/src/core_day.rs` | `open_estate` begins the estate with an empty account; the day's close checks no ended account holds a residue |
+| `crates/assembly/phx-world/src/consts.rs` | `reason::PASSED`, a flow reason |
+
+**Design**:
+- The defect: `end_firm` (`core_default.rs`) and `end_household` (`core_pop.rs`) read the ended party's balance and
+  pending, begin the estate with that balance (`open_estate`, `core_day.rs`, `store.begin(…, Opening { bank, balance:
+  money })`) and set the ended account to zero — money moved with no instruction (SET.11) and no flow the money audit
+  reads (MON.8).
+- `passing_flow(ended, estate, (balance, pending), ccy) -> Option<Flow>`: a pure function; the whole money the ended
+  party holds at its ending, payer the ended party, payee its estate, reason `PASSED`, in its currency; none when it
+  holds none. It is pushed onto the day's pending flows. Both endings run before the day's settlement (hazards at stage
+  3, defaults in labour), so it settles that day (on a closed day it is committed, as every flow is); SET.7: an
+  instruction naming a party that ended during the day is settled against its estate.
+- The flow carries the highest payment order (`Flow::order`), so any other flow naming the payer that day settles or
+  fails first (SET.6).
+- `open_estate` begins the estate with `Opening { bank, balance: 0 }`.
+- At the day's close, before the slots of the day's endings are released, an ended party's account holding anything
+  is a contract violation (SET.7) naming it and the amount — the check that the flow carried all of it.
+- The direct balance writers left in `phx-world` after this step: none (the save's fault-injection test harness,
+  `save/inject.rs`, is test-only); S1.158 re-aims PC-25 at settlement's apply.
+- Moved first by S1.344 (endings onto the ending kernel, K-97, which moves every row naming the party).
+- It carries SET.11, MON.8, SET.7 (done at S0.15) and PTY.9 (done at S0.25).
+
+**Edge cases**:
+- E3: a household with no money and no shares opens no estate and issues no flow — `zero_money_passes_nothing`.
+- E1: many endings on one day each issue one flow, grouped like any other — `many_endings_one_flow_each`.
+- E14: an ending and a wage due to the same household the same day: the wage settles to the household's account and
+  the passing flow, ordered last, carries it on — `passing_ordered_last`.
+- E10: the ended slot is released only after the day's settlement, so the flow never names a reused slot —
+  `residue_after_close_stops`.
+- E5: on a closed day the flow is committed with the day's others and final on the next business day — LC-0-18 (the
+  money identity) over a run crossing a weekend.
+
+**Extension points**: none.
+**Unit tests**: `ending_money_passes_by_flow`, `zero_money_passes_nothing`, `many_endings_one_flow_each`,
+`passing_ordered_last` (the flow's payment order), `residue_after_close_stops`.
+**Live checks**: LC-0-18 (the money identity) and LC-0-53 (estates' standing) keep passing; from the first ending.
+**Budget**: no share of any `[fin.*]` line (today's code; S1.344 carries endings at the design point); resident bytes:
+none. One flow an ending.
+**Guards**: none here; S1.158 re-aims PC-25 at the writers that remain.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a balance or pending written outside settlement's apply or the opening; an estate begun with money.
+**Done when**:
+- [ ] The flow, the check and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes with LC-0-18 and LC-0-53 read and at least one ending of each kind, and
+  reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.147 — The activity the state's agencies produce declared
+
+**Status**: planned
+**Kind**: data
+**Clauses**: none
+**Architecture**: §10.0a (the opening dataset) followed.
+**Depends on**: none.
+**Goal**: which activity of the national accounts the state's public agencies produce is declared data of the agency's
+system, named by the activity's code in the accounts' classification, so no mechanism reads a dataset's column by its
+position.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/systems/sys-soc/src/lib.rs` | `SOC.agency_activity`: the activity code (the classification's public administration) the state's agencies produce, POLICY of the state (what its agencies do), with its source |
+| `data/shared/SOC.toml` | its value: public administration's code in the accounts' activity list |
+
+**Design**:
+- `PUBLIC_ADMINISTRATION = 21` (`consts.rs`) is the position of public administration's column in the accounts the
+  opening derives. The code of that activity is the declared fact; its column is found by the code in the accounts'
+  activity list where the opening reads it (S1.148).
+- No mechanism reads it here.
+- It serves SOC.2 (completed at S5.130).
+
+**Edge cases**:
+- E12: an absent value is refused at assembly — `agency_activity_missing_refused`.
+- E13: a code the classification does not hold is refused — `agency_activity_unknown_code_refused`.
+
+**Extension points**: S1.148 reads it; S1.410 and S1.423, which open the agencies' staff and purchases, read the same.
+**Unit tests**: `agency_activity_read`, `agency_activity_missing_refused`, `agency_activity_unknown_code_refused`.
+**Live checks**: none.
+**Budget**: no share of any `[fin.*]` line; resident bytes: none.
+**Guards**: none.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a dataset column by position.
+**Done when**:
+- [ ] The primitive, its data and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.148 — Numeric literals in mechanisms declared
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §16 (drift guards) written: PC-06 no longer exempts array lengths and indices.
+**Depends on**: S1.147 (the agencies' declared activity); S1.144 (the issuer's classes read by form).
+**Goal**: no mechanism carries as a literal a count of money classes, a labour state's place, a dataset's column or an
+iteration count; each is a typed enumeration of what the spec names or is read from its declaration, and the opening's
+fixed point is solved exactly rather than iterated to a hidden bound.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_central.rs`, `core_day.rs` | the issuer's money classes as `IssuerClass` |
+| `crates/interfaces/if-state/src/consts.rs` | `LabourState` (employed; unemployed and searching; out of the labour force), replacing `LABOUR_STATES` |
+| `crates/assembly/phx-world/src/core_stats.rs` | `labour_force` counts by `LabourState` |
+| `crates/assembly/phx-world/src/consts.rs`, `core_firms.rs`, `core_jobs.rs`, `core_goods.rs`, `opening/asked.rs` | public administration's column found by `SOC.agency_activity`; `PUBLIC_ADMINISTRATION` deleted |
+| `crates/assembly/phx-world/src/opening/leontief.rs` | `solve(inputs, finals) -> Result<Vec<f64>, Refusal>`, the exact solution of x = A·x + f |
+| `crates/apps/phx-check/src/rules/literals.rs` | PC-06 without the array-length and index exemption |
+
+**Design**:
+- The issuer's money classes: `[i128; 3]` in `Central::recorded`, `issuer_held` (`core_central.rs`) and `money_breaks`
+  (`core_day.rs`), with its names array and `if class == NOTES { "MON.9" } else { "MON.7" }`, become
+  `IssuerClass { Reserves, StateAccounts, Notes }` — the three MON.7 and MON.9 name — with `ALL`, `COUNT`, `name()` and
+  the clause its identity checks; arrays are `[i128; IssuerClass::COUNT]`, indexed by the class.
+- Labour states at literal places 0, 1, 2 (`labour_force`, `core_stats.rs`): `if-state`'s `LabourState`, a person's
+  state counted at its variant.
+- `PUBLIC_ADMINISTRATION = 21` (`consts.rs`), read by `open_firms`, `open_jobs`, `open_goods` and `Asked`
+  (`opening/asked.rs`): the column found by `SOC.agency_activity`'s code in the accounts' activity list at the opening,
+  refused where absent.
+- The opening's fixed point `for _ in 0..n * n` (`open_expected`, `core_goods.rs`): what the ways use to make the final
+  demand is x = (I − A)⁻¹ f, solved by Gaussian elimination with partial pivoting over the n products (at the opening
+  only); a matrix with no non-negative solution (not productive) is refused at the opening naming the country. No
+  iteration count, no tolerance.
+- PC-06 today exempts array lengths and indices; it refuses them above 2 in mechanism code, with the engineering
+  constants of a crate's `consts` item exempt as today.
+- Moved first by S1.243 (maintained money totals, K-47), S1.221 (statistics accumulators) and the steps opening
+  firms and jobs (S1.483, S1.412), which keep the enumerations and the declared column.
+- It carries NUM.3 (done at S0.09), MON.7 and MON.9 (done at S0.15).
+
+**Edge cases**:
+- E13: a country whose accounts lack the declared activity is refused — `agency_activity_column_missing_refused`.
+- E12: a singular or non-productive input matrix is refused, never iterated — `non_productive_matrix_refused`.
+- E11: the opening solves once and no day reads the solver — `leontief_solves_exactly`.
+
+**Extension points**: a later money class (a foreign issuer's deposits, S5.159) is an `IssuerClass` variant with its clause;
+a later labour state (S6.115) a `LabourState` variant.
+**Unit tests**: `leontief_solves_exactly` (a 2×2 and a 3×3 with known inverses), `non_productive_matrix_refused`,
+`issuer_classes_indexed_by_variant`, `labour_state_counted_at_its_variant`, `agency_activity_column_missing_refused`,
+`pc06_refuses_array_length_three`.
+**Live checks**: LC-1-26 (the issuers' money classes) and LC-1-37 keep passing with the same values.
+**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none. The opening's fixed point falls from up
+to n² sweeps to one solve.
+**Guards**: PC-06 extended as above; the sites removed.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; an iteration bound or tolerance standing for an exact solution; a dataset column by position.
+**Done when**:
+- [ ] The enumerations, the solver, PC-06 and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes, the committed setup opening with the same expected demands to the
+  solver's rounding, and reads the budget with no ratchet broken.
+- [ ] §16 states PC-06's reach; the two reviews done; status `done` and the section removed.
+
+---
+
+### S1.149 — An employment's notice cleared on every close
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §7.18 followed.
+**Depends on**: S1.145 (the jobs families by their declared flag).
+**Goal**: a job under notice that closes by any path — separation, the employer's ending, quitting, retirement, the
+person leaving or its household ending — leaves no notice behind, so a later hire into the reused contract slot is seen
+by `staff_of` and `lay_off`.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_labour.rs` | `close_job`, the one closing path of a job; `hire` refuses a slot under notice |
+| `crates/assembly/phx-world/src/core_pop.rs`, `core_default.rs`, `core_agencies.rs` | their job closes go through `close_job` |
+| `crates/assembly/phx-world/src/core_labour_tests.rs` | the unit tests below |
+
+**Design**:
+- The defect: `labour.noticed: BTreeSet<u32>` (`core_labour.rs`) holds the edge slots of jobs under notice; `separate`,
+  `close_contracts` (`core_default.rs`) and `quit_jobs` (`core_agencies.rs`) remove them, but `leave_jobs`,
+  `person_left` and `end_household` (`core_pop.rs`) close jobs under notice and leave the slot in the set. The edge
+  slot is reused by a later hire, which `staff_of`, `review_wages` and `lay_off` then skip until the old separation
+  date.
+- `close_job(&mut self, family: FamilyH, edge: Slot)`: removes the notice and closes the contract; every close of a
+  contract in a jobs family goes through it (the loops of `person_left` and `end_household` over every family call it
+  for jobs families by S1.145's flag).
+- `hire` opening a job in a slot still in `noticed` is a contract violation (LAB.16) naming the slot: the check that no
+  path is missed.
+- Moved first by S1.266 (arrears, grace and notice onto status, K-56: notice a contract's own status, gone with its
+  row).
+- It serves LAB.1 (done at S1.08; S4.145 retires its placeholder) and carries LAB.16 (done at S1.08).
+
+**Edge cases**:
+- E10: a slot closed and reused on the same day starts with no notice — `close_job_clears_notice`,
+  `hire_into_noticed_slot_stops`.
+- E14: a notice given and the person retiring the same day close the job once, through one path —
+  `notice_and_retirement_close_once`.
+- E6: `noticed` is saved as it is; no index to rebuild — `noticed_round_trips`.
+
+**Extension points**: none.
+**Unit tests**: `close_job_clears_notice` and `hire_into_noticed_slot_stops` (a hand-built jobs `Family` fixture of a
+few contracts and a notice set), `every_jobs_close_goes_through_close_job` (the closers' family filter by flag),
+`notice_and_retirement_close_once`, `noticed_round_trips`.
+**Live checks**: LC-1-21 (LAB.13's employment identity) and LC-1-22 (LAB.14) keep passing; from the first separation.
+**Budget**: no share of any `[fin.*]` line (today's code; S1.266 carries notice at the design point); resident bytes:
+none.
+**Guards**: none.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a second path that closes a job.
+**Done when**:
+- [ ] The path, the check and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons at `-d 60` (retirements and separations under notice both reached) passes and
+  reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.150 — Measurement histories held by declared horizons
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §11 (persistence) followed: what is saved stays within its horizon.
+**Depends on**: none.
+**Goal**: five histories that grow without bound over a run — the tax sample, the surprise responses, the deaths, the
+followed catastrophes and the published releases — each keep only the records within a declared horizon (RESOLUTION),
+and each reader reads within it.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `data/shared/SET.toml` | `SET.horizon_days` per history: tax sample, surprise responses, deaths, shocks, releases |
+| `crates/assembly/phx-world/src/core_taxes.rs`, `core_outlooks.rs`, `core_pop.rs`, `core_weather.rs`, `core_stats.rs` | each history dated and pruned at the day's close |
+| `crates/assembly/phx-world/src/horizon.rs` | `expired(dates, today, horizon) -> usize` and the amortised prune |
+| `crates/apps/phx-cli/src/checks/{core,outlooks,geo,lives}.rs` | their reads stated over the horizon |
+
+**Design**:
+- The stores: `Taxes::sample` (one row a sampled wage, written by `withhold`), `Outlooks::responses` (written in
+  `core_goods.rs` after a surprise), `Core::deaths` (`core_pop.rs`), `Weather::shocks` (`weather_day`,
+  `core_weather.rs`, each with a clone of the day's marks, and walked by `note_rises` every day for every shock ever),
+  `CoreStats::published` (`stats_day`, `core_stats.rs`).
+- Each record carries its day (the sample and the responses gain it); each history declares its horizon in days, a
+  RESOLUTION primitive (SET.17), set at two years, and never shorter than what its readers compare (none follows a
+  POLICY). At the day's close records older than the horizon are dropped: the history is appended in day order, so they
+  are a prefix, found by binary search; the prefix is drained once it is at least half the store, so each record moves
+  at most once on average and no day moves the whole store.
+- `note_rises` walks only the shocks within their horizon; a shock's base marks stay those of its day (GDS.11 follows
+  every market's rise).
+- The live checks reading them (`deaths_destined`, `responses_by_size`, the tax sample check, the shocks' reads, the
+  life tables) read the records within the horizon; a gate run's reads are over its last two years.
+- Moved first by S1.167 (the horizon ring, K-08), S1.214 (deaths and weather records onto the event log), S1.218
+  (releases onto records) and S1.221 (samples in statistics' frames), whose horizons these declarations become.
+- It carries SET.13 and SET.17 (done at S0.20).
+
+**Edge cases**:
+- E9: over a run longer than a horizon each store stays flat at its horizon — `pruned_store_flat_after_horizon`, and
+  the bench's `StoreStats` rows ever against rows live.
+- E6: a save holds the records within the horizon and the load prunes nothing more —
+  `saved_history_within_horizon_round_trips`.
+- E11: an empty history on day zero prunes nothing — `expired_of_empty_is_none`.
+
+**Extension points**: S1.167's ring takes these horizons as its capacity by days.
+**Unit tests**: `expired_counts_the_old_prefix`, `expired_of_empty_is_none`, `prune_moves_each_record_once_amortised`,
+`pruned_store_flat_after_horizon`, `saved_history_within_horizon_round_trips`, `horizon_read_from_register`.
+**Live checks**: LC-0-53, LC-1-15, LC-1-44 and LC-1-51 read within the horizon and keep passing.
+**Budget**: no share of any `[fin.*]` line (today's code; S1.167 and S1.214–S1.221 carry histories at the design
+point); resident bytes: bounded by the horizons, none added. A binary search a history a day; drains amortised O(1) a
+record.
+**Guards**: none.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a history with no declared horizon; a daily walk of every record ever kept.
+**Done when**:
+- [ ] The horizons, the pruning and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken; a run past a horizon shows
+  the five stores' `StoreStats` rows ever and live apart.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.151 — Dates placed by the calendar, not counted
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §6.6 (cost bounds) followed: O(log n) per operation.
+**Depends on**: none.
+**Goal**: every date the day's code finds by counting from the start — a hire's first pay date, a project's ready day,
+a release's business day, a bill issue's place, the audit's births and deaths — is placed by the calendar or an index
+in O(log n) or O(1), whatever the run's length.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/kernel/phx-core/src/calendar/period.rs` | `ScheduleDates::first_after(calendar, day) -> u32` |
+| `crates/kernel/phx-core/src/calendar/mod.rs` | `Calendar::nth_business(country, from, k)` over a per-country business-day ordinal of the window |
+| `crates/assembly/phx-world/src/core_labour.rs`, `core_plant.rs`, `core_stats.rs`, `core_bills.rs`, `core_audit.rs` | the sites below |
+| `crates/kernel/phx-core/public-api.txt` | the snapshot |
+
+**Design**:
+- `hire` (`core_labour.rs`) counts dates from the schedule's first (`while dates.nth(…, nth) <= day { nth += 1 }`),
+  linear in the schedule's age. `first_after`: `nth` is non-decreasing in n, so an exponential then binary search finds
+  the first date after `day` in O(log n).
+- `start_project` (`core_plant.rs`) adds the lead one day at a time: `calendar.plus(day, Period::days(lead))`.
+- `release_day` (`core_stats.rs`) steps business days one by one: `nth_business` reads the k-th business day from a
+  per-country ordinal of the calendar's window (2 bytes a day a country, built with the window, rebuilt at load, moved
+  with `move_window`).
+- `Bills::issues` is searched linearly by `open_bill` and summed by filter for what matures by `offer`
+  (`core_bills.rs`), and grows forever: issues are kept per country sorted by maturity (binary insertion among the live
+  issues, about a year's weekly issues a country), the day's issue found at its place, what matures in (day, next]
+  summed over the range found by binary search, and an issue leaves on its maturity (the live check reads only live
+  issues).
+- `audit` (`core_audit.rs`) folds every day's births and deaths: running totals of born and gone, advanced where the
+  day's record is written.
+- Moved first by S1.178 (the calendar's per-day facts, K-19), S1.264 (reckoning onto shared plans), S1.282 (bills
+  onto instruments) and S1.220 (per-day records onto the day ledger).
+- It carries TIME.4 (done at S0.08).
+
+**Edge cases**:
+- E11: a schedule whose first date is after today gives n = 0 — `first_after_before_first_date`.
+- E5: a release on a month opening with closed days lands on its k-th business day — `nth_business_skips_closed_days`.
+- E9: a two-year run's hire costs the same as day one's — `first_after_is_logarithmic` (counts the `nth` calls).
+- E6: the ordinal is rebuilt at load and the calendar hashes equal — `ordinal_rebuilt_equal`.
+
+**Extension points**: `first_after` and `nth_business` serve every schedule of K-55 (S1.263) and K-19 (S1.178).
+**Unit tests**: `first_after_before_first_date`, `first_after_matches_linear_count`, `first_after_is_logarithmic`,
+`nth_business_skips_closed_days`, `ordinal_rebuilt_equal`, `issues_sorted_by_maturity`, `maturing_sum_over_range`,
+`running_totals_equal_fold`.
+**Live checks**: LC-1-29 (TRS.6's bills), LC-1-37 (release days) and LC-0-63 (persons reconciled) keep passing.
+**Budget**: no share of any `[fin.*]` line (today's code; S1.178 carries the calendar's facts at the design point);
+resident bytes: a 2 B-a-day ordinal a country over the calendar's window, rebuilt at load. Each site O(log n) or O(1).
+**Guards**: PC-17 (days placed only by the calendar) keeps passing with the loops gone.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a loop whose length grows with the run.
+**Done when**:
+- [ ] The functions, the sites and the tests; the public-API snapshot; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.154 — Production, orders and the opening's needs return actions, not floors
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §7.18 followed.
+**Depends on**: none.
+**Goal**: where a firm's making, a buyer's order or the opening's dealing of jobs can be "nothing", the rule returns
+that action instead of flooring a number at zero by comparison.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_goods.rs` | `planned` returns `Plan::{Make(q), Rest}` |
+| `crates/systems/sys-frm/src/rules/inputs.rs` | `order` returns `Order::{Buy(units), None}` |
+| `crates/assembly/phx-world/src/core_jobs.rs` | `net_needs` returns each firm's `Need::{Jobs(x), MetByOwners}` |
+
+**Design**:
+- The sites, each `if x > 0.0 { x } else { 0.0 }`: `planned` (`core_goods.rs`), `order` (`sys-frm`'s inputs rule),
+  `net_needs` (`core_jobs.rs`). Clippy already refuses `min`, `max` and `clamp`; these are the same floor written as a
+  comparison.
+- None of FRM.4, FRM.7 or GDS.5 states a floor. What each decides is a choice among actions, one of which is to do
+  nothing: a firm makes some quantity or rests (FRM.4; a stock above its aim is run down by selling, the price review's
+  clearing, FRM.5); a buyer orders some units of an input or none (GDS.5; stock above the plan is held, and a
+  stockist's sale is GDS.6's); a firm's owners meet its need or it takes jobs (the opening's dealing, a count of jobs).
+  Each returns its action as an enum variant; the caller matches it.
+- Moved first by the production and input-order rules of S1.443 and S1.444, which keep the action enums ("doing
+  nothing is the rule's action").
+- It carries FRM.7 (done at S1.08) and NUM.8 (done at S0.09), and serves FRM.4 (completed at S1.443) and GDS.5
+  (completed at S1.444).
+
+**Edge cases**:
+- E2: a market with no buyer leaves a firm's stock above its aim; it rests, and the price review clears it —
+  `overstocked_firm_rests`.
+- E12: an action is never read as a number where the rule rests — `rest_is_not_zero_units`.
+- E11: day zero's first plans are the same actions — `opening_plan_is_an_action`.
+
+**Extension points**: every later decision states "nothing" as an action of its option set (Stage 4 on, K-100/K-102's
+`OptionSet`).
+**Unit tests**: `overstocked_firm_rests`, `rest_is_not_zero_units`, `order_none_when_covered`, `owners_meet_need`,
+`opening_plan_is_an_action`.
+**Live checks**: LC-1-05 and LC-1-07 keep passing with the same values.
+**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
+**Guards**: none here; S1.155 adds PC-110.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a floor, cap or clamp by comparison.
+**Done when**:
+- [ ] The actions and the tests; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.155 — The bill offer returns an action; no floor by comparison
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: §16 (drift guards) written: PC-110.
+**Depends on**: S1.154 (the other floors gone, so PC-110 passes on the tree).
+**Goal**: the treasury's bill offer returns "no offer" as an action; the one floor left, inside a declared placeholder,
+is listed by name; and `phx-check` refuses any new floor or cap by comparison in mechanisms.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/systems/sys-sov/src/rules.rs` | `size` returns `Offer::{Face(f), None}`; its outflow floor listed as the placeholder's |
+| `crates/apps/phx-check/src/rules/floors.rs` | PC-110 and its tests |
+| `crates/apps/phx-check/exceptions/PC-110.toml` | the named placeholder floor |
+| `perf/ratchets.toml` | `phx_check.exceptions_pc110` |
+
+**Design**:
+- `size` (`sys-sov`'s rules) floors the offered face at zero and its week's outflow at zero. SOV.3 states no floor: the
+  treasury offers some face or none, `Offer::None` when nothing is needed.
+- The outflow floor (a week of net inflow read as no outflow) is part of the rule the code declares a placeholder naming
+  TRS; it stays, listed by name in `exceptions/PC-110.toml` with "placeholder naming TRS, retired by the treasury's
+  funding plan (S3.119)".
+- **PC-110** — no floor or cap by comparison in mechanisms: in mechanism code (`sys-*`, `phx-world`, the kernel
+  crates), refuses an `if`/`else` whose one arm is the compared value and whose other is a literal zero (`0`, `0.0`;
+  `>`, `>=`, `<`, `<=`; either order of the comparison), and the same with the arms swapped. It does not match an arm
+  that builds an enum variant: a function returning a declared option or action enum states that doing nothing is an
+  action. Exceptions are listed by function in `exceptions/PC-110.toml`, each with its clause or placeholder, never
+  exempt by pattern; the file's count is the down-ratchet `phx_check.exceptions_pc110`.
+- Moved first by the bill auction's sizing (S3.119), which retires the placeholder and its exception.
+- It serves SOV.3 (completed at S3.119).
+
+**Edge cases**:
+- E2: a treasury whose cash covers its buffer offers nothing — `offer_none_when_cash_suffices`.
+- E12: an exception without its clause or placeholder is refused — `pc110_exception_needs_its_clause`.
+
+**Extension points**: every later mechanism is held to PC-110.
+**Unit tests**: `offer_none_when_cash_suffices`, `pc110_refuses_value_or_zero`, `pc110_refuses_swapped_arms`,
+`pc110_passes_action_enum`, `pc110_exception_needs_its_clause`.
+**Live checks**: LC-1-29 keeps passing with the same values.
+**Budget**: no share of any `[fin.*]` line (today's code); resident bytes: none.
+**Guards**: PC-110; `exceptions/PC-110.toml` holds one entry.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a floor, cap or clamp by comparison; an exception by pattern.
+**Done when**:
+- [ ] The action, PC-110, its exception file, its ratchet and the tests; the fast checks pass on the current tree.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] §16 states PC-110; the two reviews done; status `done` and the section removed.
+
+---
+
+### S1.157 — Stale comments corrected
+
+**Status**: planned
+**Kind**: repair
+**Clauses**: none
+**Architecture**: none.
+**Depends on**: S1.153 (which makes `pop_rules.rs`' comment on following true).
+**Goal**: the false comments say what the code does, and a comment explaining code that is not there is gone.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/assembly/phx-world/src/core_goods.rs` | `review_prices`' comment |
+| `crates/assembly/phx-world/src/core_labour.rs` | the comment on the voluntary close removed from `post` |
+
+**Design**:
+- `review_prices` (`core_goods.rs`): "the firms whose production schedule came today review their price" — the
+  reviewing firms are those whose attention drew a review today (`reviewing_today`, `attend`); the comment says so.
+- `post` (`core_labour.rs`): a comment explains an owner's winding down that no code does and names a later system;
+  removed. The voluntary close's absence is a declared placeholder (`FRM.voluntary_close`, placeholder naming MND),
+  declared as data by the default step (S1.428), not a comment.
+- `follow`'s comment (`pop_rules.rs`) is made true by S1.153 and is left as it is.
+- Comments say why, in a sentence or two, and name no document, clause, step or system (PC-07 for clause identifiers).
+
+**Edge cases**: n/a: no behaviour changes, and PC-07 runs over the comments.
+**Extension points**: none.
+**Unit tests**: none (comments only; PC-07 runs over them).
+**Live checks**: none.
+**Budget**: no share of any `[fin.*]` line; resident bytes: none.
+**Guards**: none.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a comment that names a system, a step or history.
+**Done when**:
+- [ ] The comments corrected; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] The two reviews done; status `done` and the section removed.
+
+---
+
+### S1.158 — Vacuous `phx-check` rules re-aimed
+
+**Status**: planned
+**Kind**: tool
+**Clauses**: none
+**Architecture**: §16 (drift guards) written: each rule's target as it now is.
+**Depends on**: S1.140 (no balance is written outside settlement's apply, so PC-25's re-aim passes).
+**Goal**: every `phx-check` rule guards something that exists. PC-24, PC-25, PC-28 and PC-29 are re-aimed at today's
+writers of what they protect; PC-27 loses its entry for deleted files; each base step that later moves a target
+carries the rule with it.
+
+**Files**:
+
+| path | purpose |
+| --- | --- |
+| `crates/apps/phx-check/src/rules/ledger_writes.rs` | PC-24 re-aimed |
+| `crates/apps/phx-check/src/rules/money_moves.rs` | PC-25 re-aimed |
+| `crates/apps/phx-check/src/rules/batches.rs` | PC-27's first entry removed |
+| `crates/apps/phx-check/src/rules/prints.rs` | PC-28 re-aimed |
+| `crates/apps/phx-check/src/rules/equity.rs` | PC-29 re-aimed |
+| `crates/apps/phx-check/src/rules/mod.rs` | the rules' titles |
+
+**Design**: each rule, what it names today (none of which exists) and what it guards after:
+- **PC-24** (`ledger_writes.rs`: `RelationshipRows`, `Lots`, `NamedUnits`, `phx-pop/src/holder.rs`): holdings are
+  written by the goods kernel alone — no code outside `phx-core/src/goods.rs` and `units.rs` assigns a `Holding`'s
+  fields or builds a `Holding`; world code changes holdings only through `Stocks`' methods. S1.271 and S1.272
+  (holdings, K-60) move the target to `phx-hold`.
+- **PC-25** (`money_moves.rs`: the ledger's `add_row`, `set_count` …, `LegDigest`): balances and pending are written by
+  settlement's apply (`phx-core/src/settle.rs`) and by an account's opening (`KindStore::begin`, `open_account`, from
+  opening code) alone; refuses `.balance.set(`, `.pending.set(` and a mutable slice of either elsewhere in world
+  crates. The save's fault-injection harness (`save/inject.rs`, test-only) is outside world code. S1.240 and S1.244
+  (money accounts, K-47) move the target to `phx-ledger`.
+- **PC-27** (`batches.rs`: `phx-ledger`'s `stream.rs`, `fixed_point.rs`, `apply_batch.rs`, `batch.rs`): the entry is
+  removed; the `phx-core/settle.rs` entry stays live. S1.245 (flow batches, K-48) adds its own entry.
+- **PC-28** (`prints.rs`: a `Print` type in `phx-market`): a market's mark is written by its meeting's `mark` alone
+  (`core_goods.rs`, `goods.marks`); nothing else inserts a mark or converts a valuation or quote into one. S1.326 and
+  S1.327 (prints and marks, K-86) move the target to `phx-market`'s prints.
+- **PC-29** (`equity.rs`: `phx-acct/src/equity.rs`, `EquityEvent`, `EquityAccounts`): equity accounts
+  (`accounts.opening`, `accounts.income`) are written by `recognise`, the opening's `open_accounts` and a party's
+  ending alone, and no statement is stored. S1.330 and S1.331 (K-88) move the target to `phx-acct`.
+- PC-22 is not touched here: S1.128 re-aims it, and S1.354 makes the audit families pure checks it guards.
+- Each rule keeps its number and its title's substance; its test is rewritten over a hand-built source of the new
+  target (one refused write, one allowed).
+- It carries SET.11 (done at S0.15), ACC.9 (done at S0.19) and MKT.18 (done at S0.18), and serves ACC.4 (completed at
+  S1.330).
+
+**Edge cases**: none apply (a code rule); the current tree passes each re-aimed rule after S1.140 —
+`pc25_allows_opening_account`.
+**Extension points**: none; S1.191, S1.244, S1.245, S1.272, S1.326, S1.327 and S1.331, built before it, re-aim their
+own targets in their Guards, and those targets stand.
+**Unit tests**: `pc24_refuses_holding_field_write_outside_goods`, `pc25_refuses_balance_set_outside_apply`,
+`pc25_allows_opening_account`, `pc27_has_no_deleted_file`, `pc28_refuses_mark_insert_outside_mark`,
+`pc29_refuses_income_write_outside_recognise`.
+**Live checks**: none.
+**Budget**: no share of any `[fin.*]` line; resident bytes: none.
+**Guards**: PC-24, PC-25, PC-27, PC-28, PC-29 as above.
+**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
+allocation per day; a rule naming a file, type or function that does not exist; a rule passing vacuously; a new rule
+number for an old rule's substance.
+**Done when**:
+- [ ] The rules re-aimed and their tests; `phx-check` passes on the current tree; the fast checks pass.
+- [ ] The bench's run at fewer persons passes and reads the budget with no ratchet broken.
+- [ ] §16 lists each rule's target; the two reviews done; status `done` and the section removed.
 
 ---
 
