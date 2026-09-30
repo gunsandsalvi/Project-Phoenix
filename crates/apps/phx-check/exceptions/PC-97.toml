@@ -1,0 +1,121 @@
+# The sites PC-97 admits for now, 24 in all, held to `phx_check.exceptions_pc97`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "None pool"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::pay_currencies"
+what = "None pool"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "DatedFamily::dues"
+what = "None pool"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::buy_inputs"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::decide_spending"
+what = "None pool"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::make"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::answer_reviews"
+what = "None pool"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post"
+what = "None pool"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::search_round"
+what = "None pool"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::run_hazards"
+what = "None pool"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/save/mod.rs"
+item = "World::save"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/save/mod.rs"
+item = "write_store"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "FlowBufs::group"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::apply"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::index"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle::settle"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "matching"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/hiring.rs"
+item = "search"
+what = "pool dispatch"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "meet"
+what = "pool dispatch"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "remake"
+what = "pool dispatch"
+count = 1

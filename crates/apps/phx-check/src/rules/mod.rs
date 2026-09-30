@@ -12,6 +12,7 @@ mod comment_refs;
 mod day_arithmetic;
 mod dependencies;
 mod design;
+pub mod dispatch;
 mod documents;
 mod draws;
 mod equity;
@@ -185,6 +186,12 @@ pub const RULES: &[Rule] = &[
         title: "whole-table walks only through the kernel's traversals or declared sweeps",
         since: "S1.121",
         run: traversals::run,
+    },
+    Rule {
+        id: "PC-97",
+        title: "dispatch only through the kernel's traversals; no absent pool; rules hold no world state",
+        since: "S1.122",
+        run: dispatch::run,
     },
 ];
 

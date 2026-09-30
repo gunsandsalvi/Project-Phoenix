@@ -29,6 +29,14 @@ counter = "phx_check.exceptions_pc96"
 value = 79
 direction = "down"
 
+# PC-97's admitted sites (S1.122, 2026-09-30): literal `None` handed to a kernel's pool and work run on a pool
+# outside the kernel's traversals, as the code stood when the rule came, 24 in all. Each migration removes its own
+# (the absent pools S1.152 and S1.153, the dispatches K-11 and K-12); the count only falls, and S1.492 empties it.
+[[ratchet]]
+counter = "phx_check.exceptions_pc97"
+value = 24
+direction = "down"
+
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
 # the placeholders a stage brings for later systems. BNK's two loan terms and XB's closed borders (S0.18); a
 # searcher's reservation and an employee's price outlook (HH, S1.08) until households weigh their own; a firm loan's
