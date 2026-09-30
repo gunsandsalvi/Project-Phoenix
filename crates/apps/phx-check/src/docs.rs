@@ -25,6 +25,10 @@ pub struct Step {
     pub clauses: String,
     /// The crates its **Files** table names by full path, in order.
     pub crates: Vec<String>,
+    /// The step ids its **Depends on** names.
+    pub depends: Vec<String>,
+    /// The step ids its **Extension points** names.
+    pub extends: Vec<String>,
 }
 
 /// A row of the clause map: the step that completes the listed clauses of one system.
@@ -138,6 +142,7 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
     let heading = regex(r"^### (S(\d+)\.\d{2,3}) — ")?;
     let section = regex(r"^\*\*([A-Za-z ]+)\*\*")?;
     let crate_path = regex(r"crates/(?:foundation|kernel|interfaces|systems|assembly|apps)/([a-z0-9-]+)/")?;
+    let step_id = regex(r"\bS\d+\.\d{2,3}[A-Z]?\b")?;
     let mut steps: Vec<Step> = Vec::new();
     let mut open = false;
     let mut current = "";
@@ -155,6 +160,8 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
                 sections: Vec::new(),
                 clauses: String::new(),
                 crates: Vec::new(),
+                depends: Vec::new(),
+                extends: Vec::new(),
             });
             open = true;
             current = "";
@@ -181,6 +188,14 @@ pub fn steps(plan: &str) -> Result<Vec<Step>, String> {
             "Clauses" => {
                 step.clauses.push_str(line);
                 step.clauses.push('\n');
+            }
+            "Depends on" | "Extension points" => {
+                let ids = if current == "Depends on" { &mut step.depends } else { &mut step.extends };
+                for m in step_id.find_iter(line) {
+                    if !ids.iter().any(|i| i == m.as_str()) {
+                        ids.push(m.as_str().to_owned());
+                    }
+                }
             }
             "Files" => {
                 for caps in crate_path.captures_iter(line) {

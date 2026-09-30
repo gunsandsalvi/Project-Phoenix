@@ -35,7 +35,40 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             }
         }
     }
+    breaches.extend(extension_points(&steps));
     breaches.extend(texts(ws));
+    breaches
+}
+
+/// The kinds of step whose Extension points are the index of the later steps that depend on them.
+const INDEXED: &[&str] = &["base", "kernel", "index"];
+
+/// A base's Extension points name exactly the later steps whose Depends on names it; a step done and gone from the
+/// plan is neither read nor required.
+fn extension_points(steps: &[Step]) -> Vec<Breach> {
+    let mut breaches = Vec::new();
+    let place = |id: &str| steps.iter().position(|s| s.id == id);
+    for (at, base) in steps.iter().enumerate() {
+        if !base.kind.as_deref().is_some_and(|k| INDEXED.contains(&k)) || base.status.as_deref() == Some("retired") {
+            continue;
+        }
+        for dependent in steps.iter().filter(|s| s.depends.contains(&base.id) && !base.extends.contains(&s.id)) {
+            let message = format!("{}'s Extension points omit {}, which depends on it", base.id, dependent.id);
+            breaches.push(Breach::new(RULE, PLAN, base.line, message));
+        }
+        for named in &base.extends {
+            let refused = match place(named).and_then(|p| steps.get(p).map(|s| (p, s))) {
+                None => Some("which is not a step of the plan"),
+                Some((p, _)) if p <= at => Some("which does not come after it"),
+                Some((_, s)) if !s.depends.contains(&base.id) => Some("which does not depend on it"),
+                Some(_) => None,
+            };
+            if let Some(why) = refused {
+                let message = format!("{}'s Extension points name {named}, {why}", base.id);
+                breaches.push(Breach::new(RULE, PLAN, base.line, message));
+            }
+        }
+    }
     breaches
 }
 
@@ -303,5 +336,52 @@ mod tests {
             ],
             "a retirer in parentheses is text"
         );
+    }
+
+    fn indexed(id: &str, kind: &str, depends: &str, extends: &str) -> String {
+        step(id, "planned", "", "x")
+            .replace("**Kind**: mechanism", &format!("**Kind**: {kind}"))
+            .replace("**Depends on**", &format!("**Depends on**: {depends}"))
+            .replace("**Extension points**", &format!("**Extension points**: {extends}"))
+    }
+
+    fn reverse_index(plan: String) -> Vec<String> {
+        messages(&ws(plan, &[])).into_iter().filter(|m| m.contains("Extension points")).collect()
+    }
+
+    #[test]
+    fn a_dependent_missing_from_extension_points_is_refused() {
+        let plan = indexed("S1.160", "base", "none", "S1.170 (reads it)")
+            + &indexed("S1.170", "mechanism", "S1.160", "none")
+            + &indexed("S1.180", "mechanism", "S1.160 (its rows)", "none");
+        assert_eq!(reverse_index(plan), ["S1.160's Extension points omit S1.180, which depends on it"]);
+    }
+
+    #[test]
+    fn an_extension_point_not_depending_back_is_refused() {
+        let plan = indexed("S1.150", "mechanism", "S1.160", "none")
+            + &indexed("S1.160", "kernel", "none", "S1.150 (x); S1.170 (y); S1.199 (z)")
+            + &indexed("S1.170", "mechanism", "none", "none");
+        assert_eq!(
+            reverse_index(plan),
+            [
+                "S1.160's Extension points name S1.150, which does not come after it",
+                "S1.160's Extension points name S1.170, which does not depend on it",
+                "S1.160's Extension points name S1.199, which is not a step of the plan"
+            ]
+        );
+    }
+
+    #[test]
+    fn a_base_with_no_dependent_says_so() {
+        let plan = indexed("S1.160", "index", "none", "none yet") + &indexed("S1.170", "mechanism", "none", "S1.160");
+        assert!(reverse_index(plan).is_empty(), "a mechanism's Extension points are not an index");
+    }
+
+    #[test]
+    fn done_steps_are_not_read() {
+        let plan = indexed("S1.160", "base", "S1.05 (done)", "S1.170 (x)")
+            + &indexed("S1.170", "mechanism", "S1.160, S1.05", "none");
+        assert!(reverse_index(plan).is_empty(), "a done step gone from the plan is neither a base nor a dependent");
     }
 }
