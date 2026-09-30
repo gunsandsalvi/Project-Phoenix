@@ -121,16 +121,43 @@ fn halves(v: u64) -> [u32; 2] {
     [u32::from_le_bytes([b0, b1, b2, b3]), u32::from_le_bytes([b4, b5, b6, b7])]
 }
 
-/// A stream's key: its name and the seed mixed by one Philox block, so adding a stream changes no other.
+/// Whose draws a stream's are: the world's, the observer's or the player's advice's. The family is mixed into the
+/// key, so streams of two families never share one whatever their names; the world's word is nothing, so its keys are
+/// its name and the seed alone.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum StreamFamily {
+    World,
+    Observer,
+    Advice,
+}
+
+impl StreamFamily {
+    const fn word(self) -> u32 {
+        match self {
+            StreamFamily::World => 0,
+            StreamFamily::Observer => 1,
+            StreamFamily::Advice => 2,
+        }
+    }
+}
+
+/// A stream's key: its family, its name and the seed mixed by one Philox block, so adding a stream changes no other.
 #[clause("CHN.1")]
-pub fn stream_key(seed: Seed, name: &str) -> StreamKey {
+pub fn family_key(seed: Seed, family: StreamFamily, name: &str) -> StreamKey {
     let [fnv_lo, fnv_hi] = halves(fnv1a64(name.as_bytes()));
     let [seed_lo, seed_hi] = halves(seed.0);
-    let [w0, w1, _, _] = philox([fnv_lo, fnv_hi, seed_lo, seed_hi], STREAM_KEY_KEY);
+    let [w0, w1, _, _] = philox([fnv_lo, fnv_hi, seed_lo, seed_hi ^ family.word()], STREAM_KEY_KEY);
     StreamKey([w0, w1])
 }
 
-/// The counter of one block of one address: the subject, the day, and the sub-step above the block index.
+/// A world stream's key.
+#[clause("CHN.1")]
+pub fn stream_key(seed: Seed, name: &str) -> StreamKey {
+    family_key(seed, StreamFamily::World, name)
+}
+
+/// The counter of one block of one address: the subject, the day, and the slot's ordinal above the block index.
+#[clause("CHN.6")]
 #[must_use]
 #[inline]
 pub fn counter(subject: Subject, day: u32, substep: u8, block: u32) -> [u32; 4] {
@@ -139,39 +166,5 @@ pub fn counter(subject: Subject, day: u32, substep: u8, block: u32) -> [u32; 4] 
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{Seed, Subject, SubjectTag, counter, stream_key};
-
-    #[test]
-    fn stream_keys_independent_of_registration() {
-        let seed = Seed::new(42);
-        let in_order: Vec<_> = ["A", "B", "C"].iter().map(|n| stream_key(seed, n)).collect();
-        let reordered: Vec<_> = ["C", "A", "B", "D"].iter().map(|n| stream_key(seed, n)).collect();
-        assert_eq!(in_order, vec![reordered[1], reordered[2], reordered[0]]);
-        assert_ne!(stream_key(seed, "A"), stream_key(Seed::new(43), "A"));
-        assert_ne!(stream_key(seed, "A"), stream_key(seed, "B"));
-    }
-
-    #[test]
-    fn subjects_read_back() {
-        let s = Subject::new(SubjectTag::Party, 77);
-        assert_eq!((Subject::from_raw(s.raw()), s.tag(), s.id()), (Some(s), SubjectTag::Party, 77));
-        assert_eq!(Subject::from_raw(u64::MAX), None);
-    }
-
-    #[test]
-    fn subjects_never_collide() {
-        let party = Subject::new(SubjectTag::Party, 7);
-        let line = Subject::new(SubjectTag::Line, 7);
-        assert_ne!(counter(party, 3, 1, 0), counter(line, 3, 1, 0));
-        let caught = std::panic::catch_unwind(|| Subject::new(SubjectTag::World, 1 << 60));
-        assert!(caught.is_err());
-    }
-
-    #[test]
-    fn substeps_never_collide() {
-        let s = Subject::new(SubjectTag::Party, 9);
-        assert_ne!(counter(s, 3, 1, 0), counter(s, 3, 2, 0));
-        assert_ne!(counter(s, 3, 1, 0), counter(s, 4, 1, 0));
-    }
-}
+#[path = "key_tests.rs"]
+mod tests;

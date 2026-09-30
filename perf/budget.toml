@@ -56,7 +56,7 @@ direction = "down"
 # Today's kept kernels at the design point (S1.119, 2026-09-30; `tools/bench.sh -F kept`), before any base lands, four
 # measures each: flows grouped and settled 862–956 ns a flow on a business day and 648–749 on the heaviest, a due taken
 # and filed again 21–24, a retail want met 1 363–1 381, a searcher's round 9 811–12 626, a civil date and business-day
-# read 28–33, a draw 10–12, and 360 MiB filled. Each time stands a quarter above its highest measure and the bytes a
+# read 28–33, and 360 MiB filled. Each time stands a quarter above its highest measure and the bytes a
 # tenth. Each key is removed by the step whose own base replaces its kernel (phx-fin's `kept::RETIRERS`).
 
 [[ratchet]]
@@ -87,11 +87,6 @@ direction = "down"
 [[ratchet]]
 counter = "fin.kept.civil_ns"
 value = 42
-direction = "down"
-
-[[ratchet]]
-counter = "fin.kept.draw_ns"
-value = 15
 direction = "down"
 
 [[ratchet]]
@@ -408,6 +403,23 @@ direction = "down"
 [[ratchet]]
 counter = "fin.apportion.dividend_ns"
 value = 25.9
+direction = "down"
+
+# Streams (S1.176, 2026-10-01; `tools/bench.sh -F streams`): each of a day's `[day.*] retail` wants a cursor at the
+# retail meeting's slot, its subject's own, drawing one Philox block, 10.0–11.1 ns against the step's 8; and the same
+# draws four subjects at a time, their first blocks made side by side, 44.7–49.2 ns a batch against the step's 12: the
+# four cursors' addresses and the ten rounds of each block, which run side by side but each on its own multiplies, are
+# most of it. The world's keys are unchanged, its family's word being nothing. Each ratchet stands a quarter above the
+# highest; they replace `[fin.kept] draw_ns`.
+
+[[ratchet]]
+counter = "fin.streams.block_ns"
+value = 13.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.streams.x4_ns"
+value = 61.5
 direction = "down"
 
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80

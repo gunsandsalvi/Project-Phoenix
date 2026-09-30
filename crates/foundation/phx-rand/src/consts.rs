@@ -16,8 +16,10 @@ pub const FNV_OFFSET: u64 = 0xCBF2_9CE4_8422_2325;
 /// FNV-1a 64-bit prime (Fowler, Noll and Vo).
 pub const FNV_PRIME: u64 = 0x0000_0100_0000_01B3;
 
-/// The counter's last word holds the sub-step above bit 24 and the block below it.
+/// The counter's last word holds the slot's ordinal above bit 24 and the block below it.
 pub const SUBSTEP_SHIFT: u32 = 24;
+/// Slot ordinals the counter's top byte holds.
+pub const SLOT_ORDINALS: u64 = 1 << (u32::BITS - SUBSTEP_SHIFT);
 /// Blocks of four words one address may draw: 2^24, far beyond any sampler's rejections.
 pub const BLOCKS_PER_ADDRESS: u32 = 1 << SUBSTEP_SHIFT;
 /// A subject is a 4-bit tag above 60 bits of identity.

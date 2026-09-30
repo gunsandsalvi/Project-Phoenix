@@ -17,10 +17,10 @@ pub mod uniform;
 
 pub use binomial::{binomial, binomial_at_least_one, binomials_joint_at_least_one};
 pub use continuous::{beta, exponential, gamma, gumbel, log_normal, normal, normal_quantile, pareto, weibull};
-pub use draws::Draws;
+pub use draws::{Draws, SlotOrdinal};
 pub use geometric::geometric;
 pub use hypergeometric::{hypergeometric, multivariate_hypergeometric};
-pub use key::{Seed, StreamKey, Subject, SubjectTag, stream_key};
+pub use key::{Seed, StreamFamily, StreamKey, Subject, SubjectTag, family_key, stream_key};
 pub use multinomial::{AliasTable, multinomial, multinomial_alias};
 pub use philox::{philox, philox_x4};
 pub use picks::{Fenwick, pick_without_replacement};

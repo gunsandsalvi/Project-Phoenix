@@ -209,10 +209,16 @@ low), with no conversion between them (compile-fail `holding_ref_as_offer_ref`);
 slot 27) within a day and a `PartyRef` (kind, 24-bit generation, slot) past it; both are `phx_num::Owner`s, so another
 party's money is `PartyMoney<PartyRef>`. An `InstrumentId(u32)` is never reused.
 
-**`phx-rand`'s addressing.** A stream's key is words 0 and 1 of `philox([fnv_lo, fnv_hi, seed_lo, seed_hi],
-fixed key)`, `fnv` being FNV-1a-64 of the stream's name, so a key depends on its name and the seed alone and adding a
-stream changes no other (CHN.1). The counter is `[subject_lo, subject_hi, day, (sub-step ordinal << 24) | block]`,
-a `Subject` being a 4-bit tag (world, party, part, line, tile, region, zone, country, market, instrument, an opening's
+**`phx-rand`'s addressing.** A stream's key is words 0 and 1 of `philox([fnv_lo, fnv_hi, seed_lo, seed_hi ⊕
+family], fixed key)`, `fnv` being FNV-1a-64 of the stream's name and `family` its `StreamFamily`'s word — the world's
+nothing, the observer's one, the player's advice's two — so a key depends on its family, its name and the seed alone,
+streams of two families never share one, the world's keys are its names' and the seed's, and adding a stream changes
+no other (CHN.1; `family_key`, `stream_key` for the world's). The counter is `[subject_lo, subject_hi, day,
+(slot ordinal << 24) | block]`: a `SlotOrdinal` is the stage-table slot a draw is made in, a byte (past it stops the
+run), appended and never renumbered, since a renumbering changes every draw; `Draws::at` opens a cursor by it, and
+today's callers still pass their sub-step's ordinal in the same byte until the day runner walks the stage table
+(S1.186). A stream keeps no position: a cursor opened at a later block reads what one read up to it would.
+A `Subject` is a 4-bit tag (world, party, part, line, tile, region, zone, country, market, instrument, an opening's
 stratum and ordinal before its party exists, a profile value) over a 60-bit identity; a larger identity or more than
 2²⁴ blocks at one address is `capacity_exceeded!`. Draws for different subjects never share a counter, so processing
 order cannot change a draw (CHN.6). `Draws` is a cursor over one address; a sampler that rejects draws on from the

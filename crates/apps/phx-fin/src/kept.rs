@@ -24,13 +24,12 @@ pub const RETIRERS: &[(&str, &str)] = &[
     ("purchase_ns", "S1.306"),
     ("search_ns", "S1.321"),
     ("civil_ns", "S1.178"),
-    ("draw_ns", "S1.176"),
     ("mb", "S1.321"),
 ];
 
 /// Where today's kernels stand in the declared day until their bases land: settlement's flows in its stage (ordinary
 /// and heavy days apart, measured apart), the dues taken at the day's opening, the retail meeting among prices, and
-/// hiring's search among decisions. The calendar's and the streams' reads stand in no declared leaf.
+/// hiring's search among decisions. The calendar's reads stand in no declared leaf.
 pub const LEAVES: &[Leaf] = &[
     Leaf { op: "flow", line: "7 Settle", unit: "flow", count: "flows", days: &[DayType::B], gather: true },
     Leaf { op: "flow_h", line: "7 Settle", unit: "flow", count: "flows", days: &[DayType::H], gather: true },

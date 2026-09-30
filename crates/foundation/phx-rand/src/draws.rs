@@ -1,9 +1,30 @@
 use phx_macros::clause;
 use phx_num::capacity_exceeded;
 
-use crate::consts::{BLOCK_WORDS, BLOCKS_PER_ADDRESS, LANES};
+use crate::consts::{BLOCK_WORDS, BLOCKS_PER_ADDRESS, LANES, SLOT_ORDINALS};
 use crate::key::{StreamKey, Subject, counter};
 use crate::philox::{philox, philox_x4};
+
+/// The slot of the day a draw is made in: its ordinal in the stage table, the counter's top byte, so draws of two
+/// slots never share a counter. Ordinals are appended, never renumbered: a renumbering changes every draw.
+#[must_use]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SlotOrdinal(u8);
+
+impl SlotOrdinal {
+    /// The slot at `ordinal` in the table; past a byte stops the run.
+    pub fn new(ordinal: u32) -> SlotOrdinal {
+        match u8::try_from(ordinal) {
+            Ok(o) => SlotOrdinal(o),
+            Err(_) => capacity_exceeded!("slot ordinals a counter holds", SLOT_ORDINALS, u64::from(ordinal) + 1),
+        }
+    }
+
+    #[must_use]
+    pub const fn get(self) -> u8 {
+        self.0
+    }
+}
 
 /// The cursor over one address (stream, subject, day, sub-step): every sampler draws from it, so a result depends
 /// only on the address and never on the order subjects are processed.
@@ -24,6 +45,13 @@ impl Draws {
     pub fn new(key: StreamKey, subject: Subject, day: u32, substep: u8) -> Draws {
         let base = counter(subject, day, substep, 0);
         Draws { key: key.words(), base, next_block: 0, buf: [0; BLOCK_WORDS], pos: BLOCK_WORDS }
+    }
+
+    /// The cursor over a stream's draws for a subject on a day in a slot of the day.
+    #[must_use]
+    #[inline]
+    pub fn at(key: StreamKey, subject: Subject, day: u32, slot: SlotOrdinal) -> Draws {
+        Draws::new(key, subject, day, slot.get())
     }
 
     /// The cursor from a block of its address on: the draws of a purpose that takes one block a turn, as a buyer's

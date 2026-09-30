@@ -1,5 +1,4 @@
-//! Today's calendar and streams (`phx_core::calendar`, `phx_rand`): a day's civil dates and business-day reads, each
-//! due reading its date, and a day's draws, each retail want drawing its choice.
+//! Today's calendar (`phx_core::calendar`): a day's civil dates and business-day reads, each due reading its date.
 
 use std::collections::BTreeMap;
 use std::hint::black_box;
@@ -7,11 +6,9 @@ use std::hint::black_box;
 use phx_core::calendar::rules::{CountryRules, WeekendRule};
 use phx_core::calendar::{Calendar as Civil, civil_date, civil_serial};
 use phx_id::{CountryId, Date, Day, Weekday};
-use phx_rand::Draws;
-use phx_rand::key::{Seed, Subject, SubjectTag, stream_key};
 
 use crate::FinError;
-use crate::kept::{BASE, count};
+use crate::kept::BASE;
 use crate::measure::Measures;
 
 /// The years of days the reads range over, from the calendar's epoch.
@@ -40,12 +37,11 @@ impl Calendar {
         Ok(())
     }
 
-    /// A day's `dues` civil and business-day reads, if it has dues, and its `retail` draws.
+    /// A day's `dues` civil and business-day reads, if it has dues.
     ///
     /// # Errors
     /// A day without the counts.
     pub fn day(&mut self, counts: &BTreeMap<String, u64>, m: &mut Measures<'_>) -> Result<(), FinError> {
-        let draws = count(counts, "retail", "day")?;
         let calendar = self.calendar.as_ref().ok_or_else(|| FinError("a calendar read before its fill".to_owned()))?;
         let span = YEARS * DAYS_A_YEAR;
         let first = civil_serial(calendar.epoch());
@@ -61,14 +57,6 @@ impl Calendar {
                 black_box(open)
             });
         }
-        let mut d = Draws::new(stream_key(Seed::new(1), "fin.kept.draws"), Subject::new(SubjectTag::World, 0), 0, 0);
-        m.read(BASE, "draw", draws, || {
-            let mut sum = 0_u64;
-            for _ in 0..draws {
-                sum ^= d.next_u64();
-            }
-            black_box(sum)
-        });
         Ok(())
     }
 }
