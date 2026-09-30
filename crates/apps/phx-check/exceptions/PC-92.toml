@@ -1,0 +1,1009 @@
+# The sites PC-92 admits for now, 248 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Accounts"
+what = "PartyMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::account_flows"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_accounts.rs"
+item = "Core::net_assets"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Agencies"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_agencies.rs"
+item = "Core::post_agencies"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_audit.rs"
+item = "Held"
+what = "Vec<i128>"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Bills"
+what = "Vec<Option>"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::issue_bills"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::issue_held"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_books.rs"
+item = "Core::owed_on_loans"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Central"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Central"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Central"
+what = "Vec<i128>"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::after_fund_stage"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::record_fund_days"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::record_fund_days"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::requests"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::reserves_and_target"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::reserves_moved"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::lend_shortfalls"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::end_settled"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::fund_agencies"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::hold_arrears"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::money_moves"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::order_payments"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::record_wages_settled"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::run_day"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "CoreState"
+what = "Vec<Option>"
+count = 6
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "DatedFamily"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "DatedFamily"
+what = "Vec<Option>"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Decisions"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_decide.rs"
+item = "Decisions"
+what = "Vec<Vec>"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::close_ended"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Insolvency"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Insolvency"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Deposits"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_deposits.rs"
+item = "Deposits"
+what = "Vec<Option>"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "centring"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_firms.rs"
+item = "mean_hours"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "(module)"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::cover_by_place"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::depart_shipments"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Core::ship"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_freight.rs"
+item = "Freight"
+what = "BTreeMap"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Cheapest"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::close_services"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::cost_at"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::deliver_sales"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::mark_surprised"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::meet_all"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::open_expected"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::opening_spending"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::region_shares"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::stalls"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::stalls"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "CoreGoods"
+what = "BTreeMap"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "CoreGoods"
+what = "Vec<Vec>"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "GoodsCtx"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "(module)"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::firm_hours"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::open_jobs"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::pay_jobs"
+what = "BTreeMap"
+count = 5
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "activity_rates"
+what = "BTreeMap"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "occupation_wages"
+what = "BTreeMap"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "wage_in"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "(module)"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::answer_reviews"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::keep_vacancies"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::open_labour"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::post"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::searching_persons"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::seekers"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "BTreeSet"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "Vec<Vec>"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "CoreLabour"
+what = "thread"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "LabourCtx"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "staff_means"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::open_credit"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Core::review_lenders"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_lending.rs"
+item = "Credit"
+what = "BTreeMap"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Drawn"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_outlooks.rs"
+item = "Outlooks"
+what = "BTreeMap"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::estates_ended"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::estates_ended"
+what = "BTreeSet"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::open_owners"
+what = "BTreeMap"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Core::price_owners"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_owners.rs"
+item = "Owners"
+what = "BTreeMap"
+count = 4
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::pass_projects_of"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Core::project_costs"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Plant"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_plant.rs"
+item = "Plant"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Hazard"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Hazard"
+what = "thread"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Rates"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::country_of_party"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::exposed"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::life_table"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::money_stock"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::record_sale"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "CoreStats"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Month"
+what = "BTreeMap"
+count = 3
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "link"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Core::accrue_taxes"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "Taxes"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::destroy"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Shock"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "struck_tiles"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/day.rs"
+item = "World::core_day"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/day.rs"
+item = "World::run_turn"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/day.rs"
+item = "World::run_turn_observed"
+what = "dyn"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/events.rs"
+item = "EventStore::publish"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "FlowBufs"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/flows.rs"
+item = "Grouped"
+what = "Vec<Vec>"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Shipments"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Shipments"
+what = "thread"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Stocks"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "Stocks"
+what = "thread"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/goods.rs"
+item = "UnitIds"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/pop_process.rs"
+item = "AgentView"
+what = "dyn"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Books"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/settle.rs"
+item = "Settle"
+what = "Vec<Vec>"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/store.rs"
+item = "CashLines"
+what = "Vec<Option>"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/store.rs"
+item = "Family"
+what = "thread"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "(module)"
+what = "dyn"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations"
+what = "dyn"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::market"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/system.rs"
+item = "Declarations::pop_process"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/wheel.rs"
+item = "DueWheel"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/counters.rs"
+item = "ExecCounters::timed"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/gather.rs"
+item = "IntentBuf"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/keyed.rs"
+item = "KeyedReduce"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "barrier"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "baseline"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "core_rates"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "gather"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "since"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "sweep"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/probe.rs"
+item = "units_per_second"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/stats.rs"
+item = "Sample::of"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/trace.rs"
+item = "Trace"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-exec/src/trace.rs"
+item = "set"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/climate.rs"
+item = "RegionClimate"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/distance.rs"
+item = "Land"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "Map"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "Places"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "Surface"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "attempt"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/generate.rs"
+item = "generate"
+what = "dyn"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/hydrology.rs"
+item = "Drainage"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "(module)"
+what = "BTreeMap"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "Network::lengths"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "Network::lengths"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "Network::route"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-geo/src/network.rs"
+item = "generate"
+what = "BTreeSet"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/partition.rs"
+item = "(module)"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "GeoState::build"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "HazardState"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-geo/src/state.rs"
+item = "HazardState"
+what = "Vec<Vec>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/algebra.rs"
+item = "DueState"
+what = "dyn"
+count = 3
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "Vec<Option>"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-market/src/meet.rs"
+item = "Meeting"
+what = "Vec<Vec>"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-val/src/heuristic.rs"
+item = "(module)"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/heuristic.rs"
+item = "HeuristicId::rule"
+what = "dyn"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-val/src/registered.rs"
+item = "Registered"
+what = "BTreeMap"
+count = 2
+
+[[site]]
+path = "crates/kernel/phx-val/src/registered.rs"
+item = "Registered::apply"
+what = "BTreeMap"
+count = 1

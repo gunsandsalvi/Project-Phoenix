@@ -19,7 +19,7 @@ mod expect_count;
 mod expect_reason;
 mod forecasts;
 mod hand_pod;
-mod hot_paths;
+pub mod hot_paths;
 mod id_default;
 mod interfaces;
 mod layering;
@@ -174,7 +174,7 @@ pub const RULES: &[Rule] = &[
     Rule { id: "PC-75", title: "a border closed in the markets' reach alone", since: "S0.18", run: borders::run },
     Rule {
         id: "PC-92",
-        title: "no map or trait object in the core's hot modules",
+        title: "no map, list, dynamic dispatch or wide optional on the day's paths",
         since: "S1.19",
         run: hot_paths::run,
     },

@@ -2,6 +2,7 @@ mod clauses;
 mod comments;
 mod coverage;
 mod docs;
+mod exceptions;
 mod git;
 mod ratchets;
 mod rules;
@@ -47,6 +48,13 @@ enum Command {
         #[arg(long)]
         write: bool,
     },
+    /// Lists every site a rule finds as it would admit them; `--write` records them as the rule's exceptions file,
+    /// which is done once, when the rule is first widened over the code as it stands.
+    Exceptions {
+        rule: String,
+        #[arg(long)]
+        write: bool,
+    },
 }
 
 fn main() -> ExitCode {
@@ -73,8 +81,45 @@ fn main() -> ExitCode {
         Command::Clauses => clauses::run(&ws),
         Command::Coverage { write } => return coverage_command(&ws, write),
         Command::PublicApi { write } => return public_api_command(&ws, write),
+        Command::Exceptions { rule, write } => return exceptions_command(&ws, &rule, write),
     };
     report(&breaches)
+}
+
+/// The rules whose sites an exceptions file can admit, with how each finds them.
+const FINDERS: &[(&str, exceptions::Finder)] = &[(rules::hot_paths::RULE, rules::hot_paths::found)];
+
+fn exceptions_command(ws: &Workspace, rule: &str, write: bool) -> ExitCode {
+    let Some((id, find)) = FINDERS.iter().find(|(id, _)| *id == rule) else {
+        eprintln!("phx-check: no exceptions file is kept for `{rule}`");
+        return ExitCode::FAILURE;
+    };
+    let (found, breaches) = find(ws);
+    if !breaches.is_empty() {
+        return report(&breaches);
+    }
+    let text = exceptions::write(id, &found);
+    if !write {
+        print!("{text}");
+        return ExitCode::SUCCESS;
+    }
+    let path = ws.root.join(exceptions::path(id));
+    if let Some(dir) = path.parent()
+        && let Err(e) = fs::create_dir_all(dir)
+    {
+        eprintln!("phx-check: {}: {e}", dir.display());
+        return ExitCode::FAILURE;
+    }
+    match fs::write(&path, text) {
+        Ok(()) => {
+            println!("{}: {} sites", path.display(), found.len());
+            ExitCode::SUCCESS
+        }
+        Err(e) => {
+            eprintln!("phx-check: {}: {e}", path.display());
+            ExitCode::FAILURE
+        }
+    }
 }
 
 fn public_api(nightly: &str, krate: &str) -> Result<String, String> {

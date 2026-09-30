@@ -13,6 +13,14 @@ counter = "phx_check.expect_count"
 value = 7
 direction = "down"
 
+# PC-92's admitted sites (S1.120, 2026-09-30): the maps, lists of lists, trait objects, wide or optional per-party
+# columns and threading fields on the day's paths as the code stood when the rule was widened, 248 in all. Each
+# migration of the core removes its own; the count only falls, and S1.492 empties it.
+[[ratchet]]
+counter = "phx_check.exceptions_pc92"
+value = 248
+direction = "down"
+
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
 # the placeholders a stage brings for later systems. BNK's two loan terms and XB's closed borders (S0.18); a
 # searcher's reservation and an employee's price outlook (HH, S1.08) until households weigh their own; a firm loan's

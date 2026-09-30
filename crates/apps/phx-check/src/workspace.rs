@@ -123,6 +123,8 @@ pub struct Workspace {
     pub design: String,
     /// Every `.toml` file under `data/`, as (path, text), sorted by path.
     pub data: Vec<(String, String)>,
+    /// Each rule's exceptions file, as (rule, text).
+    pub exceptions: Vec<(String, String)>,
 }
 
 pub const SPEC: &str = "docs/PROJECT_PHOENIX.md";
@@ -150,6 +152,7 @@ impl Workspace {
             plan: String::new(),
             design: String::new(),
             data: Vec::new(),
+            exceptions: Vec::new(),
         }
     }
 
@@ -211,8 +214,17 @@ pub fn load() -> Result<Workspace, String> {
     for path in files_with(&root.join(DATA), "toml")? {
         data.push((relative(&root, &path)?, read(&path)?));
     }
+    let mut exceptions = Vec::new();
+    let dir = root.join(crate::exceptions::DIR);
+    if dir.is_dir() {
+        for path in files_with(&dir, "toml")? {
+            let rule = path.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
+            exceptions.push((rule, read(&path)?));
+        }
+    }
     Ok(Workspace {
         data,
+        exceptions,
         root_clippy: read(&root.join("clippy.toml"))?,
         ratchets: read(&root.join(RATCHETS))?,
         spec: read(&root.join(SPEC))?,

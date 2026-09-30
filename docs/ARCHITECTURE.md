@@ -964,8 +964,9 @@ bounds, traversal, save and load, capacity, volumes and ratchets, and extension 
 today keeps a **Today** paragraph, naming what the code holds by file, until its migration deletes it. The
 foundation's bases — K-16 in `phx-num`, K-17 in `phx-id`, K-18 in `phx-rand` — are written in §3.2.
 
-**Today**: PC-92 refuses a map or a trait object in the core's parties, edges, stores, partition, flows, wheel,
-settlement, facts, goods, capital, posted-price meetings and labour matching.
+PC-92 (§16) holds every module a day's work runs through to R1: the core's crates, `phx-world`'s day modules and the
+systems' daily rules, less the cold ones; today's sites are admitted by its exceptions file, which each migration
+shrinks.
 
 ### 7.1 phx-store
 
@@ -3125,7 +3126,15 @@ credited while the world holds it (GEN.10).
     | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day |
     | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `Streams`, `open_keyed` and `ObserverDraws` named outside their listed files (§5.3) |
+    | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, `KernelMap`, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
     | PC-94 | a name — an identifier, or a declared name in a string — in a world crate ending `_small` or `_large`: a mechanism split by size, where a firm is one kind whatever its size (S1.24) |
+
+    **Exceptions** (`src/exceptions.rs`): a rule widened over code that does not yet keep it admits today's sites in
+    `crates/apps/phx-check/exceptions/<rule>.toml`, each `[[site]]` by path, enclosing item (`Type::fn`, a struct, a
+    module) and what was found, with a count. A site found beyond its count is a breach; a listed site found fewer
+    times is a stale exception, so the file only shrinks; the total is held to `phx_check.exceptions_pcNN` in
+    `perf/ratchets.toml`, which only falls. `phx-check exceptions <rule> [--write]` lists what the rule finds, and
+    `--write` records it once, when the rule is widened; each migration removes its own sites in its own commit.
 
     The clippy exemptions are declared per crate in `phx-check` and realised by that crate's `clippy.toml`: `phx-exec`
     the atomics, `std::thread::spawn`, `thread_local!` and the `OnceLock` holding where the trace goes; `phx-rand`, `phx-store` and `phx-exec` the wrapping
