@@ -494,11 +494,17 @@ redeemed and written off (TRS.6, LC-1-29).
 
 **`sys-tax`** (TAX.2, TAX.5; `core_taxes`). A tax arises on its base's payment once it settles — income tax withheld
 by the employer from the wage it pays (the wage flow carries the net), the tax on products a final sale pays on top of
-its price, charged by the seller — and is then its collector's debt to its treasury, a contract of the `TAX.collected`
-family reckoned from terms (its balance paid in full on `TAX.remit_day` of the month after, asked again each month
-while unpaid, a claim in its collector's estate); the collector's tax is entered when it arises. The treasury paying
+its price, charged by the seller — and is then its collector's debt to its treasury, a contract reckoned from terms (its balance paid in full on
+`TAX.remit_day` of the month after, asked again each month while unpaid, a claim in its collector's estate); the
+collector's tax is entered when it arises. As wages are paid in one family per payer kind, each wage family declares
+the collectors' family its payers owe in (`families::COLLECTORS`: `LAB.employment` → `TAX.collected`,
+`LAB.public_employment` → `TAX.collected_public`), opened with the wage family's payer kind as its first side and the
+treasuries' as its second; the core's `collectors` index, each kind's collectors' family, is built at the opening and
+rebuilt after a load (never saved), and a collector of a kind with none stops the run (TAX.5). The one-family-per-
+collector-kind form stands until the contract store takes sides of any declared kind (S1.257). The treasury paying
 its own staff collects to itself. At each close what arose is held to what was remitted, what collectors owe and what
-their debts owed when they closed (each family's `lost`), a difference a finding of the taxes family (LC-1-28). The
+their debts owed when they closed (every collectors' family's `lost`), a difference a finding of the taxes family
+(LC-1-28). The
 income tax withheld from sampled households' wages is kept with its gross wage, and LC-0-29 recomputes it band by band
 under its rounding.
 

@@ -70,6 +70,9 @@ pub struct Core {
     pub bills: crate::core_bills::Bills,
     /// The taxes arising, their collectors' debts and what was remitted.
     pub taxes: crate::core_taxes::Taxes,
+    /// Each kind's collectors' family, by the kind's place: found among the families, never saved.
+    #[saved(skip, rebuild = Core::index_collectors)]
+    pub(crate) collectors: Vec<Option<usize>>,
     /// The central banks' facilities, their positions' days, their income and the money they record owing.
     pub central: crate::core_central::Central,
     /// The decisions the world takes, who takes each, and how many each decider took.

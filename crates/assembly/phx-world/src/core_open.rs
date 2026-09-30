@@ -15,7 +15,7 @@ use phx_core::settle::AT_ISSUER;
 use phx_core::store::{KindStore, Opening};
 use phx_core::{Household, OpeningCountry, OpeningCtx, Register, StreamDef, Streams};
 use phx_id::{Day, PartyId, PartyKey};
-use phx_macros::clause;
+use phx_macros::{clause, opening};
 use phx_num::{MaybeI64, Missing, violation};
 use phx_pop::kind::PopKindDecl;
 use phx_pop::persons::{Held, Persons};
@@ -150,6 +150,7 @@ impl Rules {
 
 impl Core {
     /// The core with no party yet: each kind's store, the households' with their persons.
+    #[opening]
     fn empty(household: &PopKindDecl, household_pop: usize) -> Core {
         let mut space = AddressSpace::empty();
         let mut kinds = Vec::new();
@@ -205,6 +206,7 @@ impl Core {
             player: crate::core_player::PlayerDesk::default(),
             central: crate::core_central::Central::default(),
             taxes: crate::core_taxes::Taxes::default(),
+            collectors: Vec::new(),
             bills: crate::core_bills::Bills::default(),
             next_id: 1,
             banks_of: Vec::new(),

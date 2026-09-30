@@ -12,7 +12,7 @@ pub const KIND_ROWS_PER_CHUNK: u32 = 1 << 12;
 pub const AGENT_ROWS_PER_CHUNK: u32 = 1 << 12;
 
 /// A save's format: a change of what a store holds or how it is written is a new format, and a load refuses others.
-pub const SAVE_FORMAT: u32 = 22;
+pub const SAVE_FORMAT: u32 = 23;
 /// A save's tasks on the pool: the core's store, the run's record and the world's hash.
 pub const SAVE_TASKS: usize = 3;
 /// The file every save writes last, which makes it complete.
@@ -79,7 +79,10 @@ pub mod families {
     pub const LENDING_FACILITY: &str = "CB.lending_facility";
     pub const BILLS: &str = "SOV.bills";
     pub const COLLECTED: &str = "TAX.collected";
-    pub const ALL: [&str; 10] = [
+    pub const COLLECTED_PUBLIC: &str = "TAX.collected_public";
+    /// Each wage family and the family its payers owe the tax they withhold in: one per payer kind, as the wages are.
+    pub const COLLECTORS: [(&str, &str); 2] = [(EMPLOYMENT, COLLECTED), (PUBLIC_EMPLOYMENT, COLLECTED_PUBLIC)];
+    pub const ALL: [&str; 11] = [
         EMPLOYMENT,
         PUBLIC_EMPLOYMENT,
         HOUSEHOLD_LOANS,
@@ -90,6 +93,7 @@ pub mod families {
         LENDING_FACILITY,
         BILLS,
         COLLECTED,
+        COLLECTED_PUBLIC,
     ];
 }
 

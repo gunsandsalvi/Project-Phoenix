@@ -1,4 +1,4 @@
-# The sites PC-98 admits for now, 89 in all, held to `phx_check.exceptions_pc98`. Each migration removes its own; a site is never added.
+# The sites PC-98 admits for now, 87 in all, held to `phx_check.exceptions_pc98`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -425,12 +425,6 @@ path = "crates/assembly/phx-world/src/core_stats.rs"
 item = "Core::record_sale"
 what = "a comparison with a name"
 count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_taxes.rs"
-item = "Core::open_taxes"
-what = "a comparison with a name"
-count = 2
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_weather.rs"

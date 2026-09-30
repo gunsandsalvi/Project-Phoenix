@@ -466,26 +466,13 @@ impl Core {
     fn withhold(&mut self, buf: &mut [Flow]) {
         let mut arising = Vec::new();
         for f in buf.iter_mut().filter(|f| f.reason == WAGE && f.denomination.is_money()) {
-            let ccy = f.denomination.ccy();
-            let Some(Some(w)) = self.state.withholding.get(usize::from(ccy)) else { continue };
-            let gross = f.amount;
-            let tax = w.on_payment(gross);
-            if tax <= 0 || tax > gross {
-                continue;
-            }
-            f.amount -= tax;
-            arising.push(crate::core_taxes::Arising {
-                collector: f.payer,
-                payer: f.payee,
-                base: crate::core_taxes::INCOME,
-                tax,
-                ccy,
-                on: (f.payer, f.payee, f.amount, f.reason, f.source),
-            });
-            let id = self.kinds.get(usize::from(f.payee.kind())).and_then(|k| k.parties.id(f.payee.slot()));
+            let law = self.state.withholding.get(usize::from(f.denomination.ccy())).and_then(Option::as_ref);
+            let Some((a, gross)) = crate::core_taxes::withheld(f, law) else { continue };
+            let id = self.kinds.get(usize::from(a.payer.kind())).and_then(|k| k.parties.id(a.payer.slot()));
             if id.is_some_and(crate::core_rates::sampled) {
-                self.taxes.sample.push((gross, tax, ccy));
+                self.taxes.sample.push((gross, a.tax, a.ccy));
             }
+            arising.push(a);
         }
         self.taxes.arising.append(&mut arising);
     }
