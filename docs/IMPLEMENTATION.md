@@ -246,7 +246,7 @@ activates bases.
 | --- | --- | --- |
 | **0 Foundations** | S0.01–S0.28 | done: the workspace, the foundation and kernel crates, the map, the setup and the persistence |
 | **1 The circular flow**, done | S1.01–S1.14, S1.17–S1.23, S1.26 | done: the Stage 1 systems' declarations and rules, the meter, one representation, the core and the bench, money and settlement, markets and goods on the core, one opening dataset per profile, Stage 0's world on the core, the decision core |
-| **1 The core: frame and tools** | S1.100–S1.133 | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
+| **1 The core: frame and tools** | S1.101–S1.133 (S1.100 done) | the architecture's frame at the design point; the finished-volume measure (`tools/bench.sh -F`, `phx-fin`); `perf/design.toml`; `phx-check`'s rules for bases and steps; the ratchets |
 | **1 The core: repairs** | S1.134–S1.158 | defects that stand apart from any base |
 | **1 The core: bases** | S1.159–S1.360 | every store, kernel and index the finished world needs, each designed for its last user and measured at the design point, each followed by the migration of its current users |
 | **1 Stage 1 on the core** | S1.400–S1.499 | Stage 0's and Stage 1's mechanisms as rules over the bases, Stage 1's remaining clauses, the opening's derivations, and the Stage 1 gate |
@@ -266,8 +266,9 @@ The steps of each stage, in build order:
   `sys-tax`, `sys-soc`, `sys-sov` · S1.12 `sys-hh` · S1.13 `sys-dem` births · S1.14 `sys-idx` and `sys-sta` ·
   S1.17 the meter · S1.18 the spec follows one representation · S1.19 the core and the bench · S1.20 money and
   settlement on the core · S1.21 markets, goods and named units on the core · S1.22 one opening dataset per profile ·
-  S1.23 Stage 0's world on the core · S1.26 the decision core.
-- **Stage 1, the core: frame and tools**: S1.100 The architecture's stale sections retired · S1.101 Layers and the crate map restated · S1.102 The day's stage table · S1.103 The design point and the budgets · S1.104 The cost rule and the design rules R1–R12 · S1.105 The clause map's L and N rows machine-read · S1.106 Coverage orders stages by the build table · S1.107 The plan cites no scratch document · S1.108 A base's Extension points name every later step that depends on it · S1.109 Clauses lines in one form · S1.110 Every edge case names its test or live check · S1.111 Every code step's Done when reads the bench · S1.112 The layering order of the new crate map · S1.113 `perf/design.toml`: the design point's one figure set · S1.114 The capacity table (K-24) · S1.115 `phx-world`'s literal capacities read the declared table · S1.116 `phx-fin` and `tools/bench.sh -F` · S1.117 The measurement counters (K-15) · S1.118 The counters in the run's report and the bench's summary · S1.119 `-F` baseline of the kept kernels · S1.120 No map, list, dynamic dispatch or wide optional on day paths (R1) · S1.121 Whole-table traversal only through kernel traversals or declared sweeps (R2) · S1.122 Dispatch only through kernel traversals; no absent pool (R3, R8) · S1.123 No register, kind or family read by name on day paths · S1.124 No allocation on day paths (R5) · S1.125 No map keyed by a bare slot in saved state · S1.126 No absent value read as zero · S1.127 No literal capacity · S1.128 Maintained aggregates declared and never read by the audit (R4) · S1.129 Per-day values only through the day-stamped cache (R7) · S1.130 Every index left out of a save names its rebuild (R9) · S1.131 Architecture names exist; unused kernel API reported · S1.132 The design point's ratchets in `perf/budget.toml` · S1.133 The world run's counters for the core's rules
+  S1.23 Stage 0's world on the core · S1.26 the decision core · S1.100 the architecture's stale sections
+  retired.
+- **Stage 1, the core: frame and tools**: S1.101 Layers and the crate map restated · S1.102 The day's stage table · S1.103 The design point and the budgets · S1.104 The cost rule and the design rules R1–R12 · S1.105 The clause map's L and N rows machine-read · S1.106 Coverage orders stages by the build table · S1.107 The plan cites no scratch document · S1.108 A base's Extension points name every later step that depends on it · S1.109 Clauses lines in one form · S1.110 Every edge case names its test or live check · S1.111 Every code step's Done when reads the bench · S1.112 The layering order of the new crate map · S1.113 `perf/design.toml`: the design point's one figure set · S1.114 The capacity table (K-24) · S1.115 `phx-world`'s literal capacities read the declared table · S1.116 `phx-fin` and `tools/bench.sh -F` · S1.117 The measurement counters (K-15) · S1.118 The counters in the run's report and the bench's summary · S1.119 `-F` baseline of the kept kernels · S1.120 No map, list, dynamic dispatch or wide optional on day paths (R1) · S1.121 Whole-table traversal only through kernel traversals or declared sweeps (R2) · S1.122 Dispatch only through kernel traversals; no absent pool (R3, R8) · S1.123 No register, kind or family read by name on day paths · S1.124 No allocation on day paths (R5) · S1.125 No map keyed by a bare slot in saved state · S1.126 No absent value read as zero · S1.127 No literal capacity · S1.128 Maintained aggregates declared and never read by the audit (R4) · S1.129 Per-day values only through the day-stamped cache (R7) · S1.130 Every index left out of a save names its rebuild (R9) · S1.131 Architecture names exist; unused kernel API reported · S1.132 The design point's ratchets in `perf/budget.toml` · S1.133 The world run's counters for the core's rules
 - **Stage 1, the core: repairs**: S1.134 An agency's withheld tax opens in its collector's family · S1.135 A firm estate's project completes at its own site · S1.136 A failed goods move stops the run or fails whole, never a zero cost · S1.137 Missing technology, law or price refused, never zero · S1.138 Impossible values stop the run at the conversion · S1.139 Absent preferences, standings, standards and accounts matched · S1.140 Balances written at endings become flows · S1.141 Legal forms declare whether they have owners and who owns them · S1.142 Kinds declare their place · S1.143 The heirless destination declared by each country's law · S1.144 Kinds' features read as declared · S1.145 Families and kinds bound to handles at assembly · S1.146 The register read by handles on day paths · S1.147 The activity the state's agencies produce declared · S1.148 Numeric literals in mechanisms declared · S1.149 An employment's notice cleared on every close · S1.150 Measurement histories held by declared horizons · S1.151 Dates placed by the calendar, not counted · S1.152 Settlement and the day's flows on the pool · S1.153 Wheel takes, hiring's search and hazards' follow on the pool · S1.154 Production, orders and the opening's needs return actions, not floors · S1.155 The bill offer returns an action; no floor by comparison · S1.156 The duplicated decision runtime deleted · S1.157 Stale comments corrected · S1.158 Vacuous `phx-check` rules re-aimed
 - **Stage 1, the core: bases**: S1.159 Generation references for every table · S1.160 Day buffers · S1.161 The day plan: buffers' lives and shared pages · S1.162 The save contract: the rebuild pass and the round-trip harness · S1.163 The world hash as a tree of frame hashes · S1.164 The sum-tree · S1.165 Keyed indexes maintained by events · S1.166 Epoch flags and change sets · S1.167 Horizon rings · S1.168 The interner with reference counts · S1.169 Chunk plans and bounded spin · S1.170 Partitioned apply with its sweep hooks · S1.171 Declared sweeps and rolling cursors · S1.172 Apportionment with a named residue · S1.173 The four money viewpoints · S1.174 Typed references and the contract link's widths · S1.175 24-bit unit ids · S1.176 Stream families in the key, slot ordinals in the counter · S1.177 Stream declarations by family, and the families' draw types · S1.178 The calendar's day facts · S1.179 Dated policy schedules and rule handles · S1.180 The kind catalogue · S1.181 The family codes of the finished world · S1.182 Kinds, families and capacities read from the catalogue · S1.183 The units registry · S1.184 Goods and capital classes issued by the registry · S1.185 The stage table · S1.186 The day runner walks the stage table · S1.187 Networks and routes · S1.188 The day's use of the network as pair flows · S1.189 Freight's routes onto the route table · S1.190 Cells and the ground things stand on · S1.191 The deposits register · S1.192 Weather history and catastrophe footprints · S1.193 The weather's stores onto the ring and the footprint · S1.194 The party directory: generations, tombstones and successors · S1.195 The world's parties onto the directory · S1.196 Kind stores with typed columns at fixed byte maps · S1.197 Windowed groups: columns that exist only within a dated window · S1.198 Firms' record words to typed columns · S1.199 Households' record words to typed columns · S1.200 Equity and income lines onto kind columns · S1.201 Banks onto the bank kind: lending records and loan books · S1.202 Banks' reserve targets onto the bank kind · S1.203 The extraction flag as a firm flag bit · S1.204 Carriers' modes read from their ways · S1.205 Agencies onto the agency kind: staff targets and budgets · S1.206 The remaining kinds onto phx-pop; phx-core's KindStore deleted · S1.207 Persons as parties in their households · S1.208 Persons onto the person kind · S1.209 Offices and founding preferences · S1.210 Office holders and founding preferences onto offices · S1.211 The per-day party cache · S1.212 The stored log: immutable day segments on storage · S1.213 The event log: public events resident, occurrences stored · S1.214 Hazard events, weather records and deaths onto the event log · S1.215 The records store: series records by vintage, as published · S1.216 Filed accounts encoded per block · S1.217 The credit bureau's records: sparse summaries and adverse events · S1.218 Releases, filed earnings, auction history and the opening's present values onto records · S1.219 The day ledger: the representation reported every day · S1.220 The per-day records onto the day ledger · S1.221 Statistics accumulators · S1.222 Sample frames and saved samples · S1.223 Life records on storage within their horizon · S1.224 Tallies and votes · S1.225 The due wheel in phx-agenda with due-day runs · S1.226 Dated families' takes onto the phx-agenda wheel · S1.227 The decision agenda: one entry a party, a next day a reason · S1.228 Firms' production visits onto the decision agenda · S1.229 Extraction reviews onto the decision agenda · S1.230 Shipping onto the decision agenda · S1.231 Investment reviews onto the decision agenda · S1.232 Employers' postings onto the decision agenda · S1.233 Households' spending onto the decision agenda · S1.234 Employers' pay rounds onto the decision agenda · S1.235 Hazards drawn ahead on the agenda · S1.236 Today's hazards onto the agenda · S1.237 Messages and notices · S1.238 Notices, applications and offers onto messages · S1.239 The trigger index · S1.240 Money accounts: one 20-byte row, no owner column, banknotes · S1.241 Account side slots: facilities, held amounts, links and statements · S1.242 Exact interest on accounts by Abel summation · S1.243 Money totals maintained in the settlement sweep · S1.244 Accounts and money passes moved onto the ledger · S1.245 Flow batches: 16-byte items, 24-bit denominations, link groups, the chains' entry points · S1.246 Card authorization and reason gates · S1.247 Flows moved from `phx-core` with their producers · S1.248 Settlement in `phx-ledger`: the `pending` sweep, short payers re-derived, outcome by place · S1.249 Settlement routed onto the ledger; failure maps onto the outcome by place · S1.250 Linked legs across currencies and correspondent settlement · S1.251 Dated commitments on both books · S1.252 Pending flows moved onto commitments and accounts' `pending` · S1.253 The levy engine: declared levy sets fused at emission, accrued by collector · S1.254 Settlement tallies by reason, fused in the sweeps · S1.255 Per-flow passes moved onto tallies and the declared payment order · S1.256 The agency's statistics passes moved onto accumulators · S1.257 The contract store: declared families, compact rows, codes and runs · S1.258 Chains and lazy block lists: the walked sides · S1.259 Column sweeps and book sides · S1.260 Dated families moved onto the contract store · S1.261 Side aggregates maintained on row events · S1.262 Staff, wage bills, owed balances and collateral moved onto side aggregates · S1.263 Terms, shapes and the day's due plans · S1.264 Reckoning and schedules moved onto shared plans · S1.265 Status, arrears and the day's transitions · S1.266 Arrears, grace, closes and default moved onto status · S1.267 Books, bulk side moves and the rows of a book · S1.268 Participations: sides held in shares · S1.269 Accruing statement contracts: invoice pairs, open and closed periods, carving · S1.270 Taxes moved onto the levy engine and collectors' payables · S1.271 Holdings of goods and physical units by holder · S1.272 Stocks' users moved onto holdings · S1.273 Unit totals and nature's net, maintained · S1.274 The place index · S1.275 The goods identity read from maintained totals · S1.276 Lots and cost flows, with realised gains · S1.277 Bounds and liens: committed, pledged, received under title · S1.278 Sales' covers and carriers' pledges moved onto bounds · S1.279 The instruments register · S1.280 Instrument holdings and holders by instrument · S1.281 The instrument events engine · S1.282 Bills moved onto instruments and their events · S1.283 Owners moved onto equity holdings · S1.284 Named units and what stands on a tile · S1.285 Capital classes: wear and maintained capacity · S1.286 Plant's wear and capacity moved onto capital classes · S1.287 Processes in progress: shipments, projects, production in flight, spells · S1.288 Shipments moved onto processes · S1.289 Standing rates realised lazily · S1.290 Cumulative output per way and its thresholds · S1.291 Production and spoilage moved onto standing rates · S1.292 Projects moved onto processes · S1.293 Deposits and extraction rights moved onto the register and holdings · S1.294 Catastrophes' losses found by place · S1.295 A firm's unit cost read once a day from the bases · S1.296 Standing offers and market instances · S1.297 Price points and ladders · S1.298 The shared admission hook · S1.299 The stall family in good-major blocks · S1.300 Posted prices onto standing offers · S1.301 The stall book: a sum-tree per good at its zone · S1.302 Closed borders read as a declared scope · S1.303 Stalls and the cheapest price onto the stall book · S1.304 The vacancy book and searchers · S1.305 Vacancies and searchers onto the vacancy book · S1.306 The posted-price meeting on the stall book's sum-trees · S1.307 The between-firm meeting on price levels from the stall book · S1.308 The world's purchases onto the meetings · S1.309 The sale as its payment: seller-range sweep and the (seller, good) batch · S1.310 Failed between-firm sales reversed before the close · S1.311 Booking and delivery onto the sales batch · S1.312 The call auction · S1.313 The bill auction onto the call auction · S1.314 The network call: a transport model over lines · S1.315 The continuous book with its closing call · S1.316 The dealer market · S1.317 The bilateral protocol · S1.318 The lending round onto the bilateral protocol · S1.319 The administered form · S1.320 The central bank's facilities onto the administered form · S1.321 Search and match · S1.322 Labour's rounds onto search and match · S1.323 Rationed queues · S1.324 Perishable daily capacity · S1.325 Services' capacity onto perishable capacity · S1.326 Prints, marks, fixings and market measures · S1.327 Traded sums and marks onto prints and marks · S1.328 Account lines (K-87) · S1.329 Income recognition onto lines · S1.330 Equity accounts and maintained net assets (K-88) · S1.331 The accounts audit onto recounts · S1.332 Carrying values, provisions and unrealised differences (K-89) · S1.333 Statements (K-90) · S1.334 Consolidation (K-90) · S1.335 Valuations and curves (K-91) · S1.336 Public series and methods (K-92) · S1.337 Public series onto the store · S1.338 Books and declared limits (K-93) · S1.339 Loan books and lenders' classes onto books · S1.340 Netting sets, margin and collateral (K-94) · S1.341 Exact linear aggregates (K-95) · S1.342 Estates' lifecycle (K-96) · S1.343 The ending kernel (K-97) · S1.344 Endings onto the ending kernel and estates' lifecycle · S1.345 Claims and the priority waterfall (K-98) · S1.346 Estates' payments onto the waterfall · S1.347 The resolution engine (K-99) · S1.348 The decision core (K-100) · S1.349 Decisions onto the decision core · S1.350 The attention kernel (K-101) · S1.351 Attention onto the kernel and the agenda · S1.352 Minds (K-102) · S1.353 The audit engine (K-103) · S1.354 Audit families onto the engine · S1.355 `phx-world` refuses stores and per-party passes · S1.356 Snapshots of every base (K-104) · S1.357 The investor schedule and position rule (K-105) · S1.358 The measurement recorder (K-106) · S1.359 The recorder routed at the day's close · S1.360 The core's close
 - **Stage 1 on the core**: S1.400 Stage 1's macro reads frozen · S1.401 Hazards' chances and their following in sys-dem · S1.402 Outcomes on persons and households in sys-dem · S1.403 Extended households' members from the DHS · S1.404 Households and persons drawn by sys-dem · S1.405 Persons own their accounts and debts at the opening · S1.406 A household's payments drawn from its persons · S1.407 Banks opened by sys-bnk · S1.408 The central bank opened by sys-cb · S1.409 The treasury opened by sys-trs · S1.410 Agencies and the state pensions in payment opened by sys-soc · S1.411 The developing group's job tenure · S1.412 Jobs and working owners dealt by sys-lab at the opening · S1.413 Vacancies posted from the employer's own state · S1.414 Searchers apply from their own reservation · S1.415 Selection, offers and hires · S1.416 Pay rounds at contracts' review dates · S1.417 Layoffs, notice and separations · S1.418 SOC.3 pays the named person · S1.419 Retirement closes jobs · S1.420 The state pension claimed at retirement · S1.421 The benefit claimed on a lost job · S1.422 Working owners' hours, pay and leaving · S1.423 Public agencies' appropriation, funding and staff · S1.424 The state's purchases through its agencies · S1.425 The lending round · S1.426 A firm's rate for new debt as its own position · S1.427 A firm's shortfall borrowed from its own bank · S1.428 Default after grace · S1.429 The central bank's facilities and remittance · S1.430 A bank's request of the facilities · S1.431 The treasury's position and cash buffer · S1.432 Bills at auction · S1.433 Sovereign debt's maturities and holders at the opening · S1.434 A bill's discount accrued over its life · S1.435 Income and consumption tax rules in sys-tax · S1.436 Mining divisions apart · S1.437 Coal deposits' sizes and grades · S1.438 A way's graded inputs declared in content · S1.439 Graded inputs used and valued by content · S1.440 A firm's unit cost as a sys-frm rule · S1.441 Which way to run · S1.442 Capacity's check declared in the Units family · S1.443 Production on the firm's schedule · S1.444 Input orders against the stall book · S1.445 Services bought for what was made · S1.446 Spoilage on standing rates · S1.447 Extraction on its schedule · S1.448 Household spending on its schedule · S1.449 Posted-price marks by units sold · S1.450 Price reviews · S1.451 Firms' attention, and reviews paid in hours · S1.452 Households' attention to their stances · S1.453 Firms' outlooks and stances · S1.454 Households' outlooks and experience weights · S1.455 Management types' spread from the SCE panel · S1.456 Surveyed expectations at the snapshot · S1.457 Wear by use and age, on its kinks · S1.458 Investment on its occasion · S1.459 Projects bought from named producers, paid in stages · S1.460 How an investment is funded · S1.461 A firm enters a line by investing · S1.462 Hazards' damage from the damage functions · S1.463 Crops' yield response to weather · S1.464 Weather and catastrophes destroy crops and stocks at named places · S1.465 Coastal vessels from the IMO, MARAD and shipbuilding · S1.466 Carriers' room and empty repositioning · S1.467 Sellers ship when the gap pays · S1.468 Buyers ship when origin plus freight beats home · S1.469 Freight, basis and supply-shock reads · S1.470 The trade ways declared · S1.471 The trade firms' products at the opening · S1.472 Stockists and merchants · S1.473 Distributors between makers and households · S1.474 The price indices' accumulators and records declared · S1.475 Price indices chained and released · S1.476 Labour force, life table and money released · S1.477 National accounts by three measures · S1.478 Labour's reads · S1.479 Capital's reads · S1.480 Realised rates on the observer's panel · S1.481 Firms' ages at the opening · S1.482 Farms over the size classes · S1.483 Firms drawn at the opening by sys-frm · S1.484 The opening's plant on the steady path · S1.485 Defined-benefit pensions in payment at the opening · S1.486 Each firm's latest filed accounts at the opening · S1.487 The dwelling capital kind declared · S1.488 The opening dwellings held without a housing market · S1.489 Founding reviewed at the adults' attention · S1.490 Firm births · S1.491 Day zero: each party's opening decisions once · S1.492 `phx-world` holds routing only · S1.493 PC-107: rules live in their systems · S1.494 Estimators I: filters, dating, tails · S1.495 Estimators II: survival, regressions, spells, forecasts · S1.496 Credit, verdicts and fact reports · S1.497 Chain relationships computed and reported · S1.498 Stage 1's liveness checks and live reads · S1.499 The Stage 1 gate
@@ -852,95 +853,6 @@ unchanged.
 | Exceptions files of PC-92, PC-96–PC-101 listing today's sites | S1.120–S1.130 | retired by S1.492, which empties every exception file; until then each migration step removes its sites, and the listed `core_*.rs` modules are admitted by S1.355 (PC-102), each entry carrying its retiring step |
 | `#[saved(skip)]` sites without `rebuild =` in PC-101's exceptions | S1.130 | S1.184 (`UnitIds::plain`), S1.225 (the wheel's scratch), S1.248 (settlement's `Work`), S1.264 (`DatedFamily::alike`), S1.306 (the meeting's scratch), each giving its site a rebuild |
 | §7 subsections' "Today" paragraphs describing the code as it stands | S1.100 | each base step's section; S1.360 requires none |
-
----
-
-### S1.100 — The architecture's stale sections retired
-
-**Status**: planned
-**Kind**: docs
-**Clauses**: none
-**Architecture**: §1, §4, §5, §6.4–§6.5, §7, §10, §14–§19 (written)
-**Depends on**: none
-**Goal**: `docs/ARCHITECTURE.md` describes only what is true: the old kernel's machinery, the cells' and agents'
-vocabulary and the diary paragraphs are gone, every design decision the core keeps is kept, and §7 is the core's
-skeleton — one subsection per core crate, each marked planned — which every base step fills with its own design
-before its code.
-
-**Files**:
-| path | purpose |
-| --- | --- |
-| `docs/ARCHITECTURE.md` | stale sections retired; §1's forces restated; §7 the core's skeleton; §3.5 gains the systems' kept rule paragraphs; §18 superseded decisions marked |
-
-**Design**:
-- **§1 Goals and forces.** The four goals stay. The forces are restated for the core: *scale* — the design point of
-  6.0 M persons and its counts (§13, E 51) and the play resolution as the valve (REP.40, N8.5); *cost follows events*
-  — the due wheel, the agenda and the hazards drawn ahead, whole-store work only as declared sweeps (N8.6); *memory is
-  set by the bases' rows* — bytes a row per base, the contract rows and the persons carrying it; *a phone is
-  latency-bound* — work partitioned by target range and swept in cache, a miss budget per item; exactness; fifty
-  systems, one world. "Agents that act", coarsening (E 31) and "rows per agent" go.
-- **Retired** (text deleted; any design decision in it that the core keeps is moved as below):
-  §4.1 facts and facets on kind tables; §4.5 relationship rows; §4.8's "as built" paragraph (`KeyedReduce` kept);
-  §5.2 handlers; §5.3's fact columns, relationship-row layouts and kink sets (register and streams kept); §5.4's
-  handler, message-kind and line-kind refusals; §6.4 instructions, `LegRec`, `Ledger::apply`; §6.5 the payer pass,
-  run heads, cleared lines and 7a–7e (the currencies' and closed banks' semantics moved to §7.8 as forward design);
-  §7.1–§7.7 the agent tables, arenas, agenda wheel, visits, lines' counts and "the representation"'s measured
-  paragraph; §7.10's first half (instruments, `WearDecl`, visits); §7.11's instruments per good, `GoodsView`,
-  `OrderIntent`, markets' instances, `RetailKind`, `ShipIntent`, `AwayTable`, merchants and digests; §7.12's lines,
-  labour book and wage points; §7.13's credit book; §7.15's `StatsBook`, tape and the ledger's day book; §7.16's
-  first sentences; §7.17's opening sentences; §10.1–§10.3's phases, drawn and derived sides, opening writes,
-  `opening-writes.csv`, attachment draws and cleared lines; the §10.4a–c headings; §15's `phx-audit` `Audit`,
-  `FamilyCtx`, `AuditStream`, `TouchedRows`; §16 item 8's rows-streamed and run-heads counters, item 9's PC-50–PC-57
-  text, PC-18's `phx-ffi`, `TermsToken`, `PhysicalToken`; §17's "one thread"; the diary paragraphs (§7.6's measured
-  representation, §13.2's measured paragraph, §14.7's "first measure of the budget"); the orphan fragments in §14.4
-  and §16 item 3.
-- **Kept and moved.** Hazards drawn ahead and the processes on persons (old §7.3) → §7.7 phx-agenda; births and the
-  population store (old §7.3, §7.17) → §7.5 phx-pop; `phx-store`'s backing and columns (old §7.2) → §7.1; map
-  generation, weather and places on the core (old §7.8) → §7.4 phx-geo; the valve (old §7.9) → §13; plant on the core
-  (old §7.10) → §7.10 phx-hold; the core as built (old §7.17: references, parties, edge tables, the wheel, flows,
-  settlement, dues by shape, draws, the meetings, goods, capital, hiring) → the §7 subsection of the crate that will
-  own each, as its "Today" paragraph; the decision core (old §7.18) → §7.16 phx-mind. The rules on the core — the
-  households' spending rule, freight, the ways' units, labour, credit rules, the fund stage, statistics, the state's
-  first cut (old §7.11–§7.16) — → §3.5, one paragraph under each system that owns the rule. Persons-first drawing,
-  labour's draw, what the output asks and productivity centring stay in §10.3. §10.5 is rewritten: no settled
-  worlds for testing; the one run, `tools/bench.sh -g` at gates (E 36).
-- **§7 "The core"**, the skeleton: §7.0 the core's discipline (a pointer to §6.6's rules and §13's design point);
-  §7.1 phx-store (K-01–K-10), §7.2 phx-exec (K-11–K-15), §7.3 phx-core (K-19–K-24), §7.4 phx-geo (K-25–K-30), §7.5
-  phx-pop (K-31–K-35), §7.6 phx-record (K-36–K-41, K-106), §7.7 phx-agenda (K-42–K-46), §7.8 phx-ledger
-  (K-47–K-52), §7.9 phx-contract (K-53–K-59), §7.10 phx-hold (K-60–K-69), §7.11 phx-market (K-70–K-86), §7.12
-  phx-acct (K-87–K-91), §7.13 phx-val (K-92, K-105), §7.14 phx-risk (K-93–K-95), §7.15 phx-end (K-96–K-99), §7.16
-  phx-mind (K-100–K-102), §7.17 phx-audit (K-103), §7.18 the day runner and saves (K-23's runner, K-104). The
-  foundation's bases (K-16 phx-num, K-17 phx-id, K-18 phx-rand) are written in §3.2. Each subsection opens with
-  `Status: planned (S1.nnn–S1.nnn)` and one heading per base: layout, API, algorithms and their bounds, traversal,
-  save and load, capacity, volumes and ratchets, extension points, and "Today" (what the code holds now, by file) until
-  its migration is done. §8 and §9 keep the forms' and endings' semantics; their store descriptions (the markets'
-  tape, `MarketsAudit`, the accounts as ordered maps, estates at 512 bytes) are retired to §7.11, §7.15.
-- **§18.** Decisions 4, 5, 8–13, 20, 22 (its coarsening), 23–27, 30, 32, 33 and 34 are each marked "superseded by n"
-  (n among 35–37 and the core's decisions S1.101, S1.103 and S1.116 add), never deleted. §19's hand-written cells
-  naming `phx-audit` and the `android/` bench are corrected (the derived columns are S1.106's).
-
-**Edge cases**: n/a: the step changes no code.
-
-**Extension points**: the §7 skeleton: every base step S1.159–S1.358 writes its subsection's design before its code
-and deletes its "Today" paragraph at its migration; S1.101 writes §3, S1.102 §6.1–§6.3, S1.104 §6.6, S1.103 §13;
-S1.131 reads the subsections' status lines.
-
-**Unit tests**: none.
-
-**Live checks**: none.
-
-**Budget**: none (no code).
-
-**Guards**: PC-09 (documents) as it stands.
-
-**Not allowed**: a store, index, map or per-party pass outside the core bases; a pass over every party every day; an
-allocation per day; history kept as text ("as built at", "was", dates of measures); a design decision deleted rather
-than moved or marked superseded; a design for a base written here instead of in its step.
-
-**Done when**:
-- [ ] Every section listed above retired, restated or moved; §7's eighteen subsections stand, each `planned`.
-- [ ] `phx-check all` clean (PC-09, coverage).
-- [ ] The two reviews done; status `done` and the section removed.
 
 ---
 
@@ -11732,7 +11644,7 @@ deleted (S1.244, S1.247, S1.249, S1.252, S1.255, S1.256, S1.260, S1.262, S1.264,
 **Status**: planned
 **Kind**: base
 **Clauses**: PTY.3 STATE *(part: a person's accounts are its own)*
-**Architecture**: writes §7.8.1; follows §6.1 (stage 7a), §13.
+**Architecture**: writes §7.8 "K-47 Money accounts"; follows §6.1 (stage 7a), §13.
 **Depends on**: S1.159 (generation references for the records naming an account); S1.196 (kind records name their
 account); S1.207 (the person's `account` and `notes` words); S1.171 (the declared sweep finding a bank's depositors);
 S1.180 (products and money-holder classes as declared data); S1.162 (the save contract and the round-trip harness).
@@ -11746,7 +11658,7 @@ firm's or institution's are an account at the central bank.
 | `crates/kernel/phx-ledger/src/accounts.rs` | `Accounts`, `AccountId`, `Product`, `Flags`; `open`, `close`, `add_pending`, `move_notes`, reads |
 | `crates/kernel/phx-ledger/src/accounts_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/ledger.rs` | `-F ledger` driver |
-| `docs/ARCHITECTURE.md` §7.8.1 | the section, written first |
+| `docs/ARCHITECTURE.md` §7.8 "K-47 Money accounts" | the section, written first |
 | `perf/budget.toml` `[fin.ledger]` | `row_bytes` 20, `mb` 148, `apply_ns` 7.7, `pending_ns` 3.1, `faults_per_day` 0 |
 | `perf/design.toml` `[store]` | `accounts` (7.4 M), `account_products` 64 (added) |
 
@@ -11806,7 +11718,7 @@ household (E 46); a default bank.
 **Done when**:
 - [ ] code and tests; `fmt`, `clippy`, tests, `phx-check` pass
 - [ ] `tools/bench.sh -F ledger` at the design point within `[fin.ledger]` (B, NB, H)
-- [ ] §7.8.1 written
+- [ ] §7.8 "K-47 Money accounts" written
 - [ ] both reviews (the builder's); status `done`; section removed
 
 ---
@@ -11816,7 +11728,7 @@ household (E 46); a default bank.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.8.2.
+**Architecture**: writes §7.8 "K-47 Money accounts".
 **Depends on**: S1.240 (the account row and its slot bits); S1.168 (the `Facility` slot's terms id is an interned
 handle); S1.162 (the save contract and the round-trip harness).
 **Goal**: the few accounts that carry more than a balance — a facility, money held through a closed bank, a holder's
@@ -11829,7 +11741,7 @@ walked by 7a's sweep with a cursor; no column rides on every account.
 | `crates/kernel/phx-ledger/src/side.rs` | `SlotKind`, per-range runs, rank directory, `add_slot`, `drop_slot`, `set_limit`, `limit`, `drawn` |
 | `crates/kernel/phx-ledger/src/side_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/ledger.rs` | 9.37 M slots filled by kind (`[store] side_rows`); random reads and cursor walks |
-| `docs/ARCHITECTURE.md` §7.8.2 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-47 Money accounts" | the section |
 | `perf/budget.toml` `[fin.ledger]` | `slot_read_ns` 20 (added) |
 
 **Design**:
@@ -11885,7 +11797,7 @@ drawn.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F ledger` within `[fin.ledger]` including `slot_read_ns`
-- [ ] §7.8.2 written
+- [ ] §7.8 "K-47 Money accounts" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -11895,7 +11807,7 @@ drawn.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: none
-**Architecture**: writes §7.8.3.
+**Architecture**: writes §7.8 "K-47 Money accounts".
 **Depends on**: S1.241 (the `Accrual` slot); S1.178 (day facts and day counts); S1.225 (a crediting or charging date
 per (bank, product) on the wheel).
 **Goal**: interest on an account's daily balance is exact at any rate path. Each balance change adds one i128 product
@@ -11908,7 +11820,7 @@ product's crediting or charging date, inside 7a's sweep.
 | `crates/kernel/phx-ledger/src/interest.rs` | cumulative indices J, `set_rate`, `accrue_change`, `credit_due` |
 | `crates/kernel/phx-ledger/src/interest_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/ledger.rs` | 1.2 M interest-bearing accounts; a crediting date |
-| `docs/ARCHITECTURE.md` §7.8.3 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-47 Money accounts" | the section |
 | `perf/budget.toml` `[fin.ledger]` | `credit_ns` 5 (added) |
 
 **Design**:
@@ -11955,7 +11867,7 @@ product's crediting or charging date, inside 7a's sweep.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F ledger -D B,H` within `[fin.ledger]` including `credit_ns`
-- [ ] §7.8.3 written
+- [ ] §7.8 "K-47 Money accounts" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -11965,7 +11877,7 @@ product's crediting or charging date, inside 7a's sweep.
 **Status**: planned
 **Kind**: base
 **Clauses**: MON.10 MEASURE
-**Architecture**: writes §7.8.4; follows §7.17 (the audit's independence).
+**Architecture**: writes §7.8 "K-47 Money accounts"; follows §7.17 (the audit's independence).
 **Depends on**: S1.240 (accounts, holder class and product bits); S1.241 (facility limits for the undrawn totals);
 S1.207 (the persons' `notes` words the recount reads); S1.180 (reasons and money-holder classes); S1.128
 (`#[maintained]`).
@@ -11980,7 +11892,7 @@ source — while the audit keeps its own recount; no other pass over accounts ex
 | `crates/kernel/phx-ledger/src/recount.rs` | per-range slice recount for the audit |
 | `crates/kernel/phx-ledger/src/totals_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/ledger.rs` | the recount measure |
-| `docs/ARCHITECTURE.md` §7.8.4 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-47 Money accounts" | the section |
 | `perf/budget.toml` `[fin.ledger]` | `recount_ns_per_row` 0.4 |
 
 **Design**:
@@ -12028,7 +11940,7 @@ totals.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F ledger` within `recount_ns_per_row`
-- [ ] §7.8.4 written
+- [ ] §7.8 "K-47 Money accounts" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12038,7 +11950,7 @@ totals.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.8.1–§7.8.4.
+**Architecture**: follows §7.8 "K-47 Money accounts"–§7.8 "K-47 Money accounts".
 **Depends on**: S1.243 (totals, fold and recount); S1.241 (facility and held slots); S1.196, S1.200 (kind records
 name their account); S1.144 (the kind-name compares in `core_central.rs` are its sites).
 **Goal**: today's accounts, one per party of a money-holding kind, move into K-47 (persons' own come at S1.405);
@@ -12102,7 +12014,7 @@ allocation per day; keeping `Accounts` beside K-47.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.8.5; follows §6.1 (stages 2b, 6b, 6d, 7), §3.1 (sweep hooks).
+**Architecture**: writes §7.8 "K-48 Flow batches"; follows §6.1 (stages 2b, 6b, 6d, 7), §3.1 (sweep hooks).
 **Depends on**: S1.160 (day buffers); S1.161 (the day plan: the batches' and chains' buffers declare their lives
 there); S1.175 (24-bit unit ids; retires its 15-bit placeholder); S1.170 (apply by range and its `SweepHooks`
 parameter); S1.180 (reasons with payment order, source kind and lines); S1.240 (`add_pending`).
@@ -12117,7 +12029,7 @@ instruction has a number, legs, a cause, trade and settlement dates and a link g
 | `crates/kernel/phx-ledger/src/chains.rs` | `DueItems` (payer and payee scattered through S1.170's ranges), `ShardCredits`, `SpendSplit` (E 48), each generic over `H: SweepHooks` |
 | `crates/kernel/phx-ledger/src/flows_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/settle.rs` | decided flows' driver |
-| `docs/ARCHITECTURE.md` §7.8.5 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-48 Flow batches" | the section |
 | `perf/budget.toml` `[fin.settle]` | `flow_ns` 19.2 |
 
 **Design**:
@@ -12181,7 +12093,7 @@ per party; a 15-bit unit id; a `phx-ledger` call into a higher crate.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F settle` within `flow_ns`
-- [ ] §7.8.5 written
+- [ ] §7.8 "K-48 Flow batches" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12191,7 +12103,7 @@ per party; a 15-bit unit id; a `phx-ledger` call into a higher crate.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: none
-**Architecture**: writes §7.8.6.
+**Architecture**: writes §7.8 "K-48 Flow batches".
 **Depends on**: S1.245 (batches and the chains' entry points); S1.240 (`available`); S1.180 (reasons with their gates
 as declared data).
 **Goal**: a card payment is TIME.8's commitment made through authorization (Law 1): it is admitted only against the
@@ -12204,7 +12116,7 @@ refusal rule evaluated once at emission.
 | `crates/kernel/phx-ledger/src/authorize.rs` | `authorize(account, amount) -> Admit`, the authorized rank, `Gate` evaluation |
 | `crates/kernel/phx-ledger/src/authorize_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/settle.rs` | authorization and gates on the decided and retail items |
-| `docs/ARCHITECTURE.md` §7.8.6 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-48 Flow batches" | the section |
 
 **Design**:
 - **Retail and services**: the authorization is the household's want budgets, bounded by its persons' `available` in
@@ -12246,7 +12158,7 @@ branching on a kind's name.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F settle` within `flow_ns`
-- [ ] §7.8.6 written
+- [ ] §7.8 "K-48 Flow batches" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12256,7 +12168,7 @@ branching on a kind's name.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.8.5.
+**Architecture**: follows §7.8 "K-48 Flow batches".
 **Depends on**: S1.245 (batches and entry points); S1.246 (authorization).
 **Goal**: `phx-core`'s 24-byte `Flow`, `FlowBufs`, `Grouped` and the one-chunk buffer are deleted; every producer in
 `phx-world` writes K-48 batches or the chains' entry points in the same change.
@@ -12305,7 +12217,7 @@ allocation per day; keeping `FlowBufs` beside K-48.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: SET.10 MEASURE
-**Architecture**: writes §7.8.7; follows §6.1 (stage 7).
+**Architecture**: writes §7.8 "K-49 Settlement"; follows §6.1 (stage 7).
 **Depends on**: S1.245 (batches, places, chains); S1.161 (the day plan: the outcome bitmap's and 7b scratch's lives);
 S1.246 (authorized debits rank first); S1.244 (K-47, the only balances); S1.243 (`MoneyTotals::fold`); S1.170 (apply by
 range); S1.171 (the sweep as a declared sweep); S1.169 (chunk plans); S1.219 (the day ledger publishing SET.10).
@@ -12320,7 +12232,7 @@ bitmap by place replaces every value-keyed failure map.
 | `crates/kernel/phx-ledger/src/settle.rs` | beside today's apply (moved here at S1.244; S1.249 deletes it): `settle_day(currencies)`, `sweep` (7a), `rederive`, fixed point, ring, bank shortfall (7b), `commit`, `Outcome`, `Values` |
 | `crates/kernel/phx-ledger/src/settle_tests.rs` | new tests; today's (moved here at S1.244) go with today's apply at S1.249 |
 | `crates/apps/phx-fin/src/settle.rs` | shorts, sweep, fixed point on B, B′, H |
-| `docs/ARCHITECTURE.md` §7.8.7 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-49 Settlement" | the section |
 | `perf/budget.toml` `[fin.settle]` | `short_ns` 38.5, `sweep_ns_per_account` 0.4, `fixed_point_core_ms_h` 25 |
 
 **Design**:
@@ -12384,7 +12296,7 @@ loop's bound; settling on a non-business day.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F settle,ledger -D B,BC,H` within `[fin.settle]`, `[fin.ledger]`
-- [ ] §7.8.7 written
+- [ ] §7.8 "K-49 Settlement" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12394,7 +12306,7 @@ loop's bound; settling on a non-business day.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.8.7.
+**Architecture**: follows §7.8 "K-49 Settlement".
 **Depends on**: S1.248 (`settle_day`, `Outcome` by place, nets in `pending`); S1.247 (producers on K-48).
 **Goal**: today's settlement apply (moved into `phx-ledger` at S1.244) and today's per-currency loop are deleted and the day routes to `settle_day` with the
 pool; the five value-keyed `unpaid` maps and `lend_shortfalls`' map over every flow are deleted; each consumer reads a
@@ -12455,7 +12367,7 @@ allocation per day; matching a failure by amount.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: FX.4 PROCESS *(part: both currencies settle together)*
-**Architecture**: writes §7.8.8; follows §7.8.7.
+**Architecture**: writes §7.8 "K-49 Settlement"; follows §7.8 "K-49 Settlement".
 **Depends on**: S1.248 (`settle_day`, the fixed point and link groups); S1.240 (nostro accounts); S1.178 (per-country
 business-day facts); S1.180 (currency systems and their members as declared data).
 **Goal**: a group of legs in two currencies settles in both currencies' sweeps together or not at all, on a value
@@ -12468,7 +12380,7 @@ through its nostro at its declared correspondent. The first world user is S5.161
 | `crates/kernel/phx-ledger/src/pvp.rs` | `JointDate`, cross-currency rounds inside `settle_day`, correspondent routing |
 | `crates/kernel/phx-ledger/src/pvp_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/settle.rs` | PvP driver |
-| `docs/ARCHITECTURE.md` §7.8.8 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-49 Settlement" | the section |
 | `perf/budget.toml` `[fin.settle]` | `pvp_ns` 30 (added) |
 
 **Design**:
@@ -12510,7 +12422,7 @@ through its nostro at its declared correspondent. The first world user is S5.161
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F settle` within `pvp_ns`
-- [ ] §7.8.8 written
+- [ ] §7.8 "K-49 Settlement" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12520,7 +12432,7 @@ through its nostro at its declared correspondent. The first world user is S5.161
 **Status**: planned
 **Kind**: base
 **Clauses**: REG.10 STATE
-**Architecture**: writes §7.8.9.
+**Architecture**: writes §7.8 "K-50 Dated commitments".
 **Depends on**: S1.225 (the due wheel files a commitment by settle day); S1.245 (batches, which commitments enter on
 their day); S1.246 (a draw passes its reason's gate); S1.171 (the 9a declared sweep); S1.241 (facility reads); S1.162 (the save contract and the round-trip harness).
 **Goal**: every commitment between trade date and settle date is one row, due on the wheel and read on both parties'
@@ -12534,7 +12446,7 @@ commitment it names is recorded on both books as what it is.
 | `crates/kernel/phx-ledger/src/commit.rs` | `Commitments` columns, `post`, `take_due`, `cancel`, the 9a fold |
 | `crates/kernel/phx-ledger/src/commit_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/commitments.rs` | `-F commitments` |
-| `docs/ARCHITECTURE.md` §7.8.9 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-50 Dated commitments" | the section |
 | `perf/budget.toml` `[fin.commitments]` | `post_ns` 30, `take_ns` 10, `mb` 5.4 (added) |
 
 **Design**:
@@ -12581,7 +12493,7 @@ S3.185, S3.195, S8.110, S4.163, S4.172, S4.176, S5.162, S5.180.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F commitments` within its ratchets
-- [ ] §7.8.9 written
+- [ ] §7.8 "K-50 Dated commitments" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12591,7 +12503,7 @@ S3.185, S3.195, S8.110, S4.163, S4.172, S4.176, S5.162, S5.180.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.8.6, §7.8.9.
+**Architecture**: follows §7.8 "K-48 Flow batches", §7.8 "K-50 Dated commitments".
 **Depends on**: S1.251 (commitments); S1.246 (card authorization); S1.247 (producers on K-48).
 **Goal**: `Core::pending: Vec<Flow>` is deleted; a closed day's authorized card payments add into the payer's and
 payee's K-47 `pending` in commit mode; a trade settling on a later date posts a K-50 row.
@@ -12643,7 +12555,7 @@ allocation per day; storing closed days' purchases as flows.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: TAX.2 PROCESS *(part: withheld at payroll, charged at the sale, owed by the collector until remitted)*
-**Architecture**: writes §7.8.10; follows §6.1 (stages 2b, 6b), §3.1 (sweep hooks).
+**Architecture**: writes §7.8 "K-51 The levy engine"; follows §6.1 (stages 2b, 6b), §3.1 (sweep hooks).
 **Depends on**: S1.245 (the chains' entry points and their hooks, where levies fuse); S1.180 (reasons with their levy
 sets and collector roles); S1.179 (dated policy schedules: rates and bands in force); S1.196 (the collector's record
 cells); S1.165 (owner instances for holding levies).
@@ -12658,7 +12570,7 @@ no pass and no stored row per wage or sale.
 | `crates/kernel/phx-ledger/src/levy.rs` | `LevySet`, `Levy`, `apply_levies` (a sweep hook), accrual cells; today's `Withholding` becomes one `Levy` form |
 | `crates/kernel/phx-ledger/src/levy_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/dues.rs` | the dated-item stream with withholding sets |
-| `docs/ARCHITECTURE.md` §7.8.10 | the section (replaces §4.3's text) |
+| `docs/ARCHITECTURE.md` §7.8 "K-51 The levy engine" | the section (replaces §4.3's text) |
 | `perf/budget.toml` `[fin.dues]` | `levy_ns_extra` 0 (added) |
 
 **Design**:
@@ -12715,7 +12627,7 @@ S5.180.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F dues -D B,H` within `item_ns` with levies fused
-- [ ] §7.8.10 written
+- [ ] §7.8 "K-51 The levy engine" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12725,7 +12637,7 @@ S5.180.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.8.11; follows §7.6 (K-39's stock counters).
+**Architecture**: writes §7.8 "K-52 Settlement tallies"; follows §7.6 (K-39's stock counters).
 **Depends on**: S1.245 (the chains and batches where tallies fuse); S1.248 (the outcome by place a tally reverses on);
 S1.180 (reasons, with the tallies each feeds); S1.207 (the person's tax-year pair); S1.162 (the save contract and the round-trip harness).
 **Goal**: every flow sum a rule or a statistic reads — a person's taxable income and withheld this tax year, an
@@ -12739,7 +12651,7 @@ kernel: K-39 (S1.221) keeps stock counters, exposure and samples and reads flow 
 | `crates/kernel/phx-ledger/src/tally.rs` | `TallyDecl`, `Tallies` cells, `add` (a sweep hook), `reverse`, `read(key, period)`, `day_cell` |
 | `crates/kernel/phx-ledger/src/tally_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/flows.rs` | `-F flows`: tallies fused into the chains' shards |
-| `docs/ARCHITECTURE.md` §7.8.11 | the section |
+| `docs/ARCHITECTURE.md` §7.8 "K-52 Settlement tallies" | the section |
 | `perf/budget.toml` `[fin.flows]` | `tally_ns` 1.2 (added; K-39's `[fin.stats]` keeps stocks only) |
 
 **Design**:
@@ -12794,7 +12706,7 @@ S6.115.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F flows` within `[fin.flows]`
-- [ ] §7.8.11 written
+- [ ] §7.8 "K-52 Settlement tallies" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -12804,7 +12716,7 @@ S6.115.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.8.5, §7.8.11.
+**Architecture**: follows §7.8 "K-48 Flow batches", §7.8 "K-52 Settlement tallies".
 **Depends on**: S1.254 (tallies); S1.249 (settlement routed; the outcome by place); S1.180 (payment order as K-21 data
 per (payer kind, reason)).
 **Goal**: the remaining passes over every flow of the day — `record_wages_settled`, `fund_agencies` (each agency's day
@@ -12859,7 +12771,7 @@ allocation per day; a payment order computed by kind name.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.6 (K-39), §7.8.4, §7.8.11.
+**Architecture**: follows §7.6 (K-39), §7.8 "K-47 Money accounts", §7.8 "K-52 Settlement tallies".
 **Depends on**: S1.221 (stock counters and sample frames); S1.243 (money totals); S1.254 (flow tallies).
 **Goal**: the statistics agency's monthly passes over every household, person and account — `exposed`,
 `labour_force`, `employed_ids`, `money_stock` — the rates' daily sample pass and `Taxes::sample` are deleted; month
@@ -12915,7 +12827,7 @@ allocation per day; a class by kind name.
 **Status**: planned
 **Kind**: base
 **Clauses**: ACC.12 INVARIANT
-**Architecture**: writes §7.9.1; follows §13 (memory).
+**Architecture**: writes §7.9 "K-53 The contract store"; follows §13 (memory).
 **Depends on**: S1.181 (every family's fixed 8-bit code); S1.159 (generation references); S1.168 (the interner,
 which holds terms ids); S1.180 (families declared with their columns and side modes); S1.225 (the wheel, whose entries carry the family code); S1.162 (the save contract and the round-trip harness).
 **Goal**: every contract between named parties is one row of its declared family in a new crate `phx-contract`; a
@@ -12928,7 +12840,7 @@ family of the finished plan, under its code from S1.181, in 1 074.0 MB at the de
 | `crates/kernel/phx-contract/src/{lib,store,family,runs}.rs` | `Families`, `FamilyDecl`, `FamilyCode` (u8), `ContractRef`, `open`, `close`, typed column reads, run columns |
 | `crates/kernel/phx-contract/src/store_tests.rs` | unit tests (with `phx-store/src/edges.rs`'s tests, moved at S1.260) |
 | `crates/apps/phx-fin/src/contracts.rs` | `-F contracts.<family>` driver |
-| `docs/ARCHITECTURE.md` §7.9.1 | the section and the family table, written first |
+| `docs/ARCHITECTURE.md` §7.9 "K-53 The contract store" | the section and the family table, written first |
 | `perf/budget.toml` `[fin.contracts]`, `[fin.contracts.<family>]` | restated below |
 | `perf/design.toml` `[store.contracts]` | the rows of each family below |
 
@@ -13054,7 +12966,7 @@ S6.115, S6.116, S6.117, S6.121, S6.133.
 **Done when**:
 - [ ] crate, code and tests; fast checks pass
 - [ ] `tools/bench.sh -F contracts` within `[fin.contracts]` and every `[fin.contracts.<family>]`
-- [ ] §7.9.1 written with the family table
+- [ ] §7.9 "K-53 The contract store" written with the family table
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13064,7 +12976,7 @@ S6.115, S6.116, S6.117, S6.121, S6.133.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.9.1 (walked sides).
+**Architecture**: writes §7.9 "K-53 The contract store" (walked sides).
 **Depends on**: S1.257 (rows and the 32-bit link); S1.196, S1.207 (records holding chain heads and list headers).
 **Goal**: a party finds its rows of a walked side through its own record — a chain of links for sides held by one
 party of few rows, a lazy block list for firms' and institutions' sides with many — with no owner index.
@@ -13123,7 +13035,7 @@ party of few rows, a lazy block list for firms' and institutions' sides with man
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.9.1 (unwalked sides).
+**Architecture**: writes §7.9 "K-53 The contract store" (unwalked sides).
 **Depends on**: S1.257 (rows); S1.171 (declared sweeps); S1.168 (the interner, whose terms name a book or a party).
 **Goal**: a side no party walks each day holds only its party column, found by a declared sweep on the days it is
 needed; a side whose one party faces millions of rows (insurer, scheme, supplier, lender, agency, treasury, school)
@@ -13183,7 +13095,7 @@ is named through the terms and costs no byte in the row.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.9.1.
+**Architecture**: follows §7.9 "K-53 The contract store".
 **Depends on**: S1.257, S1.258, S1.259 (the store and its sides); S1.225 (the wheel, which files each row); S1.208 (`person_left` and `end_household` left walking today's families).
 **Goal**: today's ten dated families and their parallel vectors move into K-53 families — employment, public
 employment, household loans, firm loans, benefits (flat and individual), pensions, the central bank's two facilities
@@ -13245,7 +13157,7 @@ allocation per day; a second copy of a family.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.9.2; follows §7.17 (R4).
+**Architecture**: writes §7.9 "K-54 Side aggregates"; follows §7.17 (R4).
 **Depends on**: S1.257 (row events: open, close, reprice, move); S1.258 (walked sides); S1.196 (record cells in the
 party's record); S1.128 (`#[maintained]`).
 **Goal**: every sum a rule reads over a party's contracts — a firm's wage bill and staff hours by class, a household's
@@ -13259,7 +13171,7 @@ on a day path.
 | `crates/kernel/phx-contract/src/aggregate.rs` | `AggDecl` (family, side, measure, cell), `on_open`, `on_close`, `on_reprice`, `on_move`, `rebuild` |
 | `crates/kernel/phx-contract/src/aggregate_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/contracts.rs` | aggregate updates on the row events |
-| `docs/ARCHITECTURE.md` §7.9.2 | the section |
+| `docs/ARCHITECTURE.md` §7.9 "K-54 Side aggregates" | the section |
 | `perf/budget.toml` `[fin.contracts]` | `agg_update_ns` 10 (added) |
 
 **Design**:
@@ -13308,7 +13220,7 @@ writers.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F contracts` within `agg_update_ns`
-- [ ] §7.9.2 written
+- [ ] §7.9 "K-54 Side aggregates" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13318,7 +13230,7 @@ writers.
 **Status**: planned
 **Kind**: migration
 **Clauses**: LAB.13 INVARIANT
-**Architecture**: follows §7.9.2.
+**Architecture**: follows §7.9 "K-54 Side aggregates".
 **Depends on**: S1.261 (aggregates); S1.260 (families on K-53).
 **Goal**: every walk of a party's contracts to sum them is deleted — `staff_of`, `staff_capacity`, `cost_at`'s wage
 walk, `staff_means`, `owed_until`, `owed_on_loans` (every contract every day), the collateral sums over every firm
@@ -13379,7 +13291,7 @@ allocation per day; a second copy of the wage bill.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: BNK.2 STATE *(part: loan types and facilities declared)*
-**Architecture**: writes §7.9.3 (replaces §4.4's algebra text).
+**Architecture**: writes §7.9 "K-55 Terms, shapes and due plans" (replaces §4.4's algebra text).
 **Depends on**: S1.257 (rows hold terms ids); S1.168 (the interner); S1.215 (the records store, read "as published by
 day d"); S1.178 (day facts, day counts and conventions); S1.239 (the trigger index waking event legs); S1.170 (the
 dues' apply and its waves); S1.162 (the save contract and the round-trip harness).
@@ -13395,7 +13307,7 @@ commitment fee are declared data; the undrawn part's charge on capital and liqui
 | `crates/kernel/phx-contract/src/forms.rs` | the closed set of amount forms and their evaluators (written from `phx-ledger/src/{algebra,shape}.rs`, which S1.264 deletes) |
 | `crates/kernel/phx-contract/src/terms_tests.rs` | unit tests (algebra's, and new) |
 | `crates/apps/phx-fin/src/{terms,dues}.rs` | `-F terms`, `-F dues` |
-| `docs/ARCHITECTURE.md` §7.9.3 | the section |
+| `docs/ARCHITECTURE.md` §7.9 "K-55 Terms, shapes and due plans" | the section |
 | `perf/budget.toml` `[fin.terms]`, `[fin.dues]` | `resolve_ns` 40 (added); `item_ns` 11.5, `miss_per_item` 0.08 a wave's item |
 
 **Design**:
@@ -13468,7 +13380,7 @@ read as 0.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F terms,dues -D B,H` within `[fin.terms]`, `[fin.dues]`
-- [ ] §7.9.3 written
+- [ ] §7.9 "K-55 Terms, shapes and due plans" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13478,7 +13390,7 @@ read as 0.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.9.3.
+**Architecture**: follows §7.9 "K-55 Terms, shapes and due plans".
 **Depends on**: S1.263 (terms and day plans); S1.260 (rows in K-53).
 **Goal**: `reckoned` (a terms clone, a plan and a buffer per contract per call) is deleted, and so is every schedule
 made per day or month (facilities, shortfall loans, tax debts, benefits, jobs, bills), with `alike` and
@@ -13534,7 +13446,7 @@ allocation per day; a schedule per contract.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.9.4.
+**Architecture**: writes §7.9 "K-56 Status and arrears".
 **Depends on**: S1.257 (rows and their declared columns); S1.248 (fails by place); S1.227 (arrears agenda entries);
 S1.215 (histories copied to records at close); S1.237 (notices as messages); S1.162 (the save contract and the round-trip harness).
 **Goal**: a contract's status is state in its row — a stage-and-months word where a family declares one (loans), own
@@ -13548,7 +13460,7 @@ histories a later decision reads are copied to records at close.
 | `crates/kernel/phx-contract/src/status.rs` | `Stage`, `ArrearsWord`, `mark_failed`, `advance`, `Transitions` (K-03), `close_history` |
 | `crates/kernel/phx-contract/src/status_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/contracts.rs` | arrears marks on the H day |
-| `docs/ARCHITECTURE.md` §7.9.4 | the section |
+| `docs/ARCHITECTURE.md` §7.9 "K-56 Status and arrears" | the section |
 | `perf/budget.toml` `[fin.contracts]` | `mark_ns` 20 (added) |
 
 **Design**:
@@ -13597,7 +13509,7 @@ from own due.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F contracts -D H` within `mark_ns`
-- [ ] §7.9.4 written
+- [ ] §7.9 "K-56 Status and arrears" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13607,7 +13519,7 @@ from own due.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.9.4.
+**Architecture**: follows §7.9 "K-56 Status and arrears".
 **Depends on**: S1.265 (status and transitions); S1.261 (book cells); S1.249 (fails by place); S1.238 (notices on
 messages; `noticed` left only for `staff_of`, deleted here).
 **Goal**: `Insolvency::since` and its daily `retain`, `hold_arrears`' map rebuilt daily, `note_arrears`' linear family
@@ -13670,7 +13582,7 @@ allocation per day; a scan for defaults.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.9.5; follows §9 (endings).
+**Architecture**: writes §7.9 "K-57 Books"; follows §9 (endings).
 **Depends on**: S1.257, S1.258, S1.259 (side modes); S1.194 (the party directory: a book is a party kind); S1.261
 (aggregates carried in a book's record); S1.171 (declared sweeps); S1.170 (apply by range and its `SweepHooks`); S1.162 (the save contract and the round-trip harness).
 **Goal**: a book is a declared party kind with no money and no decisions, owned by a party, named by a side through a
@@ -13684,7 +13596,7 @@ parallel. The rows of one book are found by one declared sweep of the family's t
 | `crates/kernel/phx-contract/src/book.rs` | `Book` records (owner PartyKey, aggregate cells), `move_book`, `move_end`, `repoint_party`, `rows_of_book` |
 | `crates/kernel/phx-contract/src/book_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/contracts.rs` | the re-pointing cursor and a mass-ending day in `-F contracts` |
-| `docs/ARCHITECTURE.md` §7.9.5 | the section |
+| `docs/ARCHITECTURE.md` §7.9 "K-57 Books" | the section |
 | `perf/budget.toml` `[fin.contracts]` | `move_row_ns` 15, `book_sweep_ns` 1.0, `repoint_day_core_ms` 1 (added) |
 
 **Design**:
@@ -13740,7 +13652,7 @@ book's rows.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F contracts` within `move_row_ns`, `book_sweep_ns` and `repoint_day_core_ms`
-- [ ] §7.9.5 written
+- [ ] §7.9 "K-57 Books" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13750,7 +13662,7 @@ book's rows.
 **Status**: planned
 **Kind**: base
 **Clauses**: PTY.3 STATE *(part: a thing owned jointly is held in shares by its co-owners)*
-**Architecture**: writes §7.9.6.
+**Architecture**: writes §7.9 "K-58 Participations".
 **Depends on**: S1.257 (side modes); S1.172 (apportionment with a named residue); S1.194 (the directory: a group is a
 party kind).
 **Goal**: a side held jointly (a joint account, a loan taken together, a dwelling in shares, a household's division by
@@ -13764,7 +13676,7 @@ syndicated loan is its own contract (BNK.3), never a group.
 | `crates/kernel/phx-contract/src/group.rs` | `Group` rows, members arena, the intern index, `split_due`, `join`, `leave` |
 | `crates/kernel/phx-contract/src/group_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/contracts.rs` | `-F contracts.participations` |
-| `docs/ARCHITECTURE.md` §7.9.6 | the section |
+| `docs/ARCHITECTURE.md` §7.9 "K-58 Participations" | the section |
 | `perf/budget.toml` `[fin.contracts.participations]` | `split_ns` 15, `mb` 19 (added) |
 
 **Design**:
@@ -13807,7 +13719,7 @@ syndicated loan is its own contract (BNK.3), never a group.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F contracts` within the participations ratchets
-- [ ] §7.9.6 written
+- [ ] §7.9 "K-58 Participations" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13817,7 +13729,7 @@ syndicated loan is its own contract (BNK.3), never a group.
 **Status**: planned
 **Kind**: base
 **Clauses**: ACC.1 STATE *(part: a recognised item not yet paid is a receivable or payable with a named counterparty)*
-**Architecture**: writes §7.9.7.
+**Architecture**: writes §7.9 "K-59 Accruing statement contracts".
 **Depends on**: S1.257, S1.258, S1.259 (the `invoices` and `statements` families and their sides); S1.263 (the
 grant's terms and statement schedule); S1.265 (overdue as own due past); S1.160 (the day's reused scratch); S1.162 (the save contract and the round-trip harness).
 **Goal**: an invoice (TCR.1) is one pair row per (seller, buyer) on terms, holding the open statement's accrued
@@ -13832,7 +13744,7 @@ resident index.
 | `crates/kernel/phx-contract/src/statement.rs` | pair columns, `open_pair`, `accrue`, `roll`, `carve`, `due_take`, `pay_early`, the seller's sorted scratch |
 | `crates/kernel/phx-contract/src/statement_tests.rs` | unit tests |
 | `crates/apps/phx-fin/src/b2b.rs` | the purchase's binary search inside `fin.b2b.all_in_ns` |
-| `docs/ARCHITECTURE.md` §7.9.7 | the section |
+| `docs/ARCHITECTURE.md` §7.9 "K-59 Accruing statement contracts" | the section |
 | `perf/budget.toml` `[fin.contracts.invoices]`, `[fin.contracts.statements]` | `row_bytes` 50.7 / 28, `mb` 253.5 / 14 |
 | `perf/design.toml` `[store.contracts]` | `statements` 0.5 M, the declared capacity |
 
@@ -13894,7 +13806,7 @@ opened past the declared capacity.
 **Done when**:
 - [ ] code and tests; fast checks pass
 - [ ] `tools/bench.sh -F b2b,contracts` within `all_in_ns` and the families' ratchets
-- [ ] §7.9.7 written
+- [ ] §7.9 "K-59 Accruing statement contracts" written
 - [ ] both reviews; status `done`; section removed
 
 ---
@@ -13904,7 +13816,7 @@ opened past the declared capacity.
 **Status**: planned
 **Kind**: migration
 **Clauses**: TAX.5 INVARIANT; ACC.1 STATE *(part: a tax arising is the collector's payable to the named payee)*
-**Architecture**: follows §7.8.10, §7.9.1.
+**Architecture**: follows §7.8 "K-51 The levy engine", §7.9 "K-53 The contract store".
 **Depends on**: S1.253 (levies accrued in collector cells); S1.254 (tallies by base); S1.257 (the `tax_payables`
 family and its run column); S1.171 (the period-close sweep of collector cells).
 **Goal**: `core_taxes`' `Arising` row per wage and final sale is deleted, and so are the collector's debt per
@@ -13996,7 +13908,7 @@ them rebuilt at load with the hash equal; `tools/bench.sh -F holdings,units,batc
 **Status**: planned
 **Kind**: base
 **Clauses**: GEO.5 STATE
-**Architecture**: writes §7.10 phx-hold and §7.10.1 "Holdings of goods and physical units".
+**Architecture**: writes §7.10 phx-hold's status line and "K-60 Holdings".
 **Depends on**: S1.183 (K-22: 24-bit `UnitId`s, each unit's kind, grade, zone and content per unit); S1.196 (K-32:
 the declared inline columns of the firm and household records); S1.207 (K-33: a holding names a person, E 46);
 S1.268 (K-58: a group holds jointly); S1.190 (K-28: a parcel held apart, its owner and cost); S1.165 (K-06: the
@@ -14016,7 +13928,7 @@ Instrument holdings are S1.280's.
 | `crates/kernel/phx-hold/tests/{physical,plant,batch}.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/units.rs` | the `units` driver |
 | `perf/budget.toml`, `perf/design.toml` | `[fin.units]` keys below; `[store] physical_rows`, `plant_cells` |
-| `docs/ARCHITECTURE.md` | §7.10, §7.10.1 |
+| `docs/ARCHITECTURE.md` | §7.10, §7.10 "K-60 Holdings" |
 
 **Design**:
 
@@ -14090,7 +14002,7 @@ a holder; a clamp at 32 or 16 bits; a pass over every holding; an allocation per
 - [ ] `phx-hold` created with the words, inline declarations, plant cells, rows, batch apply and tests; carriers moved.
 - [ ] Fast checks pass (`fmt`, `clippy`, tests, `phx-check`).
 - [ ] `tools/bench.sh -F units` at the design point within `[fin.units]`.
-- [ ] §7.10 and §7.10.1 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 and §7.10 "K-60 Holdings" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14099,7 +14011,7 @@ a holder; a clamp at 32 or 16 bits; a pass over every holding; an allocation per
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.1; retires ARCHITECTURE's `Stocks` paragraphs (§7.11 goods, §7.17 core).
+**Architecture**: follows §7.10 "K-60 Holdings"; retires ARCHITECTURE's `Stocks` paragraphs (§7.11 goods, §7.17 core).
 **Depends on**: S1.271 (the holdings and their batch API); S1.184 (units resolved into records, so no `UnitIds::find`
 on a path).
 **Goal**: every user of `phx_core::goods::Stocks` reads and writes holdings through `phx-hold`'s batch API, owned by
@@ -14159,7 +14071,7 @@ allocation per day; `Stocks` kept "for the opening"; a household as a holder.
 **Status**: planned
 **Kind**: base
 **Clauses**: TEC.9 INVARIANT
-**Architecture**: writes §7.10.2 "Unit totals and nature's net".
+**Architecture**: writes §7.10 "K-61 Unit totals and nature's net".
 **Depends on**: S1.271 (the batch apply the totals are fused into); S1.180 (K-21: ways, their inputs and yields;
 source kinds); S1.166 (K-07: units touched today).
 **Goal**: per unit, the world's held total, its opening of the day and what nature gave and took by source kind are
@@ -14177,7 +14089,7 @@ it actually consumed (TEC.9).
 | `crates/kernel/phx-hold/tests/totals.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/units.rs` | `units.totals` measures |
 | `perf/budget.toml` | `[fin.units]` `totals_ns`, `totals_mb` |
-| `docs/ARCHITECTURE.md` | §7.10.2 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-61 Unit totals and nature's net" |
 
 **Design**:
 - **Columns** by `UnitId` (dense, `[store] unit_ids` ≈ 110 k at `[resolution] zones` 1 000): held i64; opening i64
@@ -14223,7 +14135,7 @@ the identity; an allocation per day.
 **Done when**:
 - [ ] Columns, slice totals and making groups with tests; TEC.9's `#[clause]` on `making.rs`.
 - [ ] Fast checks pass; `tools/bench.sh -F units` within `totals_ns`, `totals_mb`.
-- [ ] §7.10.2 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-61 Unit totals and nature's net" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14233,7 +14145,7 @@ the identity; an allocation per day.
 **Kind**: base
 **Clauses**: REP.24 PROCESS *(part: units counted by zone and class, their tile drawn when something depends on it)*;
 PTY.5 STATE
-**Architecture**: writes §7.10.2a "Places" (the old §7.8 "Places and catastrophes" restated).
+**Architecture**: writes §7.10 "K-27 The place index" (its Today paragraph retired).
 **Depends on**: S1.271 (holdings by holder: a holder's units of a class at a zone; the index hooks); S1.273 (unit
 totals: a (zone, class) unit's held total is its stock); S1.196 (kind columns: a party's zone for each site); S1.165
 (K-06: the owners-by-zone instance); S1.172 (the uniform split over undrawn tiles by largest remainder); S1.183 (a
@@ -14252,7 +14164,7 @@ undrawn units; no draw visits a party that holds nothing there.
 | `crates/kernel/phx-hold/tests/places.rs` | unit tests over hand-built zones and holders |
 | `crates/apps/phx-fin/src/units.rs` | the `-F` driver's place part (`[store] unit_rows`; a flood day's draws) |
 | `perf/budget.toml` | `[fin.units] draw_ns` kept; `[fin.places]` (added) |
-| `docs/ARCHITECTURE.md` | §7.10.2a |
+| `docs/ARCHITECTURE.md` | §7.10 "K-27 The place index" |
 
 **Design**:
 - **Stock**: a (zone, class) pair's stock U is its registry unit's held total, maintained by the unit totals (S1.273 —
@@ -14311,7 +14223,7 @@ drawn place contradicted; owners drawn other than by their undrawn units; an all
 **Done when**:
 - [ ] `Places` and its tests; fast checks pass.
 - [ ] `tools/bench.sh -F units` (the place part) at the design point within `[fin.units] draw_ns` and `[fin.places]`.
-- [ ] §7.10.2a written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-27 The place index" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14320,7 +14232,7 @@ drawn place contradicted; owners drawn other than by their undrawn units; an all
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.2.
+**Architecture**: follows §7.10 "K-61 Unit totals and nature's net".
 **Depends on**: S1.273 (maintained totals); S1.272 (holdings on the batch API).
 **Goal**: the four daily `Stocks::totals` passes over every holding and the `nature_net`/`breaks` passes over every
 flow are gone; the goods identity is read from the maintained columns and checked by the audit's recount.
@@ -14359,7 +14271,7 @@ allocation per day.
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.10.3 "Lots and cost flows".
+**Architecture**: writes §7.10 "K-62 Lots and cost flows".
 **Depends on**: S1.271 (the `CostWord` and its flag); S1.254 (K-52: declared tallies keyed by person or party and
 period); S1.180 (K-21: each reason's declared gains tally; a legal form's permitted cost flows).
 **Goal**: a holding is held at weighted average or as a FIFO chain of lots by its holder's declared choice (ACC.6;
@@ -14376,7 +14288,7 @@ reader in Stage 5).
 | `crates/kernel/phx-hold/tests/lots.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/holdings.rs` | `lot_bytes`, `lot_ns`, `lots` |
 | `perf/budget.toml` | `[fin.holdings]` `lot_bytes`, `lot_ns`, `lots` |
-| `docs/ARCHITECTURE.md` | §7.10.3 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-62 Lots and cost flows" |
 
 **Design**:
 - **Lot**: day u32, units i64, cost i64 — 20 B. A FIFO holding's `CostWord` is its run's ref (arena offset u32, length
@@ -14423,7 +14335,7 @@ standing rates); S5.108 (capital income and realised gains per person); S5.160 (
 **Done when**:
 - [ ] Lots, consumption, ages and gains with tests; carriers moved.
 - [ ] Fast checks pass; `tools/bench.sh -F holdings` within `lot_bytes`, `lot_ns`, `lots`.
-- [ ] §7.10.3 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-62 Lots and cost flows" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14432,7 +14344,7 @@ standing rates); S5.108 (capital income and realised gains per person); S5.160 (
 **Status**: planned
 **Kind**: base
 **Clauses**: none
-**Architecture**: writes §7.10.4 "Bounds and liens".
+**Architecture**: writes §7.10 "K-63 Bounds and liens".
 **Depends on**: S1.271 (holdings, their `UnitWord` flags and the firm's inline committed sum); S1.257 (K-53:
 `ContractRef`, the via contract whose other side is the pledgee); S1.251 (K-50: unit commitments between trade and
 settle day); S1.174 (typed refs: `OfferRef`, `ProcessRef`); S1.160 (K-03: the day's cuts).
@@ -14451,7 +14363,7 @@ the only quantity a sell side takes, is made here from free units.
 | `crates/kernel/phx-hold/tests/bind.rs`, `tests/ui/covered_*.rs` | logic-level and compile-fail tests |
 | `crates/apps/phx-fin/src/holdings.rs` | `lien_ns`, `free_ns`, `lien_mb` |
 | `perf/budget.toml` | `[fin.holdings]` keys below |
-| `docs/ARCHITECTURE.md` | §7.10.4 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-63 Bounds and liens" |
 
 **Design**:
 
@@ -14525,7 +14437,7 @@ twice; a loss that leaves a bind above units.
 **Done when**:
 - [ ] Bind rows, whole pledges, covers, re-pledges and title rows with tests; carriers moved.
 - [ ] Fast checks pass; `tools/bench.sh -F holdings` within the keys above.
-- [ ] §7.10.4 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-63 Bounds and liens" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14534,7 +14446,7 @@ twice; a loss that leaves a bind above units.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.4.
+**Architecture**: follows §7.10 "K-63 Bounds and liens".
 **Depends on**: S1.277 (covers and liens); S1.272 (holdings on the batch API, with S1.272's adapter this step
 retires).
 **Goal**: no sale binds its cover one by one: a seller's stall is covered once at the day's meeting, the day's sales
@@ -14586,7 +14498,7 @@ allocation per day; a cover per sale.
 **Status**: planned
 **Kind**: base
 **Clauses**: REG.3 STATE; REG.17 FORBID; REG.18 PRIMITIVE
-**Architecture**: writes §7.10.5 "Instruments".
+**Architecture**: writes §7.10 "K-64 Instruments".
 **Depends on**: S1.183 (K-22: an instrument's unit id); S1.263 (K-55: an issue's terms interned); S1.168 (K-09:
 ids retired without reuse); S1.180 (K-21: instrument families and their declared term sets, legal forms whose parties
 issue equity); S1.196 (K-32: the firm record's equity words).
@@ -14603,7 +14515,7 @@ issued amount, which only the named events change (REG.3); every issue is its ow
 | `crates/kernel/phx-hold/tests/register.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/holdings.rs` | `issue_ns` |
 | `perf/budget.toml`, `perf/design.toml` | `[fin.holdings] issue_ns`, `register_mb` (added); `[store] instruments` restated to 77 000 |
-| `docs/ARCHITECTURE.md` | §7.10.5 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-64 Instruments" |
 
 **Design**:
 
@@ -14657,7 +14569,7 @@ in code.
 **Done when**:
 - [ ] Register, ids, issue and reads with tests; fast checks pass.
 - [ ] `tools/bench.sh -F holdings` within `issue_ns`, `register_mb`.
-- [ ] §7.10.5 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-64 Instruments" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14666,7 +14578,7 @@ in code.
 **Status**: planned
 **Kind**: base
 **Clauses**: REG.4 STATE; REG.13 INVARIANT
-**Architecture**: writes §7.10.6 "Instrument holdings".
+**Architecture**: writes §7.10 "K-65 Instrument holdings and their events".
 **Depends on**: S1.279 (the register); S1.271 (holdings' words and batch apply); S1.276 (lots and gains on sale
 legs); S1.257 (K-53: the holder chain, family code 255 reserved for holdings); S1.165 (K-06: holders by instrument).
 **Goal**: a holding of an instrument is a 33 B row found both ways — what a party holds and who holds an instrument
@@ -14681,7 +14593,7 @@ from the rows (REG.13).
 | `crates/kernel/phx-hold/tests/instr.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/holdings.rs` | `update_ns`, `row_bytes`, `mb` |
 | `perf/budget.toml`, `perf/design.toml` | `[fin.holdings]`; `[store] holdings` restated to 4 950 000 |
-| `docs/ARCHITECTURE.md` | §7.10.6 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-65 Instrument holdings and their events" |
 
 **Design**:
 
@@ -14737,7 +14649,7 @@ allocation per day.
 **Done when**:
 - [ ] Rows, both directions and the trade legs with tests; fast checks pass.
 - [ ] `tools/bench.sh -F holdings` within `update_ns`, `row_bytes`, `mb`.
-- [ ] §7.10.6 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-65 Instrument holdings and their events" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14746,7 +14658,7 @@ allocation per day.
 **Status**: planned
 **Kind**: kernel
 **Clauses**: REG.11 PROCESS; REG.12 PROCESS
-**Architecture**: writes §7.10.6a "Instrument events".
+**Architecture**: writes §7.10 "K-65 Instrument holdings and their events".
 **Depends on**: S1.280 (holders by instrument); S1.245 (K-48: batches of legs); S1.172 (K-16: apportionment with a
 named residue); S1.225 (K-42: events on their dates); S1.251 (K-50: entitlements between record and pay date); S1.180
 (K-21: each family's events, amount rules and cessation outcomes).
@@ -14761,7 +14673,7 @@ ceasing instrument resolves every holding to cash, another instrument, a recover
 | `crates/kernel/phx-hold/src/events.rs` | the engine: take, fan out, apportion, emit batches; cessation |
 | `crates/kernel/phx-hold/tests/events.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/holdings.rs` | `holder_ns` |
-| `docs/ARCHITECTURE.md` | §7.10.6a |
+| `docs/ARCHITECTURE.md` | §7.10 "K-65 Instrument holdings and their events" |
 
 **Design**:
 - **Holders of record** (REG.11): events due today are taken at 1a and applied at stage 2e, before any stage-6 trade or
@@ -14814,7 +14726,7 @@ residue; a holding left behind a ceased instrument; a second walk of a holder li
 **Done when**:
 - [ ] The engine and cessation with tests; fast checks pass.
 - [ ] `tools/bench.sh -F holdings -D H` within `holder_ns`, measuring the holder rows' share on B and H days.
-- [ ] §7.10.6a written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-65 Instrument holdings and their events" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -14823,7 +14735,7 @@ residue; a holding left behind a ceased instrument; a second walk of a holder li
 **Status**: planned
 **Kind**: migration
 **Clauses**: TRS.6 INVARIANT
-**Architecture**: follows §7.10.5–§7.10.6a; retires §7.17's bills paragraph.
+**Architecture**: follows §7.10 "K-64 Instruments"–§7.10 "K-65 Instrument holdings and their events"; retires §7.17's bills paragraph.
 **Depends on**: S1.280 (bills held as holdings); S1.281 (redemption by the events engine); S1.260 (the dated families
 moved onto K-53, whose `SOV.bills` family this step deletes); S1.215 (K-37: auction results as records).
 **Goal**: each bill issue is an instrument issued by its treasury at the auction, held by the winning banks as
@@ -14875,7 +14787,7 @@ allocation per day; a debt total kept beside the register.
 **Status**: planned
 **Kind**: migration
 **Clauses**: PTY.7 STATE; REG.6 STATE
-**Architecture**: follows §7.10.5–§7.10.6a; retires §7.17's `Owners` paragraph.
+**Architecture**: follows §7.10 "K-64 Instruments"–§7.10 "K-65 Instrument holdings and their events"; retires §7.17's `Owners` paragraph.
 **Depends on**: S1.280 (instrument holdings, holders by instrument, the firm's implicit equity); S1.281 (a firm's
 end resolves its equity holdings); S1.208 (persons as
 parties, so an owner is a person, E 46); S1.210 (offices: an owner managing its firm holds its offices); S1.260 (K-53
@@ -14938,7 +14850,7 @@ allocation per day; a household holding shares (E 46).
 **Status**: planned
 **Kind**: base
 **Clauses**: GEO.4 STATE
-**Architecture**: writes §7.10.7 "Named units".
+**Architecture**: writes §7.10 "K-66 Named units".
 **Depends on**: S1.271 (holdings and their place key: a building's composition is read from the holdings placed in
 it); S1.190 (K-28: the cell a unit stands on, a `CellId` u32; a parcel's row); S1.187 (K-26: the path a line or road follows);
 S1.180 (K-21: unit kinds and their declared columns); S1.165 (K-06: the by-tile instance); S1.274 (the owner index a
@@ -14956,7 +14868,7 @@ holds are reads; counted units stay holdings by (zone, class); land held apart i
 | `crates/kernel/phx-hold/tests/named.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/units.rs` | `named` measures |
 | `perf/budget.toml`, `perf/design.toml` | `[fin.units]` `named_*` (added); `[store] named_units`, `buildings` |
-| `docs/ARCHITECTURE.md` | §7.10.7 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-66 Named units" |
 
 **Design**:
 
@@ -15010,7 +14922,7 @@ units to find a tile's; an allocation per day.
 **Done when**:
 - [ ] Tables, core and kind columns, sites, `standing` and `in_building` with tests; fast checks pass.
 - [ ] `tools/bench.sh -F units` within the `named_*` keys.
-- [ ] §7.10.7 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-66 Named units" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -15021,7 +14933,7 @@ units to find a tile's; an allocation per day.
 **Clauses**: CAP.6 PROCESS *(part: wear by age and use as class moves, charged once to income and to the unit;
 failure completes at S2.129)*; CAP.9 INVARIANT *(part: plant capacity maintained; the output check
 completes with production, S1.443)*
-**Architecture**: writes §7.10.8 "Capital classes, wear and capacity".
+**Architecture**: writes §7.10 "K-67 Capital classes, wear and capacity".
 **Depends on**: S1.271 (plant cells, household slots and their carry); S1.227 (K-43: a firm's period close among its
 next days, until the close pass takes it); S1.180 (K-21: capital chains — each class's efficiency and value as
 declared fixed-point shares, leaving rates over age and use, the failed band); S1.261 (K-54: the warm record's
@@ -15039,7 +14951,7 @@ repaired or scrapped; a firm's plant capacity is read in closed form from the sa
 | `crates/kernel/phx-hold/src/capacity.rs` | per kind efficient units; capacity = least over kinds; maintained on change |
 | `crates/kernel/phx-hold/tests/{wear,capacity}.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/units.rs` | `wear_ns`, `capacity_read_ns`, `failed_cells` |
-| `docs/ARCHITECTURE.md` | §7.10.8 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-67 Capital classes, wear and capacity" |
 
 **Design**:
 - **Chain** (K-21, from `CAP.condition_classes` and the kind's life): A classes; a class's leaving rate declared over
@@ -15104,7 +15016,7 @@ limit"; an allocation per day.
 **Done when**:
 - [ ] The closed form with carry and use, the failed band, capacity at read, the depreciation hook, with tests.
 - [ ] Fast checks pass; `tools/bench.sh -F units` within `wear_ns`, `capacity_read_ns`, `failed_cells`.
-- [ ] §7.10.8 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-67 Capital classes, wear and capacity" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -15113,7 +15025,8 @@ limit"; an allocation per day.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.8; retires §7.10's "Plant on the core" wear and capacity sentences.
+**Architecture**: follows §7.10 "K-67 Capital classes, wear and capacity"; retires its Today paragraph's wear and
+capacity sentences.
 **Depends on**: S1.285 (wear and maintained capacity); S1.272 (plant as cells).
 **Goal**: no pass over every party of every kind wears plant, and no capacity is recomputed by a walk: today's
 `phx_core::units` functions, `plant_capacity` and `wear_plant` are replaced by S1.285's realisation at each firm's
@@ -15155,7 +15068,7 @@ allocation per day.
 **Kind**: base
 **Clauses**: FRM.1 STATE *(part: work in progress at cost; completes at S3.156)*; CAP.5 PROCESS
 *(part: a project over its lead time, in service only when complete; purchase in stages completes at S1.459)*
-**Architecture**: writes §7.10.10 "Processes in progress".
+**Architecture**: writes §7.10 "K-69 Processes in progress".
 **Depends on**: S1.271 (the owner's holdings the process draws from and delivers to); S1.277 (goods in transit
 pledged to the carrier via the process); S1.160 (a day's arena page, K-03's page pool); S1.180 (K-21:
 process kinds and their declared columns); S1.190 (K-28: a process's own site cell); S1.159 (K-02).
@@ -15172,7 +15085,7 @@ in progress is read from its rows at cost.
 | `crates/kernel/phx-hold/tests/process.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/processes.rs` | the `processes` driver |
 | `perf/budget.toml`, `perf/design.toml` | `[fin.processes]` (added); `[store] processes`, read from the farm count S1.482 gives |
-| `docs/ARCHITECTURE.md` | §7.10.10 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-69 Processes in progress" |
 
 **Design**:
 
@@ -15236,7 +15149,7 @@ multiplier; an allocation per day.
 **Done when**:
 - [ ] Rows, kinds, open, complete, delay, cut and pass with tests; carrier moved.
 - [ ] Fast checks pass; `tools/bench.sh -F processes` within `[fin.processes]`.
-- [ ] §7.10.10 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-69 Processes in progress" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -15245,7 +15158,7 @@ multiplier; an allocation per day.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.10; retires §7.11's shipments paragraph.
+**Architecture**: follows §7.10 "K-69 Processes in progress"; retires §7.11's shipments paragraph.
 **Depends on**: S1.287 (process rows); S1.278 (carriers' pledges as liens via the shipment).
 **Goal**: `phx_core::goods::Shipments` and its per-owner list, wheel and scans are gone; every shipment is a process
 row pledged to its carrier, arriving on its wheel day.
@@ -15285,7 +15198,7 @@ allocation per day.
 **Kind**: base
 **Clauses**: FRM.4 DECISION *(part: the output decided is a start rate realised exactly; the decision itself is
 S1.443's)*
-**Architecture**: writes §7.10.9 "Standing rates".
+**Architecture**: writes §7.10 "K-68 Standing rates and cumulative output".
 **Depends on**: S1.271 (the own and input stocks the realisation writes); S1.273 (making groups); S1.276 (lot ages
 for spoilage); S1.285 (capacity); S1.287 (starts in flight at a rate change become a process); S1.225 (K-42: kinks as
 dated rows); S1.227 (K-43: kinks among the firm's next days, wakes).
@@ -15301,7 +15214,7 @@ stock plus what the rate owes to the day as a pure value.
 | `crates/kernel/phx-hold/src/spoil.rs` | spoilage realised from lot ages (moves `goods::spoil`'s arithmetic) |
 | `crates/kernel/phx-hold/tests/{rate,spoil}.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/batches.rs` | `prod_ns`; realisation fused into `batch_ns` |
-| `docs/ARCHITECTURE.md` | §7.10.9 |
+| `docs/ARCHITECTURE.md` | §7.10 "K-68 Standing rates and cumulative output" |
 
 **Design**:
 
@@ -15359,7 +15272,7 @@ within it is the rule's); an allocation per day.
 **Done when**:
 - [ ] Rate row, realisation, derived inputs, `pending`, spoilage and kinks with tests; carriers moved.
 - [ ] Fast checks pass; `tools/bench.sh -F batches` within `prod_ns`, `batch_ns`.
-- [ ] §7.10.9 written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-68 Standing rates and cumulative output" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -15369,7 +15282,7 @@ within it is the rule's); an allocation per day.
 **Kind**: base
 **Clauses**: FRM.23 STATE *(part: cumulative output as a position)*; TEC.7 PROCESS *(part: the thresholds' crossing
 days; the learning curve's labour read completes at S6.104)*
-**Architecture**: writes §7.10.9a "Cumulative output per way".
+**Architecture**: writes §7.10 "K-68 Standing rates and cumulative output".
 **Depends on**: S1.289 (realisations add units made); S1.225 (K-42: crossing days filed); S1.227 (K-43: wakes);
 S1.165 (K-06: the by-holder instance for positions beyond two).
 **Goal**: a firm's cumulative output on each way it runs is a position (FRM.23, REP.20) added to at every realisation;
@@ -15382,7 +15295,7 @@ the way's declared thresholds give the day each is crossed at the current rate, 
 | `crates/kernel/phx-hold/src/cumulative.rs` | cumulative output per (holder, way); thresholds and their crossing day |
 | `crates/kernel/phx-hold/tests/cumulative.rs` | logic-level tests |
 | `crates/apps/phx-fin/src/batches.rs` | `cumulative_ns` |
-| `docs/ARCHITECTURE.md` | §7.10.9a |
+| `docs/ARCHITECTURE.md` | §7.10 "K-68 Standing rates and cumulative output" |
 
 **Design**:
 
@@ -15417,7 +15330,7 @@ firm's age, S1.481: `opening_cumulative_read`); E8 (i64 counts, overflow stops: 
 **Done when**:
 - [ ] Counts, thresholds and kinks with tests; fast checks pass.
 - [ ] `tools/bench.sh -F batches` within `cumulative_ns`.
-- [ ] §7.10.9a written; both reviews' findings fixed; status `done` and the section removed.
+- [ ] §7.10 "K-68 Standing rates and cumulative output" written; both reviews' findings fixed; status `done` and the section removed.
 
 ---
 
@@ -15426,7 +15339,7 @@ firm's age, S1.481: `opening_cumulative_read`); E8 (i64 counts, overflow stops: 
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.9; retires §7.11's making and spoilage paragraphs.
+**Architecture**: follows §7.10 "K-68 Standing rates and cumulative output"; retires §7.11's making and spoilage paragraphs.
 **Depends on**: S1.289 (standing rates); S1.228 (the firms' production schedule on the agenda, so the rule runs on
 the firm's visit only).
 **Goal**: no firm's stock grows by a daily pass and no party of any kind is visited for spoilage: production is the
@@ -15466,7 +15379,7 @@ allocation per day.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.10; retires §7.10's "Plant on the core" project sentences.
+**Architecture**: follows §7.10 "K-69 Processes in progress"; retires its Today paragraph's project sentences.
 **Depends on**: S1.287 (process rows with their own site).
 **Goal**: a capital good bought as investment is a project row carried at cost on its owner's balance sheet until its
 kind's lead passes; no pass over every project runs, and an estate completes its project from the row's own site.
@@ -15506,7 +15419,7 @@ allocation per day.
 **Status**: planned
 **Kind**: migration
 **Clauses**: GEO.9 PROCESS
-**Architecture**: follows §7.10.1, §7.10.9 and K-29's §7.4 section; retires §7.8's "Deposits on the core".
+**Architecture**: follows §7.10 "K-60 Holdings", §7.10 "K-68 Standing rates and cumulative output" and K-29's §7.4 section; retires §7.8's "Deposits on the core".
 **Depends on**: S1.191 (K-29: each deposit's opening, extracted and resource, its right unit); S1.271 (rights as
 holdings); S1.289 (extraction as a standing rate with kinks); S1.227 (K-43: the extractor's decision reason);
 S1.165 (K-06: the parties-by-zone-and-kind instance for the opening's nearest-firm grant).
@@ -15562,7 +15475,7 @@ allocation per day; a deposit that refills.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows §7.10.1, §7.10.4, §7.10.7 and the place index's section; retires §7.8's "On the core"
+**Architecture**: follows §7.10 "K-60 Holdings", §7.10 "K-63 Bounds and liens", §7.10 "K-66 Named units" and the place index's section; retires §7.8's "On the core"
 destruction paragraph.
 **Depends on**: S1.274 (K-27: counted units drawn by (zone, class) at the struck tiles); S1.192 (K-30: the day's
 footprint); S1.271 (`lose_batch`); S1.277 (bounds cut by losses); S1.284 (`standing(tile)`); S1.285 (capacity
@@ -15617,7 +15530,7 @@ allocation per day; a loss taken only from free units.
 **Status**: planned
 **Kind**: migration
 **Clauses**: none
-**Architecture**: follows K-35's section (§7.5) and §7.10.8.
+**Architecture**: follows K-35's section (§7.5) and §7.10 "K-67 Capital classes, wear and capacity".
 **Depends on**: S1.211 (K-35: `DayCached<T>`, `#[per_day]`); S1.262 (the wage bill and staff hours maintained, and
 `staff_capacity` retired there); S1.283 (working owners' hours and pay as aggregates); S1.285 (plant capacity and the
 capital charge's classes); S1.272 (holdings' cost read directly); S1.276 (inputs' cost at the holder's cost flow).
@@ -18710,7 +18623,7 @@ daily pass over every loan.
 **Status**: planned
 **Kind**: migration
 **Clauses**: BNK.11 INVARIANT; BNK.14 FORBID
-**Architecture**: §7.14 "Books and limits" followed; §7.13 (credit) restated.
+**Architecture**: §7.14 "K-93 Books and limits" followed; §3.5's `sys-bnk` paragraph (`credit`) restated.
 **Depends on**: S1.338 (the books base); S1.264 (reckoning onto shared plans: loans' repayments as dated items that
 fold); S1.262 (owed balances onto side aggregates: the moves the books fold); S1.265 (status and arrears: a write-off
 only from a default).
@@ -18768,7 +18681,7 @@ allocation per day; a book kept as a number; a recovery or loss rate declared.
 **Done when**:
 - [ ] The users moved; `core_books.rs` deleted; the fast checks pass.
 - [ ] `tools/bench.sh` at the committed resolution shows the books span gone; no ratchet broken (a measure of code, never read as the world's).
-- [ ] §7.13's credit paragraph restated; the two reviews done; status `done` and the section removed.
+- [ ] §3.5's `sys-bnk` credit paragraph restated; the two reviews done; status `done` and the section removed.
 
 ---
 

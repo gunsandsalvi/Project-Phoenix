@@ -1201,7 +1201,7 @@ planned (S1.114).
 
 ### 7.4 phx-geo
 
-Status: planned (S1.187–S1.193, S1.274)
+Status: planned (S1.187–S1.193)
 
 #### K-25 Tiles, zones and distances
 
@@ -1271,25 +1271,6 @@ planned (S1.187, S1.188).
 every two regions of a country that share a border, over their land path, and sea lanes joining a country's parts, the
 shortest first; each mode's capacity a day in tonnes. A route is the shortest path of one mode over the segments
 (`Network::route`).
-
-#### K-27 The place index
-
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.274).
-
-**Decided**: `phx-geo` keeps **physical stock per (tile, class)** as the one writer of where units stand, and an index
-listing, per (zone, class), the **holding** rows (owners) of that class there. A catastrophe at 3a draws in two
-levels: the units lost are allocated across the holdings of the struck (zone, class) by one multivariate
-hypergeometric draw, each holder's lost units coming from its own count; then, for each holder hit, the contracts its
-lost units carry — mortgage, dwelling insurance, tenancy — are read from its own, since their terms name the same zone
-and class. **Victims** of harm to third parties (Stage 4) are drawn the same way: for damage to property, a holder from
-the (zone, class) index of the harm's zone, weighted by its units; for injury, a household of the zone, weighted by its
-persons, whose illness `sys-dem` applies as the hit's declared reader. The same index drives the **holding levy**
-(property tax, §4.3): on the law's dates it lists the holders of each taxed class in a zone, and each holder's amount
-joins its payments that day, so no contract is kept per owner. A landlord's lost units reach its tenants: the
-tenancies of the struck (zone, class) are drawn from their tenant side (REP.23), and each hit tenant receives a
-notice to move. An insured loss opens a **claim** message to the insurer; a mortgage whose collateral is lost stays a
-loan with its collateral description marked lost, and its lender reads that on its next review (REG.9, BNK.17).
 
 #### K-28 Cells
 
@@ -1711,6 +1692,25 @@ planned (S1.273, S1.275).
 **Today** (`phx-core`'s `goods.rs`): the goods' identity (GDS.10): each good's units at the close are its units at the
 open plus what nature gave less what it took (`nature_net`, `breaks`); flows between parties move units without
 changing how many there are.
+
+#### K-27 The place index
+
+Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
+planned (S1.274).
+
+**Decided**: `phx-geo` keeps **physical stock per (tile, class)** as the one writer of where units stand, and an index
+listing, per (zone, class), the **holding** rows (owners) of that class there. A catastrophe at 3a draws in two
+levels: the units lost are allocated across the holdings of the struck (zone, class) by one multivariate
+hypergeometric draw, each holder's lost units coming from its own count; then, for each holder hit, the contracts its
+lost units carry — mortgage, dwelling insurance, tenancy — are read from its own, since their terms name the same zone
+and class. **Victims** of harm to third parties (Stage 4) are drawn the same way: for damage to property, a holder from
+the (zone, class) index of the harm's zone, weighted by its units; for injury, a household of the zone, weighted by its
+persons, whose illness `sys-dem` applies as the hit's declared reader. The same index drives the **holding levy**
+(property tax, §4.3): on the law's dates it lists the holders of each taxed class in a zone, and each holder's amount
+joins its payments that day, so no contract is kept per owner. A landlord's lost units reach its tenants: the
+tenancies of the struck (zone, class) are drawn from their tenant side (REP.23), and each hit tenant receives a
+notice to move. An insured loss opens a **claim** message to the insurer; a mortgage whose collateral is lost stays a
+loan with its collateral description marked lost, and its lender reads that on its next review (REG.9, BNK.17).
 
 #### K-62 Lots and cost flows
 
