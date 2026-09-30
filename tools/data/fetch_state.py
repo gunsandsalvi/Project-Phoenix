@@ -313,7 +313,7 @@ def enterprise_surveys(cache: Path, iso3: set) -> tuple:
                      "sales, employment and labour productivity growth, capacity use), job flows and jobs share, "
                      "innovation and R&D, World Bank; titles in state/enterprise_surveys_indicators",
             "rows": table(OUT / "enterprise_surveys.csv", ["iso3", "year", "indicator", "size", "value"], out),
-            "for": ["S1.22", "S1.480", "S1.481", "S2.111", "S6.113"],
+            "for": ["S1.22", "S1.481", "S1.482", "S2.111", "S6.113"],
             "note": "The shares of sales and purchases on credit (fin17, fin18) and of working capital from supplier "
                     "credit (fin8, fin22) are not published by the portal; investment financed by supplier credit "
                     "(fin3) is.",

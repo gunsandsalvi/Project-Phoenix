@@ -1035,7 +1035,7 @@ Status: planned (S1.159–S1.168)
 
 #### K-01 Columns in reserved address space
 
-No step rebuilds it: the columns stand as below, and the core's close (S1.359) writes their capacity and ratchets at
+No step rebuilds it: the columns stand as below, and the core's close (S1.360) writes their capacity and ratchets at
 the design point.
 
 **Today** (`backing.rs`, `column.rs`, `table.rs`): a column reserves address space for its declared maximum rows
@@ -1067,7 +1067,7 @@ planned (S1.160, S1.161).
 #### K-04 Chunk arenas and block pools
 
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.359).
+planned (S1.360).
 
 **Today** (`arena.rs`, `block_list.rs`): a chunk's arena is 8-byte words holding its rows' lists by
 `ListRef { off, len, cap }`; a list grows in place while it has room and otherwise moves to the arena's end with 5/4 of
@@ -1129,7 +1129,7 @@ planned (S1.170).
 #### K-13 Keyed reductions
 
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.359).
+planned (S1.360).
 
 **Today** (`keyed.rs`): `KeyedReduce` (§4.8).
 
@@ -1206,7 +1206,7 @@ Status: planned (S1.187–S1.193, S1.274)
 #### K-25 Tiles, zones and distances
 
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.359).
+planned (S1.360).
 
 **Today** (`grid.rs`, `tile.rs`, `generate.rs`, `relief.rs`, `hydrology.rs`, `partition.rs`, `distance.rs`,
 `state.rs`): the map, its zone distances, the regions' climates, the exposure columns and the deposits are compiled
@@ -1913,7 +1913,7 @@ planned (S1.321, S1.322).
 #### K-83 The carriage meeting
 
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.359).
+planned (S1.360).
 
 **Today** (`carriage.rs`): `carriage::carriage` and `carriage::freight` (§3.5 `sys-frt`).
 

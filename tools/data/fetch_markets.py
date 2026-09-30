@@ -270,7 +270,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "Pension Statistics (DSD_FP@DF_SPS)",
                   table(OUT / "pension_structure.csv",
                         ["iso3", "year", "measure", "unit", "plan", "definition", "vehicle", "value"], rows),
-                  ["S1.484", "S4.146"])
+                  ["S1.485", "S4.147"])
     rows = [(r["REF_AREA"], r["MEASURE"], r["UNIT_MEASURE"], r["PLAN_TYPE"], r["DEFINITION_TYPE"], r["VEHICLE_TYPE"],
              r["UNIT_MULT"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "pension_main_2019", cm, "DSD_FP@DF_FPS",
@@ -286,7 +286,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "by vehicle for investment, liabilities and members, OECD Global Pension Statistics (DSD_FP@DF_FPS)",
                   table(OUT / "pension_main_2019.csv",
                         ["iso3", "measure", "unit", "plan", "definition", "vehicle", "unit_mult", "value"], rows),
-                  ["S1.484", "S4.146"])
+                  ["S1.485", "S4.147"])
     rows = [(r["REF_AREA"], int(r["TIME_PERIOD"]), r["MEASURE"], r["UNIT_MEASURE"], r["PREMIUMS"],
              r["INSURANCE_TYPE"], r["UNIT_MULT"], r["OBS_VALUE"])
             for r in oecd_rows(cache, "ins_ind", cm, "DSD_INS@DF_IND", "all")
@@ -361,7 +361,7 @@ def oecd(cache: Path, iso3: set, iso2: dict) -> tuple:
     out |= series("pension_participation", "Participation rate in pension plans by type (mandatory or quasi-mandatory, "
                   "auto-enrolment, voluntary occupational, voluntary personal, voluntary total), % of the working-age "
                   "population 15-64, OECD Pensions at a Glance 2023, Table 9.1 (StatLink https://stat.link/64gd3b)",
-                  table(OUT / "pension_participation.csv", ["iso3", "year", "plan", "value"], rows), ["S4.146"],
+                  table(OUT / "pension_participation.csv", ["iso3", "year", "plan", "value"], rows), ["S4.147"],
                   "Private pension coverage by age is not published in a downloadable table (Pensions at a Glance "
                   "2023 has participation by plan type only); coverage is by type of plan, working-age population.")
     return {"markets/oecd": {"title": "OECD SDMX API (Global Pension Statistics, Global Insurance Statistics, "
@@ -476,7 +476,7 @@ def sec(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "multifamily and commercial mortgages, home equity, trade receivables, private credit and other "
                   "loans, consumer leases, agency securities, Treasuries) and liability (debt securities, commercial "
                   "paper, bonds, repo), millions of US dollars, Federal Reserve Financial Accounts of the US (Z.1)",
-                  table(OUT / "us_abs_issuers.csv", ["series", "description", "year", "value"], rows), ["S4.163"],
+                  table(OUT / "us_abs_issuers.csv", ["series", "description", "year", "value"], rows), ["S4.164"],
                   "The agency pools sector holds only the pools off the GSEs' balance sheets (Fannie Mae and Freddie "
                   "Mac pools are on them since 2010); agency MBS outstanding in total is in "
                   "markets/afme_securitisation.")
@@ -505,7 +505,7 @@ def sec(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "Eurozone, EU Total, European Total), billions (the sheets state euro billions; the US table is "
                   "sourced from SIFMA), AFME Securitisation Data Report Q1 2026, tables 3.1, 3.3, 3.4 and 3.5",
                   table(OUT / "afme_securitisation.csv", ["region", "area", "collateral", "year", "value"], rows),
-                  ["S4.163"],
+                  ["S4.164"],
                   "SIFMA's own US statistics are behind a registration form; the US outstanding by collateral is "
                   "taken from AFME's table 3.3 (SIFMA-sourced) and the Fed's Z.1. European CLO/CDO outstanding is "
                   "unavailable from 2019Q4 to 2022Q1 per AFME's footnote; AFME changed its European source in 2020 "
@@ -532,7 +532,7 @@ def sec(cache: Path, iso3: set, iso2: dict) -> tuple:
                   "and originator (00 all, E0 euro area, E1 euro area MFIs, E2 government, E3 OFIs/funds/ICPFs, E4 "
                   "NFCs, R0 non-euro area, ZZ not applicable), ECB FVC statistics",
                   table(OUT / "ecb_fvc.csv", ["area", "year", "fvc_sector", "item", "counterpart_area",
-                                              "counterpart_sector", "originator", "value"], rows), ["S4.163"])
+                                              "counterpart_sector", "originator", "value"], rows), ["S4.164"])
     return {"markets/securitisation": {"title": "Federal Reserve Z.1 CSV release; AFME Securitisation Data Report Q1 "
                                                 "2026 (xlsx); ECB Data Portal FVC dataset",
                                        "url": f"{Z1_URL}; {AFME_SEC_URL}; {FVC_URL}", "fetched": TODAY}}, out

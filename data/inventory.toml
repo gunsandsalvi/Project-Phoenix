@@ -249,7 +249,7 @@ what = "defined-benefit pensions in payment and pension funds' assets"
 owner = "PEN"
 first_read = "S0.25"
 source = "OECD Pensions at a Glance (occupational transfers' share of the over-65s' income), for the groups that lack it the median of the ten reporting economies nearest in GDP per head; World Bank GFDD pension fund assets to GDP"
-status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S1.484; amounts' spread, indexation and survivors' shares have no source"
+status = "sourced: derived by tools/data/derive_pop.py into data/profiles/<level>/later/PEN.toml; the defined-benefit share of assets from the OECD's Global Pension Statistics at S1.485; amounts' spread, indexation and survivors' shares have no source"
 
 [[row]]
 id = "GEN.dist.banks"
@@ -271,9 +271,9 @@ status = "in hand: imf/GGXWDG_NGDP (level); bank/qpsd (maturity, currency and cr
 id = "GEN.dist.funds_pensions_insurance"
 what = "households' holdings of funds, pensions and insurance"
 owner = "FND"
-first_read = "S1.484"
+first_read = "S1.485"
 source = "OECD Pension Markets in Focus; OECD Institutional Investors Statistics"
-status = "in hand: markets/GFDD.DI.07 (funds), markets/institutional_investors, markets/pension_main_2019, pension_structure and pension_participation (pensions by plan type, assets and coverage by age), markets/insurance_indicators, insurance_classes and GFDD.DI.09 to DI.11 (insurance), markets/hfcs_2021 and households/scf2019 (households' holdings); mapped at S3.183 and S4.126-S4.146"
+status = "in hand: markets/GFDD.DI.07 (funds), markets/institutional_investors, markets/pension_main_2019, pension_structure and pension_participation (pensions by plan type, assets and coverage by age), markets/insurance_indicators, insurance_classes and GFDD.DI.09 to DI.11 (insurance), markets/hfcs_2021 and households/scf2019 (households' holdings); mapped at S3.183 and S4.126-S4.147"
 
 [[row]]
 id = "GEN.dist.vintages"
@@ -445,7 +445,7 @@ status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<l
 id = "GEN.productivity_spread"
 what = "the spread of firms' log physical productivity within an industry"
 owner = "GEN"
-first_read = "S1.482"
+first_read = "S1.483"
 source = "Hsieh and Klenow (2007), NBER WP 13290, Table 1: the United States, China and India standing for the three groups"
 status = "sourced: derived by tools/data/derive_economy.py into data/profiles/<level>/economy.toml"
 

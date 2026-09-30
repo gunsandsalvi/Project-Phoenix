@@ -1017,7 +1017,7 @@ def farms(cache: Path, manifest: dict, iso3: set) -> None:
                  "year; Eurostat farm structure survey and integrated farm statistics (ef_m_farmleg, ef_lf_leg)",
         "rows": table(OUT / "eurostat_farms_by_size.csv",
                       ["iso3", "year", "so_class", "work_status", "unit", "value"], rows),
-        "for": ["S1.03", "S1.481", "S2.140"],
+        "for": ["S1.03", "S1.482", "S2.140"],
     }
     rows = []
     with gzip.open(cached(cache, "qs.census2017.txt.gz", NASS), "rt", encoding="utf-8", errors="replace") as f:
@@ -1040,7 +1040,7 @@ def farms(cache: Path, manifest: dict, iso3: set) -> None:
                  "Stats bulk file)",
         "rows": table(OUT / "us_farms_hired_workers.csv", ["item", "domain", "class", "value"],
                       [r for r in rows if r[3]]),
-        "for": ["S1.03", "S1.481"],
+        "for": ["S1.03", "S1.482"],
         "note": "values withheld for disclosure ('(D)') are left out",
     }
     manifest["sources"]["households/farms"] = {
