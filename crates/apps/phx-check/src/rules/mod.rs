@@ -9,6 +9,7 @@ mod arch_names;
 mod audit_reads;
 mod batches;
 mod borders;
+pub mod civil_reads;
 mod clippy_files;
 mod comment_refs;
 mod day_arithmetic;

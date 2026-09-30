@@ -11,7 +11,7 @@ use crate::design::Design;
 use crate::fill::Streams;
 use crate::measure::Measures;
 use crate::{Bytes, DayType, Filled, FinBase, FinError};
-use crate::{kept_calendar, kept_flows, kept_meet, kept_search, kept_wheel};
+use crate::{kept_flows, kept_meet, kept_search, kept_wheel};
 
 /// The base the kept kernels are measured under.
 pub const BASE: &str = "kept";
@@ -23,13 +23,12 @@ pub const RETIRERS: &[(&str, &str)] = &[
     ("due_ns", "S1.225"),
     ("purchase_ns", "S1.306"),
     ("search_ns", "S1.321"),
-    ("civil_ns", "S1.178"),
     ("mb", "S1.321"),
 ];
 
 /// Where today's kernels stand in the declared day until their bases land: settlement's flows in its stage (ordinary
 /// and heavy days apart, measured apart), the dues taken at the day's opening, the retail meeting among prices, and
-/// hiring's search among decisions. The calendar's reads stand in no declared leaf.
+/// hiring's search among decisions.
 pub const LEAVES: &[Leaf] = &[
     Leaf { op: "flow", line: "7 Settle", unit: "flow", count: "flows", days: &[DayType::B], gather: true },
     Leaf { op: "flow_h", line: "7 Settle", unit: "flow", count: "flows", days: &[DayType::H], gather: true },
@@ -90,7 +89,6 @@ pub struct Kept {
     wheel: kept_wheel::Wheel,
     meet: kept_meet::Meet,
     search: kept_search::Search,
-    calendar: kept_calendar::Calendar,
 }
 
 impl std::fmt::Debug for Kept {
@@ -141,7 +139,6 @@ impl FinBase for Kept {
         rows += self.wheel.fill(design, streams)?;
         rows += self.meet.fill(design, streams)?;
         rows += self.search.fill(design, streams)?;
-        self.calendar.fill()?;
         Ok(Filled { rows })
     }
 
@@ -151,8 +148,7 @@ impl FinBase for Kept {
         self.flows.day(day, counts, m, pool)?;
         self.wheel.day(counts, m, pool)?;
         self.meet.day(day, counts, m, pool)?;
-        self.search.day(day, counts, m, pool)?;
-        self.calendar.day(counts, m)
+        self.search.day(day, counts, m, pool)
     }
 
     fn bytes(&self) -> Bytes {

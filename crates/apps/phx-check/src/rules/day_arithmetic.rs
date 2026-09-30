@@ -31,6 +31,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
             breaches.extend(check(source));
         }
     }
+    breaches.extend(super::civil_reads::run(ws));
     breaches
 }
 

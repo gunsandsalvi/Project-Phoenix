@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 807 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 799 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -1499,18 +1499,6 @@ path = "crates/kernel/phx-core/src/calendar/mod.rs"
 item = "Calendar::move_window"
 what = "`.clone()`"
 count = 1
-
-[[site]]
-path = "crates/kernel/phx-core/src/calendar/mod.rs"
-item = "Calendar::new"
-what = "`Vec::with_capacity`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-core/src/calendar/mod.rs"
-item = "Calendar::new"
-what = "`format!`"
-count = 2
 
 [[site]]
 path = "crates/kernel/phx-core/src/calendar/mod.rs"

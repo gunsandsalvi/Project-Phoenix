@@ -13,6 +13,15 @@ counter = "phx_check.expect_count"
 value = 7
 direction = "down"
 
+# PC-17's admitted sites on the day's paths (S1.178, 2026-10-01): a day converted to its date by `Calendar::date` or
+# the calendar's civil conversions where the day's facts, computed once at its open, will be read, as the code stood
+# when the check came, 37 in all. Each reader's migration moves it onto the facts or an agenda's date and removes its
+# own; the count only falls.
+[[ratchet]]
+counter = "phx_check.exceptions_pc17"
+value = 37
+direction = "down"
+
 # PC-92's admitted sites (S1.120, 2026-09-30): the maps, lists of lists, trait objects, wide or optional per-party
 # columns and threading fields on the day's paths as the code stood when the rule was widened, 248 in all. Each
 # migration of the core removes its own; the count only falls, and S1.492 empties it.
@@ -52,7 +61,7 @@ direction = "down"
 # empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 802
+value = 799
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and

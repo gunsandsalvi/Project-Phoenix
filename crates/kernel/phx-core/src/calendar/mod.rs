@@ -1,5 +1,6 @@
 pub mod bizday;
 pub mod daycount;
+pub mod facts;
 pub mod period;
 pub mod prims;
 pub mod rules;
@@ -94,6 +95,8 @@ pub struct Calendar {
     /// The epoch's civil day count, which every day's lookup adds to.
     epoch_serial: i64,
     countries: Vec<CountryCalendar>,
+    /// The facts of the day last opened, derived from the rules and never saved.
+    today: Vec<facts::DayFacts>,
 }
 
 impl Calendar {
@@ -102,6 +105,7 @@ impl Calendar {
     ///
     /// # Errors
     /// When a country's rules cannot describe a calendar, or the countries are not numbered from zero in order.
+    #[phx_macros::opening]
     pub fn new(epoch: Date, countries: Vec<(CountryId, CountryRules)>, year: i32) -> Result<Calendar, String> {
         let mut built = Vec::with_capacity(countries.len());
         for (i, (country, rules)) in countries.into_iter().enumerate() {
@@ -111,7 +115,8 @@ impl Calendar {
             rules.validate().map_err(|e| format!("country {}: {e}", country.get()))?;
             built.push(CountryCalendar::build(country, rules, (epoch.year(), year)));
         }
-        Ok(Calendar { epoch, epoch_serial: days_from_civil(epoch), countries: built })
+        let today = Vec::with_capacity(built.len());
+        Ok(Calendar { epoch, epoch_serial: days_from_civil(epoch), countries: built, today })
     }
 
     /// Extends every country's bitset to the window's years after `year`, as each year's start does; it keeps every

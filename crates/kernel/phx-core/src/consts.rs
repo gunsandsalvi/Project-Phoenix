@@ -2,6 +2,9 @@
 /// days beyond are computed from the rules, and the window grows a year at each year's start. Sixty-four years cover
 /// every contract date a run of a few decades reads.
 pub const CALENDAR_WINDOW_YEARS: i32 = 64;
+/// The business-day conventions ISDA defines: following, modified following, preceding, modified preceding and
+/// unadjusted.
+pub const CONVENTIONS: usize = 5;
 
 /// A year without 29 February, against which a fixed holiday is checked to exist every year.
 pub const COMMON_YEAR: i32 = 2001;

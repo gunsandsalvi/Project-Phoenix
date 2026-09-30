@@ -5,6 +5,7 @@
 pub mod apply;
 pub mod apportion;
 pub mod budget;
+pub mod calendar;
 pub mod compose;
 pub mod counters;
 pub mod daybuf;
@@ -13,7 +14,6 @@ pub mod epoch;
 pub mod fill;
 pub mod index;
 pub mod kept;
-pub mod kept_calendar;
 pub mod kept_flows;
 pub mod kept_meet;
 pub mod kept_search;
@@ -153,6 +153,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(settle::Settle::default()),
     || Box::new(apportion::Apportion::default()),
     || Box::new(streams::StreamsBase::default()),
+    || Box::new(calendar::CalendarBase::default()),
 ];
 
 /// What a run fills, runs and reads.

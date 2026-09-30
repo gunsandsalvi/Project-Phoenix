@@ -60,9 +60,8 @@ direction = "down"
 
 # Today's kept kernels at the design point (S1.119, 2026-09-30; `tools/bench.sh -F kept`), before any base lands, four
 # measures each: flows grouped and settled 862–956 ns a flow on a business day and 648–749 on the heaviest, a due taken
-# and filed again 21–24, a retail want met 1 363–1 381, a searcher's round 9 811–12 626, a civil date and business-day
-# read 28–33, and 360 MiB filled. Each time stands a quarter above its highest measure and the bytes a
-# tenth. Each key is removed by the step whose own base replaces its kernel (phx-fin's `kept::RETIRERS`).
+# and filed again 21–24, a retail want met 1 363–1 381, a searcher's round 9 811–12 626, and 360 MiB filled. Each
+# time stands a quarter above its highest measure and the bytes a tenth. Each key is removed by the step whose own base replaces its kernel (phx-fin's `kept::RETIRERS`).
 
 [[ratchet]]
 counter = "fin.kept.flow_ns"
@@ -87,11 +86,6 @@ direction = "down"
 [[ratchet]]
 counter = "fin.kept.search_ns"
 value = 15783
-direction = "down"
-
-[[ratchet]]
-counter = "fin.kept.civil_ns"
-value = 42
 direction = "down"
 
 [[ratchet]]
@@ -425,6 +419,16 @@ direction = "down"
 [[ratchet]]
 counter = "fin.streams.x4_ns"
 value = 61.5
+direction = "down"
+
+# The day's facts (S1.178, 2026-10-01; `tools/bench.sh -F calendar`): three countries' facts opened for each of two
+# years of days, each a date, a weekday, a business-day test, the period it closes and what each of the five
+# conventions rolls onto it: 138–142 ns a country-day against the step's 1 µs; the ratchet stands a quarter above the
+# higher. It replaces `[fin.kept] civil_ns`.
+
+[[ratchet]]
+counter = "fin.calendar.open_ns"
+value = 177
 direction = "down"
 
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80

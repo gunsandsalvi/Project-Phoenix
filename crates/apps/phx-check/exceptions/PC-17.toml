@@ -1,0 +1,211 @@
+# The sites PC-17 admits for now, 37 in all, held to `phx_check.exceptions_pc17`. Each migration removes its own; a site is never added.
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::auctions"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_bills.rs"
+item = "Core::open_bill"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::fund_stage"
+what = "`Calendar::date`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_central.rs"
+item = "Core::open_central"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::household_loans"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_credit.rs"
+item = "Core::lend_shortfalls"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_day.rs"
+item = "Core::keep_books"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_default.rs"
+item = "Core::claims_of"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::decide_spending"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_goods.rs"
+item = "Core::mark"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::drawn_jobs"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_jobs.rs"
+item = "Core::pay_jobs"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::claim_benefit"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::claim_pension"
+what = "`Calendar::date`"
+count = 2
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::hire"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::review_wages"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::seekers"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_labour.rs"
+item = "Core::separate"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "Core::open"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "months_a_year"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_open.rs"
+item = "next_after"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::outcomes"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::record_vitals"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_pop.rs"
+item = "Core::run_hazards"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_rates.rs"
+item = "Core::measure_rates"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "Core::stats_day"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_stats.rs"
+item = "period_of"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_taxes.rs"
+item = "collection_day"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/core_weather.rs"
+item = "Core::weather_day"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/day.rs"
+item = "World::core_day"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/assembly/phx-world/src/day.rs"
+item = "World::run_turn_observed"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/schedule.rs"
+item = "instance"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-core/src/schedule.rs"
+item = "next_due"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-ledger/src/algebra.rs"
+item = "Schedule::date_index"
+what = "`Calendar::date`"
+count = 1
+
+[[site]]
+path = "crates/kernel/phx-pop/src/person.rs"
+item = "read"
+what = "`civil_date`"
+count = 1

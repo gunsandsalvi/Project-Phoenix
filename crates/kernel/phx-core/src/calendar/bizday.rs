@@ -16,6 +16,17 @@ pub enum BusinessDayConvention {
     Unadjusted,
 }
 
+impl BusinessDayConvention {
+    /// Every convention, in the order a day's facts hold what each moves onto it.
+    pub const ALL: [BusinessDayConvention; crate::consts::CONVENTIONS] = [
+        BusinessDayConvention::Following,
+        BusinessDayConvention::ModifiedFollowing,
+        BusinessDayConvention::Preceding,
+        BusinessDayConvention::ModifiedPreceding,
+        BusinessDayConvention::Unadjusted,
+    ];
+}
+
 impl Calendar {
     fn preceding(&self, country: CountryId, day: Day) -> Day {
         let Some(d) = self.on_or_before(country, day) else {

@@ -87,15 +87,12 @@ fn kept_heavy_day_runs() {
     let mut m = Measures::new(&clock);
     kept.day(DayType::H, design.day(DayType::H).unwrap(), &mut m).unwrap();
     let ops: Vec<(&str, u64)> = m.iter().map(|((_, op), x)| (op.as_str(), x.items)).collect();
-    for (op, items) in [("flow_h", 1_500), ("due", 700), ("purchase", 800), ("search", 150), ("civil", 700)] {
+    for (op, items) in [("flow_h", 1_500), ("due", 700), ("purchase", 800), ("search", 150)] {
         assert!(ops.contains(&(op, items)), "{op} measured over {items} items: {ops:?}");
     }
     let mut closed = Measures::new(&clock);
     kept.day(DayType::Nb, design.day(DayType::Nb).unwrap(), &mut closed).unwrap();
-    assert!(
-        closed.iter().all(|((_, op), _)| op == "purchase" || op == "draw"),
-        "a closed day settles and takes nothing"
-    );
+    assert!(closed.iter().all(|((_, op), _)| op == "purchase"), "a closed day settles and takes nothing");
 }
 
 #[test]

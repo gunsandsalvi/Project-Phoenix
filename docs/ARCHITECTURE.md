@@ -1752,7 +1752,7 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams built, S1.177; K-19–K-24 planned, S1.114, S1.178–S1.185)
+Status: building (streams and K-19 built, S1.177–S1.178; K-20–K-24 planned, S1.114, S1.179–S1.185)
 
 #### Streams
 
@@ -1775,10 +1775,24 @@ stage table (S1.185) takes over the slots' list. A stream costs nothing of its o
 
 #### K-19 Calendar and day facts
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.178).
-
-**Today** (`calendar/`): the calendar of §6.1.
+Each country's facts about a day are computed once at the day's open and read from there, so no rule on a day's path
+converts a date or tests a business day per call. `DayFacts` (`calendar/facts.rs`) holds a country's date, weekday
+and business-day test, the longest period the day closes (`PeriodEnd`: within, month, quarter or year, civil), its
+month, quarter and year counted from the epoch's, and for each of the five business-day conventions
+(`BusinessDayConvention::ALL`) the run of calendar days it moves onto the day (`RolledRange`): after a closed weekend
+Saturday to Monday under the following convention, a modified-following month end rolled back onto the month's last
+business day, nothing onto a closed day but itself unadjusted. The run is one, since a convention moves a closed day
+to the nearest business day on one side; each day in it adjusts onto the day. `Calendar::facts_of(country, day)`
+computes them from the country's rules and business days; `Calendar::open_day(day)` fills every country's into the
+calendar's kept buffer at stage 1a, and `today()` reads them. They are derived and never saved, rebuilt by the first
+day opened after a load. `Calendar::plus` stays the one way to add a period (PC-17); the facts never advance a date.
+A party's fiscal calendar is its own dated schedule, not here. Day zero's facts are the epoch's, the day before the
+first. The day runner opens the day's facts (S1.186); readers of `Calendar::date` and the civil conversions on the
+day's paths — 37 sites, admitted by PC-17's exceptions file and its ratchet — move onto the facts or an agenda's date
+in their migrations. `[fin.calendar] open_ns` 177: three countries' facts over two years of days opened at 138–142
+ns a country-day (the step's 1 µs). Extension points: a window's open and close days (S1.197), the agenda's business
+days (S1.227), day counts on accounts and terms (S1.242, S1.263), business-day facts across currencies (S1.250), and
+maintenance periods (S3.114).
 
 #### K-20 The register: handles and policy schedules
 
@@ -3798,7 +3812,7 @@ credited while the world holds it (GEN.10).
     | PC-14 | `Default` on an id of `phx-id` |
     | PC-15 | a kernel or interface crate without a committed `public-api.txt`, or whose API differs from it; `public-api --write` records beside each item the crates outside it that name it outside their tests (`// used by: …`, no part of the API compared), and `public-api --unused` lists the items none names — a report, since a base is built before its users, which S1.360 reads (S1.131) |
     | PC-16 | a per-crate `clippy.toml` other than the root file minus that crate's declared exemptions |
-    | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day |
+    | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day; on the day's paths, `Calendar::date`, `civil_date` or `days_after` (the day's facts are read instead; today's sites admitted by its exceptions file) |
     | PC-18 | a primitive's value reached other than through `Prim` or `PolicyValue`; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `WorldStreams`, `open_keyed`, `ObserverDraws` and `AdviceDraws` named outside their listed files (§5.3) |
     | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
