@@ -36,7 +36,7 @@ pub if_state::kinds::BidIn::excess: f64  // used by: phx-core, phx-world, sys-so
 pub if_state::kinds::BidIn::floor_price: f64  // used by: phx-world
 pub struct if_state::kinds::BillKind  // used by: phx-world, sys-sov
 pub if_state::kinds::BillKind::bid: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::BidIn, alloc::vec::Vec<(f64, f64)>>  // used by: phx-world, sys-sov
-pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>  // used by: phx-core, phx-exec, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
+pub if_state::kinds::BillKind::clear: fn(i64, &[if_state::kinds::Bid]) -> core::option::Option<if_state::kinds::Allotment>  // used by: phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
 pub if_state::kinds::BillKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_state::kinds::BillLaw, alloc::string::String>  // used by: if-credit, if-labour, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
 pub if_state::kinds::BillKind::size: &'static phx_core::decisions::DecisionPointDecl<if_state::kinds::SizeIn, f64>  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
 pub struct if_state::kinds::BillLaw  // used by: phx-world, sys-sov

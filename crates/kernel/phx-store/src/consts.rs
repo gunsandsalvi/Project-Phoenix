@@ -78,3 +78,7 @@ pub const SIP_LEN_SHIFT: u32 = 56;
 /// A short reference's link holds its family in the top byte and the row's slot in the 24 bits below, the most rows a
 /// contract family holds.
 pub const SHORT_LINK_SLOT_BITS: u32 = 24;
+
+/// The kinds of day a day buffer records its longest length on: a business day, a day no market opens, a heavy day,
+/// and the business day after closed days.
+pub const DAY_KINDS: usize = 4;

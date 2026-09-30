@@ -94,7 +94,7 @@ pub fn phx_exec::partition::partition_map_into<T: core::marker::Sync, U: core::m
 pub mod phx_exec::pool  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-dem
 pub struct phx_exec::pool::Pool  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
 impl phx_exec::pool::Pool
-pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)  // used by: phx-check, phx-core, phx-id
+pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)  // used by: phx-check, phx-core, phx-id, phx-store
 pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-core, phx-market
 pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -158,7 +158,7 @@ pub mod phx_exec::site  // used by: phx-check, phx-cli, phx-core, phx-world, sys
 pub struct phx_exec::site::Site  // used by: phx-check, phx-core, phx-market, phx-world
 pub phx_exec::site::Site::chunk: u32  // used by: phx-core, phx-market, phx-pop, phx-store, phx-world
 pub phx_exec::site::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
-pub phx_exec::site::Site::handler: u16
+pub phx_exec::site::Site::handler: u16  // used by: phx-store
 pub phx_exec::site::Site::substep: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-world
 pub fn phx_exec::site::current() -> core::option::Option<phx_exec::site::Site>  // used by: if-labour, phx-check, phx-cli, phx-core, phx-ledger, phx-obs, phx-world, sys-frm
 pub fn phx_exec::site::enter(phx_exec::site::Site)
@@ -215,7 +215,7 @@ impl phx_exec::trace::Spent
 pub fn phx_exec::trace::Spent::between(core::option::Option<u64>, &phx_exec::trace::Reading, &phx_exec::trace::Reading) -> phx_exec::trace::Spent  // used by: phx-fin, phx-geo, phx-market
 pub fn phx_exec::trace::Spent::counts(&self) -> alloc::vec::Vec<(&'static str, i64)>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-obs, phx-rand, phx-world, sys-dem
 pub trait phx_exec::trace::Tracer: phx_exec::clock::Clock  // used by: phx-cli
-pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)  // used by: phx-cli, phx-core, phx-world
+pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)  // used by: phx-cli, phx-core, phx-fin, phx-store, phx-world
 pub fn phx_exec::trace::count(usize) -> i64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
 pub fn phx_exec::trace::doubling(u64) -> bool  // used by: phx-core, phx-market
 pub fn phx_exec::trace::note(&'static str, &[(&'static str, i64)])  // used by: phx-core, phx-market, phx-world
@@ -262,7 +262,7 @@ pub fn phx_exec::hint::NoHint::begin_turn(&self, u64)
 pub fn phx_exec::hint::NoHint::end_turn(&self, u64)
 pub struct phx_exec::Pool  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
 impl phx_exec::pool::Pool
-pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)  // used by: phx-check, phx-core, phx-id
+pub fn phx_exec::pool::Pool::for_each<I: core::marker::Send, F: core::ops::function::Fn(I) + core::marker::Sync>(&self, impl core::iter::traits::collect::IntoIterator<Item = I>, F)  // used by: phx-check, phx-core, phx-id, phx-store
 pub fn phx_exec::pool::Pool::map<T: core::marker::Send>(&self, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_exec::pool::Pool::map_items<I: core::marker::Send, T: core::marker::Send>(&self, alloc::vec::Vec<I>, impl core::ops::function::Fn(I) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-core, phx-market
 pub fn phx_exec::pool::Pool::new(&phx_exec::spec::PoolSpec) -> core::result::Result<phx_exec::pool::Pool, phx_exec::pool::PoolError>  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -283,7 +283,7 @@ pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, p
 pub struct phx_exec::Site  // used by: phx-check, phx-core, phx-market, phx-world
 pub phx_exec::Site::chunk: u32  // used by: phx-core, phx-market, phx-pop, phx-store, phx-world
 pub phx_exec::Site::day: u32  // used by: if-state, phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
-pub phx_exec::Site::handler: u16
+pub phx_exec::Site::handler: u16  // used by: phx-store
 pub phx_exec::Site::substep: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-world
 pub struct phx_exec::Tally(_)  // used by: phx-world
 impl phx_exec::tally::Tally

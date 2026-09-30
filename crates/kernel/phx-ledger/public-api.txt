@@ -127,7 +127,7 @@ pub phx_ledger::algebra::Due::amount: phx_ledger::algebra::Amount  // used by: p
 pub phx_ledger::algebra::Due::leg: u16  // used by: phx-geo, phx-world
 pub struct phx_ledger::algebra::DueBuf  // used by: phx-world
 impl phx_ledger::algebra::DueBuf
-pub fn phx_ledger::algebra::DueBuf::clear(&mut self)  // used by: if-state, phx-core, phx-exec, phx-geo, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
+pub fn phx_ledger::algebra::DueBuf::clear(&mut self)  // used by: if-state, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-sov
 pub fn phx_ledger::algebra::DueBuf::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
 pub fn phx_ledger::algebra::DueBuf::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_ledger::algebra::Due> + '_  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub fn phx_ledger::algebra::DueBuf::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
@@ -253,7 +253,7 @@ pub struct phx_ledger::online::Online  // used by: sys-bnk
 impl phx_ledger::online::Online
 pub fn phx_ledger::online::Online::new(alloc::vec::Vec<u64>) -> phx_ledger::online::Online  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_ledger::online::Online::next(&mut self, &mut phx_rand::draws::Draws) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-market, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-lab
-pub mod phx_ledger::opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
+pub mod phx_ledger::opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-geo, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub fn phx_ledger::opening::currency(phx_id::ids::CountryId) -> phx_num::money::Ccy  // used by: phx-world
 pub fn phx_ledger::opening::derived(&phx_core::contribution::OpeningCountry, &str) -> f64  // used by: phx-check, phx-core, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab
 pub fn phx_ledger::opening::employed(&phx_core::contribution::OpeningCountry) -> f64  // used by: phx-cli, phx-world, sys-hh, sys-lab

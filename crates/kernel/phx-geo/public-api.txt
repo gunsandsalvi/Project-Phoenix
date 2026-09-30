@@ -68,7 +68,7 @@ pub fn phx_geo::deposits::Opening::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_geo::deposits::Opening::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::deposits::Deposit
 pub phx_geo::deposits::Deposit::grade: phx_num::fixed::Fixed<3>  // used by: phx-core, phx-world, sys-gds
-pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-obs, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
+pub phx_geo::deposits::Deposit::opening: phx_geo::deposits::Opening  // used by: if-pop, phx-check, phx-cli, phx-core, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub phx_geo::deposits::Deposit::resource: u16  // used by: phx-world
 pub phx_geo::deposits::Deposit::tile: phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-world
 impl phx_store::save::Saved for phx_geo::deposits::Deposit where phx_id::ids::TileId: phx_store::save::Saved, u16: phx_store::save::Saved, phx_num::fixed::Fixed<3>: phx_store::save::Saved, phx_geo::deposits::Opening: phx_store::save::Saved

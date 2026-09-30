@@ -219,6 +219,7 @@ pub const phx_store::consts::BLOCK_ENTRIES: usize
 pub const phx_store::consts::BLOCK_HALF: usize
 pub const phx_store::consts::BLOCK_TREE_DEPTH: usize
 pub const phx_store::consts::CELL_LIST_SENTINEL: u16
+pub const phx_store::consts::DAY_KINDS: usize
 pub const phx_store::consts::ENCODE_BLOCK: usize
 pub const phx_store::consts::ENCODE_MAGIC: u32
 pub const phx_store::consts::ENCODE_VERSION: u16
@@ -237,6 +238,35 @@ pub const phx_store::consts::SIP_TWEAK_128: u64
 pub const phx_store::consts::SIP_TWEAK_SECOND: u64
 pub const phx_store::consts::VA_BUDGET: usize
 pub const phx_store::consts::ZSTD_LEVEL: i32
+pub mod phx_store::daybuf  // used by: phx-fin
+pub struct phx_store::daybuf::DayBuf<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::daybuf::DayBuf<T, B>
+pub fn phx_store::daybuf::DayBuf<T, B>::as_mut_slice(&mut self, usize) -> &mut [T]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::as_slice(&self) -> &[T]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::capacity(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::clear(&mut self)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::extend(&mut self, &[T])  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::highs(&self) -> [usize; 4]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::is_empty(&self) -> bool  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::len(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::mark(&mut self, usize)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::name(&self) -> &'static str  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::new(&mut phx_store::backing::AddressSpace, &'static str, usize) -> phx_store::daybuf::DayBuf<T, B>  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::push(&mut self, T)  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::daybuf::DayBuf<T, B>
+pub fn phx_store::daybuf::DayBuf<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_store::daybuf::DayBufs<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::daybuf::DayBufs<T, B>
+pub fn phx_store::daybuf::DayBufs<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = &mut [phx_store::daybuf::DayBuf<T, B>]>  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::clear(&mut self)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::get(&self, usize, usize) -> &[T]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::join(&self, &mut phx_store::daybuf::DayBuf<T, B>)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::mark(&mut self, usize)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::new(&mut phx_store::backing::AddressSpace, &'static str, (usize, usize), usize) -> phx_store::daybuf::DayBufs<T, B>  // used by: phx-fin
 pub mod phx_store::descriptor
 pub enum phx_store::descriptor::FieldTag
 pub phx_store::descriptor::FieldTag::Amount  // used by: phx-core, phx-ledger, phx-num, phx-world
@@ -770,6 +800,10 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::daybuf::DayBuf<T, B>
+pub fn phx_store::daybuf::DayBuf<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_live(&self) -> u64  // used by: phx-fin
 pub mod phx_store::table  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
 pub struct phx_store::table::SlotAlloc<B: phx_store::backing::Backing>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
@@ -969,6 +1003,34 @@ pub phx_store::ColumnDescriptor::name: &'static str  // used by: if-pop, phx-che
 pub phx_store::ColumnDescriptor::rows_per_chunk: u32  // used by: phx-core, phx-exec, phx-pop
 impl phx_store::descriptor::ColumnDescriptor
 pub fn phx_store::descriptor::ColumnDescriptor::checked<T: phx_store::pod::Pod>(&'static str, u32, &'static [phx_store::descriptor::FieldDescriptor]) -> core::option::Option<phx_store::descriptor::ColumnDescriptor>  // used by: phx-cli
+pub struct phx_store::DayBuf<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::daybuf::DayBuf<T, B>
+pub fn phx_store::daybuf::DayBuf<T, B>::as_mut_slice(&mut self, usize) -> &mut [T]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::as_slice(&self) -> &[T]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::capacity(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::clear(&mut self)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::extend(&mut self, &[T])  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::highs(&self) -> [usize; 4]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::is_empty(&self) -> bool  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::len(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::mark(&mut self, usize)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::name(&self) -> &'static str  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::new(&mut phx_store::backing::AddressSpace, &'static str, usize) -> phx_store::daybuf::DayBuf<T, B>  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::push(&mut self, T)  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::daybuf::DayBuf<T, B>
+pub fn phx_store::daybuf::DayBuf<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_store::DayBufs<T: phx_store::pod::Pod, B: phx_store::backing::Backing>  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::daybuf::DayBufs<T, B>
+pub fn phx_store::daybuf::DayBufs<T, B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::chunks_mut(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = &mut [phx_store::daybuf::DayBuf<T, B>]>  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::clear(&mut self)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::get(&self, usize, usize) -> &[T]  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::join(&self, &mut phx_store::daybuf::DayBuf<T, B>)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::mark(&mut self, usize)  // used by: phx-fin
+pub fn phx_store::daybuf::DayBufs<T, B>::new(&mut phx_store::backing::AddressSpace, &'static str, (usize, usize), usize) -> phx_store::daybuf::DayBufs<T, B>  // used by: phx-fin
 pub struct phx_store::EdgeTable<R: phx_store::edges::Row, B: phx_store::backing::Backing>  // used by: phx-core
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::edges::EdgeTable<R, B>
 pub fn phx_store::edges::EdgeTable<R, B>::close(&mut self, phx_id::ids::Slot, [core::option::Option<&mut u32>; 2])  // used by: phx-core
@@ -1492,6 +1554,10 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::table::SlotAlloc<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rows_live(&self) -> u64  // used by: phx-fin
+impl<T: phx_store::pod::Pod, B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::daybuf::DayBuf<T, B>
+pub fn phx_store::daybuf::DayBuf<T, B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::daybuf::DayBuf<T, B>::rows_live(&self) -> u64  // used by: phx-fin
 pub trait phx_store::TableChunks
 pub type phx_store::TableChunks::Rows  // used by: phx-fin
 pub fn phx_store::TableChunks::chunks(self) -> impl core::iter::traits::iterator::Iterator<Item = phx_store::table::TableChunk<Self::Rows>>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-market

@@ -119,6 +119,26 @@ counter = "fin.refs.gen_bytes"
 value = 4
 direction = "down"
 
+# Day buffers (S1.160, 2026-09-30; `tools/bench.sh -F daybuf`): a buffer for each of the design point's daily counts,
+# reserved at its heaviest day and refilled each day, a word an item: 1 ns a word appended, and on the second day of
+# each type no page faulted and nothing allocated, which the ratchets hold at nought. The memory's slack is what the
+# bases filled by `-F all` hold beside their live rows, held to the step's 57 MB.
+
+[[ratchet]]
+counter = "fin.daybuf.faults_per_day"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.daybuf.allocs_per_day"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.mem.slack_mb"
+value = 57
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

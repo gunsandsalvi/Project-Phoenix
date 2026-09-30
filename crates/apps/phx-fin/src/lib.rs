@@ -5,6 +5,7 @@
 pub mod budget;
 pub mod compose;
 pub mod counters;
+pub mod daybuf;
 pub mod design;
 pub mod fill;
 pub mod kept;
@@ -129,6 +130,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(counters::Counters::default()),
     || Box::new(kept::Kept::default()),
     || Box::new(refs::Refs::default()),
+    || Box::new(daybuf::DayBufs::default()),
 ];
 
 /// What a run fills, runs and reads.
@@ -174,10 +176,12 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
     let mut measures = Measures::new(clock);
     let mut sizes = Vec::new();
     let mut figures = Vec::new();
+    let mut slack = 0;
     for driver in &mut chosen {
         let filled = driver.fill(&design, &streams)?;
         let bytes = driver.bytes();
         sizes.push((driver.name().to_owned(), filled.rows, (bytes.rows + bytes.resident) >> MIB_SHIFT));
+        slack += bytes.resident;
         for day in &args.days {
             let counts =
                 design.day(*day).ok_or_else(|| FinError(format!("the design point has no `day.{}`", day.key())))?;
@@ -194,6 +198,12 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
         if let Ok(mb) = mb.to_string().parse() {
             per_op.insert(format!("fin.{base}.mb"), mb);
         }
+    }
+    // What the bases hold beside their live rows is the memory's slack, read whole only when every base is filled.
+    if args.bases.as_ref().is_none_or(|names| names.iter().any(|n| n == "all"))
+        && let Ok(mb) = (slack >> MIB_SHIFT).to_string().parse()
+    {
+        figures.push(("fin.mem.slack_mb".to_owned(), mb));
     }
     per_op.extend(figures.iter().cloned());
     let mut lines = compose::declared(&design);

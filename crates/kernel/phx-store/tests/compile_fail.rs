@@ -21,3 +21,9 @@ fn references_keep_their_table_and_holder() {
     t.compile_fail("tests/ui/short_ref_outside_wheel.rs");
     t.compile_fail("tests/ui/short_ref_holder_too_seldom.rs");
 }
+
+#[test]
+#[cfg_attr(miri, ignore = "trybuild runs the compiler, which Miri cannot")]
+fn daybuf_not_saved() {
+    trybuild::TestCases::new().compile_fail("tests/ui/daybuf_not_saved.rs");
+}

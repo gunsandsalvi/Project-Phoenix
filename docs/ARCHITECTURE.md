@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02 built (S1.159); the rest planned (S1.160–S1.168)
+Status: K-02 and K-03's day buffers built (S1.159, S1.160); the rest planned (S1.161–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1083,8 +1083,42 @@ contract rows' 8-bit generation in their terms word (S1.257), and every later ta
 
 #### K-03 Day buffers and the day plan
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.160, S1.161).
+The buffers are written (S1.160); where they live in the day and which share pages is the day plan's, planned (S1.161).
+
+**Layout** (`daybuf.rs`): a `DayBuf<T: Pod>` is its name, a `Region<T>` reserved at its declared capacity (K-24), a
+length, and its longest length on each kind of day (business, non-business, heavy, the business day after closed
+days). Its pages are committed in whole pages as it first grows past them, never released during the run and never
+zeroed by the kernel: a page is zeroed once, by the system, when first committed. `DayBufs<T>` is one `DayBuf` to each
+(chunk, handler) of a traversal.
+
+**API**: `clear` sets the length to nought; `push`, `extend`, `as_slice`, and `as_mut_slice(len)`, which hands the
+caller the buffer at a length to write in place — what lies beyond the old length is an earlier day's, and the caller
+writes every element it reads. A push past the capacity stops the run naming the buffer. `mark(day_kind)` records the
+day's length when it is the kind's longest. `DayBufs::chunks_mut` hands each chunk's handlers' buffers to the worker
+that holds the chunk; `get(chunk, handler)` reads one in place; `join(into)` appends them all in (chunk, handler)
+order, so the result does not depend on which worker filled which chunk.
+
+**Algorithms and bounds**: append is a length compare and a store (a page commit only past the committed pages); clear
+is `O(1)`; a join copies each buffer once. A buffer is sized by its heaviest day, never an average one, so after the
+first heaviest day of each kind a day commits no page and allocates nothing. The day's nets are the accounts' pending
+(K-47): no buffer holds a net per party.
+
+**Save and load**: not saved — every buffer is empty at the close, and `DayBuf` implements no `Saved`
+(`daybuf_not_saved`); after a load the first day of each kind commits its pages again, once.
+
+**Capacity**: each buffer's capacity is its declared heaviest day's rows (K-24); past it the run stops.
+
+**Volumes and ratchets**: `tools/bench.sh -F daybuf` reserves a buffer for each of the design point's daily counts at
+its heaviest day and refills each on every day type, a word an item: 1 ns a word appended (the step's 0.8 VM ns), and
+on each type's second day no page faulted and nothing allocated — `[fin.daybuf]` `faults_per_day` 0 and
+`allocs_per_day` 0. The buffers' bytes are line 21's, stated by the day plan. **Slack** — memory resident but holding
+no live row — is line 22: each column's one page tail, the keyed indexes' dead entries between compactions (K-06), the
+free slots awaiting reuse and their generations (K-02), and the wheel's run tails (K-42); `-F all` reads it as what
+the bases hold beside their live rows, `[fin.mem] slack_mb` 57, today 1 MB with the bases built.
+
+**Extension points**: the day plan places these buffers and shares their pages (S1.161); every later traversal's
+intents, scratch and per-chunk staging are day buffers (S1.162–S1.171, S1.192, S1.194, S1.212–S1.225, S1.245,
+S1.269–S1.312, S1.326, S1.348, S2.211, S4.130, S4.131).
 
 #### K-04 Chunk arenas and block pools
 

@@ -111,9 +111,12 @@ impl FinBase for Refs {
         Ok(())
     }
 
+    /// A live row's generation is its row's; the rest the table holds committed — the free ring, the day's released
+    /// list, the ended slots' generations and the pages' tails — is slack.
     fn bytes(&self) -> Bytes {
-        let rows = self.table.as_ref().map_or(0, |(a, g)| wide(a.bytes_committed() + g.bytes_committed()));
-        Bytes { rows, resident: 0 }
+        let Some((a, g)) = self.table.as_ref() else { return Bytes::default() };
+        let rows = a.live_count() * wide(size_of::<u32>());
+        Bytes { rows, resident: wide(a.bytes_committed() + g.bytes_committed()) - rows }
     }
 
     /// A slot's generation's bytes.

@@ -1,0 +1,22 @@
+error[E0277]: the trait bound `DayBuf<u64>: Saved` is not satisfied
+ --> tests/ui/daybuf_not_saved.rs:6:13
+  |
+6 |     saved::<DayBuf<u64>>();
+  |             ^^^^^^^^^^^ the trait `Pod` is not implemented for `DayBuf<u64>`
+  |
+  = help: the following other types implement trait `Pod`:
+            BlockBag
+            BlockList
+            CellListRef
+            GenRef<T>
+            ListRef
+            Pair
+            [T; N]
+            i16
+          and $N others
+  = note: required for `DayBuf<u64>` to implement `Saved`
+note: required by a bound in `saved`
+ --> tests/ui/daybuf_not_saved.rs:3:13
+  |
+3 | fn saved<T: Saved>() {}
+  |             ^^^^^ required by this bound in `saved`
