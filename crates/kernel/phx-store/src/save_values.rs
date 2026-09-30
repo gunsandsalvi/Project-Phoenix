@@ -148,3 +148,20 @@ impl Saved for &'static str {
         r.name(text)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use phx_num::{Ccy, Price, Qty, UnitId};
+
+    use crate::roundtrip::roundtrip;
+
+    #[test]
+    fn qty_roundtrip() {
+        // The widest unit identity reads back as it was saved, in a quantity and in a price.
+        let widest = UnitId::new((1 << 24) - 1);
+        let (q, _) = roundtrip(&Qty::new(-42, widest)).unwrap();
+        assert_eq!(q, Qty::new(-42, widest));
+        let (p, _) = roundtrip(&Price::new(1_250, Ccy::new(2), widest)).unwrap();
+        assert_eq!(p, Price::new(1_250, Ccy::new(2), widest));
+    }
+}

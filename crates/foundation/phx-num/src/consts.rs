@@ -26,3 +26,7 @@ pub const SMALL_SPLIT: usize = 64;
 /// A split among this few selects on a stack of their size, which the common splits — a household's members, a joint
 /// holding, a small estate — fit without clearing the larger one.
 pub const SMALL_SPLIT_FEW: usize = 8;
+
+/// A unit identity's width: 16.7 M units, room for the finished world's goods and capital classes at every zone, its
+/// instruments and special units, with two years' growth.
+pub const UNIT_ID_BITS: u32 = 24;

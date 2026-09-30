@@ -77,7 +77,7 @@ impl UnitTable {
 
     #[must_use]
     pub fn exp(&self, unit: UnitId) -> u8 {
-        match self.exps.get(usize::from(unit.index())) {
+        match usize::try_from(unit.index()).ok().and_then(|i| self.exps.get(i)) {
             Some(exp) => *exp,
             None => violation!(clause = "NUM.1", "a unit with no declaration", unit = unit.index()),
         }
@@ -117,11 +117,13 @@ mod tests {
     use crate::violation::testing::violated_clause;
 
     const C: Ccy = Ccy::new(0);
-    const U: UnitId = UnitId::new(0);
+    fn u() -> UnitId {
+        UnitId::new(0)
+    }
 
     fn value(n: i64, raw: i64, r: Round) -> i64 {
         let units = UnitTable::new(vec![3]).unwrap();
-        value_of(Qty::new(n, U), Price::new(raw, C, U), &units, r).amt()
+        value_of(Qty::new(n, u()), Price::new(raw, C, u()), &units, r).amt()
     }
 
     #[test]
@@ -143,11 +145,11 @@ mod tests {
     fn value_of_refuses_mixed_units_and_undeclared_units() {
         let units = UnitTable::new(vec![3]).unwrap();
         let other = UnitId::new(1);
-        let mixed = || value_of(Qty::new(1, U), Price::new(1, C, other), &units, Round::Floor);
+        let mixed = || value_of(Qty::new(1, u()), Price::new(1, C, other), &units, Round::Floor);
         assert_eq!(violated_clause(mixed), "NUM.5");
         let undeclared = || value_of(Qty::new(1, other), Price::new(1, C, other), &units, Round::Floor);
         assert_eq!(violated_clause(undeclared), "NUM.1");
         assert!(UnitTable::new(vec![19]).is_err());
-        assert_eq!(value_of(Qty::new(2, U), Price::new(7, C, U), &units, Round::Ceil), Money::new(1, C));
+        assert_eq!(value_of(Qty::new(2, u()), Price::new(7, C, u()), &units, Round::Ceil), Money::new(1, C));
     }
 }

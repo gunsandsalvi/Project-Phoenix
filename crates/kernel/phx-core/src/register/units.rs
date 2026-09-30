@@ -66,7 +66,7 @@ impl Units {
                 errors.push(format!("unit `{}` gives no reason for its price exponent", d.name));
             }
         }
-        if u16::try_from(decls.len()).is_err() {
+        if decls.len() >> phx_num::consts::UNIT_ID_BITS != 0 {
             errors.push(format!("{} units, beyond a unit identity's width", decls.len()));
         }
         let table = UnitTable::new(decls.iter().map(|d| d.price_exp).collect())
@@ -83,7 +83,7 @@ impl Units {
 
     /// The unit of a name, if the world declares one.
     pub fn named(&self, name: &str) -> Missing<UnitId> {
-        match self.decls.iter().position(|d| d.name == name).and_then(|i| u16::try_from(i).ok()) {
+        match self.decls.iter().position(|d| d.name == name).and_then(|i| u32::try_from(i).ok()) {
             Some(i) => Missing::Present(UnitId::new(i)),
             None => Missing::Absent,
         }
@@ -92,7 +92,7 @@ impl Units {
     /// A unit's declaration.
     #[must_use]
     pub fn decl(&self, unit: UnitId) -> Option<&UnitDecl> {
-        self.decls.get(usize::from(unit.index()))
+        usize::try_from(unit.index()).ok().and_then(|i| self.decls.get(i))
     }
 
     /// The price exponents, by unit.

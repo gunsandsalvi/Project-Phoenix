@@ -133,7 +133,7 @@ transform (`#[save(delta | zigzag | delta_zigzag | plain)]` per field). Hand-wri
 **`phx-num`.** Each computing type has a bare column form that a column's declaration types: `Money { amt, ccy }` and
 `Amount`, `Qty { n, unit }` and `QtyRaw`, `Price { raw, ccy, unit }` and `PriceRaw`, `Missing<i64>` and `MaybeI64`
 (absent is `i64::MIN`, which no present value may take). A currency `Ccy(u8)` is the index of the country whose
-central bank issues it; a unit `UnitId(u16)` indexes the unit table, which gives each unit its kind and its price
+central bank issues it; a unit `UnitId(u32)` indexes the unit table, which gives each unit its kind and its price
 exponent (at most 18). `+`/`-` on `Money` or `Qty` of two currencies or units, and overflow, are violations, never
 `Err`; there is no `Mul<Money>`, no `f64` conversion and no empty `Sum` (`Money::sum_in(ccy, …)` instead), and a
 money figure is multiplied only by a `Count` of identical things. A price is smallest money units × 10⁻ᵉˣᵖ per unit
@@ -143,6 +143,13 @@ of the same period, or violates. `Fixed<E>` is a decimal of exponent `E` for pos
 `f64` only through `from_f64`, which refuses non-finite and out-of-range values. Rounding is `Round` (`HalfEven`,
 `HalfAwayFromZero`, `TowardZero`, `Floor`, `Ceil`, `InFavourOf(Payer | Payee)`), applied by `div_round`;
 `split_total(total, k, w)` gives `round(k·total/w)` and the rest, so a split conserves by construction.
+
+**Units and their width** (`qty.rs`). A unit identity — a good or a capital class at a zone, an instrument, a
+special unit — is 24 bits in a word (`UNIT_ID_BITS`): 16.7 M identities, room for the finished world's with two
+years' growth, and `UnitId::new` stops the run past them. The unit table's price exponents and the register's
+declarations are indexed by it. `QtyRaw` and `PriceRaw`, the column forms whose unit the column fixes, are single
+words, so a row laid widest first holds them and unit identities without padding; `Qty` and `Price` save their unit
+beside their number and read back equal (`qty_roundtrip`).
 
 **Whose money** (`money.rs`, `exchange.rs`). A figure in money says whose money it is by its type (NUM.2):
 `HomeMoney`, a party's figure in its home currency, what its books are kept in; `NamedMoney`, a figure in a currency

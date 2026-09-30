@@ -2,21 +2,27 @@ use std::ops::{Add, Neg, Sub};
 
 use phx_macros::clause;
 
-use crate::violation;
+use crate::consts::UNIT_ID_BITS;
+use crate::{capacity_exceeded, violation};
 
-/// A unit's index in the declared unit table, whose entries name the kind, the name and the price exponent.
+/// A unit's index in the declared unit table, whose entries name the kind, the name and the price exponent: a good
+/// or a capital class at a zone, an instrument, a special unit. It is 24 bits in a word.
 #[must_use]
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct UnitId(u16);
+pub struct UnitId(u32);
 
 impl UnitId {
-    pub const fn new(index: u16) -> UnitId {
+    /// A unit's index below 2^24; a wider one stops the run.
+    pub fn new(index: u32) -> UnitId {
+        if index >> UNIT_ID_BITS != 0 {
+            capacity_exceeded!("unit identities", 1_u64 << UNIT_ID_BITS, u64::from(index) + 1);
+        }
         UnitId(index)
     }
 
     #[must_use]
-    pub const fn index(self) -> u16 {
+    pub const fn index(self) -> u32 {
         self.0
     }
 }
@@ -135,17 +141,5 @@ impl Neg for Qty {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{Qty, UnitId};
-    use crate::violation::testing::violated_clause;
-
-    #[test]
-    fn qty_refuses_mixed_units_and_overflow() {
-        let (a, b) = (UnitId::new(1), UnitId::new(2));
-        assert_eq!(Qty::new(3, a) + Qty::new(4, a), Qty::new(7, a));
-        assert_eq!(violated_clause(|| Qty::new(3, a) + Qty::new(4, b)), "NUM.5");
-        assert_eq!(violated_clause(|| Qty::new(i64::MAX, a) + Qty::new(1, a)), "Law 7");
-        assert_eq!(Qty::matched(Qty::new(5, a), Qty::new(3, a)), Qty::new(3, a));
-        assert_eq!(violated_clause(|| Qty::matched(Qty::new(5, a), Qty::new(3, b))), "NUM.5");
-    }
-}
+#[path = "qty_tests.rs"]
+mod tests;
