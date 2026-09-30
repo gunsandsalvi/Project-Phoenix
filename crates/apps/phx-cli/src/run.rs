@@ -51,26 +51,50 @@ fn peak_resident_bytes() -> Option<u64> {
     kib.checked_mul(1 << 10)
 }
 
-/// Each counter against its ratchet: a counter with no entry is refused, and one that moved the wrong way fails.
-pub(crate) fn check_ratchets(path: &Path, counters: &[(&str, u64)]) -> Result<Vec<String>, String> {
+/// Each counter against its ratchet: a counter with no entry is refused, one that moved the wrong way fails, and a
+/// ratchet under `produced` that the run did not produce is refused, never read as met.
+pub(crate) fn check_ratchets(
+    path: &Path,
+    counters: &[(&str, f64)],
+    produced: Option<&str>,
+) -> Result<Vec<String>, String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let ratchets: Ratchets = toml::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+    judge_counters(&text, counters, produced).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+/// The judgement of `check_ratchets` over a ratchets file's text.
+pub(crate) fn judge_counters(
+    text: &str,
+    counters: &[(&str, f64)],
+    produced: Option<&str>,
+) -> Result<Vec<String>, String> {
+    let ratchets: Ratchets = toml::from_str(text).map_err(|e| e.to_string())?;
     let mut failures = Vec::new();
     for (name, value) in counters {
-        // A count as the bound reads it; every count the run keeps is far inside a float's exact integers.
-        let Ok(real) = value.to_string().parse::<f64>() else { continue };
         match ratchets.ratchet.iter().find(|r| r.counter == *name) {
             None => failures.push(format!("`{name}` has no ratchet")),
-            Some(r) if r.direction == "down" && real > r.value => {
+            Some(r) if r.direction == "down" && *value > r.value => {
                 failures.push(format!("`{name}` is {value}; its ratchet allows {}", r.value));
             }
-            Some(r) if r.direction == "up" && real < r.value => {
+            Some(r) if r.direction == "up" && *value < r.value => {
                 failures.push(format!("`{name}` is {value}; its ratchet needs {}", r.value));
             }
             Some(_) => {}
         }
     }
+    if let Some(prefix) = produced {
+        for r in ratchets.ratchet.iter().filter(|r| r.counter.starts_with(prefix)) {
+            if !counters.iter().any(|(n, _)| *n == r.counter) {
+                failures.push(format!("`{}` was not produced by the run", r.counter));
+            }
+        }
+    }
     Ok(failures)
+}
+
+/// A count as a bound reads it: every count the run keeps is far inside a float's exact integers.
+pub(crate) fn real(n: u64) -> f64 {
+    n.to_string().parse().unwrap_or(f64::INFINITY)
 }
 
 /// The greatest of some counts, none being zero.
@@ -441,7 +465,7 @@ fn play(
     args: &RunArgs,
     (settle_end, end): (phx_id::Day, phx_id::Day),
     clock: &WallClock,
-    (obs, stores): (&mut Observing, &mut StoreSamples),
+    (obs, stores, allocs): (&mut Observing, &mut StoreSamples, &mut AllocMark),
 ) -> Result<Option<PathBuf>, String> {
     let (saves, build) = (args.run_dir.join("saves"), build_id()?);
     let mut period = save_period(Inspector::new(world), world.today())?;
@@ -454,6 +478,7 @@ fn play(
         world.run_turn_observed(&[], clock, Some(&mut obs.watch));
         println!("{}", progress(Inspector::new(world), settle_end));
         stores.take_at_month_end(Inspector::new(world));
+        allocs.after_turn(Inspector::new(world).turns().iter().map(|t| u64::from(t.days)).sum());
         // Each finding as the turn found it, so a run that stops later still shows what the audit saw.
         for f in Inspector::new(world).findings().iter().skip(seen) {
             println!("finding {} {} day {}: {:?} {}: {}", f.family, f.clause, f.day.get(), f.owner, f.size, f.detail);
@@ -483,6 +508,41 @@ fn baseline_report(clock: &WallClock) -> (Option<u64>, serde_json::Value) {
     let gather = json!({ "region_bytes": b.gather.map(|g| g.bytes), "plain": rate(b.gather),
                          "prefetched": rate(b.gather_prefetched) });
     (b.resident_bytes.map(|r| r >> MIB_SHIFT), gather)
+}
+
+/// The days of a run's first buffers growing to the heaviest day's, after which a day allocates nothing.
+const FIRST_DAYS: u64 = 10;
+
+/// The allocations counted from the run's tenth day on, and at its last turn, with the days run at each.
+#[derive(Debug, Default)]
+struct AllocMark {
+    from: Option<(u64, u64)>,
+    last: Option<(u64, u64)>,
+}
+
+/// The allocations counted so far, where the bench's allocator counts them.
+#[cfg_attr(feature = "bench", expect(clippy::unnecessary_wraps, reason = "none where the allocator does not count"))]
+fn allocated() -> Option<u64> {
+    #[cfg(feature = "bench")]
+    return Some(phx_exec::alloc::allocated().0);
+    #[cfg(not(feature = "bench"))]
+    None
+}
+
+impl AllocMark {
+    fn after_turn(&mut self, days_run: u64) {
+        let Some(calls) = allocated() else { return };
+        if self.from.is_none() && days_run >= FIRST_DAYS {
+            self.from = Some((days_run, calls));
+        }
+        self.last = Some((days_run, calls));
+    }
+
+    /// Allocations a day from the tenth day on; none where they were not counted or no day followed.
+    fn per_day(&self) -> Option<f64> {
+        let ((d0, c0), (d1, c1)) = (self.from?, self.last?);
+        crate::budget::per(c1.checked_sub(c0), d1.checked_sub(d0))
+    }
 }
 
 /// Every kind's store sampled at the run's start and at each simulated month's end.
@@ -580,7 +640,10 @@ fn progress(w: Inspector<'_>, settle_end: phx_id::Day) -> String {
 }
 
 /// The counters the ratchets hold: each the greatest a day of the run came to.
-fn counters(w: Inspector<'_>) -> [(&'static str, u64); 3] {
+/// The run's counters that `perf/ratchets.toml` holds.
+type RunCounters = [(&'static str, u64); 3];
+
+fn counters(w: Inspector<'_>) -> RunCounters {
     let core = w.core();
     [
         ("phx_geo.map_bytes", u64::try_from(w.geo().bytes()).unwrap_or(u64::MAX)),
@@ -768,17 +831,12 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let definitions = phx_obs::Definitions::read(&args.data)?;
     let (mut obs, opening) = Observing::open(Inspector::new(&world), &definitions)?;
     println!("opened in {} ms", assembly_ns.map_or(0, |n| n / 1_000_000));
-    let meter = crate::budget::Meter::start(clock.now_ns());
+    let meter = crate::budget::Meter::start(clock.now_ns(), Inspector::new(&world));
+    let mut allocs = AllocMark::default();
     let mut stores = StoreSamples::opened(Inspector::new(&world));
-    let injection_save = play(&mut world, args, (settle_end, end), &clock, (&mut obs, &mut stores))?;
-    let span = meter.stop(clock.now_ns());
-    let injecting = clock.now_ns();
-    if let Some(dir) = &injection_save {
-        for r in inject_apart(args, dir)? {
-            world.record_injection(r);
-        }
-    }
-    let inject_ns = clock.now_ns().checked_sub(injecting);
+    let injection_save = play(&mut world, args, (settle_end, end), &clock, (&mut obs, &mut stores, &mut allocs))?;
+    let span = meter.stop(clock.now_ns(), Inspector::new(&world));
+    let inject_ns = inject(args, injection_save.as_deref(), &mut world, &clock)?;
     let w = Inspector::new(&world);
     let view = obs.views.close(w, &obs.watch.recorder);
     let settled = obs.settled.as_ref().map(|v| phx_obs::drift(&opening, v)).unwrap_or_default();
@@ -786,14 +844,15 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
     let observed =
         Observed { reads: &definitions.reads, series: obs.watch.recorder.series(), settled: &settled, ended: &ended };
     let (results, all_pass) = live_checks(w, &observed, &args.checks);
-    let counters = counters(w);
-    let ratchet_failures = check_ratchets(&args.ratchets, &counters)?;
-    for f in &ratchet_failures {
-        println!("ratchet: {f}");
-    }
+    let (counters, ratchet_failures) = ratchet_checks(w, &args.ratchets)?;
     let peak = peak_resident_bytes();
     let memory_ok = peak.is_some_and(|p| p <= WORLD_BYTES);
-    let (budget_block, budget_kept) = crate::budget::judge(w, peak, &span, args.budget.as_deref())?;
+    let beside = crate::budget::Beside {
+        allocs_per_day: allocs.per_day(),
+        spans_below_busy: printer.below_busy(),
+        baseline_mb: baseline.0,
+    };
+    let (budget_block, budget_kept) = crate::budget::judge(w, peak, (&span, &beside), args.budget.as_deref())?;
     let turns = w.turns();
     let mut report = json!({
         "seed": args.seed,
@@ -855,6 +914,28 @@ pub fn run(args: &RunArgs) -> Result<bool, String> {
         if budget_kept { "kept" } else { "missed" }
     );
     Ok(clean && budget_kept)
+}
+
+/// The injections' checks run on the save taken for them, each recorded on the world; their wall time.
+fn inject(args: &RunArgs, save: Option<&Path>, world: &mut World, clock: &WallClock) -> Result<Option<u64>, String> {
+    let injecting = clock.now_ns();
+    if let Some(dir) = save {
+        for r in inject_apart(args, dir)? {
+            world.record_injection(r);
+        }
+    }
+    Ok(clock.now_ns().checked_sub(injecting))
+}
+
+/// The run's counters of `perf/ratchets.toml` and each ratchet they broke, printed as found.
+fn ratchet_checks(w: Inspector<'_>, path: &Path) -> Result<(RunCounters, Vec<String>), String> {
+    let counters = counters(w);
+    let as_real: Vec<(&str, f64)> = counters.iter().map(|(n, v)| (*n, real(*v))).collect();
+    let failures = check_ratchets(path, &as_real, None)?;
+    for f in &failures {
+        println!("ratchet: {f}");
+    }
+    Ok((counters, failures))
 }
 
 /// The report written where the run was told, its directory made first.

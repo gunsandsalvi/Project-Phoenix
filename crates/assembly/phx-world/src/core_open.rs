@@ -186,6 +186,7 @@ impl Core {
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),
             work: crate::core_day::Work::default(),
+            counts: crate::core::RunCounts::default(),
             days: Vec::new(),
             hazards: Vec::new(),
             household_decl: Some(household.clone()),

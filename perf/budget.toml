@@ -99,6 +99,48 @@ counter = "fin.kept.mb"
 value = 396
 direction = "down"
 
+# The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
+# unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
+# allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
+# and 8 144 226 spin rounds a day, and a 4 MiB baseline. The counts stand a tenth above the measure, the spin, which
+# follows the machine's timing, a quarter. Spin is counted in rounds: its time is not read round by round. Rows visited
+# a day are counted by K-14's sweep ledger, and join at S1.171.
+
+[[ratchet]]
+counter = "phx_budget.unit_cost_per_firm_day"
+value = 3.08
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.meeting_work_per_sale"
+value = 3.68
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.allocs_per_day"
+value = 2579958
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.spans_below_busy"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.barriers_per_day"
+value = 397
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.spin_rounds_per_day"
+value = 10180282
+direction = "down"
+
+[[ratchet]]
+counter = "phx_budget.baseline_mb"
+value = 4.4
+direction = "down"
+
 # ---- [fin]: seeded from perf/design.toml by `phx fin --seed-budget`; edited only by it ----
 
 [[ratchet]]

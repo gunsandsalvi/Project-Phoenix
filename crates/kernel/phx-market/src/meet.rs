@@ -65,6 +65,9 @@ pub struct Sale {
 pub struct Meeting {
     pub unserved: Vec<(PartyKey, Want)>,
     pub rounds: u64,
+    /// The sellers' weights the meeting reckoned, a measure of its work beside its sales; never read by the world.
+    #[saved(skip, rebuild = Meeting::uncounted)]
+    pub weighed: u64,
     #[saved(skip)]
     sales: Vec<Vec<Sale>>,
     #[saved(skip)]
@@ -80,6 +83,11 @@ pub struct Meeting {
 }
 
 impl Meeting {
+    /// A meeting read back counts nothing yet.
+    fn uncounted(&mut self) {
+        self.weighed = 0;
+    }
+
     /// The sales, chunk by chunk of stalls.
     pub fn sales(&self) -> impl Iterator<Item = &Sale> {
         self.sales.iter().flatten()
@@ -210,6 +218,7 @@ pub fn meet(
     let jobs_n = stalls.len().div_ceil(STALL_CHUNK);
     out.unserved.clear();
     out.rounds = 0;
+    out.weighed = 0;
     out.sales.resize_with(jobs_n, Vec::new);
     out.again.resize_with(jobs_n, Vec::new);
     for v in &mut out.sales {
@@ -255,7 +264,7 @@ pub fn meet(
         // A round whose buyers fit one job runs on the calling thread: a dispatch would outweigh it.
         let pool = if out.choosing.len() > CHOICE_CHUNK { pool } else { None };
         let open = (out.left.as_slice(), out.log_prices.as_slice());
-        remake(pool, (places, &orders), (open, weights), &out.choosing, (&mut tables, &mut stale));
+        out.weighed += remake(pool, (places, &orders), (open, weights), &out.choosing, (&mut tables, &mut stale));
         let jobs: Vec<&mut [Choosing]> = out.choosing.chunks_mut(CHOICE_CHUNK).collect();
         phx_exec::pool::each(pool, jobs, |chunk| choose(chunk, &tables, (tastes, lot, round)));
         for c in out.choosing.iter().filter(|c| c.stall.is_none()) {
@@ -364,7 +373,7 @@ fn remake(
     (open, w): ((&[i64], &[Option<f64>]), Weights),
     choosing: &[Choosing],
     (tables, stale): (&mut [Option<Table>], &mut [bool]),
-) {
+) -> u64 {
     let mut wanted = vec![false; places.len()];
     for c in choosing {
         if let Some(x) = wanted.get_mut(to_usize(c.place)) {
@@ -398,6 +407,9 @@ fn remake(
             t.alias = Some(AliasTable::new(&t.weights));
         }
     });
+    // The weights reckoned are those of the places made again this round.
+    let made = tables.iter().zip(&todo).filter(|(_, t)| **t).filter_map(|(slot, _)| slot.as_ref());
+    made.map(|t| len_u64(t.weights.len())).sum()
 }
 
 /// A place's table of its open sellers this round, or none if none is open: their weights in the place's order, and

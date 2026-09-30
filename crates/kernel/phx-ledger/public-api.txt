@@ -260,4 +260,4 @@ pub fn phx_ledger::opening::employed(&phx_core::contribution::OpeningCountry) ->
 pub fn phx_ledger::opening::mean_wage(&phx_core::contribution::OpeningCountry) -> f64  // used by: phx-world, sys-lab, sys-soc
 pub fn phx_ledger::opening::monthly(phx_id::day::Date, phx_id::ids::CountryId) -> phx_core::calendar::period::ScheduleDates  // used by: if-state, phx-world, sys-lab, sys-soc
 pub fn phx_ledger::opening::plain_terms(phx_num::money::Ccy, alloc::vec::Vec<phx_ledger::algebra::Leg>, phx_ledger::algebra::Schedule) -> phx_ledger::algebra::Terms  // used by: phx-world
-pub fn phx_ledger::opening::whole(f64) -> i64  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-store, phx-world, sys-bnk, sys-dem, sys-frt, sys-hh, sys-lab, sys-soc, sys-sta
+pub fn phx_ledger::opening::whole(f64) -> i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-market, phx-store, phx-world, sys-bnk, sys-dem, sys-frt, sys-hh, sys-lab, sys-soc, sys-sta

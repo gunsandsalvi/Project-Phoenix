@@ -105,14 +105,14 @@ pub fn phx_exec::pool::Pool::workers(&self) -> usize  // used by: phx-cli, phx-f
 impl core::fmt::Debug for phx_exec::pool::Pool
 pub fn phx_exec::pool::Pool::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-id, phx-ledger, phx-store, phx-val, phx-world
 pub struct phx_exec::pool::PoolError(pub alloc::string::String)
-pub struct phx_exec::pool::PoolUsage
+pub struct phx_exec::pool::PoolUsage  // used by: phx-cli
 pub phx_exec::pool::PoolUsage::chunks: u64  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store
-pub phx_exec::pool::PoolUsage::dispatches: u64  // used by: phx-fin
+pub phx_exec::pool::PoolUsage::dispatches: u64  // used by: phx-cli, phx-fin
 pub phx_exec::pool::PoolUsage::spun: u64  // used by: phx-cli
 pub fn phx_exec::pool::counted_chunk(impl core::ops::function::FnOnce())  // used by: phx-fin
 pub fn phx_exec::pool::each<I: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, impl core::iter::traits::collect::IntoIterator<Item = I>, impl core::ops::function::Fn(I) + core::marker::Sync)  // used by: phx-core, phx-ledger, phx-market
 pub fn phx_exec::pool::map<T: core::marker::Send>(core::option::Option<&phx_exec::pool::Pool>, usize, impl core::ops::function::Fn(usize) -> T + core::marker::Sync) -> alloc::vec::Vec<T>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
-pub fn phx_exec::pool::usage() -> phx_exec::pool::PoolUsage  // used by: phx-check
+pub fn phx_exec::pool::usage() -> phx_exec::pool::PoolUsage  // used by: phx-check, phx-cli
 pub mod phx_exec::probe  // used by: phx-cli
 pub struct phx_exec::probe::Baseline
 pub phx_exec::probe::Baseline::gather: core::option::Option<phx_exec::probe::GatherRate>  // used by: phx-cli, phx-fin, phx-world
@@ -174,7 +174,7 @@ pub fn phx_exec::spec::PoolSpec::workers(&self) -> usize  // used by: phx-cli, p
 pub fn phx_exec::spec::read_capacity(usize) -> core::option::Option<u32>
 pub fn phx_exec::spec::select_cores(&[usize], impl core::ops::function::Fn(usize) -> core::option::Option<u32>) -> alloc::vec::Vec<usize>
 pub mod phx_exec::stats  // used by: if-state, phx-cli, phx-store, phx-world, sys-idx, sys-sta
-pub use phx_exec::stats::StoreStats  // used by: phx-core, phx-store
+pub use phx_exec::stats::StoreStats  // used by: phx-cli, phx-core, phx-store
 pub struct phx_exec::stats::Sample  // used by: phx-cli, phx-core
 pub phx_exec::stats::Sample::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub phx_exec::stats::Sample::rows_ever: u64  // used by: phx-core, phx-store
@@ -196,7 +196,7 @@ pub phx_exec::trace::Mark::Begun(&'static str)  // used by: phx-cli
 pub phx_exec::trace::Mark::Ended(&'static str, core::option::Option<u64>, &'a [(&'static str, i64)])  // used by: phx-cli, phx-obs
 pub phx_exec::trace::Mark::Note(&'static str, &'a [(&'static str, i64)])  // used by: phx-cli
 pub struct phx_exec::trace::Reading  // used by: phx-fin, phx-world
-pub phx_exec::trace::Reading::allocated: core::option::Option<(u64, u64)>
+pub phx_exec::trace::Reading::allocated: core::option::Option<(u64, u64)>  // used by: phx-cli
 pub phx_exec::trace::Reading::cpu_ns: core::option::Option<u64>  // used by: phx-cli, phx-fin
 pub phx_exec::trace::Reading::faults: core::option::Option<u64>  // used by: phx-cli, phx-fin
 pub phx_exec::trace::Reading::pool: phx_exec::pool::PoolUsage  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-dem
@@ -213,7 +213,7 @@ pub phx_exec::trace::Spent::items: core::option::Option<u64>  // used by: phx-ch
 pub phx_exec::trace::Spent::spun: core::option::Option<u64>  // used by: phx-cli
 impl phx_exec::trace::Spent
 pub fn phx_exec::trace::Spent::between(core::option::Option<u64>, &phx_exec::trace::Reading, &phx_exec::trace::Reading) -> phx_exec::trace::Spent  // used by: phx-fin, phx-geo, phx-market
-pub fn phx_exec::trace::Spent::counts(&self) -> alloc::vec::Vec<(&'static str, i64)>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-obs, phx-rand, sys-dem
+pub fn phx_exec::trace::Spent::counts(&self) -> alloc::vec::Vec<(&'static str, i64)>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-obs, phx-rand, phx-world, sys-dem
 pub trait phx_exec::trace::Tracer: phx_exec::clock::Clock  // used by: phx-cli
 pub fn phx_exec::trace::Tracer::mark(&self, phx_exec::trace::Mark<'_>, usize)  // used by: phx-cli, phx-core, phx-world
 pub fn phx_exec::trace::count(usize) -> i64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax

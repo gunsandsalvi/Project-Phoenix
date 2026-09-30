@@ -103,7 +103,7 @@ pub mod phx_store::backing  // used by: phx-core, phx-pop
 pub struct phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-pop, phx-world
 impl phx_store::backing::AddressSpace
 pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace  // used by: phx-exec, phx-world
-pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)  // used by: phx-check, phx-cli, phx-core, phx-obs, phx-world, sys-sta
+pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-sta
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B  // used by: phx-exec, phx-pop, phx-rand
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
 pub struct phx_store::backing::HeapBacking<const PAGE: usize>
@@ -251,7 +251,7 @@ pub phx_store::descriptor::Transform::DeltaZigzag
 pub phx_store::descriptor::Transform::Plain  // used by: phx-core, phx-ledger, phx-world
 pub phx_store::descriptor::Transform::Zigzag
 impl phx_store::descriptor::Transform
-pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-core, phx-exec, phx-val
+pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-cli, phx-core, phx-exec, phx-val
 pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
 pub struct phx_store::descriptor::ColumnDescriptor  // used by: phx-exec
 pub phx_store::descriptor::ColumnDescriptor::elem_bytes: u16  // used by: phx-exec
@@ -332,7 +332,7 @@ pub struct phx_store::hash::Sip128  // used by: phx-cli
 impl phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
-pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-world
+pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
 pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-obs, phx-world
 pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
@@ -698,7 +698,7 @@ pub fn phx_store::save::hash_saved<T: phx_store::save::Saved>(&T, &mut phx_store
 pub fn phx_store::save::narrow<T: core::convert::TryFrom<usize>>(usize, &str) -> core::result::Result<T, phx_store::save::LoadError>  // used by: sys-tec
 pub type phx_store::save::Frames<'a> = &'a dyn core::ops::function::Fn(&[alloc::vec::Vec<u8>]) -> alloc::vec::Vec<core::io::error::Result<alloc::vec::Vec<u8>>>
 pub mod phx_store::stats  // used by: if-state, phx-cli, phx-exec, phx-world, sys-idx, sys-sta
-pub trait phx_store::stats::StoreStats  // used by: phx-core, phx-exec
+pub trait phx_store::stats::StoreStats  // used by: phx-cli, phx-core, phx-exec
 pub fn phx_store::stats::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::stats::StoreStats::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
 pub fn phx_store::stats::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec
@@ -796,12 +796,12 @@ pub phx_store::Transform::DeltaZigzag
 pub phx_store::Transform::Plain  // used by: phx-core, phx-ledger, phx-world
 pub phx_store::Transform::Zigzag
 impl phx_store::descriptor::Transform
-pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-core, phx-exec, phx-val
+pub fn phx_store::descriptor::Transform::delta(self) -> bool  // used by: phx-cli, phx-core, phx-exec, phx-val
 pub fn phx_store::descriptor::Transform::zigzag(self) -> bool
 pub struct phx_store::AddressSpace  // used by: phx-core, phx-exec, phx-pop, phx-world
 impl phx_store::backing::AddressSpace
 pub fn phx_store::backing::AddressSpace::empty() -> phx_store::backing::AddressSpace  // used by: phx-exec, phx-world
-pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)  // used by: phx-check, phx-cli, phx-core, phx-obs, phx-world, sys-sta
+pub fn phx_store::backing::AddressSpace::join(&mut self, &phx_store::backing::AddressSpace)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-sta
 pub fn phx_store::backing::AddressSpace::reserve<B: phx_store::backing::Backing>(&mut self, usize) -> B  // used by: phx-exec, phx-pop, phx-rand
 pub fn phx_store::backing::AddressSpace::reserved(&self) -> usize
 #[repr(C)] pub struct phx_store::BlockBag
@@ -1027,7 +1027,7 @@ pub struct phx_store::Sip128  // used by: phx-cli
 impl phx_store::hash::Sip128
 pub fn phx_store::hash::Sip128::finish(self) -> u128  // used by: phx-cli, phx-core, phx-world
 pub fn phx_store::hash::Sip128::new([u64; 2]) -> phx_store::hash::Sip128  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
-pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-world
+pub fn phx_store::hash::Sip128::write(&mut self, &[u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-world
 pub struct phx_store::SlotAlloc<B: phx_store::backing::Backing>
 impl<B: phx_store::backing::Backing> phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::alloc(&mut self) -> phx_id::ids::Slot
@@ -1354,7 +1354,7 @@ impl<const N: usize> phx_store::save::Saved for [usize; N]
 pub fn [usize; N]::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<[usize; N], phx_store::save::LoadError>
 pub fn [usize; N]::rebuild_skipped(&mut self)
 pub fn [usize; N]::save(&self, &mut phx_store::save::Writer<'_>)
-pub trait phx_store::StoreStats  // used by: phx-core, phx-exec
+pub trait phx_store::StoreStats  // used by: phx-cli, phx-core, phx-exec
 pub fn phx_store::StoreStats::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub fn phx_store::StoreStats::rows_ever(&self) -> u64  // used by: phx-core, phx-exec
 pub fn phx_store::StoreStats::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec

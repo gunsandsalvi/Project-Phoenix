@@ -92,7 +92,7 @@ pub struct phx_val::outlook::VarId(_)
 impl phx_val::outlook::VarId
 pub const fn phx_val::outlook::VarId::get(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub const fn phx_val::outlook::VarId::new(u32) -> phx_val::outlook::VarId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
-pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>  // used by: phx-check, phx-core, phx-ledger, phx-num, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
+pub fn phx_val::outlook::fixed(f64) -> phx_num::fixed::Fixed<6>  // used by: phx-check, phx-core, phx-fin, phx-ledger, phx-num, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
 pub mod phx_val::prims  // used by: phx-cli, phx-core, phx-geo, phx-market, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
 pub struct phx_val::prims::ValPrims  // used by: phx-world
 pub phx_val::prims::ValPrims::adaptive_gain: phx_core::register::Prim<phx_core::register::values::Distribution>

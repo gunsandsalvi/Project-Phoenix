@@ -11,6 +11,14 @@ use phx_store::{AddressSpace, SystemBacking};
 
 use phx_core::store::KindStore;
 
+/// The day's work counted for the budget: unit costs reckoned, and the meetings' weights reckoned and sales made.
+#[derive(Debug, Default)]
+pub struct RunCounts {
+    pub unit_costs: phx_exec::Tally,
+    pub weighed: phx_exec::Tally,
+    pub sales: phx_exec::Tally,
+}
+
 /// Each kind's parties on the core, the persons of the kind that holds them, and every party's key by its identity,
 /// sorted.
 #[derive(Debug, phx_macros::Saved)]
@@ -30,6 +38,9 @@ pub struct Core {
     pub families: Vec<crate::core_day::DatedFamily>,
     #[saved(skip)]
     pub work: crate::core_day::Work,
+    /// What the run counts of the day's work for the budget: never saved, never read by the world.
+    #[saved(skip, rebuild = Core::uncounted)]
+    pub counts: RunCounts,
     pub days: Vec<crate::core_day::CoreDay>,
     pub hazards: Vec<crate::core_pop::Hazard>,
     #[saved(skip)]
@@ -135,6 +146,11 @@ pub struct Apportioned {
 }
 
 impl Core {
+    /// A core read back has counted nothing of the run yet.
+    fn uncounted(&mut self) {
+        self.counts = RunCounts::default();
+    }
+
     /// The build's declarations a core read back from a save holds by reference, bound again as its opening bound
     /// them: they are code, which a save never holds.
     pub(crate) fn rebind(

@@ -112,9 +112,10 @@ pub phx_market::meet::GoodsLeg::used: bool  // used by: phx-check, phx-core, phx
 pub struct phx_market::meet::Meeting  // used by: phx-core, phx-fin, phx-world
 pub phx_market::meet::Meeting::rounds: u64  // used by: phx-core, phx-exec, phx-store, phx-world
 pub phx_market::meet::Meeting::unserved: alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>  // used by: phx-fin
+pub phx_market::meet::Meeting::weighed: u64  // used by: phx-cli, phx-world
 impl phx_market::meet::Meeting
 pub fn phx_market::meet::Meeting::sales(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_market::meet::Sale>  // used by: phx-cli, phx-fin, phx-world, sys-frm
-impl phx_store::save::Saved for phx_market::meet::Meeting where alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<alloc::vec::Vec<phx_market::meet::Sale>>: core::default::Default, alloc::vec::Vec<Choosing>: core::default::Default, alloc::vec::Vec<alloc::vec::Vec<Choosing>>: core::default::Default, phx_exec::partition::Partitioned<Choosing>: core::default::Default, alloc::vec::Vec<i64>: core::default::Default, alloc::vec::Vec<core::option::Option<f64>>: core::default::Default
+impl phx_store::save::Saved for phx_market::meet::Meeting where alloc::vec::Vec<(phx_id::ids::PartyKey, phx_market::retail::Want)>: phx_store::save::Saved, u64: phx_store::save::Saved + core::default::Default, alloc::vec::Vec<alloc::vec::Vec<phx_market::meet::Sale>>: core::default::Default, alloc::vec::Vec<Choosing>: core::default::Default, alloc::vec::Vec<alloc::vec::Vec<Choosing>>: core::default::Default, phx_exec::partition::Partitioned<Choosing>: core::default::Default, alloc::vec::Vec<i64>: core::default::Default, alloc::vec::Vec<core::option::Option<f64>>: core::default::Default
 pub fn phx_market::meet::Meeting::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world
 pub fn phx_market::meet::Meeting::rebuild_skipped(&mut self)  // used by: phx-macros, phx-store, phx-world
 pub fn phx_market::meet::Meeting::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-ledger, phx-macros, phx-store, phx-world

@@ -775,6 +775,7 @@ impl Core {
     /// uses of itself; its stock's cost, which mixes units it bought at others' prices, is not its cost of making.
     /// None known while its staff make nothing, or an input it uses is neither held nor sold in its region.
     pub(crate) fn unit_cost(&self, f: &Firm) -> Option<f64> {
+        self.counts.unit_costs.add(1);
         self.cost_at(f, &|q| self.average_cost(f.key, q, f.region).or_else(|| self.goods.cheapest.get(q, f.region)))
     }
 
@@ -1785,6 +1786,8 @@ impl Core {
                 meet(&mut meeting, ctx.pool, (&plain, &places, buyers), (lot, ctx.weights), tastes, &lots);
             });
             let made: Vec<Sale> = meeting.sales().copied().collect();
+            self.counts.weighed.add(meeting.weighed);
+            self.counts.sales.add(u64::try_from(made.len()).unwrap_or(u64::MAX));
             self.goods.meeting = meeting;
             let by_seller: BTreeMap<PartyKey, usize> =
                 stalls.iter().enumerate().map(|(i, x)| (x.0.seller, i)).collect();

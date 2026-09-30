@@ -41,6 +41,11 @@ impl Tracer for Printer {
 }
 
 impl Printer {
+    /// Spans of many items that kept fewer cores busy than such a pass should.
+    pub fn below_busy(&self) -> Option<u64> {
+        self.spans.lock().ok().map(|s| s.below_busy)
+    }
+
     /// Every span's totals so far, by name.
     pub fn spans(&self) -> serde_json::Value {
         self.spans.lock().map_or(serde_json::Value::Null, |s| s.report())
@@ -86,15 +91,28 @@ impl SpanTotals {
     }
 }
 
-/// Every span's totals by name.
+/// Every span's totals by name, and how many spans of many items ran on too few cores.
 #[derive(Debug, Default)]
 pub struct Spans {
     by_name: BTreeMap<&'static str, SpanTotals>,
+    below_busy: u64,
 }
+
+/// A span this many items long should keep this many cores busy: a pass that large is the pool's to share.
+const MANY_ITEMS: i64 = 65_536;
+const BUSY_CORES: f64 = 2.5;
 
 impl Spans {
     pub fn add(&mut self, name: &'static str, ns: Option<u64>, counts: &[(&'static str, i64)]) {
         self.by_name.entry(name).or_default().add(ns, counts);
+        let read = |key: &str| counts.iter().find(|(k, _)| *k == key).map(|(_, v)| *v);
+        if let (Some(items), Some(cpu), Some(wall)) = (read("items"), read("cpu_ns"), ns)
+            && items >= MANY_ITEMS
+            && let (Ok(cpu), Ok(wall)) = (cpu.to_string().parse::<f64>(), wall.to_string().parse::<f64>())
+            && cpu < BUSY_CORES * wall
+        {
+            self.below_busy += 1;
+        }
     }
 
     /// The report's `spans`: each name's count, wall and CPU in ms, items and ns an item, faults, allocations,
