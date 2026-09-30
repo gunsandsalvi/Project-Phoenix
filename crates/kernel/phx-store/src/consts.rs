@@ -112,3 +112,18 @@ pub const INDEX_NEW_SHARE: u32 = 16;
 
 /// The floors a ring's owner may set on its horizon over a run: one a change of the policy that sets it.
 pub const RING_FLOORS: u32 = 64;
+
+/// The interner's hash key: fixed, so an interner's index depends on its values alone.
+pub const INTERN_KEY: [u64; 2] = [0x5048_5820_494e_5445, 0x524e_4552_204b_4559];
+
+/// An interned id's slot bits; its generation takes the rest of its word.
+pub const INTERN_SLOT_BITS: u32 = 24;
+
+/// An interner's index is kept at most two-thirds full: its cells are three for every two ids it may hold.
+pub const INTERN_CELLS_PER_IDS: (u32, u32) = (3, 2);
+
+/// An interner's values are compacted at a close once their dead bytes pass an eighth of the bytes in use.
+pub const INTERN_DEAD_SHARE: usize = 8;
+
+/// Values an interner looks up together, each phase of their lookups read across the group so the reads overlap.
+pub const INTERN_GROUP: usize = 16;

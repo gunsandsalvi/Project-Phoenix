@@ -283,6 +283,25 @@ counter = "fin.ring.range_ns"
 value = 2.8
 direction = "down"
 
+# The interner (S1.168, 2026-10-01; `tools/bench.sh -F terms`): the design point's 640 000 terms shapes of 8–16 bytes,
+# each day's interns staged and interned a group at a time, one in sixteen new and the rest drawn uniformly over every
+# shape held, then as many holds released and the close. An intern reads 183–226 ns: the store's one hasher, Sip128,
+# is 36 ns a value alone, and a shape drawn uniformly among 640 000 is a read of its cell, its row and its value from
+# memory, which grouping overlaps but cannot remove; the ratchet stands a quarter above (the step's 46 counts a hit on a
+# cached shape). An id holds 50.8 bytes at the design point: a 16-byte row, 12 bytes of index at two-thirds full (its
+# capacity the shapes and every measured day's new ones), 12 bytes of value, and its slot's and list's words (the
+# step's 48 counts 2 bytes of value).
+
+[[ratchet]]
+counter = "fin.terms.intern_ns"
+value = 250
+direction = "down"
+
+[[ratchet]]
+counter = "fin.terms.bytes_per_id"
+value = 51
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
@@ -369,7 +388,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.mem.bytes_per_person"
-value = 689.596
+value = 688.704
 direction = "down"
 
 [[ratchet]]
@@ -419,7 +438,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.mem.terms_mb"
-value = 33.1
+value = 28.0
 direction = "down"
 
 [[ratchet]]

@@ -35,6 +35,7 @@ impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
+impl phx_store::pod::__seal::Sealed for phx_store::intern::InternId
 impl phx_store::pod::__seal::Sealed for phx_store::sumtree::TreeHeader
 impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
@@ -231,6 +232,11 @@ pub const phx_store::consts::HEAP_PAGE: usize
 pub const phx_store::consts::INDEX_BLOCKS_PER_ENTRIES: (u32, u32)
 pub const phx_store::consts::INDEX_NEW_KEYS: u32
 pub const phx_store::consts::INDEX_NEW_SHARE: u32
+pub const phx_store::consts::INTERN_CELLS_PER_IDS: (u32, u32)
+pub const phx_store::consts::INTERN_DEAD_SHARE: usize
+pub const phx_store::consts::INTERN_GROUP: usize
+pub const phx_store::consts::INTERN_KEY: [u64; 2]
+pub const phx_store::consts::INTERN_SLOT_BITS: u32
 pub const phx_store::consts::RING_FLOORS: u32
 pub const phx_store::consts::SAVE_FRAME_BYTES: usize  // used by: phx-fin
 pub const phx_store::consts::SAVE_FRAME_WAVE: usize
@@ -367,19 +373,19 @@ pub fn phx_store::edges::EdgeTable<R, B>::load(&mut phx_store::save::Reader<'_>)
 pub fn phx_store::edges::EdgeTable<R, B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core
 pub fn phx_store::edges::EdgeTable<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core
 #[repr(C)] pub struct phx_store::edges::Pair
-pub phx_store::edges::Pair::ends: [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub phx_store::edges::Pair::ends: [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 impl phx_store::edges::Row for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::pod::Pod for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
 pub const phx_store::edges::NONE: u32  // used by: phx-core, phx-world
 pub trait phx_store::edges::Row: phx_store::pod::Pod  // used by: phx-core, phx-fin, phx-world
-pub fn phx_store::edges::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub fn phx_store::edges::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::edges::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::edges::Row for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 pub mod phx_store::encode
 pub enum phx_store::encode::DecodeError
@@ -553,6 +559,45 @@ pub phx_store::index_decl::IndexDecl::name: &'static str  // used by: if-pop, ph
 pub phx_store::index_decl::IndexDecl::predicate: phx_num::missing::Missing<&'static str>  // used by: phx-fin
 impl phx_store::index_decl::IndexDecl
 pub fn phx_store::index_decl::IndexDecl::check(&self) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-val, phx-world
+pub mod phx_store::intern  // used by: phx-fin, sys-tec
+pub enum phx_store::intern::Reuse  // used by: phx-fin
+pub phx_store::intern::Reuse::AfterClose  // used by: phx-fin
+pub phx_store::intern::Reuse::Never  // used by: phx-core, phx-pop, phx-world
+#[repr(C)] pub struct phx_store::intern::InternId(_)
+impl phx_store::intern::InternId
+pub fn phx_store::intern::InternId::generation(self) -> u8  // used by: phx-id
+pub fn phx_store::intern::InternId::slot(self) -> phx_id::ids::Slot  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-soc
+pub fn phx_store::intern::InternId::word(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-world
+impl phx_store::pod::Pod for phx_store::intern::InternId
+pub fn phx_store::intern::InternId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
+impl phx_store::pod::__seal::Sealed for phx_store::intern::InternId
+pub struct phx_store::intern::Interner<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::close_day(&mut self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::count(&self, phx_store::intern::InternId) -> phx_num::missing::Missing<u32>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::find(&self, &[u8]) -> phx_num::missing::Missing<phx_store::intern::InternId>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::find_many(&self, (&[u8], &[u32]), &mut [phx_num::missing::Missing<phx_store::intern::InternId>])  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::get(&self, phx_store::intern::InternId) -> phx_num::missing::Missing<&[u8]>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::hold(&mut self, phx_store::intern::InternId)  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::intern(&mut self, &[u8]) -> phx_store::intern::InternId  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::intern_many(&mut self, (&[u8], &[u32]), &mut [phx_num::missing::Missing<phx_store::intern::InternId>])  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::is_retired(&self, phx_store::intern::InternId) -> bool  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::live(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::new(&mut phx_store::backing::AddressSpace, (u32, usize), phx_store::intern::Reuse) -> core::result::Result<phx_store::intern::Interner<B>, alloc::string::String>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::release(&mut self, phx_store::intern::InternId)  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::reuse(&self) -> phx_store::intern::Reuse  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::value_bytes(&self) -> usize  // used by: phx-fin
+impl<B: phx_store::backing::Backing> core::cmp::PartialEq for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::eq(&self, &phx_store::intern::Interner<B>) -> bool  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world
 pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
@@ -612,6 +657,7 @@ impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockBag
 impl phx_store::pod::__seal::Sealed for phx_store::block_list::BlockList
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
+impl phx_store::pod::__seal::Sealed for phx_store::intern::InternId
 impl phx_store::pod::__seal::Sealed for phx_store::sumtree::TreeHeader
 impl phx_store::pod::__seal::Sealed for u16
 impl phx_store::pod::__seal::Sealed for u32
@@ -690,6 +736,8 @@ impl phx_store::pod::Pod for phx_store::block_list::BlockList
 pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
+impl phx_store::pod::Pod for phx_store::intern::InternId
+pub fn phx_store::intern::InternId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::sumtree::TreeHeader
 pub fn phx_store::sumtree::TreeHeader::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u16
@@ -897,6 +945,10 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
 pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
@@ -1011,6 +1063,10 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 pub fn phx_store::index::Index<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
@@ -1161,6 +1217,9 @@ impl phx_store::index_decl::Mode
 pub fn phx_store::index_decl::Mode::counts(self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-obs, phx-rand, phx-world, sys-dem
 pub fn phx_store::index_decl::Mode::lists(self) -> bool  // used by: phx-check, phx-fin, phx-pop
 pub fn phx_store::index_decl::Mode::weighs(self) -> bool  // used by: phx-fin
+pub enum phx_store::Reuse  // used by: phx-fin
+pub phx_store::Reuse::AfterClose  // used by: phx-fin
+pub phx_store::Reuse::Never  // used by: phx-core, phx-pop, phx-world
 pub enum phx_store::Size  // used by: phx-fin
 pub phx_store::Size::Bytes(u64)  // used by: phx-fin
 pub phx_store::Size::Rest  // used by: phx-fin
@@ -1481,6 +1540,41 @@ pub phx_store::IndexDecl::name: &'static str  // used by: if-pop, phx-check, phx
 pub phx_store::IndexDecl::predicate: phx_num::missing::Missing<&'static str>  // used by: phx-fin
 impl phx_store::index_decl::IndexDecl
 pub fn phx_store::index_decl::IndexDecl::check(&self) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-val, phx-world
+#[repr(C)] pub struct phx_store::InternId(_)
+impl phx_store::intern::InternId
+pub fn phx_store::intern::InternId::generation(self) -> u8  // used by: phx-id
+pub fn phx_store::intern::InternId::slot(self) -> phx_id::ids::Slot  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-world, sys-soc
+pub fn phx_store::intern::InternId::word(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-world
+impl phx_store::pod::Pod for phx_store::intern::InternId
+pub fn phx_store::intern::InternId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
+impl phx_store::pod::__seal::Sealed for phx_store::intern::InternId
+pub struct phx_store::Interner<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::bytes_committed(&self) -> usize  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::close_day(&mut self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::count(&self, phx_store::intern::InternId) -> phx_num::missing::Missing<u32>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::find(&self, &[u8]) -> phx_num::missing::Missing<phx_store::intern::InternId>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::find_many(&self, (&[u8], &[u32]), &mut [phx_num::missing::Missing<phx_store::intern::InternId>])  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::get(&self, phx_store::intern::InternId) -> phx_num::missing::Missing<&[u8]>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::hold(&mut self, phx_store::intern::InternId)  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::intern(&mut self, &[u8]) -> phx_store::intern::InternId  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::intern_many(&mut self, (&[u8], &[u32]), &mut [phx_num::missing::Missing<phx_store::intern::InternId>])  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::is_retired(&self, phx_store::intern::InternId) -> bool  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::live(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::new(&mut phx_store::backing::AddressSpace, (u32, usize), phx_store::intern::Reuse) -> core::result::Result<phx_store::intern::Interner<B>, alloc::string::String>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::release(&mut self, phx_store::intern::InternId)  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::reuse(&self) -> phx_store::intern::Reuse  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::value_bytes(&self) -> usize  // used by: phx-fin
+impl<B: phx_store::backing::Backing> core::cmp::PartialEq for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::eq(&self, &phx_store::intern::Interner<B>) -> bool  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_store::Life  // used by: phx-fin
 pub phx_store::Life::fill: u16  // used by: phx-core, phx-fin, phx-geo, phx-rand, phx-world, sys-frm, sys-lab
 pub phx_store::Life::release: u16  // used by: phx-fin
@@ -1518,9 +1612,9 @@ pub fn phx_store::backing::MmapBacking::page(&self) -> usize  // used by: phx-ex
 pub fn phx_store::backing::MmapBacking::reserve(usize) -> phx_store::backing::MmapBacking  // used by: phx-exec, phx-pop, phx-rand
 pub fn phx_store::backing::MmapBacking::reserved(&self) -> usize
 #[repr(C)] pub struct phx_store::Pair
-pub phx_store::Pair::ends: [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub phx_store::Pair::ends: [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 impl phx_store::edges::Row for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::pod::Pod for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
@@ -1788,6 +1882,8 @@ impl phx_store::pod::Pod for phx_store::block_list::BlockList
 pub fn phx_store::block_list::BlockList::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
+impl phx_store::pod::Pod for phx_store::intern::InternId
+pub fn phx_store::intern::InternId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_store::sumtree::TreeHeader
 pub fn phx_store::sumtree::TreeHeader::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for u16
@@ -1813,10 +1909,10 @@ pub fn u64::rows(self) -> core::result::Result<u64, alloc::string::String>  // u
 pub trait phx_store::Recheck
 pub const phx_store::Recheck::DAYS: u8  // used by: phx-fin
 pub trait phx_store::Row: phx_store::pod::Pod  // used by: phx-core, phx-fin, phx-world
-pub fn phx_store::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub fn phx_store::Row::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::Row::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 impl phx_store::edges::Row for phx_store::edges::Pair
-pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-world
+pub fn phx_store::edges::Pair::ends(&self) -> [phx_id::ids::PartyKey; 2]  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
 pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey)  // used by: phx-world
 pub trait phx_store::Saved: core::marker::Sized  // used by: phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-world
 pub fn phx_store::Saved::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-world
@@ -1906,6 +2002,10 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena
 pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
 pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
 pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
 pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
@@ -2014,6 +2114,10 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::index::Index<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 pub fn phx_store::index::Index<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
 pub fn phx_store::index::Index<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-macros
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::intern::Interner<B>
+pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
 pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
 pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin

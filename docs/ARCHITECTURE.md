@@ -1011,7 +1011,7 @@ shrinks.
 
 ### 7.1 phx-store
 
-Status: K-02, K-03, K-05–K-08 and K-10 built (S1.159–S1.167); the rest planned (S1.168)
+Status: K-02, K-03 and K-05–K-10 built (S1.159–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
 counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
@@ -1388,8 +1388,59 @@ migration, the history it keeps today: `Core::deaths`, `Taxes::sample`, `Outlook
 
 #### K-09 The interner
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.168).
+Every value many rows share — a contract's terms shape, a way set, a market or route key, an instrument family's terms
+— is stored once and named by a 32-bit id found from the value's bytes; each id counts the rows that hold it and
+retires at zero.
+
+**Layout** (`intern.rs`): values lie end to end in a byte arena; each id has a 16-byte row (its value's offset and
+length, its holders, its slot's generation and its state). The index is open addressing with linear probing over
+8-byte cells (a 32-bit tag of the value's hash and the slot), at most two-thirds full: 12 bytes an id. A tag match is
+confirmed by comparing the value's bytes, so the row keeps no hash, and a retirement or the load's rebuild hashes the
+value again. The hash is `Sip128` under the interner's fixed key (PC-13), so the index depends on the values alone; it is
+probed, never iterated, and its order is never read (CHN.6). A cell's home is the hash's high bits scaled to the cells,
+so the cells need not be a power of two. Its capacity is declared at construction; nothing resizes.
+
+**Ids**: `InternId` is the slot in 24 bits and its generation in 8. Each interner declares its reuse as data:
+`Reuse::AfterClose` (terms shapes, market and route keys) hands a retired slot out again after the close, first in
+first out behind its generation (K-02); `Reuse::Never` (way sets, instrument families' term sets, which records name)
+keeps a retired id's row, marked retired, and releases only its value's bytes. A slot is never reused within the day
+its id retired; ids past 2²⁴, or a generation past its byte, stop the run.
+
+**API**: `intern(bytes)` finds a value and holds it, or stores it and gives it the slot free longest. `find(bytes)`
+answers without holding. `get(id)` reads a value in one row read while the id is held or listed today. `hold` and
+`release` move the count; a release to zero lists the id to retire at the close unless it is held again first.
+`close_day` retires the listed ids still held by none: their cells tombstoned, their bytes dead, their slots freed or
+their rows kept retired. It compacts the values in slot order once their dead bytes pass an eighth. A day's
+tombstones are cleared by laying the index again from the rows before they would carry it past two-thirds full.
+
+**Grouped lookups**: a random hit costs three dependent reads of memory (its cell, its row, its value) and a hash.
+`find_many` and `intern_many` take a stage's values end to end, a group of 16 at a time. Each phase (hashes, first
+cells, the rows they name, the values compared) is read across the group, so the group's reads overlap. A first cell
+that is not the value's is walked in full. `intern_many` applies each group's holds while its rows are near, and stores
+each value not found in order, reusing its hash, so a value staged twice has one id.
+
+**Parallel**: an apply partitioned by owner range finds its range's values read-only (`find_many`) and stages the new
+ones in a day buffer. The stage's end interns every range's values in (range, emission) order, so ids depend only on
+the order of the day's work (E7; `ids_same_for_any_workers`).
+
+**Save and load** (`intern_save.rs`, off the day's paths): rows, values, slots, the ids listed today and the counts
+are saved. The index is left out and laid again at the load by hashing every held value in slot order; the rebuild
+pass records it as `Interner.index` (`rebuild_index_finds_every_value`).
+
+**Volumes and ratchets** (`tools/bench.sh -F terms`): the design point's 640 000 terms shapes of 8–16 bytes, each held
+by one to four contracts; each day's interns (`[day.*] interns`), one in sixteen new and the rest drawn uniformly over
+every shape held, staged and interned a group at a time; as many holds released; then the close. Measured:
+- An intern reads 183–226 ns (`[fin.terms] intern_ns` 250). Sip128 is 36 ns a value alone, and a uniformly drawn shape
+  is read from memory: grouping cut it from 540 ns, but the step's 46 holds only for hits on cached shapes.
+- A get reads 13–31 ns, a release 21–41, and the close 26–34 ns a release.
+- An id holds 50.8 bytes (`bytes_per_id` 51): the row 16, the index 12 at the capacity of the shapes and every
+  measured day's new ones, a value 12, its slot's and list's words the rest.
+- Ledger line 10 holds S1.263's terms at 16-byte rows and 12 bytes of index an id.
+
+**Extension points**: instrument families' and classes' keys (S1.183); route keys (S1.187); a facility's terms id
+(S1.241); the contract store's terms words (S1.257, S1.259); terms shapes (S1.263); ids retired without reuse (S1.279);
+ids issued at runtime with counts and a flags byte (S6.102); interned sets with counts (S6.103). It replaces, in those
+bases' migrations, `sys-tec`'s `WaySets.index: BTreeMap` and the families' per-day new schedules.
 
 #### K-10 The save contract and the world hash
 
