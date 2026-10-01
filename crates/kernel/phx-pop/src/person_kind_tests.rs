@@ -281,7 +281,7 @@ fn save_round_trip_lists() {
 }
 
 #[test]
-fn members_in_joining_order() {
+fn members_newest_first() {
     let mut w = World::new();
     let (a, b) = (w.household(), w.household());
     let ps: Vec<PartyRef> = (0..4).map(|i| w.person(a, 1950 + i)).collect();
@@ -289,6 +289,6 @@ fn members_in_joining_order() {
     w.move_to(ps[0], a);
     let heads = StoreHeads { store: &mut w.households, head: w.head };
     let order: Vec<u32> = w.persons.members(heads.head(a.slot())).map(Slot::get).collect();
-    let joined: Vec<u32> = [ps[1], ps[2], ps[3], ps[0]].iter().map(|p| p.slot().get()).collect();
-    assert_eq!(order, joined, "one who left and came back joins at the end");
+    let newest: Vec<u32> = [ps[0], ps[3], ps[2], ps[1]].iter().map(|p| p.slot().get()).collect();
+    assert_eq!(order, newest, "one who left and came back is the newest");
 }

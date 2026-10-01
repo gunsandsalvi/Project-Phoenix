@@ -335,7 +335,7 @@ impl Core {
         self.bound.kinds.person.map_or(0, |k| self.directory.live(kind_number(k)))
     }
 
-    /// A household's persons, in the order they joined it, each with its word; none for a household of no person.
+    /// A household's persons, the newest first, each with its word; none for a household of no person.
     pub fn members(&self, household: Slot) -> impl Iterator<Item = (PartyRef, PersonWord)> + '_ {
         let (persons, households) = (self.persons.as_ref(), self.households.as_ref());
         let first = households.map_or(phx_num::Missing::Absent, |h| h.head(household));

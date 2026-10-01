@@ -182,7 +182,7 @@ impl Core {
     }
 
     /// A household read into its explicit form in a buffer kept across reads: its own state from its store, its
-    /// persons' words in the order they joined it. A live household its store does not hold stops the run.
+    /// persons' words, the newest first. A live household its store does not hold stops the run.
     #[phx_macros::absent_is_zero(reason = "a buffer before its first household holds no persons")]
     pub(crate) fn read_household<'h>(&self, slot: Slot, buffer: &'h mut Option<Household>) -> &'h mut Household {
         let Some(state) = self.household_state(slot) else {

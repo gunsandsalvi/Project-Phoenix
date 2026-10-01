@@ -2500,7 +2500,7 @@ attribute's initial value, from which the opening and each birth begin a person.
 
 `phx-pop`'s person kind (`person_kind.rs`, and `phx-core`'s `person_word.rs`; PTY.3, PTY.11, REP.25, REP.26) makes every person a
 party of its own kind, with its own reference from the directory (K-31) and its rows on a kind store (K-32); its
-household's persons are threaded through those rows, in the order they joined.
+household's persons are threaded through those rows, the newest first.
 
 **Layout** (`PERSON` in `consts.rs`, 66 B): *core, 32* — its packed word u64 · skills u32 (8 occupation families × 4
 bits, POP.1) · household u32 (its slot) · next in its household u32 · account u32 (K-47; absent for a person banking
@@ -2521,11 +2521,11 @@ attribute the systems declare — sex, health and education (DEM), the labour st
 `birth_year`, `age_on`; `Skills::get(family)`, `with(family, level)` (a ninth family or a level past 15 stops it).
 `PersonKind::new(space, kind, capacity)`; `begin_person(dir, heads, household, (word, init))` begins a person in the
 directory and its kind, writes its rows in full (blank, then `init`'s words and its word) and links it at its
-household's tail, and `begin` does so for a person the directory began; `end_person(dir, heads, r, (day,
+household's head, and `begin` does so for a person the directory began; `end_person(dir, heads, r, (day,
 successor))` unlinks it and ends it in the directory the same day, and `left` unlinks and ends in its kind a person the
-directory ended; `move_person(dir, heads, r, to)` unlinks it, links it at the other household's tail and writes its
+directory ended; `move_person(dir, heads, r, to)` unlinks it, links it at the other household's head and writes its
 household — what it owns names the person, so nothing else moves (REP.26); `members(first)` walks a household's list
-from its first person, in the order its persons joined (a list longer than the persons ever begun stops the run);
+from its first person, the newest first (a list longer than the persons ever begun stops the run);
 `set_word` writes a person's word whole, as an outcome changed it; `view(dir, r)`
 gathers its core row once and `PersonView` reads its word's fields, skills, household, account, chain head, search start
 and goal in place, `view_at(slot)` as the day names it; `set_field`, `set_skill`, `set_search_start` write one word.
@@ -2559,9 +2559,9 @@ list, and the other household's generation, live bit and row, each a memory late
 `PersonKind`. The household's persons-head word is written through `HouseholdStore::heads`. A person's identity, which
 its contracts, draws and records carry, is its reference's word (PTY.1, PTY.10); `Core::person_of` resolves one live,
 `person_word` reads its word where its household still holds it and `write_person` writes it. A household is read for
-its processes as its persons' words in the order they joined (`Core::members`); an outcome's changed words are written
+its processes as its persons' words, the newest first (`Core::members`); an outcome's changed words are written
 back by reference, a person gone ends the same day naming its household as successor, and one born is begun in the
-directory and linked at its household's tail; one household's outcomes read and write on buffers the core keeps across
+directory and linked at its household's head; one household's outcomes read and write on buffers the core keeps across
 households (`OutcomeWork`), so applying them allocates nothing. A process still reads a household as a `Household` of
 `Person` values, each its 8-byte word, which the process interface (`phx-core`'s `PopProcess`) takes. The persons live
 are the person kind's live count; the audit counts the households none is left in. The yearly `refresh_windows` pass

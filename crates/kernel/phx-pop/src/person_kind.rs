@@ -1,7 +1,6 @@
 //! The person kind: every person a party with its own reference and 66 bytes of rows, its household's persons
-//! threaded through them in the order they joined — the household's head word, then each person's next — so a move
-//! between households is an unlink, a link and one word written, and what a person owns names the person, never its
-//! household.
+//! threaded through them — the household's head word, its newest person, then each person's next — so a move between
+//! households is an unlink, a link and one word written, and what a person owns names the person, never its household.
 
 use phx_id::{Day, PartyRef, Slot};
 use phx_macros::clause;
@@ -198,25 +197,12 @@ impl<B: Backing> PersonKind<B> {
         self.link(heads, r.slot(), to.slot());
     }
 
-    /// A person linked at its household's tail, so a household lists its persons in the order they joined it.
+    /// A person linked at its household's head: the household's newest person is its first.
     fn link(&mut self, heads: &mut impl Heads, slot: Slot, household: Slot) {
         let w = self.w();
-        self.store.set_at(slot, w.link, Missing::Absent);
+        self.store.set_at(slot, w.link, heads.head(household));
         self.store.set_at(slot, w.household, Missing::Present(household.get()));
-        let mut last = None;
-        let mut at = heads.head(household);
-        for _ in 0..self.store.rows() {
-            let Missing::Present(s) = at else { break };
-            last = Some(Slot::new(s));
-            at = self.next_of(Slot::new(s));
-        }
-        if let Missing::Present(s) = at {
-            violation!(clause = "PTY.11", "a household's list that returns on itself", slot = s);
-        }
-        match last {
-            Some(l) => self.store.set_at(l, w.link, Missing::Present(slot.get())),
-            None => heads.set_head(household, Missing::Present(slot.get())),
-        }
+        heads.set_head(household, Missing::Present(slot.get()));
     }
 
     /// A person taken from its household's list: the one before it, or the head, pointed past it.
@@ -249,7 +235,7 @@ impl<B: Backing> PersonKind<B> {
         violation!(clause = "PTY.11", "a person missing from its household's list", slot = slot.get())
     }
 
-    /// A household's persons from its first, in the order they joined it.
+    /// A household's persons from its first, the newest first.
     #[must_use]
     pub fn members(&self, first: Missing<u32>) -> Members<'_, B> {
         Members { kind: self, at: first, left: self.store.rows() }

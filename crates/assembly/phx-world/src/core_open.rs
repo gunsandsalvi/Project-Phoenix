@@ -528,7 +528,7 @@ impl Core {
         key
     }
 
-    /// The identities of a household's persons, in the order they joined it.
+    /// The identities of a household's persons, the newest first.
     fn persons_of(&self, household: PartyKey) -> Vec<u64> {
         self.members(household.slot()).map(|(r, _)| r.word()).collect()
     }
