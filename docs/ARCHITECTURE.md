@@ -2346,7 +2346,8 @@ record that may name a party). `Core::begin_party` takes the directory's slot an
 `Core::end_party` ends a party on its day naming the estate it leaves; the day's close closes the directory. Every
 whole-kind walk reads the directory's live slots, and every draw about a party is keyed by its packed reference
 (`Subject::from(PartyRef)`); a person draws under its own tag (`SubjectTag::Person`). No identity table is kept beside
-the reference; the directory is saved with the core. A table of nature's kind is refused (Law 5).
+the reference; the directory is saved with the core. The counters sample the directory, and each kind's rows live
+and ever are the directory's (`Core::store_samples`). A table of nature's kind is refused (Law 5).
 
 #### K-32 Kind stores and windowed groups
 

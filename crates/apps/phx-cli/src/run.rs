@@ -573,7 +573,7 @@ impl StoreSamples {
 
     fn take(&mut self, w: Inspector<'_>) {
         let core = w.core();
-        let stores = core.names.iter().zip(&core.kinds).map(|(n, k)| (*n, phx_exec::stats::Sample::of(k))).collect();
+        let stores = core.store_samples();
         self.taken.push((w.date(w.today()), stores));
     }
 

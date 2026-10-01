@@ -110,9 +110,8 @@ pub fn per(part: Option<u64>, whole: Option<u64>) -> Option<f64> {
 
 /// The firms the core holds now, the party kind its unit costs are reckoned for.
 fn firms(w: Inspector<'_>) -> Option<u64> {
-    use phx_store::StoreStats;
     let core = w.core();
-    core.names.iter().zip(&core.kinds).find(|(n, _)| **n == "firm").map(|(_, k)| k.rows_live())
+    core.names.contains(&"firm").then(|| core.count("firm"))
 }
 
 /// The cost of the days run, from the turns' wall times, the peak resident memory over the world's persons, the

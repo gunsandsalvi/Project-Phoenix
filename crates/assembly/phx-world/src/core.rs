@@ -301,6 +301,19 @@ impl Core {
         self.names.iter().position(|n| *n == name).map_or(0, |i| self.directory.live(kind_number(i)))
     }
 
+    /// Each kind's store as the counters sample it, its live and ever-handed rows the directory's, and the directory
+    /// itself.
+    #[must_use]
+    pub fn store_samples(&self) -> Vec<(&'static str, phx_exec::stats::Sample)> {
+        let kinds = self.names.iter().zip(&self.kinds).enumerate().map(|(place, (name, store))| {
+            let kind = kind_number(place);
+            let (live, ever) = (self.directory.live(kind), u64::from(self.directory.high_water(kind)));
+            let bytes = phx_store::StoreStats::bytes(store);
+            (*name, phx_exec::stats::Sample { rows_live: live, rows_ever: ever, bytes })
+        });
+        kinds.chain([("directory", phx_exec::stats::Sample::of(&self.directory))]).collect()
+    }
+
     /// The persons every household on the core holds.
     #[must_use]
     pub fn persons_held(&self) -> u64 {
