@@ -9,6 +9,7 @@ pub mod kind;
 pub mod kinds;
 mod kinds_save;
 pub mod layout;
+pub mod offices;
 pub mod person_kind;
 pub mod prims;
 mod tombs;

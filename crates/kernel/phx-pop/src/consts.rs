@@ -255,6 +255,15 @@ const PERSON_MIND: GroupDecl = GroupDecl { name: "mind", width: 14, words: &[] }
 /// The person's byte map, 66 bytes.
 pub const PERSON: KindMap = KindMap { kind: "person", groups: &[PERSON_CORE, PERSON_MONEY, PERSON_MIND] };
 
+/// An office's flag: a fill is under way.
+pub const OFFICE_FILLING: u16 = 1;
+/// An office's flag: its holder serves a term.
+pub const OFFICE_TERM_BOUND: u16 = 2;
+/// An office's flag: its holder is the person an appointment contract names, its holder word that contract's link.
+pub const OFFICE_APPOINTED: u16 = 4;
+/// The rows of an office's 16 bytes a chunk of the offices' column commits.
+pub const OFFICE_ROWS_PER_CHUNK: u32 = 1 << 14;
+
 /// Every group of the maps within its width, and each map within a store.
 const _: () = assert!(
     fits(&HOUSEHOLD)

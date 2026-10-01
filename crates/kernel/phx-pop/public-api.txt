@@ -12,6 +12,10 @@ pub const phx_pop::consts::KIND_CHUNK_BYTES: u32
 pub const phx_pop::consts::KIND_GROUPS: usize
 pub const phx_pop::consts::KIND_INDEXES: usize
 pub const phx_pop::consts::LOAN_CLASSES: u16
+pub const phx_pop::consts::OFFICE_APPOINTED: u16
+pub const phx_pop::consts::OFFICE_FILLING: u16
+pub const phx_pop::consts::OFFICE_ROWS_PER_CHUNK: u32
+pub const phx_pop::consts::OFFICE_TERM_BOUND: u16
 pub const phx_pop::consts::PERSON: phx_pop::layout::KindMap
 pub const phx_pop::consts::REGIONED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::consts::SITED: phx_pop::layout::KindMap  // used by: phx-world
@@ -220,6 +224,43 @@ pub const phx_pop::layout::SITED: phx_pop::layout::KindMap  // used by: phx-worl
 pub const fn phx_pop::layout::fits(&phx_pop::layout::KindMap) -> bool  // used by: phx-market, phx-store
 pub const fn phx_pop::layout::used(&phx_pop::layout::GroupDecl) -> u16  // used by: phx-check, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-frm
 pub const fn phx_pop::layout::width(&phx_pop::layout::KindMap) -> u16  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-val, phx-world
+pub mod phx_pop::offices  // used by: phx-core, phx-fin, phx-world
+pub enum phx_pop::offices::Holder  // used by: phx-core, phx-fin, phx-world
+pub phx_pop::offices::Holder::Appointment(phx_id::ids::ContractLink)  // used by: phx-fin
+pub phx_pop::offices::Holder::Owner(phx_id::ids::PartyRef)  // used by: phx-fin, phx-id, phx-num
+pub phx_pop::offices::Holder::Vacant  // used by: phx-fin
+pub struct phx_pop::offices::OfficeRef(_)  // used by: phx-fin
+impl phx_pop::offices::OfficeRef
+pub const fn phx_pop::offices::OfficeRef::at(phx_id::ids::Slot) -> phx_pop::offices::OfficeRef  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
+pub const fn phx_pop::offices::OfficeRef::row(self) -> phx_id::ids::Slot  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-store, phx-world, sys-dem, sys-frm, sys-tec
+#[repr(C)] pub struct phx_pop::offices::OfficeRow
+impl phx_store::pod::Pod for phx_pop::offices::OfficeRow
+pub fn phx_pop::offices::OfficeRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store, phx-world
+impl phx_store::pod::__seal::Sealed for phx_pop::offices::OfficeRow
+pub struct phx_pop::offices::Offices<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_pop::offices::Offices<B>
+pub fn phx_pop::offices::Offices<B>::begin_filling(&mut self, phx_pop::offices::OfficeRef, bool)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::close(&mut self, phx_pop::offices::OfficeRef)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::fill_appointed(&mut self, phx_pop::offices::OfficeRef, phx_id::ids::ContractLink)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::fill_owned(&mut self, phx_pop::offices::OfficeRef, phx_id::ids::PartyRef, phx_id::day::Day)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::flags(&self, phx_pop::offices::OfficeRef) -> (bool, bool)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::grow(&mut self, phx_pop::offices::OfficeRef, u16) -> phx_pop::offices::OfficeRef  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::holder<D: phx_store::backing::Backing>(&self, phx_pop::offices::OfficeRef, &phx_pop::directory::Directory<D>) -> phx_pop::offices::Holder  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::new(&mut phx_store::backing::AddressSpace, u8, u32) -> phx_pop::offices::Offices<B>  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::office(&self, phx_pop::offices::OfficeRef, (u16, u16), phx_id::ids::PartyKey) -> phx_pop::offices::OfficeRef  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::open(&mut self, phx_id::ids::PartyKey, &[u16]) -> phx_num::missing::Missing<phx_pop::offices::OfficeRef>  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::since(&self, phx_pop::offices::OfficeRef) -> phx_num::missing::Missing<phx_id::day::Day>  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::vacate(&mut self, phx_pop::offices::OfficeRef)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::vacate_all(&mut self, impl core::iter::traits::collect::IntoIterator<Item = phx_pop::offices::OfficeRef>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::offices::Offices<B> where phx_store::column::Column<phx_pop::offices::OfficeRow, B>: phx_store::save::Saved, alloc::vec::Vec<(u32, u32)>: phx_store::save::Saved, u8: phx_store::save::Saved
+pub fn phx_pop::offices::Offices<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_pop::offices::Offices<B>
+pub fn phx_pop::offices::Offices<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::offices::founding(phx_num::missing::Missing<u8>, phx_id::ids::PartyKey) -> u8  // used by: phx-world
 pub mod phx_pop::person_kind  // used by: phx-fin
 pub struct phx_pop::person_kind::Members<'a, B: phx_store::backing::Backing>  // used by: phx-core
 impl<B: phx_store::backing::Backing> core::iter::traits::iterator::Iterator for phx_pop::person_kind::Members<'_, B>

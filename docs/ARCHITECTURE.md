@@ -2316,7 +2316,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, every kind on one; K-33's person kind written; S1.208–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, every kind on one; K-33's person kind written and followed; K-34's offices written; S1.210–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2583,10 +2583,40 @@ in place.
 
 #### K-34 Offices
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.209, S1.210).
+`phx-pop`'s `Offices` (`offices.rs`; PTY.16, PTY.17, MND.16) holds every office an institution decides through.
 
-**Today**: the core's `Offices` (§7.16, K-100).
+**Layout**: an office's row, 16 B (`OfficeRow`): its institution's key u32 · its kind u16 (among its legal form's
+declared offices, K-21) · flags u16 (a fill under way, a term-bound holder, held by appointment) · holder u32 — the
+slot of the person who owns and manages the institution, or, with the appointed flag, the link of the appointment
+contract that names the holder (K-53), its holder and start read from the contract — or none while empty · the day an
+owner took it u32 (none for an appointed office, whose start is its contract's). An institution's offices are one
+block of rows in its form's declared order, opened at its founding; the institution's record keeps its first row (a
+firm's `head_office` word), so the office of a kind is the first plus the kind's offset, O(1).
+
+**API**: `open(institution, kinds)` opens a block, each office empty, reusing a freed block of the same length, and
+none for a form with no office; `office(first, (offset, kind), institution)` finds an office, a row of another
+institution or kind stopping the run; `holder(o, dir)` → `Holder::Owner(PartyRef)` (its reference read from its slot's
+generation: a holder's death vacates its offices the same day, so its slot is never another's while it holds one),
+`Appointment(ContractLink)` or `Vacant`; `since`, `flags`; `begin_filling`, `fill_owned(o, person, day)`,
+`fill_appointed(o, contract)`, `vacate(o)` and `vacate_all` write it, nothing else; `grow(first, kind)` adds a line
+head, moving the block whole to new rows (rare); `close(first)` frees it as the institution ends. `founding(types,
+institution)` reads an institution's founding preferences, its record's type index into its country's declared sets
+drawn at founding; an institution with none stops the run (never a default).
+
+**Algorithms and bounds**: an office is one row read; a block's open or close is its rows written; a grow moves one
+block. A person's offices (`offices_of`) are its appointments in its chain (K-53, S1.258) and the institutions it owns
+and manages (K-60, S1.283), read when those bases hold them; until then a death's caller names the offices it vacates.
+
+**Save and load**: the rows raw and the freed blocks; nothing is derived.
+
+**Volumes and ratchets** (`[fin.parties]`): the design point's 2 M offices, 11 in 25 owner-managed: `office_bytes` 16;
+`holder_ns` 4.5 (3.3–3.6 measured, the step's 3); `mb` 1 251.7 with the offices' 32 MB.
+
+**Extension points**: S1.210 (the decision core's holders and founding preferences onto it); S1.343; S1.348;
+S2.192; S3.111; S3.156; S8.104; S8.123–S8.125; S4.102; S4.142; S5.135; S5.136; S5.142; S5.144.
+
+**Today**: the core's decisions keep their holders and founding preferences in the decision core's own tables (§7.16,
+K-100) until S1.210 moves them onto this base.
 
 #### K-35 The per-day party cache
 

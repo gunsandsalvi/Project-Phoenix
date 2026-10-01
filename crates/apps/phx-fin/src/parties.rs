@@ -2,8 +2,9 @@
 //! them as tombstones — with live references resolved, ended ones looked up, a day's parties begun and ended, and a
 //! mass failure's endings closed in one merge; and the households', firms' and institutions' stores at their byte maps,
 //! their hot rows gathered and read by handle and scanned as a surprise day's wakes scan them; the persons on their
-//! kind, threaded through their households, their views read and moves made between households; and every country's
-//! campaign window open at once over its persons' intentions and its households' vote occasions.
+//! kind, threaded through their households, their views read and moves made between households; the offices the firms
+//! and institutions decide through, their holders read; and every country's campaign window open at once over its
+//! persons' intentions and its households' vote occasions.
 
 use std::collections::BTreeMap;
 use std::hint::black_box;
@@ -15,6 +16,7 @@ use phx_num::Missing;
 use phx_pop::directory::{Directory, Resolved};
 use phx_pop::kinds::{Attr, AttrW, KindStore, Opening};
 use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, IntTy, KindMap, Layout, WordDecl};
+use phx_pop::offices::{Holder, OfficeRef, OfficeRow, Offices};
 use phx_pop::person_kind::{Heads, PersonKind, StoreHeads};
 use phx_pop::windowed::{WAttrW, WindowLayout, WindowedGroup};
 use phx_rand::uniform::below_u64;
@@ -87,6 +89,17 @@ const MONTHS: u64 = 12;
 const DAYS: u64 = 28;
 /// The draw row of the persons' opening, apart from the fill's and the day's.
 const PERSON_ROW: u64 = 2;
+/// The offices a firm's and an institution's form declares at its founding: a chief executive and a line head; and
+/// the kinds of the line heads a firm adds as it enters lines, until the offices reach their count.
+const FOUNDING_OFFICES: [u16; 2] = [0, 1];
+const LINE_HEAD: u16 = 1;
+/// Of every 25 offices, the 11 their owners manage; the rest are held by appointment.
+const OWNED: u64 = 11;
+const OFFICE_SHARES: u64 = 25;
+/// The draw row of the offices' opening.
+const OFFICE_ROW: u64 = 3;
+/// The offices whose holders a day reads.
+const HOLDER_READS: u64 = 800_000;
 
 const MIB: f64 = 1_048_576.0;
 
@@ -108,6 +121,10 @@ pub struct Parties {
     /// The persons on their kind, and the places of the households among the live references.
     persons: Option<PersonKind>,
     homes: Vec<usize>,
+    /// The offices, every one opened, and the owner of each office its owner manages.
+    offices: Option<Offices>,
+    opened: Vec<OfficeRef>,
+    owners: Vec<(OfficeRef, PartyRef)>,
     faults: Option<u64>,
     /// The persons' and households' campaign groups with their write handles, and each kind's slots a country holds.
     windows: Option<Campaign>,
@@ -393,6 +410,9 @@ impl Parties {
             return Err(FinError("the persons measured before their fill".to_owned()));
         };
         let views: Vec<_> = people.iter().take(index(VISIT_BATCH)?).map(|r| persons.view(dir, *r)).collect();
+        let held: Vec<OfficeRef> = (0..VISIT_BATCH)
+            .map(|_| self.opened.get(index(below_u64(d, wide(self.opened.len())))?).copied().ok_or_else(no_party))
+            .collect::<Result<_, _>>()?;
         let reps = PERSON_VIEWS / VISIT_BATCH;
         self.folded ^= m.read(BASE, "person_view", reps * wide(views.len()), || {
             let mut sum = 0_u64;
@@ -403,15 +423,133 @@ impl Parties {
             }
             black_box(sum)
         });
+        // An office's holder read with each decision taken in it: a batch of offices read again and again.
+        let Some(offices) = self.offices.as_ref() else {
+            return Err(FinError("the offices measured before their fill".to_owned()));
+        };
+        let reps = HOLDER_READS / VISIT_BATCH;
+        self.folded ^= m.read(BASE, "holder", reps * wide(held.len()), || {
+            let mut sum = 0_u64;
+            for _ in 0..reps {
+                for o in &held {
+                    sum += match offices.holder(*o, dir) {
+                        Holder::Owner(p) => u64::from(p.slot().get()),
+                        Holder::Appointment(c) => u64::from(c.word()),
+                        Holder::Vacant => 1,
+                    };
+                }
+            }
+            black_box(sum)
+        });
         Ok(())
     }
 }
 
 impl Parties {
-    /// Every kind's store's bytes committed, the persons' among them.
+    /// The persons ended leaving their households and those born joining drawn ones, the households ended passing
+    /// their persons on, a day's moves between households measured, and the dead owners' offices left empty.
+    fn persons_day(
+        &mut self,
+        begun: &[(usize, PartyRef, PartyRef)],
+        d: &mut phx_rand::Draws,
+        m: &mut Measures<'_>,
+    ) -> Result<(), FinError> {
+        // The persons ended leave their households and those born join drawn ones; an ended household's persons move
+        // to the household now in its place.
+        let Parties { directory, persons, stores, live, homes, offices, owners, handles, .. } = self;
+        let (Some(dir), Some(persons), Some(handles)) = (directory.as_ref(), persons.as_mut(), *handles) else {
+            return Err(FinError("the persons measured before their fill".to_owned()));
+        };
+        let mut threads = heads(stores, handles.head)?;
+        // The persons first, so a household's list holds only the living when its persons move.
+        for (_, ended, r) in begun.iter().filter(|(_, e, _)| e.kind() == PERSONS) {
+            persons.left(dir, &mut threads, *ended);
+            let to = home(live, homes, d)?;
+            persons.begin(dir, &mut threads, (*r, to), person_word(d)?, &[]);
+        }
+        for (at, ended, _) in begun.iter().filter(|(_, e, _)| e.kind() == HOUSEHOLDS) {
+            let now = *live.get(*at).ok_or_else(|| FinError("no household".to_owned()))?;
+            rehouse(persons, dir, &mut threads, (*ended, now))?;
+        }
+        // A day's moves between drawn households, as formation and separation make them.
+        let moving: Vec<(PartyRef, PartyRef)> = (0..MOVES)
+            .map(|_| -> Result<_, FinError> {
+                let mut p = *live.get(index(below_u64(d, wide(live.len())))?).ok_or_else(no_party)?;
+                while p.kind() != PERSONS {
+                    p = *live.get(index(below_u64(d, wide(live.len())))?).ok_or_else(no_party)?;
+                }
+                Ok((p, home(live, homes, d)?))
+            })
+            .collect::<Result<_, _>>()?;
+        let reader = dir;
+        m.read(BASE, "move", MOVES, || {
+            for (p, to) in &moving {
+                persons.move_person(reader, &mut threads, *p, *to);
+            }
+        });
+        // A person who died leaves its offices empty the same day, as its ending vacates them.
+        if let Some(offices) = offices.as_mut() {
+            let dead: Vec<OfficeRef> =
+                owners.iter().filter(|(_, p)| dir.at(p.kind(), p.slot()) != Some(*p)).map(|(o, _)| *o).collect();
+            offices.vacate_all(dead);
+            owners.retain(|(_, p)| dir.at(p.kind(), p.slot()) == Some(*p));
+        }
+        Ok(())
+    }
+
+    /// Every kind's store's bytes committed, the persons' and the offices' among them.
     fn kinds_bytes(&self) -> u64 {
         let persons = self.persons.as_ref().map_or(0, |p| StoreStats::bytes(&p.store));
-        self.stores.iter().map(|(_, s)| StoreStats::bytes(s)).sum::<u64>() + persons
+        let offices = self.offices.as_ref().map_or(0, StoreStats::bytes);
+        self.stores.iter().map(|(_, s)| StoreStats::bytes(s)).sum::<u64>() + persons + offices
+    }
+
+    /// Every firm's and institution's offices opened, line heads added to drawn firms until the offices reach their
+    /// count, and each office held by an owner or an appointment in their shares.
+    fn open_offices(&mut self, space: &mut AddressSpace, (count, streams): (u64, &Streams)) -> Result<(), FinError> {
+        let capacity = u32::try_from(count * ROOM_QUARTERS / QUARTERS).map_err(err)?;
+        let mut offices: Offices = Offices::new(space, PERSONS, capacity);
+        let mut d = streams.draws(BASE, OFFICE_ROW, 0);
+        let founders: Vec<PartyRef> =
+            self.live.iter().copied().filter(|r| r.kind() == FIRMS || r.kind() == INSTITUTIONS).collect();
+        let mut blocks = Vec::with_capacity(founders.len());
+        for r in &founders {
+            if let Missing::Present(first) = offices.open(r.key(), &FOUNDING_OFFICES) {
+                blocks.push((*r, first, FOUNDING_OFFICES.len()));
+            }
+        }
+        let mut held = wide(blocks.len() * FOUNDING_OFFICES.len());
+        while held < count {
+            let at = index(below_u64(&mut d, wide(blocks.len())))?;
+            let Some((r, first, len)) = blocks.get_mut(at) else { continue };
+            if r.kind() != FIRMS {
+                continue;
+            }
+            *first = offices.grow(*first, LINE_HEAD);
+            *len += 1;
+            held += 1;
+        }
+        let mut contract = 0_u32;
+        for (_, first, len) in &blocks {
+            for offset in 0..*len {
+                let o = OfficeRef::at(phx_id::Slot::new(first.row().get() + u32::try_from(offset).map_err(err)?));
+                self.opened.push(o);
+                if below_u64(&mut d, OFFICE_SHARES) < OWNED {
+                    let mut p =
+                        *self.live.get(index(below_u64(&mut d, wide(self.live.len())))?).ok_or_else(no_party)?;
+                    while p.kind() != PERSONS {
+                        p = *self.live.get(index(below_u64(&mut d, wide(self.live.len())))?).ok_or_else(no_party)?;
+                    }
+                    offices.fill_owned(o, p, Day::new(HISTORY_DAYS));
+                    self.owners.push((o, p));
+                } else {
+                    offices.fill_appointed(o, phx_id::ContractLink::new(1, phx_id::Slot::new(contract)));
+                    contract += 1;
+                }
+            }
+        }
+        self.offices = Some(offices);
+        Ok(())
     }
 }
 
@@ -501,6 +639,7 @@ impl FinBase for Parties {
             let _ = dir.close_day(Day::new(day));
         }
         self.persons = Some(persons);
+        self.open_offices(&mut space, (store("offices")?, streams))?;
         self.held = StoreStats::bytes(&dir);
         self.handles = Some(handles);
         // Every country's campaign open at once, each over its own third of the persons and households.
@@ -592,38 +731,7 @@ impl FinBase for Parties {
             wide(dir.live_slots(PERSONS).skip_while(|s| *s < first).take_while(|s| s.get() < first.get() + n).count());
         let written = m.read(BASE, "window_write", covered, || campaign.write(reader, 0, today));
         black_box(written);
-        // The persons ended leave their households and those born join drawn ones; an ended household's persons move
-        // to the household now in its place.
-        let Some(persons) = self.persons.as_mut() else {
-            return Err(FinError("the persons measured before their fill".to_owned()));
-        };
-        let mut threads = heads(&mut self.stores, handles.head)?;
-        // The persons first, so a household's list holds only the living when its persons move.
-        for (_, ended, r) in begun.iter().filter(|(_, e, _)| e.kind() == PERSONS) {
-            persons.left(dir, &mut threads, *ended);
-            let to = home(&self.live, &self.homes, &mut d)?;
-            persons.begin(dir, &mut threads, (*r, to), person_word(&mut d)?, &[]);
-        }
-        for (at, ended, _) in begun.iter().filter(|(_, e, _)| e.kind() == HOUSEHOLDS) {
-            let now = *self.live.get(*at).ok_or_else(|| FinError("no household".to_owned()))?;
-            rehouse(persons, dir, &mut threads, (*ended, now))?;
-        }
-        // A day's moves between drawn households, as formation and separation make them.
-        let moving: Vec<(PartyRef, PartyRef)> = (0..MOVES)
-            .map(|_| -> Result<_, FinError> {
-                let mut p = *self.live.get(index(below_u64(&mut d, wide(self.live.len())))?).ok_or_else(no_party)?;
-                while p.kind() != PERSONS {
-                    p = *self.live.get(index(below_u64(&mut d, wide(self.live.len())))?).ok_or_else(no_party)?;
-                }
-                Ok((p, home(&self.live, &self.homes, &mut d)?))
-            })
-            .collect::<Result<_, _>>()?;
-        let reader = &*dir;
-        m.read(BASE, "move", MOVES, || {
-            for (p, to) in &moving {
-                persons.move_person(reader, &mut threads, *p, *to);
-            }
-        });
+        self.persons_day(&begun, &mut d, m)?;
         self.kinds_day(&mut d, m)
     }
 
@@ -647,6 +755,7 @@ impl FinBase for Parties {
         };
         let kinds_mb = real(self.kinds_bytes()).map(|b| b / MIB);
         let person_bytes = self.persons.as_ref().map(|p| f64::from(p.store.widths().iter().sum::<u16>()));
+        let office_bytes = real(wide(size_of::<OfficeRow>()));
         let all_mb = real(self.held + self.kinds_bytes()).map(|b| b / MIB);
         [
             mb.map(|m| ("directory_mb", m)),
@@ -656,6 +765,7 @@ impl FinBase for Parties {
             per(FIRMS, false).map(|b| ("firm_bytes", b)),
             per(FIRMS, true).map(|b| ("firm_hot_bytes", b)),
             person_bytes.map(|b| ("person_bytes", b)),
+            office_bytes.map(|b| ("office_bytes", b)),
             kinds_mb.map(|m| ("kinds_mb", m)),
             all_mb.map(|m| ("mb", m)),
             self.windows.as_ref().and_then(|c| real(c.bytes())).map(|b| ("windowed_mb", b / MIB)),

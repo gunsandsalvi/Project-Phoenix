@@ -750,7 +750,23 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.parties.mb"
-value = 1217.2
+value = 1251.7
+direction = "down"
+
+# The offices (S1.209, 2026-10-01; `tools/bench.sh -F parties`): the design point's 2 M offices of 16 bytes, each firm's
+# and institution's block opened at its founding (a chief executive and a line head) and line heads added to drawn
+# firms, 11 in 25 held by their owners and the rest by appointment. An office's holder read with each decision taken in
+# it, after its row is in cache, 3.3–3.6 ns (the step's 3: the row and, for an owner, its slot's generation, from which
+# its reference is read); the parties' megabytes rise by the offices' 32, the line the step's figure for `mb` counted.
+# The bytes at the measure; the read a quarter above the highest.
+[[ratchet]]
+counter = "fin.parties.office_bytes"
+value = 16
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.holder_ns"
+value = 4.5
 direction = "down"
 
 # Windowed groups (S1.197, 2026-10-01; `tools/bench.sh -F parties`): all three countries' campaign windows open at
