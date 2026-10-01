@@ -13,9 +13,15 @@ use super::{
     Arising, INCOME, Taxes, collected_family, collector_family, collectors_family, collectors_index, withheld,
 };
 use crate::consts::AGENT_ROWS_PER_CHUNK;
-use crate::consts::kinds::{AGENCY, FIRM, HOUSEHOLD, TREASURY};
 use crate::consts::reason::{TAXED, WAGE};
 use crate::core_day::DatedFamily;
+
+/// The fixtures' kinds, by their places among seven.
+const TREASURY: usize = 1;
+const FIRM: usize = 3;
+const HOUSEHOLD: usize = 5;
+const AGENCY: usize = 6;
+const KINDS: usize = 7;
 
 fn kind(place: usize) -> u8 {
     u8::try_from(place).unwrap()
@@ -72,7 +78,7 @@ fn agency_collector_opens_in_its_family() {
 
 #[test]
 fn collector_kind_without_family_stops() {
-    let index = collectors_index(&families(), crate::consts::kinds::KINDS.len());
+    let index = collectors_index(&families(), KINDS);
     assert_eq!(collector_family(&index, party(AGENCY, 3)), 3);
     assert!(std::panic::catch_unwind(|| collector_family(&index, party(HOUSEHOLD, 0))).is_err());
 }
@@ -107,7 +113,7 @@ fn no_withholding_opens_no_debt() {
 
 #[test]
 fn firm_and_agency_debts_in_their_own_families() {
-    let index = collectors_index(&families(), crate::consts::kinds::KINDS.len());
+    let index = collectors_index(&families(), KINDS);
     let mut all: Vec<DatedFamily> = vec![family(FIRM), family(AGENCY)];
     let mut taxes = Taxes::default();
     let treasury = party(TREASURY, 0);
@@ -123,12 +129,12 @@ fn firm_and_agency_debts_in_their_own_families() {
 #[test]
 fn collected_index_rebuilt_equal() {
     let f = families();
-    let opened = collectors_index(&f, crate::consts::kinds::KINDS.len());
-    let loaded = collectors_index(&f, crate::consts::kinds::KINDS.len());
+    let opened = collectors_index(&f, KINDS);
+    let loaded = collectors_index(&f, KINDS);
     assert_eq!(opened, loaded);
     let mut later = f;
     later.push((crate::consts::reason::PENSION, kind(HOUSEHOLD)));
-    assert_eq!(collectors_index(&later, crate::consts::kinds::KINDS.len()), opened, "families opened later move none");
+    assert_eq!(collectors_index(&later, KINDS), opened, "families opened later move none");
     assert_eq!(opened.iter().flatten().count(), 2, "one entry for each payer kind");
 }
 

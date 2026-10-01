@@ -5,7 +5,7 @@ use phx_macros::clause;
 
 use crate::kinds::{Feature, Owners, Place};
 
-/// A legal form: what it may hold (families, or `any`), its features, how it ends, who owns it and its offices.
+/// A legal form: the classes of holding it may hold, its features, how it ends, who owns it and its offices.
 #[derive(Clone, Copy, Debug)]
 pub struct FormDecl<'a> {
     pub system: &'a str,
@@ -17,17 +17,20 @@ pub struct FormDecl<'a> {
     pub offices: &'a [&'a str],
 }
 
-/// A kind of party: its legal form and where its parties' place is read from.
+/// A kind of party: its legal form, where its parties' place is read from, and the capacity table's store its rows
+/// are reserved by.
 #[derive(Clone, Copy, Debug)]
 pub struct KindEntry<'a> {
     pub system: &'a str,
     pub name: &'a str,
     pub form: &'a str,
     pub place: Place,
+    pub store: &'a str,
 }
 
 /// A contract family: the reason its payments are made for, the kinds that may be its sides, whether it is a job (else a
-/// debt), and the most rows it is declared to hold.
+/// debt), the most rows it is declared to hold, and the class of holding its contracts are to the kinds that hold
+/// them as an asset, if any.
 #[derive(Clone, Copy, Debug)]
 pub struct FamilyDecl<'a> {
     pub system: &'a str,
@@ -36,6 +39,8 @@ pub struct FamilyDecl<'a> {
     pub kinds: &'a [&'a str],
     pub jobs: bool,
     pub slots: u32,
+    pub class: phx_num::Missing<&'a str>,
+    pub holders: &'a [&'a str],
 }
 
 /// An account line.

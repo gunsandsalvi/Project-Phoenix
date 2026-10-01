@@ -6,15 +6,12 @@ use phx_num::Missing;
 
 use super::decls::{Declared, feature_bit};
 use super::{
-    Catalogue, DecisionRow, FamilyH, FamilyRow, FormH, FormRow, GateH, GradeH, KindH, KindRow, LineH, MarketRow, Names,
-    ProductH, ReasonH, ReasonRow, Span,
+    Catalogue, ClassH, DecisionRow, FamilyH, FamilyRow, FormH, FormRow, GateH, GradeH, KindH, KindRow, LineH,
+    MarketRow, Names, ProductH, ReasonH, ReasonRow, Span,
 };
 use super::{FamilyCode, FamilyKind, FamilyStatus};
 use crate::consts::{FAMILY_CODES, FAMILY_SLOTS, PARTY_KINDS};
 use crate::kinds::{Feature, Owners};
-
-/// What a legal form may hold that stands for every family.
-const ANY: &str = "any";
 
 /// One table's names, sorted and each once, with the declaration each came from.
 struct Table<'a> {
@@ -79,6 +76,7 @@ fn span(start: usize, end: usize) -> Span {
 /// Every table's names, each interned once in name order.
 struct Tables<'a> {
     forms: Table<'a>,
+    classes: Table<'a>,
     kinds: Table<'a>,
     families: Table<'a>,
     lines: Table<'a>,
@@ -101,8 +99,11 @@ impl<'a> Tables<'a> {
             Missing::Present(g) => Some((g, x.system)),
             Missing::Absent => None,
         });
+        let held = decl.forms.iter().flat_map(|f| f.may_hold.iter().map(|c| (*c, f.system)));
         let tables = Tables {
             forms: Table::of("legal form", decl.forms.iter().map(|x| (x.name, x.system)), rf),
+            // Forms share their classes, so a class named by several forms is one class.
+            classes: Table::of("holding class", held, &mut Vec::new()),
             kinds: Table::of("kind", decl.kinds.iter().map(|x| (x.name, x.system)), rf),
             families: Table::of("family", decl.families.iter().map(|x| (x.name, x.system)), rf),
             lines: Table::of("line", decl.lines.iter().map(|x| (x.name, x.system)), rf),
@@ -130,6 +131,7 @@ impl<'a> Tables<'a> {
     fn names(&self, offices: Vec<Box<str>>) -> Names {
         Names {
             forms: self.forms.names(),
+            classes: self.classes.names(),
             kinds: self.kinds.names(),
             families: self.families.names(),
             lines: self.lines.names(),
@@ -156,9 +158,9 @@ pub fn compile(decl: &Declared<'_>) -> Result<Catalogue, Vec<String>> {
     let tables = Tables::of(decl, &mut refused);
     let mut cat = Catalogue::default();
     let offices = forms(&tables, decl, &mut cat, &mut refused);
-    parties(&tables, decl, &mut cat, &mut refused);
+    let classes = parties(&tables, decl, &mut cat, &mut refused);
     reasons(&tables, decl, &mut cat, &mut refused);
-    markets(&tables, decl, &mut cat, &mut refused);
+    markets(&tables, decl, &mut cat, &classes, &mut refused);
     decisions(&tables, decl, &mut cat, &offices, &mut refused);
     goods(&tables, decl, &mut cat, &mut refused);
     cat.names = tables.names(offices.iter().map(|(_, o)| Box::from(*o)).collect());
@@ -175,11 +177,10 @@ fn forms<'a>(
     let mut offices: Vec<(FormH, &str)> = Vec::new();
     for (at, f) in tables.forms.order(decl.forms).enumerate() {
         let item = (f.system, f.name);
-        let holds_any = f.may_hold.contains(&ANY);
         let from = cat.form_holds.len();
-        for held in f.may_hold.iter().filter(|x| **x != ANY) {
-            if let Some(fam) = tables.families.resolve(held, item, refused) {
-                cat.form_holds.push(FamilyH(fam));
+        for held in f.may_hold {
+            if let Some(class) = tables.classes.resolve(held, item, refused) {
+                cat.form_holds.push(ClassH(class));
             }
         }
         let holds = span(from, cat.form_holds.len());
@@ -198,30 +199,42 @@ fn forms<'a>(
         if f.features.contains(&Feature::HasOwners) && f.owners == Owners::Members {
             refused.push(format!("{}'s legal form `{}` keeps equity for its own members", f.system, f.name));
         }
-        cat.forms.push(FormRow { features, owners: f.owners, holds_any, holds, offices: span(first, offices.len()) });
+        cat.forms.push(FormRow { features, owners: f.owners, holds, offices: span(first, offices.len()) });
     }
     offices
 }
 
 /// Whether a kind's legal form may hold a family; a kind table short of refusals reads no.
-fn may_hold(cat: &Catalogue, kind: KindH, family: FamilyH) -> bool {
+fn may_hold(cat: &Catalogue, kind: KindH, class: ClassH) -> bool {
     let form = cat.kinds.get(usize::from(kind.0)).and_then(|k| cat.forms.get(usize::from(k.form.0)));
-    form.is_some_and(|f| f.holds_any || f.holds.of(&cat.form_holds).contains(&family))
+    form.is_some_and(|f| f.holds.of(&cat.form_holds).contains(&class))
 }
 
-/// The kinds, and the families whose sides they are.
-fn parties(tables: &Tables<'_>, decl: &Declared<'_>, cat: &mut Catalogue, refused: &mut Vec<String>) {
+/// The kinds, and the families whose sides they are; each family's class by its handle, for the markets that trade it.
+fn parties(
+    tables: &Tables<'_>,
+    decl: &Declared<'_>,
+    cat: &mut Catalogue,
+    refused: &mut Vec<String>,
+) -> Vec<Missing<ClassH>> {
     for k in tables.kinds.order(decl.kinds) {
-        if let Some(form) = tables.forms.resolve(k.form, (k.system, k.name), refused) {
-            cat.kinds.push(KindRow { form: FormH(form), place: k.place });
+        let rows = crate::capacity::table().find(|c| c.store == k.store).map(|c| c.rows);
+        if rows.is_none() {
+            refused.push(format!(
+                "{}'s kind `{}` is reserved by store `{}`, which no capacity holds",
+                k.system, k.name, k.store
+            ));
+        }
+        if let (Some(form), Some(rows)) = (tables.forms.resolve(k.form, (k.system, k.name), refused), rows) {
+            cat.kinds.push(KindRow { form: FormH(form), place: k.place, rows });
         }
     }
     let kinds_whole = cat.kinds.len() == tables.kinds.len();
-    for (at, f) in tables.families.order(decl.families).enumerate() {
+    let mut classes = Vec::with_capacity(tables.families.len());
+    for f in tables.families.order(decl.families) {
         let item = (f.system, f.name);
         let reason = tables.reasons.resolve(f.reason, item, refused);
         let from = cat.family_kinds.len();
-        let Ok(fam) = u16::try_from(at) else { continue };
         if f.slots > FAMILY_SLOTS {
             refused.push(format!(
                 "{}'s family `{}` declares {} rows, more than the {FAMILY_SLOTS} a link names",
@@ -230,21 +243,39 @@ fn parties(tables: &Tables<'_>, decl: &Declared<'_>, cat: &mut Catalogue, refuse
         }
         for k in f.kinds {
             if let Some(kind) = tables.kinds.resolve(k, item, refused) {
-                if kinds_whole && !may_hold(cat, KindH(kind), FamilyH(fam)) {
-                    refused.push(format!(
-                        "{}'s family `{}` has sides of kind `{k}`, whose legal form may not hold it",
-                        f.system, f.name
-                    ));
-                }
                 cat.family_kinds.push(KindH(kind));
             }
         }
+        let class = match f.class {
+            Missing::Present(c) => tables.classes.resolve(c, item, refused).map(|h| Missing::Present(ClassH(h))),
+            Missing::Absent => Some(Missing::Absent),
+        };
+        let held_from = cat.family_holders.len();
+        for k in f.holders {
+            let Some(kind) = tables.kinds.resolve(k, item, refused) else { continue };
+            if !f.kinds.contains(k) {
+                refused.push(format!("{}'s family `{}` is held by kind `{k}`, not among its sides", f.system, f.name));
+            }
+            match class {
+                Some(Missing::Present(c)) if kinds_whole && !may_hold(cat, KindH(kind), c) => refused.push(format!(
+                    "{}'s family `{}` is held by kind `{k}`, whose legal form may not hold its class",
+                    f.system, f.name
+                )),
+                Some(Missing::Absent) => {
+                    refused.push(format!("{}'s family `{}` names holders but no class", f.system, f.name));
+                }
+                _ => {}
+            }
+            cat.family_holders.push(KindH(kind));
+        }
+        classes.push(class.unwrap_or(Missing::Absent));
         let code = family_code(decl.codes, item, refused);
-        if let (Some(reason), Some(code)) = (reason, code) {
-            let kinds = span(from, cat.family_kinds.len());
-            cat.families.push(FamilyRow { code, reason: ReasonH(reason), kinds, jobs: f.jobs });
+        if let (Some(reason), Some(code), Some(class)) = (reason, code, class) {
+            let (kinds, holders) = (span(from, cat.family_kinds.len()), span(held_from, cat.family_holders.len()));
+            cat.families.push(FamilyRow { code, reason: ReasonH(reason), kinds, jobs: f.jobs, class, holders });
         }
     }
+    classes
 }
 
 /// A declared family's code, its row's: refused where it has none, or its row is retired or a dated reason's.
@@ -296,7 +327,13 @@ fn reasons(tables: &Tables<'_>, decl: &Declared<'_>, cat: &mut Catalogue, refuse
 }
 
 /// The markets: each one's operator, participants, the family traded and the register's primitives it reads.
-fn markets(tables: &Tables<'_>, decl: &Declared<'_>, cat: &mut Catalogue, refused: &mut Vec<String>) {
+fn markets(
+    tables: &Tables<'_>,
+    decl: &Declared<'_>,
+    cat: &mut Catalogue,
+    classes: &[Missing<ClassH>],
+    refused: &mut Vec<String>,
+) {
     let kinds_whole = cat.kinds.len() == tables.kinds.len();
     for m in tables.markets.order(decl.markets) {
         let item = (m.system, m.name);
@@ -314,9 +351,10 @@ fn markets(tables: &Tables<'_>, decl: &Declared<'_>, cat: &mut Catalogue, refuse
         let from = cat.market_kinds.len();
         for p in m.participants {
             if let Some(kind) = tables.kinds.resolve(p, item, refused) {
-                if let Some(fam) = trades
+                let class = trades.and_then(|fam| classes.get(usize::from(fam)));
+                if let Some(Missing::Present(class)) = class
                     && kinds_whole
-                    && !may_hold(cat, KindH(kind), FamilyH(fam))
+                    && !may_hold(cat, KindH(kind), *class)
                 {
                     refused.push(format!(
                         "{}'s market `{}` admits kind `{p}`, whose legal form may not trade it",

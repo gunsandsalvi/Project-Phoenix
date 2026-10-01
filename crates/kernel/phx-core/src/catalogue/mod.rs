@@ -39,6 +39,8 @@ macro_rules! handle {
 handle!(
     /// A legal form.
     FormH,
+    /// A class of holding a legal form may hold.
+    ClassH,
     /// A kind of party.
     KindH,
     /// A contract family.
@@ -89,31 +91,33 @@ impl Span {
     }
 }
 
-/// A compiled legal form: its features as bits, its owners, whether it may hold anything, and the families it may
-/// hold and its offices, by span.
+/// A compiled legal form: its features as bits, its owners, and the classes it may hold and its offices, by span.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FormRow {
     pub features: u8,
     pub owners: Owners,
-    pub holds_any: bool,
     pub holds: Span,
     pub offices: Span,
 }
 
-/// A compiled kind: its legal form and where its parties' place is read from.
+/// A compiled kind: its legal form, where its parties' place is read from, and the rows its store reserves.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct KindRow {
     pub form: FormH,
     pub place: Place,
+    pub rows: u32,
 }
 
-/// A compiled family: its fixed code, its reason, the kinds its sides may be, and whether it is a job or a debt.
+/// A compiled family: its fixed code, its reason, the kinds its sides may be, whether it is a job or a debt, and the
+/// class its holders hold it as, with those holders.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FamilyRow {
     pub code: u8,
     pub reason: ReasonH,
     pub kinds: Span,
     pub jobs: bool,
+    pub class: Missing<ClassH>,
+    pub holders: Span,
 }
 
 /// A compiled reason: its lines, its place in the payment order and its gate, if any.
@@ -147,9 +151,10 @@ pub struct DecisionRow {
 }
 
 /// Each table's names in handle order, for reports and the assembly's own reads; no day path reads them.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Names {
     pub forms: Vec<Box<str>>,
+    pub classes: Vec<Box<str>>,
     pub kinds: Vec<Box<str>>,
     pub families: Vec<Box<str>>,
     pub lines: Vec<Box<str>>,
@@ -165,14 +170,15 @@ pub struct Names {
 }
 
 /// The compiled catalogue: each table's rows by handle, their lists flattened, and the names apart.
-#[derive(Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Catalogue {
     pub names: Names,
     pub(crate) forms: Vec<FormRow>,
-    pub(crate) form_holds: Vec<FamilyH>,
+    pub(crate) form_holds: Vec<ClassH>,
     pub(crate) kinds: Vec<KindRow>,
     pub(crate) families: Vec<FamilyRow>,
     pub(crate) family_kinds: Vec<KindH>,
+    pub(crate) family_holders: Vec<KindH>,
     pub(crate) reasons: Vec<ReasonRow>,
     pub(crate) reason_lines: Vec<LineH>,
     pub(crate) markets: Vec<MarketRow>,
@@ -214,6 +220,11 @@ impl Catalogue {
         row(&self.families, h.get())
     }
 
+    /// Every kind's handle, in handle order.
+    pub fn kinds(&self) -> impl Iterator<Item = KindH> {
+        (0..self.kinds.len()).filter_map(|at| u16::try_from(at).ok()).map(KindH)
+    }
+
     /// Every family's handle, in handle order.
     pub fn families(&self) -> impl Iterator<Item = FamilyH> {
         (0..self.families.len()).filter_map(|at| u16::try_from(at).ok()).map(FamilyH)
@@ -222,6 +233,18 @@ impl Catalogue {
     #[must_use]
     pub fn family_kinds(&self, h: FamilyH) -> &[KindH] {
         self.family(h).kinds.of(&self.family_kinds)
+    }
+
+    /// The kinds that hold a family's contracts as an asset of its class.
+    #[must_use]
+    pub fn family_holders(&self, h: FamilyH) -> &[KindH] {
+        self.family(h).holders.of(&self.family_holders)
+    }
+
+    /// Whether a legal form may hold a class of holding.
+    #[must_use]
+    pub fn may_hold(&self, h: FormH, class: ClassH) -> bool {
+        self.form(h).holds.of(&self.form_holds).contains(&class)
     }
 
     #[must_use]
@@ -281,6 +304,7 @@ impl Catalogue {
         let n = &self.names;
         let text = [
             &n.forms,
+            &n.classes,
             &n.kinds,
             &n.families,
             &n.lines,
@@ -298,10 +322,10 @@ impl Catalogue {
         .map(|t| names(t))
         .sum::<usize>();
         text + self.forms.len() * size_of::<FormRow>()
-            + self.form_holds.len() * size_of::<FamilyH>()
+            + self.form_holds.len() * size_of::<ClassH>()
             + self.kinds.len() * size_of::<KindRow>()
             + self.families.len() * size_of::<FamilyRow>()
-            + self.family_kinds.len() * size_of::<KindH>()
+            + (self.family_kinds.len() + self.family_holders.len()) * size_of::<KindH>()
             + self.reasons.len() * size_of::<ReasonRow>()
             + self.reason_lines.len() * size_of::<LineH>()
             + self.markets.len() * size_of::<MarketRow>()

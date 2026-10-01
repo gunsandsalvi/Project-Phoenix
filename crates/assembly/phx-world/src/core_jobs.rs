@@ -226,11 +226,12 @@ impl Core {
 
     /// A family of jobs paid by one kind of employer to households.
     fn job_family(&mut self, name: &'static str, employer: usize, household: usize, today: Day) -> DatedFamily {
+        let rows = [self.kind_rows(employer), self.kind_rows(household)];
         DatedFamily {
             name,
             store: phx_core::store::Family::new(
                 &mut self.space,
-                ([kind_number(employer), kind_number(household)], [AGENT_ROWS, AGENT_ROWS]),
+                ([kind_number(employer), kind_number(household)], rows),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [true, true],
                 (today.succ(), WHEEL_DAYS),

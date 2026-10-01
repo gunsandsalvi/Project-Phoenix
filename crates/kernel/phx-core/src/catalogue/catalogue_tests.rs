@@ -14,7 +14,7 @@ use crate::kinds::{Feature, Owners, Place};
 const COMPANY: FormDecl<'static> = FormDecl {
     system: "FRM",
     name: "company",
-    may_hold: &["any"],
+    may_hold: &["money", "loans", "shares"],
     features: &[Feature::SeparateParty, Feature::LimitedLiability, Feature::HasOwners],
     endings: &["insolvency"],
     owners: Owners::Shareholders,
@@ -23,16 +23,16 @@ const COMPANY: FormDecl<'static> = FormDecl {
 const HOUSEHOLD: FormDecl<'static> = FormDecl {
     system: "DEM",
     name: "household",
-    may_hold: &["LAB.employment", "BNK.household_loan"],
+    may_hold: &["money", "loans"],
     features: &[],
     endings: &["dissolution"],
     owners: Owners::Members,
     offices: &["head"],
 };
 const KINDS: [KindEntry<'static>; 3] = [
-    KindEntry { system: "FRM", name: "firm", form: "company", place: Place::Site { word: 0 } },
-    KindEntry { system: "BNK", name: "bank", form: "company", place: Place::Site { word: 0 } },
-    KindEntry { system: "DEM", name: "household", form: "household", place: Place::Sited },
+    KindEntry { system: "FRM", name: "firm", form: "company", place: Place::Site { word: 0 }, store: "firms" },
+    KindEntry { system: "BNK", name: "bank", form: "company", place: Place::Site { word: 0 }, store: "banks" },
+    KindEntry { system: "DEM", name: "household", form: "household", place: Place::Sited, store: "households" },
 ];
 const FAMILIES: [FamilyDecl<'static>; 2] = [
     FamilyDecl {
@@ -42,6 +42,8 @@ const FAMILIES: [FamilyDecl<'static>; 2] = [
         kinds: &["firm", "household"],
         jobs: true,
         slots: 1,
+        class: Missing::Absent,
+        holders: &[],
     },
     FamilyDecl {
         system: "BNK",
@@ -50,6 +52,8 @@ const FAMILIES: [FamilyDecl<'static>; 2] = [
         kinds: &["bank", "household"],
         jobs: false,
         slots: 1,
+        class: Missing::Present("loans"),
+        holders: &["bank"],
     },
 ];
 const LINES: [LineDecl<'static>; 2] =
@@ -151,6 +155,8 @@ fn every_reference_resolved() {
     assert_eq!(c.reason(reason).payment_order, 2);
     assert!(matches!(c.reason(reason).gate, Missing::Present(_)));
     assert!(c.has(c.kind(kind("firm")).form, Feature::HasOwners));
+    let capacity = crate::capacity::table().find(|t| t.store == "firms").unwrap().rows;
+    assert_eq!(c.kind(kind("firm")).rows, capacity, "a kind's rows are its store's capacity");
     assert!(!c.has(c.kind(kind("household")).form, Feature::HasOwners));
     assert_eq!(c.hazard(super::HazardH(0)), kind("household"));
     assert_eq!(c.decision(super::DecisionH(0)).office, 1, "the chief executive, the company's second office");
@@ -176,10 +182,12 @@ fn market_without_participants_refused() {
     let forms = [COMPANY, HOUSEHOLD];
     let lonely = MarketDecl { participants: &[], ..MARKET };
     assert!(refused(&declared(&forms, &KINDS, &[lonely])).iter().any(|e| e.contains("no participants")));
-    // A participant whose form may not hold what the market trades.
-    let wrong = MarketDecl { trades: "LAB.employment", participants: &["bank"], ..MARKET };
-    let forms_narrow = [FormDecl { may_hold: &["BNK.household_loan"], ..COMPANY }, HOUSEHOLD];
-    assert!(refused(&declared(&forms_narrow, &KINDS, &[wrong])).iter().any(|e| e.contains("may not trade")));
+    // A participant whose form may not hold the class of what the market trades, nor so hold the family.
+    let forms_narrow = [FormDecl { may_hold: &["money"], ..COMPANY }, HOUSEHOLD];
+    let errors = refused(&declared(&forms_narrow, &KINDS, &[MARKET]));
+    assert!(errors.iter().any(|e| e.contains("admits kind `bank`, whose legal form may not trade it")), "{errors:?}");
+    assert!(errors.iter().any(|e| e.contains("held by kind `bank`, whose legal form may not hold its class")));
+    assert!(!errors.iter().any(|e| e.contains("admits kind `household`")), "a household's form holds loans");
 }
 
 #[test]
@@ -194,12 +202,21 @@ fn decision_office_refused() {
 #[test]
 fn family_capacity_refused() {
     // The household may hold anything here, so no form names a family the test replaces.
-    let forms = [COMPANY, FormDecl { may_hold: &["any"], ..HOUSEHOLD }];
+    let forms = [COMPANY, HOUSEHOLD];
     let names: Vec<String> = (0..256).map(|i| format!("F.f{i}")).collect();
     let codes: Vec<FamilyCode> = (0_u8..255).zip(&names).map(|(c, n)| row(c, n, FamilyStatus::Declared)).collect();
     let many: Vec<FamilyDecl<'_>> = names
         .iter()
-        .map(|n| FamilyDecl { system: "X", name: n, reason: "wage", kinds: &["firm"], jobs: false, slots: 1 })
+        .map(|n| FamilyDecl {
+            system: "X",
+            name: n,
+            reason: "wage",
+            kinds: &["firm"],
+            jobs: false,
+            slots: 1,
+            class: Missing::Absent,
+            holders: &[],
+        })
         .collect();
     let mut d = declared(&forms, &KINDS, &[]);
     d.families = &many;
@@ -214,10 +231,12 @@ fn family_capacity_refused() {
 
 #[test]
 fn kind_census_refused() {
-    let forms = [COMPANY, FormDecl { may_hold: &["any"], ..HOUSEHOLD }];
+    let forms = [COMPANY, HOUSEHOLD];
     let names: Vec<String> = (0..32).map(|i| format!("k{i}")).collect();
-    let many: Vec<KindEntry<'_>> =
-        names.iter().map(|n| KindEntry { system: "X", name: n, form: "company", place: Place::Sited }).collect();
+    let many: Vec<KindEntry<'_>> = names
+        .iter()
+        .map(|n| KindEntry { system: "X", name: n, form: "company", place: Place::Sited, store: "institutions" })
+        .collect();
     let mut d = declared(&forms, &many, &[]);
     d.families = &[];
     d.hazards = &[];
@@ -252,11 +271,16 @@ fn absent_primitive_refused() {
 #[test]
 fn undeclared_references_and_twins_refused() {
     let forms = [COMPANY, HOUSEHOLD, COMPANY];
-    let kinds =
-        [KINDS[0], KINDS[1], KINDS[2], KindEntry { system: "X", name: "ghost", form: "nowhere", place: Place::Sited }];
+    let kinds = [
+        KINDS[0],
+        KINDS[1],
+        KINDS[2],
+        KindEntry { system: "X", name: "ghost", form: "nowhere", place: Place::Sited, store: "crypts" },
+    ];
     let errors = refused(&declared(&forms, &kinds, &[MARKET]));
     assert!(errors.iter().any(|e| e.contains("legal form `company` declared twice")), "{errors:?}");
     assert!(errors.iter().any(|e| e.contains("legal form `nowhere`")), "{errors:?}");
+    assert!(errors.iter().any(|e| e.contains("store `crypts`, which no capacity holds")), "{errors:?}");
 }
 
 #[test]
@@ -315,4 +339,28 @@ fn duplicate_code_refused() {
     assert!(FamilyCodes::new(twice).unwrap_err().iter().any(|e| e.contains("two rows")));
     let holdings = vec![row(crate::consts::HOLDINGS_CODE, "holdings", FamilyStatus::Planned)];
     assert!(FamilyCodes::new(holdings).is_err(), "holdings' code is reserved");
+}
+
+#[test]
+fn holders_and_classes_refused() {
+    let forms = [COMPANY, HOUSEHOLD];
+    let mut d = declared(&forms, &KINDS, &[MARKET]);
+    let families = [
+        FAMILIES[0],
+        FamilyDecl { holders: &["firm"], ..FAMILIES[1] },
+        FamilyDecl { name: "BNK.bonds", class: Missing::Present("bonds"), holders: &[], ..FAMILIES[1] },
+        FamilyDecl { name: "LAB.held", holders: &["household"], ..FAMILIES[0] },
+    ];
+    d.families = &families;
+    let codes = [
+        super::FamilyCode { name: "BNK.bonds".to_owned(), code: 5, ..codes()[1].clone() },
+        super::FamilyCode { name: "LAB.held".to_owned(), code: 6, ..codes()[1].clone() },
+        codes()[0].clone(),
+        codes()[1].clone(),
+    ];
+    d.codes = &codes;
+    let errors = refused(&d);
+    assert!(errors.iter().any(|e| e.contains("held by kind `firm`, not among its sides")), "{errors:?}");
+    assert!(errors.iter().any(|e| e.contains("holding class `bonds`")), "{errors:?}");
+    assert!(errors.iter().any(|e| e.contains("`LAB.held` names holders but no class")), "{errors:?}");
 }

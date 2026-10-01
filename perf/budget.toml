@@ -1147,12 +1147,12 @@ value = 30.0
 direction = "down"
 
 [[ratchet]]
-counter = "fin.contracts.bnk_firm_loan_rows"
+counter = "fin.contracts.bnk_firm_loans_rows"
 value = 360000.0
 direction = "down"
 
 [[ratchet]]
-counter = "fin.contracts.bnk_household_loan_rows"
+counter = "fin.contracts.bnk_household_loans_rows"
 value = 1440000.0
 direction = "down"
 

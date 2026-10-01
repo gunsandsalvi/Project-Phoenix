@@ -24,13 +24,11 @@ use phx_store::{AddressSpace, SystemBacking};
 
 use crate::consts::sheet::{BANKS, CURRENCY, DEPOSITS, GOVERNMENT, HOUSEHOLDS, RESERVES};
 use crate::consts::{AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, KIND_ROWS_PER_CHUNK};
-use crate::core::{Core, kind_number};
+use crate::core::{Core, declared_kind, kind_number};
 use crate::core_day::{DatedFamily, Due, PENSION};
 use crate::opening::asked::Asked;
 use crate::opening::sheet::Sheet;
-use phx_core::capacity::{AGENT_ROWS, KIND_ROWS, WHEEL_DAYS};
-
-use crate::consts::kinds::{AGENCY, BANK, CENTRAL_BANK, HOUSEHOLD, KINDS, TREASURY};
+use phx_core::capacity::{AGENT_ROWS, WHEEL_DAYS};
 
 /// A job drawn at the opening, before its employer is dealt: its household, its person, its country, its class —
 /// occupation, hours and the band its tenure began in — and its region.
@@ -148,26 +146,29 @@ impl Rules {
 }
 
 impl Core {
-    /// The core with no party yet: each kind's store, the households' with their persons.
+    /// The core with no party yet: each declared kind's store, in the catalogue's order, reserving its capacity's rows;
+    /// the population kind's with its record of attributes and positions, and its persons.
     #[opening]
     fn empty(household: &PopKindDecl, household_pop: usize, declared: &crate::core_kinds::Bound) -> Core {
         let mut space = AddressSpace::empty();
         let mut kinds = Vec::new();
         let mut persons = Vec::new();
-        for (place, _) in KINDS.iter().enumerate() {
+        for (place, traits) in declared.0.iter().enumerate() {
             let kind = kind_number(place);
-            let (rows, chunk, stride) = if place == HOUSEHOLD {
-                (AGENT_ROWS, AGENT_ROWS_PER_CHUNK, household.attrs.len() + household.positions.len())
+            let populated = traits.name == household.kind;
+            let (chunk, stride) = if populated {
+                (AGENT_ROWS_PER_CHUNK, household.attrs.len() + household.positions.len())
             } else {
-                (KIND_ROWS, KIND_ROWS_PER_CHUNK, 1)
+                (KIND_ROWS_PER_CHUNK, 1)
             };
-            let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, kind, rows, chunk, stride);
-            if crate::core_kinds::of(&declared.0, place).holds_money {
-                store = store.with_accounts(&mut space, rows, chunk);
+            let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, kind, traits.rows, chunk, stride);
+            if traits.holds_money {
+                store = store.with_accounts(&mut space, traits.rows, chunk);
             }
             kinds.push(store);
-            persons.push((place == HOUSEHOLD).then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK)));
+            persons.push(populated.then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK)));
         }
+        let names: Vec<&'static str> = declared.0.iter().map(|k| k.name).collect();
         let happened = phx_core::EventStore::new(
             &mut space,
             phx_core::capacity::EVENT_ROWS,
@@ -177,14 +178,14 @@ impl Core {
         Core {
             space,
             household_pop,
-            names: KINDS.iter().map(|k| k.name).collect(),
-            bound: crate::bound::Bound::of(&KINDS.map(|k| k.name), &[]),
+            bound: crate::bound::Bound::of(&names, &[]),
+            bank_kind: declared.0.iter().position(|k| k.takes_deposits).map(kind_number),
+            names,
 
             kinds,
             persons,
             keys: Vec::new(),
             issuers: Vec::new(),
-            bank_kind: Some(kind_number(BANK)),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),
             work: crate::core_day::Work::default(),
@@ -267,13 +268,20 @@ impl Core {
         let ctx = OpeningCtx::new(o.streams, phx_core::CONTRACTS);
         let date = o.calendar.date(o.today);
         let mut pensions = core.pension_family(o.today);
+        let bound = core.bound.kinds;
+        let (central_bank, treasury_kind, agency_kind, bank_kind) = (
+            declared_kind(bound.central_bank),
+            declared_kind(bound.treasury),
+            declared_kind(bound.agency),
+            declared_kind(bound.bank),
+        );
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
             core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), (*name).to_owned(), *share)));
             let at = |instrument, sector| phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
             let site = sys_cb::site(&ctx, c);
-            let issuer = core.begin_party(CENTRAL_BANK, &[MaybeI64::present(i64::from(site.get()))], None);
+            let issuer = core.begin_party(central_bank, &[MaybeI64::present(i64::from(site.get()))], None);
             let treasury = core.begin_party(
-                TREASURY,
+                treasury_kind,
                 &[MaybeI64::present(i64::from(site.get()))],
                 Some(Opening { bank: AT_ISSUER, balance: at(DEPOSITS, GOVERNMENT) }),
             );
@@ -281,7 +289,7 @@ impl Core {
             core.treasuries.push(Some(treasury));
             // Its public agency, sited with it, holds its account at the issuer and is funded as it pays.
             let agency = core.begin_party(
-                AGENCY,
+                agency_kind,
                 &[MaybeI64::present(i64::from(site.get()))],
                 Some(Opening { bank: AT_ISSUER, balance: 0 }),
             );
@@ -292,7 +300,7 @@ impl Core {
             for (k, balance) in (0_u32..).zip(reserves) {
                 let site = sys_bnk::bank_site(&ctx, c, k);
                 let record = [MaybeI64::present(i64::from(site.get()))];
-                banks.push(core.begin_party(BANK, &record, Some(Opening { bank: AT_ISSUER, balance })));
+                banks.push(core.begin_party(bank_kind, &record, Some(Opening { bank: AT_ISSUER, balance })));
             }
             let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c, decl);
             let mut labour = rules.jobs.rule(o.register, date, c, Asked::of(o.register, c)?.by_occupation());
@@ -454,7 +462,8 @@ impl Core {
             },
             sys_bnk::households::Banked::Unbanked { .. } => AT_ISSUER,
         };
-        let key = self.begin_party(HOUSEHOLD, &record, Some(Opening { bank, balance: 0 }));
+        let household = declared_kind(self.bound.kinds.household);
+        let key = self.begin_party(household, &record, Some(Opening { bank, balance: 0 }));
         let held: Vec<Held> = h
             .persons
             .iter()
@@ -464,7 +473,7 @@ impl Core {
                 Held { word: phx_pop::person::pack(decl, p), id }
             })
             .collect();
-        if let Some(Some(p)) = self.persons.get_mut(HOUSEHOLD) {
+        if let Some(Some(p)) = self.persons.get_mut(household) {
             p.set(&mut self.space, key.slot(), &held);
         }
         key
@@ -498,7 +507,7 @@ impl Core {
         let shares = self.apportion(("households' deposits", c.id.get()), deposits, &weights);
         let cash: Vec<u64> = money.unbanked.iter().map(|(_, n)| *n).collect();
         let cash = self.apportion(("households' currency", c.id.get()), currency, &cash);
-        let Some(store) = self.kinds.get_mut(HOUSEHOLD) else { return Ok(()) };
+        let Some(store) = self.kinds.get_mut(declared_kind(self.bound.kinds.household)) else { return Ok(()) };
         for ((slot, bank, _), balance) in money.banked.iter().zip(shares) {
             let Some(b) = banks.get(*bank) else { continue };
             store.open_account(*slot, Opening { bank: b.slot().get(), balance });
@@ -521,11 +530,14 @@ impl Core {
 
     /// The state pensions' family: from each country's treasury to households, naming the person paid.
     fn pension_family(&mut self, today: Day) -> DatedFamily {
+        let (treasury, household) =
+            (declared_kind(self.bound.kinds.treasury), declared_kind(self.bound.kinds.household));
+        let rows = [self.kind_rows(treasury), self.kind_rows(household)];
         DatedFamily {
             name: crate::consts::families::PENSION,
             store: phx_core::store::Family::new(
                 &mut self.space,
-                ([kind_number(TREASURY), kind_number(HOUSEHOLD)], [KIND_ROWS, AGENT_ROWS]),
+                ([kind_number(treasury), kind_number(household)], rows),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [false, true],
                 (today.succ(), WHEEL_DAYS),

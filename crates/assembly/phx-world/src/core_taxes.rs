@@ -23,7 +23,7 @@ use crate::consts::reason::{TAXED, WAGE};
 use crate::core::{Core, kind_number};
 use crate::core_accounts::Line;
 use crate::core_day::{DatedFamily, Due};
-use phx_core::capacity::{AGENT_ROWS, KIND_ROWS};
+use phx_core::capacity::AGENT_ROWS;
 
 /// The bases a tax arises on.
 pub const INCOME: u8 = 0;
@@ -190,12 +190,8 @@ impl Core {
             let Some(payer) = self.families.iter().find(|f| f.name == wage).map(|f| f.store.kinds[0]) else {
                 continue;
             };
-            let family = collectors_family(
-                &mut self.space,
-                (collected, [payer, treasury]),
-                ([AGENT_ROWS, KIND_ROWS], AGENT_ROWS),
-                today,
-            );
+            let rows = [self.kind_rows(usize::from(payer)), self.kind_rows(usize::from(treasury))];
+            let family = collectors_family(&mut self.space, (collected, [payer, treasury]), (rows, AGENT_ROWS), today);
             self.add_family(family);
         }
         self.index_collectors();

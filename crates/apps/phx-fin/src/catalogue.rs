@@ -141,7 +141,9 @@ impl<'a> Lists<'a> {
     }
 }
 
-const ANY: [&str; 1] = ["any"];
+/// The classes of holding every form may hold, and the one the families' contracts are held as.
+const CLASSES_HELD: [&str; 4] = ["money", "loans", "securities", "shares"];
+const LOANS: &str = "loans";
 const FEATURES: [Feature; 3] = [Feature::SeparateParty, Feature::LimitedLiability, Feature::HasOwners];
 const ENDINGS: [&str; 1] = ["insolvency"];
 
@@ -169,7 +171,7 @@ impl<'a> Tables<'a> {
                 .map(|name| FormDecl {
                     system: "FRM",
                     name,
-                    may_hold: &ANY,
+                    may_hold: &CLASSES_HELD,
                     features: &FEATURES,
                     endings: &ENDINGS,
                     owners,
@@ -180,7 +182,13 @@ impl<'a> Tables<'a> {
                 .kinds
                 .iter()
                 .enumerate()
-                .map(|(i, name)| KindEntry { system: "PTY", name, form: nth(&s.forms, i, 0), place: Place::Sited })
+                .map(|(i, name)| KindEntry {
+                    system: "PTY",
+                    name,
+                    form: nth(&s.forms, i, 0),
+                    place: Place::Sited,
+                    store: "firms",
+                })
                 .collect(),
             families: s
                 .families
@@ -194,6 +202,8 @@ impl<'a> Tables<'a> {
                     kinds,
                     jobs: i % JOBS == 0,
                     slots: FAMILY_ROWS,
+                    class: Missing::Present(LOANS),
+                    holders: kinds.get(..1).unwrap_or_default(),
                 })
                 .collect(),
             lines: s.lines.iter().map(|name| LineDecl { system: "ACC", name }).collect(),

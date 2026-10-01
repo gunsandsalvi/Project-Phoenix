@@ -112,11 +112,12 @@ impl Core {
         let (Some(treasury), Some(household)) = (self.bound.kinds.treasury, self.bound.kinds.household) else {
             return Ok(());
         };
+        let rows = [self.kind_rows(treasury), self.kind_rows(household)];
         let family = DatedFamily {
             name: crate::consts::families::BENEFIT,
             store: phx_core::store::Family::new(
                 &mut self.space,
-                ([kind_number(treasury), kind_number(household)], [AGENT_ROWS, AGENT_ROWS]),
+                ([kind_number(treasury), kind_number(household)], rows),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [false, true],
                 (today.succ(), WHEEL_DAYS),
@@ -137,11 +138,12 @@ impl Core {
     }
 
     fn loan_family(&mut self, name: &'static str, borrower: usize, bank: usize, today: Day) -> DatedFamily {
+        let rows = [self.kind_rows(borrower), self.kind_rows(bank)];
         DatedFamily {
             name,
             store: phx_core::store::Family::new(
                 &mut self.space,
-                ([kind_number(borrower), kind_number(bank)], [AGENT_ROWS, AGENT_ROWS]),
+                ([kind_number(borrower), kind_number(bank)], rows),
                 (AGENT_ROWS, AGENT_ROWS_PER_CHUNK),
                 [true, true],
                 (today.succ(), WHEEL_DAYS),

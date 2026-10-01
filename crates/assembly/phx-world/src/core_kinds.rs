@@ -24,10 +24,13 @@ pub struct Declared {
 /// What the forms say a party may hold that is money.
 const MONEY: &str = "money";
 
-/// A kind's declared traits: whether its owners hold its equity, whether it holds money (it may and issues none),
-/// whether it takes deposits, who owns it, the money stock's class its deposits count in, and its place.
+/// A kind's declared traits: its name, the rows its store reserves, whether its owners hold its equity, whether it
+/// holds money (it may and issues none), whether it takes deposits, who owns it, the money stock's class its deposits
+/// count in, and its place.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct KindTraits {
+    pub name: &'static str,
+    pub rows: u32,
     pub has_owners: bool,
     pub holds_money: bool,
     pub takes_deposits: bool,
@@ -36,17 +39,18 @@ pub struct KindTraits {
     pub place: Place,
 }
 
-/// Each kind's traits from its legal form, in the kinds' order: the money stock's classes are the deposit-taking
-/// forms' reserves, then the holder forms' deposits in their published order, all others in the last.
+/// Each kind's traits from its legal form, with the rows its store reserves, in the kinds' order: the money stock's
+/// classes are the deposit-taking forms' reserves, then the holder forms' deposits in their published order, all
+/// others in the last.
 ///
 /// # Errors
 /// A kind whose legal form the forms do not declare.
 #[opening]
 #[clause("PTY.4", "PTY.5", "MON.9")]
-pub fn traits(kinds: &[KindDecl], forms: &[LegalForm], holders: &[&str]) -> Result<Vec<KindTraits>, String> {
+pub fn traits(kinds: &[(KindDecl, u32)], forms: &[LegalForm], holders: &[&str]) -> Result<Vec<KindTraits>, String> {
     kinds
         .iter()
-        .map(|k| {
+        .map(|(k, rows)| {
             let Some(form) = forms.iter().find(|f| f.name == k.legal_form) else {
                 return Err(format!(
                     "kind `{}` takes the legal form `{}`, which the law does not declare",
@@ -60,6 +64,8 @@ pub fn traits(kinds: &[KindDecl], forms: &[LegalForm], holders: &[&str]) -> Resu
                 holders.iter().position(|h| *h == form.name).map_or(MONEY_CLASSES - 1, |at| at + 1)
             };
             Ok(KindTraits {
+                name: k.name,
+                rows: *rows,
                 has_owners: form.has(Feature::HasOwners),
                 holds_money: form.may_hold.iter().any(|h| h == MONEY) && !form.has(Feature::IssuesCurrency),
                 takes_deposits,

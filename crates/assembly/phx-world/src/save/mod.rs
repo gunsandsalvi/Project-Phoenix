@@ -47,9 +47,9 @@ pub struct SaveRecord {
     pub world_hash: u128,
 }
 
-/// Every name the build declares that a core's save holds: its kinds' and its families'.
-fn names() -> Vec<&'static str> {
-    let mut n: Vec<&'static str> = crate::consts::kinds::KINDS.iter().map(|k| k.name).collect();
+/// Every name the build declares that a core's save holds: its kinds', as declared, and its families'.
+fn names(kinds: &[&'static str]) -> Vec<&'static str> {
+    let mut n = kinds.to_vec();
     n.extend(crate::consts::families::ALL);
     n
 }
@@ -83,14 +83,14 @@ fn write_store(
 /// A store's file opened and read by `read`, which must consume it whole, and the root of the frames it read.
 fn read_store<T>(
     dir: &Path,
-    name: &str,
+    (name, kinds): (&str, &[&'static str]),
     read: &mut dyn FnMut(&mut Reader<'_>) -> Result<T, LoadError>,
 ) -> Result<(T, u128), String> {
     let path = dir.join(file_of(name));
     let file = std::fs::File::open(&path).map_err(|e| io_err(&path, &e))?;
     let mut input = BufReader::new(file);
     let mut r = Reader::new(&mut input).map_err(|e| io_err(&path, &e))?;
-    r.with_names(&names());
+    r.with_names(&names(kinds));
     r.hash_frames(HASH_KEY);
     let value = read(&mut r).map_err(|e| io_err(&path, &e))?;
     if !r.at_end().map_err(|e| io_err(&path, &e))? {
@@ -161,7 +161,7 @@ impl World {
     #[clause("SET.15")]
     pub fn check_save(&self, dir: &Path) -> Result<u128, String> {
         let manifest = Manifest::read(dir)?;
-        let (_, got) = read_store(dir, CORE, &mut read_core)?;
+        let (_, got) = read_store(dir, (CORE, &self.core.names), &mut read_core)?;
         if hex(got) != manifest.world_hash {
             return Err(format!("the save reads back as {} where the close hashed {}", hex(got), manifest.world_hash));
         }
@@ -224,11 +224,11 @@ pub fn load(
 ) -> Result<World, String> {
     let manifest = Manifest::read(dir)?;
     admitted(&manifest, build, config.seed)?;
-    let mut world = crate::registry::assemble_loaded(systems, interfaces, config, &mut |register| {
+    let mut world = crate::registry::assemble_loaded(systems, interfaces, config, &mut |register, kinds| {
         if hex(register) != manifest.register {
             return Err("a save of other data than this run's".to_owned());
         }
-        let ((today, core), root) = read_store(dir, CORE, &mut read_core)?;
+        let ((today, core), root) = read_store(dir, (CORE, kinds), &mut read_core)?;
         if hex(root) != manifest.world_hash {
             return Err("the save's world does not hash to its close's".to_owned());
         }
@@ -239,7 +239,7 @@ pub fn load(
     }
     // Every index left out of the save and naming its rebuild is rebuilt now, the world rebound around it.
     phx_store::rebuild(&mut world.core).map_err(|e| e.to_string())?;
-    world.metrics = read_store(dir, RUN, &mut |r| Metrics::load(r))?.0;
+    world.metrics = read_store(dir, (RUN, &world.core.names), &mut |r| Metrics::load(r))?.0;
     Ok(world)
 }
 

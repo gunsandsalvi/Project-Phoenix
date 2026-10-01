@@ -15,8 +15,13 @@ fn family(name: &'static str, kinds: [u8; 2]) -> DatedFamily {
     crate::core_taxes::collectors_family(&mut AddressSpace::empty(), (name, kinds), ([rows, rows], rows), Day::new(0))
 }
 
+/// The fixtures' kinds, each at the place its families' sides name.
 fn names() -> Vec<&'static str> {
-    crate::consts::kinds::KINDS.iter().map(|k| k.name).collect()
+    [sys_cb::CENTRAL_BANK, sys_cb::TREASURY, sys_bnk::BANK, sys_frm::FIRM, phx_core::ESTATE_KIND]
+        .iter()
+        .chain(&[sys_dem::HOUSEHOLD_KIND, sys_soc::AGENCY])
+        .map(|k| k.name)
+        .collect()
 }
 
 fn opened() -> Vec<DatedFamily> {

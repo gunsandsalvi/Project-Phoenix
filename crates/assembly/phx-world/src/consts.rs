@@ -95,25 +95,6 @@ pub mod families {
     ];
 }
 
-/// The kinds of party on the core, the systems' declarations in the core's order, and each one's place among them.
-pub mod kinds {
-    pub const KINDS: [phx_core::KindDecl; 7] = [
-        sys_cb::CENTRAL_BANK,
-        sys_cb::TREASURY,
-        sys_bnk::BANK,
-        sys_frm::FIRM,
-        phx_core::ESTATE_KIND,
-        sys_dem::HOUSEHOLD_KIND,
-        sys_soc::AGENCY,
-    ];
-    pub const CENTRAL_BANK: usize = 0;
-    pub const TREASURY: usize = 1;
-    pub const BANK: usize = 2;
-    pub const FIRM: usize = 3;
-    pub const ESTATE: usize = 4;
-    pub const HOUSEHOLD: usize = 5;
-    pub const AGENCY: usize = 6;
-}
 /// The statistics' numbers: the base the published places are powers of, and the money stock's classes — the banks'
 /// reserves, then deposits held by households, by firms and by everyone else.
 pub mod stats {

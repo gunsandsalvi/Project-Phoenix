@@ -96,7 +96,6 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
 /// country — or a kind sited by a population declaration that sites it by none.
 #[opening]
 fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]) -> Vec<String> {
-    let firm = crate::consts::kinds::KINDS.get(crate::consts::kinds::FIRM).map(|k| &k.name);
     d.kinds
         .iter()
         .filter_map(|(_, k)| {
@@ -108,7 +107,7 @@ fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]
             }
             let words = match declared {
                 Some(p) => p.attrs.len() + p.positions.len(),
-                None if firm == Some(&k.name) => crate::consts::firm::RECORD,
+                None if k.name == sys_frm::FIRM.name => crate::consts::firm::RECORD,
                 None => 1,
             };
             k.place.check(k.name, words).err()
@@ -368,22 +367,68 @@ fn open_stats(
     Ok(())
 }
 
-/// The core's kinds' declared traits, from their legal forms, and each country's heirless destination's kind, from
-/// its inheritance law.
+fn strs(v: &[String]) -> Vec<&str> {
+    v.iter().map(String::as_str).collect()
+}
+
+/// The world's kind catalogue: the law's legal forms and the systems' kinds, with the families' codes.
 ///
 /// # Errors
-/// A kind whose form the law does not declare, or a destination no kind of the core's is.
+/// Every inconsistency the catalogue refuses.
+#[opening]
+pub(crate) fn world_catalogue(
+    d: &Declarations,
+    forms: &[phx_core::LegalForm],
+    codes: &phx_core::catalogue::FamilyCodes,
+) -> Result<phx_core::catalogue::Catalogue, String> {
+    use phx_core::catalogue::{Declared, FormDecl, KindEntry, compile};
+    let lists: Vec<_> = forms.iter().map(|f| (strs(&f.may_hold), strs(&f.endings), strs(&f.offices))).collect();
+    let forms: Vec<FormDecl<'_>> = forms
+        .iter()
+        .zip(&lists)
+        .map(|(f, (may_hold, endings, offices))| FormDecl {
+            system: "PTY",
+            name: &f.name,
+            may_hold,
+            features: &f.features,
+            endings,
+            owners: f.owners,
+            offices,
+        })
+        .collect();
+    let kinds: Vec<KindEntry<'_>> = d
+        .kinds
+        .iter()
+        .map(|(system, k)| KindEntry { system, name: k.name, form: k.legal_form, place: k.place, store: k.store })
+        .collect();
+    let declared = Declared { forms: &forms, kinds: &kinds, codes: codes.rows(), ..Declared::default() };
+    compile(&declared).map_err(|refused| format!("the kind catalogue refused:\n{}", refused.join("\n")))
+}
+
+/// The core's kinds in the catalogue's order, each with its declared traits, from its legal form, and the rows its
+/// store reserves; and each country's heirless destination's kind, from its inheritance law.
+///
+/// # Errors
+/// What the catalogue refuses, or a destination no kind of the core's is.
 #[opening]
 fn declared_kinds(p: &Prepared) -> Result<crate::core_kinds::Bound, String> {
-    use crate::consts::kinds::KINDS;
     let forms = p.kernel.legal_forms.shared(&p.c.register);
-    let traits = crate::core_kinds::traits(&KINDS, forms, &if_state::stats::HOLDER_CLASSES)?;
+    let catalogue = world_catalogue(&p.d, forms, p.c.register.family_codes())?;
+    let kinds = catalogue
+        .kinds()
+        .zip(&catalogue.names.kinds)
+        .map(|(h, name)| {
+            let decl = p.d.kinds.iter().find(|(_, k)| k.name == &**name).map(|(_, k)| *k);
+            decl.map(|k| (k, catalogue.kind(h).rows)).ok_or_else(|| format!("kind `{name}` compiled undeclared"))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
+    let traits = crate::core_kinds::traits(&kinds, forms, &if_state::stats::HOLDER_CLASSES)?;
     let prim = p.c.register.handle::<phx_core::register::values::KindName>(&sys_dem::HEIRLESS_TO)?;
     let heirless = (0..p.levels.len())
         .map(|c| {
             let country = phx_id::CountryId::new(u8::try_from(c).map_err(|e| e.to_string())?);
             let name = &prim.get(&p.c.register, country).0;
-            KINDS.iter().position(|k| k.name == name).map(crate::core::kind_number).ok_or_else(|| {
+            kinds.iter().position(|(k, _)| k.name == name).map(crate::core::kind_number).ok_or_else(|| {
                 format!("country {c}: its law passes an estate with no heir to `{name}`, no kind the core keeps")
             })
         })
@@ -741,9 +786,13 @@ fn opened(core: &crate::core::Core, register: &phx_core::Register) -> crate::met
     crate::metrics::Opened { kinds, distributions }
 }
 
+/// What reads a save's core and its day, handed the register's hash and the build's kinds.
+pub(crate) type ReadSave<'a> =
+    dyn FnMut(u128, &[&'static str]) -> Result<(phx_id::Day, crate::core::Core), String> + 'a;
+
 /// A world read back from a save: assembled from the build and the data as the save's was, without its opening, its
-/// core and its day read from the save by `read`, which is handed the register's hash to hold the save to, and the
-/// build's declarations its core holds bound again.
+/// core and its day read from the save by `read`, which is handed the register's hash to hold the save to and the
+/// build's kinds to bind its names to, and the build's declarations its core holds bound again.
 ///
 /// # Errors
 /// Every refusal of assembly, and the save's refusal.
@@ -751,10 +800,11 @@ pub(crate) fn assemble_loaded(
     systems: &[fn() -> SystemEntry],
     interfaces: &[&[ItemDecl]],
     config: &WorldConfig,
-    read: &mut dyn FnMut(u128) -> Result<(phx_id::Day, crate::core::Core), String>,
+    read: &mut ReadSave<'_>,
 ) -> Result<World, String> {
     let parts = parts(systems, interfaces, config).map_err(|e| format!("assembly refused:\n{e}"))?;
-    let (today, mut core) = read(parts.p.register_hash)?;
+    let kinds: Vec<&'static str> = parts.p.d.kinds.iter().map(|(_, k)| k.name).collect();
+    let (today, mut core) = read(parts.p.register_hash, &kinds)?;
     let household = parts.p.pop.iter().find(|(d, _)| d.kind == if_pop::HOUSEHOLD).map(|(d, _)| d.clone());
     let sta = parts.p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::StaKind>()).copied();
     let index = parts.p.d.markets.iter().find_map(|(_, k)| k.downcast_ref::<if_state::stats::IndexKind>()).copied();

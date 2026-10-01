@@ -105,11 +105,12 @@ pub(crate) enum Step {
 
 impl Core {
     fn facility_family(&mut self, name: &'static str, kinds: [u8; 2], today: Day) -> DatedFamily {
+        let rows = kinds.map(|k| self.kind_rows(usize::from(k)));
         DatedFamily {
             name,
             store: phx_core::store::Family::new(
                 &mut self.space,
-                (kinds, [KIND_ROWS, KIND_ROWS]),
+                (kinds, rows),
                 (KIND_ROWS, KIND_ROWS_PER_CHUNK),
                 [true, true],
                 (today.succ(), phx_core::capacity::WHEEL_DAYS),

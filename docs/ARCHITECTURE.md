@@ -908,9 +908,10 @@ an interface item whose writer is not registered.
   not hold.
 
   The kind catalogue (K-21) refuses, all at once, by item and system: a name declared twice in a table; a reference to
-  a name no system declares; a family with sides of a kind whose legal form may not hold it, or declaring more rows
+  a name no system declares; a kind reserved by a store the capacity table does not hold; a family held by a kind
+  not among its sides or whose legal form may not hold its class, naming holders but no class, or declaring more rows
   than a link names; a reason of no place in the payment order; a market without participants, or admitting a kind
-  whose form may not trade what it trades; a primitive a market reads absent from the register; a decision taken in an
+  whose form may not hold the class of what it trades; a primitive a market reads absent from the register; a decision taken in an
   office its taker's form does not declare; a way reading a product at a grade it has not; a legal form with no ending
   that issues no currency, or naming an office twice; more than 255 families or 31 party kinds.
 
@@ -1832,9 +1833,10 @@ every later stage's dated POLICY.
 Everything that differs between kinds of thing is declared data, compiled once at assembly into dense tables read by
 typed handles, so no mechanism reads a name and adding a kind is a declaration. The systems' declarations
 (`catalogue/decls.rs`) name each item and the system that declared it, and every reference to another by that other's
-name: legal forms (`FormDecl`: what they may hold — families, or `any` — features, endings, owners, offices), party
-kinds (`KindEntry`: form, place), contract families (`FamilyDecl`: reason, side kinds, job or debt, the rows it is
-declared to hold), account lines (`LineDecl`), reasons (`ReasonDecl`: lines, place in the payment order, refusal gate
+name: legal forms (`FormDecl`: the classes of holding they may hold — money, loans, shares and the law's others —
+features, endings, owners, offices), party kinds (`KindEntry`: form, place, and the capacity table's store its rows are
+reserved by), contract families (`FamilyDecl`: reason, side kinds, job or debt, the rows it is declared to hold, and
+the class its contracts are to the side kinds that hold them as an asset, with those holders), account lines (`LineDecl`), reasons (`ReasonDecl`: lines, place in the payment order, refusal gate
 by name), markets (`MarketDecl`: form of `MarketForm` — posted price, call, network call, book, dealer, bilateral,
 administered, search, queue — operator kind, `MeetingDays`, settlement a number of business days after the trade,
 participant kinds, the family traded, and the register's primitives holding its tick size, price points and valuer's
@@ -1843,14 +1845,14 @@ grades), ways (`WayDecl`: inputs by product and grade) and capital kinds (`Capit
 in one `Declared` with the register's primitive ids.
 
 `compile` (`catalogue/refusals.rs`) interns each table's names in name order, so the same declarations registered in
-any order give the same handles (`FormH`, `KindH`, `FamilyH`, `LineH`, `ReasonH`, `GateH`, `MarketH`, `HazardH`,
+any order give the same handles (`FormH`, `ClassH`, `KindH`, `FamilyH`, `LineH`, `ReasonH`, `GateH`, `MarketH`, `HazardH`,
 `DecisionH`, `ProductH`, `WayH`, `CapitalH`, each a `u16`; `GradeH` a product and a grade), resolves every reference
-to a handle and returns the `Catalogue`: a row per handle (`FormRow` with its features as bits, `KindRow`,
-`FamilyRow`, `ReasonRow`, `MarketRow`, `DecisionRow` with its office's place in the taker's form), each table's lists
+to a handle and returns the `Catalogue`: a row per handle (`FormRow` with its features as bits and its classes,
+`KindRow` with its store's rows, `FamilyRow` with its class and holders, `ReasonRow`, `MarketRow`, `DecisionRow` with its office's place in the taker's form), each table's lists
 flattened into one column read by `Span`, and the names apart for reports and assembly (`Names`); a gate shared by
-several reasons is one gate. It reports every refusal at once, each naming its item and system (§5.4). A day path
+several reasons is one gate, and a class several forms may hold is one class. It reports every refusal at once, each naming its item and system (§5.4). A day path
 holds only handles and reads a row by one indexed load (`form`, `kind`, `family`, `family_kinds`, `reason`,
-`reason_lines`, `market`, `participants`, `hazard`, `decision`, `grades`, `way_inputs`, `classes`); `has` tests a
+`family_holders`, `may_hold`, `reason_lines`, `market`, `participants`, `hazard`, `decision`, `grades`, `way_inputs`, `classes`); `has` tests a
 form's feature bit. The catalogue is not saved: the build supplies it. Capacity: 255 families beside holdings' code
 (`FAMILY_CODES`), each at most 2²⁴ rows (`FAMILY_SLOTS`), and 31 party kinds beside nature (`PARTY_KINDS`).
 `[fin.catalogue]` over the finished world's counts — 26 kinds, 80 families, 300 lines, 400 reasons, 60 markets, 40
@@ -1953,9 +1955,11 @@ codes in use are 80 of 255:
 | 79 | `TAX.collected_public` | contract | S1.270 | declared |
 | 255 | holdings | reserved | S1.174 | the holdings' link (S1.271) |
 
-**Today** (`kinds.rs`, `system.rs`, `pop.rs`): the kinds, legal forms and population items systems declare (§5.1),
-bound to handles by `Bound`; the catalogue replaces them as the world's kinds and families move onto it (S1.182).
-Extension points: each kind's attribute schemas (S1.196), offices and
+**The world's catalogue.** `registry::world_catalogue` compiles the law's legal forms and the systems' kinds, with the
+family codes, at assembly and again at load; the core keeps its kinds in the catalogue's order and each store at its
+declared capacity (§10.3). The world's families are not yet declared to it: their reasons and lines are declared
+with the settlement chain's reasons (S1.245), and the families join the catalogue as the contract store declares them
+(S1.257), retiring `Bound`'s family places. Extension points: each kind's attribute schemas (S1.196), offices and
 their holders (S1.209), record kinds (S1.215), dated-reason kinds (S1.225), levy sets, tallies and source kinds on
 reasons (S1.245–S1.255), families' columns and side modes (S1.257), instrument families (S1.279), unit and process
 kinds (S1.284, S1.287), capital chains' rates (S1.285), markets' lapse rules, points and marks (S1.296, S1.297,
@@ -1989,7 +1993,9 @@ reads a named constant — `AGENT_ROWS` (the persons), `KIND_ROWS` (the institut
 (the event log and its arena: today every event of a gate's run resident, the `events_unpruned` store, until K-36's
 log keeps occurrences on storage within a horizon), `PERSON_ARENA_WORDS` (a chunk of households' arena, each
 household's list of persons at its most, `HOUSEHOLD_WORDS`), `INSTRUMENT_ROWS` — computed at compile time from its store's own entry, so no store
-stops the run at a literal ceiling. Capacities are address-space reservations committed only as rows are written:
+stops the run at a literal ceiling. A kind of party reserves the capacity of the store its declaration names
+(`KindDecl::store`: households, firms, banks, estates or institutions), read once into its catalogue row (K-21), and a
+family's sides reserve their kinds' rows (`Core::kind_rows`). Capacities are address-space reservations committed only as rows are written:
 they change no outcome, and at twice the design point with growth they stay inside `phx-store`'s `VA_BUDGET`.
 
 The code widths: a chain link and a wheel entry carry a family code of `FAMILY_BITS` (8) and a slot of `SLOT_BITS`
@@ -3279,8 +3285,10 @@ rounding of the stored places over the terms summed (Law 7).
 ### 10.3 Canonical drawing
 
 **The core's opening** (`phx_world::core_open`) draws its own world, no copy of anything. Its kinds are the systems'
-declarations in the core's order (`consts::kinds::KINDS`: central bank, treasury, bank, firm, estate, household,
-agency), a kind's number its place. What the core reads of a kind is read from its declarations, bound at assembly and
+declarations as the kind catalogue (K-21) compiles them with the law's legal forms (`registry::world_catalogue`), in
+the catalogue's handle order — agency, bank, central bank, estate, firm, household, treasury — a kind's number its
+place; each kind's store reserves the rows of the capacity table's store it declares (`KindDecl::store`), the
+households' with their persons. The bank kind is the one whose form takes deposits. What the core reads of a kind is read from its declarations, bound at assembly and
 again at load and never saved (`Core::declared`, `core_kinds`): whether it keeps an equity account (its form's
 `HasOwners`), whether it holds money (its form may and issues no currency), whether it takes deposits, who owns it
 (an account of a state-owned form at the issuer is the state's account), the money stock's class its deposits count in

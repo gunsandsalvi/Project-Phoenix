@@ -330,11 +330,12 @@ fn fact(d: &Decl) -> syn::Result<TokenStream> {
 
 fn kind(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
     let span = d.name.span();
-    let fields = d.fields(&["legal_form", "place", "clause"])?;
+    let fields = d.fields(&["legal_form", "place", "store", "clause"])?;
     if !snake(&d.id.value()) {
         return Err(syn::Error::new_spanned(&d.id, "a kind is named in snake_case"));
     }
     let form = string(required(&fields, "legal_form", span)?)?;
+    let store = string(required(&fields, "store", span)?)?;
     let place = required(&fields, "place", span)?;
     let clause = clause_of(&fields, span)?;
     let id = &d.id;
@@ -348,6 +349,7 @@ fn kind(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
                     use ::phx_core::kinds::Place::{Country, Region, Site, Sited};
                     #place
                 },
+                store: #store,
                 clause: #clause,
             }
         },
@@ -584,12 +586,17 @@ mod tests {
             "another system writes LAB's fact"
         );
         assert!(!refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", place: Site { word: 0 },
-        clause: "BNK.1" } })));
+        store: "banks", clause: "BNK.1" } })));
         assert!(refused(&kind_decl(quote! { pub BANK = "Bank" { legal_form: "bank", place: Site { word: 0 },
-        clause: "BNK.1" } })));
+        store: "banks", clause: "BNK.1" } })));
         assert!(
-            refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", clause: "BNK.1" } })),
+            refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", store: "banks", clause: "BNK.1" } })),
             "a kind with no place"
+        );
+        assert!(
+            refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", place: Site { word: 0 },
+            clause: "BNK.1" } })),
+            "a kind with no store"
         );
     }
 }

@@ -235,6 +235,14 @@ impl Core {
     }
 }
 
+/// A kind the opening begins parties of, bound from the declarations; a world that declares none stops.
+pub(crate) fn declared_kind(kind: Option<usize>) -> usize {
+    match kind {
+        Some(k) => k,
+        None => violation!(clause = "PTY.4", "the opening begins a kind the world does not declare"),
+    }
+}
+
 pub(crate) fn kind_number(place: usize) -> u8 {
     match u8::try_from(place) {
         Ok(k) if k < NATURE_KIND => k,
@@ -243,6 +251,11 @@ pub(crate) fn kind_number(place: usize) -> u8 {
 }
 
 impl Core {
+    /// The rows a kind's store reserves, its capacity's.
+    pub(crate) fn kind_rows(&self, kind: usize) -> u32 {
+        crate::core_kinds::of(&self.declared.kinds, kind).rows
+    }
+
     /// The identity of a household's person at a place, none where it holds no one there.
     #[must_use]
     pub fn person_at(&self, household: PartyKey, place: usize) -> Option<u64> {

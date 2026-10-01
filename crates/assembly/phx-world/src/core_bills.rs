@@ -126,11 +126,12 @@ impl Core {
             })
             .collect();
         self.bills = Bills { kind: state.bills, last_cash: vec![None; laws.len()], laws, ..Bills::default() };
+        let rows = [self.kind_rows(treasury), self.kind_rows(usize::from(bank))];
         let family = DatedFamily {
             name: BILLS,
             store: phx_core::store::Family::new(
                 &mut self.space,
-                ([crate::core::kind_number(treasury), bank], [KIND_ROWS, KIND_ROWS]),
+                ([crate::core::kind_number(treasury), bank], rows),
                 (KIND_ROWS, KIND_ROWS_PER_CHUNK),
                 [true, true],
                 (today.succ(), phx_core::capacity::WHEEL_DAYS),

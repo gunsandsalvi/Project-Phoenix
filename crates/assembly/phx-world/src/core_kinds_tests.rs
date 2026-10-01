@@ -42,8 +42,19 @@ fn forms() -> Vec<LegalForm> {
 
 const HOLDERS: [&str; 2] = ["household", "company"];
 
+/// The build's kinds, in a fixed order of the fixture's own, each reserving one row.
+const TODAYS: [KindDecl; 7] = [
+    sys_cb::CENTRAL_BANK,
+    sys_cb::TREASURY,
+    sys_bnk::BANK,
+    sys_frm::FIRM,
+    phx_core::ESTATE_KIND,
+    sys_dem::HOUSEHOLD_KIND,
+    sys_soc::AGENCY,
+];
+
 fn of_kinds() -> Vec<super::KindTraits> {
-    traits(&crate::consts::kinds::KINDS, &forms(), &HOLDERS).unwrap()
+    traits(&TODAYS.map(|k| (k, 1)), &forms(), &HOLDERS).unwrap()
 }
 
 #[test]
@@ -55,8 +66,14 @@ fn equity_account_by_has_owners() {
 #[test]
 fn accounts_opened_by_may_hold() {
     let held = |may_hold: &[&str]| {
-        let k = KindDecl { name: "x", legal_form: "x", place: Place::Site { word: 0 }, clause: "PTY.4" };
-        traits(&[k], &[form("x", may_hold, &[], Owners::State)], &HOLDERS).unwrap()[0].holds_money
+        let k = KindDecl {
+            name: "x",
+            legal_form: "x",
+            place: Place::Site { word: 0 },
+            store: "institutions",
+            clause: "PTY.4",
+        };
+        traits(&[(k, 1)], &[form("x", may_hold, &[], Owners::State)], &HOLDERS).unwrap()[0].holds_money
     };
     assert!(held(&["money", "plant"]));
     assert!(!held(&["plant", "stocks"]), "a form that may hold no money opens no account");
@@ -86,11 +103,17 @@ fn money_stock_class_by_form() {
 
 #[test]
 fn form_outside_holder_classes_counts_other() {
-    let k = KindDecl { name: "fund", legal_form: "fund", place: Place::Site { word: 0 }, clause: "PTY.4" };
-    let fund = traits(&[k], &[form("fund", &["money"], &[], Owners::Shareholders)], &HOLDERS).unwrap();
+    let k = KindDecl {
+        name: "fund",
+        legal_form: "fund",
+        place: Place::Site { word: 0 },
+        store: "institutions",
+        clause: "PTY.4",
+    };
+    let fund = traits(&[(k, 1)], &[form("fund", &["money"], &[], Owners::Shareholders)], &HOLDERS).unwrap();
     assert_eq!(fund[0].money_class, MONEY_CLASSES - 1);
     let unknown = KindDecl { legal_form: "church", ..k };
-    assert!(traits(&[unknown], &forms(), &HOLDERS).is_err(), "a form the law does not declare");
+    assert!(traits(&[(unknown, 1)], &forms(), &HOLDERS).is_err(), "a form the law does not declare");
 }
 
 #[test]
@@ -116,17 +139,35 @@ fn heirless_to_the_declared_institution() {
 }
 
 #[test]
-fn kinds_order_is_assembly_order() {
+fn stores_built_from_catalogue_order() {
     let mut d = phx_core::Declarations::new();
     let _ = crate::compile::KernelPrims::declare(&mut d);
     for system in crate::systems::SYSTEMS {
         phx_core::declare_entry(&system(), &mut d);
     }
+    let codes = phx_core::catalogue::FamilyCodes::default();
+    let catalogue = crate::registry::world_catalogue(&d, &forms(), &codes).unwrap();
     let mut declared: Vec<&str> = d.kinds.iter().map(|(_, k)| k.name).collect();
-    let mut core: Vec<&str> = crate::consts::kinds::KINDS.iter().map(|k| k.name).collect();
     declared.sort_unstable();
-    core.sort_unstable();
-    assert_eq!(declared, core, "the core keeps every kind the build declares, and no other");
-    assert_eq!(crate::consts::kinds::KINDS[crate::consts::kinds::FIRM], sys_frm::FIRM);
-    assert_eq!(crate::consts::kinds::KINDS[crate::consts::kinds::HOUSEHOLD], sys_dem::HOUSEHOLD_KIND);
+    let compiled: Vec<&str> = catalogue.names.kinds.iter().map(AsRef::as_ref).collect();
+    assert_eq!(compiled, declared, "every kind the build declares, in name order, whatever the registration order");
+    let rows = |store: &str| phx_core::capacity::table().find(|c| c.store == store).unwrap().rows;
+    for (h, name) in catalogue.kinds().zip(&catalogue.names.kinds) {
+        let (_, decl) = d.kinds.iter().find(|(_, k)| k.name == &**name).unwrap();
+        assert_eq!(catalogue.kind(h).rows, rows(decl.store), "`{name}` reserves its own store's capacity");
+    }
+}
+
+#[test]
+fn empty_kind_empty_store() {
+    // A declared kind no party opens holds an empty store of its capacity, never a missing one.
+    let mut space = phx_store::AddressSpace::empty();
+    let store: phx_core::store::KindStore<phx_store::SystemBacking> = phx_core::store::KindStore::new(
+        &mut space,
+        0,
+        crate::consts::KIND_ROWS_PER_CHUNK,
+        crate::consts::KIND_ROWS_PER_CHUNK,
+        1,
+    );
+    assert_eq!(store.parties.live_slots().count(), 0);
 }
