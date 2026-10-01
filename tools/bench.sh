@@ -87,8 +87,9 @@ if [[ -n $persons ]]; then args+=(--persons "$persons"); else args+=(--budget pe
 if [[ -n $workers ]]; then args+=(--workers "$workers"); fi
 
 mkdir -p "$out"
-# A run that fails writes no report, so the last one is removed first and never read as this run's.
-rm -rf "$out/report.json" "$out/run"
+# A run that fails writes no report, and one not sampled no profile, so the last ones are removed first and never read
+# as this run's.
+rm -rf "$out/report.json" "$out/run" "$out/perf.data" "$out"/profile-*.txt
 status=0
 # The sampler is the kernel tools' own perf: the one on the path is a wrapper that refuses a kernel it was not built
 # for.
