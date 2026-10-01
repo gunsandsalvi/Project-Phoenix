@@ -5,18 +5,30 @@ pub const phx_pop::consts::AGENCY_OCCUPATIONS: u16
 pub const phx_pop::consts::AGENCY_REGIONS: u16
 pub const phx_pop::consts::BANK: phx_pop::layout::KindMap
 pub const phx_pop::consts::BIRTH_BITS: u32
+pub const phx_pop::consts::BIRTH_DAY_BITS: u32
+pub const phx_pop::consts::BIRTH_MONTH_BITS: u32
+pub const phx_pop::consts::BIRTH_YEAR_BITS: u32
 pub const phx_pop::consts::COUNTRIED: phx_pop::layout::KindMap  // used by: phx-world
+pub const phx_pop::consts::EDUCATION_BITS: u32
 pub const phx_pop::consts::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
+pub const phx_pop::consts::HEALTH_BITS: u32
 pub const phx_pop::consts::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
 pub const phx_pop::consts::INT_BYTES: [u16; 4]
 pub const phx_pop::consts::KIND_CHUNK_BYTES: u32
 pub const phx_pop::consts::KIND_GROUPS: usize
 pub const phx_pop::consts::KIND_INDEXES: usize
+pub const phx_pop::consts::LABOUR_BITS: u32
 pub const phx_pop::consts::LOAN_CLASSES: u16
+pub const phx_pop::consts::OCCUPATION_BITS: u32
+pub const phx_pop::consts::PERSON: phx_pop::layout::KindMap
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
+pub const phx_pop::consts::POINT_BITS: u32
 pub const phx_pop::consts::REGIONED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::consts::ROLE_BITS: u32
+pub const phx_pop::consts::SEX_BITS: u32
 pub const phx_pop::consts::SITED: phx_pop::layout::KindMap  // used by: phx-world
+pub const phx_pop::consts::SKILL_BITS: u32
+pub const phx_pop::consts::SKILL_FAMILIES: u32
 pub const phx_pop::consts::TOMB_FENCE: usize
 pub const phx_pop::consts::TOMB_KEY_BITS: u32
 pub const phx_pop::consts::TOMB_MERGE_SHARE: usize
@@ -222,6 +234,7 @@ pub const phx_pop::layout::BANK: phx_pop::layout::KindMap
 pub const phx_pop::layout::COUNTRIED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::layout::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
 pub const phx_pop::layout::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
+pub const phx_pop::layout::PERSON: phx_pop::layout::KindMap
 pub const phx_pop::layout::REGIONED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::layout::SITED: phx_pop::layout::KindMap  // used by: phx-world
 pub const fn phx_pop::layout::fits(&phx_pop::layout::KindMap) -> bool  // used by: phx-market, phx-store
@@ -231,6 +244,85 @@ pub mod phx_pop::person  // used by: phx-cli, phx-core, phx-fin, phx-market, phx
 pub fn phx_pop::person::pack(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Person) -> u64  // used by: phx-store, phx-world
 pub fn phx_pop::person::role_and_birth(u64) -> (usize, phx_id::day::Date)
 pub fn phx_pop::person::unpack(&phx_pop::kind::PopKindDecl, u64) -> phx_core::pop_process::Person  // used by: phx-cli, phx-store, phx-world
+pub mod phx_pop::person_kind  // used by: phx-fin
+pub struct phx_pop::person_kind::Members<'a, B: phx_store::backing::Backing>  // used by: phx-core
+impl<B: phx_store::backing::Backing> core::iter::traits::iterator::Iterator for phx_pop::person_kind::Members<'_, B>
+pub type phx_pop::person_kind::Members<'_, B>::Item = phx_id::ids::Slot  // used by: phx-core
+pub fn phx_pop::person_kind::Members<'_, B>::next(&mut self) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core
+pub struct phx_pop::person_kind::PersonKind<B: phx_store::backing::Backing>  // used by: phx-fin
+pub phx_pop::person_kind::PersonKind::store: phx_pop::kinds::KindStore<B>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world
+impl<B: phx_store::backing::Backing> phx_pop::person_kind::PersonKind<B>
+pub fn phx_pop::person_kind::PersonKind<B>::begin<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, (phx_id::ids::PartyRef, phx_id::ids::PartyRef), phx_pop::person_word::PersonWord, &[phx_pop::kinds::Opening])  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::begin_person<D: phx_store::backing::Backing>(&mut self, &mut phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef, (phx_pop::person_word::PersonWord, &[phx_pop::kinds::Opening])) -> phx_id::ids::PartyRef  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::end_person<D: phx_store::backing::Backing>(&mut self, &mut phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef, (phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyRef>))  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::layout(&mut self) -> &mut phx_pop::layout::Layout  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::left<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef)  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::members<'a>(&'a self, &impl phx_pop::person_kind::Heads, phx_id::ids::Slot) -> phx_pop::person_kind::Members<'a, B>  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::move_person<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef, phx_id::ids::PartyRef)  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::new(&mut phx_store::backing::AddressSpace, u8, u32) -> phx_pop::person_kind::PersonKind<B>  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::set_field<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::person_word::Field, u32)  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::set_search_start<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_num::missing::Missing<u16>)  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::set_skill<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, u32, u32)  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::view<D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef) -> phx_pop::person_kind::PersonView<'_>  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::view_at(&self, phx_id::ids::Slot) -> core::option::Option<phx_pop::person_kind::PersonView<'_>>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::person_kind::PersonKind<B> where phx_pop::kinds::KindStore<B>: phx_store::save::Saved, core::option::Option<(phx_pop::layout::Layout, Words)>: core::default::Default
+pub fn phx_pop::person_kind::PersonKind<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+pub struct phx_pop::person_kind::PersonView<'a>
+impl phx_pop::person_kind::PersonView<'_>
+pub fn phx_pop::person_kind::PersonView<'_>::account(&self) -> phx_num::missing::Missing<u32>
+pub fn phx_pop::person_kind::PersonView<'_>::age_on(&self, phx_id::day::Date) -> i64
+pub fn phx_pop::person_kind::PersonView<'_>::chain_head(&self) -> phx_num::missing::Missing<u32>
+pub fn phx_pop::person_kind::PersonView<'_>::get(&self, phx_pop::person_word::Field) -> u32
+pub fn phx_pop::person_kind::PersonView<'_>::goal(&self) -> phx_num::missing::Missing<u16>
+pub fn phx_pop::person_kind::PersonView<'_>::household(&self) -> phx_id::ids::Slot
+pub fn phx_pop::person_kind::PersonView<'_>::search_start(&self) -> phx_num::missing::Missing<u16>
+pub fn phx_pop::person_kind::PersonView<'_>::skills(&self) -> phx_pop::person_word::Skills
+pub fn phx_pop::person_kind::PersonView<'_>::word(&self) -> phx_pop::person_word::PersonWord
+pub struct phx_pop::person_kind::StoreHeads<'a, B: phx_store::backing::Backing>  // used by: phx-fin
+pub phx_pop::person_kind::StoreHeads::head: phx_pop::kinds::AttrW<u32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-store, phx-world
+pub phx_pop::person_kind::StoreHeads::store: &'a mut phx_pop::kinds::KindStore<B>  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world
+impl<B: phx_store::backing::Backing> phx_pop::person_kind::Heads for phx_pop::person_kind::StoreHeads<'_, B>
+pub fn phx_pop::person_kind::StoreHeads<'_, B>::head(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>  // used by: phx-fin
+pub fn phx_pop::person_kind::StoreHeads<'_, B>::kind(&self) -> u8  // used by: phx-fin
+pub fn phx_pop::person_kind::StoreHeads<'_, B>::set_head(&mut self, phx_id::ids::Slot, phx_num::missing::Missing<u32>)  // used by: phx-fin
+pub trait phx_pop::person_kind::Heads
+pub fn phx_pop::person_kind::Heads::head(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-store, phx-world
+pub fn phx_pop::person_kind::Heads::kind(&self) -> u8  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub fn phx_pop::person_kind::Heads::set_head(&mut self, phx_id::ids::Slot, phx_num::missing::Missing<u32>)
+impl<B: phx_store::backing::Backing> phx_pop::person_kind::Heads for phx_pop::person_kind::StoreHeads<'_, B>
+pub fn phx_pop::person_kind::StoreHeads<'_, B>::head(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>  // used by: phx-fin
+pub fn phx_pop::person_kind::StoreHeads<'_, B>::kind(&self) -> u8  // used by: phx-fin
+pub fn phx_pop::person_kind::StoreHeads<'_, B>::set_head(&mut self, phx_id::ids::Slot, phx_num::missing::Missing<u32>)  // used by: phx-fin
+pub mod phx_pop::person_word  // used by: phx-fin
+pub struct phx_pop::person_word::Field  // used by: phx-check, phx-macros
+pub phx_pop::person_word::Field::bits: u32  // used by: phx-core, phx-fin, phx-num, phx-rand, phx-store, phx-world
+pub phx_pop::person_word::Field::shift: u32  // used by: phx-exec, phx-fin, phx-market, phx-num, phx-rand, phx-store, phx-world
+pub struct phx_pop::person_word::PersonWord(pub u64)  // used by: phx-fin
+impl phx_pop::person_word::PersonWord
+pub fn phx_pop::person_word::PersonWord::age_on(self, phx_id::day::Date) -> i64  // used by: phx-cli, phx-core, phx-world, sys-dem, sys-lab, sys-soc
+pub fn phx_pop::person_word::PersonWord::birth_year(self) -> i32
+pub fn phx_pop::person_word::PersonWord::born(self) -> phx_id::day::Date  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
+pub fn phx_pop::person_word::PersonWord::get(self, phx_pop::person_word::Field) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_pop::person_word::PersonWord::new(phx_id::day::Date, u32) -> phx_pop::person_word::PersonWord  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_pop::person_word::PersonWord::with(self, phx_pop::person_word::Field, u32) -> phx_pop::person_word::PersonWord  // used by: phx-exec, phx-store, sys-dem
+pub struct phx_pop::person_word::Skills(pub u32)
+impl phx_pop::person_word::Skills
+pub fn phx_pop::person_word::Skills::get(self, u32) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_pop::person_word::Skills::with(self, u32, u32) -> phx_pop::person_word::Skills  // used by: phx-exec, phx-store, sys-dem
+pub const phx_pop::person_word::BIRTH_DAY: phx_pop::person_word::Field
+pub const phx_pop::person_word::BIRTH_MONTH: phx_pop::person_word::Field
+pub const phx_pop::person_word::BIRTH_YEAR: phx_pop::person_word::Field
+pub const phx_pop::person_word::EDUCATION: phx_pop::person_word::Field  // used by: if-pop, sys-dem, sys-lab
+pub const phx_pop::person_word::EDUCATION_FIELD: phx_pop::person_word::Field
+pub const phx_pop::person_word::HEALTH: phx_pop::person_word::Field  // used by: if-pop, phx-world, sys-dem
+pub const phx_pop::person_word::LABOUR: phx_pop::person_word::Field  // used by: phx-fin, sys-lab, sys-tec
+pub const phx_pop::person_word::LIFE_RECORD: phx_pop::person_word::Field
+pub const phx_pop::person_word::OCCUPATION: phx_pop::person_word::Field  // used by: if-labour, phx-world, sys-lab
+pub const phx_pop::person_word::POINT: phx_pop::person_word::Field
+pub const phx_pop::person_word::ROLE: phx_pop::person_word::Field
+pub const phx_pop::person_word::SEX: phx_pop::person_word::Field  // used by: if-pop, phx-cli, phx-fin, phx-world, sys-dem, sys-lab, sys-soc
 pub mod phx_pop::persons  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub struct phx_pop::persons::Held  // used by: phx-cli, phx-core, phx-world
 pub phx_pop::persons::Held::id: u64  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs

@@ -10,6 +10,8 @@ pub mod kinds;
 mod kinds_save;
 pub mod layout;
 pub mod person;
+pub mod person_kind;
+pub mod person_word;
 pub mod persons;
 pub mod prims;
 mod tombs;

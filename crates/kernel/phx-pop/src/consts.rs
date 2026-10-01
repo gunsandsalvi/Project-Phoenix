@@ -228,9 +228,67 @@ pub const SITED: KindMap = KindMap { kind: "sited", groups: &[SITE_PLACE] };
 pub const REGIONED: KindMap = KindMap { kind: "regioned", groups: &[REGION_PLACE] };
 pub const COUNTRIED: KindMap = KindMap { kind: "countried", groups: &[COUNTRY_PLACE] };
 
+/// A person's day of the month of birth in its word.
+pub const BIRTH_DAY_BITS: u32 = 5;
+/// A person's month of birth in its word.
+pub const BIRTH_MONTH_BITS: u32 = 4;
+/// A person's year of birth in its word, offset by 32 768, so a year from −32 768 to 32 767 is held.
+pub const BIRTH_YEAR_BITS: u32 = 16;
+/// A person's sex in its word: female or male.
+pub const SEX_BITS: u32 = 1;
+/// A person's health in its word: room for four states.
+pub const HEALTH_BITS: u32 = 2;
+/// A person's education stage in its word, and its field: sixteen of each.
+pub const EDUCATION_BITS: u32 = 4;
+/// A person's labour state in its word: not searching, searching or retired, room for a fourth.
+pub const LABOUR_BITS: u32 = 2;
+/// The occupation family a person last worked in, or none: sixteen.
+pub const OCCUPATION_BITS: u32 = 4;
+/// The wage point of a person's last job, or none: 128.
+pub const POINT_BITS: u32 = 7;
+/// The occupation families a person's skills are held for.
+pub const SKILL_FAMILIES: u32 = 8;
+/// The bits a skill level takes: levels 0 to 15.
+pub const SKILL_BITS: u32 = 4;
+
+/// A person's core row, what any read of a person gathers: its packed word, its skills, its household and the next
+/// person in it, its account, its chain's head, the day it began searching and its goal.
+const PERSON_CORE: GroupDecl = GroupDecl {
+    name: "core",
+    width: 32,
+    words: &[
+        word("word", U64, 1, false, "K-33"),
+        word("skills", U32, 1, false, "K-33"),
+        word("household", U32, 1, false, "K-33"),
+        word("next", U32, 1, true, "K-33"),
+        word("account", U32, 1, true, "K-47"),
+        word("chain_head", U32, 1, true, "K-53"),
+        word("search_start", U16, 1, true, "K-33"),
+        word("goal", U16, 1, true, "K-102"),
+    ],
+};
+
+/// A person's money row: its banknotes, and its tax year's taxable income and tax withheld.
+const PERSON_MONEY: GroupDecl = GroupDecl {
+    name: "money",
+    width: 20,
+    words: &[
+        word("banknotes", I32, 1, false, "K-47"),
+        word("taxable", I64, 1, false, "K-52"),
+        word("withheld", I64, 1, false, "K-52"),
+    ],
+};
+
+/// A person's mind and its experience factor, which their own steps declare into this reserve.
+const PERSON_MIND: GroupDecl = GroupDecl { name: "mind", width: 14, words: &[] };
+
+/// The person's byte map, 66 bytes.
+pub const PERSON: KindMap = KindMap { kind: "person", groups: &[PERSON_CORE, PERSON_MONEY, PERSON_MIND] };
+
 /// Every group of the maps within its width, and each map within a store.
 const _: () = assert!(
     fits(&HOUSEHOLD)
+        && fits(&PERSON)
         && fits(&FIRM)
         && fits(&BANK)
         && fits(&AGENCY)
@@ -238,6 +296,8 @@ const _: () = assert!(
         && fits(&REGIONED)
         && fits(&COUNTRIED)
 );
+/// The person's 66 bytes, its core row whole: one half-line a view gathers.
+const _: () = assert!(width(&PERSON) == 66 && used(&PERSON_CORE) == PERSON_CORE.width && PERSON_CORE.width == 32);
 /// The household's 174 bytes, 128 of them hot: two cache lines a visit gathers.
 const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
 /// The firm's 528 bytes, 192 of them hot and 192 warm: three cache lines each.

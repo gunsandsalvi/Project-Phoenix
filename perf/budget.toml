@@ -725,6 +725,34 @@ counter = "fin.parties.wake_scan_ns"
 value = 16.7
 direction = "down"
 
+# The person kind (S1.207, 2026-10-01; `tools/bench.sh -F parties`): the design point's 6 M persons on their kind at
+# 66 bytes (a 32-byte core row a view gathers), begun household by household, 1 to 8 a household, 3.4 on average,
+# threaded through their rows from each household's head. A view's reads after its gather — two fields of its word,
+# its household and its account — 2.5–3.0 ns (the step's 3, which stands); a move between two drawn households 816–929
+# ns (the step's 200: a move reads the person's generation and live bit, its row, its household's row and list, and
+# the other household's generation, live bit and row, each a memory latency away on this machine; 10 000 a day take
+# 9 ms). The directory's and every kind's stores together 1 217 MiB (the step's 1 654, which counted the offices,
+# S1.209). The bytes at the measure; the move a quarter above the highest.
+[[ratchet]]
+counter = "fin.parties.person_bytes"
+value = 66
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.person_view_ns"
+value = 3
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.move_ns"
+value = 1161
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.mb"
+value = 1217.2
+direction = "down"
+
 # Windowed groups (S1.197, 2026-10-01; `tools/bench.sh -F parties`): all three countries' campaign windows open at
 # once, each over its third of the design point's 6 M persons (an intention, 1 B) and 1.77 M households (a vote
 # occasion, 2 B), every live party written: 9.1 MiB committed (the step's 12 at its counts). A window opened —

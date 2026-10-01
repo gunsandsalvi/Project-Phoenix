@@ -1,18 +1,21 @@
 //! `-F parties`: the party directory at the design point — every kind's parties begun, and two years of endings behind
 //! them as tombstones — with live references resolved, ended ones looked up, a day's parties begun and ended, and a
 //! mass failure's endings closed in one merge; and the households', firms' and institutions' stores at their byte maps,
-//! their hot rows gathered and read by handle and scanned as a surprise day's wakes scan them; and every country's
+//! their hot rows gathered and read by handle and scanned as a surprise day's wakes scan them; the persons on their
+//! kind, threaded through their households, their views read and moves made between households; and every country's
 //! campaign window open at once over its persons' intentions and its households' vote occasions.
 
 use std::collections::BTreeMap;
 use std::hint::black_box;
 
 use phx_exec::trace::{Reading, Spent};
-use phx_id::{Day, PartyRef};
+use phx_id::{Date, Day, PartyRef, Slot};
 use phx_num::Missing;
 use phx_pop::directory::{Directory, Resolved};
 use phx_pop::kinds::{Attr, AttrW, KindStore, Opening};
 use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, IntTy, KindMap, Layout, WordDecl};
+use phx_pop::person_kind::{PersonKind, StoreHeads};
+use phx_pop::person_word::{LABOUR, PersonWord, SEX};
 use phx_pop::windowed::{WAttrW, WindowLayout, WindowedGroup};
 use phx_rand::uniform::below_u64;
 use phx_store::{AddressSpace, StoreStats};
@@ -71,6 +74,19 @@ const FIRM_VISITS: u64 = 900_000;
 /// The words a household visit reads from its gathered hot row, and the visits whose rows stay in cache together.
 const VISIT_READS: u64 = 4;
 const VISIT_BATCH: u64 = 512;
+/// The persons whose views a day reads, and the moves between households a day makes (formation and separation).
+const PERSON_VIEWS: u64 = 1_600_000;
+const MOVES: u64 = 10_000;
+/// The persons a household may hold beyond its first, each drawn with the chance that brings the persons to their
+/// count.
+const MORE_PERSONS: u64 = 7;
+/// The birth years persons are drawn among, from the first; and the months and the days of a month drawn.
+const FIRST_BIRTH_YEAR: u64 = 1_930;
+const BIRTH_YEARS: u64 = 95;
+const MONTHS: u64 = 12;
+const DAYS: u64 = 28;
+/// The draw row of the persons' opening, apart from the fill's and the day's.
+const PERSON_ROW: u64 = 2;
 
 const MIB: f64 = 1_048_576.0;
 
@@ -89,6 +105,9 @@ pub struct Parties {
     /// pages a day's reads and writes faulted.
     stores: Vec<(u8, KindStore)>,
     handles: Option<Handles>,
+    /// The persons on their kind, and the places of the households among the live references.
+    persons: Option<PersonKind>,
+    homes: Vec<usize>,
     faults: Option<u64>,
     /// The persons' and households' campaign groups with their write handles, and each kind's slots a country holds.
     windows: Option<Campaign>,
@@ -204,6 +223,7 @@ struct Handles {
     flags: Attr<u8>,
     own_unit: AttrW<u32>,
     zone: AttrW<u16>,
+    head: AttrW<u32>,
 }
 
 impl Handles {
@@ -216,6 +236,7 @@ impl Handles {
             flags: household.attr("flags", 0).map_err(FinError)?,
             own_unit: firm.writer("units", 0, "K-60").map_err(FinError)?,
             zone: firm.writer("zone", 0, "K-32").map_err(FinError)?,
+            head: household.writer("persons_head", 0, "K-33").map_err(FinError)?,
         })
     }
 
@@ -255,6 +276,51 @@ fn begin_in(
     Ok(())
 }
 
+/// The households' store with its persons' head, where the persons are threaded.
+fn heads(
+    stores: &mut [(u8, KindStore)],
+    head: AttrW<u32>,
+) -> Result<StoreHeads<'_, phx_store::SystemBacking>, FinError> {
+    match stores.iter_mut().find(|(k, _)| *k == HOUSEHOLDS) {
+        Some((_, store)) => Ok(StoreHeads { store, head }),
+        None => Err(FinError("no household store".to_owned())),
+    }
+}
+
+/// A person's word: a drawn birth date, the first role.
+fn person_word(d: &mut phx_rand::Draws) -> Result<PersonWord, FinError> {
+    let year = i32::try_from(FIRST_BIRTH_YEAR + below_u64(d, BIRTH_YEARS)).map_err(err)?;
+    let month = u8::try_from(1 + below_u64(d, MONTHS)).map_err(err)?;
+    let day = u8::try_from(1 + below_u64(d, DAYS)).map_err(err)?;
+    let born = Date::new(year, month, day).ok_or_else(|| FinError("a birth date no calendar holds".to_owned()))?;
+    Ok(PersonWord::new(born, 0))
+}
+
+/// A household drawn among the live ones.
+fn home(live: &[PartyRef], homes: &[usize], d: &mut phx_rand::Draws) -> Result<PartyRef, FinError> {
+    let at = homes.get(index(below_u64(d, wide(homes.len())))?).copied();
+    at.and_then(|i| live.get(i).copied()).ok_or_else(|| FinError("no household".to_owned()))
+}
+
+/// An ended household's persons moved into the one begun in its place.
+fn rehouse(
+    persons: &mut PersonKind,
+    dir: &Directory,
+    heads: &mut StoreHeads<'_, phx_store::SystemBacking>,
+    (ended, to): (PartyRef, PartyRef),
+) -> Result<(), FinError> {
+    let members: Vec<Slot> = persons.members(heads, ended.slot()).collect();
+    for slot in members {
+        let p = dir.reference(PERSONS, slot).ok_or_else(|| FinError("a member never begun".to_owned()))?;
+        persons.move_person(dir, heads, p, to);
+    }
+    Ok(())
+}
+
+fn no_party() -> FinError {
+    FinError("no party".to_owned())
+}
+
 fn err(e: impl std::fmt::Display) -> FinError {
     FinError(e.to_string())
 }
@@ -276,6 +342,7 @@ impl Parties {
             Ok(out)
         };
         let (households, firms) = (of_kind(HOUSEHOLDS, HOUSEHOLD_VISITS, d)?, of_kind(FIRMS, FIRM_VISITS, d)?);
+        let people = of_kind(PERSONS, PERSON_VIEWS, d)?;
         let store = |k: u8| self.stores.iter().find(|(x, _)| *x == k).map(|(_, s)| s);
         let (Some(hs), Some(fs)) = (store(HOUSEHOLDS), store(FIRMS)) else {
             return Err(FinError("no household or firm store".to_owned()));
@@ -321,7 +388,30 @@ impl Parties {
             }
             black_box(sum)
         });
+        // A person's view read after its row is gathered: two fields of its word, its household and its account.
+        let Some(persons) = self.persons.as_ref() else {
+            return Err(FinError("the persons measured before their fill".to_owned()));
+        };
+        let views: Vec<_> = people.iter().take(index(VISIT_BATCH)?).map(|r| persons.view(dir, *r)).collect();
+        let reps = PERSON_VIEWS / VISIT_BATCH;
+        self.folded ^= m.read(BASE, "person_view", reps * wide(views.len()), || {
+            let mut sum = 0_u64;
+            for _ in 0..reps {
+                for v in &views {
+                    sum += u64::from(v.get(SEX) + v.get(LABOUR) + v.household().get()) + folded(v.account());
+                }
+            }
+            black_box(sum)
+        });
         Ok(())
+    }
+}
+
+impl Parties {
+    /// Every kind's store's bytes committed, the persons' among them.
+    fn kinds_bytes(&self) -> u64 {
+        let persons = self.persons.as_ref().map_or(0, |p| StoreStats::bytes(&p.store));
+        self.stores.iter().map(|(_, s)| StoreStats::bytes(s)).sum::<u64>() + persons
     }
 }
 
@@ -352,12 +442,32 @@ impl FinBase for Parties {
             (FIRMS, KindStore::new(&mut space, FIRMS, &firm, cap(FIRMS)?)),
             (INSTITUTIONS, KindStore::new(&mut space, INSTITUTIONS, &institution, cap(INSTITUTIONS)?)),
         ];
+        let mut persons: PersonKind = PersonKind::new(&mut space, PERSONS, cap(PERSONS)?);
         let mut d = streams.draws(BASE, 0, 0);
-        for (kind, n) in (0_u8..).zip(&counts) {
+        for (kind, n) in (0_u8..).zip(&counts).filter(|(k, _)| *k != PERSONS) {
             for _ in 0..*n {
                 let r = dir.begin(kind);
                 begin_in(&mut self.stores, &dir, (r, handles), (&mut d, 0))?;
+                if kind == HOUSEHOLDS {
+                    self.homes.push(self.live.len());
+                }
                 self.live.push(r);
+            }
+        }
+        // The persons begun household by household, so a household's start adjacent: its first, and each of the
+        // more it may hold with the chance that brings the persons to their count.
+        let count = |k: u8| counts.get(usize::from(k)).copied().ok_or_else(|| FinError(format!("no kind {k}")));
+        let (households, people) = (count(HOUSEHOLDS)?, count(PERSONS)?);
+        let more =
+            people.checked_sub(households).ok_or_else(|| FinError("fewer persons than households".to_owned()))?;
+        let mut threads = heads(&mut self.stores, handles.head)?;
+        let mut pd = streams.draws(BASE, PERSON_ROW, 0);
+        for at in &self.homes {
+            let h = *self.live.get(*at).ok_or_else(|| FinError("no household".to_owned()))?;
+            let extra = (0..MORE_PERSONS).filter(|_| below_u64(&mut pd, MORE_PERSONS * households) < more).count();
+            for _ in 0..=extra {
+                let p = persons.begin_person(&mut dir, &mut threads, h, (person_word(&mut pd)?, &[]));
+                self.live.push(p);
             }
         }
         let _ = dir.close_day(Day::new(0));
@@ -366,16 +476,31 @@ impl FinBase for Parties {
             for _ in 0..a_day {
                 let at = index(below_u64(&mut d, wide(self.live.len())))?;
                 let Some(&party) = self.live.get(at) else { continue };
-                dir.end(party, Day::new(day), Missing::Absent);
+                let today = Day::new(day);
+                // A person dies and another is born into a drawn household; a household's persons move to the one
+                // begun in its place.
+                let r = if party.kind() == PERSONS {
+                    let mut threads = heads(&mut self.stores, handles.head)?;
+                    persons.end_person(&mut dir, &mut threads, party, (today, Missing::Absent));
+                    let to = home(&self.live, &self.homes, &mut d)?;
+                    persons.begin_person(&mut dir, &mut threads, to, (person_word(&mut d)?, &[]))
+                } else {
+                    dir.end(party, today, Missing::Absent);
+                    let r = dir.begin(party.kind());
+                    begin_in(&mut self.stores, &dir, (r, handles), (&mut d, day))?;
+                    if party.kind() == HOUSEHOLDS {
+                        rehouse(&mut persons, &dir, &mut heads(&mut self.stores, handles.head)?, (party, r))?;
+                    }
+                    r
+                };
                 self.ended.push(party);
-                let r = dir.begin(party.kind());
-                begin_in(&mut self.stores, &dir, (r, handles), (&mut d, day))?;
                 if let Some(slot) = self.live.get_mut(at) {
                     *slot = r;
                 }
             }
             let _ = dir.close_day(Day::new(day));
         }
+        self.persons = Some(persons);
         self.held = StoreStats::bytes(&dir);
         self.handles = Some(handles);
         // Every country's campaign open at once, each over its own third of the persons and households.
@@ -420,14 +545,16 @@ impl FinBase for Parties {
         let turnover: Vec<usize> =
             (0..TURNOVER).map(|_| index(below_u64(&mut d, wide(self.live.len())))).collect::<Result<_, _>>()?;
         let lives = &mut self.live;
+        // Each ending with its place among the live references and the party begun there.
         let mut begun = Vec::with_capacity(index(TURNOVER + MASS)?);
         m.read(BASE, "begin_end", 2 * TURNOVER, || {
             for at in &turnover {
                 let Some(slot) = lives.get_mut(*at) else { continue };
                 if matches!(dir.resolve(*slot), Resolved::Live(_)) {
-                    dir.end(*slot, today, Missing::Absent);
+                    let ended = *slot;
+                    dir.end(ended, today, Missing::Absent);
                     *slot = dir.begin(slot.kind());
-                    begun.push(*slot);
+                    begun.push((*at, ended, *slot));
                 }
             }
         });
@@ -437,9 +564,10 @@ impl FinBase for Parties {
             for at in &mass {
                 let Some(slot) = lives.get_mut(*at) else { continue };
                 if matches!(dir.resolve(*slot), Resolved::Live(_)) {
-                    dir.end(*slot, today, Missing::Absent);
+                    let ended = *slot;
+                    dir.end(ended, today, Missing::Absent);
                     *slot = dir.begin(slot.kind());
-                    begun.push(*slot);
+                    begun.push((*at, ended, *slot));
                 }
             }
             black_box(dir.close_day(today))
@@ -451,9 +579,9 @@ impl FinBase for Parties {
         let Some(campaign) = self.windows.as_mut() else {
             return Err(FinError("the campaign measured before its fill".to_owned()));
         };
-        for r in begun {
-            begin_in(&mut self.stores, dir, (r, handles), (&mut d, self.today))?;
-            campaign.begun(r);
+        for (_, _, r) in &begun {
+            begin_in(&mut self.stores, dir, (*r, handles), (&mut d, self.today))?;
+            campaign.begun(*r);
         }
         // One country's campaign closed and opened again over its parties as they are now.
         let (reader, today) = (&*dir, self.today);
@@ -464,16 +592,48 @@ impl FinBase for Parties {
             wide(dir.live_slots(PERSONS).skip_while(|s| *s < first).take_while(|s| s.get() < first.get() + n).count());
         let written = m.read(BASE, "window_write", covered, || campaign.write(reader, 0, today));
         black_box(written);
+        // The persons ended leave their households and those born join drawn ones; an ended household's persons move
+        // to the household now in its place.
+        let Some(persons) = self.persons.as_mut() else {
+            return Err(FinError("the persons measured before their fill".to_owned()));
+        };
+        let mut threads = heads(&mut self.stores, handles.head)?;
+        // The persons first, so a household's list holds only the living when its persons move.
+        for (_, ended, r) in begun.iter().filter(|(_, e, _)| e.kind() == PERSONS) {
+            persons.left(dir, &mut threads, *ended);
+            let to = home(&self.live, &self.homes, &mut d)?;
+            persons.begin(dir, &mut threads, (*r, to), person_word(&mut d)?, &[]);
+        }
+        for (at, ended, _) in begun.iter().filter(|(_, e, _)| e.kind() == HOUSEHOLDS) {
+            let now = *self.live.get(*at).ok_or_else(|| FinError("no household".to_owned()))?;
+            rehouse(persons, dir, &mut threads, (*ended, now))?;
+        }
+        // A day's moves between drawn households, as formation and separation make them.
+        let moving: Vec<(PartyRef, PartyRef)> = (0..MOVES)
+            .map(|_| -> Result<_, FinError> {
+                let mut p = *self.live.get(index(below_u64(&mut d, wide(self.live.len())))?).ok_or_else(no_party)?;
+                while p.kind() != PERSONS {
+                    p = *self.live.get(index(below_u64(&mut d, wide(self.live.len())))?).ok_or_else(no_party)?;
+                }
+                Ok((p, home(&self.live, &self.homes, &mut d)?))
+            })
+            .collect::<Result<_, _>>()?;
+        let reader = &*dir;
+        m.read(BASE, "move", MOVES, || {
+            for (p, to) in &moving {
+                persons.move_person(reader, &mut threads, *p, *to);
+            }
+        });
         self.kinds_day(&mut d, m)
     }
 
     fn bytes(&self) -> Bytes {
-        let stores: u64 = self.stores.iter().map(|(_, s)| StoreStats::bytes(s)).sum();
-        Bytes { rows: self.held + stores, resident: 0 }
+        Bytes { rows: self.held + self.kinds_bytes(), resident: 0 }
     }
 
     /// The directory's megabytes and tombstones; each store's bytes a party and its hot row's; the kinds' megabytes
-    /// committed; and the most pages a day's reads faulted.
+    /// committed, the persons' among them, and the directory's and kinds' together; and the most pages a day's reads
+    /// faulted.
     fn figures(&self) -> Vec<(&'static str, f64)> {
         let real = |n: u64| n.to_string().parse::<f64>().ok();
         let mb = real(self.held).map(|b| b / MIB);
@@ -485,7 +645,9 @@ impl FinBase for Parties {
             let bytes: u16 = if hot { widths.first().copied()? } else { widths.iter().sum() };
             Some(f64::from(bytes))
         };
-        let kinds_mb = real(self.stores.iter().map(|(_, s)| StoreStats::bytes(s)).sum()).map(|b| b / MIB);
+        let kinds_mb = real(self.kinds_bytes()).map(|b| b / MIB);
+        let person_bytes = self.persons.as_ref().map(|p| f64::from(p.store.widths().iter().sum::<u16>()));
+        let all_mb = real(self.held + self.kinds_bytes()).map(|b| b / MIB);
         [
             mb.map(|m| ("directory_mb", m)),
             tombs.map(|n| ("tombstones", n)),
@@ -493,7 +655,9 @@ impl FinBase for Parties {
             per(HOUSEHOLDS, true).map(|b| ("household_hot_bytes", b)),
             per(FIRMS, false).map(|b| ("firm_bytes", b)),
             per(FIRMS, true).map(|b| ("firm_hot_bytes", b)),
+            person_bytes.map(|b| ("person_bytes", b)),
             kinds_mb.map(|m| ("kinds_mb", m)),
+            all_mb.map(|m| ("mb", m)),
             self.windows.as_ref().and_then(|c| real(c.bytes())).map(|b| ("windowed_mb", b / MIB)),
             self.faults.and_then(real).map(|f| ("faults_per_day", f)),
         ]

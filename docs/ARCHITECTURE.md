@@ -2315,7 +2315,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, every kind on one; S1.207–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, every kind on one; K-33's person kind written; S1.208–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2483,7 +2483,7 @@ kind's declared place, none for a zoned kind; `begin(dir, r, at)` writes a party
 its word stops the run) and `at(slot)` reads it. `Core::begin_party` takes the place with the party's account, and a
 party's country is read from it through the regions or the map (`core_kinds::country_by_place`).
 
-**Extension points**: the persons head (S1.207);
+**Extension points**: the persons head, written by the person kind (K-33);
 cache words (S1.211); agenda slots (S1.227); K-54's aggregates (S1.261); and each reserve's declaring step above.
 
 **Money beside the kinds** (`phx-core`'s `store.rs`, until K-47): a kind that holds money keeps its parties'
@@ -2497,8 +2497,60 @@ values.
 
 #### K-33 Persons
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.207, S1.208).
+`phx-pop`'s person kind (`person_kind.rs`, `person_word.rs`; PTY.3, PTY.11, REP.25, REP.26) makes every person a
+party of its own kind, with its own reference from the directory (K-31) and its rows on a kind store (K-32); its
+household's persons are threaded through those rows. The world's persons move onto it at S1.208; until then they stay
+in their households' arenas (below).
+
+**Layout** (`PERSON` in `consts.rs`, 66 B): *core, 32* — its packed word u64 · skills u32 (8 occupation families × 4
+bits, POP.1) · household u32 (its slot) · next in its household u32 · account u32 (K-47; absent for a person banking
+nowhere) · chain head u32 (K-53) · the day it began searching u16, from the run's first · goal u16 (K-102) — every
+read of a person gathers this half-line; *money, 20* — banknotes i32 (K-47) · the tax year's taxable income and tax
+withheld 2 × i64 (K-52); *mind, 14* — a reserve the mind (K-102, 13 B) and the experience factor (1 B) declare into.
+The word's fields, from bit 0 (`person_word.rs`, each `Field` a shift and a width, the widths in `consts.rs`): birth
+day 5, month 4 and year 16 (offset by 32 768) · role 3 · sex 1 · health 2 · education stage 4 and field 4 · labour
+state 2 (the labour law's not searching, searching, retired) · occupation family last worked in 4 · last job's wage
+point 7 · life record kept 1 · reserve 11. The birth date is held as its civil fields, not a day serial, so an age is
+read from the day's date in its facts (K-19) with no conversion on the day's path (PC-17): `age_on(today)` is one more
+on each birthday, a 29 February birthday falling on 1 March in a common year (REP.25). The word holds today's person
+attributes in full — the labour state, last occupation and wage point among them — so S1.208 moves every user onto
+fields.
+
+**API**: `PersonWord::new(born, role)`, `get(field)`, `with(field, v)` (a value past its bits stops the run), `born`,
+`birth_year`, `age_on`; `Skills::get(family)`, `with(family, level)` (a ninth family or a level past 15 stops it).
+`PersonKind::new(space, kind, capacity)`; `begin_person(dir, heads, household, (word, init))` begins a person in the
+directory and its kind, writes its rows in full (blank, then `init`'s words and its word) and links it at its
+household's head, and `begin` does so for a person the directory began; `end_person(dir, heads, r, (day,
+successor))` unlinks it and ends it in the directory the same day, and `left` unlinks and ends in its kind a person the
+directory ended; `move_person(dir, heads, r, to)` unlinks it, links it at the other household's head and writes its
+household — what it owns names the person, so nothing else moves (REP.26); `members(heads, household)` walks a
+household's list (its order is never read; a list longer than the persons ever begun stops the run); `view(dir, r)`
+gathers its core row once and `PersonView` reads its word's fields, skills, household, account, chain head, search start
+and goal in place, `view_at(slot)` as the day names it; `set_field`, `set_skill`, `set_search_start` write one word.
+`Heads` is where each household's list starts — its persons-head word on the household's own store; `StoreHeads` reads
+and writes it on a `KindStore` with its head handle (K-33's). The layout (`PersonKind::layout`) hands the later bases
+their words' handles, each once.
+
+**Algorithms and bounds**: a view is one gathered row and shifts and masks, nothing allocated; a move or an ending
+walks one household's list, k ≤ its size; a link is two writes.
+
+**Traversal**: a household's persons are written only by the writer holding that household (the population's outcomes
+by household range), and each person lies in one household's list, so writes by household are disjoint for any worker
+count. The opening begins persons household by household, so a household's persons start adjacent.
+
+**Save and load**: the kind's store raw (K-32); the links are words in it, so the lists round-trip with it; the handles
+are compiled again at load (`save_round_trip_lists`).
+
+**Volumes and ratchets** (`[fin.parties]`, `tools/bench.sh -F parties`): the design point's 6 M persons begun
+household by household (1–8 a household, 3.4 on average), two years of their deaths and births behind them, and a
+day's 10 000 moves: `person_bytes` 66; `person_view_ns` 3 (2.5–3.0 measured: a view's reads after its gather);
+`move_ns` 1 161 (816–929 measured, the step's 200: the person's generation, live bit and row, its household's row and
+list, and the other household's generation, live bit and row, each a memory latency away; a day's moves take 9 ms);
+`mb` 1 217.2, the directory's and every kind's stores together (the step's 1 654 counted the offices, K-34).
+
+**Extension points**: S1.208 (every user onto the kind); the account and banknotes (S1.240, S1.243); the tax-year pair
+(S1.254); the chain head (S1.258); the searchers' index on the labour state (S1.304); the mind's 13 B and the goal
+(S1.352); the experience byte (S8.197); the campaign's windowed group (S5.137).
 
 **Today** (`persons.rs`, `person.rs`): each household's persons, two words each — its word as its kind packs it (birth
 date, role, attributes: the word is full) and its identity (`Held`) — a list per household in its chunk's arena and
