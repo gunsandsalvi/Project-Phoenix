@@ -11,6 +11,7 @@ pub mod cells;
 pub mod compose;
 pub mod counters;
 pub mod daybuf;
+pub mod deposits;
 pub mod design;
 pub mod epoch;
 pub mod fill;
@@ -166,6 +167,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(stages::Stages::default()),
     || Box::new(routes::RoutesBase::default()),
     || Box::new(cells::CellsBase::default()),
+    || Box::new(deposits::DepositsBase::default()),
 ];
 
 /// What a run fills, runs and reads.

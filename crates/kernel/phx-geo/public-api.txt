@@ -218,6 +218,42 @@ impl phx_store::save::Saved for phx_geo::deposits::Deposit where phx_id::ids::Ti
 pub fn phx_geo::deposits::Deposit::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::deposits::Deposit::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::deposits::Deposit::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_geo::deposits::DepositId(_)  // used by: phx-fin
+impl phx_geo::deposits::DepositId
+pub const fn phx_geo::deposits::DepositId::get(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub const fn phx_geo::deposits::DepositId::new(u32) -> phx_geo::deposits::DepositId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+#[repr(C)] pub struct phx_geo::deposits::DepositRow
+impl phx_geo::deposits::DepositRow
+pub fn phx_geo::deposits::DepositRow::extracted(&self) -> u64  // used by: phx-cli, phx-world
+pub fn phx_geo::deposits::DepositRow::grade(&self) -> phx_num::fixed::Fixed<3>  // used by: phx-core, phx-fin, phx-world, sys-gds
+pub fn phx_geo::deposits::DepositRow::opening(&self) -> phx_num::missing::Missing<u64>  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
+pub fn phx_geo::deposits::DepositRow::remaining(&self) -> phx_num::missing::Missing<u64>  // used by: phx-cli, phx-ledger, phx-rand, phx-world, sys-gds
+pub fn phx_geo::deposits::DepositRow::resource(&self) -> phx_num::qty::UnitId  // used by: phx-world
+pub fn phx_geo::deposits::DepositRow::right(&self) -> phx_num::qty::UnitId  // used by: phx-check, phx-exec, phx-rand, phx-store
+pub fn phx_geo::deposits::DepositRow::tile(&self) -> phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-fin, phx-world
+impl phx_store::pod::Pod for phx_geo::deposits::DepositRow
+pub fn phx_geo::deposits::DepositRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::deposits::DepositRow
+pub struct phx_geo::deposits::Deposits  // used by: phx-fin, phx-world
+impl phx_geo::deposits::Deposits
+pub fn phx_geo::deposits::Deposits::extract_batch(&mut self, &[phx_geo::deposits::Extraction]) -> u64  // used by: phx-fin
+pub fn phx_geo::deposits::Deposits::grade_now(&self, phx_geo::deposits::DepositId, impl core::ops::function::Fn(f64, f64) -> f64) -> f64
+pub fn phx_geo::deposits::Deposits::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_geo::deposits::Deposits::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_geo::deposits::Deposits::open(&mut self, phx_id::ids::TileId, (phx_num::qty::UnitId, phx_num::qty::UnitId), phx_num::fixed::Fixed<3>, phx_num::missing::Missing<u64>) -> phx_geo::deposits::DepositId  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub fn phx_geo::deposits::Deposits::row(&self, phx_geo::deposits::DepositId) -> phx_geo::deposits::DepositRow  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-store, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_geo::deposits::Deposits::settle(&mut self)  // used by: phx-core, phx-fin, phx-store, phx-world
+impl phx_store::save::Saved for phx_geo::deposits::Deposits
+pub fn phx_geo::deposits::Deposits::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_geo::deposits::Deposits, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::deposits::Deposits::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+impl phx_store::stats::StoreStats for phx_geo::deposits::Deposits
+pub fn phx_geo::deposits::Deposits::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::deposits::Deposits::rows_ever(&self) -> u64  // used by: phx-core, phx-exec, phx-store
+pub fn phx_geo::deposits::Deposits::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-store
+pub struct phx_geo::deposits::Extraction  // used by: phx-fin
+pub phx_geo::deposits::Extraction::deposit: phx_geo::deposits::DepositId  // used by: if-base, phx-core, phx-fin, phx-world, sys-bnk, sys-tec
+pub phx_geo::deposits::Extraction::extractor: u32  // used by: phx-fin
+pub phx_geo::deposits::Extraction::units: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
 pub const phx_geo::deposits::DEPOSITS_STREAM: phx_core::streams::StreamDecl
 pub fn phx_geo::deposits::draw(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::generate::Map, &phx_core::contribution::OpeningCtx<'_>) -> alloc::vec::Vec<phx_geo::deposits::Deposit>  // used by: phx-core, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
 pub fn phx_geo::deposits::everywhere(&phx_geo::prims::GeoPrims, &phx_core::register::Register) -> alloc::vec::Vec<alloc::string::String>

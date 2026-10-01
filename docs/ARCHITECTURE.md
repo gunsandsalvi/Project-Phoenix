@@ -2058,7 +2058,7 @@ holds the table to `[store]`.
 
 ### 7.4 phx-geo
 
-Status: building (K-26, K-28 written; S1.191–S1.193 planned)
+Status: building (K-26, K-28, K-29 written; S1.192, S1.193 planned)
 
 #### K-25 Tiles, zones and distances
 
@@ -2235,8 +2235,22 @@ arena), `mb` 27.6 (the step's 38).
 
 #### K-29 Deposits
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.191).
+The **deposits register** (`deposits.rs`, beside the opening's draw; GEO.6, GEO.9, GEO.12) holds every deposit as one
+32-byte `Pod` row by its `DepositId`, never reused: its tile, the unit its resource is at its grade and zone and the
+unit its right to extract is (K-22), its opening grade in thousandths, what it held at the opening — a `MaybeI64`,
+absent for a deposit without end, never a large number in its place — and what has been extracted since. There is no
+remaining column: what remains is the opening less what was extracted, a read, and absent without end.
+`extract_batch(items)` takes the day's extractions — each the deposit it comes from, the extractor and its units, a
+transformation's leg with the deposit its source (SET.9) — in the order given, adding each to its deposit's extracted
+total, the one place that total is written; an extraction where there is no deposit or past what remains stops the run
+at its item, the extractor having read what remains before it chose (GEO.12, GDS.12). The items run on one thread:
+their sums commute, and the 1.6 MB of rows stay in cache where the partitioned apply's scatter would cost more than the
+add (K-12). `grade_now(id, rule)` carries the opening grade by the resource's rule over the share taken (sys-gds's
+grade fall), a deposit without end keeping its grade. The rows are saved whole, extracted totals and all; `settle`
+trims the room the opening grew. Nothing in the world uses the register yet: extraction moves onto it at S1.293.
+
+`[fin.deposits]` over the design point's 50 000 deposits and a day's 100 000 extractions: `extract_ns` 7.7 (5.0–6.2
+measured) and `row_bytes` 32.
 
 **Today** (`phx-geo`'s `deposits.rs`, `phx-world`'s `core_deposits.rs`; GEO.6, GEO.9, GEO.12, GDS.3, GDS.4, GDS.12):
 each deposit's right is a holding over its tile, given at the opening to the firm of its region making the product

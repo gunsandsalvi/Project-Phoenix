@@ -601,6 +601,21 @@ counter = "fin.cells.mb"
 value = 27.6
 direction = "down"
 
+# The deposits register (S1.191, 2026-10-01; `tools/bench.sh -F deposits`): the design point's 50 000 deposits, one in
+# ten without end, and a day's 100 000 extractions drawn across them, applied as one batch in the order given: 5.0–6.2
+# ns an extraction (the step's 7.7); a row is 32 bytes once the opening has entered them. The time ratchet stands at the
+# step's figure, a quarter above the highest; the bytes at the measure.
+
+[[ratchet]]
+counter = "fin.deposits.extract_ns"
+value = 7.7
+direction = "down"
+
+[[ratchet]]
+counter = "fin.deposits.row_bytes"
+value = 32
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
