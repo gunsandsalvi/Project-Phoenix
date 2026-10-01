@@ -8,12 +8,12 @@ use phx_id::Day;
 use phx_num::{Fixed, Missing, UnitId};
 
 use super::{CapitalClass, Content, GradeContents, UnitKey, UnitRegistry, UnitTraits};
-use crate::catalogue::{Declared, GradeH, ProductDecl, ProductH, compile};
+use crate::catalogue::{Declared, GradeH, ProductDecl, compile};
 
-const KEPT: UnitTraits = UnitTraits { price_exp: 2, storable: true, perishable: false, spoilage: 0 };
+const KEPT: UnitTraits = UnitTraits { storable: true, perishable: false };
 
 fn good(product: u16, grade: u8, zone: u16) -> UnitKey {
-    UnitKey::Good { product: ProductH::new(product), grade, zone }
+    UnitKey::Good { product, grade, zone }
 }
 
 fn class(age: u8) -> CapitalClass {
@@ -136,12 +136,32 @@ fn content_by_grade() {
         [ProductDecl { system: "GDS", name: "ore", grades: 2 }, ProductDecl { system: "GDS", name: "coal", grades: 1 }];
     let catalogue = compile(&Declared { products: &products, ..Declared::default() }).unwrap();
     let mut contents = GradeContents::new(&catalogue);
-    let ore = GradeH { product: ProductH::new(1), grade: 1 };
+    let handle =
+        |name: &str| catalogue.products().find(|p| &*catalogue.names.products[usize::from(p.get())] == name).unwrap();
+    let ore = GradeH { product: handle("ore"), grade: 1 };
     let content = Content { unit: UnitId::new(4), per_unit: Fixed::from_raw(350_000) };
     contents.declare(ore, content);
     assert_eq!(contents.content(ore), Missing::Present(content));
     assert_eq!(contents.content(GradeH { grade: 0, ..ore }), Missing::Absent, "a grade that declares none");
-    let coal = GradeH { product: ProductH::new(0), grade: 1 };
+    let coal = GradeH { product: handle("coal"), grade: 1 };
     assert!(catch_unwind(|| contents.content(coal)).is_err(), "coal has one grade");
     assert!(catch_unwind(AssertUnwindSafe(|| contents.declare(ore, content))).is_err(), "declared once");
+}
+
+#[test]
+fn dense_goods_read_at_their_place() {
+    // Goods within the declared extents are found at their place, those outside by probing, alike; a load rebuilds
+    // both from the rows.
+    let mut r = UnitRegistry::with_capacity(64);
+    let early = r.issue(good(1, 0, 2), KEPT);
+    r.declare_goods(4, 1, 3);
+    let inside = r.issue(good(3, 0, 0), KEPT);
+    let outside = r.issue(good(0, 1, 0), KEPT);
+    assert_eq!((r.find(good(1, 0, 2)), r.find(good(3, 0, 0))), (Missing::Present(early), Missing::Present(inside)));
+    assert_eq!(r.find(good(0, 1, 0)), Missing::Present(outside), "a grade past the extents is probed for");
+    assert_eq!(r.find(good(2, 0, 1)), Missing::Absent);
+    let dense = r.dense.clone();
+    r.dense.clear();
+    r.place_goods();
+    assert_eq!(r.dense, dense);
 }

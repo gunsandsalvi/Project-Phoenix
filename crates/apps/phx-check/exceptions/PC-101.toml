@@ -1,4 +1,4 @@
-# The sites PC-101 admits for now, 26 in all, held to `phx_check.exceptions_pc101`. Each migration removes its own; a site is never added.
+# The sites PC-101 admits for now, 24 in all, held to `phx_check.exceptions_pc101`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core.rs"
@@ -82,18 +82,6 @@ count = 1
 path = "crates/kernel/phx-core/src/contribution.rs"
 item = "GenReport"
 what = "skip `sink`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-core/src/goods.rs"
-item = "UnitIds"
-what = "skip `plain_upto`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-core/src/goods.rs"
-item = "UnitIds"
-what = "skip `plain`"
 count = 1
 
 [[site]]

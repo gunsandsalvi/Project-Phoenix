@@ -9,7 +9,8 @@ use phx_macros::clause;
 use phx_num::violation;
 
 use crate::flows::{Denom, Flow};
-use crate::goods::{Held, NATURE, Stocks, UnitIds};
+use crate::goods::{Held, NATURE, Stocks, capital, find, unit};
+use crate::unit_registry::{UnitRegistry, UnitTraits};
 use crate::wear::{carried, leaving};
 
 /// A class of capital units at a zone: its kind (a kind of plant, dwelling or vehicle), its band of size or quality,
@@ -36,8 +37,9 @@ pub struct Chain {
 /// Issues a kind's chain at a zone and band, every condition together, so wear finds each next condition issued;
 /// returns the conditions' units, newest first.
 #[clause("CAP.6", "REP.24")]
-pub fn issue_chain(ids: &mut UnitIds, newest: Class, conditions: u8) -> Vec<u16> {
-    (0..conditions).map(|c| ids.unit(Held::Capital(Class { condition: newest.condition + c, ..newest }))).collect()
+pub fn issue_chain(ids: &mut UnitRegistry, newest: Class, conditions: u8) -> Vec<u16> {
+    let class = |c: u8| Held::Capital(Class { condition: newest.condition + c, ..newest });
+    (0..conditions).map(|c| unit(ids, class(c), UnitTraits::NONE)).collect()
 }
 
 /// A holder's wear over `days`: from each of its classes of a kind with a chain, the units a constant
@@ -47,7 +49,7 @@ pub fn issue_chain(ids: &mut UnitIds, newest: Class, conditions: u8) -> Vec<u16>
 /// leaving alone; all under `reason`, their source the kind.
 #[clause("CAP.6", "CAP.8", "REP.24")]
 pub fn wear<'a>(
-    (stocks, ids): (&mut Stocks, &UnitIds),
+    (stocks, ids): (&mut Stocks, &UnitRegistry),
     holder: PartyKey,
     chain: impl Fn(u16) -> Option<&'a Chain>,
     (days, days_a_year): (i64, i64),
@@ -58,7 +60,7 @@ pub fn wear<'a>(
         .holdings(holder)
         .filter(|h| h.units > 0)
         .filter_map(|h| {
-            let Some(Held::Capital(c)) = ids.held(h.unit) else { return None };
+            let c = capital(ids, h.unit)?;
             let ch = chain(c.kind)?;
             let Some(n) = leaving(h.units, days, ch.leaving_per_year, days_a_year) else {
                 violation!(clause = "CAP.6", "wear beyond an integer's reach", units = h.units);
@@ -87,7 +89,7 @@ pub fn wear<'a>(
         let Some(kept) = carried(cost, *from, *to) else {
             violation!(clause = "ACC.6", "a worn cost beyond an integer's reach", cost = cost);
         };
-        let Some(next) = ids.find(Held::Capital(Class { condition: class.condition + 1, ..class })) else {
+        let Some(next) = find(ids, Held::Capital(Class { condition: class.condition + 1, ..class })) else {
             violation!(clause = "CAP.6", "a chain's next condition never issued", kind = class.kind);
         };
         stocks.receive(holder, next, (n, kept), Day::new(since));
@@ -109,15 +111,15 @@ pub fn wear<'a>(
 #[must_use]
 pub fn capacity(
     stocks: &Stocks,
-    ids: &UnitIds,
+    ids: &UnitRegistry,
     holder: PartyKey,
     (kind, zone): (u16, Option<u32>),
     chain: &Chain,
 ) -> f64 {
     stocks
         .holdings(holder)
-        .filter_map(|h| match ids.held(h.unit) {
-            Some(Held::Capital(c)) if c.kind == kind && zone.is_none_or(|z| z == c.zone) => {
+        .filter_map(|h| match capital(ids, h.unit) {
+            Some(c) if c.kind == kind && zone.is_none_or(|z| z == c.zone) => {
                 let Some(e) = chain.efficiency.get(usize::from(c.condition)) else {
                     violation!(clause = "CAP.9", "a condition beyond its chain", condition = c.condition);
                 };

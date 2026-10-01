@@ -5,7 +5,8 @@
 use phx_id::{Day, PartyKey, Slot};
 
 use super::{
-    Bound, Carriage, Cost, Good, Held, NATURE, Shipment, Shipments, Short, Stocks, UnitIds, breaks, nature_net, spoil,
+    Bound, Carriage, Cost, Good, Held, NATURE, Shipment, Shipments, Short, Stocks, breaks, find, held, nature_net,
+    spoil, unit,
 };
 use crate::flows::{Denom, Flow};
 use crate::units::Class;
@@ -25,14 +26,17 @@ fn nature_is_the_kind_no_table_is_of() {
 
 #[test]
 fn goods_are_issued_their_units_once() {
-    let mut ids = UnitIds::default();
+    let mut ids = crate::unit_registry::UnitRegistry::with_capacity(8);
+    let kept = crate::unit_registry::UnitTraits { storable: true, perishable: false };
     let wheat = Good { product: 3, grade: 1, zone: 40 };
     let there = Good { zone: 41, ..wheat };
     let (a, b) = (Held::Good(wheat), Held::Good(there));
-    assert_eq!((ids.unit(a), ids.unit(b), ids.unit(a)), (0, 1, 0), "the same grade at two zones is two goods");
+    let issued = (unit(&mut ids, a, kept), unit(&mut ids, b, kept), unit(&mut ids, a, kept));
+    assert_eq!(issued, (0, 1, 0), "the same grade at two zones is two goods");
     let lorry = Held::Capital(Class { kind: 3, band: 0, condition: 1, zone: 40 });
-    assert_eq!((ids.unit(lorry), ids.held(2)), (2, Some(lorry)), "capital and goods share the units");
-    assert_eq!((ids.find(b), ids.held(1), ids.find(Held::Good(Good { grade: 2, ..wheat }))), (Some(1), Some(b), None));
+    let none = crate::unit_registry::UnitTraits::NONE;
+    assert_eq!((unit(&mut ids, lorry, none), held(&ids, 2)), (2, lorry), "capital and goods share the units");
+    assert_eq!((find(&ids, b), held(&ids, 1), find(&ids, Held::Good(Good { grade: 2, ..wheat }))), (Some(1), b, None));
 }
 
 #[test]
@@ -193,4 +197,19 @@ fn a_successor_takes_every_holding_with_what_binds_it() {
         ships.arrive(Day::new(d), &mut s, Carriage { shipped: 1, arrived: 2 }, &mut out);
     }
     assert_eq!(s.holding(estate, 1).map(|h| h.units), Some(8), "the goods on their way arrive at the successor");
+}
+
+#[test]
+fn denom_placeholder_width_stops() {
+    // A flow carries a unit in 15 bits until its batch header carries 24: the registry's 2^15th unit stops the run.
+    let width = 1_u32 << crate::consts::UNITS_BIT;
+    let mut ids = crate::unit_registry::UnitRegistry::with_capacity(width + 1);
+    let kept = crate::unit_registry::UnitTraits { storable: true, perishable: false };
+    let zones = u32::from(u16::MAX) + 1;
+    let good = |n: u32| Held::Good(Good { product: u16::try_from(n / zones).unwrap(), grade: 0, zone: n % zones });
+    for n in 0..width {
+        let _ = unit(&mut ids, good(n), kept);
+    }
+    let past = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| unit(&mut ids, good(width), kept)));
+    assert!(past.is_err());
 }

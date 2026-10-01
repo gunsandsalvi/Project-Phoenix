@@ -13,7 +13,8 @@ use std::collections::BTreeMap;
 
 use phx_core::calendar::Calendar;
 use phx_core::flows::{Denom, Flow};
-use phx_core::goods::{Bound, Cost, Good, Held, Holding, NATURE, UnitIds, breaks, nature_net};
+use phx_core::goods::{Bound, Cost, Good, Held, Holding, NATURE, breaks, find, nature_net, unit};
+use phx_core::unit_registry::{UnitRegistry, UnitTraits};
 use phx_core::wheel::DueWheel;
 use phx_core::{OpeningCountry, Register, StreamDef, SubStep, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
@@ -165,7 +166,7 @@ pub struct CoreGoods {
     /// The day the core's making began, from which each firm's day's making is counted in whole units.
     pub began: u32,
     pub stocks: phx_core::goods::Stocks,
-    pub units: UnitIds,
+    pub units: UnitRegistry,
     /// Each country's ways' inputs of each product a unit of each, by country index; and which products are stored.
     pub inputs: Vec<Vec<Vec<f64>>>,
     pub stored: Vec<bool>,
@@ -332,11 +333,22 @@ impl Core {
     }
 
     fn unit_of(&mut self, product: u16, region: u32) -> u16 {
-        self.goods.units.unit(Held::Good(Good { product, grade: 0, zone: region }))
+        let good = Held::Good(Good { product, grade: 0, zone: region });
+        if let Some(u) = find(&self.goods.units, good) {
+            return u;
+        }
+        let traits = self.good_traits(product);
+        unit(&mut self.goods.units, good, traits)
+    }
+
+    /// A product's traits as its goods are issued: whether a firm's stock keeps it and whether it is lost in stock.
+    pub(crate) fn good_traits(&self, product: u16) -> UnitTraits {
+        let spoils = self.goods.spoil_rates.get(usize::from(product)).is_some_and(|r| *r > 0.0);
+        UnitTraits { storable: self.is_stored(product), perishable: spoils }
     }
 
     fn free_units(&self, holder: PartyKey, product: u16, region: u32) -> i64 {
-        let unit = self.goods.units.find(Held::Good(Good { product, grade: 0, zone: region }));
+        let unit = find(&self.goods.units, Held::Good(Good { product, grade: 0, zone: region }));
         unit.and_then(|u| self.goods.stocks.holding(holder, u)).map_or(0, Holding::free)
     }
 
@@ -418,6 +430,9 @@ impl Core {
         goods.lots = (0_u16..).take(products.len()).map(|p| sys_frm::FilingPrims::lot(ctx.register, p)).collect();
         goods.spoil_rates = sys_gds::spoilage_rates(ctx.register)?;
         goods.spoil_days = u32::try_from(ctx.register.count(sys_gds::SPOILAGE_DAYS.id)?).map_err(|e| e.to_string())?;
+        // Every good the world names is a product's first grade at a region, so their ids are read at their place.
+        let extent = |n: usize| u16::try_from(n).map_err(|e| e.to_string());
+        goods.units.declare_goods(extent(products.len())?, 1, extent(ctx.regions.len())?);
         let mut prices: Vec<Vec<f64>> = Vec::new();
         for c in countries {
             goods.inputs.push(table(ctx.register, "TEC.inputs", c.id)?.0);
@@ -783,9 +798,9 @@ impl Core {
 
     /// A held good's average cost a unit; none known while none is held.
     fn average_cost(&self, holder: PartyKey, product: u16, region: u32) -> Option<f64> {
-        let unit = self.goods.units.find(Held::Good(Good { product, grade: 0, zone: region }))?;
-        let held = self.goods.stocks.holding(holder, unit).filter(|h| h.units > 0)?;
-        Some(from_i64(held.cost) / from_i64(held.units))
+        let unit = find(&self.goods.units, Held::Good(Good { product, grade: 0, zone: region }))?;
+        let holding = self.goods.stocks.holding(holder, unit).filter(|h| h.units > 0)?;
+        Some(from_i64(holding.cost) / from_i64(holding.units))
     }
 
     /// A firm's cost of making a unit now: its wage bill a day, with what its working owners' hours earn, over what its
@@ -976,9 +991,9 @@ impl Core {
         }
         let units = &self.goods.units;
         let rates = &self.goods.spoil_rates;
-        let rate = |unit: u16| match units.held(unit) {
-            Some(Held::Good(g)) => rates.get(usize::from(g.product)).copied().filter(|r| *r > 0.0),
-            _ => None,
+        let rate = |unit: u16| {
+            let g = phx_core::goods::good(units, unit)?;
+            rates.get(usize::from(g.product)).copied().filter(|r| *r > 0.0)
         };
         let mut lost = Vec::new();
         for holder in holders {

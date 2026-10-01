@@ -492,16 +492,19 @@ impl Core {
 
     /// A party's free units of a product at a region.
     fn free_held(&self, holder: PartyKey, product: u16, region: u32) -> i64 {
-        self.goods
-            .units
-            .find(Held::Good(Good { product, grade: 0, zone: region }))
+        phx_core::goods::find(&self.goods.units, Held::Good(Good { product, grade: 0, zone: region }))
             .and_then(|u| self.goods.stocks.holding(holder, u))
             .map_or(0, phx_core::goods::Holding::free)
     }
 
     /// A product's unit at a region, issued if new.
     fn good_unit(&mut self, product: u16, region: u32) -> u16 {
-        self.goods.units.unit(Held::Good(Good { product, grade: 0, zone: region }))
+        let good = Held::Good(Good { product, grade: 0, zone: region });
+        if let Some(u) = phx_core::goods::find(&self.goods.units, good) {
+            return u;
+        }
+        let traits = self.good_traits(product);
+        phx_core::goods::unit(&mut self.goods.units, good, traits)
     }
 }
 

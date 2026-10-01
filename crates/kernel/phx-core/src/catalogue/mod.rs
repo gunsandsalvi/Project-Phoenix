@@ -65,13 +65,6 @@ handle!(
     CapitalH,
 );
 
-impl ProductH {
-    /// The product at a place in the catalogue's products, as a unit's key holds it.
-    pub(crate) const fn new(index: u16) -> ProductH {
-        ProductH(index)
-    }
-}
-
 /// A product at one of its grades.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GradeH {

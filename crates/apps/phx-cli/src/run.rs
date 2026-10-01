@@ -224,7 +224,7 @@ fn plant_report(w: Inspector<'_>) -> serde_json::Value {
     let core = w.core();
     let mut by_condition: std::collections::BTreeMap<u8, i64> = std::collections::BTreeMap::new();
     for h in core.goods.stocks.all() {
-        if let Some(phx_core::goods::Held::Capital(c)) = core.goods.units.held(h.unit) {
+        if let phx_core::goods::Held::Capital(c) = phx_core::goods::held(&core.goods.units, h.unit) {
             *by_condition.entry(c.condition).or_insert(0) += h.units;
         }
     }

@@ -247,7 +247,7 @@ subsection's; a crate not yet in the workspace is created by the first step name
 | --- | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | §7.1: columns in reserved address space, slots and generations, day buffers and the day plan, chunk arenas, sum-trees, keyed indexes, epoch flags, horizon rings, the interner, the save contract and the world hash, `StoreStats` (K-01–K-10; S1.159–S1.168) | Paged columns, arenas, slot allocators, column descriptors, save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | §7.2: chunk plans, partitioned apply, keyed reductions, declared sweeps and rolling cursors, the measurement counters (K-11–K-15; S1.117, S1.169–S1.171) | The pinned pool, chunked traversals, gathers, sharded `KeyedReduce`, fixed-tree reductions, radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | §7.3: streams, the calendar's day facts, the register with handles and policy schedules, the kind catalogue, the units registry, the stage table, the capacity table (K-19–K-24; S1.114, S1.177–S1.185) | The vocabulary every system and kernel crate declares with (§5); and, until their migrations, the core's stores: `store.rs` (kind stores → `phx-pop` K-32, families → `phx-contract` K-53, accounts → `phx-ledger` K-47), `wheel.rs` (→ `phx-agenda` K-42), `flows.rs` and `settle.rs` (→ `phx-ledger` K-48, K-49), `goods.rs` and `units.rs` (→ `phx-hold` K-60, K-66–K-68; `UnitIds` → K-22), `events.rs` (→ `phx-record` K-36), the runtime half of `decisions.rs` (→ `phx-mind` K-100). |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | §7.3: streams, the calendar's day facts, the register with handles and policy schedules, the kind catalogue, the units registry, the stage table, the capacity table (K-19–K-24; S1.114, S1.177–S1.185) | The vocabulary every system and kernel crate declares with (§5); and, until their migrations, the core's stores: `store.rs` (kind stores → `phx-pop` K-32, families → `phx-contract` K-53, accounts → `phx-ledger` K-47), `wheel.rs` (→ `phx-agenda` K-42), `flows.rs` and `settle.rs` (→ `phx-ledger` K-48, K-49), `goods.rs` and `units.rs` (→ `phx-hold` K-60, K-66–K-68), `events.rs` (→ `phx-record` K-36), the runtime half of `decisions.rs` (→ `phx-mind` K-100). |
 | `phx-geo` | GEO | §7.4: tiles, zones and distances, networks and routes, cells, deposits, weather and catastrophes (K-25, K-26, K-28–K-30; S1.187–S1.193) | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure. |
 | `phx-pop` | REP | §7.5: the directory, kind stores and windowed groups, persons, offices, the per-day party cache (K-31–K-35; S1.194–S1.211) | The population kinds compiled from the systems' items; each person packed into its word (`persons::Persons`); `hazard.rs` (→ `phx-agenda` K-44). |
 | `phx-record` | — | §7.6: the stored log and the event log, the records store, the day ledger, statistics accumulators and sample frames, life records, tallies and votes, the recorder (K-36–K-41, K-106; created at S1.212) | Planned. |
@@ -1764,7 +1764,7 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams and K-19–K-22 built, S1.177–S1.183; K-23 and K-24 planned, S1.114, S1.184–S1.185)
+Status: building (streams and K-19–K-22 built, S1.177–S1.184; K-23 and K-24 planned, S1.114, S1.185)
 
 #### Streams
 
@@ -1974,7 +1974,9 @@ names it. A `UnitKey` (`keys.rs`) says what it is: a good (`ProductH`, grade, zo
 of 6 — a band past its bits stops the run), an instrument, a special unit at a place, or a deposit's right. Each unit
 is a 16-byte `UnitRow`: its key's word, its kind (`KeyKind`), its zone or place where its kind has one, its price
 exponent, whether it keeps and spoils, its spoilage class, and the day it retired (`UnitTraits` is fixed at issue; a
-key issued again with other traits is a fact with two writers and stops the run).
+key issued again with other traits is a fact with two writers and stops the run). Its last four bytes are kept for the
+price exponent and spoilage class products will declare; today a unit's traits are whether it keeps in stock and
+whether it spoils, the world's goods taking theirs from their product (`UnitTraits::NONE` for the rest).
 
 `issue(key, traits)` returns the key's id or appends a row; `find(key)` returns it or `Missing`, never a default id;
 `row(id)` reads a row, retired or not; `retire(id, day)` keeps the row, and a key named again after its unit retired
@@ -1982,8 +1984,11 @@ takes a new id, ids never being reused. The index from key to newest id is one o
 power of two of slots for all kinds, a quarter kept free and at least one, sized once from the capacity table's
 `unit_ids` store (`UNIT_ID_ROWS`) and never grown, so an issue moves nothing; a probe compares the key with the row
 its slot names. A unit is looked up only when a party's units change; the id it resolves to is kept where it is
-used. Ids follow the order of issue alone. The rows are saved and the index rebuilt from them in id order at load
-(`reindex`), giving the slots the issues gave. The issues count as new rows in its `StoreStats`; the day's visited
+used. Where the world declares its goods' extents (`declare_goods`: products, grades, zones), a good's id is read at
+its place in a dense table instead — one load, no probe — and a retired good's place emptied; goods outside the
+extents are probed for. A row's `good` and `capital` read its kind before unpacking anything, for the passes that only
+ask whether a holding is capital. Ids follow the order of issue alone. The rows and extents are saved and both indexes
+rebuilt from the rows in id order at load (`reindex`), giving the places the issues gave. The issues count as new rows in its `StoreStats`; the day's visited
 counters are party kinds', which a unit is not. `GradeContents` (`grades.rs`) holds each grade's content per unit — a
 `Content` of a declared content unit and a fixed-point amount per unit — by `GradeH`, declared once and absent where
 undeclared; the primitive that declares it comes with the ways' reads of content (S1.438, S1.439).
@@ -1991,8 +1996,13 @@ undeclared; the primitive that declares it comes with the ways' reads of content
 `[fin.units]` over the design point's 110 000 units across 1 000 zones: `issue_ns` 36.2 (25.8–28.9 measured, the
 step's 200), `find_ns` 37.2 (23.2–29.7) and `ids_mb` 3 (2.875 MiB of rows and index).
 
-**Today** (`goods.rs`, `units.rs`): `UnitIds` still issues each good and capital class the 15-bit unit its flows carry
-(`Denom::units`), its users moving onto the registry in S1.184, which retires it.
+**The world's units** (`goods.rs`): goods and capital classes are issued by the registry (`goods::unit`, `find`,
+`held`, `good`, `capital`), a world `Held` mapped onto its key — a good at its region, a capital class with its band as
+its size band and one quality band and age class. The world declares its goods' extents at the opening (its products,
+one grade, its regions), so every good's id is read at its place. A flow still carries a unit in 15 bits
+(`Denom::units`): the registry's id is carried in them, and an id past them stops the run (`carried`) until the flows'
+batch header widens to 24 (S1.245). A firm's own unit id becomes its record's hot attribute with its typed columns
+(S1.198); until then a firm's units are read at their dense place by product and region.
 
 #### K-23 The stage table
 

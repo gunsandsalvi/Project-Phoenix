@@ -9,7 +9,7 @@ use std::collections::BTreeMap;
 
 use phx_core::OpeningCountry;
 use phx_core::flows::{Denom, Flow};
-use phx_core::goods::{Bound, Cost, Held, NATURE};
+use phx_core::goods::{Bound, Cost, NATURE};
 use phx_core::units::{Chain, Class};
 use phx_id::{CountryId, Day, PartyKey};
 use phx_macros::{clause, opening};
@@ -56,6 +56,9 @@ pub struct Plant {
     needs: Vec<Vec<(usize, f64)>>,
     products: usize,
     bought_as: Vec<u16>,
+    /// Each product bought as plant with its kind, by product, from `bought_as`.
+    #[saved(skip, rebuild = Plant::index_kinds)]
+    kind_of: Vec<(u16, u16)>,
     lead: Vec<u32>,
     lives: Vec<f64>,
     review_days: u32,
@@ -67,6 +70,20 @@ pub struct Plant {
     /// delivered in the period before.
     sold: BTreeMap<PartyKey, i64>,
     reviewed: BTreeMap<PartyKey, (i64, i64)>,
+}
+
+impl Plant {
+    /// Each product's plant kind indexed from the products the kinds are bought as.
+    #[phx_macros::opening]
+    fn index_kinds(&mut self) -> u64 {
+        self.kind_of =
+            self.bought_as.iter().enumerate().filter_map(|(k, p)| u16::try_from(k).ok().map(|k| (*p, k))).collect();
+        self.kind_of.sort_unstable();
+        match u64::try_from(self.bought_as.len()) {
+            Ok(n) => n,
+            Err(_) => phx_num::capacity_exceeded!("plant kinds", u64::MAX, self.bought_as.len()),
+        }
+    }
 }
 
 /// A kind's steady-path classes at a growth rate: each class's weight, newest first, and the efficient units a unit
@@ -157,6 +174,7 @@ impl Core {
             began: today.get(),
             ..Plant::default()
         };
+        self.plant.index_kinds();
         let mut prices = Vec::new();
         let mut growth = Vec::new();
         for c in countries {
@@ -279,14 +297,9 @@ impl Core {
 
     /// Whether a capital unit's class has a next condition in its chain.
     fn next_condition_held(&self, unit: u16) -> bool {
-        match self.goods.units.held(unit) {
-            Some(Held::Capital(c)) => self
-                .plant
-                .chains
-                .get(usize::from(c.kind))
-                .is_some_and(|ch| usize::from(c.condition) + 1 < ch.value.len()),
-            _ => false,
-        }
+        phx_core::goods::capital(&self.goods.units, unit).is_some_and(|c| {
+            self.plant.chains.get(usize::from(c.kind)).is_some_and(|ch| usize::from(c.condition) + 1 < ch.value.len())
+        })
     }
 
     /// What a holder's capital units cost.
@@ -294,7 +307,7 @@ impl Core {
         self.goods
             .stocks
             .holdings(holder)
-            .filter(|h| matches!(self.goods.units.held(h.unit), Some(Held::Capital(_))))
+            .filter(|h| phx_core::goods::capital(&self.goods.units, h.unit).is_some())
             .map(|h| i128::from(h.cost))
             .sum()
     }
@@ -407,15 +420,13 @@ impl Core {
 
     /// The kind of plant a unit's product is bought as, if any.
     pub(crate) fn plant_kind_of_unit(&self, unit: u16) -> Option<u16> {
-        match self.goods.units.held(unit) {
-            Some(Held::Good(g)) => self.plant_kind(g.product),
-            _ => None,
-        }
+        phx_core::goods::good(&self.goods.units, unit).and_then(|g| self.plant_kind(g.product))
     }
 
     /// The kind of plant a product is bought as, if any.
     pub(crate) fn plant_kind(&self, product: u16) -> Option<u16> {
-        self.plant.bought_as.iter().position(|p| *p == product).and_then(|k| u16::try_from(k).ok())
+        let at = self.plant.kind_of.binary_search_by_key(&product, |(p, _)| *p).ok()?;
+        self.plant.kind_of.get(at).map(|(_, k)| *k)
     }
 
     /// A capital good delivered to its buyer as investment: a project at what it paid, until its kind's lead passes.

@@ -7,10 +7,11 @@
 
 use phx_id::{Day, PartyKey, Slot};
 use phx_macros::clause;
-use phx_num::{Round, capacity_exceeded, round::div_round, violation};
+use phx_num::{Missing, Round, UnitId, capacity_exceeded, round::div_round, violation};
 
 use crate::consts::{NATURE_WORD, UNITS_BIT};
 use crate::flows::{Denom, Flow};
+use crate::unit_registry::{CapitalClass, UnitKey, UnitRegistry, UnitTraits};
 use crate::units::Class;
 use crate::wheel::DueWheel;
 
@@ -36,101 +37,76 @@ pub enum Held {
     Capital(Class),
 }
 
-/// The goods and capital classes named so far, each issued the declared unit its flows carry the first time something
-/// names it, so only what is somewhere made or held exists.
-#[derive(Debug, Default, phx_macros::Saved)]
-pub struct UnitIds {
-    named: Vec<Held>,
-    sorted: Vec<(Held, u16)>,
-    /// The units of the goods of the first grade, by zone then product: the lookup the day makes most, read at a
-    /// place rather than searched for; kept as units are issued, and made again from `named` after a load.
-    #[saved(skip)]
-    plain: Vec<Vec<Option<u16>>>,
-    #[saved(skip)]
-    plain_upto: usize,
+/// The registry's key for what is held: a good at its zone, or a capital class at its zone with its band as its size
+/// and one quality band and age class.
+fn key_of(held: Held) -> UnitKey {
+    let zone = |z: u32| match u16::try_from(z) {
+        Ok(z) => z,
+        Err(_) => capacity_exceeded!("zones a unit's key names", u16::MAX, z),
+    };
+    match held {
+        Held::Good(g) => UnitKey::Good { product: g.product, grade: g.grade, zone: zone(g.zone) },
+        Held::Capital(c) => {
+            let Ok(kind) = u8::try_from(c.kind) else {
+                capacity_exceeded!("capital kinds a class's key names", u8::MAX, c.kind);
+            };
+            let class = CapitalClass { kind, size: c.band, quality: 0, condition: c.condition, age: 0 };
+            UnitKey::Capital { class, zone: zone(c.zone) }
+        }
+    }
 }
 
-impl UnitIds {
-    /// A good of the first grade's unit, where it has been named and indexed.
-    fn plain_of(&self, held: Held) -> Option<u16> {
-        match held {
-            Held::Good(Good { product, grade: 0, zone }) => {
-                self.plain.get(usize::try_from(zone).ok()?)?.get(usize::from(product)).copied().flatten()
-            }
-            _ => None,
-        }
+/// What a flow carries for a registry id: its 15 bits until the flows' batch header carries 24; an id past them stops
+/// the run.
+#[clause("GDS.1")]
+fn carried(id: UnitId) -> u16 {
+    match u16::try_from(id.index()) {
+        Ok(u) if u < 1 << UNITS_BIT => u,
+        _ => capacity_exceeded!("units a flow names", 1_u32 << UNITS_BIT, id.index()),
     }
+}
 
-    /// The units named since the index was last kept, indexed.
-    fn index_plain(&mut self) {
-        while let Some(held) = self.named.get(self.plain_upto).copied() {
-            if let (Held::Good(Good { product, grade: 0, zone }), Ok(unit)) = (held, u16::try_from(self.plain_upto))
-                && let Ok(z) = usize::try_from(zone)
-            {
-                if self.plain.len() <= z {
-                    self.plain.resize_with(z + 1, Vec::new);
-                }
-                if let Some(by_product) = self.plain.get_mut(z) {
-                    let p = usize::from(product);
-                    if by_product.len() <= p {
-                        by_product.resize(p + 1, None);
-                    }
-                    if let Some(at) = by_product.get_mut(p) {
-                        *at = Some(unit);
-                    }
-                }
-            }
-            self.plain_upto += 1;
-        }
+/// The unit of what is held, issued by the registry now if it has none: a good with its product's traits, a capital
+/// class with none.
+pub fn unit(registry: &mut UnitRegistry, held: Held, traits: UnitTraits) -> u16 {
+    carried(registry.issue(key_of(held), traits))
+}
+
+/// The unit of what is held, if it has been issued.
+#[must_use]
+pub fn find(registry: &UnitRegistry, held: Held) -> Option<u16> {
+    match registry.find(key_of(held)) {
+        Missing::Present(id) => Some(carried(id)),
+        Missing::Absent => None,
     }
+}
 
-    /// The unit of what is held, issued now if it has none.
-    pub fn unit(&mut self, held: Held) -> u16 {
-        self.index_plain();
-        if let Some(unit) = self.plain_of(held) {
-            return unit;
-        }
-        match self.sorted.binary_search_by_key(&held, |(h, _)| *h) {
-            Ok(at) => {
-                self.sorted.get(at).map_or_else(|| violation!(clause = "GDS.1", "a unit found and gone"), |x| x.1)
-            }
-            Err(at) => {
-                let limit = 1_usize << UNITS_BIT;
-                let unit = match u16::try_from(self.named.len()) {
-                    Ok(u) if usize::from(u) < limit => u,
-                    _ => capacity_exceeded!("units a flow names", limit, self.named.len()),
-                };
-                self.named.push(held);
-                self.sorted.insert(at, (held, unit));
-                unit
-            }
-        }
-    }
+/// The capital class a unit names, if it names one.
+#[must_use]
+pub fn capital(registry: &UnitRegistry, unit: u16) -> Option<Class> {
+    let (class, zone) = registry.row(UnitId::new(u32::from(unit))).capital()?;
+    Some(Class { kind: u16::from(class.kind), band: class.size, condition: class.condition, zone: u32::from(zone) })
+}
 
-    /// The unit of what is held, if it has been named.
-    #[must_use]
-    pub fn find(&self, held: Held) -> Option<u16> {
-        if let Some(unit) = self.plain_of(held) {
-            return Some(unit);
-        }
-        let at = self.sorted.binary_search_by_key(&held, |(h, _)| *h).ok()?;
-        self.sorted.get(at).map(|x| x.1)
-    }
+/// The good a unit names, if it names one.
+#[must_use]
+pub fn good(registry: &UnitRegistry, unit: u16) -> Option<Good> {
+    let (product, grade, zone) = registry.row(UnitId::new(u32::from(unit))).good()?;
+    Some(Good { product, grade, zone: u32::from(zone) })
+}
 
-    /// What a unit names.
-    #[must_use]
-    pub fn held(&self, unit: u16) -> Option<Held> {
-        self.named.get(usize::from(unit)).copied()
-    }
-
-    #[must_use]
-    pub fn len(&self) -> usize {
-        self.named.len()
-    }
-
-    #[must_use]
-    pub fn is_empty(&self) -> bool {
-        self.named.is_empty()
+/// What a unit names; a unit no good or capital class has stops the run.
+#[must_use]
+pub fn held(registry: &UnitRegistry, unit: u16) -> Held {
+    match registry.row(UnitId::new(u32::from(unit))).key() {
+        UnitKey::Good { product, grade, zone } => Held::Good(Good { product, grade, zone: u32::from(zone) }),
+        UnitKey::Capital { class, zone } => Held::Capital(Class {
+            kind: u16::from(class.kind),
+            band: class.size,
+            condition: class.condition,
+            zone: u32::from(zone),
+        }),
+        _ => violation!(clause = "GDS.1", "a flow's unit neither a good nor a capital class", unit = unit),
     }
 }
 

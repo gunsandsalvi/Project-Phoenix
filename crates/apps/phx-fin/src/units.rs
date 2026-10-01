@@ -27,7 +27,7 @@ const RIGHTS: u32 = 1;
 /// A capital kind's age classes, so a zone's classes span kinds by age.
 const AGES: u8 = 9;
 
-const TRAITS: UnitTraits = UnitTraits { price_exp: 2, storable: true, perishable: false, spoilage: 0 };
+const TRAITS: UnitTraits = UnitTraits { storable: true, perishable: false };
 
 const MIB: f64 = 1_048_576.0;
 
@@ -60,7 +60,11 @@ impl FinBase for Units {
         let mut instruments = 0;
         for z in 0..zones {
             let zone = zone_of(z)?;
-            self.keys.extend(catalogue.products().map(|product| UnitKey::Good { product, grade: 0, zone }));
+            self.keys.extend(catalogue.products().map(|product| UnitKey::Good {
+                product: product.get(),
+                grade: 0,
+                zone,
+            }));
             for c in 0..CLASSES {
                 let class = CapitalClass { kind: c / AGES, size: 0, quality: 0, condition: 0, age: c % AGES };
                 self.keys.push(UnitKey::Capital { class, zone });

@@ -265,3 +265,13 @@ pub const UNIT_HASH: [u64; 3] = [0x2545_F491, 0x3C6E_F372, 0x1B87_3593];
 pub const UNIT_HASH_FOLD: u32 = 31;
 /// A grade's content per unit, in millionths of its content unit.
 pub const CONTENT_PLACES: u8 = 6;
+/// Each kind of unit's code in its row: a good, a capital class, an instrument, a special unit, a right.
+pub const UNIT_GOOD: u8 = 0;
+/// A capital class's code.
+pub const UNIT_CAPITAL: u8 = 1;
+/// An instrument's code.
+pub const UNIT_INSTRUMENT: u8 = 2;
+/// A special unit's code.
+pub const UNIT_SPECIAL: u8 = 3;
+/// A right's code.
+pub const UNIT_RIGHT: u8 = 4;

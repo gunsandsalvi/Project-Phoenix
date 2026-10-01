@@ -4,8 +4,10 @@
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 
-use crate::catalogue::ProductH;
-use crate::consts::{CAPITAL_BAND_BITS, CAPITAL_BANDS, CAPITAL_KIND_BITS, PRODUCT_SHIFT};
+use crate::consts::{
+    CAPITAL_BAND_BITS, CAPITAL_BANDS, CAPITAL_KIND_BITS, PRODUCT_SHIFT, UNIT_CAPITAL, UNIT_GOOD, UNIT_INSTRUMENT,
+    UNIT_RIGHT, UNIT_SPECIAL,
+};
 
 const _: () = assert!(CAPITAL_KIND_BITS + CAPITAL_BANDS * CAPITAL_BAND_BITS == u32::BITS, "a class fills one word");
 
@@ -20,24 +22,27 @@ pub enum KeyKind {
 }
 
 impl KeyKind {
-    pub const ALL: [KeyKind; 5] =
-        [KeyKind::Good, KeyKind::Capital, KeyKind::Instrument, KeyKind::Special, KeyKind::Right];
-
-    /// The kind's code, its place among the kinds.
+    /// The kind's code, as its row holds it.
     #[must_use]
     pub fn code(self) -> u8 {
-        let at = KeyKind::ALL.iter().position(|k| *k == self).and_then(|at| u8::try_from(at).ok());
-        match at {
-            Some(code) => code,
-            None => violation!(clause = "GDS.1", "a unit kind missing from the kinds"),
+        match self {
+            KeyKind::Good => UNIT_GOOD,
+            KeyKind::Capital => UNIT_CAPITAL,
+            KeyKind::Instrument => UNIT_INSTRUMENT,
+            KeyKind::Special => UNIT_SPECIAL,
+            KeyKind::Right => UNIT_RIGHT,
         }
     }
 
     /// The kind a row's code names; a code no kind has stops the run.
     pub(crate) fn of(code: u8) -> KeyKind {
-        match KeyKind::ALL.into_iter().find(|k| k.code() == code) {
-            Some(k) => k,
-            None => violation!(clause = "GDS.1", "a unit row of no kind", code = code),
+        match code {
+            UNIT_GOOD => KeyKind::Good,
+            UNIT_CAPITAL => KeyKind::Capital,
+            UNIT_INSTRUMENT => KeyKind::Instrument,
+            UNIT_SPECIAL => KeyKind::Special,
+            UNIT_RIGHT => KeyKind::Right,
+            _ => violation!(clause = "GDS.1", "a unit row of no kind", code = code),
         }
     }
 }
@@ -68,7 +73,7 @@ impl CapitalClass {
     }
 
     /// The class a word packs: the age in the lowest bits, the kind in the highest.
-    fn unpacked(word: u32) -> CapitalClass {
+    pub(crate) fn unpacked(word: u32) -> CapitalClass {
         let mask = (1 << CAPITAL_BAND_BITS) - 1;
         let byte = |bits: u32| match u8::try_from(bits) {
             Ok(b) => b,
@@ -88,7 +93,7 @@ impl CapitalClass {
 /// What a unit names.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum UnitKey {
-    Good { product: ProductH, grade: u8, zone: u16 },
+    Good { product: u16, grade: u8, zone: u16 },
     Capital { class: CapitalClass, zone: u16 },
     Instrument { id: u32 },
     Special { kind: u32, place: u16 },
@@ -100,7 +105,7 @@ impl UnitKey {
     pub(crate) fn parts(self) -> (KeyKind, u32, Missing<u16>) {
         match self {
             UnitKey::Good { product, grade, zone } => {
-                (KeyKind::Good, (u32::from(product.get()) << PRODUCT_SHIFT) | u32::from(grade), Missing::Present(zone))
+                (KeyKind::Good, (u32::from(product) << PRODUCT_SHIFT) | u32::from(grade), Missing::Present(zone))
             }
             UnitKey::Capital { class, zone } => (KeyKind::Capital, class.packed(), Missing::Present(zone)),
             UnitKey::Instrument { id } => (KeyKind::Instrument, id, Missing::Absent),
@@ -118,7 +123,7 @@ impl UnitKey {
                 else {
                     violation!(clause = "GDS.1", "a good's word past its product and grade", word = word);
                 };
-                UnitKey::Good { product: ProductH::new(product), grade, zone }
+                UnitKey::Good { product, grade, zone }
             }
             (KeyKind::Capital, Missing::Present(zone)) => {
                 UnitKey::Capital { class: CapitalClass::unpacked(word), zone }

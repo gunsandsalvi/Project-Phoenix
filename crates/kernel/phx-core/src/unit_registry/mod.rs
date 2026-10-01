@@ -16,21 +16,24 @@ pub use keys::{CapitalClass, KeyKind, UnitKey};
 
 use crate::capacity::UNIT_ID_ROWS;
 use crate::consts::{
-    UNIT_AT_ZONE, UNIT_HASH, UNIT_HASH_FOLD, UNIT_INDEX_FREE, UNIT_PERISHABLE, UNIT_RETIRED, UNIT_STORABLE,
+    PRODUCT_SHIFT, UNIT_AT_ZONE, UNIT_CAPITAL, UNIT_GOOD, UNIT_HASH, UNIT_HASH_FOLD, UNIT_INDEX_FREE, UNIT_PERISHABLE,
+    UNIT_RETIRED, UNIT_STORABLE,
 };
 
-/// What a unit is beyond its key, fixed when it is issued: its price exponent, whether it keeps and whether it spoils,
-/// and its spoilage class.
+/// What a unit is beyond its key, fixed when it is issued: whether it keeps in stock and whether it spoils.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct UnitTraits {
-    pub price_exp: u8,
     pub storable: bool,
     pub perishable: bool,
-    pub spoilage: u8,
 }
 
-/// A unit's row: its key's word, the day it retired, its zone or place, its kind's code, its flags, its price exponent
-/// and its spoilage class.
+impl UnitTraits {
+    /// A unit no stock keeps and nothing spoils: a capital class, an instrument, a special unit, a right.
+    pub const NONE: UnitTraits = UnitTraits { storable: false, perishable: false };
+}
+
+/// A unit's row: its key's word, the day it retired, its zone or place, its kind's code and its flags; its last four
+/// bytes are kept for the price exponent and spoilage class its products will declare.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Pod)]
 pub struct UnitRow {
@@ -39,9 +42,7 @@ pub struct UnitRow {
     zone: u16,
     kind: u8,
     flags: u8,
-    price_exp: u8,
-    spoilage: u8,
-    pad: [u8; 2],
+    pad: [u8; 4],
 }
 
 const _: () = assert!(size_of::<UnitRow>() == size_of::<u128>(), "a unit row is sixteen bytes, its store's");
@@ -59,12 +60,27 @@ impl UnitRow {
 
     #[must_use]
     pub fn traits(self) -> UnitTraits {
-        UnitTraits {
-            price_exp: self.price_exp,
-            storable: self.flag(UNIT_STORABLE),
-            perishable: self.flag(UNIT_PERISHABLE),
-            spoilage: self.spoilage,
+        UnitTraits { storable: self.flag(UNIT_STORABLE), perishable: self.flag(UNIT_PERISHABLE) }
+    }
+
+    /// The capital class and zone the row names, if it names one: its kind read before anything is unpacked.
+    #[must_use]
+    pub fn capital(self) -> Option<(CapitalClass, u16)> {
+        (self.kind == UNIT_CAPITAL).then(|| (CapitalClass::unpacked(self.word), self.zone))
+    }
+
+    /// The good — product, grade and zone — the row names, if it names one.
+    #[must_use]
+    pub fn good(self) -> Option<(u16, u8, u16)> {
+        if self.kind != UNIT_GOOD {
+            return None;
         }
+        let (Ok(product), Ok(grade)) =
+            (u16::try_from(self.word >> PRODUCT_SHIFT), u8::try_from(self.word & ((1 << PRODUCT_SHIFT) - 1)))
+        else {
+            violation!(clause = "GDS.1", "a good's word past its product and grade", word = self.word);
+        };
+        Some((product, grade, self.zone))
     }
 
     /// The day the unit retired, if it has.
@@ -104,8 +120,13 @@ fn slots_for(capacity: u32) -> usize {
 pub struct UnitRegistry {
     rows: Vec<UnitRow>,
     capacity: u32,
+    /// The goods' declared extents — products, grades, zones — over which their ids are kept dense; none declared.
+    goods: [u32; 3],
     #[saved(skip, rebuild = UnitRegistry::reindex)]
     slots: Vec<u32>,
+    /// Each declared good's id by (product, grade, zone), rebuilt from the rows.
+    #[saved(skip, rebuild = UnitRegistry::place_goods)]
+    dense: Vec<u32>,
 }
 
 impl UnitRegistry {
@@ -121,7 +142,38 @@ impl UnitRegistry {
     #[must_use]
     pub fn with_capacity(capacity: u32) -> UnitRegistry {
         let rows = index(u64::from(capacity));
-        UnitRegistry { rows: Vec::with_capacity(rows), capacity, slots: vec![EMPTY; slots_for(capacity)] }
+        UnitRegistry {
+            rows: Vec::with_capacity(rows),
+            capacity,
+            goods: [0; 3],
+            slots: vec![EMPTY; slots_for(capacity)],
+            dense: Vec::new(),
+        }
+    }
+
+    /// The goods' extents declared, so each good's id is read at its place rather than probed for; a good outside them
+    /// is probed for as any unit. Goods already issued are placed.
+    #[opening]
+    pub fn declare_goods(&mut self, products: u16, grades: u8, zones: u16) {
+        self.goods = [u32::from(products), u32::from(grades), u32::from(zones)];
+        let _ = self.place_goods();
+    }
+
+    /// A good's place among the dense ids, where its key lies within the declared extents.
+    fn dense_at(&self, (product, grade, zone): (u16, u8, u16)) -> Option<usize> {
+        let [p, g, z] = self.goods;
+        let (product, grade, zone) = (u32::from(product), u32::from(grade), u32::from(zone));
+        let inside = product < p && grade < g && zone < z;
+        inside.then(|| index(u64::from((product * g + grade) * z + zone)))
+    }
+
+    /// A good's dense place set to an id, or emptied when its unit retires.
+    fn place_good(&mut self, good: (u16, u8, u16), id: u32) {
+        if let Some(at) = self.dense_at(good)
+            && let Some(slot) = self.dense.get_mut(at)
+        {
+            *slot = id;
+        }
     }
 
     /// The slot a key's probe starts at.
@@ -166,6 +218,14 @@ impl UnitRegistry {
 
     /// A key's newest id, if it has been issued.
     pub fn find(&self, key: UnitKey) -> Missing<UnitId> {
+        if let UnitKey::Good { product, grade, zone } = key
+            && let Some(at) = self.dense_at((product, grade, zone))
+        {
+            return match self.dense.get(at) {
+                Some(id) if *id != EMPTY => Missing::Present(UnitId::new(*id)),
+                _ => Missing::Absent,
+            };
+        }
         match self.probe(key.parts()) {
             (_, Missing::Present(id)) if !self.row_of(id).flag(UNIT_RETIRED) => Missing::Present(UnitId::new(id)),
             _ => Missing::Absent,
@@ -199,18 +259,12 @@ impl UnitRegistry {
             | if traits.storable { UNIT_STORABLE } else { 0 }
             | if traits.perishable { UNIT_PERISHABLE } else { 0 };
         let unit = UnitId::new(id);
-        self.rows.push(UnitRow {
-            word,
-            retired: 0,
-            zone,
-            kind: kind.code(),
-            flags,
-            price_exp: traits.price_exp,
-            spoilage: traits.spoilage,
-            pad: [0; 2],
-        });
+        self.rows.push(UnitRow { word, retired: 0, zone, kind: kind.code(), flags, pad: [0; 4] });
         if let Some(s) = self.slots.get_mut(slot) {
             *s = id;
+        }
+        if let UnitKey::Good { product, grade, zone } = key {
+            self.place_good((product, grade, zone), id);
         }
         unit
     }
@@ -227,6 +281,9 @@ impl UnitRegistry {
             Some(r) if !r.flag(UNIT_RETIRED) => {
                 r.flags |= UNIT_RETIRED;
                 r.retired = day.get();
+                if let UnitKey::Good { product, grade, zone } = r.key() {
+                    self.place_good((product, grade, zone), EMPTY);
+                }
             }
             Some(_) => violation!(clause = "GDS.1", "a unit retired twice", id = unit.index()),
             None => violation!(clause = "GDS.1", "a unit id the registry never issued", id = unit.index()),
@@ -258,6 +315,23 @@ impl UnitRegistry {
         }
         wide(self.rows.len())
     }
+
+    /// The dense goods' places rebuilt from the rows in id order, each live good at its newest id.
+    #[opening]
+    fn place_goods(&mut self) -> u64 {
+        let [p, g, z] = self.goods.map(|n| index(u64::from(n)));
+        self.dense = vec![EMPTY; p * g * z];
+        for id in 0..self.rows.len() {
+            let Ok(id) = u32::try_from(id) else { break };
+            let row = self.row_of(id);
+            if let Some(good) = row.good()
+                && !row.flag(UNIT_RETIRED)
+            {
+                self.place_good(good, id);
+            }
+        }
+        wide(self.rows.len())
+    }
 }
 
 impl Default for UnitRegistry {
@@ -276,7 +350,7 @@ impl StoreStats for UnitRegistry {
     }
 
     fn bytes(&self) -> u64 {
-        wide(self.rows.capacity() * size_of::<UnitRow>() + self.slots.len() * size_of::<u32>())
+        wide(self.rows.capacity() * size_of::<UnitRow>() + (self.slots.len() + self.dense.len()) * size_of::<u32>())
     }
 }
 

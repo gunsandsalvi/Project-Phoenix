@@ -702,7 +702,7 @@ fn services_not_stored(w: Inspector<'_>) -> Outcome {
         return Outcome::NotYet("no goods day closed in the run");
     }
     for h in goods.stocks.all() {
-        let Some(phx_core::goods::Held::Good(g)) = goods.units.held(h.unit) else { continue };
+        let phx_core::goods::Held::Good(g) = phx_core::goods::held(&goods.units, h.unit) else { continue };
         if !goods.stored.get(usize::from(g.product)).copied().unwrap_or(true) && h.units != 0 {
             return Outcome::Fail(format!("{} units of service {} held at region {}", h.units, g.product, g.zone));
         }

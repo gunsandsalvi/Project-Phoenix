@@ -27,7 +27,7 @@ direction = "down"
 # migration of the core removes its own; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc92"
-value = 244
+value = 243
 direction = "down"
 
 # PC-96's admitted sites (S1.121, 2026-09-30): the world's and the systems' whole-table walks on the day's paths
@@ -78,7 +78,7 @@ direction = "down"
 # only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc101"
-value = 26
+value = 24
 direction = "down"
 
 # Placeholder SHAPEs in the committed data, each naming the system that retires it: the count only falls, except by
