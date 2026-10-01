@@ -31,6 +31,21 @@ impl Day {
         Day(next)
     }
 
+    /// The days from an earlier day to this one, as a store packs a day against its run's first; none for a day
+    /// before it.
+    #[must_use]
+    pub fn since(self, earlier: Day) -> Option<u32> {
+        self.0.checked_sub(earlier.0)
+    }
+
+    /// The day a packed count of days after an earlier one names: what `since` packed.
+    pub fn unpacked(earlier: Day, days: u32) -> Day {
+        let Some(day) = earlier.0.checked_add(days) else {
+            capacity_exceeded!("day count", u32::MAX, u64::from(earlier.0) + u64::from(days));
+        };
+        Day(day)
+    }
+
     /// The earlier of two days.
     pub fn earlier(a: Day, b: Day) -> Day {
         if a <= b { a } else { b }

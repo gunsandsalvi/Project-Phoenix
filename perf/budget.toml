@@ -639,6 +639,40 @@ counter = "fin.geo.mb"
 value = 29.3
 direction = "down"
 
+# The party directory (S1.194, 2026-10-01; `tools/bench.sh -F parties`): the design point's 8.7 M parties of four kinds
+# begun, two years of endings behind them as 0.67 M tombstones, held in 49.7 MiB (the step's 57). The day's applies'
+# references resolved in slot order at 4.7–5.9 ns (the step's 2.3: the generation and live bit a slot, where the
+# references' own base reads 3.4–3.5 on this machine now); an ended one's tombstone in 50–52 ns through the main run's
+# fence (the step's 60); a party ended and one begun at a drawn slot in 181–193 ns each (the step's 100: each touches
+# a slot's generation and live bit away from the last, and the slot taken again is the one that rested longest, far
+# from the one ended); a mass failure's 115 000 endings, as many begun, and the close's merge in 45–48 ms (the step's
+# 12, as many reads as the endings). Each time ratchet stands a quarter above the highest; the bytes at the measure.
+
+[[ratchet]]
+counter = "fin.parties.directory_mb"
+value = 49.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.resolve_ns"
+value = 7.4
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.tomb_lookup_ns"
+value = 64.7
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.begin_end_ns"
+value = 242
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.mass_end_ns"
+value = 60300000
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

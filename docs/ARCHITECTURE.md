@@ -2309,12 +2309,34 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: planned (S1.194–S1.211)
+Status: building (K-31 written; S1.195–S1.211 planned)
 
 #### K-31 The directory
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.194, S1.195).
+`phx-pop`'s `Directory` (`directory.rs`; PTY.1, PTY.9, PTY.10, PTY.13, SET.13) owns every party kind's slots and their
+generations: per kind, K-02's slot allocator (a slot released rests until the day closes and is handed out again first
+in, first out) and generation column (4 bytes a slot, 24 bits used), and a maintained live count. A party's lasting
+identity is its `PartyRef` — kind, generation, slot. `begin(kind)` takes the slot that has rested longest at its next
+generation; `end(party, day, successor)` refuses a party not live (PTY.9), releases its slot, so it reads as ended at
+once, and keeps a tombstone; `set_successor` names an estate's heir afterwards. `resolve(r)` reads the slot's
+generation and live bit — `Live(slot)` when both hold — else the tombstone: `Ended { day, successor }`, or
+`EndedBeyondHorizon` once it has been dropped; a generation the slot has not reached stops the run (PTY.13).
+`follow(r)` walks successors to a live party or the last that ended with none (PTY.10).
+
+A **tombstone** (`tombs.rs`) is a 16-byte `Pod`: the packed reference — kind 5, slot 27, generation 24 bits — with the
+high byte of its end day's offset from the run's first day, and the successor's packed reference (or none) with the low
+byte: 65 535 days a run, past which an ending stops the run. They lie in a main run and a recent one, each sorted by
+packed reference, and the day's endings, sorted as a phase of endings ends (`sort_endings`) so reads of them are a
+search. The main run is found through a fence of every 64th key, which stays in cache, then one kilobyte block. The
+day's close sorts the day's endings into the recent run, and once that passes a sixteenth of the main one merges it in
+from the back, in place, dropping every tombstone ended before today less the horizon (the longest declared horizon of
+any record that may name a party, given at assembly). The save keeps every kind's slots, generations and count and the
+tombstones as one run (`directory_save.rs`, cold); the fence is laid again at load.
+
+`[fin.parties]` at the design point (8.7 M parties of four kinds, 0.67 M tombstones): `directory_mb` 49.8 (the step's
+57), `resolve_ns` 7.4 (4.7–5.9 measured over the day's applies in slot order; the step's 2.3), `tomb_lookup_ns` 64.7
+(50–52), `begin_end_ns` 242 (181–193, the step's 100: each a slot's generation and live bit away from the last), and
+`mass_end_ns` 60.3 ms for a mass failure's 115 000 endings, as many begun, and the close (45–48 ms, the step's 12).
 
 **Today** (`phx-world`'s `core.rs`): `Core::key` finds a party's key by its identity.
 

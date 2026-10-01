@@ -32,6 +32,7 @@ const COLD: &[(&str, &str, &str)] = &[
     ("phx-store", "src/intern_save.rs", "saving"),
     ("phx-geo", "src/cells/parcels_save.rs", "saving"),
     ("phx-geo", "src/weather_save.rs", "saving"),
+    ("phx-pop", "src/directory_save.rs", "saving"),
     ("phx-exec", "src/unwind.rs", "a stopping run's panic, carried to its caller"),
     ("phx-world", "src/registry.rs", "assembly"),
     ("phx-world", "src/compile.rs", "assembly"),

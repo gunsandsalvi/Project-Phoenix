@@ -24,6 +24,7 @@ pub mod kept_search;
 mod kept_tests;
 pub mod kept_wheel;
 pub mod measure;
+pub mod parties;
 pub mod policy;
 pub mod pool;
 pub mod records;
@@ -174,6 +175,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(cells::CellsBase::default()),
     || Box::new(deposits::DepositsBase::default()),
     || Box::new(weather::WeatherBase::default()),
+    || Box::new(parties::Parties::default()),
 ];
 
 /// What a run fills, runs and reads.

@@ -3,6 +3,36 @@ pub mod phx_pop::consts  // used by: if-base, if-labour, if-pop, if-state, phx-c
 pub const phx_pop::consts::BIRTH_BITS: u32
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
 pub const phx_pop::consts::ROLE_BITS: u32
+pub const phx_pop::consts::TOMB_FENCE: usize
+pub const phx_pop::consts::TOMB_KEY_BITS: u32
+pub const phx_pop::consts::TOMB_MERGE_SHARE: usize
+pub mod phx_pop::directory  // used by: phx-fin
+pub enum phx_pop::directory::Resolved  // used by: phx-fin, phx-obs
+pub phx_pop::directory::Resolved::Ended  // used by: phx-cli, phx-exec, phx-obs
+pub phx_pop::directory::Resolved::Ended::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
+pub phx_pop::directory::Resolved::Ended::successor: phx_num::missing::Missing<phx_id::ids::PartyRef>  // used by: phx-core
+pub phx_pop::directory::Resolved::EndedBeyondHorizon
+pub phx_pop::directory::Resolved::Live(phx_id::ids::Slot)  // used by: phx-fin
+pub struct phx_pop::directory::Directory<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_pop::directory::Directory<B>
+pub fn phx_pop::directory::Directory<B>::begin(&mut self, u8) -> phx_id::ids::PartyRef  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::close_day(&mut self, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::end(&mut self, phx_id::ids::PartyRef, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyRef>)  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::follow(&self, phx_id::ids::PartyRef) -> (phx_id::ids::PartyRef, phx_pop::directory::Resolved)  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::live(&self, u8) -> u64  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::new(&mut phx_store::backing::AddressSpace, &[u32], u32, (phx_id::day::Day, u32)) -> phx_pop::directory::Directory<B>  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::resolve(&self, phx_id::ids::PartyRef) -> phx_pop::directory::Resolved  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::set_successor(&mut self, phx_id::ids::PartyRef, phx_id::ids::PartyRef)  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::sort_endings(&mut self)  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::tombstones(&self) -> usize  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::directory::Directory<B>
+pub fn phx_pop::directory::Directory<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_pop::directory::Directory<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_pop::directory::Directory<B>
+pub fn phx_pop::directory::Directory<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_pop::directory::Party  // used by: phx-core, phx-fin, phx-id, phx-macros, phx-market, phx-rand, phx-world
 pub mod phx_pop::hazard  // used by: phx-cli, phx-core, phx-geo, phx-macros, phx-world, sys-dem, sys-lab
 pub enum phx_pop::hazard::Booking  // used by: phx-world
 pub phx_pop::hazard::Booking::Hit(phx_id::day::Day)  // used by: phx-world

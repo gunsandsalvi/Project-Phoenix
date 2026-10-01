@@ -6,6 +6,7 @@ error[E0599]: no associated function or constant named `default` found for struc
   |
 note: if you're trying to build a new `Day` consider using one of the following associated functions:
       Day::new
+      Day::unpacked
       Day::earlier
       Day::later
       Day::from_date
@@ -13,6 +14,9 @@ note: if you're trying to build a new `Day` consider using one of the following 
   |
   |     pub const fn new(raw: u32) -> Day {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+  |     pub fn unpacked(earlier: Day, days: u32) -> Day {
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ...
   |     pub fn earlier(a: Day, b: Day) -> Day {
   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

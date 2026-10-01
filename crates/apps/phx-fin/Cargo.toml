@@ -9,6 +9,7 @@ publish.workspace = true
 [dependencies]
 phx-core = { path = "../../kernel/phx-core" }
 phx-geo = { path = "../../kernel/phx-geo" }
+phx-pop = { path = "../../kernel/phx-pop" }
 phx-exec = { path = "../../kernel/phx-exec" }
 phx-id = { path = "../../foundation/phx-id" }
 phx-market = { path = "../../kernel/phx-market" }
