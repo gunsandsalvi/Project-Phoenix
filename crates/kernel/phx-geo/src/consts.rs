@@ -36,3 +36,9 @@ pub const MONTHS_U8: u8 = 12;
 /// Attempts at a map before the generator gives up: a map that fails its conditions this often is a finding about the
 /// conditions, not a run to keep drawing.
 pub const MAP_MAX_ATTEMPTS: u64 = 64;
+/// A segment row's flags: closed until its day, removed, held as a named unit.
+pub const SEGMENT_CLOSED: u16 = 1;
+/// A removed segment.
+pub const SEGMENT_REMOVED: u16 = 1 << 1;
+/// A segment held as a named unit.
+pub const SEGMENT_HELD: u16 = 1 << 2;

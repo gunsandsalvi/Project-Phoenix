@@ -503,6 +503,29 @@ counter = "fin.stages.day_zero_ns"
 value = 795
 direction = "down"
 
+# Networks and routes (S1.187, 2026-10-01; `tools/bench.sh -F routes`): the design point's 500 000 segments over 1 000
+# zones in 25 regions, three trunk modes between the regions' market zones and two land modes within each region. A
+# route read is 2.8–4.6 ns (the step's 2: the place map, the entry and its run are three reads, not two, the entry's
+# line rarely cached at a million random pairs); a struck region's recompute — the trunk mode and its two land tables
+# — 2.7–4.2 ms (the step's 10). The rows and tables hold 20.2 MiB, above the step's 19: each table's member list
+# (2 MiB), which keeps a recompute to its own segments rather than all 500 000 (32 ms without). Each time ratchet stands
+# a quarter above the higher; the bytes, which do not vary, at the measure.
+
+[[ratchet]]
+counter = "fin.routes.route_ns"
+value = 5.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.routes.recompute_ns"
+value = 5200000
+direction = "down"
+
+[[ratchet]]
+counter = "fin.routes.mb"
+value = 20.3
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

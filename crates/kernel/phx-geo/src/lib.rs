@@ -17,6 +17,7 @@ pub mod state;
 pub mod stock;
 pub mod system;
 pub mod tile;
+pub mod transport;
 pub mod weather;
 
 pub use prims::GeoPrims;

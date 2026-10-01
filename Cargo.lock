@@ -415,6 +415,7 @@ version = "0.1.0"
 dependencies = [
  "phx-core",
  "phx-exec",
+ "phx-geo",
  "phx-id",
  "phx-market",
  "phx-num",

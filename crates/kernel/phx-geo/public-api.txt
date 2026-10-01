@@ -57,6 +57,9 @@ pub const phx_geo::consts::MONTHS_U8: u8  // used by: phx-cli
 pub const phx_geo::consts::PER_MILLE: u64  // used by: phx-cli, phx-world
 pub const phx_geo::consts::PER_MILLE_F64: f64
 pub const phx_geo::consts::ROUNDING_PARTS: u64
+pub const phx_geo::consts::SEGMENT_CLOSED: u16
+pub const phx_geo::consts::SEGMENT_HELD: u16
+pub const phx_geo::consts::SEGMENT_REMOVED: u16
 pub const phx_geo::consts::TENTHS: f64
 pub const phx_geo::consts::WHOLE_PERCENT: u64
 pub mod phx_geo::deposits  // used by: phx-cli, phx-core, phx-fin, phx-world
@@ -499,6 +502,142 @@ pub fn phx_geo::tile::Zone::rebuild_derived(&mut self, &mut phx_store::rebuild::
 pub fn phx_geo::tile::Zone::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_geo::tile::LAND: u8  // used by: sys-tec
 pub const phx_geo::tile::WATER: u8
+pub mod phx_geo::transport  // used by: phx-fin
+pub mod phx_geo::transport::routes  // used by: phx-fin, phx-world
+pub struct phx_geo::transport::routes::Route<'a>
+pub phx_geo::transport::routes::Route::metres: u64  // used by: phx-fin, phx-market, phx-world
+pub phx_geo::transport::routes::Route::segments: &'a [u32]  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-market, phx-world
+pub struct phx_geo::transport::routes::Routes  // used by: phx-fin
+impl phx_geo::transport::routes::Routes
+pub fn phx_geo::transport::routes::Routes::admit(&mut self, phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::SegmentRow)
+pub fn phx_geo::transport::routes::Routes::admit_all(&mut self, &phx_geo::transport::segments::Segments)  // used by: phx-fin
+pub fn phx_geo::transport::routes::Routes::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::routes::Routes::new(u8, &[u16], u32) -> phx_geo::transport::routes::Routes  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_geo::transport::routes::Routes::recompute(&mut self, &phx_geo::transport::segments::Segments, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::routes::Routes::route(&self, u16, u16) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'_>>  // used by: phx-fin, phx-world
+impl core::cmp::Eq for phx_geo::transport::routes::Routes
+impl core::cmp::PartialEq for phx_geo::transport::routes::Routes
+pub fn phx_geo::transport::routes::Routes::eq(&self, &phx_geo::transport::routes::Routes) -> bool  // used by: phx-check, phx-core, phx-store
+pub mod phx_geo::transport::segments  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-market, phx-world
+pub enum phx_geo::transport::segments::Change  // used by: phx-check
+pub phx_geo::transport::segments::Change::Opened  // used by: phx-world
+pub phx_geo::transport::segments::Change::Removed
+pub struct phx_geo::transport::segments::SegmentDecl  // used by: phx-fin
+pub phx_geo::transport::segments::SegmentDecl::capacity: u32  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-frm
+pub phx_geo::transport::segments::SegmentDecl::condition: u8  // used by: phx-cli, phx-core, phx-fin, phx-world
+pub phx_geo::transport::segments::SegmentDecl::from: u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_geo::transport::segments::SegmentDecl::metres: u32  // used by: phx-fin, phx-market, phx-world
+pub phx_geo::transport::segments::SegmentDecl::mode: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub phx_geo::transport::segments::SegmentDecl::to: u16  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-store, phx-world, sys-lab
+pub phx_geo::transport::segments::SegmentDecl::unit: phx_num::missing::Missing<u32>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub struct phx_geo::transport::segments::SegmentId(_)  // used by: phx-fin
+impl phx_geo::transport::segments::SegmentId
+pub const fn phx_geo::transport::segments::SegmentId::get(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub const fn phx_geo::transport::segments::SegmentId::new(u32) -> phx_geo::transport::segments::SegmentId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+#[repr(C)] pub struct phx_geo::transport::segments::SegmentRow
+impl phx_geo::transport::segments::SegmentRow
+pub fn phx_geo::transport::segments::SegmentRow::capacity(self) -> u32  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-frm
+pub fn phx_geo::transport::segments::SegmentRow::condition(self) -> u8  // used by: phx-cli, phx-core, phx-fin, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::ends(self) -> (u16, u16)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::metres(self) -> u32  // used by: phx-fin, phx-market, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::mode(self) -> u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::open_on(self, phx_id::day::Day) -> bool
+pub fn phx_geo::transport::segments::SegmentRow::unit(self) -> phx_num::missing::Missing<u32>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+impl phx_store::pod::Pod for phx_geo::transport::segments::SegmentRow
+pub fn phx_geo::transport::segments::SegmentRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::transport::segments::SegmentRow
+pub struct phx_geo::transport::segments::Segments  // used by: phx-core, phx-fin
+impl phx_geo::transport::segments::Segments
+pub fn phx_geo::transport::segments::Segments::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::segments::Segments::close(&mut self, phx_geo::transport::segments::SegmentId, phx_id::day::Day)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-store, phx-world, sys-frm
+pub fn phx_geo::transport::segments::Segments::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_geo::transport::segments::Segments::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::SegmentRow)> + '_  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_geo::transport::segments::Segments::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_geo::transport::segments::Segments::open(&mut self, phx_geo::transport::segments::SegmentDecl) -> phx_geo::transport::segments::SegmentId  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub fn phx_geo::transport::segments::Segments::remove(&mut self, phx_geo::transport::segments::SegmentId)  // used by: phx-core, phx-market, phx-pop, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_geo::transport::segments::Segments::reopen(&mut self, phx_geo::transport::segments::SegmentId)  // used by: phx-fin
+pub fn phx_geo::transport::segments::Segments::row(&self, phx_geo::transport::segments::SegmentId) -> phx_geo::transport::segments::SegmentRow  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-store, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_geo::transport::segments::Segments::settle(&mut self)  // used by: phx-core, phx-fin, phx-store, phx-world
+pub fn phx_geo::transport::segments::Segments::take_changes(&mut self, &mut alloc::vec::Vec<(phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::Change)>)  // used by: phx-fin
+impl phx_store::save::Saved for phx_geo::transport::segments::Segments where alloc::vec::Vec<phx_geo::transport::segments::SegmentRow>: phx_store::save::Saved, alloc::vec::Vec<(phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::Change)>: core::default::Default
+pub fn phx_geo::transport::segments::Segments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::transport::segments::Segments::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::transport::segments::Segments::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+pub enum phx_geo::transport::Change  // used by: phx-check
+pub phx_geo::transport::Change::Opened  // used by: phx-world
+pub phx_geo::transport::Change::Removed
+pub struct phx_geo::transport::Route<'a>
+pub phx_geo::transport::Route::metres: u64  // used by: phx-fin, phx-market, phx-world
+pub phx_geo::transport::Route::segments: &'a [u32]  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-market, phx-world
+pub struct phx_geo::transport::Routes  // used by: phx-fin
+impl phx_geo::transport::routes::Routes
+pub fn phx_geo::transport::routes::Routes::admit(&mut self, phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::SegmentRow)
+pub fn phx_geo::transport::routes::Routes::admit_all(&mut self, &phx_geo::transport::segments::Segments)  // used by: phx-fin
+pub fn phx_geo::transport::routes::Routes::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::routes::Routes::new(u8, &[u16], u32) -> phx_geo::transport::routes::Routes  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_geo::transport::routes::Routes::recompute(&mut self, &phx_geo::transport::segments::Segments, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::routes::Routes::route(&self, u16, u16) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'_>>  // used by: phx-fin, phx-world
+impl core::cmp::Eq for phx_geo::transport::routes::Routes
+impl core::cmp::PartialEq for phx_geo::transport::routes::Routes
+pub fn phx_geo::transport::routes::Routes::eq(&self, &phx_geo::transport::routes::Routes) -> bool  // used by: phx-check, phx-core, phx-store
+pub struct phx_geo::transport::SegmentDecl  // used by: phx-fin
+pub phx_geo::transport::SegmentDecl::capacity: u32  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-frm
+pub phx_geo::transport::SegmentDecl::condition: u8  // used by: phx-cli, phx-core, phx-fin, phx-world
+pub phx_geo::transport::SegmentDecl::from: u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_geo::transport::SegmentDecl::metres: u32  // used by: phx-fin, phx-market, phx-world
+pub phx_geo::transport::SegmentDecl::mode: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub phx_geo::transport::SegmentDecl::to: u16  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-store, phx-world, sys-lab
+pub phx_geo::transport::SegmentDecl::unit: phx_num::missing::Missing<u32>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub struct phx_geo::transport::SegmentId(_)  // used by: phx-fin
+impl phx_geo::transport::segments::SegmentId
+pub const fn phx_geo::transport::segments::SegmentId::get(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub const fn phx_geo::transport::segments::SegmentId::new(u32) -> phx_geo::transport::segments::SegmentId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+#[repr(C)] pub struct phx_geo::transport::SegmentRow
+impl phx_geo::transport::segments::SegmentRow
+pub fn phx_geo::transport::segments::SegmentRow::capacity(self) -> u32  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-frm
+pub fn phx_geo::transport::segments::SegmentRow::condition(self) -> u8  // used by: phx-cli, phx-core, phx-fin, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::ends(self) -> (u16, u16)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::metres(self) -> u32  // used by: phx-fin, phx-market, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::mode(self) -> u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::segments::SegmentRow::open_on(self, phx_id::day::Day) -> bool
+pub fn phx_geo::transport::segments::SegmentRow::unit(self) -> phx_num::missing::Missing<u32>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+impl phx_store::pod::Pod for phx_geo::transport::segments::SegmentRow
+pub fn phx_geo::transport::segments::SegmentRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::transport::segments::SegmentRow
+pub struct phx_geo::transport::Segments  // used by: phx-core, phx-fin
+impl phx_geo::transport::segments::Segments
+pub fn phx_geo::transport::segments::Segments::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::segments::Segments::close(&mut self, phx_geo::transport::segments::SegmentId, phx_id::day::Day)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-store, phx-world, sys-frm
+pub fn phx_geo::transport::segments::Segments::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_geo::transport::segments::Segments::iter(&self) -> impl core::iter::traits::iterator::Iterator<Item = (phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::SegmentRow)> + '_  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_geo::transport::segments::Segments::len(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_geo::transport::segments::Segments::open(&mut self, phx_geo::transport::segments::SegmentDecl) -> phx_geo::transport::segments::SegmentId  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub fn phx_geo::transport::segments::Segments::remove(&mut self, phx_geo::transport::segments::SegmentId)  // used by: phx-core, phx-market, phx-pop, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_geo::transport::segments::Segments::reopen(&mut self, phx_geo::transport::segments::SegmentId)  // used by: phx-fin
+pub fn phx_geo::transport::segments::Segments::row(&self, phx_geo::transport::segments::SegmentId) -> phx_geo::transport::segments::SegmentRow  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-store, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_geo::transport::segments::Segments::settle(&mut self)  // used by: phx-core, phx-fin, phx-store, phx-world
+pub fn phx_geo::transport::segments::Segments::take_changes(&mut self, &mut alloc::vec::Vec<(phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::Change)>)  // used by: phx-fin
+impl phx_store::save::Saved for phx_geo::transport::segments::Segments where alloc::vec::Vec<phx_geo::transport::segments::SegmentRow>: phx_store::save::Saved, alloc::vec::Vec<(phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::Change)>: core::default::Default
+pub fn phx_geo::transport::segments::Segments::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::transport::segments::Segments::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::transport::segments::Segments::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+pub struct phx_geo::transport::Transport  // used by: phx-fin
+pub phx_geo::transport::Transport::segments: phx_geo::transport::segments::Segments  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-market, phx-world
+impl phx_geo::transport::Transport
+pub fn phx_geo::transport::Transport::close(&mut self, phx_geo::transport::segments::SegmentId, phx_id::day::Day, phx_id::day::Day) -> u64  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-store, phx-world, sys-frm
+pub fn phx_geo::transport::Transport::new(phx_geo::transport::segments::Segments, (&[u16], u32), u8, phx_id::day::Day) -> phx_geo::transport::Transport  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_geo::transport::Transport::open(&mut self, phx_geo::transport::segments::SegmentDecl, phx_id::day::Day) -> phx_geo::transport::segments::SegmentId  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-dem, sys-lab
+pub fn phx_geo::transport::Transport::remove(&mut self, phx_geo::transport::segments::SegmentId, phx_id::day::Day) -> u64  // used by: phx-core, phx-market, phx-pop, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_geo::transport::Transport::reopen(&mut self, phx_geo::transport::segments::SegmentId, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::Transport::route(&self, u8, u16, u16) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'_>>  // used by: phx-fin, phx-world
+impl phx_store::save::Saved for phx_geo::transport::Transport where phx_geo::transport::segments::Segments: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved, u32: phx_store::save::Saved, u8: phx_store::save::Saved, alloc::vec::Vec<phx_geo::transport::routes::Routes>: core::default::Default
+pub fn phx_geo::transport::Transport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::transport::Transport::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_geo::transport::Transport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+impl phx_store::stats::StoreStats for phx_geo::transport::Transport
+pub fn phx_geo::transport::Transport::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::Transport::rows_ever(&self) -> u64  // used by: phx-core, phx-exec, phx-store
+pub fn phx_geo::transport::Transport::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-store
 pub mod phx_geo::weather  // used by: phx-cli, phx-world
 pub struct phx_geo::weather::Variable
 pub phx_geo::weather::Variable::event: phx_core::events::EventKindDecl  // used by: phx-cli, phx-core, phx-ledger, phx-world, sys-dem, sys-lab

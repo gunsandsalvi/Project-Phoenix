@@ -1134,14 +1134,14 @@ preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 M
 16 = { name = "small-bases pool", mb = 173.6 }   # the zones' 1.75 unscaled
 17 = { name = "markets", mb = 104.1 }   # 129.5 at the steps' counts, the marks at 730 days; the zones' 2.5 unscaled
 18 = { name = "records", mb = 120.2 }   # 150.2 at the steps' counts: every step's line-18 figure at the horizons above
-19 = { name = "map and network", mb = 30.5 }   # at 1 000 zones
+19 = { name = "map and network", mb = 31.7 }   # at 1 000 zones; S1.187 20.2 for 19 (the route tables' member lists)
 20 = { name = "estates", mb = 18.4 }
 21 = { name = "day buffers", mb = 128.1 }   # the live set at the heaviest sub-step
 22 = { name = "slack", mb = 45.6 }
 23 = { name = "save buffers", mb = 13.0 }
 24 = { name = "plant cells", mb = 77.4 }   # 96.8 at the steps' counts, at two condition classes
 25 = { name = "windows", mb = 9.6 }
-total_mb = 3940.8   # 4 817.1 at the steps' counts; against fin.mem.peak_mb 4 349: 408 MB (9.4 %) below, 9 below the owner's 3 950
+total_mb = 3942.0   # 4 818.3 at the steps' counts; against fin.mem.peak_mb 4 349: 407 MB (9.4 %) below, 8 below the owner's 3 950
 
 [save]   # the save and load buffers' representation (ledger line 23), as the snapshot step S1.356 states it; not a valve
 frames_per_worker = 4

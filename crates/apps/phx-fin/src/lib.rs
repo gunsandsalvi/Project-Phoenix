@@ -27,6 +27,7 @@ pub mod pool;
 pub mod records;
 pub mod refs;
 pub mod report;
+pub mod routes;
 pub mod save;
 pub mod seed;
 #[path = "seed_tests.rs"]
@@ -162,6 +163,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(catalogue::CatalogueBase::default()),
     || Box::new(units::Units::default()),
     || Box::new(stages::Stages::default()),
+    || Box::new(routes::RoutesBase::default()),
 ];
 
 /// What a run fills, runs and reads.

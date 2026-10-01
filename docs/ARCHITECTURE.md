@@ -2028,7 +2028,7 @@ alone on day zero (`Mode::DayZero`, GEN.13); settling days as ordinary ones. The
 `[fin.stages]`: the runner's own walk of a day, each slot a span around no work, `runner_ns` 895 (641–716 measured,
 the step's 2 ms) and `day_zero_ns` 795.
 
-**Today** (`substep.rs`): the sub-steps the day still runs by hand, until the day runner walks the table (S1.186).
+The world's day walks it (`World::run_day`, §7.18).
 
 #### K-24 The capacity table
 
@@ -2056,7 +2056,7 @@ holds the table to `[store]`.
 
 ### 7.4 phx-geo
 
-Status: planned (S1.187–S1.193)
+Status: building (K-26 written; S1.188–S1.193 planned)
 
 #### K-25 Tiles, zones and distances
 
@@ -2119,13 +2119,46 @@ largest zone (`GeoState::market_zones`), where its market meets and the freight 
 
 #### K-26 Networks and routes
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.187, S1.188).
+The transport network (`transport/`) is a table of **segments** and, per mode, a table of **routes** between places.
 
-**Today** (`network.rs`): the network is generated with the map: road and rail segments between the market zones of
-every two regions of a country that share a border, over their land path, and sea lanes joining a country's parts, the
-shortest first; each mode's capacity a day in tonnes. A route is the shortest path of one mode over the segments
-(`Network::route`).
+A segment (`segments.rs`) is one 32-byte `Pod` row: its two zones, its mode (a declared mode's handle), condition
+class, flags (closed, removed, held), length in metres, capacity a day in its mode's unit, the day a closure ends and
+the named unit it is held as (`Missing` unless held; its owner is the unit's holder, one writer). Its last eight bytes
+are kept for the free-flow time a mode's declared speed gives it. A `SegmentId` is its row's place, never reused: a
+removed segment keeps its row, flagged. `open_on(day)` is whether it carries: not removed, and not closed or closed
+only until an earlier day. `Segments` logs each opening and removal (`Change`); what is derived from the segments'
+lines takes the log in the same apply (`take_changes`), so it is never stale — the per-tile segment index is its
+first taker (S1.190). The log is empty at every save and rebuilt empty at load.
+
+`Routes` (`routes.rs`) is one mode's table over a list of places among the map's zones: the regions' market zones,
+which the trunks join, or a region's zones over its own segments. `place_of` maps a zone to its place (none for a
+zone the table does not hold); the table is dense over every (origin, destination) pair of places, each `Entry` an
+offset and length into one arena of segment ids and the route's length, so `route(from, to)` is the place map, the
+entry and its run — no search. A pair no open path joins reads `Missing`; a zone the table does not hold stops the
+run. The table's **members** are the segments of its mode joining two of its places, whatever their state, admitted
+once at its making and at each opening (`admit`). `recompute(segments, day)` lays the members open on the day as a
+compressed adjacency over the zones, each segment either way, and runs Dijkstra from each place over it, a binary heap
+of (distance, zone), the lower zone first among equal distances, then traces each place's path back into the arena;
+it allocates nothing its scratch has held before, and returns the segment rows it read (each member twice) for the
+caller's visited counters. Its result is a function of the segments alone, whatever ran it.
+
+`Transport` (`mod.rs`) holds the segments, the places its tables join, the zones, the modes, the day last computed
+and each mode's routes. `close(id, until, today)`, `reopen` and `remove` change a segment and recompute its mode's
+table only; `open` admits the new segment and recomputes its mode's. The segments and the day are saved; the routes
+are rebuilt at load from the open segments (`#[saved(skip, rebuild = Transport::rebuild)]`), equal to the saved
+world's. `StoreStats` counts the segments and the bytes of the rows, tables, arenas and member lists.
+
+`[fin.routes]` at the design point (500 000 segments over 1 000 zones in 25 regions; three trunk modes between the
+market zones, two land modes within each region): `route_ns` 5.8 (2.8–4.6 measured; the step's 2), `recompute_ns`
+5.2 ms for a struck region's trunk table and its two land tables (2.7–4.2 measured; the step's 10), `mb` 20.3 (the
+step's 19: the member lists' 2 MiB, which keep a recompute to its own segments rather than all 500 000).
+
+**Today** (`network.rs`): the world's network is still generated with the map: road and rail segments between the
+market zones of every two regions of a country that share a border, over their land path, and sea lanes joining a
+country's parts, the shortest first; each mode's capacity a day in tonnes, its modes the `ROAD`, `RAIL` and `SEA`
+consts. A route is the shortest path of one mode over the segments (`Network::route`), and freight keeps its own maps
+of lengths and routes. Both move onto `Transport` with freight's routes (S1.189); a segment's use on a day is
+S1.188's.
 
 #### K-28 Cells
 
