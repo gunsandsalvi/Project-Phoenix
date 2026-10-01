@@ -30,6 +30,7 @@ pub mod store;
 pub mod streams;
 pub mod substep;
 pub mod system;
+pub mod unit_registry;
 pub mod units;
 pub mod wear;
 pub mod wheel;

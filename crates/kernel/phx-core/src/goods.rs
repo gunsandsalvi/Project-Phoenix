@@ -22,7 +22,6 @@ pub const NATURE: PartyKey = PartyKey::from_word(NATURE_WORD);
 const NONE: u32 = u32::MAX;
 
 /// A good: a product's grade class at a zone. The same grade at two zones is two goods.
-#[clause("GDS.1")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, phx_macros::Saved)]
 pub struct Good {
     pub product: u16,

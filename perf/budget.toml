@@ -468,6 +468,27 @@ counter = "fin.catalogue.mb"
 value = 0.07
 direction = "down"
 
+# The units registry (S1.183, 2026-10-01; `tools/bench.sh -F units`): the design point's 110 000 units over 1 000
+# zones — sixty product-grades, forty-five capital classes, two instruments, two special units and a right a zone —
+# issued into an empty registry at 25.8–28.9 ns a unit (the step's 200) and found again at 23.2–29.7 ns, in 2.875 MiB of
+# rows and index (the step's 3 MiB). Each time ratchet stands a quarter above the higher; the bytes, which do not vary,
+# at the step's figure.
+
+[[ratchet]]
+counter = "fin.units.issue_ns"
+value = 36.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.units.find_ns"
+value = 37.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.units.ids_mb"
+value = 3
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

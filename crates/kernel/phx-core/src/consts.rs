@@ -153,6 +153,11 @@ pub const HOLDINGS_CODE: u8 = phx_id::consts::HOLDINGS_FAMILY;
 /// The persons' store, which a constructor reads by name.
 pub const PERSONS: (&str, u32, u32, crate::capacity::Growth) =
     ("persons", 6_000_000, 66, crate::capacity::Growth::Persons);
+/// The units registry's rows, 16 B each, which its constructor reads by name.
+pub const UNIT_IDS: (&str, u32, u32, crate::capacity::Growth) =
+    ("unit_ids", 110_000, UNIT_ROW_BYTES, crate::capacity::Growth::Persons);
+/// A unit row's bytes.
+pub const UNIT_ROW_BYTES: u32 = 16;
 /// The institutions' store, which a constructor reads by name.
 pub const INSTITUTIONS: (&str, u32, u32, crate::capacity::Growth) =
     ("institutions", 16_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons);
@@ -230,8 +235,33 @@ pub const STORES: &[(&str, u32, u32, crate::capacity::Growth)] = &[
     ("regions", 25, ROW_BYTES_UNLAID, crate::capacity::Growth::Fixed),
     ("tiles", 40_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Fixed),
     ("products", 250, ROW_BYTES_UNLAID, crate::capacity::Growth::Fixed),
-    ("unit_ids", 110_000, ROW_BYTES_UNLAID, crate::capacity::Growth::Persons),
+    UNIT_IDS,
 ];
 
 /// A flow's grouping by its payer's range, declared at a flow's cost: about 25 ns of phone core time.
 pub const FLOW_GROUP_COST: u64 = 25;
+
+/// A capital class's word: its kind's bits above its four bands' — size, quality, condition and age — each of six.
+pub const CAPITAL_KIND_BITS: u32 = 8;
+/// A capital class's bands: size, quality, condition and age.
+pub const CAPITAL_BANDS: u32 = 4;
+/// Each band's bits.
+pub const CAPITAL_BAND_BITS: u32 = 6;
+/// A good's word: its product above its grade's eight bits.
+pub const PRODUCT_SHIFT: u32 = 8;
+/// A unit row's flags: whether it is at a zone, storable, perishable, retired.
+pub const UNIT_AT_ZONE: u8 = 1;
+/// A unit that keeps.
+pub const UNIT_STORABLE: u8 = 1 << 1;
+/// A unit that spoils.
+pub const UNIT_PERISHABLE: u8 = 1 << 2;
+/// A unit retired, its row kept.
+pub const UNIT_RETIRED: u8 = 1 << 3;
+/// The units' index keeps a quarter of its slots free, so a probe ends soon.
+pub const UNIT_INDEX_FREE: usize = 4;
+/// The units' index's probe multipliers, odd and below 2^30 so a key's sum never overflows a word.
+pub const UNIT_HASH: [u64; 3] = [0x2545_F491, 0x3C6E_F372, 0x1B87_3593];
+/// A probe's fold of its sum's high half onto its low.
+pub const UNIT_HASH_FOLD: u32 = 31;
+/// A grade's content per unit, in millionths of its content unit.
+pub const CONTENT_PLACES: u8 = 6;

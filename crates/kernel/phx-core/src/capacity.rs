@@ -4,7 +4,7 @@
 
 use crate::consts::{
     CHUNK_ROWS, EVENT_WORDS, EVENTS_UNPRUNED, FAMILY_BITS, GROWTH_DIVISOR, GROWTH_YEARS, HOUSEHOLD_WORDS, INSTITUTIONS,
-    INSTRUMENTS, LONGEST_QUARTER_DAYS, PERSONS, SLOT_BITS, STORES,
+    INSTRUMENTS, LONGEST_QUARTER_DAYS, PERSONS, SLOT_BITS, STORES, UNIT_IDS,
 };
 
 /// Days the due wheel files ahead.
@@ -56,6 +56,8 @@ pub const ARENA_WORDS: u32 = EVENT_ROWS * EVENT_WORDS;
 pub const PERSON_ARENA_WORDS: u32 = CHUNK_ROWS * HOUSEHOLD_WORDS;
 /// Instruments the register holds.
 pub const INSTRUMENT_ROWS: u32 = capacity(&INSTRUMENTS).rows;
+/// Units the registry issues.
+pub const UNIT_ID_ROWS: u32 = capacity(&UNIT_IDS).rows;
 
 /// Whether a slot fits beside its family code in one link.
 #[must_use]

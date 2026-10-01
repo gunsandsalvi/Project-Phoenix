@@ -37,6 +37,7 @@ pub mod streams;
 pub mod terms;
 #[path = "tests.rs"]
 mod tests;
+pub mod units;
 
 use std::collections::BTreeMap;
 
@@ -158,6 +159,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(calendar::CalendarBase::default()),
     || Box::new(policy::Policy::default()),
     || Box::new(catalogue::CatalogueBase::default()),
+    || Box::new(units::Units::default()),
 ];
 
 /// What a run fills, runs and reads.

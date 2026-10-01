@@ -180,6 +180,7 @@ pub const phx_core::capacity::INSTRUMENT_ROWS: u32
 pub const phx_core::capacity::KIND_ROWS: u32  // used by: phx-world
 pub const phx_core::capacity::LINK_BITS: u32
 pub const phx_core::capacity::PERSON_ARENA_WORDS: u32  // used by: phx-pop
+pub const phx_core::capacity::UNIT_ID_ROWS: u32
 pub const phx_core::capacity::WHEEL_DAYS: u32  // used by: phx-world
 pub const fn phx_core::capacity::slot_fits(u32) -> bool
 pub fn phx_core::capacity::table() -> impl core::iter::traits::iterator::Iterator<Item = phx_core::capacity::Capacity>  // used by: phx-check, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
@@ -329,6 +330,7 @@ pub fn phx_core::catalogue::Catalogue::kinds(&self) -> impl core::iter::traits::
 pub fn phx_core::catalogue::Catalogue::market(&self, phx_core::catalogue::MarketH) -> phx_core::catalogue::MarketRow  // used by: if-labour, phx-check, phx-geo, phx-world, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
 pub fn phx_core::catalogue::Catalogue::may_hold(&self, phx_core::catalogue::FormH, phx_core::catalogue::ClassH) -> bool  // used by: phx-fin, phx-world
 pub fn phx_core::catalogue::Catalogue::participants(&self, phx_core::catalogue::MarketH) -> &[phx_core::catalogue::KindH]  // used by: phx-fin
+pub fn phx_core::catalogue::Catalogue::products(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::catalogue::ProductH>  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub fn phx_core::catalogue::Catalogue::reason(&self, phx_core::catalogue::ReasonH) -> phx_core::catalogue::ReasonRow  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
 pub fn phx_core::catalogue::Catalogue::reason_lines(&self, phx_core::catalogue::ReasonH) -> &[phx_core::catalogue::LineH]
 pub fn phx_core::catalogue::Catalogue::way_inputs(&self, phx_core::catalogue::WayH) -> &[phx_core::catalogue::GradeH]
@@ -510,9 +512,13 @@ pub mod phx_core::consts  // used by: if-base, if-labour, if-pop, if-state, phx-
 pub const phx_core::consts::BIT_WORD: usize
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
+pub const phx_core::consts::CAPITAL_BANDS: u32
+pub const phx_core::consts::CAPITAL_BAND_BITS: u32
+pub const phx_core::consts::CAPITAL_KIND_BITS: u32
 pub const phx_core::consts::CF_TINY: f64
 pub const phx_core::consts::CHUNK_ROWS: u32  // used by: phx-fin
 pub const phx_core::consts::COMMON_YEAR: i32
+pub const phx_core::consts::CONTENT_PLACES: u8
 pub const phx_core::consts::CONVENTIONS: usize
 pub const phx_core::consts::DAYS_30: i64
 pub const phx_core::consts::DAYS_360: i64
@@ -572,12 +578,22 @@ pub const phx_core::consts::PARTY_KINDS: usize
 pub const phx_core::consts::PERCENT_F64: f64  // used by: phx-ledger, phx-world
 pub const phx_core::consts::PERSONS: (&str, u32, u32, phx_core::capacity::Growth)  // used by: phx-pop
 pub const phx_core::consts::PPM: u32  // used by: sys-frm, sys-tec
+pub const phx_core::consts::PRODUCT_SHIFT: u32
 pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::ROW_BYTES_UNLAID: u32
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
 pub const phx_core::consts::SLOT_BITS: u32
 pub const phx_core::consts::STORES: &[(&str, u32, u32, phx_core::capacity::Growth)]  // used by: phx-check
 pub const phx_core::consts::UNITS_BIT: u16
+pub const phx_core::consts::UNIT_AT_ZONE: u8
+pub const phx_core::consts::UNIT_HASH: [u64; 3]
+pub const phx_core::consts::UNIT_HASH_FOLD: u32
+pub const phx_core::consts::UNIT_IDS: (&str, u32, u32, phx_core::capacity::Growth)
+pub const phx_core::consts::UNIT_INDEX_FREE: usize
+pub const phx_core::consts::UNIT_PERISHABLE: u8
+pub const phx_core::consts::UNIT_RETIRED: u8
+pub const phx_core::consts::UNIT_ROW_BYTES: u32
+pub const phx_core::consts::UNIT_STORABLE: u8
 pub const phx_core::consts::WHEEL_DAYS: u32  // used by: phx-world
 pub mod phx_core::contribution
 pub struct phx_core::contribution::Adjustment
@@ -2102,6 +2118,118 @@ pub fn phx_core::system::System::declare(&mut phx_core::system::Declarations)  /
 pub fn phx_core::system::declare_entry(&phx_core::system::SystemEntry, &mut phx_core::system::Declarations)  // used by: phx-world
 pub fn phx_core::system::declare_system<S: phx_core::system::System>(&mut phx_core::system::Declarations)
 pub type phx_core::system::Compile = alloc::boxed::Box<(dyn core::ops::function::FnOnce(&phx_core::register::Register, usize) -> core::result::Result<alloc::boxed::Box<(dyn core::any::Any + core::marker::Send + core::marker::Sync)>, alloc::string::String> + core::marker::Send)>
+pub mod phx_core::unit_registry  // used by: phx-fin
+pub mod phx_core::unit_registry::grades  // used by: phx-fin
+pub struct phx_core::unit_registry::grades::Content
+pub phx_core::unit_registry::grades::Content::per_unit: phx_num::fixed::Fixed<CONTENT_PLACES>  // used by: phx-world, sys-cap
+pub phx_core::unit_registry::grades::Content::unit: phx_num::qty::UnitId  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub struct phx_core::unit_registry::grades::GradeContents
+impl phx_core::unit_registry::grades::GradeContents
+pub fn phx_core::unit_registry::grades::GradeContents::content(&self, phx_core::catalogue::GradeH) -> phx_num::missing::Missing<phx_core::unit_registry::grades::Content>  // used by: phx-world
+pub fn phx_core::unit_registry::grades::GradeContents::declare(&mut self, phx_core::catalogue::GradeH, phx_core::unit_registry::grades::Content)  // used by: phx-acct, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_core::unit_registry::grades::GradeContents::new(&phx_core::catalogue::Catalogue) -> phx_core::unit_registry::grades::GradeContents  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub mod phx_core::unit_registry::keys  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-num, phx-store, phx-val, phx-world
+pub enum phx_core::unit_registry::keys::KeyKind
+pub phx_core::unit_registry::keys::KeyKind::Capital  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::keys::KeyKind::Good  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::keys::KeyKind::Instrument  // used by: phx-fin, phx-id, phx-rand
+pub phx_core::unit_registry::keys::KeyKind::Right  // used by: phx-fin
+pub phx_core::unit_registry::keys::KeyKind::Special  // used by: phx-fin
+impl phx_core::unit_registry::keys::KeyKind
+pub const phx_core::unit_registry::keys::KeyKind::ALL: [phx_core::unit_registry::keys::KeyKind; 5]  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_core::unit_registry::keys::KeyKind::code(self) -> u8  // used by: phx-fin, phx-id, phx-macros, phx-store, phx-world
+pub enum phx_core::unit_registry::keys::UnitKey  // used by: phx-fin
+pub phx_core::unit_registry::keys::UnitKey::Capital  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::keys::UnitKey::Capital::class: phx_core::unit_registry::keys::CapitalClass  // used by: if-credit, if-labour, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub phx_core::unit_registry::keys::UnitKey::Capital::zone: u16  // used by: phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world
+pub phx_core::unit_registry::keys::UnitKey::Good  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::keys::UnitKey::Good::grade: u8  // used by: phx-fin, phx-geo, phx-world, sys-gds
+pub phx_core::unit_registry::keys::UnitKey::Good::product: phx_core::catalogue::ProductH  // used by: if-base, phx-check, phx-cli, phx-fin, phx-market, phx-num, phx-world, sys-frm, sys-tec
+pub phx_core::unit_registry::keys::UnitKey::Good::zone: u16  // used by: phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world
+pub phx_core::unit_registry::keys::UnitKey::Instrument  // used by: phx-fin, phx-id, phx-rand
+pub phx_core::unit_registry::keys::UnitKey::Instrument::id: u32  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::unit_registry::keys::UnitKey::Right  // used by: phx-fin
+pub phx_core::unit_registry::keys::UnitKey::Right::deposit: u32  // used by: if-base, phx-fin, phx-geo, phx-world, sys-bnk, sys-tec
+pub phx_core::unit_registry::keys::UnitKey::Special  // used by: phx-fin
+pub phx_core::unit_registry::keys::UnitKey::Special::kind: u32  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::unit_registry::keys::UnitKey::Special::place: u16  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub struct phx_core::unit_registry::keys::CapitalClass  // used by: phx-fin
+pub phx_core::unit_registry::keys::CapitalClass::age: u8  // used by: if-state, phx-cli, phx-fin, phx-val, phx-world, sys-cap, sys-dem, sys-lab, sys-soc
+pub phx_core::unit_registry::keys::CapitalClass::condition: u8  // used by: phx-cli, phx-fin, phx-geo, phx-world
+pub phx_core::unit_registry::keys::CapitalClass::kind: u8  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::unit_registry::keys::CapitalClass::quality: u8  // used by: phx-fin
+pub phx_core::unit_registry::keys::CapitalClass::size: u8  // used by: if-state, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
+pub enum phx_core::unit_registry::KeyKind
+pub phx_core::unit_registry::KeyKind::Capital  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::KeyKind::Good  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::KeyKind::Instrument  // used by: phx-fin, phx-id, phx-rand
+pub phx_core::unit_registry::KeyKind::Right  // used by: phx-fin
+pub phx_core::unit_registry::KeyKind::Special  // used by: phx-fin
+impl phx_core::unit_registry::keys::KeyKind
+pub const phx_core::unit_registry::keys::KeyKind::ALL: [phx_core::unit_registry::keys::KeyKind; 5]  // used by: phx-cli, phx-fin, phx-world
+pub fn phx_core::unit_registry::keys::KeyKind::code(self) -> u8  // used by: phx-fin, phx-id, phx-macros, phx-store, phx-world
+pub enum phx_core::unit_registry::UnitKey  // used by: phx-fin
+pub phx_core::unit_registry::UnitKey::Capital  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::UnitKey::Capital::class: phx_core::unit_registry::keys::CapitalClass  // used by: if-credit, if-labour, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-store, phx-world, sys-bnk, sys-cap, sys-frm, sys-gds, sys-lab
+pub phx_core::unit_registry::UnitKey::Capital::zone: u16  // used by: phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world
+pub phx_core::unit_registry::UnitKey::Good  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::unit_registry::UnitKey::Good::grade: u8  // used by: phx-fin, phx-geo, phx-world, sys-gds
+pub phx_core::unit_registry::UnitKey::Good::product: phx_core::catalogue::ProductH  // used by: if-base, phx-check, phx-cli, phx-fin, phx-market, phx-num, phx-world, sys-frm, sys-tec
+pub phx_core::unit_registry::UnitKey::Good::zone: u16  // used by: phx-cli, phx-fin, phx-geo, phx-ledger, phx-market, phx-world
+pub phx_core::unit_registry::UnitKey::Instrument  // used by: phx-fin, phx-id, phx-rand
+pub phx_core::unit_registry::UnitKey::Instrument::id: u32  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::unit_registry::UnitKey::Right  // used by: phx-fin
+pub phx_core::unit_registry::UnitKey::Right::deposit: u32  // used by: if-base, phx-fin, phx-geo, phx-world, sys-bnk, sys-tec
+pub phx_core::unit_registry::UnitKey::Special  // used by: phx-fin
+pub phx_core::unit_registry::UnitKey::Special::kind: u32  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::unit_registry::UnitKey::Special::place: u16  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub struct phx_core::unit_registry::CapitalClass  // used by: phx-fin
+pub phx_core::unit_registry::CapitalClass::age: u8  // used by: if-state, phx-cli, phx-fin, phx-val, phx-world, sys-cap, sys-dem, sys-lab, sys-soc
+pub phx_core::unit_registry::CapitalClass::condition: u8  // used by: phx-cli, phx-fin, phx-geo, phx-world
+pub phx_core::unit_registry::CapitalClass::kind: u8  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::unit_registry::CapitalClass::quality: u8  // used by: phx-fin
+pub phx_core::unit_registry::CapitalClass::size: u8  // used by: if-state, phx-cli, phx-exec, phx-fin, phx-geo, phx-store, phx-val, phx-world, sys-frm, sys-sov
+pub struct phx_core::unit_registry::Content
+pub phx_core::unit_registry::Content::per_unit: phx_num::fixed::Fixed<CONTENT_PLACES>  // used by: phx-world, sys-cap
+pub phx_core::unit_registry::Content::unit: phx_num::qty::UnitId  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
+pub struct phx_core::unit_registry::GradeContents
+impl phx_core::unit_registry::grades::GradeContents
+pub fn phx_core::unit_registry::grades::GradeContents::content(&self, phx_core::catalogue::GradeH) -> phx_num::missing::Missing<phx_core::unit_registry::grades::Content>  // used by: phx-world
+pub fn phx_core::unit_registry::grades::GradeContents::declare(&mut self, phx_core::catalogue::GradeH, phx_core::unit_registry::grades::Content)  // used by: phx-acct, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_core::unit_registry::grades::GradeContents::new(&phx_core::catalogue::Catalogue) -> phx_core::unit_registry::grades::GradeContents  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub struct phx_core::unit_registry::UnitRegistry  // used by: phx-fin
+impl phx_core::unit_registry::UnitRegistry
+pub fn phx_core::unit_registry::UnitRegistry::find(&self, phx_core::unit_registry::keys::UnitKey) -> phx_num::missing::Missing<phx_num::qty::UnitId>  // used by: phx-acct, phx-check, phx-cli, phx-fin, phx-macros, phx-obs, phx-rand, phx-store, phx-world, sys-dem, sys-lab
+pub fn phx_core::unit_registry::UnitRegistry::is_empty(&self) -> bool  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_core::unit_registry::UnitRegistry::issue(&mut self, phx_core::unit_registry::keys::UnitKey, phx_core::unit_registry::UnitTraits) -> phx_num::qty::UnitId  // used by: phx-fin
+pub fn phx_core::unit_registry::UnitRegistry::len(&self) -> usize  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
+pub fn phx_core::unit_registry::UnitRegistry::new() -> phx_core::unit_registry::UnitRegistry  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_core::unit_registry::UnitRegistry::retire(&mut self, phx_num::qty::UnitId, phx_id::day::Day)  // used by: sys-lab
+pub fn phx_core::unit_registry::UnitRegistry::row(&self, phx_num::qty::UnitId) -> phx_core::unit_registry::UnitRow  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-store, phx-world, sys-dem, sys-frm, sys-tec
+pub fn phx_core::unit_registry::UnitRegistry::with_capacity(u32) -> phx_core::unit_registry::UnitRegistry  // used by: phx-exec, phx-fin, phx-geo, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-dem, sys-frm
+impl core::default::Default for phx_core::unit_registry::UnitRegistry
+pub fn phx_core::unit_registry::UnitRegistry::default() -> phx_core::unit_registry::UnitRegistry  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+impl phx_store::save::Saved for phx_core::unit_registry::UnitRegistry where alloc::vec::Vec<phx_core::unit_registry::UnitRow>: phx_store::save::Saved, u32: phx_store::save::Saved, alloc::vec::Vec<u32>: core::default::Default
+pub fn phx_core::unit_registry::UnitRegistry::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_core::unit_registry::UnitRegistry::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
+pub fn phx_core::unit_registry::UnitRegistry::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
+impl phx_store::stats::StoreStats for phx_core::unit_registry::UnitRegistry
+pub fn phx_core::unit_registry::UnitRegistry::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_core::unit_registry::UnitRegistry::rows_ever(&self) -> u64  // used by: phx-exec, phx-store
+pub fn phx_core::unit_registry::UnitRegistry::rows_live(&self) -> u64  // used by: phx-cli, phx-exec, phx-fin, phx-store
+#[repr(C)] pub struct phx_core::unit_registry::UnitRow
+impl phx_core::unit_registry::UnitRow
+pub fn phx_core::unit_registry::UnitRow::key(self) -> phx_core::unit_registry::keys::UnitKey  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn phx_core::unit_registry::UnitRow::retired(self) -> phx_num::missing::Missing<phx_id::day::Day>  // used by: phx-check, phx-cli, phx-fin, phx-store, phx-world, sys-lab
+pub fn phx_core::unit_registry::UnitRow::traits(self) -> phx_core::unit_registry::UnitTraits  // used by: phx-world
+impl phx_store::pod::Pod for phx_core::unit_registry::UnitRow
+pub fn phx_core::unit_registry::UnitRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_core::unit_registry::UnitRow
+pub struct phx_core::unit_registry::UnitTraits  // used by: phx-fin
+pub phx_core::unit_registry::UnitTraits::perishable: bool  // used by: phx-fin
+pub phx_core::unit_registry::UnitTraits::price_exp: u8  // used by: phx-fin, sys-cap, sys-frm
+pub phx_core::unit_registry::UnitTraits::spoilage: u8  // used by: phx-fin
+pub phx_core::unit_registry::UnitTraits::storable: bool  // used by: if-base, phx-fin, phx-world, sys-frm, sys-tec
 pub mod phx_core::units  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-world, sys-cap, sys-frm, sys-sov, sys-tec
 pub struct phx_core::units::Chain  // used by: phx-world
 pub phx_core::units::Chain::efficiency: alloc::vec::Vec<f64>  // used by: phx-world, sys-cap

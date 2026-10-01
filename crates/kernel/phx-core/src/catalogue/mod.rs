@@ -65,6 +65,13 @@ handle!(
     CapitalH,
 );
 
+impl ProductH {
+    /// The product at a place in the catalogue's products, as a unit's key holds it.
+    pub(crate) const fn new(index: u16) -> ProductH {
+        ProductH(index)
+    }
+}
+
 /// A product at one of its grades.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct GradeH {
@@ -218,6 +225,11 @@ impl Catalogue {
     #[must_use]
     pub fn family(&self, h: FamilyH) -> FamilyRow {
         row(&self.families, h.get())
+    }
+
+    /// Every product's handle, in handle order.
+    pub fn products(&self) -> impl Iterator<Item = ProductH> {
+        (0..self.products.len()).filter_map(|at| u16::try_from(at).ok()).map(ProductH)
     }
 
     /// Every kind's handle, in handle order.

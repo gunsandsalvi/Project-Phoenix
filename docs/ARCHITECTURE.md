@@ -1764,7 +1764,7 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams, K-19, K-20 and K-21 built, S1.177–S1.181; K-22–K-24 planned, S1.114, S1.182–S1.185)
+Status: building (streams and K-19–K-22 built, S1.177–S1.183; K-23 and K-24 planned, S1.114, S1.184–S1.185)
 
 #### Streams
 
@@ -1967,12 +1967,32 @@ S1.326), each kind's lines (S1.328), valuers' methods (S1.335) and decision conc
 
 #### K-22 The units registry
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.183).
+Every unit a holding, flow, offer or print is denominated in has one 24-bit `UnitId`, issued by the `UnitRegistry`
+(`unit_registry/`, apart from `units.rs`'s capital wear and the register's declared `Units`) the first time something
+names it. A `UnitKey` (`keys.rs`) says what it is: a good (`ProductH`, grade, zone), a capital class at a zone
+(`CapitalClass`: capital kind, size, quality and condition bands and age class, packed in one word, 8 bits and four
+of 6 — a band past its bits stops the run), an instrument, a special unit at a place, or a deposit's right. Each unit
+is a 16-byte `UnitRow`: its key's word, its kind (`KeyKind`), its zone or place where its kind has one, its price
+exponent, whether it keeps and spoils, its spoilage class, and the day it retired (`UnitTraits` is fixed at issue; a
+key issued again with other traits is a fact with two writers and stops the run).
 
-**Today** (`goods.rs`, `units.rs`): `GoodIds` issues each good the declared unit its flows carry the first time
-something names it, within `Denom::units`' 2^15; capital classes are declared units of the same registry (`UnitIds`
-over `Held`).
+`issue(key, traits)` returns the key's id or appends a row; `find(key)` returns it or `Missing`, never a default id;
+`row(id)` reads a row, retired or not; `retire(id, day)` keeps the row, and a key named again after its unit retired
+takes a new id, ids never being reused. The index from key to newest id is one open-addressed table of ids over a
+power of two of slots for all kinds, a quarter kept free and at least one, sized once from the capacity table's
+`unit_ids` store (`UNIT_ID_ROWS`) and never grown, so an issue moves nothing; a probe compares the key with the row
+its slot names. A unit is looked up only when a party's units change; the id it resolves to is kept where it is
+used. Ids follow the order of issue alone. The rows are saved and the index rebuilt from them in id order at load
+(`reindex`), giving the slots the issues gave. The issues count as new rows in its `StoreStats`; the day's visited
+counters are party kinds', which a unit is not. `GradeContents` (`grades.rs`) holds each grade's content per unit — a
+`Content` of a declared content unit and a fixed-point amount per unit — by `GradeH`, declared once and absent where
+undeclared; the primitive that declares it comes with the ways' reads of content (S1.438, S1.439).
+
+`[fin.units]` over the design point's 110 000 units across 1 000 zones: `issue_ns` 36.2 (25.8–28.9 measured, the
+step's 200), `find_ns` 37.2 (23.2–29.7) and `ids_mb` 3 (2.875 MiB of rows and index).
+
+**Today** (`goods.rs`, `units.rs`): `UnitIds` still issues each good and capital class the 15-bit unit its flows carry
+(`Denom::units`), its users moving onto the registry in S1.184, which retires it.
 
 #### K-23 The stage table
 
