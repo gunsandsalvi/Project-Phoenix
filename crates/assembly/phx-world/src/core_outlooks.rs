@@ -16,6 +16,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::StreamDef;
+use phx_core::slots::DaySlot;
 use phx_id::{Day, PartyId, PartyKey};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
@@ -295,7 +296,7 @@ impl Outlooks {
             .get(&key)
             .and_then(|s| s.methods.get(view))
             .map_or([Missing::Absent; HEURISTICS], |v| v.performance);
-        let mut d = streams.open(stream, Subject::new(SubjectTag::Party, party.get()), day, 0);
+        let mut d = streams.open_at(stream, Subject::new(SubjectTag::Party, party.get()), day, DaySlot::S5b.ordinal());
         phx_val::switching::StanceIn { performance, intensity: beta, taste: phx_rand::open_unit(&mut d) }
     }
 }

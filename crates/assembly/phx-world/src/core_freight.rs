@@ -11,7 +11,8 @@ use std::collections::BTreeMap;
 
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Bound, Carriage, Good, Held, Shipment, Shipments};
-use phx_core::{StreamDef, SubStep, WorldStreams};
+use phx_core::slots::DaySlot;
+use phx_core::{StreamDef, WorldStreams};
 use phx_geo::GeoState;
 use phx_id::{CountryId, Day, PartyKey};
 use phx_macros::{clause, opening};
@@ -316,7 +317,7 @@ impl Core {
         let Some(lot) = streams.named(sys_frt::LotStream::DECL.name) else {
             violation!(clause = "FRT.7", "the carriage lot's stream is not declared");
         };
-        let mut d = streams.open(&lot, subject, day, SubStep::S6a.ordinal());
+        let mut d = streams.open_at(&lot, subject, day, DaySlot::S6b.ordinal());
         let outcome = carriage(&offers, &consignments, &mut left, &mut d);
         self.freight.today.no_room += phx_rand::float::len_u64(outcome.no_room.len());
         self.freight.today.over_capacity += phx_rand::float::len_u64(outcome.over_capacity.len());

@@ -63,7 +63,7 @@ pub enum Mode {
 }
 
 /// The table compiled and checked: its slots in the day's order.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct StageTable {
     slots: Vec<SlotDecl>,
 }

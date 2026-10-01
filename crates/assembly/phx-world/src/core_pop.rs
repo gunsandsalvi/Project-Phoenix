@@ -5,8 +5,9 @@
 //! one is left in ends. A household changed is booked again for every process from the next day.
 
 use phx_core::pop_process::{Household, Person};
+use phx_core::slots::DaySlot;
 use phx_core::wheel::DueWheel;
-use phx_core::{Register, SubStep, WorldStreams};
+use phx_core::{Register, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
@@ -128,7 +129,7 @@ impl Core {
             .collect();
         self.happened.record(phx_core::NewEvent {
             day,
-            substep: SubStep::S3b,
+            slot: DaySlot::S3b,
             kind,
             subjects: &[Subject::new(SubjectTag::Party, household)],
             details: &details,
@@ -213,7 +214,7 @@ impl Core {
             let Some(b) = ctx.processes.get(hz.process) else { continue };
             let change = chances(&reading, (decl.kind, party), b, h, from, buffers);
             let subject = Subject::new(SubjectTag::Party, party.get());
-            let mut d = ctx.streams.open(&b.stream, subject, from, SubStep::S10b.ordinal());
+            let mut d = ctx.streams.open_at(&b.stream, subject, from, DaySlot::S10b.ordinal());
             let booking = next_booking(&mut d, any_hit(&buffers.qs), from, change);
             book(hz, slot, booking);
         }
@@ -281,7 +282,7 @@ impl Core {
                 };
                 this.read_household((place, decl), slot, &mut chunk.h);
                 let subject = Subject::new(SubjectTag::Party, id.get());
-                let mut d = ctx.streams.open(&b.stream, subject, day, SubStep::S3b.ordinal());
+                let mut d = ctx.streams.open_at(&b.stream, subject, day, DaySlot::S3b.ordinal());
                 let f = follow(&reading, (decl.kind, id), b, (&chunk.h, &mut chunk.buffers), (day, start), &mut d);
                 chunk.out.push(f);
             }
@@ -358,7 +359,7 @@ impl Core {
                 continue;
             }
             let mut d =
-                ctx.streams.open(&b.stream, Subject::new(SubjectTag::Party, id.get()), day, SubStep::S3e.ordinal());
+                ctx.streams.open_at(&b.stream, Subject::new(SubjectTag::Party, id.get()), day, DaySlot::S3b.ordinal());
             b.process.outcome(ctx.register, &view, &mut h, &places, &mut d);
             for (p, cause) in h.persons.iter().zip(causes.iter_mut()) {
                 if p.gone && cause.is_none() {

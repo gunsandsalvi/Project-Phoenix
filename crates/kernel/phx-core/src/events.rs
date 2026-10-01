@@ -4,7 +4,7 @@ use phx_num::{Missing, capacity_exceeded, violation};
 use phx_rand::Subject;
 use phx_store::{AddressSpace, Backing, ChunkArena, Column, ListRef, LogicalHasher, SystemBacking};
 
-use crate::substep::SubStep;
+use crate::slots::DaySlot;
 
 /// A kind of event, and the unit its sizes are in.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,7 +22,7 @@ struct EventRow {
     id: u64,
     day: u32,
     kind: u16,
-    substep: u8,
+    slot: u8,
     public: u8,
     subjects: ListRef,
     details: ListRef,
@@ -36,7 +36,7 @@ const NONE: u64 = u64::MAX;
 pub struct Event {
     pub id: u64,
     pub day: Day,
-    pub substep: u8,
+    pub slot: u8,
     pub kind: u16,
     pub public: bool,
     pub develops_from: Missing<u64>,
@@ -44,11 +44,11 @@ pub struct Event {
     pub details: Vec<(u64, i64)>,
 }
 
-/// What an event records when it is written, in the apply of the sub-step that drew it.
+/// What an event records when it is written, in the apply of the slot that drew it.
 #[derive(Clone, Copy, Debug)]
 pub struct NewEvent<'a> {
     pub day: Day,
-    pub substep: SubStep,
+    pub slot: DaySlot,
     pub kind: u16,
     pub subjects: &'a [Subject],
     pub details: &'a [(Subject, i64)],
@@ -101,7 +101,7 @@ impl<B: Backing> EventStore<B> {
             id,
             day: e.day.get(),
             kind: e.kind,
-            substep: e.substep.ordinal(),
+            slot: e.slot.ordinal().get(),
             public: 0,
             subjects,
             details,
@@ -146,7 +146,7 @@ impl<B: Backing> EventStore<B> {
             h.u64(row.id);
             h.u64(u64::from(row.day));
             h.u64(u64::from(row.kind));
-            h.u64(u64::from(row.substep));
+            h.u64(u64::from(row.slot));
             h.u64(u64::from(row.public));
             h.u64(row.develops_from);
             h.list(&self.arena, row.subjects);
@@ -165,7 +165,7 @@ impl<B: Backing> EventStore<B> {
         Event {
             id: r.id,
             day: Day::new(r.day),
-            substep: r.substep,
+            slot: r.slot,
             kind: r.kind,
             public: r.public != 0,
             develops_from: if r.develops_from == NONE { Missing::Absent } else { Missing::Present(r.develops_from) },
@@ -183,7 +183,7 @@ mod tests {
     use phx_store::{AddressSpace, HeapBacking};
 
     use super::{EventStore, NewEvent};
-    use crate::substep::SubStep;
+    use crate::slots::DaySlot;
 
     #[test]
     fn events_keep_subjects_and_sizes() {
@@ -192,7 +192,7 @@ mod tests {
         let (tile_a, tile_b) = (Subject::new(SubjectTag::Tile, 3), Subject::new(SubjectTag::Tile, 4));
         let flood = NewEvent {
             day: Day::new(9),
-            substep: SubStep::S3a,
+            slot: DaySlot::S3a,
             kind: 2,
             subjects: &[tile_a, tile_b],
             details: &[(tile_a, 70), (tile_b, -5)],
@@ -201,7 +201,7 @@ mod tests {
         let first = store.record(flood);
         let second = store.record(NewEvent { develops_from: Missing::Present(first), ..flood });
         let e = store.get(second);
-        assert_eq!((e.develops_from, e.subjects.len(), e.details[1].1, e.substep), (Missing::Present(1), 2, -5, 9));
+        assert_eq!((e.develops_from, e.subjects.len(), e.details[1].1, e.slot), (Missing::Present(1), 2, -5, 8));
         assert!(
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 store.record(NewEvent { develops_from: Missing::Present(9), ..flood })
@@ -226,7 +226,7 @@ mod tests {
         let (large, small) = ([(tile, 70)], [(tile, 5)]);
         let new = |day, details| NewEvent {
             day: Day::new(day),
-            substep: SubStep::S3a,
+            slot: DaySlot::S3a,
             kind: 0,
             subjects: &[],
             details,

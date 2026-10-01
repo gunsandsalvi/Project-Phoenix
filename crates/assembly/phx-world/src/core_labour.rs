@@ -16,8 +16,9 @@ use if_labour::kind::LabourKind;
 use if_labour::law::Law;
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::Period;
+use phx_core::slots::DaySlot;
 use phx_core::wheel::DueWheel;
-use phx_core::{OpeningCountry, Register, StreamDef, SubStep, WorldStreams};
+use phx_core::{OpeningCountry, Register, StreamDef, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
 use phx_market::hiring::{Application, Seeker, Standing, Vacancy, answer, search, select};
@@ -208,7 +209,7 @@ impl LabourCtx<'_> {
         let Some(stream) = self.streams.named(name) else {
             violation!(clause = "CHN.1", "labour drawing from a stream never declared");
         };
-        self.streams.open(&stream, subject, day, SubStep::S5c.ordinal())
+        self.streams.open_at(&stream, subject, day, DaySlot::S5c.ordinal())
     }
 
     pub(crate) fn wage_at(&self, law: &Law, point: i64) -> f64 {

@@ -12,8 +12,9 @@ use if_credit::central::{Corridor, RequestIn};
 use phx_core::calendar::Calendar;
 use phx_core::calendar::daycount::DayCount;
 use phx_core::flows::{Denom, Flow, Grouped, Ranges};
+use phx_core::slots::DaySlot;
 use phx_core::store::{books, deposits_of};
-use phx_core::{OpeningCountry, Register, StreamDecl, SubStep, WorldStreams};
+use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_ledger::algebra::{Leg, Reference, Schedule};
 use phx_macros::clause;
@@ -273,7 +274,12 @@ impl Core {
             let grouped = Grouped::new(&[&work.fund], ranges);
             let mut b = books(&mut self.kinds, self.bank_kind.unwrap_or(u8::MAX), (&mut deposits, &closed), issuer);
             let lot = |p: PartyKey| {
-                streams.open(order, Subject::new(SubjectTag::Party, u64::from(p.word())), day, SubStep::S8e.ordinal())
+                streams.open_at(
+                    order,
+                    Subject::new(SubjectTag::Party, u64::from(p.word())),
+                    day,
+                    DaySlot::S8e.ordinal(),
+                )
             };
             let out = work.settle.settle(pool, &grouped, ranges, &mut b, &lot);
             failed.extend(out.failed.iter().map(|(f, _)| *f));

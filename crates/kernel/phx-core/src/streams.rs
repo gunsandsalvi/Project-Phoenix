@@ -6,7 +6,7 @@ use phx_rand::key::fnv1a64;
 use phx_rand::{Draws, Seed, SlotOrdinal, StreamKey, Subject, family_key};
 
 use crate::consts::{KEYED_ORDINAL, OPENING_ORDINAL_BASE};
-use crate::substep::SubStep;
+use crate::slots::DaySlot;
 
 /// What chance is for: the world's declared purposes, and none for an outcome.
 #[clause("CHN.3", "CHN.5")]
@@ -240,7 +240,7 @@ impl<'a> ObserverDraws<'a> {
         if decl.family != StreamFamily::Observer {
             return Err(NotObserver);
         }
-        Ok(WorldStreams::by_day(self.streams.entry(decl), subject, day, SubStep::S10e.ordinal()))
+        Ok(WorldStreams::by_day(self.streams.entry(decl), subject, day, DaySlot::S10e.ordinal().get()))
     }
 }
 

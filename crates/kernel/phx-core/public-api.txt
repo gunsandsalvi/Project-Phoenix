@@ -794,8 +794,8 @@ pub phx_core::events::Event::develops_from: phx_num::missing::Missing<u64>  // u
 pub phx_core::events::Event::id: u64  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::events::Event::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::events::Event::public: bool  // used by: phx-cli, phx-world, sys-frm, sys-tec
+pub phx_core::events::Event::slot: u8  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
 pub phx_core::events::Event::subjects: alloc::vec::Vec<u64>  // used by: phx-cli, phx-fin, phx-geo, phx-rand, phx-world
-pub phx_core::events::Event::substep: u8  // used by: phx-exec, phx-fin, phx-market, phx-rand, phx-world
 pub struct phx_core::events::EventIntent  // used by: phx-geo
 pub phx_core::events::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::events::EventIntent::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
@@ -822,8 +822,8 @@ pub phx_core::events::NewEvent::day: phx_id::day::Day  // used by: if-state, phx
 pub phx_core::events::NewEvent::details: &'a [(phx_rand::key::Subject, i64)]  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::events::NewEvent::develops_from: phx_num::missing::Missing<u64>  // used by: phx-world
 pub phx_core::events::NewEvent::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::events::NewEvent::slot: phx_core::slots::DaySlot  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
 pub phx_core::events::NewEvent::subjects: &'a [phx_rand::key::Subject]  // used by: phx-cli, phx-fin, phx-geo, phx-rand, phx-world
-pub phx_core::events::NewEvent::substep: phx_core::substep::SubStep  // used by: phx-exec, phx-fin, phx-market, phx-rand, phx-world
 pub mod phx_core::events_rule
 pub enum phx_core::events_rule::Notice
 pub phx_core::events_rule::Notice::Always
@@ -2045,70 +2045,6 @@ pub fn phx_core::streams::WorldStreams::open_keyed(&self, &phx_core::streams::St
 pub fn phx_core::streams::WorldStreams::open_keyed_at(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, u32) -> phx_rand::draws::Draws
 pub trait phx_core::streams::StreamDef  // used by: phx-geo, phx-macros, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
 pub const phx_core::streams::StreamDef::DECL: phx_core::streams::StreamDecl  // used by: phx-geo, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
-pub mod phx_core::substep  // used by: phx-exec, phx-fin, phx-market, phx-rand, phx-world
-pub enum phx_core::substep::SubStep  // used by: phx-world
-pub phx_core::substep::SubStep::S10a
-pub phx_core::substep::SubStep::S10b  // used by: phx-world
-pub phx_core::substep::SubStep::S10c
-pub phx_core::substep::SubStep::S10d
-pub phx_core::substep::SubStep::S10e
-pub phx_core::substep::SubStep::S10f
-pub phx_core::substep::SubStep::S1a
-pub phx_core::substep::SubStep::S1b
-pub phx_core::substep::SubStep::S1c
-pub phx_core::substep::SubStep::S2a
-pub phx_core::substep::SubStep::S2b
-pub phx_core::substep::SubStep::S2c
-pub phx_core::substep::SubStep::S2d
-pub phx_core::substep::SubStep::S2e
-pub phx_core::substep::SubStep::S2f
-pub phx_core::substep::SubStep::S3a  // used by: phx-world
-pub phx_core::substep::SubStep::S3b  // used by: phx-world
-pub phx_core::substep::SubStep::S3c
-pub phx_core::substep::SubStep::S3d
-pub phx_core::substep::SubStep::S3e  // used by: phx-world
-pub phx_core::substep::SubStep::S4a
-pub phx_core::substep::SubStep::S4b
-pub phx_core::substep::SubStep::S5a
-pub phx_core::substep::SubStep::S5b
-pub phx_core::substep::SubStep::S5c  // used by: phx-world
-pub phx_core::substep::SubStep::S5d
-pub phx_core::substep::SubStep::S6a  // used by: phx-world
-pub phx_core::substep::SubStep::S6b
-pub phx_core::substep::SubStep::S6c
-pub phx_core::substep::SubStep::S6d
-pub phx_core::substep::SubStep::S7a
-pub phx_core::substep::SubStep::S7b  // used by: phx-world
-pub phx_core::substep::SubStep::S7c
-pub phx_core::substep::SubStep::S7d
-pub phx_core::substep::SubStep::S7e
-pub phx_core::substep::SubStep::S8a
-pub phx_core::substep::SubStep::S8b
-pub phx_core::substep::SubStep::S8c
-pub phx_core::substep::SubStep::S8d
-pub phx_core::substep::SubStep::S8e  // used by: phx-world
-pub phx_core::substep::SubStep::S8f
-pub phx_core::substep::SubStep::S9a
-pub phx_core::substep::SubStep::S9b
-pub phx_core::substep::SubStep::S9c
-pub phx_core::substep::SubStep::S9d
-pub phx_core::substep::SubStep::S9e
-impl phx_core::substep::SubStep
-pub fn phx_core::substep::SubStep::from_label(&str) -> core::option::Option<phx_core::substep::SubStep>
-pub fn phx_core::substep::SubStep::info(self) -> phx_core::substep::SubStepInfo  // used by: phx-cli
-pub fn phx_core::substep::SubStep::ordinal(self) -> u8  // used by: phx-rand, phx-store, phx-world, sys-bnk, sys-dem
-pub enum phx_core::substep::SubStepKind
-pub phx_core::substep::SubStepKind::Agenda  // used by: phx-exec
-pub phx_core::substep::SubStepKind::Index  // used by: phx-exec, phx-fin, phx-macros, phx-store
-pub phx_core::substep::SubStepKind::KernelApply
-pub phx_core::substep::SubStepKind::Stream
-pub phx_core::substep::SubStepKind::Sweep  // used by: phx-exec
-pub struct phx_core::substep::SubStepInfo
-pub phx_core::substep::SubStepInfo::business_only: bool
-pub phx_core::substep::SubStepInfo::kind: phx_core::substep::SubStepKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
-pub phx_core::substep::SubStepInfo::label: &'static str  // used by: phx-cli, phx-geo
-pub phx_core::substep::SubStepInfo::step: phx_core::substep::SubStep  // used by: phx-check, phx-geo, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-world, sys-dem
-pub const phx_core::substep::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub mod phx_core::system  // used by: phx-check, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_core::system::DecisionMeta
 pub phx_core::system::DecisionMeta::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
@@ -2605,63 +2541,6 @@ pub phx_core::Standing::Player  // used by: phx-world
 impl phx_core::decisions::Standing
 pub const phx_core::decisions::Standing::ALL: [phx_core::decisions::Standing; 5]  // used by: phx-cli, phx-fin, phx-world
 pub fn phx_core::decisions::Standing::name(self) -> &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub enum phx_core::SubStep  // used by: phx-world
-pub phx_core::SubStep::S10a
-pub phx_core::SubStep::S10b  // used by: phx-world
-pub phx_core::SubStep::S10c
-pub phx_core::SubStep::S10d
-pub phx_core::SubStep::S10e
-pub phx_core::SubStep::S10f
-pub phx_core::SubStep::S1a
-pub phx_core::SubStep::S1b
-pub phx_core::SubStep::S1c
-pub phx_core::SubStep::S2a
-pub phx_core::SubStep::S2b
-pub phx_core::SubStep::S2c
-pub phx_core::SubStep::S2d
-pub phx_core::SubStep::S2e
-pub phx_core::SubStep::S2f
-pub phx_core::SubStep::S3a  // used by: phx-world
-pub phx_core::SubStep::S3b  // used by: phx-world
-pub phx_core::SubStep::S3c
-pub phx_core::SubStep::S3d
-pub phx_core::SubStep::S3e  // used by: phx-world
-pub phx_core::SubStep::S4a
-pub phx_core::SubStep::S4b
-pub phx_core::SubStep::S5a
-pub phx_core::SubStep::S5b
-pub phx_core::SubStep::S5c  // used by: phx-world
-pub phx_core::SubStep::S5d
-pub phx_core::SubStep::S6a  // used by: phx-world
-pub phx_core::SubStep::S6b
-pub phx_core::SubStep::S6c
-pub phx_core::SubStep::S6d
-pub phx_core::SubStep::S7a
-pub phx_core::SubStep::S7b  // used by: phx-world
-pub phx_core::SubStep::S7c
-pub phx_core::SubStep::S7d
-pub phx_core::SubStep::S7e
-pub phx_core::SubStep::S8a
-pub phx_core::SubStep::S8b
-pub phx_core::SubStep::S8c
-pub phx_core::SubStep::S8d
-pub phx_core::SubStep::S8e  // used by: phx-world
-pub phx_core::SubStep::S8f
-pub phx_core::SubStep::S9a
-pub phx_core::SubStep::S9b
-pub phx_core::SubStep::S9c
-pub phx_core::SubStep::S9d
-pub phx_core::SubStep::S9e
-impl phx_core::substep::SubStep
-pub fn phx_core::substep::SubStep::from_label(&str) -> core::option::Option<phx_core::substep::SubStep>
-pub fn phx_core::substep::SubStep::info(self) -> phx_core::substep::SubStepInfo  // used by: phx-cli
-pub fn phx_core::substep::SubStep::ordinal(self) -> u8  // used by: phx-rand, phx-store, phx-world, sys-bnk, sys-dem
-pub enum phx_core::SubStepKind
-pub phx_core::SubStepKind::Agenda  // used by: phx-exec
-pub phx_core::SubStepKind::Index  // used by: phx-exec, phx-fin, phx-macros, phx-store
-pub phx_core::SubStepKind::KernelApply
-pub phx_core::SubStepKind::Stream
-pub phx_core::SubStepKind::Sweep  // used by: phx-exec
 pub enum phx_core::TakenIn  // used by: phx-world
 pub phx_core::TakenIn::Household  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub phx_core::TakenIn::Office(alloc::string::String)  // used by: phx-world
@@ -2915,8 +2794,8 @@ pub phx_core::Event::develops_from: phx_num::missing::Missing<u64>  // used by: 
 pub phx_core::Event::id: u64  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::Event::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::Event::public: bool  // used by: phx-cli, phx-world, sys-frm, sys-tec
+pub phx_core::Event::slot: u8  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
 pub phx_core::Event::subjects: alloc::vec::Vec<u64>  // used by: phx-cli, phx-fin, phx-geo, phx-rand, phx-world
-pub phx_core::Event::substep: u8  // used by: phx-exec, phx-fin, phx-market, phx-rand, phx-world
 pub struct phx_core::EventIntent  // used by: phx-geo
 pub phx_core::EventIntent::details: alloc::vec::Vec<(phx_rand::key::Subject, i64)>  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::EventIntent::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
@@ -3054,8 +2933,8 @@ pub phx_core::NewEvent::day: phx_id::day::Day  // used by: if-state, phx-check, 
 pub phx_core::NewEvent::details: &'a [(phx_rand::key::Subject, i64)]  // used by: phx-cli, phx-geo, phx-world
 pub phx_core::NewEvent::develops_from: phx_num::missing::Missing<u64>  // used by: phx-world
 pub phx_core::NewEvent::kind: u16  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::NewEvent::slot: phx_core::slots::DaySlot  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
 pub phx_core::NewEvent::subjects: &'a [phx_rand::key::Subject]  // used by: phx-cli, phx-fin, phx-geo, phx-rand, phx-world
-pub phx_core::NewEvent::substep: phx_core::substep::SubStep  // used by: phx-exec, phx-fin, phx-market, phx-rand, phx-world
 pub struct phx_core::NewsEntry  // used by: phx-world
 pub phx_core::NewsEntry::kind: alloc::string::String  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::NewsEntry::notice: phx_core::events_rule::Notice
@@ -3311,11 +3190,6 @@ pub phx_core::StreamDecl::family: phx_rand::key::StreamFamily  // used by: phx-c
 pub phx_core::StreamDecl::keyed: bool  // used by: phx-check, phx-exec, phx-geo, phx-macros, phx-world
 pub phx_core::StreamDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::StreamDecl::purpose: phx_core::streams::Purpose  // used by: phx-geo, phx-macros, phx-world, sys-bnk
-pub struct phx_core::SubStepInfo
-pub phx_core::SubStepInfo::business_only: bool
-pub phx_core::SubStepInfo::kind: phx_core::substep::SubStepKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
-pub phx_core::SubStepInfo::label: &'static str  // used by: phx-cli, phx-geo
-pub phx_core::SubStepInfo::step: phx_core::substep::SubStep  // used by: phx-check, phx-geo, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-world, sys-dem
 pub struct phx_core::SystemEntry  // used by: phx-world
 pub phx_core::SystemEntry::code: &'static str  // used by: phx-id, phx-macros, phx-store, phx-world
 pub phx_core::SystemEntry::declare: fn(&mut phx_core::system::Declarations)  // used by: phx-acct, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
@@ -3398,7 +3272,6 @@ pub const phx_core::PHASES: [phx_core::streams::OpeningPhase; 6]
 pub const phx_core::PHYSICAL_STOCK: phx_core::streams::OpeningPhase
 pub const phx_core::PRESENT_VALUES: phx_core::streams::OpeningPhase
 pub const phx_core::PUBLIC_EVENTS: phx_core::register::PrimDecl  // used by: phx-world
-pub const phx_core::SUB_STEPS: [phx_core::substep::SubStepInfo; 46]
 pub trait phx_core::Contribution: core::marker::Send + core::marker::Sync
 pub fn phx_core::Contribution::contribute(&self, &mut phx_core::contribution::Opening<'_>)
 pub fn phx_core::Contribution::derived(&self) -> &'static [&'static str]  // used by: phx-check, phx-ledger, phx-world, sys-bnk, sys-cb, sys-dem, sys-lab

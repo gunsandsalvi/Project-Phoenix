@@ -98,7 +98,7 @@ mod tests {
         Event {
             id: 1,
             day: Day::new(4),
-            substep: 0,
+            slot: 0,
             kind,
             public: false,
             develops_from: Missing::Absent,

@@ -63,7 +63,8 @@ pub fn is_hot(c: &Crate, source: &Source) -> bool {
         return true;
     }
     if c.name == "phx-world" {
-        return rel.split('/').count() == 2 && (file == "day.rs" || file.starts_with("core_"));
+        let top = rel.split('/').count() == 2 && file.starts_with("core_");
+        return top || rel.starts_with("src/day/");
     }
     c.name.starts_with("sys-") && rel.starts_with("src/rules/")
 }

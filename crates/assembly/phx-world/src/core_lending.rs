@@ -11,6 +11,7 @@ use std::collections::BTreeMap;
 use if_credit::decisions::{ChooseIn, DeclineIn, QuoteIn};
 use if_credit::law::Law;
 use phx_core::StreamDef;
+use phx_core::slots::DaySlot;
 use phx_id::{Day, PartyKey};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
@@ -302,7 +303,8 @@ impl Core {
             .unwrap_or_default();
         others.retain(|b| *b != own);
         let asked_stream = streams.named(sys_bnk::AskedStream::DECL.name)?;
-        let mut draws = streams.open(&asked_stream, Subject::new(SubjectTag::Party, u64::from(key.word())), day, 0);
+        let subject = Subject::new(SubjectTag::Party, u64::from(key.word()));
+        let mut draws = streams.open_at(&asked_stream, subject, day, DaySlot::S5c.ordinal());
         let count = asked(&law.lenders_asked, phx_rand::open_unit(&mut draws));
         let mut chosen = vec![own];
         while chosen.len() < count && !others.is_empty() {
@@ -364,7 +366,7 @@ impl Core {
             }
         }
         let taste_stream = streams.named(sys_bnk::TasteStream::DECL.name)?;
-        let mut taste = streams.open(&taste_stream, Subject::new(SubjectTag::Party, u64::from(key.word())), day, 0);
+        let mut taste = streams.open_at(&taste_stream, subject, day, DaySlot::S5c.ordinal());
         let tastes: Vec<f64> = quotes.iter().map(|_| phx_rand::gumbel(&mut taste, 0.0, 1.0)).collect();
         let pick = self.decide(choosing, key, |_| ChooseIn {
             rates: quotes.iter().map(|q| q.1).collect(),

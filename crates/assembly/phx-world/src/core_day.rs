@@ -4,13 +4,14 @@
 
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::ScheduleDates;
+use phx_core::slots::DaySlot;
 use std::collections::BTreeMap;
 
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::{Denom, Flow, FlowBufs, Grouped, Ranges};
 use phx_core::settle::{Cause, Outcome, Settle};
 use phx_core::store::{Family, books, deposits_of};
-use phx_core::{StreamDecl, SubStep, WorldStreams};
+use phx_core::{StreamDecl, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
@@ -902,11 +903,11 @@ impl Core {
             );
             if business {
                 let lot = |p: PartyKey| {
-                    streams.open(
+                    streams.open_at(
                         order,
                         Subject::new(SubjectTag::Party, u64::from(p.word())),
                         day,
-                        SubStep::S7b.ordinal(),
+                        DaySlot::S7b.ordinal(),
                     )
                 };
                 let out = phx_exec::trace::span("settle.fixed_point", || {

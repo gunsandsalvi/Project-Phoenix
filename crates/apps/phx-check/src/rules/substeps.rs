@@ -6,10 +6,11 @@ use crate::workspace::{Crate, Source, Workspace};
 
 const RULE: &str = "PC-21";
 const CORE: &str = "phx-core";
-const TABLE_FILE: &str = "/src/substep.rs";
-const TABLE: &str = "SUB_STEPS";
+const TABLE_FILE: &str = "/src/slots.rs";
+const TABLE: &str = "DAY_SLOT_ORDER";
+const SLOT: &str = "DaySlot";
 
-/// The sub-steps the table holds, in order, read from the kernel's table.
+/// The slots the day's table holds, in order, read from the kernel's list of them.
 fn table(core: &Crate) -> Option<(String, Vec<String>)> {
     let source = core.sources.iter().find(|s| s.path.ends_with(TABLE_FILE))?;
     let file = source.file.as_ref().ok()?;
@@ -30,6 +31,7 @@ fn array_names(expr: &Expr) -> Vec<String> {
                 Expr::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()),
                 _ => None,
             }),
+            Expr::Path(p) => p.path.segments.last().map(|s| s.ident.to_string()),
             Expr::Lit(syn::ExprLit { lit: syn::Lit::Str(s), .. }) => Some(s.value()),
             _ => None,
         })
@@ -40,7 +42,7 @@ pub fn run(ws: &Workspace) -> Vec<Breach> {
     let Some(core) = ws.crates.iter().find(|c| c.name == CORE) else { return Vec::new() };
     let Some((_, known)) = table(core) else {
         let at = format!("{}{TABLE_FILE}", core.dir);
-        return vec![Breach::new(RULE, &at, 1, "the kernel has no sub-step table")];
+        return vec![Breach::new(RULE, &at, 1, "the kernel lists no slots of the day")];
     };
     let mut breaches = Vec::new();
     for c in ws.world_crates() {
@@ -72,7 +74,7 @@ struct Finder<'a> {
 impl Finder<'_> {
     fn named(&mut self, name: &str, line: usize) {
         if !self.known.iter().any(|k| k == name) {
-            self.found.push((line, format!("sub-step `{name}` is not in the table")));
+            self.found.push((line, format!("slot `{name}` is not in the day's table")));
         }
     }
 }
@@ -82,7 +84,7 @@ impl<'ast> Visit<'ast> for Finder<'_> {
         let segments: Vec<&syn::PathSegment> = path.segments.iter().collect();
         for pair in segments.windows(2) {
             if let [enum_name, variant] = pair
-                && enum_name.ident == "SubStep"
+                && enum_name.ident == SLOT
             {
                 self.named(&variant.ident.to_string(), attrs::line(variant.ident.span()));
             }
@@ -115,19 +117,19 @@ mod tests {
     use crate::workspace::fixture::{krate, with_source};
     use crate::workspace::{Layer, Workspace};
 
-    const TABLE: &str = "pub const SUB_STEPS: [SubStepInfo; 2] = [info(S::S1a, \"1a\", false, Index), info(S::S1b, \"1b\", false, Index)];";
+    const TABLE: &str = "pub const DAY_SLOT_ORDER: [DaySlot; 2] = [DaySlot::S1a, DaySlot::S1b];";
 
     fn lines(system: &str) -> Vec<(usize, String)> {
-        let core = with_source(krate("phx-core", Layer::Kernel), "src/substep.rs", TABLE);
+        let core = with_source(krate("phx-core", Layer::Kernel), "src/slots.rs", TABLE);
         let sys = with_source(krate("sys-dem", Layer::Systems), "src/lib.rs", system);
         run(&Workspace::new(vec![core, sys])).into_iter().map(|b| (b.line, b.message)).collect()
     }
 
     #[test]
-    fn code_names_only_the_table_s_sub_steps() {
-        let system = "fn f() -> SubStep { SubStep::S1b }\n\
-                      fn g() -> SubStep { SubStep::S7q }\n\
-                      #[cfg(test)]\nmod tests { fn t() -> SubStep { SubStep::S0x } }";
-        assert_eq!(lines(system), vec![(2, "sub-step `S7q` is not in the table".to_owned())]);
+    fn code_names_only_the_table_s_slots() {
+        let system = "fn f() -> DaySlot { DaySlot::S1b }\n\
+                      fn g() -> DaySlot { DaySlot::S7q }\n\
+                      #[cfg(test)]\nmod tests { fn t() -> DaySlot { DaySlot::S0x } }";
+        assert_eq!(lines(system), vec![(2, "slot `S7q` is not in the day's table".to_owned())]);
     }
 }

@@ -39,6 +39,8 @@ pub struct World {
     pub(crate) news: phx_core::EventsRule,
     /// The country each region lies in, by the region's number.
     pub(crate) regions: Vec<CountryId>,
+    /// The day's stage table, compiled at assembly.
+    pub(crate) stages: phx_core::stages::StageTable,
     pub(crate) game: NewGame,
     pub(crate) metrics: Metrics,
     pub(crate) findings: Findings,

@@ -9,7 +9,8 @@ use std::collections::BTreeMap;
 use phx_core::calendar::Calendar;
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Cost, NATURE};
-use phx_core::{NewEvent, StreamDef, SubStep, WorldStreams};
+use phx_core::slots::DaySlot;
+use phx_core::{NewEvent, StreamDef, WorldStreams};
 use phx_geo::weather::{Latents, VARIABLES};
 use phx_geo::{GeoState, catastrophe};
 use phx_id::{Day, PartyKey};
@@ -59,20 +60,20 @@ impl Core {
     #[clause("CHN.3", "GEO.8")]
     pub(crate) fn weather_day(&mut self, geo: &GeoState, (streams, calendar): (&WorldStreams, &Calendar), day: Day) {
         let date = calendar.date(day);
-        let at = SubStep::S3a.ordinal();
+        let at = DaySlot::S3a.ordinal();
         if self.weather.latents.len() < geo.regions.len() {
             self.weather.latents.resize(geo.regions.len(), [Missing::Absent; VARIABLES.len()]);
         }
         for (r, climate) in geo.regions.iter().enumerate() {
             let region = Subject::new(SubjectTag::Region, phx_rand::float::len_u64(r));
-            let mut d = streams.open(&phx_geo::weather::WeatherStream::DECL, region, day, at);
+            let mut d = streams.open_at(&phx_geo::weather::WeatherStream::DECL, region, day, at);
             let Some(latents) = self.weather.latents.get_mut(r) else { continue };
             let values = phx_geo::weather::region_day(climate, date.month(), latents, &mut d);
             for (v, kind) in values.iter().zip(&geo.weather_kinds) {
                 let Missing::Present(v) = v else { continue };
                 self.happened.record(NewEvent {
                     day,
-                    substep: SubStep::S3a,
+                    slot: DaySlot::S3a,
                     kind: *kind,
                     subjects: &[region],
                     details: &[(region, whole(*v))],
@@ -84,7 +85,7 @@ impl Core {
         let countries = geo.hazards.first().map_or(0, |h| h.by_country.len());
         for c in 0..countries {
             let country = Subject::new(SubjectTag::Country, phx_rand::float::len_u64(c));
-            let mut d = streams.open(&catastrophe::CatastropheStream::DECL, country, day, at);
+            let mut d = streams.open_at(&catastrophe::CatastropheStream::DECL, country, day, at);
             for h in &geo.hazards {
                 for e in catastrophe::hazard_day(geo, h, c, days, &mut d) {
                     let mut regions = Vec::new();
@@ -102,7 +103,7 @@ impl Core {
                     self.weather.shocks.push(Shock { day, kind: e.kind, regions, base, rose: BTreeMap::new() });
                     self.happened.record(NewEvent {
                         day,
-                        substep: SubStep::S3a,
+                        slot: DaySlot::S3a,
                         kind: e.kind,
                         subjects: &e.subjects,
                         details: &e.details,

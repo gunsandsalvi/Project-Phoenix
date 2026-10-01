@@ -14,9 +14,10 @@ use std::collections::BTreeMap;
 use phx_core::calendar::Calendar;
 use phx_core::flows::{Denom, Flow};
 use phx_core::goods::{Bound, Cost, Good, Held, Holding, NATURE, breaks, find, nature_net, unit};
+use phx_core::slots::DaySlot;
 use phx_core::unit_registry::{UnitRegistry, UnitTraits};
 use phx_core::wheel::DueWheel;
-use phx_core::{OpeningCountry, Register, StreamDef, SubStep, WorldStreams};
+use phx_core::{OpeningCountry, Register, StreamDef, WorldStreams};
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
 use phx_market::meet::{Buyer, GoodsLeg, Meeting, Place, Sale, Stall, Tastes, meet};
@@ -1640,7 +1641,8 @@ impl Core {
             self.look_at_sales(ctx, (firm, slot), (day, memory));
             let Some(weighed) = self.review_chance(ctx, (firm, slot), view) else { continue };
             let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
-            let mut d = ctx.streams.open(&stream, Subject::new(SubjectTag::Party, id.get()), day, 0);
+            let mut d =
+                ctx.streams.open_at(&stream, Subject::new(SubjectTag::Party, id.get()), day, DaySlot::S5b.ordinal());
             let draw = phx_rand::open_unit(&mut d);
             if self.decide(attends, key, |_| sys_frm::rules::review::AttendIn { draw, ..weighed }) {
                 attending.push(slot.get());
@@ -1803,13 +1805,13 @@ impl Core {
                 })
                 .collect();
             let Some(lot) = floor_to_i64(self.lot(product)) else { continue };
-            let tastes = Tastes { key, day: day.get(), substep: SubStep::S5c.ordinal() };
+            let tastes = Tastes { key, day: day.get(), substep: DaySlot::S5c.ordinal().get() };
             let lots = |seller: PartyKey, round: u32| {
-                ctx.streams.open(
+                ctx.streams.open_at(
                     &lot_stream,
                     Subject::new(SubjectTag::Party, packed(u64::from(seller.word()), u64::from(round), ROUND_BITS)),
                     day,
-                    SubStep::S5c.ordinal(),
+                    DaySlot::S5c.ordinal(),
                 )
             };
             let mut meeting = std::mem::take(&mut self.goods.meeting);

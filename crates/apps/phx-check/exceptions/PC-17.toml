@@ -175,13 +175,13 @@ what = "`Calendar::date`"
 count = 1
 
 [[site]]
-path = "crates/assembly/phx-world/src/day.rs"
-item = "World::core_day"
+path = "crates/assembly/phx-world/src/day/mod.rs"
+item = "World::run_day"
 what = "`Calendar::date`"
 count = 1
 
 [[site]]
-path = "crates/assembly/phx-world/src/day.rs"
+path = "crates/assembly/phx-world/src/day/mod.rs"
 item = "World::run_turn_observed"
 what = "`Calendar::date`"
 count = 1

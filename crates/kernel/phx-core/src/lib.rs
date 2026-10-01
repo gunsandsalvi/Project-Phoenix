@@ -29,7 +29,6 @@ pub mod spoilage;
 pub mod stages;
 pub mod store;
 pub mod streams;
-pub mod substep;
 pub mod system;
 pub mod unit_registry;
 pub mod units;
@@ -80,6 +79,5 @@ pub use spoilage::SpoilageDecl;
 pub use streams::{
     AdviceDraws, NotObserver, ObserverDraws, OpeningPhase, Purpose, StreamDecl, StreamDef, StreamFamily, WorldStreams,
 };
-pub use substep::{SUB_STEPS, SubStep, SubStepInfo, SubStepKind};
 pub use system::{DecisionMeta, Declarations, SetupValue, System, SystemEntry, declare_entry, declare_system};
 pub use wear::{WearDecl, WearSpec};

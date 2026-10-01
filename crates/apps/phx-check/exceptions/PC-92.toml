@@ -643,19 +643,19 @@ what = "BTreeMap"
 count = 1
 
 [[site]]
-path = "crates/assembly/phx-world/src/day.rs"
-item = "World::core_day"
+path = "crates/assembly/phx-world/src/day/mod.rs"
+item = "World::run_day"
 what = "dyn"
 count = 1
 
 [[site]]
-path = "crates/assembly/phx-world/src/day.rs"
+path = "crates/assembly/phx-world/src/day/mod.rs"
 item = "World::run_turn"
 what = "dyn"
 count = 1
 
 [[site]]
-path = "crates/assembly/phx-world/src/day.rs"
+path = "crates/assembly/phx-world/src/day/mod.rs"
 item = "World::run_turn_observed"
 what = "dyn"
 count = 2

@@ -534,9 +534,12 @@ counter = "phx_budget.spans_below_busy"
 value = 0
 direction = "down"
 
+# Restated from 397 at S1.186 (2026-10-01): the day runner addresses every draw a day makes by the table's slot it is
+# made in, which changes the day's draws once, as the step requires; the world's path moved with them and its pool takes
+# 398.45 barriers a day over the twenty, measured twice alike.
 [[ratchet]]
 counter = "phx_budget.barriers_per_day"
-value = 397
+value = 399
 direction = "down"
 
 [[ratchet]]

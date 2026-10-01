@@ -720,6 +720,7 @@ fn world_of(
         event_kinds,
         news,
         regions,
+        stages: stage_table(),
         game: p.game,
         metrics: Metrics::default(),
         findings: Findings::default(),
@@ -789,6 +790,17 @@ fn opened(core: &crate::core::Core, register: &phx_core::Register) -> crate::met
 /// What reads a save's core and its day, handed the register's hash and the build's kinds.
 pub(crate) type ReadSave<'a> =
     dyn FnMut(u128, &[&'static str]) -> Result<(phx_id::Day, crate::core::Core), String> + 'a;
+
+/// The day's stage table, compiled as the build declares it; a table the check refuses is a build that cannot run.
+#[opening]
+fn stage_table() -> phx_core::stages::StageTable {
+    match phx_core::stages::compile(&phx_core::stages::DAY_TABLE) {
+        Ok(table) => table,
+        Err(refused) => {
+            phx_num::violation!(clause = "TIME.10", "the day's stage table refused", refusals = refused.len())
+        }
+    }
+}
 
 /// A world read back from a save: assembled from the build and the data as the save's was, without its opening, its
 /// core and its day read from the save by `read`, which is handed the register's hash to hold the save to and the

@@ -968,8 +968,8 @@ whether a non-business day runs it, the bases that run there, its reads and writ
 it. On a non-business day the walk is TIME.8's list — 1a, 1b, 2a, stages 3 and 4, stage 5, stage 6 and stage 10 — and
 on day zero stage 5 alone.
 
-**Today** (until S1.186): the day is still `phx-world/src/day.rs`'s hand sequence over the sub-steps
-`phx-core/src/substep.rs` names, beside the table; the day runner (S1.186) walks the table and retires the sub-steps.
+The day runner walks the table (§7.18): each slot that runs today makes the calls its route lists, in the table's
+order. A draw is addressed by the slot it is made in (`DaySlot::ordinal`), an event records its slot.
 
 **The calendar** (`phx-core::calendar`) is built at assembly from each country's declared rules: a weekend and
 holidays that are `Fixed`, `NthWeekday` (−1 the last), `EasterOffset` (the Gregorian computus) or `Substitute`
@@ -3020,18 +3020,37 @@ invariant against a record kept apart from the state it checks (§15).
 
 ### 7.18 The day runner and saves
 
-Status: planned (S1.186, S1.356)
+Status: building (the runner built, S1.186; saves planned, S1.356)
 
 #### K-23's runner
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.186).
+`World` holds the calendar, register and streams, each system's compiled state, the stage table compiled at assembly
+(`stage_table`; a table the check refuses stops assembly) and `core::Core`; assembly compiles the declarations,
+generates the map and draws the core's opening (`core_open`, §10.3). A turn runs every day up to the next business day
+of some country, each day by `World::run_day` (`day/`): the stage table walked for the day — every slot where some
+country does business, TIME.8's slots where none does — and each slot's calls made in its place, from the routing
+table `day/route.rs` (`ROUTES`: slot → `Call`s). Today's calls are the core's, unchanged in what they do:
 
-**Today** (`phx-world`'s `world.rs`, `day.rs`, `core_day.rs`): `World` holds the calendar, register and streams, each
-system's compiled state, and `core::Core`; assembly compiles the declarations, generates the map and draws the core's
-opening (`core_open`, §10.3); a turn runs the core's day: chance on the persons, labour's round, goods, then dues and
-settlement. The observer (`phx_obs`) reads the core's days, households and families; the live checks read the world
-through `Inspector`.
+| Slot | Calls |
+| --- | --- |
+| 3a | weather |
+| 3b | the hazard rates measured, then the hazards drawn at them |
+| 5a | the households' windows refreshed on a year's first day |
+| 5b | labour's round, its parts in their places until the labour steps split it |
+| 6a | goods: making, households' spending, the meetings and sales, until the goods steps split them |
+| 6b | freight |
+| 6d | settlement on a day no country does business: dues taken, purchases recorded as commitments |
+| 7a | settlement on a business day, the fund stage within it |
+| 10a | the day's public events published |
+| 10c | the audit |
+| 10d | the statistics, then the record of the player's decisions |
+
+Each call is timed as its span (`Core::timed`); the day's spans, findings and time are kept after the walk. The
+rates are measured in 3b, before the hazards, since they are the rates the hazards are drawn at; the statistics and
+the player's record run every day in 10d, where the day's records close. Every draw a day makes is addressed by its
+slot through `WorldStreams::open_at`; `open` with a raw ordinal is left to the opening's draws. The observer
+(`phx_obs`) reads the core's days, households and families; the live checks read the world through `Inspector`.
+Counting each slot's traversals into the sweep ledger waits for the per-party passes to leave `phx-world` (S1.355).
 
 #### K-104 Saves
 
