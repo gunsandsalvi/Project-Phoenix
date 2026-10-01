@@ -83,7 +83,7 @@ impl<T: Word> Attr<T> {
 
     /// The word in a group's row, `Missing` where it holds its sentinel.
     #[inline]
-    fn read_in(self, row: &[u8]) -> Missing<T> {
+    pub(crate) fn read_in(self, row: &[u8]) -> Missing<T> {
         match row.get(self.span()).and_then(T::read) {
             Some(v) if self.absent && v == T::ABSENT => Missing::Absent,
             Some(v) => Missing::Present(v),
@@ -91,7 +91,7 @@ impl<T: Word> Attr<T> {
         }
     }
 
-    fn write_in(self, row: &mut [u8], v: Missing<T>) {
+    pub(crate) fn write_in(self, row: &mut [u8], v: Missing<T>) {
         let value = match v {
             Missing::Present(x) if x == T::ABSENT && self.absent => {
                 violation!(clause = "NUM.8", "an attribute's sentinel written as its value", offset = self.offset)

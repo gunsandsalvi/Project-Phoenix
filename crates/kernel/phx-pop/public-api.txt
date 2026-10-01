@@ -256,3 +256,36 @@ pub fn phx_pop::prims::Representation::rebuild_derived(&mut self, &mut phx_store
 pub fn phx_pop::prims::Representation::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_pop::prims::PERSONS: phx_core::register::PrimDecl  // used by: phx-core
 pub const phx_pop::prims::TOMBSTONE_HORIZON_DAYS: phx_core::register::PrimDecl  // used by: phx-world
+pub mod phx_pop::windowed  // used by: phx-fin
+pub struct phx_pop::windowed::WAttr<T>(_)
+impl<T> core::clone::Clone for phx_pop::windowed::WAttr<T>
+pub fn phx_pop::windowed::WAttr<T>::clone(&self) -> phx_pop::windowed::WAttr<T>
+impl<T> core::marker::Copy for phx_pop::windowed::WAttr<T>
+pub struct phx_pop::windowed::WAttrW<T>(_)  // used by: phx-fin
+impl<T> phx_pop::windowed::WAttrW<T>
+pub fn phx_pop::windowed::WAttrW<T>::read(self) -> phx_pop::windowed::WAttr<T>  // used by: phx-fin
+impl<T> core::clone::Clone for phx_pop::windowed::WAttrW<T>
+pub fn phx_pop::windowed::WAttrW<T>::clone(&self) -> phx_pop::windowed::WAttrW<T>  // used by: phx-fin
+impl<T> core::marker::Copy for phx_pop::windowed::WAttrW<T>
+pub struct phx_pop::windowed::WindowLayout(_)  // used by: phx-fin
+impl phx_pop::windowed::WindowLayout
+pub fn phx_pop::windowed::WindowLayout::attr<T: phx_pop::kinds::Word>(&self, &str, u16) -> core::result::Result<phx_pop::windowed::WAttr<T>, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
+pub fn phx_pop::windowed::WindowLayout::compile(&'static str, &'static [phx_pop::layout::GroupDecl]) -> core::result::Result<phx_pop::windowed::WindowLayout, alloc::string::String>  // used by: phx-core, phx-fin, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub fn phx_pop::windowed::WindowLayout::writer<T: phx_pop::kinds::Word>(&mut self, &str, u16, &str) -> core::result::Result<phx_pop::windowed::WAttrW<T>, alloc::string::String>  // used by: phx-core, phx-fin, phx-macros
+pub struct phx_pop::windowed::WindowedGroup<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_pop::windowed::WindowedGroup<B>
+pub fn phx_pop::windowed::WindowedGroup<B>::begun(&mut self, phx_id::ids::PartyRef)  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::close(&mut self, u32)  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::closing(&self, phx_id::day::Day) -> impl core::iter::traits::iterator::Iterator<Item = u32> + '_  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::get<T: phx_pop::kinds::Word, D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::windowed::WAttr<T>) -> phx_num::missing::Missing<T>  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::new(u8, &phx_pop::windowed::WindowLayout, usize) -> phx_pop::windowed::WindowedGroup<B>  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::open(&mut self, &mut phx_store::backing::AddressSpace, u32, (phx_id::ids::Slot, u32), (phx_id::day::Day, phx_id::day::Day))  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::open_windows(&self) -> usize  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::set<T: phx_pop::kinds::Word, D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::windowed::WAttrW<T>, phx_num::missing::Missing<T>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::windowed::WindowedGroup<B>
+pub fn phx_pop::windowed::WindowedGroup<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_pop::windowed::WindowedGroup<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_pop::windowed::WindowedGroup<B>
+pub fn phx_pop::windowed::WindowedGroup<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_pop::windowed::WindowedGroup<B>::rows_live(&self) -> u64  // used by: phx-fin

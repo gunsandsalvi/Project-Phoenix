@@ -2311,7 +2311,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; K-32's kind stores written; S1.197–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores and windowed groups written; S1.198–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2352,8 +2352,8 @@ and ever are the directory's (`Core::store_samples`). A table of nature's kind i
 #### K-32 Kind stores and windowed groups
 
 `phx-pop`'s `KindStore` (`kinds.rs`; PTY.5, REP.1) holds a kind's parties' state as fixed-width groups by slot, at the
-slot the directory (K-31) gave each party; windowed groups are planned (S1.197), and today's kinds move onto the stores
-at S1.198–S1.206.
+slot the directory (K-31) gave each party, and its windowed groups the columns that exist only inside a dated window;
+today's kinds move onto the stores at S1.198–S1.206.
 
 **Layout** (`layout.rs`, the maps in `consts.rs`): a kind's `KindMap` names its groups, hot first, at most four; a
 group (`GroupDecl`) is a width in bytes and the words the bases declare in it (`WordDecl`: name, integer type, count
@@ -2417,7 +2417,23 @@ a hot row a memory latency away, in slot order); `attr_ns` 1 (0.47 measured, aft
 (12.7–13.3 measured, the step's 3.8: a bare read of the rows' first words at their stride takes 9–10 ns a record here,
 one core's memory streaming 12.7 GB/s); `faults_per_day` 0.
 
-**Extension points**: windowed groups (S1.197); the kinds' migrations (S1.198–S1.206); the persons head (S1.207);
+**Windowed groups** (`windowed.rs`, `windowed_save.rs`): a kind's group that exists only inside a dated window — a
+campaign's voting intentions and vote occasions. `WindowLayout::compile(kind, group)` compiles its one group; its
+handles (`WAttr<T>`, `WAttrW<T>`, one writer a word) read and write its windows alone. `WindowedGroup::new(kind, layout,
+subjects)` holds none open, with room for a window a subject (a country) at once. `open(space, subject, (first, slots),
+(opened, closes))` reserves a window's rows over a run of slots — a country's parties, which the opening begins country
+by country — in address space (K-01), committing nothing; `set(dir, r, w, v)` writes a live party's word inside a
+window covering its slot, committing the window's rows as far as the write (each row blank until written), and stops
+the run outside every window or for a party not live; `get` reads `Missing` where no window covers the slot, where the
+party is not live (ended, or its slot since taken) and where the window has not written it; `begun(r)` blanks a
+reused slot's row, so a new party reads nothing of the last; `closing(today)` names the windows due to close and
+`close(subject)` drops one, its pages and reservation returned. Nothing about a window costs a byte while none is
+open. The save keeps each open window — subject, slots, days and its written rows; a closed one saves nothing.
+`[fin.parties]`: all three countries' campaigns open over 6 M persons (1 B) and 1.77 M households (2 B): `windowed_mb`
+12 (9.1 measured); `window_open_ns` 100 000 (12–14 µs); `window_close_ns` 258 000 (120–210 µs, the step's 0.1 ms: its
+written pages returned a page at a time); `window_write_ns` 30 (21–24, the directory's live check and the row's growth).
+
+**Extension points**: the kinds' migrations (S1.198–S1.206); the persons head (S1.207);
 cache words (S1.211); agenda slots (S1.227); K-54's aggregates (S1.261); and each reserve's declaring step above.
 
 **Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps, at the slot the directory

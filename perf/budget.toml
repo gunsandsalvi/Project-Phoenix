@@ -722,6 +722,34 @@ counter = "fin.parties.wake_scan_ns"
 value = 16.7
 direction = "down"
 
+# Windowed groups (S1.197, 2026-10-01; `tools/bench.sh -F parties`): all three countries' campaign windows open at
+# once, each over its third of the design point's 6 M persons (an intention, 1 B) and 1.77 M households (a vote
+# occasion, 2 B), every live party written: 9.1 MiB committed (the step's 12 at its counts). A window opened —
+# reserved, nothing committed — in 12–14 µs (the step's 0.1 ms, which stands); closed in 120–210 µs (the step's 0.1
+# ms: its 3 MB of written pages returned to the system, a page at a time); a party's word written as the campaign's
+# first day writes them all, in slot order, its row committed as far as the write, 21–24 ns (no step figure: the
+# directory's live check and the window's growth by a row). Each time ratchet stands a quarter above the highest; the
+# bytes and the open at the step's figures.
+[[ratchet]]
+counter = "fin.parties.windowed_mb"
+value = 12
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.window_open_ns"
+value = 100000
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.window_close_ns"
+value = 258000
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.window_write_ns"
+value = 30
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

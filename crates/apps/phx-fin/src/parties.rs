@@ -1,7 +1,8 @@
 //! `-F parties`: the party directory at the design point — every kind's parties begun, and two years of endings behind
 //! them as tombstones — with live references resolved, ended ones looked up, a day's parties begun and ended, and a
 //! mass failure's endings closed in one merge; and the households', firms' and institutions' stores at their byte maps,
-//! their hot rows gathered and read by handle and scanned as a surprise day's wakes scan them.
+//! their hot rows gathered and read by handle and scanned as a surprise day's wakes scan them; and every country's
+//! campaign window open at once over its persons' intentions and its households' vote occasions.
 
 use std::collections::BTreeMap;
 use std::hint::black_box;
@@ -11,7 +12,8 @@ use phx_id::{Day, PartyRef};
 use phx_num::Missing;
 use phx_pop::directory::{Directory, Resolved};
 use phx_pop::kinds::{Attr, AttrW, KindStore, Opening};
-use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, KindMap, Layout};
+use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, IntTy, KindMap, Layout, WordDecl};
+use phx_pop::windowed::{WAttrW, WindowLayout, WindowedGroup};
 use phx_rand::uniform::below_u64;
 use phx_store::{AddressSpace, StoreStats};
 
@@ -44,6 +46,23 @@ const INSTITUTIONS: u8 = 3;
 /// An institution's record at the design point: one group of the width most institution kinds declare.
 const INSTITUTION: KindMap =
     KindMap { kind: "institution", groups: &[GroupDecl { name: "record", width: 1_024, words: &[] }] };
+/// The campaign's windowed groups: a person's voting intention, and a household's next vote occasion.
+const INTENTION: &[GroupDecl] = &[GroupDecl {
+    name: "campaign",
+    width: 1,
+    words: &[WordDecl { name: "intention", ty: IntTy::U8, count: 1, absent: true, writer: "S5.137" }],
+}];
+const VOTE: &[GroupDecl] = &[GroupDecl {
+    name: "campaign",
+    width: 2,
+    words: &[WordDecl { name: "vote", ty: IntTy::U16, count: 1, absent: true, writer: "S1.227" }],
+}];
+/// The countries, each a third of every kind's slots as the opening begins them country by country, and a campaign's
+/// days.
+const COUNTRIES: u32 = 3;
+const CAMPAIGN_DAYS: u32 = 42;
+const PERSONS: u8 = 0;
+
 /// The zones a household's residence and a firm's zone are drawn among, and the households' and firms' visits a day
 /// gathers.
 const ZONES: u64 = 1_000;
@@ -71,6 +90,107 @@ pub struct Parties {
     stores: Vec<(u8, KindStore)>,
     handles: Option<Handles>,
     faults: Option<u64>,
+    /// The persons' and households' campaign groups with their write handles, and each kind's slots a country holds.
+    windows: Option<Campaign>,
+}
+
+/// The campaign's groups: each kind's, its handle, and the slots each of its countries covers.
+#[derive(Debug)]
+struct Campaign {
+    groups: Vec<(u8, WindowedGroup, Written, u32)>,
+}
+
+/// A windowed group's write handle, by its word's type.
+#[derive(Clone, Copy, Debug)]
+enum Written {
+    Intention(WAttrW<u8>),
+    Vote(WAttrW<u16>),
+}
+
+impl Campaign {
+    fn new(dir: &Directory) -> Result<Campaign, FinError> {
+        let (mut persons, mut households) = (
+            WindowLayout::compile("person", INTENTION).map_err(FinError)?,
+            WindowLayout::compile("household", VOTE).map_err(FinError)?,
+        );
+        let intention = persons.writer::<u8>("intention", 0, "S5.137").map_err(FinError)?;
+        let vote = households.writer::<u16>("vote", 0, "S1.227").map_err(FinError)?;
+        let subjects = index(u64::from(COUNTRIES))?;
+        Ok(Campaign {
+            groups: vec![
+                (
+                    PERSONS,
+                    WindowedGroup::new(PERSONS, &persons, subjects),
+                    Written::Intention(intention),
+                    dir.high_water(PERSONS),
+                ),
+                (
+                    HOUSEHOLDS,
+                    WindowedGroup::new(HOUSEHOLDS, &households, subjects),
+                    Written::Vote(vote),
+                    dir.high_water(HOUSEHOLDS),
+                ),
+            ],
+        })
+    }
+
+    /// A country's slots of a kind: its third of the slots the opening began.
+    fn slots(high: u32, country: u32) -> (phx_id::Slot, u32) {
+        let share = high.div_ceil(COUNTRIES);
+        let first = share * country;
+        if first >= high {
+            return (phx_id::Slot::new(high), 0);
+        }
+        let end = if first + share < high { first + share } else { high };
+        (phx_id::Slot::new(first), end - first)
+    }
+
+    /// A country's windows opened over its slots, nothing yet written.
+    fn open(&mut self, country: u32, today: u32) {
+        let mut space = AddressSpace::empty();
+        for (_, group, _, high) in &mut self.groups {
+            let span = Campaign::slots(*high, country);
+            group.open(&mut space, country, span, (Day::new(today), Day::new(today + CAMPAIGN_DAYS)));
+        }
+    }
+
+    /// Every live party a country's windows cover written, as its campaign's first day writes them: the parties
+    /// written.
+    fn write(&mut self, dir: &Directory, country: u32, today: u32) -> u64 {
+        let mut written = 0;
+        let day = u16::try_from(today).unwrap_or(u16::MAX - 1);
+        for (kind, group, w, high) in &mut self.groups {
+            let (first, n) = Campaign::slots(*high, country);
+            let covered = dir.live_slots(*kind).skip_while(|s| *s < first).take_while(|s| s.get() < first.get() + n);
+            for slot in covered {
+                let Some(r) = dir.at(*kind, slot) else { continue };
+                match w {
+                    Written::Intention(a) => group.set(dir, r, *a, Missing::Present(1)),
+                    Written::Vote(a) => group.set(dir, r, *a, Missing::Present(day)),
+                }
+                written += 1;
+            }
+        }
+        written
+    }
+
+    fn close(&mut self, country: u32) {
+        for (_, group, _, _) in &mut self.groups {
+            group.close(country);
+        }
+    }
+
+    fn begun(&mut self, r: PartyRef) {
+        for (kind, group, _, _) in &mut self.groups {
+            if *kind == r.kind() {
+                group.begun(r);
+            }
+        }
+    }
+
+    fn bytes(&self) -> u64 {
+        self.groups.iter().map(|(_, g, _, _)| StoreStats::bytes(g)).sum()
+    }
 }
 
 /// The words the fill opens and the day reads: a household's residence, preference and formation day; a firm's own
@@ -258,6 +378,13 @@ impl FinBase for Parties {
         }
         self.held = StoreStats::bytes(&dir);
         self.handles = Some(handles);
+        // Every country's campaign open at once, each over its own third of the persons and households.
+        let mut campaign = Campaign::new(&dir)?;
+        for country in 0..COUNTRIES {
+            campaign.open(country, HISTORY_DAYS);
+            let _ = campaign.write(&dir, country, HISTORY_DAYS);
+        }
+        self.windows = Some(campaign);
         (self.directory, self.streams, self.today) = (Some(dir), Some(*streams), HISTORY_DAYS);
         Ok(Filled { rows: counts.iter().sum() })
     }
@@ -321,9 +448,22 @@ impl FinBase for Parties {
             return Err(FinError("the stores measured before their fill".to_owned()));
         };
         // The parties begun write their rows outside the directory's measures, which are the directory's alone.
+        let Some(campaign) = self.windows.as_mut() else {
+            return Err(FinError("the campaign measured before its fill".to_owned()));
+        };
         for r in begun {
             begin_in(&mut self.stores, dir, (r, handles), (&mut d, self.today))?;
+            campaign.begun(r);
         }
+        // One country's campaign closed and opened again over its parties as they are now.
+        let (reader, today) = (&*dir, self.today);
+        m.read(BASE, "window_close", 1, || campaign.close(0));
+        m.read(BASE, "window_open", 1, || campaign.open(0, today));
+        let (first, n) = Campaign::slots(dir.high_water(PERSONS), 0);
+        let covered =
+            wide(dir.live_slots(PERSONS).skip_while(|s| *s < first).take_while(|s| s.get() < first.get() + n).count());
+        let written = m.read(BASE, "window_write", covered, || campaign.write(reader, 0, today));
+        black_box(written);
         self.kinds_day(&mut d, m)
     }
 
@@ -354,6 +494,7 @@ impl FinBase for Parties {
             per(FIRMS, false).map(|b| ("firm_bytes", b)),
             per(FIRMS, true).map(|b| ("firm_hot_bytes", b)),
             kinds_mb.map(|m| ("kinds_mb", m)),
+            self.windows.as_ref().and_then(|c| real(c.bytes())).map(|b| ("windowed_mb", b / MIB)),
             self.faults.and_then(real).map(|f| ("faults_per_day", f)),
         ]
         .into_iter()
