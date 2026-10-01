@@ -45,3 +45,21 @@ fn heirless_destination_unknown_kind_refused() {
     assert_eq!(refused.len(), 1);
     assert!(refused[0].contains("`church`"));
 }
+
+#[test]
+fn todays_families_hold_declared_rows() {
+    #[derive(serde::Deserialize)]
+    struct File {
+        family: Vec<phx_core::catalogue::FamilyCode>,
+    }
+    let file: File = toml::from_str(include_str!("../../../../data/shared/families.toml")).unwrap();
+    let codes = phx_core::catalogue::FamilyCodes::new(file.family).unwrap();
+    let declared = |name: &str| {
+        codes.rows().iter().any(|r| r.name == name && r.status == phx_core::catalogue::FamilyStatus::Declared)
+    };
+    for name in crate::consts::families::ALL {
+        assert!(declared(name), "`{name}` has no declared row");
+    }
+    let rows = codes.rows().iter().filter(|r| r.status == phx_core::catalogue::FamilyStatus::Declared).count();
+    assert_eq!(rows, crate::consts::families::ALL.len(), "a declared row the world does not declare");
+}

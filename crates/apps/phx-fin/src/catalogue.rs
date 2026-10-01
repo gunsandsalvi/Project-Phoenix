@@ -6,8 +6,8 @@ use std::collections::BTreeMap;
 use std::hint::black_box;
 
 use phx_core::catalogue::{
-    CapitalDecl, Catalogue, DecisionEntry, Declared, FamilyDecl, FormDecl, HazardEntry, KindEntry, LineDecl,
-    MarketDecl, MarketForm, MeetingDays, ProductDecl, ReasonDecl, WayDecl, compile,
+    CapitalDecl, Catalogue, DecisionEntry, Declared, FamilyCode, FamilyDecl, FamilyKind, FamilyStatus, FormDecl,
+    HazardEntry, KindEntry, LineDecl, MarketDecl, MarketForm, MeetingDays, ProductDecl, ReasonDecl, WayDecl, compile,
 };
 use phx_core::kinds::{Feature, Owners, Place};
 use phx_num::Missing;
@@ -88,6 +88,7 @@ struct Source {
     ways: Vec<String>,
     capitals: Vec<String>,
     prims: Vec<String>,
+    codes: Vec<FamilyCode>,
 }
 
 fn named(prefix: &str, n: usize) -> Vec<String> {
@@ -279,6 +280,7 @@ impl CatalogueBase {
             ways: &t.ways,
             capitals: &t.capitals,
             prims: &lists.prims,
+            codes: &self.source.codes,
         };
         let compiled = m.read(BASE, "compile", 1, || compile(&declared));
         self.compiled = compiled.map_err(|refused| FinError(refused.join("; ")))?;
@@ -308,7 +310,14 @@ impl FinBase for CatalogueBase {
             ways: named("way", WAYS),
             capitals: named("capital", CAPITALS),
             prims: named("prim", PRIMS),
+            codes: Vec::new(),
         };
+        // Each family at its own fixed code, as the family codes give one.
+        for (code, name) in self.source.families.iter().enumerate() {
+            let code = u8::try_from(code).map_err(|e| FinError(e.to_string()))?;
+            let (kind, status, step) = (FamilyKind::Contract, FamilyStatus::Declared, String::new());
+            self.source.codes.push(FamilyCode { code, name: name.clone(), kind, step, status });
+        }
         let rows = KINDS + FAMILIES + LINES + REASONS + MARKETS + HAZARDS + DECISIONS + PRODUCTS + WAYS + CAPITALS;
         Ok(Filled { rows: wide(rows) })
     }

@@ -6,8 +6,8 @@ use phx_id::Weekday;
 use phx_num::Missing;
 
 use super::{
-    CapitalDecl, DecisionEntry, Declared, FamilyDecl, FormDecl, HazardEntry, KindEntry, LineDecl, MarketDecl,
-    MarketForm, MeetingDays, ProductDecl, ReasonDecl, WayDecl, compile,
+    CapitalDecl, DecisionEntry, Declared, FamilyCode, FamilyCodes, FamilyDecl, FamilyKind, FamilyStatus, FormDecl,
+    HazardEntry, KindEntry, LineDecl, MarketDecl, MarketForm, MeetingDays, ProductDecl, ReasonDecl, WayDecl, compile,
 };
 use crate::kinds::{Feature, Owners, Place};
 
@@ -85,6 +85,17 @@ const MARKET: MarketDecl<'static> = MarketDecl {
 };
 const PRIMS: [&str; 3] = ["BNK.loan_tick", "BNK.loan_points", "BNK.loan_method"];
 
+fn row(code: u8, name: &str, status: FamilyStatus) -> FamilyCode {
+    FamilyCode { code, name: name.to_owned(), kind: FamilyKind::Contract, step: "S1.260".to_owned(), status }
+}
+
+/// The fixtures' two families' rows, made once for every test's declarations to borrow.
+fn codes() -> &'static [FamilyCode] {
+    let rows =
+        vec![row(0, "LAB.employment", FamilyStatus::Declared), row(2, "BNK.household_loan", FamilyStatus::Declared)];
+    Box::leak(rows.into_boxed_slice())
+}
+
 fn declared<'a>(forms: &'a [FormDecl<'a>], kinds: &'a [KindEntry<'a>], markets: &'a [MarketDecl<'a>]) -> Declared<'a> {
     Declared {
         forms,
@@ -107,6 +118,7 @@ fn declared<'a>(forms: &'a [FormDecl<'a>], kinds: &'a [KindEntry<'a>], markets: 
         ways: &[WayDecl { system: "TEC", name: "baking", inputs: &[("grain", 1)] }],
         capitals: &[CapitalDecl { system: "CAP", name: "ovens", classes: &["bread", "grain"] }],
         prims: &PRIMS,
+        codes: codes(),
     }
 }
 
@@ -184,12 +196,14 @@ fn family_capacity_refused() {
     // The household may hold anything here, so no form names a family the test replaces.
     let forms = [COMPANY, FormDecl { may_hold: &["any"], ..HOUSEHOLD }];
     let names: Vec<String> = (0..256).map(|i| format!("F.f{i}")).collect();
+    let codes: Vec<FamilyCode> = (0_u8..255).zip(&names).map(|(c, n)| row(c, n, FamilyStatus::Declared)).collect();
     let many: Vec<FamilyDecl<'_>> = names
         .iter()
         .map(|n| FamilyDecl { system: "X", name: n, reason: "wage", kinds: &["firm"], jobs: false, slots: 1 })
         .collect();
     let mut d = declared(&forms, &KINDS, &[]);
     d.families = &many;
+    d.codes = &codes;
     assert!(refused(&d).iter().any(|e| e.contains("256 families")));
     d.families = &many[..255];
     assert!(compile(&d).is_ok(), "255 families fit beside holdings' code");
@@ -256,4 +270,49 @@ fn legal_form_needs_ending() {
     let members = FormDecl { owners: Owners::Members, ..COMPANY };
     let forms = [members, HOUSEHOLD];
     assert!(refused(&declared(&forms, &KINDS, &[MARKET])).iter().any(|e| e.contains("its own members")));
+}
+
+#[test]
+fn family_codes_within_capacity() {
+    #[derive(serde::Deserialize)]
+    struct File {
+        family: Vec<FamilyCode>,
+    }
+    let file: File = toml::from_str(include_str!("../../../../../data/shared/families.toml")).unwrap();
+    let codes = FamilyCodes::new(file.family).unwrap();
+    assert!(codes.rows().len() <= crate::consts::FAMILY_CODES);
+    assert!(codes.rows().iter().all(|r| r.code < crate::consts::HOLDINGS_CODE), "holdings' code is never a row's");
+}
+
+#[test]
+fn retired_code_not_reused() {
+    let rows = vec![row(9, "SOV.bills", FamilyStatus::Retired), row(9, "SOV.notes", FamilyStatus::Planned)];
+    assert_eq!(FamilyCodes::new(rows), Err(vec!["family code 9 of retired `SOV.bills` reissued".to_owned()]));
+    // A retired family is not declared again under its old code.
+    let forms = [COMPANY, HOUSEHOLD];
+    let mut d = declared(&forms, &KINDS, &[MARKET]);
+    let codes = [row(0, "LAB.employment", FamilyStatus::Declared), row(2, "BNK.household_loan", FamilyStatus::Retired)];
+    d.codes = &codes;
+    assert!(refused(&d).iter().any(|e| e.contains("retired; its code 2")));
+}
+
+#[test]
+fn family_row_required() {
+    let forms = [COMPANY, HOUSEHOLD];
+    let mut d = declared(&forms, &KINDS, &[MARKET]);
+    let codes = [row(0, "LAB.employment", FamilyStatus::Declared)];
+    d.codes = &codes;
+    assert!(refused(&d).iter().any(|e| e.contains("`BNK.household_loan` has no row")));
+    let c = compile(&declared(&forms, &KINDS, &[MARKET])).unwrap();
+    assert_eq!(c.family(super::FamilyH(0)).code, 2, "a family's code is its row's, not its place among the declared");
+}
+
+#[test]
+fn duplicate_code_refused() {
+    let rows = vec![row(3, "BNK.firm_loans", FamilyStatus::Declared), row(3, "BNK.firm_loan", FamilyStatus::Planned)];
+    assert!(FamilyCodes::new(rows).unwrap_err().iter().any(|e| e.contains("code 3 held by")));
+    let twice = vec![row(3, "BNK.firm_loans", FamilyStatus::Declared), row(4, "BNK.firm_loans", FamilyStatus::Planned)];
+    assert!(FamilyCodes::new(twice).unwrap_err().iter().any(|e| e.contains("two rows")));
+    let holdings = vec![row(crate::consts::HOLDINGS_CODE, "holdings", FamilyStatus::Planned)];
+    assert!(FamilyCodes::new(holdings).is_err(), "holdings' code is reserved");
 }

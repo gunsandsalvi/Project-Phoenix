@@ -140,7 +140,7 @@ pub struct CapitalDecl<'a> {
     pub classes: &'a [&'a str],
 }
 
-/// Everything declared for the catalogue, and the primitives the register holds, by identity.
+/// Everything declared for the catalogue, the primitives the register holds, by identity, and the families' codes.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Declared<'a> {
     pub forms: &'a [FormDecl<'a>],
@@ -155,6 +155,7 @@ pub struct Declared<'a> {
     pub ways: &'a [WayDecl<'a>],
     pub capitals: &'a [CapitalDecl<'a>],
     pub prims: &'a [&'a str],
+    pub codes: &'a [super::FamilyCode],
 }
 
 /// Every feature a form may have, in the order of the bits its compiled row keeps them in.

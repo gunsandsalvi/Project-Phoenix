@@ -1763,8 +1763,7 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams, K-19, K-20 and K-21's compiler built, S1.177–S1.180; K-21's family codes and K-22–K-24
-planned, S1.114, S1.181–S1.185)
+Status: building (streams, K-19, K-20 and K-21 built, S1.177–S1.181; K-22–K-24 planned, S1.114, S1.182–S1.185)
 
 #### Streams
 
@@ -1859,9 +1858,104 @@ hazards, 150 decision kinds, 250 products, 200 ways, 30 capital kinds, 5 000 pri
 (0.54–1.09 ms measured, the step's 50 ms), `mb` 0.07 (0.055 MiB, the step's 10 MiB, which counted the attribute
 schemas K-32 adds) and `read_ns` 5.2 (a family's reason, payment order and sides, three reads, at 1.71–4.12 ns).
 
+**Family codes.** A save names a family by an 8-bit code, so a code is a permanent identifier, data and never a
+declaration's place: `data/shared/families.toml` holds one `[[family]]` row a family — contract or dated reason the
+wheel files — with its code, name, kind (`FamilyKind`), the step that settles it, and its status (`FamilyStatus`:
+declared by the world today, planned by a later step, or retired with its code kept). The register reads the world's
+rows (a country's file may hold none) into `FamilyCodes`, which refuses a code held twice — a retired family's
+reissued among them — a name given two rows, and holdings' code 255; codes being distinct and below 255, the rows
+never pass `FAMILY_CODES`. A planned row reserves its code before its step is built, so no later step renumbers one.
+`compile` reads each declared family's code from its row (`FamilyRow::code`), refusing a family with no row, one whose
+row is retired, and one holding a dated reason's row. The world's eleven families hold the declared rows; the
+codes in use are 80 of 255:
+
+| Code | Family | Kind | Step | Status |
+| --- | --- | --- | --- | --- |
+| 0 | `LAB.employment` | contract | S1.260 | declared |
+| 1 | `LAB.public_employment` | contract | S1.260 | declared |
+| 2 | `BNK.household_loans` | contract | S1.260 | declared |
+| 3 | `BNK.firm_loans` | contract | S1.260 | declared |
+| 4 | `SOC.benefit` | contract | S1.260 | declared |
+| 5 | `SOC.benefit_flat` | contract | S1.260 | planned |
+| 6 | `SOC.pension` | contract | S1.260 | declared |
+| 7 | `CB.lending_facility` | contract | S1.260 | declared |
+| 8 | `CB.deposit_facility` | contract | S1.260 | declared |
+| 9 | `SOV.bills` | contract | S1.282 | declared |
+| 10 | `invoices` | contract | S1.269 | planned |
+| 11 | `statements` | contract | S1.269 | planned |
+| 12 | `tax_payables` | contract | S1.270 | planned |
+| 13 | `FRM.appointment` | contract | S1.405 | planned |
+| 14 | `pension_rights` | contract | S1.407 | planned |
+| 15 | `CAP.project` | contract | S1.459 | planned |
+| 16 | `FRM.owner_liability` | contract | S2.126 | planned |
+| 17 | `FRT.carriage` | contract | S2.127 | planned |
+| 18 | `DEM.kin` | contract | S2.134 | planned |
+| 19 | `HSG.tenancy` | contract | S2.139 | planned |
+| 20 | `HSG.land_lease` | contract | S2.139 | planned |
+| 21 | `SRV.storage` | contract | S2.163 | planned |
+| 22 | `FRT.pass` | contract | S2.172 | planned |
+| 23 | `term_deposits` | contract | S2.177 | planned |
+| 24 | `ENE.supply` | contract | S2.204 | planned |
+| 25 | `ENE.wholesale_supply` | contract | S2.204 | planned |
+| 26 | `MMK.interbank_loan` | contract | S3.101 | planned |
+| 27 | `MMK.master_agreement` | contract | S3.101 | planned |
+| 28 | `MMK.repo` | contract | S3.106 | planned |
+| 29 | `FRM.guarantee` | contract | S3.157 | planned |
+| 30 | `DLR.intra_group_line` | contract | S3.163 | planned |
+| 31 | `DLR.primary_dealer` | contract | S3.171 | planned |
+| 32 | `DLR.sec_loan` | contract | S3.175 | planned |
+| 33 | `FND.management` | contract | S3.182 | planned |
+| 34 | `DRV.contract` | contract | S4.101 | planned |
+| 35 | `DRV.agreement` | contract | S4.101 | planned |
+| 36 | `DRV.membership` | contract | S4.102 | planned |
+| 37 | `DRV.margin` | contract | S4.108 | planned |
+| 38 | `DRV.clearing` | contract | S4.105 | planned |
+| 39 | `DRV.fund` | contract | S4.111 | planned |
+| 40 | `INS.policy` | contract | S4.125 | planned |
+| 41 | `INS.annuity` | contract | S4.125 | planned |
+| 42 | `INS.firm_policy` | contract | S4.125 | planned |
+| 43 | `INS.treaty` | contract | S4.125 | planned |
+| 44 | `INS.damages` | contract | S4.134 | planned |
+| 45 | `TAX.corporate_due` | contract | S5.110 | planned |
+| 46 | `TAX.arrear` | contract | S5.115 | planned |
+| 47 | `SOC.appropriation` | contract | S5.127 | planned |
+| 48 | `POL.membership` | contract | S5.136 | planned |
+| 49 | `POL.candidacy` | contract | S5.136 | planned |
+| 50 | `POL.public_funding` | contract | S5.141 | planned |
+| 51 | `POL.deposit` | contract | S5.141 | planned |
+| 52 | `POL.appointment` | contract | S5.142 | planned |
+| 53 | `CB.swap_line` | contract | S5.184 | planned |
+| 54 | `TEC.licence` | contract | S6.110 | planned |
+| 55 | `DEM.schooling` | contract | S6.117 | planned |
+| 56 | `messages_due` | dated reason | S1.237 | planned |
+| 57 | `commitments` | dated reason | S1.251 | planned |
+| 58 | `rate_kinks` | dated reason | S1.289 | planned |
+| 59 | `shipments` | dated reason | S1.287 | planned |
+| 60 | `projects` | dated reason | S1.287 | planned |
+| 61 | `production` | dated reason | S1.287 | planned |
+| 62 | `spells` | dated reason | S1.287 | planned |
+| 63 | `offer_lapses` | dated reason | S1.296 | planned |
+| 64 | `notice_periods` | dated reason | S1.417 | planned |
+| 65 | `benefit_claims` | dated reason | S1.421 | planned |
+| 66 | `grace_ends` | dated reason | S1.428 | planned |
+| 67 | `price_releases` | dated reason | S1.475 | planned |
+| 68 | `labour_releases` | dated reason | S1.476 | planned |
+| 69 | `covenant_tests` | dated reason | S2.105 | planned |
+| 70 | `filing_dates` | dated reason | S2.108 | planned |
+| 71 | `credit_records` | dated reason | S2.109 | planned |
+| 72 | `class_reviews` | dated reason | S2.182 | planned |
+| 73 | `record_dates` | dated reason | S3.150 | planned |
+| 74 | `conversion_dates` | dated reason | S3.160 | planned |
+| 75 | `remittance_windows` | dated reason | S5.107 | planned |
+| 76 | `constitutional_dates` | dated reason | S5.135 | planned |
+| 77 | `election_days` | dated reason | S5.142 | planned |
+| 78 | `TAX.collected` | contract | S1.270 | declared |
+| 79 | `TAX.collected_public` | contract | S1.270 | declared |
+| 255 | holdings | reserved | S1.174 | the holdings' link (S1.271) |
+
 **Today** (`kinds.rs`, `system.rs`, `pop.rs`): the kinds, legal forms and population items systems declare (§5.1),
-bound to handles by `Bound`; the catalogue replaces them as the world's kinds and families move onto it (S1.182), and
-the families take their fixed codes (S1.181). Extension points: each kind's attribute schemas (S1.196), offices and
+bound to handles by `Bound`; the catalogue replaces them as the world's kinds and families move onto it (S1.182).
+Extension points: each kind's attribute schemas (S1.196), offices and
 their holders (S1.209), record kinds (S1.215), dated-reason kinds (S1.225), levy sets, tallies and source kinds on
 reasons (S1.245–S1.255), families' columns and side modes (S1.257), instrument families (S1.279), unit and process
 kinds (S1.284, S1.287), capital chains' rates (S1.285), markets' lapse rules, points and marks (S1.296, S1.297,
@@ -1899,8 +1993,8 @@ stops the run at a literal ceiling. Capacities are address-space reservations co
 they change no outcome, and at twice the design point with growth they stay inside `phx-store`'s `VA_BUDGET`.
 
 The code widths: a chain link and a wheel entry carry a family code of `FAMILY_BITS` (8) and a slot of `SLOT_BITS`
-(24), one 32-bit word; `family_code` gives the codes below `HOLDINGS_CODE` (255, reserved for holdings) and refuses a
-family past them, and `slot_fits` a slot below 2²⁴. `WHEEL_DAYS` (128) files a quarter's dues ahead. The link's width
+(24), one 32-bit word; a family's code is its row's (K-21), below `HOLDINGS_CODE` (255, reserved for holdings), and
+`slot_fits` a slot below 2²⁴. `WHEEL_DAYS` (128) files a quarter's dues ahead. The link's width
 and the wheel's horizon are refused at compile time if either falls short. `phx-world` reserves every store and
 wheel from these constants and holds no capacity of its own; `phx-fin`'s `capacities_cover_the_design_point` (S1.116)
 holds the table to `[store]`.

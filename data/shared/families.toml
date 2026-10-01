@@ -1,0 +1,565 @@
+# Every family's fixed 8-bit code: contract families and the dated reasons the wheel files. A save names a family by
+# its code, so a code is permanent: a planned row holds its code before its step is built, a retired row keeps its code,
+# and no code is reissued. Code 255 is holdings'. `step` is the step that settles the row: the one that declares a
+# planned family, or puts a declared one on the contract store or retires it (SOV.bills onto instruments at S1.282,
+# TAX.collected and TAX.collected_public onto tax_payables at S1.270).
+
+[[family]]
+code = 0
+name = "LAB.employment"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 1
+name = "LAB.public_employment"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 2
+name = "BNK.household_loans"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 3
+name = "BNK.firm_loans"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 4
+name = "SOC.benefit"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 5
+name = "SOC.benefit_flat"
+kind = "contract"
+step = "S1.260"
+status = "planned"
+
+[[family]]
+code = 6
+name = "SOC.pension"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 7
+name = "CB.lending_facility"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 8
+name = "CB.deposit_facility"
+kind = "contract"
+step = "S1.260"
+status = "declared"
+
+[[family]]
+code = 9
+name = "SOV.bills"
+kind = "contract"
+step = "S1.282"
+status = "declared"
+
+[[family]]
+code = 10
+name = "invoices"
+kind = "contract"
+step = "S1.269"
+status = "planned"
+
+[[family]]
+code = 11
+name = "statements"
+kind = "contract"
+step = "S1.269"
+status = "planned"
+
+[[family]]
+code = 12
+name = "tax_payables"
+kind = "contract"
+step = "S1.270"
+status = "planned"
+
+[[family]]
+code = 13
+name = "FRM.appointment"
+kind = "contract"
+step = "S1.405"
+status = "planned"
+
+[[family]]
+code = 14
+name = "pension_rights"
+kind = "contract"
+step = "S1.407"
+status = "planned"
+
+[[family]]
+code = 15
+name = "CAP.project"
+kind = "contract"
+step = "S1.459"
+status = "planned"
+
+[[family]]
+code = 16
+name = "FRM.owner_liability"
+kind = "contract"
+step = "S2.126"
+status = "planned"
+
+[[family]]
+code = 17
+name = "FRT.carriage"
+kind = "contract"
+step = "S2.127"
+status = "planned"
+
+[[family]]
+code = 18
+name = "DEM.kin"
+kind = "contract"
+step = "S2.134"
+status = "planned"
+
+[[family]]
+code = 19
+name = "HSG.tenancy"
+kind = "contract"
+step = "S2.139"
+status = "planned"
+
+[[family]]
+code = 20
+name = "HSG.land_lease"
+kind = "contract"
+step = "S2.139"
+status = "planned"
+
+[[family]]
+code = 21
+name = "SRV.storage"
+kind = "contract"
+step = "S2.163"
+status = "planned"
+
+[[family]]
+code = 22
+name = "FRT.pass"
+kind = "contract"
+step = "S2.172"
+status = "planned"
+
+[[family]]
+code = 23
+name = "term_deposits"
+kind = "contract"
+step = "S2.177"
+status = "planned"
+
+[[family]]
+code = 24
+name = "ENE.supply"
+kind = "contract"
+step = "S2.204"
+status = "planned"
+
+[[family]]
+code = 25
+name = "ENE.wholesale_supply"
+kind = "contract"
+step = "S2.204"
+status = "planned"
+
+[[family]]
+code = 26
+name = "MMK.interbank_loan"
+kind = "contract"
+step = "S3.101"
+status = "planned"
+
+[[family]]
+code = 27
+name = "MMK.master_agreement"
+kind = "contract"
+step = "S3.101"
+status = "planned"
+
+[[family]]
+code = 28
+name = "MMK.repo"
+kind = "contract"
+step = "S3.106"
+status = "planned"
+
+[[family]]
+code = 29
+name = "FRM.guarantee"
+kind = "contract"
+step = "S3.157"
+status = "planned"
+
+[[family]]
+code = 30
+name = "DLR.intra_group_line"
+kind = "contract"
+step = "S3.163"
+status = "planned"
+
+[[family]]
+code = 31
+name = "DLR.primary_dealer"
+kind = "contract"
+step = "S3.171"
+status = "planned"
+
+[[family]]
+code = 32
+name = "DLR.sec_loan"
+kind = "contract"
+step = "S3.175"
+status = "planned"
+
+[[family]]
+code = 33
+name = "FND.management"
+kind = "contract"
+step = "S3.182"
+status = "planned"
+
+[[family]]
+code = 34
+name = "DRV.contract"
+kind = "contract"
+step = "S4.101"
+status = "planned"
+
+[[family]]
+code = 35
+name = "DRV.agreement"
+kind = "contract"
+step = "S4.101"
+status = "planned"
+
+[[family]]
+code = 36
+name = "DRV.membership"
+kind = "contract"
+step = "S4.102"
+status = "planned"
+
+[[family]]
+code = 37
+name = "DRV.margin"
+kind = "contract"
+step = "S4.108"
+status = "planned"
+
+[[family]]
+code = 38
+name = "DRV.clearing"
+kind = "contract"
+step = "S4.105"
+status = "planned"
+
+[[family]]
+code = 39
+name = "DRV.fund"
+kind = "contract"
+step = "S4.111"
+status = "planned"
+
+[[family]]
+code = 40
+name = "INS.policy"
+kind = "contract"
+step = "S4.125"
+status = "planned"
+
+[[family]]
+code = 41
+name = "INS.annuity"
+kind = "contract"
+step = "S4.125"
+status = "planned"
+
+[[family]]
+code = 42
+name = "INS.firm_policy"
+kind = "contract"
+step = "S4.125"
+status = "planned"
+
+[[family]]
+code = 43
+name = "INS.treaty"
+kind = "contract"
+step = "S4.125"
+status = "planned"
+
+[[family]]
+code = 44
+name = "INS.damages"
+kind = "contract"
+step = "S4.134"
+status = "planned"
+
+[[family]]
+code = 45
+name = "TAX.corporate_due"
+kind = "contract"
+step = "S5.110"
+status = "planned"
+
+[[family]]
+code = 46
+name = "TAX.arrear"
+kind = "contract"
+step = "S5.115"
+status = "planned"
+
+[[family]]
+code = 47
+name = "SOC.appropriation"
+kind = "contract"
+step = "S5.127"
+status = "planned"
+
+[[family]]
+code = 48
+name = "POL.membership"
+kind = "contract"
+step = "S5.136"
+status = "planned"
+
+[[family]]
+code = 49
+name = "POL.candidacy"
+kind = "contract"
+step = "S5.136"
+status = "planned"
+
+[[family]]
+code = 50
+name = "POL.public_funding"
+kind = "contract"
+step = "S5.141"
+status = "planned"
+
+[[family]]
+code = 51
+name = "POL.deposit"
+kind = "contract"
+step = "S5.141"
+status = "planned"
+
+[[family]]
+code = 52
+name = "POL.appointment"
+kind = "contract"
+step = "S5.142"
+status = "planned"
+
+[[family]]
+code = 53
+name = "CB.swap_line"
+kind = "contract"
+step = "S5.184"
+status = "planned"
+
+[[family]]
+code = 54
+name = "TEC.licence"
+kind = "contract"
+step = "S6.110"
+status = "planned"
+
+[[family]]
+code = 55
+name = "DEM.schooling"
+kind = "contract"
+step = "S6.117"
+status = "planned"
+
+[[family]]
+code = 56
+name = "messages_due"
+kind = "dated_reason"
+step = "S1.237"
+status = "planned"
+
+[[family]]
+code = 57
+name = "commitments"
+kind = "dated_reason"
+step = "S1.251"
+status = "planned"
+
+[[family]]
+code = 58
+name = "rate_kinks"
+kind = "dated_reason"
+step = "S1.289"
+status = "planned"
+
+[[family]]
+code = 59
+name = "shipments"
+kind = "dated_reason"
+step = "S1.287"
+status = "planned"
+
+[[family]]
+code = 60
+name = "projects"
+kind = "dated_reason"
+step = "S1.287"
+status = "planned"
+
+[[family]]
+code = 61
+name = "production"
+kind = "dated_reason"
+step = "S1.287"
+status = "planned"
+
+[[family]]
+code = 62
+name = "spells"
+kind = "dated_reason"
+step = "S1.287"
+status = "planned"
+
+[[family]]
+code = 63
+name = "offer_lapses"
+kind = "dated_reason"
+step = "S1.296"
+status = "planned"
+
+[[family]]
+code = 64
+name = "notice_periods"
+kind = "dated_reason"
+step = "S1.417"
+status = "planned"
+
+[[family]]
+code = 65
+name = "benefit_claims"
+kind = "dated_reason"
+step = "S1.421"
+status = "planned"
+
+[[family]]
+code = 66
+name = "grace_ends"
+kind = "dated_reason"
+step = "S1.428"
+status = "planned"
+
+[[family]]
+code = 67
+name = "price_releases"
+kind = "dated_reason"
+step = "S1.475"
+status = "planned"
+
+[[family]]
+code = 68
+name = "labour_releases"
+kind = "dated_reason"
+step = "S1.476"
+status = "planned"
+
+[[family]]
+code = 69
+name = "covenant_tests"
+kind = "dated_reason"
+step = "S2.105"
+status = "planned"
+
+[[family]]
+code = 70
+name = "filing_dates"
+kind = "dated_reason"
+step = "S2.108"
+status = "planned"
+
+[[family]]
+code = 71
+name = "credit_records"
+kind = "dated_reason"
+step = "S2.109"
+status = "planned"
+
+[[family]]
+code = 72
+name = "class_reviews"
+kind = "dated_reason"
+step = "S2.182"
+status = "planned"
+
+[[family]]
+code = 73
+name = "record_dates"
+kind = "dated_reason"
+step = "S3.150"
+status = "planned"
+
+[[family]]
+code = 74
+name = "conversion_dates"
+kind = "dated_reason"
+step = "S3.160"
+status = "planned"
+
+[[family]]
+code = 75
+name = "remittance_windows"
+kind = "dated_reason"
+step = "S5.107"
+status = "planned"
+
+[[family]]
+code = 76
+name = "constitutional_dates"
+kind = "dated_reason"
+step = "S5.135"
+status = "planned"
+
+[[family]]
+code = 77
+name = "election_days"
+kind = "dated_reason"
+step = "S5.142"
+status = "planned"
+
+[[family]]
+code = 78
+name = "TAX.collected"
+kind = "contract"
+step = "S1.270"
+status = "declared"
+
+[[family]]
+code = 79
+name = "TAX.collected_public"
+kind = "contract"
+step = "S1.270"
+status = "declared"

@@ -1,3 +1,4 @@
+pub mod families;
 pub mod forms;
 pub mod limit;
 pub mod profile;
@@ -16,6 +17,7 @@ use serde::Deserialize;
 
 use crate::calendar::period::Period;
 use crate::consts::MONTHS_PER_QUARTER;
+use crate::register::families::{FamilyCode, FamilyCodes};
 use crate::register::forms::{FormDecl, FormEntry, Forms};
 use crate::register::units::{UnitDecl, UnitEntry, Units};
 use crate::register::values::{PrimType, PrimValue, ValueType, parse};
@@ -269,20 +271,20 @@ impl RegisterBuilder {
         }
         let mut found: Vec<Vec<Option<(PrimValue, EntryMeta)>>> =
             self.decls.iter().map(|d| vec![None; if d.scope == Scope::Shared { 1 } else { countries }]).collect();
-        let mut unit_decls = Vec::new();
-        let mut form_decls = Vec::new();
+        let mut world = WorldDecls::default();
         for file in files {
-            let (entries, units, forms) = match read_file(&file.text) {
-                Ok(f) => (f.primitive, f.unit, f.form),
+            let mut read = match read_file(&file.text) {
+                Ok(f) => f,
                 Err(e) => {
                     errors.push(format!("{}: {e}", file.path));
                     continue;
                 }
             };
-            if !units.is_empty() && file.country != Missing::Absent {
+            if !read.unit.is_empty() && file.country != Missing::Absent {
                 errors.push(format!("{}: units are the world's, declared in its own files", file.path));
             }
-            world_decls(file, forms, units, &mut form_decls, &mut unit_decls, &mut errors);
+            let entries = std::mem::take(&mut read.primitive);
+            world_decls(file, read, &mut world, &mut errors);
             for entry in entries {
                 let found_at = by_id.binary_search_by(|(id, _)| (*id).cmp(entry.id.as_str()));
                 let Some(i) = found_at.ok().and_then(|at| by_id.get(at)).map(|(_, i)| *i) else {
@@ -328,36 +330,44 @@ impl RegisterBuilder {
                 sources.push(metas);
             }
         }
-        let units = Units::new(unit_decls).map_err(|mut e| {
+        let units = Units::new(world.units).map_err(|mut e| {
             errors.append(&mut e);
         });
-        let forms = Forms::new(form_decls).map_err(|mut e| {
+        let forms = Forms::new(world.forms).map_err(|mut e| {
             errors.append(&mut e);
         });
-        match (units, forms) {
-            (Ok(units), Ok(forms)) if errors.is_empty() => {
-                Ok(Register { decls: self.decls, stored, sources, units, forms, countries })
+        let families = FamilyCodes::new(world.families).map_err(|mut e| {
+            errors.append(&mut e);
+        });
+        match (units, forms, families) {
+            (Ok(units), Ok(forms), Ok(families)) if errors.is_empty() => {
+                Ok(Register { decls: self.decls, stored, sources, units, forms, families, countries })
             }
             _ => Err(errors),
         }
     }
 }
 
-/// A file's rule forms and units, which only the world's own files declare.
-fn world_decls(
-    file: &DataFile,
-    forms: Vec<FormEntry>,
-    units: Vec<UnitEntry>,
-    form_decls: &mut Vec<FormDecl>,
-    unit_decls: &mut Vec<UnitDecl>,
-    errors: &mut Vec<String>,
-) {
-    if !forms.is_empty() && file.country != Missing::Absent {
+/// The rule forms, units and family codes the world's own files declare.
+#[derive(Default)]
+struct WorldDecls {
+    forms: Vec<FormDecl>,
+    units: Vec<UnitDecl>,
+    families: Vec<FamilyCode>,
+}
+
+/// A file's rule forms, units and family codes, which only the world's own files declare.
+fn world_decls(file: &DataFile, read: File, world: &mut WorldDecls, errors: &mut Vec<String>) {
+    if !read.form.is_empty() && file.country != Missing::Absent {
         errors.push(format!("{}: rule forms are the world's, declared in its own files", file.path));
     }
-    for f in forms {
+    if !read.family.is_empty() && file.country != Missing::Absent {
+        errors.push(format!("{}: family codes are the world's, declared in its own files", file.path));
+    }
+    world.families.extend(read.family);
+    for f in read.form {
         match source(&f.source) {
-            Ok(src) => form_decls.push(FormDecl {
+            Ok(src) => world.forms.push(FormDecl {
                 id: f.id,
                 owner: f.owner,
                 reason: f.reason,
@@ -367,9 +377,9 @@ fn world_decls(
             Err(e) => errors.push(format!("{}: form `{}`: {e}", file.path, f.id)),
         }
     }
-    for u in units {
+    for u in read.unit {
         match source(&u.source) {
-            Ok(src) => unit_decls.push(UnitDecl {
+            Ok(src) => world.units.push(UnitDecl {
                 name: u.name,
                 kind: u.kind,
                 price_exp: u.price_exp,
@@ -405,6 +415,7 @@ pub struct Register {
     sources: Vec<Vec<EntryMeta>>,
     units: Units,
     forms: Forms,
+    families: FamilyCodes,
     countries: usize,
 }
 
@@ -431,6 +442,12 @@ impl Register {
     #[must_use]
     pub fn forms(&self) -> &Forms {
         &self.forms
+    }
+
+    /// Every family's fixed code.
+    #[must_use]
+    pub fn family_codes(&self) -> &FamilyCodes {
+        &self.families
     }
 
     fn stored(&self, index: u32) -> &Stored {
@@ -700,6 +717,8 @@ struct File {
     unit: Vec<UnitEntry>,
     #[serde(default)]
     form: Vec<FormEntry>,
+    #[serde(default)]
+    family: Vec<FamilyCode>,
 }
 
 /// A development level, whose templates a country's data is instantiated from.

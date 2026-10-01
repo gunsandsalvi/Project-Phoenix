@@ -4,7 +4,7 @@
 
 use phx_store::consts::VA_BUDGET;
 
-use super::{AGENT_ROWS, Growth, LINK_BITS, family_code, slot_fits, table};
+use super::{AGENT_ROWS, Growth, LINK_BITS, slot_fits, table};
 use crate::consts::{CHUNK_ROWS, GROWTH_DIVISOR, GROWTH_YEARS, HOLDINGS_CODE, LONGEST_QUARTER_DAYS, WHEEL_DAYS};
 
 #[test]
@@ -39,11 +39,7 @@ fn wheel_horizon_covers_a_quarter() {
 }
 
 #[test]
-fn family_code_holds_255() {
-    assert_eq!(family_code(0), Some(0));
-    assert_eq!(family_code(254), Some(254));
-    assert_eq!(family_code(255), None, "255 is holdings'");
-    assert_eq!(family_code(300), None);
+fn link_holds_255_codes() {
     assert_eq!(HOLDINGS_CODE, u8::MAX);
     assert!(slot_fits((1 << 24) - 1) && !slot_fits(1 << 24));
     assert_eq!(std::hint::black_box(LINK_BITS), u32::BITS);

@@ -181,7 +181,6 @@ pub const phx_core::capacity::KIND_ROWS: u32  // used by: phx-world
 pub const phx_core::capacity::LINK_BITS: u32
 pub const phx_core::capacity::PERSON_ARENA_WORDS: u32  // used by: phx-pop
 pub const phx_core::capacity::WHEEL_DAYS: u32  // used by: phx-world
-pub fn phx_core::capacity::family_code(usize) -> core::option::Option<u8>
 pub const fn phx_core::capacity::slot_fits(u32) -> bool
 pub fn phx_core::capacity::table() -> impl core::iter::traits::iterator::Iterator<Item = phx_core::capacity::Capacity>  // used by: phx-check, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
 pub mod phx_core::catalogue  // used by: phx-fin
@@ -212,6 +211,7 @@ pub phx_core::catalogue::decls::DecisionEntry::system: &'a str  // used by: phx-
 pub phx_core::catalogue::decls::DecisionEntry::taker: &'a str  // used by: phx-fin
 pub struct phx_core::catalogue::decls::Declared<'a>  // used by: phx-fin, phx-num, phx-pop, phx-world
 pub phx_core::catalogue::decls::Declared::capitals: &'a [phx_core::catalogue::decls::CapitalDecl<'a>]  // used by: phx-fin
+pub phx_core::catalogue::decls::Declared::codes: &'a [phx_core::register::families::FamilyCode]  // used by: phx-fin, phx-world
 pub phx_core::catalogue::decls::Declared::decisions: &'a [phx_core::catalogue::decls::DecisionEntry<'a>]  // used by: if-credit, if-labour, if-state, phx-cli, phx-fin, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub phx_core::catalogue::decls::Declared::families: &'a [phx_core::catalogue::decls::FamilyDecl<'a>]  // used by: phx-cli, phx-fin, phx-obs, phx-world
 pub phx_core::catalogue::decls::Declared::forms: &'a [phx_core::catalogue::decls::FormDecl<'a>]  // used by: phx-fin, phx-world
@@ -278,6 +278,13 @@ pub phx_core::catalogue::decls::WayDecl::name: &'a str  // used by: if-pop, phx-
 pub phx_core::catalogue::decls::WayDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub mod phx_core::catalogue::refusals  // used by: phx-check, phx-world
 pub fn phx_core::catalogue::refusals::compile(&phx_core::catalogue::decls::Declared<'_>) -> core::result::Result<phx_core::catalogue::Catalogue, alloc::vec::Vec<alloc::string::String>>  // used by: phx-fin, phx-pop, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub enum phx_core::catalogue::FamilyKind  // used by: phx-fin
+pub phx_core::catalogue::FamilyKind::Contract  // used by: phx-fin
+pub phx_core::catalogue::FamilyKind::DatedReason
+pub enum phx_core::catalogue::FamilyStatus  // used by: phx-fin
+pub phx_core::catalogue::FamilyStatus::Declared  // used by: phx-fin, phx-num, phx-pop, phx-world
+pub phx_core::catalogue::FamilyStatus::Planned  // used by: phx-ledger
+pub phx_core::catalogue::FamilyStatus::Retired
 pub enum phx_core::catalogue::MarketForm  // used by: phx-fin
 pub phx_core::catalogue::MarketForm::Administered  // used by: phx-fin
 pub phx_core::catalogue::MarketForm::Bilateral  // used by: phx-fin
@@ -332,6 +339,7 @@ pub phx_core::catalogue::DecisionRow::office: u16  // used by: phx-fin, phx-worl
 pub phx_core::catalogue::DecisionRow::taker: phx_core::catalogue::KindH  // used by: phx-fin
 pub struct phx_core::catalogue::Declared<'a>  // used by: phx-fin, phx-num, phx-pop, phx-world
 pub phx_core::catalogue::Declared::capitals: &'a [phx_core::catalogue::decls::CapitalDecl<'a>]  // used by: phx-fin
+pub phx_core::catalogue::Declared::codes: &'a [phx_core::register::families::FamilyCode]  // used by: phx-fin, phx-world
 pub phx_core::catalogue::Declared::decisions: &'a [phx_core::catalogue::decls::DecisionEntry<'a>]  // used by: if-credit, if-labour, if-state, phx-cli, phx-fin, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub phx_core::catalogue::Declared::families: &'a [phx_core::catalogue::decls::FamilyDecl<'a>]  // used by: phx-cli, phx-fin, phx-obs, phx-world
 pub phx_core::catalogue::Declared::forms: &'a [phx_core::catalogue::decls::FormDecl<'a>]  // used by: phx-fin, phx-world
@@ -343,6 +351,16 @@ pub phx_core::catalogue::Declared::prims: &'a [&'a str]  // used by: phx-cli, ph
 pub phx_core::catalogue::Declared::products: &'a [phx_core::catalogue::decls::ProductDecl<'a>]  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub phx_core::catalogue::Declared::reasons: &'a [phx_core::catalogue::decls::ReasonDecl<'a>]  // used by: phx-fin
 pub phx_core::catalogue::Declared::ways: &'a [phx_core::catalogue::decls::WayDecl<'a>]  // used by: if-base, phx-fin, phx-world, sys-frm, sys-lab, sys-tec
+pub struct phx_core::catalogue::FamilyCode  // used by: phx-fin
+pub phx_core::catalogue::FamilyCode::code: u8  // used by: phx-fin, phx-id, phx-macros, phx-store, phx-world
+pub phx_core::catalogue::FamilyCode::kind: phx_core::register::families::FamilyKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::catalogue::FamilyCode::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::FamilyCode::status: phx_core::register::families::FamilyStatus  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store
+pub phx_core::catalogue::FamilyCode::step: alloc::string::String  // used by: phx-check, phx-fin, phx-geo, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-world, sys-dem
+pub struct phx_core::catalogue::FamilyCodes
+impl phx_core::register::families::FamilyCodes
+pub fn phx_core::register::families::FamilyCodes::new(alloc::vec::Vec<phx_core::register::families::FamilyCode>) -> core::result::Result<phx_core::register::families::FamilyCodes, alloc::vec::Vec<alloc::string::String>>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_core::register::families::FamilyCodes::rows(&self) -> &[phx_core::register::families::FamilyCode]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub struct phx_core::catalogue::FamilyDecl<'a>  // used by: phx-fin
 pub phx_core::catalogue::FamilyDecl::jobs: bool  // used by: phx-cli, phx-fin, phx-market, phx-world, sys-lab, sys-soc
 pub phx_core::catalogue::FamilyDecl::kinds: &'a [&'a str]  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
@@ -354,6 +372,7 @@ pub struct phx_core::catalogue::FamilyH(_)
 impl phx_core::catalogue::FamilyH
 pub const fn phx_core::catalogue::FamilyH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub struct phx_core::catalogue::FamilyRow
+pub phx_core::catalogue::FamilyRow::code: u8  // used by: phx-fin, phx-id, phx-macros, phx-store, phx-world
 pub phx_core::catalogue::FamilyRow::jobs: bool  // used by: phx-cli, phx-fin, phx-market, phx-world, sys-lab, sys-soc
 pub phx_core::catalogue::FamilyRow::kinds: phx_core::catalogue::Span  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
 pub phx_core::catalogue::FamilyRow::reason: phx_core::catalogue::ReasonH  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
@@ -1259,6 +1278,24 @@ impl phx_core::products::ProductEntry
 pub fn phx_core::products::ProductEntry::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub mod phx_core::register  // used by: phx-check, phx-cli, phx-macros, phx-market, phx-pop, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub use phx_core::register::Missing  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub mod phx_core::register::families  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub enum phx_core::register::families::FamilyKind  // used by: phx-fin
+pub phx_core::register::families::FamilyKind::Contract  // used by: phx-fin
+pub phx_core::register::families::FamilyKind::DatedReason
+pub enum phx_core::register::families::FamilyStatus  // used by: phx-fin
+pub phx_core::register::families::FamilyStatus::Declared  // used by: phx-fin, phx-num, phx-pop, phx-world
+pub phx_core::register::families::FamilyStatus::Planned  // used by: phx-ledger
+pub phx_core::register::families::FamilyStatus::Retired
+pub struct phx_core::register::families::FamilyCode  // used by: phx-fin
+pub phx_core::register::families::FamilyCode::code: u8  // used by: phx-fin, phx-id, phx-macros, phx-store, phx-world
+pub phx_core::register::families::FamilyCode::kind: phx_core::register::families::FamilyKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_core::register::families::FamilyCode::name: alloc::string::String  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::register::families::FamilyCode::status: phx_core::register::families::FamilyStatus  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store
+pub phx_core::register::families::FamilyCode::step: alloc::string::String  // used by: phx-check, phx-fin, phx-geo, phx-ledger, phx-market, phx-obs, phx-rand, phx-store, phx-world, sys-dem
+pub struct phx_core::register::families::FamilyCodes
+impl phx_core::register::families::FamilyCodes
+pub fn phx_core::register::families::FamilyCodes::new(alloc::vec::Vec<phx_core::register::families::FamilyCode>) -> core::result::Result<phx_core::register::families::FamilyCodes, alloc::vec::Vec<alloc::string::String>>  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_core::register::families::FamilyCodes::rows(&self) -> &[phx_core::register::families::FamilyCode]  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-macros, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-lab, sys-tec
 pub mod phx_core::register::forms  // used by: phx-world
 pub struct phx_core::register::forms::FormDecl
 pub phx_core::register::forms::FormDecl::id: alloc::string::String  // used by: if-base, phx-check, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
@@ -1681,6 +1718,7 @@ pub fn phx_core::register::Register::countries(&self) -> usize  // used by: phx-
 pub fn phx_core::register::Register::counts_per_country(&self, &str) -> core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>  // used by: phx-world
 pub fn phx_core::register::Register::decl_by_id(&self, &str) -> core::result::Result<&phx_core::register::PrimDecl, alloc::string::String>  // used by: phx-world, sys-bnk, sys-lab, sys-tax
 pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::Result<&phx_core::register::values::Distribution, alloc::string::String>  // used by: phx-val, phx-world, sys-dem, sys-frm
+pub fn phx_core::register::Register::family_codes(&self) -> &phx_core::register::families::FamilyCodes
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-fin, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
 pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>  // used by: phx-world, sys-idx, sys-lab, sys-soc, sys-sta
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms  // used by: phx-world
@@ -3036,6 +3074,7 @@ pub fn phx_core::register::Register::countries(&self) -> usize  // used by: phx-
 pub fn phx_core::register::Register::counts_per_country(&self, &str) -> core::result::Result<alloc::vec::Vec<u64>, alloc::string::String>  // used by: phx-world
 pub fn phx_core::register::Register::decl_by_id(&self, &str) -> core::result::Result<&phx_core::register::PrimDecl, alloc::string::String>  // used by: phx-world, sys-bnk, sys-lab, sys-tax
 pub fn phx_core::register::Register::distribution(&self, &str) -> core::result::Result<&phx_core::register::values::Distribution, alloc::string::String>  // used by: phx-val, phx-world, sys-dem, sys-frm
+pub fn phx_core::register::Register::family_codes(&self) -> &phx_core::register::families::FamilyCodes
 pub fn phx_core::register::Register::fixed(&self, &str) -> core::result::Result<f64, alloc::string::String>  // used by: phx-check, phx-fin, phx-ledger, phx-num, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov
 pub fn phx_core::register::Register::fixed_in(&self, &str, phx_id::ids::CountryId) -> core::result::Result<f64, alloc::string::String>  // used by: phx-world, sys-idx, sys-lab, sys-soc, sys-sta
 pub fn phx_core::register::Register::forms(&self) -> &phx_core::register::forms::Forms  // used by: phx-world

@@ -9,6 +9,7 @@ use super::{
     Catalogue, DecisionRow, FamilyH, FamilyRow, FormH, FormRow, GateH, GradeH, KindH, KindRow, LineH, MarketRow, Names,
     ProductH, ReasonH, ReasonRow, Span,
 };
+use super::{FamilyCode, FamilyKind, FamilyStatus};
 use crate::consts::{FAMILY_CODES, FAMILY_SLOTS, PARTY_KINDS};
 use crate::kinds::{Feature, Owners};
 
@@ -238,10 +239,30 @@ fn parties(tables: &Tables<'_>, decl: &Declared<'_>, cat: &mut Catalogue, refuse
                 cat.family_kinds.push(KindH(kind));
             }
         }
-        if let Some(reason) = reason {
+        let code = family_code(decl.codes, item, refused);
+        if let (Some(reason), Some(code)) = (reason, code) {
             let kinds = span(from, cat.family_kinds.len());
-            cat.families.push(FamilyRow { reason: ReasonH(reason), kinds, jobs: f.jobs });
+            cat.families.push(FamilyRow { code, reason: ReasonH(reason), kinds, jobs: f.jobs });
         }
+    }
+}
+
+/// A declared family's code, its row's: refused where it has none, or its row is retired or a dated reason's.
+fn family_code(codes: &[FamilyCode], (system, name): (&str, &str), refused: &mut Vec<String>) -> Option<u8> {
+    let Some(row) = codes.iter().find(|r| r.name == name) else {
+        refused.push(format!("{system}'s family `{name}` has no row in the family codes"));
+        return None;
+    };
+    match (row.status, row.kind) {
+        (FamilyStatus::Retired, _) => {
+            refused.push(format!("{system}'s family `{name}` is retired; its code {} is never reissued", row.code));
+            None
+        }
+        (_, FamilyKind::DatedReason) => {
+            refused.push(format!("{system}'s family `{name}` holds a dated reason's row, not a contract's"));
+            None
+        }
+        _ => Some(row.code),
     }
 }
 

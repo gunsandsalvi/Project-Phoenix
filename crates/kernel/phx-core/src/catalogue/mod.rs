@@ -8,6 +8,7 @@ pub mod refusals;
 
 use phx_num::Missing;
 
+pub use crate::register::families::{FamilyCode, FamilyCodes, FamilyKind, FamilyStatus};
 pub use decls::{
     CapitalDecl, DecisionEntry, Declared, FamilyDecl, FormDecl, HazardEntry, KindEntry, LineDecl, MarketDecl,
     MarketForm, MeetingDays, ProductDecl, ReasonDecl, WayDecl,
@@ -106,9 +107,10 @@ pub struct KindRow {
     pub place: Place,
 }
 
-/// A compiled family: its reason, the kinds its sides may be, and whether it is a job or a debt.
+/// A compiled family: its fixed code, its reason, the kinds its sides may be, and whether it is a job or a debt.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FamilyRow {
+    pub code: u8,
     pub reason: ReasonH,
     pub kinds: Span,
     pub jobs: bool,

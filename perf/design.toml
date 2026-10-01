@@ -79,8 +79,8 @@ unit_ids = 110_000               # S1.183: about 110 a zone
 [store.contracts]   # S1.257's families (codes S1.181's), rows at the design point; 34.6 M rows, 859.2 MB (43.2 M, 1 074.0 at the steps' counts)
 "LAB.employment" = 3_040_000
 "LAB.public_employment" = 560_000
-"BNK.household_loan" = 1_440_000
-"BNK.firm_loan" = 360_000
+"BNK.household_loans" = 1_440_000
+"BNK.firm_loans" = 360_000
 "SOC.benefit" = 600_000
 "SOC.benefit_flat" = 600_000
 "SOC.pension" = 1_800_000

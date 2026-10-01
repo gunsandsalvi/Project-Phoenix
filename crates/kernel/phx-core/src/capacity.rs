@@ -3,8 +3,8 @@
 //! stops the run at a literal ceiling.
 
 use crate::consts::{
-    CHUNK_ROWS, EVENT_WORDS, EVENTS_UNPRUNED, FAMILY_BITS, GROWTH_DIVISOR, GROWTH_YEARS, HOLDINGS_CODE,
-    HOUSEHOLD_WORDS, INSTITUTIONS, INSTRUMENTS, LONGEST_QUARTER_DAYS, PERSONS, SLOT_BITS, STORES,
+    CHUNK_ROWS, EVENT_WORDS, EVENTS_UNPRUNED, FAMILY_BITS, GROWTH_DIVISOR, GROWTH_YEARS, HOUSEHOLD_WORDS, INSTITUTIONS,
+    INSTRUMENTS, LONGEST_QUARTER_DAYS, PERSONS, SLOT_BITS, STORES,
 };
 
 /// Days the due wheel files ahead.
@@ -56,13 +56,6 @@ pub const ARENA_WORDS: u32 = EVENT_ROWS * EVENT_WORDS;
 pub const PERSON_ARENA_WORDS: u32 = CHUNK_ROWS * HOUSEHOLD_WORDS;
 /// Instruments the register holds.
 pub const INSTRUMENT_ROWS: u32 = capacity(&INSTRUMENTS).rows;
-
-/// A family's code for its index among the declared families: the codes below the one reserved for holdings;
-/// `None` for a family past them.
-#[must_use]
-pub fn family_code(index: usize) -> Option<u8> {
-    u8::try_from(index).ok().filter(|code| *code < HOLDINGS_CODE)
-}
 
 /// Whether a slot fits beside its family code in one link.
 #[must_use]
