@@ -1,11 +1,12 @@
 //! Freight on the core. Each firm selling carriage carries by one mode, drawn at the opening by the modes' shares of
 //! carriage's employment. On its shipping schedule a firm holding its own product beyond what its cover asks weighs
 //! carrying whole lots of it to each other region of its country: what a lot fetches there against here and the freight
-//! out by each mode posted at its region that joins the two, the widest gap first. The carriage meeting at each origin
-//! and mode books each consignment with the cheapest carrier with room for its trip out and back, refusing one whose
-//! route crosses a segment already carrying its day's tonnes; the freight is paid with the day's flows, and once it
-//! settles the goods are pledged to the carrier, on their way until their day, when they arrive at the cost they left
-//! with.
+//! out by each mode posted at its region that joins the two, the widest gap first, its length the route the network
+//! gives between the regions' market zones. The carriage meeting at each origin and mode books each consignment with
+//! the cheapest carrier with room for its trip out and back, refusing one whose route crosses a segment already
+//! carrying its day's tonnes, which every meeting of the day loads; the freight is paid with the day's flows, and once
+//! it settles the goods are pledged to the carrier, on their way until their day, when they arrive at the cost they
+//! left with.
 
 use std::collections::BTreeMap;
 
@@ -14,6 +15,7 @@ use phx_core::goods::{Bound, Carriage, Good, Held, Shipment, Shipments};
 use phx_core::slots::DaySlot;
 use phx_core::{StreamDef, WorldStreams};
 use phx_geo::GeoState;
+use phx_geo::transport::{Route, SegmentUse};
 use phx_id::{CountryId, Day, PartyKey};
 use phx_macros::{clause, opening};
 use phx_market::carriage::{Carrier, Consignment, FreightTech, carriage, freight, transit_days};
@@ -41,8 +43,8 @@ pub struct Booking {
 }
 
 /// What freight did on a day: the shippers who weighed carrying and those who chose to, the consignments booked, those
-/// no carrier had room for and those a full segment refused, the trips whose freight failed, the units that left and
-/// arrived, and the shipments on their way at the close.
+/// no carrier had room for, those a full segment refused and those no route served, the trips whose freight failed,
+/// the units that left and arrived, and the shipments on their way at the close.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
 pub struct FreightDay {
     pub day: u32,
@@ -51,35 +53,43 @@ pub struct FreightDay {
     pub booked: u64,
     pub no_room: u64,
     pub over_capacity: u64,
+    pub no_route: u64,
     pub unpaid: u64,
     pub departed: i64,
     pub arrived: i64,
     pub on_the_way: u64,
 }
 
-/// Freight: its technology, each carrier's mode, each mode's route and its length between every two regions' market
-/// zones,
-/// the days between a shipper's decisions and the day freight opened, the shipments on their way, today's bookings, the
-/// days' records.
+/// Freight: its technology, each carrier's mode, each region's market zone, the days between a shipper's decisions and
+/// the day freight opened, the shipments on their way, today's bookings and the segments' loads, the days' records.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Freight {
     tech: FreightTech,
     pub modes: BTreeMap<PartyKey, u16>,
-    lengths: BTreeMap<(u16, u32, u32), u64>,
-    routes: BTreeMap<(u16, u32, u32), Vec<usize>>,
+    markets: Vec<u16>,
     shipping_days: u32,
     began: u32,
     pub shipments: Option<Shipments>,
     bookings: Vec<Booking>,
+    #[saved(skip, rebuild = Freight::unloaded)]
+    used: SegmentUse,
     pub days: Vec<FreightDay>,
     today: FreightDay,
+}
+
+impl Freight {
+    /// A loaded world's segments carry nothing yet: a save is taken at a close, and loads are the day's.
+    fn unloaded(&mut self) -> u64 {
+        self.used = SegmentUse::default();
+        0
+    }
 }
 
 /// The day's carriage offers at each region and mode: each carrier, its posted price for a lot and its room today.
 type Offers = BTreeMap<(u32, u16), Vec<(PartyKey, i64, i64)>>;
 
 /// A consignment weighed at an origin: its shipper, the good it leaves as and arrives as, its units, the tonnes and
-/// the trip's tonne-km, its route's segments and days, and the freight it would pay a lot.
+/// the trip's tonne-km, the regions it runs between and its days.
 struct Weighed {
     shipper: PartyKey,
     from: u16,
@@ -87,13 +97,13 @@ struct Weighed {
     units: i64,
     tonnes: f64,
     km: f64,
-    segments: Vec<usize>,
+    regions: (u32, u32),
     days: u32,
 }
 
 impl Core {
     /// Freight opened: its technology, each carrier's mode drawn by the modes' shares of carriage's employment, and
-    /// each mode's route lengths between the regions' market zones.
+    /// each region's market zone, where its routes begin and end.
     ///
     /// # Errors
     /// Freight's tables unread.
@@ -109,24 +119,14 @@ impl Core {
         let shares = register.table1(sys_frt::MODE_SHARE.id)?.values().to_vec();
         let whole: i64 = shares.iter().sum();
         let shipping_days = u32::try_from(register.count(sys_frt::SHIPPING_DAYS.id)?).map_err(|e| e.to_string())?;
-        let zones = geo.market_zones();
-        let zone_of = |r: usize| match zones.get(r) {
-            Some(Missing::Present(z)) => Some(*z),
-            _ => None,
-        };
-        let all = geo.network.lengths();
-        let mut lengths = BTreeMap::new();
-        let mut routes = BTreeMap::new();
-        for ((mode, from, to), metres) in &all {
-            for a in (0..regions.len()).filter(|a| zone_of(*a) == Some(*from)) {
-                for b in (0..regions.len()).filter(|b| zone_of(*b) == Some(*to)) {
-                    let (Ok(ra), Ok(rb)) = (u32::try_from(a), u32::try_from(b)) else { continue };
-                    let Some(route) = geo.network.route(*mode, *from, *to) else { continue };
-                    lengths.insert((*mode, ra, rb), *metres);
-                    routes.insert((*mode, ra, rb), route.segments);
-                }
-            }
-        }
+        let markets = geo
+            .market_zones()
+            .into_iter()
+            .map(|z| match z {
+                Missing::Present(z) => u16::try_from(z.get()).map_err(|e| e.to_string()),
+                Missing::Absent => Err("a region with no market zone".to_owned()),
+            })
+            .collect::<Result<Vec<u16>, String>>()?;
         let mut modes = BTreeMap::new();
         if let Some(firm) = self.bound.kinds.firm
             && whole > 0
@@ -153,8 +153,7 @@ impl Core {
         self.freight = Freight {
             tech,
             modes,
-            lengths,
-            routes,
+            markets,
             shipping_days,
             began: today.get(),
             shipments: Some(Shipments::new(today.succ(), phx_core::capacity::WHEEL_DAYS)),
@@ -194,7 +193,7 @@ impl Core {
             if !self.is_stored(f.product) || !ctx.calendar.is_business(country, day) {
                 continue;
             }
-            if let Some((mode, w)) = self.weigh(ctx, (&f, deciding), &offers) {
+            if let Some((mode, w)) = self.weigh((ctx, geo), (&f, deciding), &offers) {
                 by_origin.entry((f.region, mode)).or_default().push(w);
             }
         }
@@ -211,7 +210,7 @@ impl Core {
     /// where a lot fetches most above its own price less the freight out, when its decision is to carry.
     fn weigh(
         &mut self,
-        ctx: &crate::core_goods::GoodsCtx<'_>,
+        (ctx, geo): (&crate::core_goods::GoodsCtx<'_>, &GeoState),
         (f, deciding): (&crate::core_goods::Firm, crate::core_decide::Bound<sys_frt::points::ShipIn, bool>),
         offers: &Offers,
     ) -> Option<(u16, Weighed)> {
@@ -237,11 +236,12 @@ impl Core {
             for ((_, mode), carriers) in offers.range((f.region, 0)..=(f.region, u16::MAX)) {
                 let mode = *mode;
                 let lowest = lowest_price(carriers);
-                let (Some(metres), Some(price)) =
-                    (self.freight.lengths.get(&(mode, f.region, *region)).copied(), lowest)
+                let (Missing::Present(route), Some(price)) =
+                    (self.route_between(geo, mode, (f.region, *region)), lowest)
                 else {
                     continue;
                 };
+                let metres = route.metres;
                 let Some(out) =
                     freight(&self.freight.tech, (f.product, lot_units), (mode, metres), (price, carriage_lot))
                 else {
@@ -266,7 +266,6 @@ impl Core {
         self.freight.today.chose += 1;
         let units = lots * lot_units;
         let units_a_tonne = self.freight.tech.units_a_tonne.get(usize::from(f.product)).copied()?;
-        let route = self.route_of(mode, (f.region, to_region))?;
         let speed = self.freight.tech.metres_a_day.get(usize::from(mode)).copied()?;
         let loading = self.freight.tech.loading_days.get(usize::from(mode)).copied()?;
         let from = self.good_unit(f.product, f.region);
@@ -280,7 +279,7 @@ impl Core {
                 units,
                 tonnes: from_i64(units) / units_a_tonne,
                 km: from_u64(metres) / phx_market::consts::METRES_A_KM,
-                segments: route,
+                regions: (f.region, to_region),
                 days: transit_days(metres, speed, loading),
             },
         ))
@@ -302,25 +301,25 @@ impl Core {
                 Some(Carrier { carrier: id, price: PriceRaw::from_raw(*price), room: *room })
             })
             .collect();
-        let consignments: Vec<Consignment> = weighed
+        let consignments: Vec<Consignment<'_>> = weighed
             .iter()
             .filter_map(|w| {
                 let id = self.kinds.get(usize::from(w.shipper.kind()))?.parties.id(w.shipper.slot())?;
                 let need = floor_to_i64((2.0 * w.tonnes * w.km).ceil())?;
                 let load = floor_to_i64(w.tonnes.ceil())?;
-                Some(Consignment { shipper: id, need, load, segments: w.segments.clone() })
+                Some(Consignment { shipper: id, need, load, route: self.route_between(geo, mode, w.regions) })
             })
             .collect();
-        let mut left: Vec<i64> =
-            geo.network.segments.iter().map(|s| i64::try_from(s.tonnes).unwrap_or(i64::MAX)).collect();
         let subject = Subject::new(SubjectTag::Region, u64::from(origin) << u16::BITS | u64::from(mode));
         let Some(lot) = streams.named(sys_frt::LotStream::DECL.name) else {
             violation!(clause = "FRT.7", "the carriage lot's stream is not declared");
         };
         let mut d = streams.open_at(&lot, subject, day, DaySlot::S6b.ordinal());
-        let outcome = carriage(&offers, &consignments, &mut left, &mut d);
+        let outcome =
+            carriage(&offers, &consignments, (&geo.transport.segments, &mut self.freight.used), (&mut d, day));
         self.freight.today.no_room += phx_rand::float::len_u64(outcome.no_room.len());
         self.freight.today.over_capacity += phx_rand::float::len_u64(outcome.over_capacity.len());
+        self.freight.today.no_route += phx_rand::float::len_u64(outcome.no_route.len());
         let carriage_lot = self.lot(self.freight.tech.carriage_product);
         let Some(per_tonne_km) = self.freight.tech.carriage_a_tonne_km.get(usize::from(mode)).copied() else {
             violation!(clause = "FRT.7", "a mode with no carriage a tonne-km", mode = mode);
@@ -413,7 +412,7 @@ impl Core {
     /// gap between its marks a lot, with the least freight of a lot between them by a mode posted at either.
     #[clause("GDS.11", "FRT.10")]
     #[must_use]
-    pub fn basis(&self, regions: &[CountryId]) -> Vec<(f64, f64)> {
+    pub fn basis(&self, regions: &[CountryId], geo: &GeoState) -> Vec<(f64, f64)> {
         let carriage_lot = self.lot(self.freight.tech.carriage_product);
         let offers = self.carriage_offers();
         let lowest = |at: u32, mode: u16| lowest_price(offers.get(&(at, mode))?);
@@ -431,7 +430,8 @@ impl Core {
                     .iter()
                     .flat_map(|at| offers.range((*at, 0)..=(*at, u16::MAX)).map(move |((_, m), _)| (*m, *at)))
                     .filter_map(|(mode, at)| {
-                        let metres = self.freight.lengths.get(&(mode, *from, *to)).copied()?;
+                        let Missing::Present(route) = self.route_between(geo, mode, (*from, *to)) else { return None };
+                        let metres = route.metres;
                         let price = lowest(at, mode)?;
                         freight(&self.freight.tech, (*product, lot), (mode, metres), (price, carriage_lot))
                     })
@@ -486,9 +486,14 @@ impl Core {
         out
     }
 
-    /// A mode's route between two regions' market zones, by its segments.
-    fn route_of(&self, mode: u16, (from, to): (u32, u32)) -> Option<Vec<usize>> {
-        self.freight.routes.get(&(mode, from, to)).cloned()
+    /// A mode's route today between two regions' market zones, as the network keeps it; none where no open path of
+    /// the mode joins them.
+    fn route_between<'g>(&self, geo: &'g GeoState, mode: u16, (from, to): (u32, u32)) -> Missing<Route<'g>> {
+        let zone = |r: u32| usize::try_from(r).ok().and_then(|r| self.freight.markets.get(r)).copied();
+        match (zone(from), zone(to), u8::try_from(mode)) {
+            (Some(a), Some(b), Ok(m)) => geo.transport.route(m, a, b),
+            _ => violation!(clause = "FRT.2", "a route between regions freight does not hold", from = from, to = to),
+        }
     }
 
     /// A party's free units of a product at a region.

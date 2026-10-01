@@ -1,4 +1,4 @@
-# The sites PC-92 admits for now, 243 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
+# The sites PC-92 admits for now, 235 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -268,7 +268,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_freight.rs"
 item = "Freight"
 what = "BTreeMap"
-count = 3
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
@@ -887,30 +887,6 @@ path = "crates/kernel/phx-geo/src/hydrology.rs"
 item = "Drainage"
 what = "Vec<Option>"
 count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "(module)"
-what = "BTreeMap"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "Network::lengths"
-what = "BTreeMap"
-count = 2
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "Network::lengths"
-what = "BTreeSet"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "Network::route"
-what = "BTreeMap"
-count = 2
 
 [[site]]
 path = "crates/kernel/phx-geo/src/network.rs"

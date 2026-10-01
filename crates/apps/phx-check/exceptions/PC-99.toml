@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 797 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 787 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -519,14 +519,8 @@ count = 1
 [[site]]
 path = "crates/assembly/phx-world/src/core_freight.rs"
 item = "Core::meet_carriage"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_freight.rs"
-item = "Core::meet_carriage"
 what = "`.collect()`"
-count = 3
+count = 2
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
@@ -2407,30 +2401,6 @@ what = "`vec!`"
 count = 1
 
 [[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "Network::lengths"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "Network::route"
-what = "`Vec::new`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "generate"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/network.rs"
-item = "generate"
-what = "`Vec::new`"
-count = 2
-
-[[site]]
 path = "crates/kernel/phx-geo/src/noise.rs"
 item = "Lattice::draw"
 what = "`.collect()`"
@@ -2633,24 +2603,6 @@ path = "crates/kernel/phx-geo/src/state.rs"
 item = "params"
 what = "`.to_string()`"
 count = 3
-
-[[site]]
-path = "crates/kernel/phx-geo/src/state.rs"
-item = "segment_tonnes"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/state.rs"
-item = "segment_tonnes"
-what = "`.to_owned()`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-geo/src/state.rs"
-item = "segment_tonnes"
-what = "`.to_string()`"
-count = 1
 
 [[site]]
 path = "crates/kernel/phx-ledger/src/algebra.rs"

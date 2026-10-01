@@ -1,10 +1,11 @@
 //! The carriage meeting at an origin and a mode: shippers in an order drawn by lot, each at the cheapest carrier with
 //! room for its consignment, equal prices by lot; a consignment whose route crosses a segment already carrying its
-//! day's capacity is refused, never repriced.
+//! day's capacity is refused, never repriced, and one no route serves fails.
 
-use phx_id::PartyId;
+use phx_geo::transport::{Route, SegmentUse, Segments};
+use phx_id::{Day, PartyId};
 use phx_macros::clause;
-use phx_num::{PriceRaw, capacity_exceeded};
+use phx_num::{Missing, PriceRaw, capacity_exceeded};
 use phx_rand::Draws;
 use phx_rand::uniform::below_u64;
 
@@ -49,22 +50,23 @@ pub struct Carrier {
 }
 
 /// A shipper's consignment: the room it takes of a carrier's vehicles, the load it puts on each segment of its route,
-/// and the route's segments.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Consignment {
+/// and the route the network gives it today, read where the network keeps it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Consignment<'r> {
     pub shipper: PartyId,
     pub need: i64,
     pub load: i64,
-    pub segments: Vec<usize>,
+    pub route: Missing<Route<'r>>,
 }
 
-/// The meeting's outcome: each consignment booked with its carrier, those no carrier had room for, and those a full
-/// segment refused.
+/// The meeting's outcome: each consignment booked with its carrier, those no carrier had room for, those a full
+/// segment refused, and those no route served.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CarriageDay {
     pub booked: Vec<(usize, usize)>,
     pub no_room: Vec<usize>,
     pub over_capacity: Vec<usize>,
+    pub no_route: Vec<usize>,
 }
 
 /// The days a shipment takes over a route of `metres` at a mode's `metres_a_day`, the part of a day's run a whole day,
@@ -95,14 +97,14 @@ fn lot(draws: &mut Draws, n: usize) -> usize {
     i
 }
 
-/// The carriage meeting over the carriers at an origin and the consignments leaving it by their mode, with what each
-/// segment can still carry today in `left`, which the bookings take.
+/// The carriage meeting over the carriers at an origin and the consignments leaving it by their mode, each booked on
+/// its route's segments' loads today, which every meeting of the day shares.
 #[clause("FRT.6", "FRT.7", "FRT.9", "GEO.13")]
 pub fn carriage(
     carriers: &[Carrier],
-    consignments: &[Consignment],
-    left: &mut [i64],
-    draws: &mut Draws,
+    consignments: &[Consignment<'_>],
+    (segments, used): (&Segments, &mut SegmentUse),
+    (draws, today): (&mut Draws, Day),
 ) -> CarriageDay {
     let mut room: Vec<i64> = carriers.iter().map(|c| c.room).collect();
     let mut order: Vec<usize> = (0..consignments.len()).collect();
@@ -112,11 +114,16 @@ pub fn carriage(
     let mut day = CarriageDay::default();
     for i in order {
         let Some(c) = consignments.get(i) else { continue };
-        let fits = c.segments.iter().all(|s| left.get(*s).is_some_and(|l| *l >= c.load));
-        if !fits {
+        let Missing::Present(route) = c.route else {
+            day.no_route.push(i);
+            continue;
+        };
+        // A load past what a segment's count can hold is past every segment's capacity.
+        let fits = u32::try_from(c.load).ok().filter(|load| used.room(segments, route, *load, today));
+        let Some(load) = fits else {
             day.over_capacity.push(i);
             continue;
-        }
+        };
         let open: Vec<usize> = (0..carriers.len()).filter(|k| room.get(*k).is_some_and(|r| *r >= c.need)).collect();
         let Some(low) = open
             .iter()
@@ -133,53 +140,12 @@ pub fn carriage(
         if let Some(r) = room.get_mut(k) {
             *r -= c.need;
         }
-        for s in &c.segments {
-            if let Some(l) = left.get_mut(*s) {
-                *l -= c.load;
-            }
-        }
+        used.book(segments, route, load, today);
         day.booked.push((i, k));
     }
     day
 }
 
 #[cfg(test)]
-mod tests {
-    use phx_id::PartyId;
-    use phx_num::PriceRaw;
-    use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
-
-    use super::{Carrier, Consignment, carriage};
-
-    fn draws() -> Draws {
-        Draws::new(stream_key(Seed::new(3), "FRT.capacity_lot"), Subject::new(SubjectTag::Market, 1), 0, 0)
-    }
-
-    fn consignment(shipper: u64, load: i64, segments: Vec<usize>) -> Consignment {
-        Consignment { shipper: PartyId::new(shipper), need: load * 2, load, segments }
-    }
-
-    #[test]
-    fn arrival_day_from_route_and_speed() {
-        assert_eq!(super::transit_days(450_000, 600_000, 0), 1, "part of a day's run is a day");
-        assert_eq!(super::transit_days(1_300_000, 600_000, 1), 5, "three days' run and a day loading at each end");
-        assert_eq!(super::transit_days(600_000, 600_000, 0), 1);
-    }
-
-    #[test]
-    fn route_capacity_binds_by_lot() {
-        let carriers = [
-            Carrier { carrier: PartyId::new(1), price: PriceRaw::from_raw(9), room: 1_000 },
-            Carrier { carrier: PartyId::new(2), price: PriceRaw::from_raw(5), room: 30 },
-        ];
-        let consignments: Vec<Consignment> = (0..6).map(|s| consignment(10 + s, 10, vec![0, 1])).collect();
-        let mut left = vec![1_000, 40];
-        let day = carriage(&carriers, &consignments, &mut left, &mut draws());
-        assert_eq!(day.booked.len(), 4, "the second segment carries four loads a day");
-        assert_eq!(day.over_capacity.len(), 2, "the rest are refused, never repriced");
-        assert_eq!(left, vec![960, 0]);
-        assert_eq!(day.booked.iter().filter(|(_, k)| *k == 1).count(), 1, "the cheap carrier's room takes one trip");
-        let none = carriage(&carriers[1..], &[consignment(99, 100, vec![0])], &mut [1_000], &mut draws());
-        assert_eq!(none.no_room, vec![0], "no room without a vehicle");
-    }
-}
+#[path = "carriage_tests.rs"]
+mod tests;

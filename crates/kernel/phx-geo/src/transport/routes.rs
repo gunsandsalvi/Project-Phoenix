@@ -14,6 +14,8 @@ use super::segments::{SegmentId, SegmentRow, Segments};
 
 /// No place: a zone that is none of the table's places, or a pair no path joins.
 const NONE: u32 = u32::MAX;
+/// No place of the table, as a zone's place reads.
+const NO_PLACE: u16 = u16::MAX;
 
 /// A route's run in the arena and its length; a pair no path joins holds `NONE`.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,7 +51,7 @@ struct Scratch {
 pub struct Routes {
     mode: u8,
     places: Vec<u16>,
-    place_of: Vec<u32>,
+    place_of: Vec<u16>,
     /// The segments of the mode that join two of its places, by identity, whatever their state.
     members: Vec<u32>,
     entries: Vec<Entry>,
@@ -86,10 +88,13 @@ impl Routes {
     #[must_use]
     #[phx_macros::opening]
     pub fn new(mode: u8, places: &[u16], zones: u32) -> Routes {
-        let mut place_of = vec![NONE; index(u64::from(zones))];
+        let mut place_of = vec![NO_PLACE; index(u64::from(zones))];
         for (i, z) in places.iter().enumerate() {
+            let Some(place) = u16::try_from(i).ok().filter(|p| *p != NO_PLACE) else {
+                capacity_exceeded!("a route table's places", NO_PLACE, i);
+            };
             match place_of.get_mut(usize::from(*z)) {
-                Some(p) => *p = narrow(i),
+                Some(p) => *p = place,
                 None => violation!(clause = "GEO.4", "a place past the map's zones", zone = *z),
             }
         }
@@ -115,7 +120,7 @@ impl Routes {
 
     /// A segment made one of the table's if it is of its mode and joins two of its places.
     pub fn admit(&mut self, id: SegmentId, row: SegmentRow) {
-        let placed = |z: u16| self.place_of.get(usize::from(z)).is_some_and(|p| *p != NONE);
+        let placed = |z: u16| self.place_of.get(usize::from(z)).is_some_and(|p| *p != NO_PLACE);
         let (a, b) = row.ends();
         if row.mode() == self.mode && placed(a) && placed(b) {
             self.members.push(id.get());
@@ -126,7 +131,7 @@ impl Routes {
     /// none of the table's places stops the run.
     pub fn route(&self, from: u16, to: u16) -> Missing<Route<'_>> {
         let place = |z: u16| match self.place_of.get(usize::from(z)) {
-            Some(p) if *p != NONE => index(u64::from(*p)),
+            Some(p) if *p != NO_PLACE => usize::from(*p),
             _ => violation!(clause = "FRT.2", "a route asked of a zone the table does not hold", zone = z),
         };
         let at = place(from) * self.places.len() + place(to);
@@ -203,7 +208,8 @@ impl Routes {
     #[must_use]
     pub fn bytes(&self) -> usize {
         self.entries.capacity() * size_of::<Entry>()
-            + (self.arena.capacity() + self.place_of.capacity() + self.members.capacity()) * size_of::<u32>()
+            + (self.arena.capacity() + self.members.capacity()) * size_of::<u32>()
+            + self.place_of.capacity() * size_of::<u16>()
     }
 }
 

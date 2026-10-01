@@ -1,49 +1,23 @@
-//! The transport network: segments between regions' market zones, generated with the map by a recorded procedure.
-//! Every two regions of a country that share a border are joined by each land mode over the land path between their
-//! market zones; the parts of a country no land path joins, its islands, are joined by sea lanes, each part to its
-//! nearest, the shortest lanes first. Routes are the shortest paths of one mode over the segments.
+//! The network as the map generates it, by a recorded procedure: every two regions of a country that share a border
+//! are joined by each land mode over the land path between their market zones; the parts of a country no land path
+//! joins, its islands, are joined by each sea mode, each part to its nearest, the shortest lanes first. Which modes run
+//! on land and which by sea, and what each carries a day, are declared by the modes' places.
 
-use std::collections::{BTreeMap, BTreeSet, BinaryHeap};
+use std::collections::BTreeSet;
 
-use phx_id::ZoneId;
-use phx_macros::clause;
-use phx_num::{Missing, violation};
+use phx_id::{Day, ZoneId};
+use phx_macros::{clause, opening};
+use phx_num::{Missing, capacity_exceeded, violation};
 
 use crate::distance::ZoneDistances;
 use crate::generate::Map;
+use crate::transport::{SegmentDecl, Segments, Transport};
 
-/// The modes the network carries, by place: land modes join regions that share a border, the sea mode the parts of a
-/// country no land path joins.
-pub const ROAD: u16 = 0;
-pub const RAIL: u16 = 1;
-pub const SEA: u16 = 2;
-/// The land modes, which run over land paths between market zones.
-pub const LAND: [u16; 2] = [ROAD, RAIL];
-
-/// A segment between two zones, of a mode, its length in metres and what it carries a day in tonnes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, phx_macros::Saved)]
-pub struct Segment {
-    pub from: ZoneId,
-    pub to: ZoneId,
-    pub mode: u16,
-    pub metres: u64,
-    pub tonnes: u64,
-}
-
-/// The network as generated with the map.
-#[clause("GEO.4")]
-#[derive(Clone, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
-pub struct Network {
-    pub segments: Vec<Segment>,
-}
-
-/// A route: the segments one mode runs over from one zone to another, in order, and its length in metres.
-#[clause("FRT.2")]
+/// What the modes are, by place: whether each runs on land, and what its segments carry a day in tonnes.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Route {
-    pub mode: u16,
-    pub segments: Vec<usize>,
-    pub metres: u64,
+pub struct Modes {
+    pub land: Vec<bool>,
+    pub tonnes: Vec<u32>,
 }
 
 /// The root of a part in a forest of parts.
@@ -61,12 +35,28 @@ fn root(parent: &mut [usize], mut i: usize) -> usize {
     i
 }
 
+fn zone(z: ZoneId) -> u16 {
+    match u16::try_from(z.get()) {
+        Ok(z) => z,
+        Err(_) => capacity_exceeded!("the network's zones", u16::MAX, z.get()),
+    }
+}
+
+fn mode(m: usize) -> u8 {
+    match u8::try_from(m) {
+        Ok(m) => m,
+        Err(_) => capacity_exceeded!("the network's modes", u8::MAX, m),
+    }
+}
+
 /// The network over a map: each land mode between every two market zones of regions sharing a border within a
-/// country, over their land path; sea lanes joining each country's parts, the shortest lane between two parts' market
-/// zones first. Each mode carries what `tonnes` gives it a day.
+/// country, over their land path; each sea mode joining each country's parts, the shortest lane between two parts'
+/// market zones first. The segments are opened in (from, to, mode, metres) order, and the routes join the regions'
+/// market zones.
 #[clause("GEO.4", "GEO.13")]
 #[must_use]
-pub fn generate(map: &Map, distances: &ZoneDistances, market: &[Missing<ZoneId>], tonnes: &[u64]) -> Network {
+#[opening]
+pub fn generate(map: &Map, distances: &ZoneDistances, market: &[Missing<ZoneId>], modes: &Modes) -> Transport {
     let region_of = |z: ZoneId| map.zones.get(usize::try_from(z.get()).ok()?).map(|z| usize::from(z.region.get()));
     let mut touching: BTreeSet<(usize, usize)> = BTreeSet::new();
     for (i, tile) in map.tiles.iter().enumerate() {
@@ -83,17 +73,26 @@ pub fn generate(map: &Map, distances: &ZoneDistances, market: &[Missing<ZoneId>]
         Some(Missing::Present(z)) => Some(*z),
         _ => None,
     };
-    let capacity = |mode: u16| match tonnes.get(usize::from(mode)) {
-        Some(t) => *t,
-        None => violation!(clause = "GEO.4", "a mode with no declared capacity", mode = mode),
+    let metres = |m: u64| match u32::try_from(m) {
+        Ok(m) => m,
+        Err(_) => capacity_exceeded!("a segment's length", u32::MAX, m),
+    };
+    let ways = |land: bool| {
+        modes
+            .land
+            .iter()
+            .zip(&modes.tonnes)
+            .enumerate()
+            .filter(move |(_, (l, _))| **l == land)
+            .map(|(m, (_, t))| (mode(m), *t))
     };
     let mut segments = Vec::new();
     let mut parent: Vec<usize> = (0..map.regions.len()).collect();
     for &(a, b) in &touching {
         let (Some(za), Some(zb)) = (at(a), at(b)) else { continue };
-        let Some(metres) = distances.between(za, zb) else { continue };
-        for mode in LAND {
-            segments.push(Segment { from: za, to: zb, mode, metres, tonnes: capacity(mode) });
+        let Some(length) = distances.between(za, zb) else { continue };
+        for (m, tonnes) in ways(true) {
+            segments.push((zone(za), zone(zb), m, metres(length), tonnes));
         }
         let (ra, rb) = (root(&mut parent, a), root(&mut parent, b));
         if let Some(slot) = parent.get_mut(ra) {
@@ -114,130 +113,39 @@ pub fn generate(map: &Map, distances: &ZoneDistances, market: &[Missing<ZoneId>]
         }
     }
     lanes.sort_unstable();
-    for (metres, a, b) in lanes {
+    for (length, a, b) in lanes {
         let (ra, rb) = (root(&mut parent, a), root(&mut parent, b));
         if ra == rb {
             continue;
         }
         if let (Some(za), Some(zb)) = (at(a), at(b)) {
-            segments.push(Segment { from: za, to: zb, mode: SEA, metres, tonnes: capacity(SEA) });
+            for (m, tonnes) in ways(false) {
+                segments.push((zone(za), zone(zb), m, metres(length), tonnes));
+            }
         }
         if let Some(slot) = parent.get_mut(ra) {
             *slot = rb;
         }
     }
     segments.sort_unstable();
-    Network { segments }
-}
-
-/// Each mode's shortest route length between every two zones it joins, by (mode, from, to), in metres.
-pub type Lengths = BTreeMap<(u16, ZoneId, ZoneId), u64>;
-
-impl Network {
-    /// The length of each mode's shortest route between every two zones it joins, either way along each segment, as
-    /// `route` finds it; none between zones no path of one mode joins.
-    #[clause("FRT.2")]
-    #[must_use]
-    pub fn lengths(&self) -> Lengths {
-        let mut out = Lengths::new();
-        let modes: BTreeSet<u16> = self.segments.iter().map(|s| s.mode).collect();
-        for mode in modes {
-            let mut edges: BTreeMap<ZoneId, Vec<(ZoneId, u64)>> = BTreeMap::new();
-            for s in self.segments.iter().filter(|s| s.mode == mode) {
-                edges.entry(s.from).or_default().push((s.to, s.metres));
-                edges.entry(s.to).or_default().push((s.from, s.metres));
-            }
-            for &from in edges.keys() {
-                let mut best: BTreeMap<ZoneId, u64> = BTreeMap::new();
-                best.insert(from, 0);
-                let mut heap = BinaryHeap::new();
-                heap.push(core::cmp::Reverse((0_u64, from)));
-                while let Some(core::cmp::Reverse((d, z))) = heap.pop() {
-                    if best.get(&z).is_some_and(|b| *b < d) {
-                        continue;
-                    }
-                    for &(n, m) in edges.get(&z).map_or(&[][..], Vec::as_slice) {
-                        let next = d + m;
-                        if best.get(&n).is_none_or(|b| next < *b) {
-                            best.insert(n, next);
-                            heap.push(core::cmp::Reverse((next, n)));
-                        }
-                    }
-                }
-                out.extend(best.into_iter().filter(|(to, _)| *to != from).map(|(to, m)| ((mode, from, to), m)));
-            }
-        }
-        out
+    let mut opened = Segments::default();
+    for (from, to, mode, metres, capacity) in segments {
+        let _ = opened.open(SegmentDecl { from, to, mode, metres, capacity, condition: 0, unit: Missing::Absent });
     }
-
-    /// The shortest route of one mode from one zone to another over the segments, either way along each, the lower
-    /// zone first among equals; none where the mode joins them by no path.
-    #[clause("FRT.2")]
-    #[must_use]
-    pub fn route(&self, mode: u16, from: ZoneId, to: ZoneId) -> Option<Route> {
-        let mut edges: BTreeMap<ZoneId, Vec<(ZoneId, u64, usize)>> = BTreeMap::new();
-        for (i, s) in self.segments.iter().enumerate().filter(|(_, s)| s.mode == mode) {
-            edges.entry(s.from).or_default().push((s.to, s.metres, i));
-            edges.entry(s.to).or_default().push((s.from, s.metres, i));
-        }
-        let mut best: BTreeMap<ZoneId, (u64, Option<(ZoneId, usize)>)> = BTreeMap::new();
-        best.insert(from, (0, None));
-        let mut heap = BinaryHeap::new();
-        heap.push(core::cmp::Reverse((0_u64, from)));
-        while let Some(core::cmp::Reverse((d, z))) = heap.pop() {
-            if z == to {
-                break;
-            }
-            if best.get(&z).is_some_and(|(b, _)| *b < d) {
-                continue;
-            }
-            for &(n, m, i) in edges.get(&z).map_or(&[][..], Vec::as_slice) {
-                let next = d + m;
-                if best.get(&n).is_none_or(|(b, _)| next < *b) {
-                    best.insert(n, (next, Some((z, i))));
-                    heap.push(core::cmp::Reverse((next, n)));
-                }
-            }
-        }
-        let (metres, _) = *best.get(&to)?;
-        let mut segments = Vec::new();
-        let mut at = to;
-        while let Some(&(_, Some((prev, i)))) = best.get(&at) {
-            segments.push(i);
-            at = prev;
-        }
-        segments.reverse();
-        Some(Route { mode, segments, metres })
+    let mut places: Vec<u16> = market
+        .iter()
+        .filter_map(|z| match z {
+            Missing::Present(z) => Some(zone(*z)),
+            Missing::Absent => None,
+        })
+        .collect();
+    places.sort_unstable();
+    places.dedup();
+    let Ok(zones) = u32::try_from(map.zones.len()) else {
+        capacity_exceeded!("the network's zones", u32::MAX, map.zones.len());
+    };
+    if modes.land.len() != modes.tonnes.len() {
+        violation!(clause = "GEO.4", "modes whose ground and capacity disagree in number", modes = modes.land.len());
     }
-
-    /// Bytes the segments hold.
-    #[must_use]
-    pub fn bytes(&self) -> usize {
-        self.segments.len() * core::mem::size_of::<Segment>()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use phx_id::ZoneId;
-
-    use super::{Network, ROAD, SEA, Segment};
-
-    fn seg(a: u32, b: u32, mode: u16, metres: u64) -> Segment {
-        Segment { from: ZoneId::new(a), to: ZoneId::new(b), mode, metres, tonnes: 100 }
-    }
-
-    #[test]
-    fn a_route_is_the_shortest_path_of_its_mode() {
-        let n = Network {
-            segments: vec![seg(0, 1, ROAD, 10), seg(1, 2, ROAD, 10), seg(0, 2, ROAD, 25), seg(2, 3, SEA, 5)],
-        };
-        let r = n.route(ROAD, ZoneId::new(0), ZoneId::new(2)).expect("a road joins them");
-        assert_eq!((r.metres, r.segments.len()), (20, 2));
-        let back = n.route(ROAD, ZoneId::new(2), ZoneId::new(0)).expect("either way along a segment");
-        assert_eq!(back.metres, 20);
-        assert!(n.route(ROAD, ZoneId::new(0), ZoneId::new(3)).is_none(), "no road reaches the island");
-        assert_eq!(n.route(SEA, ZoneId::new(2), ZoneId::new(3)).map(|r| r.metres), Some(5));
-        assert_eq!(n.route(ROAD, ZoneId::new(1), ZoneId::new(1)).map(|r| r.metres), Some(0));
-    }
+    Transport::new(opened, (&places, zones), mode(modes.land.len()), Day::new(0))
 }

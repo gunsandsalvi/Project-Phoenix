@@ -255,12 +255,13 @@ fn freight_report(w: Inspector<'_>) -> serde_json::Value {
             "booked": d.booked,
             "no_room": d.no_room,
             "over_capacity": d.over_capacity,
+            "no_route": d.no_route,
             "unpaid": d.unpaid,
             "departed": d.departed,
             "arrived": d.arrived,
             "on_the_way": d.on_the_way,
         })).collect::<Vec<_>>(),
-        "basis": core.basis(w.regions()).iter().map(|(g, f)| json!({ "gap": g, "freight": f })).collect::<Vec<_>>(),
+        "basis": core.basis(w.regions(), w.geo()).iter().map(|(g, f)| json!({ "gap": g, "freight": f })).collect::<Vec<_>>(),
     })
 }
 

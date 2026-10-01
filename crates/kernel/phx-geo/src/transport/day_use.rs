@@ -41,6 +41,7 @@ pub struct SegmentUse {
     loads: Vec<Load>,
     day: u32,
     flows: usize,
+    booked: bool,
     touched: Vec<u32>,
     over: Vec<u32>,
     /// A bit a segment, set while the day's admission runs for those past their capacity.
@@ -107,8 +108,36 @@ impl SegmentUse {
         }
     }
 
+    /// The day's buffers emptied when the day is a new one, and a load for every segment opened.
+    fn begin(&mut self, segments: &Segments, day: Day) {
+        if self.loads.len() < segments.len() {
+            self.loads.resize(segments.len(), UNLOADED);
+        }
+        if self.day != day.get() {
+            (self.day, self.flows, self.booked) = (day.get(), 0, false);
+            self.touched.clear();
+            self.over.clear();
+            self.admitted.clear();
+        }
+    }
+
+    /// A count added to a segment's load today.
+    fn add(&mut self, seg: u32, count: u32, day: Day) {
+        let Some(l) = self.loads.get_mut(at(seg)) else {
+            violation!(clause = "GEO.20", "a route over a segment never opened", segment = seg);
+        };
+        if l.day != day.get() {
+            *l = Load { day: day.get(), amount: 0 };
+            self.touched.push(seg);
+        }
+        let Some(after) = l.amount.checked_add(count) else {
+            capacity_exceeded!("a segment's load", u32::MAX, u64::from(l.amount) + u64::from(count));
+        };
+        l.amount = after;
+    }
+
     /// The day's flows added to the segments of their routes; the items added. A day's flows are added once, all
-    /// together, so its loads are every flow's before anything reads them.
+    /// together and before anything is booked, so its loads are every flow's before anything reads them.
     #[clause("GEO.20")]
     pub fn add_flows<'r>(
         &mut self,
@@ -117,31 +146,17 @@ impl SegmentUse {
         route: impl Fn(&PairFlow) -> Missing<Route<'r>>,
         day: Day,
     ) -> u64 {
-        if self.day == day.get() && self.flows != 0 {
-            violation!(clause = "GEO.20", "a day's flows added twice", day = day.get());
+        self.begin(segments, day);
+        if self.flows != 0 || self.booked {
+            violation!(clause = "GEO.20", "a day's flows added twice, or after a booking", day = day.get());
         }
-        if self.loads.len() < segments.len() {
-            self.loads.resize(segments.len(), UNLOADED);
-        }
-        (self.day, self.flows) = (day.get(), flows.len());
-        self.touched.clear();
-        self.admitted.clear();
+        self.flows = flows.len();
         self.admitted.extend(flows.iter().map(|f| f.count));
         let mut items = 0_u64;
         for f in flows {
             let r = route_of(&route, f);
             for seg in r.segments {
-                let Some(l) = self.loads.get_mut(at(*seg)) else {
-                    violation!(clause = "GEO.20", "a route over a segment never opened", segment = *seg);
-                };
-                if l.day != day.get() {
-                    *l = Load { day: day.get(), amount: 0 };
-                    self.touched.push(*seg);
-                }
-                let Some(after) = l.amount.checked_add(f.count) else {
-                    capacity_exceeded!("a segment's load", u32::MAX, u64::from(l.amount) + u64::from(f.count));
-                };
-                l.amount = after;
+                self.add(*seg, f.count, day);
             }
             items += wide(r.segments.len());
         }
@@ -153,6 +168,30 @@ impl SegmentUse {
             }
         }
         items
+    }
+
+    /// Whether every leg of a route has room today for a count more.
+    #[clause("GEO.13")]
+    #[must_use]
+    pub fn room(&self, segments: &Segments, route: Route<'_>, count: u32, day: Day) -> bool {
+        route.segments.iter().all(|seg| {
+            let id = SegmentId::new(*seg);
+            u64::from(self.load(id, day)) + u64::from(count) <= u64::from(segments.row(id).capacity())
+        })
+    }
+
+    /// A count booked on every leg of a route that has room for it, after the day's flows were admitted: one
+    /// booking at a time, each reading those before it. A leg without room stops the run.
+    #[clause("GEO.13")]
+    pub fn book(&mut self, segments: &Segments, route: Route<'_>, count: u32, day: Day) {
+        self.begin(segments, day);
+        if !self.room(segments, route, count, day) {
+            violation!(clause = "GEO.13", "a booking past a segment's capacity", count = count);
+        }
+        self.booked = true;
+        for seg in route.segments {
+            self.add(*seg, count, day);
+        }
     }
 
     /// The segments the day's flows loaded, and those they carried past their capacity.

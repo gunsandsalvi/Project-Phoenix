@@ -136,3 +136,21 @@ fn congestion_time_rises_with_load() {
     assert_eq!(time(0), 30, "free flow over three legs");
     assert!(time(200) < time(800), "the more on the legs, the longer");
 }
+
+#[test]
+fn bookings_take_room_in_turn() {
+    // A booking reads the loads the day's flows and the bookings before it put on its legs; the day's flows come
+    // first.
+    let t = network(30);
+    let day = Day::new(5);
+    let Missing::Present(r) = t.route(ROAD, 0, 3) else { panic!("joined") };
+    let mut u = SegmentUse::default();
+    let _ = u.add_flows(&t.segments, &[flow(1, 2, 10)], router(&t), day);
+    assert!(u.room(&t.segments, r, 20, day) && !u.room(&t.segments, r, 21, day), "the middle leg has 20 left");
+    u.book(&t.segments, r, 20, day);
+    assert_eq!(loads(&u, day), [20, 30, 20]);
+    assert!(catch_unwind(AssertUnwindSafe(|| u.book(&t.segments, r, 1, day))).is_err(), "a full leg refuses");
+    let late = catch_unwind(AssertUnwindSafe(|| u.add_flows(&t.segments, &[flow(0, 1, 1)], router(&t), day)));
+    assert!(late.is_err(), "flows after a booking");
+    assert!(u.room(&t.segments, r, 30, day.succ()), "a new day's room is the whole capacity");
+}

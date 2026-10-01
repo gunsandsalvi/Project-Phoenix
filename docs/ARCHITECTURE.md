@@ -376,8 +376,8 @@ more than a unit's worth to it, used as delivered (`buy_services`), as a provide
 price there counts in its unit cost, and the opening's expected sales count every product's use by the ways.
 
 **`sys-frt`** (FRT.1, FRT.4–FRT.10, GEO.13). At the opening each firm selling `FRT.carriage_product` is given a mode,
-drawn by `FRT.mode_share` on stream `FRT.opening`, and every mode's route and length between two regions' market zones
-is taken once from the network (K-26). On its `FRT.shipping_days` schedule, a business day, a firm of a stored product
+drawn by `FRT.mode_share` on stream `FRT.opening`; a mode's route and its length between two regions are the network's
+between their market zones (K-26), read where it keeps them. On its `FRT.shipping_days` schedule, a business day, a firm of a stored product
 holding free units beyond its expected sales times the goods' days of cover weighs carrying the whole lots beyond to
 each other region of its country that marks its product: the mark there less its own price less the freight of a lot
 out (`phx_market::carriage::freight`, at the lowest price carriage is posted at by a carrier of that mode with room at
@@ -386,7 +386,8 @@ and mode (`carriage_offers`) that the shippers, the meetings and the basis read;
 (`FRT.ship`). The consignments of each origin and mode meet in one carriage meeting (K-83, order by
 `FRT.capacity_lot`): each booked with the cheapest carrier whose vehicles' room today (its transport equipment's
 efficient units times the mode's tonne-km a day) holds the trip out and back, one whose route crosses a segment already
-carrying its day's tonnes refused. A booking's goods are committed and its freight — the whole units of carriage its
+carrying its day's tonnes refused (the segments' loads shared by every meeting of the day, K-26), one no route serves
+failing visibly. A booking's goods are committed and its freight — the whole units of carriage its
 tonne-km take, priced at the carrier's posted price a lot and rounded once as a sale is — is a day's flow under
 `CARRIED`; after settlement a paid trip departs (K-69, the goods pledged to the carrier) and is the carrier's revenue,
 the shipper's services used and a sale of carriage to the national accounts, and an unpaid one frees its goods. On its
@@ -2056,7 +2057,7 @@ holds the table to `[store]`.
 
 ### 7.4 phx-geo
 
-Status: building (K-26 written; S1.189–S1.193 planned)
+Status: building (K-26 written and followed; S1.190–S1.193 planned)
 
 #### K-25 Tiles, zones and distances
 
@@ -2156,7 +2157,7 @@ step's 19: the member lists' 2 MiB, which keep a recompute to its own segments r
 **The day's use** (`day_use.rs`, GEO.20, GEO.13): `SegmentUse` holds each segment's load today, an 8-byte `Pod` of its
 amount and the day it was put on, so a load another day put reads as none and no pass clears it. The day's trips come as
 `PairFlow`s — a count a (mode, origin zone, destination zone) pair — once a day, all together, in the pair order their
-counts are kept (`add_flows`; a second add the same day stops the run); each adds its count to every segment of its
+counts are kept (`add_flows`; a second add the same day, or one after a booking, stops the run); each adds its count to every segment of its
 route, which the caller resolves through whichever tables hold the pair (a generic closure, monomorphised), and a pair
 no route joins stops the run. The sums are integers, so they are the same in any order: they run on one thread, the
 loads (4 MB at the design point) staying in cache where the partitioned apply's scatter would cost ≈ 10 ns an item
@@ -2165,7 +2166,9 @@ list. `admit(…, (draws, day))` then takes them in identity order (GEO.13): it 
 flows crossing them in one pass, and for each still past its capacity draws its capacity across those flows' still
 admitted counts without replacement (`multivariate_hypergeometric`, on the lot stream the caller opens, REP.22); a
 flow's refused part leaves every leg of its route before the next segment is read, so no segment's settled load passes
-its capacity, and what each flow was admitted is `admitted()`, returned to its rule. Only then does `time_at(route,
+its capacity, and what each flow was admitted is `admitted()`, returned to its rule. Bookings come after: `room(route, count)`
+says whether every leg has room for a count more today, and `book` loads them, one at a time, a leg without room
+stopping the run (GEO.13). Only then does `time_at(route,
 curve)` read a route's time: each leg's time at its load by the mode's curve (a caller's function of the segment's row
 and its load), summed — every trip of a pair reads the load all of the day's flows put on its legs. The calls return
 the items they read for the caller's visited counters; nothing is saved. `StoreStats` counts the loads' rows and the
@@ -2177,12 +2180,14 @@ the step's 2.3), `pair_time_ns` 18.8 a leg (10.3–15.1, the step's 10, with the
 `admit_ns` 215 a pair (120–172 with 133 of 3 470 loaded segments past their capacity, nearly all of it the draws), and
 `fin.routes.use_mb` 4.3. A working day's 4b is ≈ 1.3 core-ms of adds; a day with segments past capacity adds its draws.
 
-**Today** (`network.rs`): the world's network is still generated with the map: road and rail segments between the
-market zones of every two regions of a country that share a border, over their land path, and sea lanes joining a
-country's parts, the shortest first; each mode's capacity a day in tonnes, its modes the `ROAD`, `RAIL` and `SEA`
-consts. A route is the shortest path of one mode over the segments (`Network::route`), and freight keeps its own maps
-of lengths and routes. Both move onto `Transport`, and freight's tonnes onto the day's use, with freight's routes
-(S1.189).
+**The world's network** (`network.rs`, GEO.10): generated with the map, the segments opened in (from, to, mode, length)
+order: each mode `GEO.segment_land` declares a land mode joins the market zones of every two regions of a country that
+share a border, over their land path; each sea mode joins a country's parts, the shortest lane between two parts'
+market zones first, until each country is one part; each carries `GEO.segment_tonnes` a day, by its mode's place. The
+routes join the regions' market zones (`GeoState::transport`), computed at day zero. Freight reads a route's length
+and segments there by its region pair (`Core::route_between`, through each region's market zone) and books its tonnes
+on the day's use (`SegmentUse::room`, `book`): one booking at a time, each reading those before it, so every
+carriage meeting of a day shares the segments' capacity.
 
 #### K-28 Cells
 

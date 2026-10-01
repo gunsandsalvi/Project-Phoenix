@@ -133,6 +133,14 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// Whether each mode's segments run over land between bordering regions (one) or by sea between a country's parts
+    /// (none), by its place.
+    pub SEGMENT_LAND = "GEO.segment_land" {
+        kind: Technology, value: Table1 { axis_exp: 0, exp: 0 }, clause: "GEO.4", scope: Shared
+    }
+}
+
+declare_prim! {
     /// The range of heights in metres within the land's windows of a tile's span, at each part per thousand of their
     /// area, least first, measured over the analogue region.
     pub LAND_RELIEF = "GEO.land_relief" {
@@ -528,8 +536,9 @@ pub struct GeoPrims {
     pub highland_elevation: Prim<Table1>,
     pub highland_class: Prim<Table1>,
     pub coast_m: Prim<Count>,
-    /// Declared so the register holds it; the network reads it by its identifier.
+    /// Declared so the register holds them; the network reads them by their identifiers.
     pub segment_tonnes: Prim<Table1>,
+    pub segment_land: Prim<Table1>,
     pub weather: WeatherPrims,
     pub deposits: DepositPrims,
     pub hazards: Vec<HazardPrims>,
@@ -600,6 +609,7 @@ impl GeoPrims {
                 persistence: d.prim(&PERSISTENCE),
             },
             segment_tonnes: d.prim(&SEGMENT_TONNES),
+            segment_land: d.prim(&SEGMENT_LAND),
             deposits: DepositPrims {
                 density: d.prim(&DEPOSIT_DENSITY),
                 grade_mu: d.prim(&GRADE_MU),

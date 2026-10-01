@@ -50,7 +50,7 @@ pub struct GeoState {
     pub regions: Vec<RegionClimate>,
     pub hazards: Vec<HazardState>,
     pub deposits: Vec<Deposit>,
-    pub network: crate::network::Network,
+    pub transport: crate::transport::Transport,
     pub weather_kinds: Vec<u16>,
 }
 
@@ -217,7 +217,7 @@ impl GeoState {
         let deposits = draw(p, r, &map, ctx);
         let regions = crate::climate::regions(p, r, &map);
         let distances = ZoneDistances::measure(&map);
-        let tonnes = segment_tonnes(r).map_err(one)?;
+        let modes = modes(r).map_err(one)?;
         let mut state = GeoState {
             params: map_params,
             map,
@@ -225,10 +225,10 @@ impl GeoState {
             regions,
             hazards,
             deposits,
-            network: crate::network::Network::default(),
+            transport: crate::transport::Transport::default(),
             weather_kinds,
         };
-        state.network = crate::network::generate(&state.map, &state.distances, &state.market_zones(), &tonnes);
+        state.transport = crate::network::generate(&state.map, &state.distances, &state.market_zones(), &modes);
         Ok(state)
     }
 
@@ -297,15 +297,32 @@ impl GeoState {
     pub fn bytes(&self) -> usize {
         let tiles = self.map.tiles.len() * size_of::<crate::tile::Tile>();
         let exposure: usize = self.hazards.iter().map(|h| h.exposure.len() * size_of::<Option<u8>>()).sum();
-        tiles + exposure + self.distances.bytes() + self.deposits.len() * size_of::<Deposit>() + self.network.bytes()
+        let transport = usize::try_from(phx_store::StoreStats::bytes(&self.transport)).unwrap_or(usize::MAX);
+        tiles + exposure + self.distances.bytes() + self.deposits.len() * size_of::<Deposit>() + transport
     }
 }
 
 /// What each mode's segment carries a day, in tonnes, by the mode's place.
-fn segment_tonnes(r: &Register) -> Result<Vec<u64>, String> {
-    let t = r.table1(crate::prims::SEGMENT_TONNES.id)?;
-    if t.axis().iter().zip(0_i64..).any(|(a, i)| *a != i) {
-        return Err("the segments' capacities are not by the modes' places in order".to_owned());
-    }
-    t.values().iter().map(|v| u64::try_from(*v).map_err(|e| e.to_string())).collect()
+#[phx_macros::opening]
+fn modes(r: &Register) -> Result<crate::network::Modes, String> {
+    let by_place = |id| {
+        let t = r.table1(id)?;
+        if t.axis().iter().zip(0_i64..).any(|(a, i)| *a != i) {
+            return Err("the segments' modes are not by their places in order".to_owned());
+        }
+        Ok(t.values().to_vec())
+    };
+    let tonnes = by_place(crate::prims::SEGMENT_TONNES.id)?;
+    let land = by_place(crate::prims::SEGMENT_LAND.id)?;
+    Ok(crate::network::Modes {
+        tonnes: tonnes.iter().map(|v| u32::try_from(*v).map_err(|e| e.to_string())).collect::<Result<_, _>>()?,
+        land: land
+            .iter()
+            .map(|v| match v {
+                0 => Ok(false),
+                1 => Ok(true),
+                _ => Err(format!("a mode's ground is one or none, not {v}")),
+            })
+            .collect::<Result<_, _>>()?,
+    })
 }

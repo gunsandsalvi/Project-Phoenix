@@ -210,36 +210,10 @@ pub phx_geo::hydrology::Drainage::receiver: alloc::vec::Vec<core::option::Option
 pub fn phx_geo::hydrology::drainage(&phx_geo::grid::Grid, &[f64], &[bool], &[u64]) -> phx_geo::hydrology::Drainage
 pub fn phx_geo::hydrology::upstream(&phx_geo::hydrology::Drainage) -> alloc::vec::Vec<u32>
 pub mod phx_geo::network  // used by: phx-world
-pub struct phx_geo::network::Network
-pub phx_geo::network::Network::segments: alloc::vec::Vec<phx_geo::network::Segment>  // used by: phx-check, phx-macros, phx-market, phx-world
-impl phx_geo::network::Network
-pub fn phx_geo::network::Network::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
-pub fn phx_geo::network::Network::lengths(&self) -> phx_geo::network::Lengths  // used by: phx-world
-pub fn phx_geo::network::Network::route(&self, u16, phx_id::ids::ZoneId, phx_id::ids::ZoneId) -> core::option::Option<phx_geo::network::Route>  // used by: phx-world
-impl phx_store::save::Saved for phx_geo::network::Network where alloc::vec::Vec<phx_geo::network::Segment>: phx_store::save::Saved
-pub fn phx_geo::network::Network::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::network::Network::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
-pub fn phx_geo::network::Network::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
-pub struct phx_geo::network::Route
-pub phx_geo::network::Route::metres: u64  // used by: phx-market, phx-world
-pub phx_geo::network::Route::mode: u16  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
-pub phx_geo::network::Route::segments: alloc::vec::Vec<usize>  // used by: phx-check, phx-macros, phx-market, phx-world
-pub struct phx_geo::network::Segment
-pub phx_geo::network::Segment::from: phx_id::ids::ZoneId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_geo::network::Segment::metres: u64  // used by: phx-market, phx-world
-pub phx_geo::network::Segment::mode: u16  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
-pub phx_geo::network::Segment::to: phx_id::ids::ZoneId  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-store, phx-world, sys-lab
-pub phx_geo::network::Segment::tonnes: u64  // used by: phx-world
-impl phx_store::save::Saved for phx_geo::network::Segment where phx_id::ids::ZoneId: phx_store::save::Saved, u16: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_geo::network::Segment::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
-pub fn phx_geo::network::Segment::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
-pub fn phx_geo::network::Segment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
-pub const phx_geo::network::LAND: [u16; 2]  // used by: sys-tec
-pub const phx_geo::network::RAIL: u16
-pub const phx_geo::network::ROAD: u16
-pub const phx_geo::network::SEA: u16
-pub fn phx_geo::network::generate(&phx_geo::generate::Map, &phx_geo::distance::ZoneDistances, &[phx_num::missing::Missing<phx_id::ids::ZoneId>], &[u64]) -> phx_geo::network::Network
-pub type phx_geo::network::Lengths = alloc::collections::btree::map::BTreeMap<(u16, phx_id::ids::ZoneId, phx_id::ids::ZoneId), u64>
+pub struct phx_geo::network::Modes
+pub phx_geo::network::Modes::land: alloc::vec::Vec<bool>  // used by: if-base, phx-cli, phx-world, sys-tec
+pub phx_geo::network::Modes::tonnes: alloc::vec::Vec<u32>  // used by: phx-world
+pub fn phx_geo::network::generate(&phx_geo::generate::Map, &phx_geo::distance::ZoneDistances, &[phx_num::missing::Missing<phx_id::ids::ZoneId>], &phx_geo::network::Modes) -> phx_geo::transport::Transport
 pub mod phx_geo::noise
 pub struct phx_geo::noise::Lattice
 impl phx_geo::noise::Lattice
@@ -289,6 +263,7 @@ pub phx_geo::prims::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed
 pub phx_geo::prims::GeoPrims::rugged_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::sea_depths: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::prims::GeoPrims::segment_land: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::segment_tonnes: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::prims::GeoPrims::share_tolerance: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
@@ -376,6 +351,7 @@ pub const phx_geo::prims::ROUGHNESS: phx_core::register::PrimDecl
 pub const phx_geo::prims::RUGGED_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEA_DEPTHS: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEA_SHARE: phx_core::register::PrimDecl
+pub const phx_geo::prims::SEGMENT_LAND: phx_core::register::PrimDecl
 pub const phx_geo::prims::SEGMENT_TONNES: phx_core::register::PrimDecl
 pub const phx_geo::prims::SHARE_TOLERANCE: phx_core::register::PrimDecl
 pub const phx_geo::prims::STORM_COASTAL: phx_core::register::PrimDecl
@@ -434,9 +410,9 @@ pub phx_geo::state::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Depos
 pub phx_geo::state::GeoState::distances: phx_geo::distance::ZoneDistances  // used by: phx-market
 pub phx_geo::state::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>  // used by: phx-cli, phx-core, phx-macros, phx-world
 pub phx_geo::state::GeoState::map: phx_geo::generate::Map  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
-pub phx_geo::state::GeoState::network: phx_geo::network::Network  // used by: phx-world
 pub phx_geo::state::GeoState::params: phx_geo::generate::MapParams  // used by: phx-cli, phx-macros, phx-val, phx-world
 pub phx_geo::state::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
+pub phx_geo::state::GeoState::transport: phx_geo::transport::Transport  // used by: phx-fin, phx-market, phx-world
 pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>  // used by: phx-world
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-val, phx-world, sys-dem, sys-tec
@@ -446,7 +422,7 @@ pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num:
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
-impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::transport::Transport: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::state::GeoState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -514,9 +490,11 @@ impl phx_geo::transport::day_use::SegmentUse
 pub fn phx_geo::transport::day_use::SegmentUse::add_flows<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, phx_id::day::Day) -> u64  // used by: phx-fin
 pub fn phx_geo::transport::day_use::SegmentUse::admit<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, (&mut phx_rand::draws::Draws, phx_id::day::Day)) -> u64  // used by: phx-fin
 pub fn phx_geo::transport::day_use::SegmentUse::admitted(&self) -> &[u32]  // used by: phx-check, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::book(&mut self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, u32, phx_id::day::Day)  // used by: phx-core, phx-fin, phx-market, phx-world
 pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub fn phx_geo::transport::day_use::SegmentUse::load(&self, phx_geo::transport::segments::SegmentId, phx_id::day::Day) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::transport::day_use::SegmentUse::loaded(&self) -> (usize, usize)  // used by: phx-cli, phx-exec, phx-fin, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::room(&self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, u32, phx_id::day::Day) -> bool  // used by: phx-market, phx-store, phx-world, sys-lab
 pub fn phx_geo::transport::day_use::SegmentUse::time_at(&self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, phx_id::day::Day, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentRow, u32) -> u64) -> u64  // used by: phx-fin
 impl phx_store::stats::StoreStats for phx_geo::transport::day_use::SegmentUse
 pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
@@ -633,9 +611,11 @@ impl phx_geo::transport::day_use::SegmentUse
 pub fn phx_geo::transport::day_use::SegmentUse::add_flows<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, phx_id::day::Day) -> u64  // used by: phx-fin
 pub fn phx_geo::transport::day_use::SegmentUse::admit<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, (&mut phx_rand::draws::Draws, phx_id::day::Day)) -> u64  // used by: phx-fin
 pub fn phx_geo::transport::day_use::SegmentUse::admitted(&self) -> &[u32]  // used by: phx-check, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::book(&mut self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, u32, phx_id::day::Day)  // used by: phx-core, phx-fin, phx-market, phx-world
 pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
 pub fn phx_geo::transport::day_use::SegmentUse::load(&self, phx_geo::transport::segments::SegmentId, phx_id::day::Day) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::transport::day_use::SegmentUse::loaded(&self) -> (usize, usize)  // used by: phx-cli, phx-exec, phx-fin, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::room(&self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, u32, phx_id::day::Day) -> bool  // used by: phx-market, phx-store, phx-world, sys-lab
 pub fn phx_geo::transport::day_use::SegmentUse::time_at(&self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, phx_id::day::Day, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentRow, u32) -> u64) -> u64  // used by: phx-fin
 impl phx_store::stats::StoreStats for phx_geo::transport::day_use::SegmentUse
 pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
@@ -722,6 +702,7 @@ pub phx_geo::GeoPrims::roughness: phx_core::register::Prim<phx_num::fixed::Fixed
 pub phx_geo::GeoPrims::rugged_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::sea_depths: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::sea_share: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
+pub phx_geo::GeoPrims::segment_land: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::segment_tonnes: phx_core::register::Prim<phx_core::register::values::Table1>
 pub phx_geo::GeoPrims::share_tolerance: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::terrain_elevation: phx_core::register::Prim<phx_core::register::values::Table1>
@@ -740,9 +721,9 @@ pub phx_geo::GeoState::deposits: alloc::vec::Vec<phx_geo::deposits::Deposit>  //
 pub phx_geo::GeoState::distances: phx_geo::distance::ZoneDistances  // used by: phx-market
 pub phx_geo::GeoState::hazards: alloc::vec::Vec<phx_geo::state::HazardState>  // used by: phx-cli, phx-core, phx-macros, phx-world
 pub phx_geo::GeoState::map: phx_geo::generate::Map  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
-pub phx_geo::GeoState::network: phx_geo::network::Network  // used by: phx-world
 pub phx_geo::GeoState::params: phx_geo::generate::MapParams  // used by: phx-cli, phx-macros, phx-val, phx-world
 pub phx_geo::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
+pub phx_geo::GeoState::transport: phx_geo::transport::Transport  // used by: phx-fin, phx-market, phx-world
 pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>  // used by: phx-world
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-val, phx-world, sys-dem, sys-tec
@@ -752,7 +733,7 @@ pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num:
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
-impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::network::Network: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::transport::Transport: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::state::GeoState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world

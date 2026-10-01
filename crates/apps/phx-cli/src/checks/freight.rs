@@ -65,7 +65,7 @@ fn arrived_on_time(w: Inspector<'_>) -> Outcome {
 
 /// The gaps between places' marks a lot rise with the freight of a lot between them.
 fn gaps_track_freight(w: Inspector<'_>) -> Outcome {
-    let basis = w.core().basis(w.regions());
+    let basis = w.core().basis(w.regions(), w.geo());
     if basis.len() < 2 {
         return Outcome::NotYet("fewer than two pairs of places mark a good carriage joins");
     }

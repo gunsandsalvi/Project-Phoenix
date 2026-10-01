@@ -507,9 +507,9 @@ direction = "down"
 # zones in 25 regions, three trunk modes between the regions' market zones and two land modes within each region. A
 # route read is 2.8–4.6 ns (the step's 2: the place map, the entry and its run are three reads, not two, the entry's
 # line rarely cached at a million random pairs); a struck region's recompute — the trunk mode and its two land tables
-# — 2.7–4.2 ms (the step's 10). The rows and tables hold 20.2 MiB, above the step's 19: each table's member list
-# (2 MiB), which keeps a recompute to its own segments rather than all 500 000 (32 ms without). Each time ratchet stands
-# a quarter above the higher; the bytes, which do not vary, at the measure.
+# — 2.7–4.2 ms (the step's 10). The rows and tables hold 20.1 MiB (S1.189: a zone's place in 16 bits), above the
+# step's 19: each table's member list (2 MiB), which keeps a recompute to its own segments rather than all 500 000
+# (32 ms without). Each time ratchet stands a quarter above the higher; the bytes, which do not vary, at the measure.
 
 [[ratchet]]
 counter = "fin.routes.route_ns"
@@ -523,7 +523,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.routes.mb"
-value = 20.3
+value = 20.2
 direction = "down"
 
 # The day's use (S1.188, 2026-10-01; `tools/bench.sh -F routes`): a working day's 40 000 active (mode, origin,

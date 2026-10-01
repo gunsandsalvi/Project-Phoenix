@@ -27,7 +27,7 @@ direction = "down"
 # migration of the core removes its own; the count only falls, and S1.492 empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc92"
-value = 243
+value = 235
 direction = "down"
 
 # PC-96's admitted sites (S1.121, 2026-09-30): the world's and the systems' whole-table walks on the day's paths
@@ -61,7 +61,7 @@ direction = "down"
 # empties it.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 797
+value = 787
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and
@@ -97,10 +97,12 @@ direction = "down"
 # industries. It rises with the ways firms discover, license and imitate from Stage 6, each rise stated.
 # Barriers the day runner crosses on a day no handler runs, read by the build run.
 # The map's bytes on the build run's seed: tiles with their relief and rivers, exposure columns, zone distances,
-# deposits and the transport network's segments; the plan's budget is 80 MB.
+# deposits and the transport network's segments and routes; the plan's budget is 80 MB. Restated from 7 500 276
+# (S1.189, 2026-10-01): each mode's routes between the regions' market zones, which freight kept in its own maps, are
+# the network's (ledger line 19, S1.187's figure).
 [[ratchet]]
 counter = "phx_geo.map_bytes"
-value = 7500276
+value = 7546672
 direction = "down"
 
 # Stage 7 on the build run, the most on any day: rows of lines due read, run heads read, rows of scanned segments read
