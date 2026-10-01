@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 223 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 222 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -298,12 +298,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_deposits.rs"
 item = "Deposits"
 what = "field `held`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_deposits.rs"
-item = "Deposits"
-what = "field `working`: `BTreeMap` keyed by `PartyKey`"
 count = 1
 
 [[site]]

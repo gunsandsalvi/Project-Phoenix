@@ -2259,7 +2259,9 @@ that draws on its resource (`TEC.products`' `extracts`, `TEC.deposit_draw`) site
 lower slot on a tie; a deposit no such firm's region holds is held by no one. The core's `Deposits` keeps, by the
 deposit's place among the map's, its holder, what it has given and, if finite, what it holds and opened with. An
 extractor decides whether to work what it holds on its extraction schedule (`GDS.extraction_days`, each firm's day by
-its slot) and before its first making, through the decision core (`GDS.extract`, §3.5). The production rule's capacity
+its slot) and before its first making, through the decision core (`GDS.extract`, §3.5); what it decided is two bits
+of its hot flags word (`EXTRACTION_DECIDED`, `EXTRACTION_WORKING`; `FirmView::extraction`, none before it first
+decides), cleared as its rights pass. The production rule's capacity
 is at most what its deposits give at its way's draw a unit, none while it does not work them; each unit made takes the
 draw, rounded up, from its deposits in their order (`Core::take_from_deposits`), a finite one never below nothing. Its
 rights pass to its estate as its goods do, and an estate holding rights waits for its liquidation. The deposits family

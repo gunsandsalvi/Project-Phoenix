@@ -18,8 +18,8 @@ use phx_rand::float::from_i64;
 use crate::core::{Core, kind_number};
 
 /// The deposits: each one's holder, what it has given and, where finite, what it holds and opened with, and its
-/// resource, by its place among the map's; each product's resource and draw a unit, the days between an extractor's decisions, each extractor's deposits and
-/// whether it works them as it last decided.
+/// resource, by its place among the map's; each product's resource and draw a unit, the days between an extractor's
+/// decisions, and each extractor's deposits. Whether it works them as it last decided is its flags'.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Deposits {
     pub holders: Vec<Option<PartyKey>>,
@@ -30,7 +30,6 @@ pub struct Deposits {
     draws: Vec<Option<(u16, i64)>>,
     days: u32,
     pub held: BTreeMap<PartyKey, Vec<u32>>,
-    pub working: BTreeMap<PartyKey, bool>,
 }
 
 /// A draw a unit as the technology states it.
@@ -104,7 +103,7 @@ impl Core {
     #[clause("GDS.12", "GEO.9")]
     pub(crate) fn deposit_room(&self, maker: PartyKey, product: u16) -> f64 {
         let Some((resource, raw)) = self.draw_of(product) else { return f64::INFINITY };
-        if self.deposits.working.get(&maker) != Some(&true) {
+        if self.firm_of(maker).and_then(|f| f.extraction()) != Some(true) {
             return 0.0;
         }
         let per = per_unit(raw).to_f64();
@@ -171,7 +170,7 @@ impl Core {
         for slot in self.firm_slots(firm) {
             let key = PartyKey::new(kind_number(firm), slot);
             let due = (day.get() + slot.get()).is_multiple_of(days);
-            if !due && self.deposits.working.contains_key(&key) {
+            if !due && self.firm_view(slot).and_then(|f| f.extraction()).is_some() {
                 continue;
             }
             let Some(f) = self.firm_at(regions, slot) else { continue };
@@ -207,9 +206,13 @@ impl Core {
                 years,
                 finite,
             });
-            decided.push((key, works));
+            decided.push((slot, works));
         }
-        self.deposits.working.extend(decided);
+        self.firm_write(|fs| {
+            for (slot, works) in decided {
+                fs.set_extraction(slot, Some(works));
+            }
+        });
     }
 
     /// A holder's rights passed to its successor, as its goods pass.
@@ -222,7 +225,9 @@ impl Core {
             }
         }
         self.deposits.held.entry(to).or_default().extend(held);
-        self.deposits.working.remove(&from);
+        if self.firm_of(from).is_some() {
+            self.firm_write(|fs| fs.set_extraction(from.slot(), None));
+        }
     }
 
     /// Each finite deposit's given and held against what it opened with; a difference is a finding of the deposits

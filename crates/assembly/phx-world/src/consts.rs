@@ -170,6 +170,9 @@ pub mod household {
 }
 
 pub mod firm {
+    /// The firm's flags: whether it has decided whether to work its deposits, and whether it does.
+    pub const EXTRACTION_DECIDED: u32 = 1;
+    pub const EXTRACTION_WORKING: u32 = 2;
     /// A share, a rate or a firm's sales in millionths, as a firm's words hold them.
     pub const PART_ONE: f64 = 1_000_000.0;
     /// A firm's productivity's log factor in hundred-millionths: a word of 32 bits spans ±21, past the drawn spread.

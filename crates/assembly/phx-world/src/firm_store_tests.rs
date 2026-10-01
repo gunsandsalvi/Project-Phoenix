@@ -80,3 +80,17 @@ fn firm_without_outlook_decides_nothing() {
     let refused = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| store.set_price(r.slot(), 1_500)));
     assert!(refused.is_err(), "a price that is no point is refused");
 }
+
+#[test]
+fn working_bit_declared_in_flags() {
+    let (mut dir, mut store) = fixture();
+    let r = dir.begin(FIRMS);
+    store.begin(&dir, r, &opening(Missing::Present(100.0)));
+    assert_eq!(store.view(r.slot()).unwrap().extraction(), None, "undecided until its first review");
+    store.set_extraction(r.slot(), Some(false));
+    assert_eq!(store.view(r.slot()).unwrap().extraction(), Some(false));
+    store.set_extraction(r.slot(), Some(true));
+    assert_eq!(store.view(r.slot()).unwrap().extraction(), Some(true));
+    store.set_extraction(r.slot(), None);
+    assert_eq!(store.view(r.slot()).unwrap().extraction(), None, "a decision cleared as its rights pass");
+}

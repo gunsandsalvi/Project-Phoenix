@@ -12,7 +12,7 @@ use phx_store::{AddressSpace, SystemBacking};
 
 use crate::account_lines::BookWords;
 use crate::consts::DAYS_A_YEAR;
-use crate::consts::firm::{PART_ONE, PRODUCTIVITY_ONE, RATE_ONE};
+use crate::consts::firm::{EXTRACTION_DECIDED, EXTRACTION_WORKING, PART_ONE, PRODUCTIVITY_ONE, RATE_ONE};
 
 /// The groups a visit gathers: the hot row and the warm one.
 const HOT: u8 = 0;
@@ -38,6 +38,7 @@ struct Words {
     sold: AttrW<i64>,
     seen: AttrW<i64>,
     reviewed: AttrW<u16>,
+    flags: AttrW<u32>,
     books: BookWords,
 }
 
@@ -66,6 +67,7 @@ fn words() -> Words {
         sold: w!(i64, "sales_since_review", 0, "K-74"),
         seen: w!(i64, "sales_since_review", 1, "K-74"),
         reviewed: w!(u16, "last_review", 0, "K-32"),
+        flags: w!(u32, "flags", 0, "K-32"),
         books: BookWords::bind(&mut l),
     }
 }
@@ -232,6 +234,21 @@ impl FirmStore {
         self.set(slot, w, Missing::Present(off));
     }
 
+    /// Whether a firm works its deposits as it last decided, written to its flags; none clears the decision.
+    pub fn set_extraction(&mut self, slot: Slot, works: Option<bool>) {
+        let w = self.w().flags;
+        let Some(held) = self.view(slot).and_then(|v| present(v.hot.get(w.read()))) else {
+            violation!(clause = "GDS.4", "an extraction decision for no firm", slot = slot.get());
+        };
+        let clear = held & !(EXTRACTION_DECIDED | EXTRACTION_WORKING);
+        let v = match works {
+            Some(true) => clear | EXTRACTION_DECIDED | EXTRACTION_WORKING,
+            Some(false) => clear | EXTRACTION_DECIDED,
+            None => clear,
+        };
+        self.set(slot, w, Missing::Present(v));
+    }
+
     /// A firm's posted price moved to a point; a price that is no point stops the run.
     pub fn set_price(&mut self, slot: Slot, price: i64) {
         let Some(code) = sys_frm::decide::point_code(&self.points, price) else {
@@ -325,6 +342,13 @@ impl FirmView<'_> {
     #[must_use]
     pub fn seen_sold(&self) -> Option<i64> {
         present(self.hot.get(self.fs.w().seen.read()))
+    }
+
+    /// Whether it works its deposits as it last decided; none before it first decides.
+    #[must_use]
+    pub fn extraction(&self) -> Option<bool> {
+        let flags = present(self.hot.get(self.fs.w().flags.read()))?;
+        (flags & EXTRACTION_DECIDED != 0).then_some(flags & EXTRACTION_WORKING != 0)
     }
 
     /// The day of its last price review.
