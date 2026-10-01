@@ -117,6 +117,8 @@ impl Core {
         let (Some(treasury), Some(bank)) = (self.bound.kinds.treasury, self.bank_kind) else {
             return Ok(());
         };
+        // A treasury is founded by its state with no preference of its own: its minister's decisions read none.
+        self.found(crate::core::kind_number(treasury), crate::core_decide::Founding::Shared(phx_core::Prefs::NONE));
         let laws: Vec<Option<BillLaw>> = state
             .countries
             .iter()

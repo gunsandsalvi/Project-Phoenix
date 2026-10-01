@@ -25,8 +25,11 @@ pub struct Types {
 }
 
 /// A distribution cut into its types, with each type's value.
+///
+/// # Errors
+/// A primitive the cut reads that the register does not hold, or a distribution that cuts into no types.
 #[opening]
-fn cut(register: &Register, (distribution, count): (&str, &str)) -> Result<(TypeSet, Vec<f64>), String> {
+pub fn cut(register: &Register, (distribution, count): (&str, &str)) -> Result<(TypeSet, Vec<f64>), String> {
     let types = u16::try_from(register.count(count)?).map_err(|e| e.to_string())?;
     let d: &Distribution = register.distribution(distribution)?;
     let scale = libm::pow(crate::consts::DECADE, f64::from(d.exp));
@@ -72,10 +75,16 @@ impl Types {
     /// The age class an age falls in: the last whose first age it has reached.
     #[clause("VAL.23")]
     pub fn window_of(&self, age: u32) -> Missing<u16> {
-        match self.windows.iter().rposition(|first| *first <= i64::from(age)).and_then(|w| u16::try_from(w).ok()) {
-            Some(w) => Missing::Present(w),
-            None => Missing::Absent,
-        }
+        window_in(&self.windows, age)
+    }
+}
+
+/// The age class an age falls in among classes beginning at `firsts`: the last whose first age it has reached.
+#[clause("VAL.23")]
+pub fn window_in(firsts: &[i64], age: u32) -> Missing<u16> {
+    match firsts.iter().rposition(|first| *first <= i64::from(age)).and_then(|w| u16::try_from(w).ok()) {
+        Some(w) => Missing::Present(w),
+        None => Missing::Absent,
     }
 }
 

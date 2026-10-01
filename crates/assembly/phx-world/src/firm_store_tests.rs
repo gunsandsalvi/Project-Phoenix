@@ -29,6 +29,9 @@ fn opening(expected: Missing<f64>) -> FirmOpening {
         markup: Missing::Present(0.35),
         expected,
         opened: Day::new(102),
+        founding: [2, 1, 4],
+        stance: 3,
+        head_office: Missing::Present(40),
     }
 }
 
@@ -68,6 +71,22 @@ fn firm_words_map_to_handles() {
     let v = store.view(r.slot()).unwrap();
     assert_eq!((v.reviewed(), v.price()), (Some(Day::new(130)), Some(1_990)));
     assert!(store.view(Slot::new(5)).is_none(), "no firm at a slot never begun");
+}
+
+/// A firm's founding types, stance and first office are its record's, and a reconsidered stance replaces its first.
+#[test]
+fn founding_and_offices_kept_in_the_record() {
+    let (mut dir, mut store) = fixture();
+    let r = dir.begin(FIRMS);
+    store.begin(&dir, r, &opening(Missing::Absent));
+    let v = store.view(r.slot()).unwrap();
+    assert_eq!(v.founding(), [Missing::Present(2), Missing::Present(1), Missing::Present(4)]);
+    assert_eq!((v.stance(), v.head_office()), (Missing::Present(3), Missing::Present(40)));
+    store.set_stance(r.slot(), 1);
+    assert_eq!(store.view(r.slot()).unwrap().stance(), Missing::Present(1));
+    let s = dir.begin(FIRMS);
+    store.begin(&dir, s, &FirmOpening { head_office: Missing::Absent, ..opening(Missing::Absent) });
+    assert_eq!(store.view(s.slot()).unwrap().head_office(), Missing::Absent, "no office opened reads none");
 }
 
 #[test]

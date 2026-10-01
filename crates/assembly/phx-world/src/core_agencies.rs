@@ -64,6 +64,10 @@ impl Core {
     /// Each agency's staff and wages at the opening, which it keeps.
     #[clause("SOC.2", "SOC.8")]
     pub fn open_agencies(&mut self) {
+        // An agency is founded by its state with no preference of its own: its head's decisions read none.
+        if let Some(agency) = self.bound.kinds.agency {
+            self.found(crate::core::kind_number(agency), crate::core_decide::Founding::Shared(phx_core::Prefs::NONE));
+        }
         let posts = self.posts_held(None);
         let Some(store) = self.agency_store.as_mut() else { return };
         for (agency, region, occupation, amount) in posts {

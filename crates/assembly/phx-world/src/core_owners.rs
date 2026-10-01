@@ -10,9 +10,9 @@
 use std::collections::BTreeMap;
 
 use phx_core::opening_subject;
-use phx_id::{Day, PartyKey};
+use phx_id::{Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
-use phx_num::Missing;
+use phx_num::{Missing, violation};
 use phx_rand::float::len_u64;
 
 use crate::consts::WEEKS_A_YEAR;
@@ -31,15 +31,13 @@ pub(crate) struct OpenOwner {
     pub region: u32,
 }
 
-/// An owner working in its firm: its household, identity, occupation, weekly hours and age class.
+/// An owner working in its firm: its household, identity, occupation and weekly hours.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Worker {
     pub household: PartyKey,
     pub person: u64,
     pub occupation: u32,
     pub hours: u32,
-    /// Its age class at the last year's close, or at the opening.
-    pub window: Missing<u16>,
 }
 
 /// Who owns what: each owned party's holders, a share each, and each holder's owned parties; each firm's working
@@ -91,7 +89,7 @@ impl Core {
     /// A primitive the dealing reads that the register does not hold.
     #[clause("FRM.1", "FRM.23", "PTY.16", "GEN.2")]
     #[opening]
-    pub fn open_owners(&mut self, o: &JobsOpening<'_>, types: &phx_val::types::Types) -> Result<(), String> {
+    pub fn open_owners(&mut self, o: &JobsOpening<'_>) -> Result<(), String> {
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let firms = self.firm_hours(o, firm)?;
         let mut owned: BTreeMap<u8, Vec<f64>> = BTreeMap::new();
@@ -112,7 +110,6 @@ impl Core {
                 return Err(format!("self-employed drawn in country {country}, which the world does not hold"));
             };
             let hours = u32::try_from(o.register.count_in("LAB.full_time_hours", c.id)?).map_err(|e| e.to_string())?;
-            let date = o.calendar.date(o.today);
             let subject = opening_subject(u32::from(country) * PURPOSES + OWNERS_PURPOSE, region);
             let mut lot = o.streams.open(o.stream, subject, Day::new(0), 0);
             // An order drawn by lot, so no household's place in the books decides the firm it owns.
@@ -143,7 +140,7 @@ impl Core {
                 let mut left = ms.into_iter();
                 for ((slot, _), n) in here.iter().zip(deal(len_u64(left.len()), &weights)) {
                     for m in left.by_ref().take(usize::try_from(n).unwrap_or(usize::MAX)) {
-                        self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, date), types);
+                        self.own(PartyKey::new(kind_number(firm), *slot), &m, (hours, o.today));
                     }
                 }
             }
@@ -250,48 +247,52 @@ impl Core {
     }
 
     /// A self-employed person owning a share of a firm and working in it, managing it where it is the first.
-    fn own(
-        &mut self,
-        firm: PartyKey,
-        m: &OpenOwner,
-        (hours, date): (u32, phx_id::Date),
-        types: &phx_val::types::Types,
-    ) {
-        let window = match self.age_of((m.household, m.person), date) {
-            Some(age) => types.window_of(age),
-            None => Missing::Absent,
-        };
+    fn own(&mut self, firm: PartyKey, m: &OpenOwner, (hours, day): (u32, Day)) {
         let o = &mut self.owners;
         let workers = o.working.entry(firm).or_default();
         let first = workers.is_empty();
-        workers.push(Worker { household: m.household, person: m.person, occupation: m.occupation, hours, window });
+        workers.push(Worker { household: m.household, person: m.person, occupation: m.occupation, hours });
         o.works_at.insert((m.household, m.person), firm);
         o.of.entry(firm).or_default().push(m.household);
         o.holds.entry(m.household).or_default().push(firm);
         o.dealt += 1;
         if first {
-            let prefs = phx_core::Prefs { window, ..self.decisions.founding_of(firm) };
-            self.decisions.appoint(firm, m.person, prefs);
+            self.manage(firm, Some(m.person), day);
         }
     }
 
     /// A person who no longer works stops working in its firm, keeping its household's share; where it managed the
-    /// firm its offices pass to the next owner working there, or stand empty.
-    #[clause("PTY.16", "FRM.1")]
-    pub(crate) fn stop_working(&mut self, household: PartyKey, person: u64) {
+    /// firm its offices pass, the same day, to the next owner working there, or stand empty.
+    #[clause("PTY.16", "PTY.17", "FRM.1")]
+    pub(crate) fn stop_working(&mut self, household: PartyKey, person: u64, day: Day) {
         let Some(firm) = self.owners.works_at.remove(&(household, person)) else { return };
         let Some(workers) = self.owners.working.get_mut(&firm) else { return };
         let managed = workers.first().is_some_and(|w| w.household == household && w.person == person);
         workers.retain(|w| !(w.household == household && w.person == person));
-        let next = workers.first().map(|w| (w.person, w.window));
+        let next = workers.first().map(|w| w.person);
         if workers.is_empty() {
             self.owners.working.remove(&firm);
         }
         if managed {
-            self.decisions.vacate(firm, Some(person));
-            if let Some((p, window)) = next {
-                let prefs = phx_core::Prefs { window, ..self.decisions.founding_of(firm) };
-                self.decisions.appoint(firm, p, prefs);
+            self.manage(firm, next, day);
+        }
+    }
+
+    /// Every office of a firm held, from a day, by the person who owns and manages it, or left empty where none does.
+    #[clause("PTY.16")]
+    fn manage(&mut self, firm: PartyKey, manager: Option<u64>, day: Day) {
+        let Missing::Present(first) = self.firm_view(firm.slot()).map_or(Missing::Absent, |v| v.head_office()) else {
+            violation!(clause = "PTY.16", "a firm managed whose offices were never opened", party = firm.word());
+        };
+        let holder = manager.map(|id| match self.person_of(id) {
+            Some(p) => p,
+            None => violation!(clause = "PTY.16", "an office taken by no live person", party = firm.word()),
+        });
+        let Some(offices) = self.offices.as_mut() else { return };
+        for o in offices.block_of(phx_pop::offices::OfficeRef::at(Slot::new(first))) {
+            match holder {
+                Some(p) => offices.fill_owned(o, p, day),
+                None => offices.vacate(o),
             }
         }
     }
@@ -309,7 +310,7 @@ impl Core {
     }
 
     /// A firm ended into its estate: its owners own the estate in its place, and those who worked in it no longer
-    /// manage or work there; the owners who worked in it are returned.
+    /// work there; the owners who worked in it are returned.
     #[clause("PTY.9", "FRM.1")]
     pub(crate) fn owners_to_estate(&mut self, firm: PartyKey, estate: PartyKey) -> Vec<Worker> {
         if let Some(holders) = self.owners.of.remove(&firm) {
@@ -324,7 +325,6 @@ impl Core {
         for w in &workers {
             self.owners.works_at.remove(&(w.household, w.person));
         }
-        self.decisions.vacate(firm, None);
         workers
     }
 

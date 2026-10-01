@@ -178,8 +178,10 @@ struct Draft {
     bank: u32,
     price: i64,
     output: f64,
-    /// Its preferences drawn at its founding, which its offices read while no one holds them.
+    /// Its preferences drawn at its founding, which its offices read while no one holds them, and their memory,
+    /// switching and required-return types its record keeps.
     prefs: phx_core::Prefs,
+    founding: [u8; 3],
 }
 
 /// What the firms' opening reads besides the core: the register, the countries with their sheets, the stream its
@@ -195,6 +197,8 @@ pub struct FirmsOpening<'a> {
     pub today: phx_id::Day,
     /// The map, whose zones the firms' sites lie in.
     pub geo: &'a phx_geo::GeoState,
+    /// How many offices a firm's legal form declares, each opened at its founding.
+    pub offices: u16,
 }
 
 /// The firms' mean hours a unit, as a factor of their way's, at a shift of their log productivities: each firm's
@@ -282,6 +286,16 @@ impl Core {
         let held = (crate::household_store::zone_regions(o.geo), o.management.points.clone(), o.today);
         let capacity = self.kind_rows(firm);
         self.firms = Some(FirmStore::new(&mut self.space, kind, capacity, held));
+        // A firm's offices, in its form's order, each opened at its founding.
+        let office_kinds: Vec<u16> = (0..o.offices).collect();
+        if let Some(person) = self.bound.kinds.person {
+            let Some(rows) = capacity.checked_mul(u32::from(o.offices)) else {
+                phx_num::capacity_exceeded!("offices", u32::MAX, capacity);
+            };
+            self.offices =
+                Some(phx_pop::offices::Offices::new(&mut self.space, crate::core::kind_number(person), rows));
+        }
+        self.found(kind, crate::core_decide::Founding::Record(o.management.required_returns.clone()));
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
             let persons = self.persons_by_region(c);
             let snap = snapshot(o.register, c)?;
@@ -315,6 +329,17 @@ impl Core {
                 let Some(r) = self.reference(key) else {
                     violation!(clause = "PTY.1", "a firm begun the directory does not name", slot = key.slot().get());
                 };
+                let head_office = match self.offices.as_mut().map(|of| of.open(key, &office_kinds)) {
+                    Some(phx_num::Missing::Present(first)) => phx_num::Missing::Present(first.row().get()),
+                    _ => phx_num::Missing::Absent,
+                };
+                let stance = match d.prefs.stance {
+                    phx_num::Missing::Present(s) => u8::try_from(s).ok(),
+                    phx_num::Missing::Absent => None,
+                };
+                let Some(stance) = stance else {
+                    violation!(clause = "VAL.7", "a firm founded with no stance", slot = key.slot().get());
+                };
                 let opening = FirmOpening {
                     product,
                     site: d.site.get(),
@@ -325,11 +350,13 @@ impl Core {
                     markup: phx_num::Missing::Absent,
                     expected: phx_num::Missing::Present(from_i64(output) / crate::consts::DAYS_A_YEAR),
                     opened: o.today,
+                    founding: d.founding,
+                    stance,
+                    head_office,
                 };
                 if let Some(fs) = self.firms.as_mut() {
                     fs.begin(&self.directory, r, &opening);
                 }
-                self.found(key, d.prefs);
             }
         }
         Ok(())
@@ -374,14 +401,22 @@ impl Core {
                 // With no heuristic scored yet nothing favours one, so its first stance is its taste's alone.
                 let menu = len_u64(phx_val::heuristic::MENU.len());
                 let stance = u16::try_from(below_u64(&mut m, menu)).unwrap_or(u16::MAX);
-                let required = o.management.required_return.draw(&mut m);
+                let required = phx_core::register::values::draw_type(&o.management.required_return, &mut m).get();
+                let (Ok(m8), Ok(s8), Ok(r8), Some(required_return)) = (
+                    u8::try_from(memory),
+                    u8::try_from(switching),
+                    u8::try_from(required),
+                    o.management.required_returns.get(usize::from(required)).copied(),
+                ) else {
+                    return Err(format!("country {}: a founding type beyond its record's byte", c.id.get()));
+                };
+                let founding = [m8, s8, r8];
                 let prefs = phx_core::Prefs {
                     memory: phx_num::Missing::Present(memory),
                     switching: phx_num::Missing::Present(switching),
                     stance: phx_num::Missing::Present(stance),
-                    required_return: phx_num::Missing::Present(required),
-                    management: phx_num::Missing::Present(0),
-                    window: phx_num::Missing::Absent,
+                    required_return: phx_num::Missing::Present(required_return),
+                    ..phx_core::Prefs::NONE
                 };
                 out.push(Draft {
                     product: cell.product,
@@ -392,6 +427,7 @@ impl Core {
                     price: 0,
                     output: 0.0,
                     prefs,
+                    founding,
                 });
                 ordinal += 1;
             }

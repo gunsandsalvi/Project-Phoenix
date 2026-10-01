@@ -448,6 +448,40 @@ fn open_decisions(p: &Prepared, core: &mut crate::core::Core) {
     core.open_decisions(p.kernel.decisions.shared(&p.c.register), &by_kind);
 }
 
+/// The firms opened on the core, each with the offices its legal form declares.
+fn open_firms(
+    p: &Prepared,
+    core: &mut crate::core::Core,
+    (opening, sheets, geo): (&[phx_core::OpeningCountry], &[crate::opening::sheet::Sheet], &phx_geo::GeoState),
+    today: phx_id::Day,
+    frm: &sys_frm::Own,
+) -> Result<(), AssemblyErrors> {
+    let Some(offices) = form_offices(p, sys_frm::FIRM.name) else {
+        return Err(AssemblyErrors(vec!["the firms' legal form not declared for their offices".to_owned()]));
+    };
+    phx_exec::trace::span("open.firms", || {
+        core.open_firms(&crate::core_firms::FirmsOpening {
+            register: &p.c.register,
+            countries: opening,
+            sheets,
+            streams: &p.c.streams,
+            stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
+            management: frm.management(),
+            today,
+            geo,
+            offices,
+        })
+    })
+    .map_err(|e| AssemblyErrors(vec![e]))
+}
+
+/// How many offices a kind's legal form declares; none for a kind or form not declared.
+fn form_offices(p: &Prepared, kind: &str) -> Option<u16> {
+    let form = p.d.kinds.iter().find(|(_, k)| k.name == kind).map(|(_, k)| k.legal_form)?;
+    let forms = p.kernel.legal_forms.shared(&p.c.register);
+    forms.iter().find(|f| f.name == form).and_then(|f| u16::try_from(f.offices.len()).ok())
+}
+
 /// Each country's opening sheet, with the plant its accounts hold drawn by the plant's kinds.
 fn opening_sheets(
     p: &Prepared,
@@ -501,19 +535,7 @@ fn core_of(
     else {
         return Err(AssemblyErrors(vec!["the firms' management not compiled for their opening".to_owned()]));
     };
-    phx_exec::trace::span("open.firms", || {
-        core.open_firms(&crate::core_firms::FirmsOpening {
-            register: &p.c.register,
-            countries: &opening,
-            sheets: &sheets,
-            streams: &p.c.streams,
-            stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
-            management: frm.management(),
-            today,
-            geo,
-        })
-    })
-    .map_err(|e| AssemblyErrors(vec![e]))?;
+    open_firms(p, &mut core, (&opening, &sheets, geo), today, frm)?;
     let jobs = crate::core_jobs::JobsOpening {
         register: &p.c.register,
         countries: &opening,
@@ -523,10 +545,11 @@ fn core_of(
         stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
     };
     let types = &frm.management().types;
-    phx_exec::trace::span("open.owners", || core.open_owners(&jobs, types)).map_err(|e| AssemblyErrors(vec![e]))?;
+    // The ages are read before the owners take their offices, which read their holders' age classes.
+    phx_exec::trace::span("open.windows", || core.refresh_windows(types, calendar.date(today)));
+    phx_exec::trace::span("open.owners", || core.open_owners(&jobs)).map_err(|e| AssemblyErrors(vec![e]))?;
     let _ = phx_exec::trace::span("open.jobs", || core.open_jobs(&jobs)).map_err(|e| AssemblyErrors(vec![e]))?;
     phx_exec::trace::span("open.owners_priced", || core.price_owners(&jobs)).map_err(|e| AssemblyErrors(vec![e]))?;
-    phx_exec::trace::span("open.windows", || core.refresh_windows(types, calendar.date(today)));
     phx_exec::trace::span("open.loans", || {
         core.open_loans(&crate::core_credit::CreditOpening {
             register: &p.c.register,

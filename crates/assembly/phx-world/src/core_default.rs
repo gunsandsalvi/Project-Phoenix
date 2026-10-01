@@ -182,6 +182,11 @@ impl Core {
         let claims = self.close_contracts(ctx, (key, country.get()), day);
         self.insolvency.claims.insert(estate, claims);
         let workers = self.owners_to_estate(key, estate);
+        // Its offices end with it, their block freed for a firm founded with as many.
+        let first = self.firm_of(key).map_or(phx_num::Missing::Absent, |v| v.head_office());
+        if let (phx_num::Missing::Present(first), Some(offices)) = (first, self.offices.as_mut()) {
+            offices.close(phx_pop::offices::OfficeRef::at(phx_id::Slot::new(first)));
+        }
         if let Some(law) = self.labour.laws.get(usize::from(country.get())).cloned() {
             for w in workers {
                 self.searches_again(ctx, (w.household, w.person), None, &law);

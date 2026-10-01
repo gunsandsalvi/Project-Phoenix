@@ -108,8 +108,10 @@ pub struct Management {
     /// must pass to wake.
     pub types: phx_val::types::Types,
     pub sensitivity: f64,
-    /// The return a firm's management requires a year, by which each firm's is drawn.
-    pub required_return: phx_core::register::values::Distribution,
+    /// The types of the return a firm's management requires a year, by which each firm's is drawn, and each type's
+    /// return.
+    pub required_return: phx_core::register::values::TypeSet,
+    pub required_returns: Vec<f64>,
 }
 
 impl Management {
@@ -128,9 +130,12 @@ impl Management {
         if adjustment == 0 {
             return Err("a stock's gap closed over no days".to_owned());
         }
+        let (required_return, required_returns) =
+            phx_val::types::cut(register, (crate::REQUIRED_RETURN.id, crate::REQUIRED_RETURN_TYPES.id))?;
         Ok(Management {
             types: phx_val::types::Types::compile(register)?,
-            required_return: register.distribution(crate::REQUIRED_RETURN.id)?.clone(),
+            required_return,
+            required_returns,
             adjustment_days: phx_rand::float::from_u64(adjustment),
             sensitivity: register.fixed("VAL.attention_sensitivity")?,
             production_days: phx_rand::float::from_u64(days),
@@ -254,11 +259,8 @@ mod tests {
                 windows: vec![0],
             },
             sensitivity: 2.0,
-            required_return: phx_core::register::values::Distribution {
-                family: phx_core::register::values::Family::Normal { mean: 15, sd: 5 },
-                discretisation: phx_core::register::values::Discretisation::EqualShares,
-                exp: 2,
-            },
+            required_return: one(3),
+            required_returns: vec![0.15],
         }
     }
 

@@ -209,6 +209,7 @@ impl Core {
             households: None,
             banks: None,
             agency_store: None,
+            offices: None,
             issuers: Vec::new(),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),

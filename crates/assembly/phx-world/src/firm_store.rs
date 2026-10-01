@@ -45,6 +45,9 @@ struct Words {
     reviewed: AttrW<u16>,
     flags: AttrW<u32>,
     mode: AttrW<u8>,
+    founding: [AttrW<u8>; 3],
+    stance: AttrW<u8>,
+    head_office: AttrW<u32>,
     books: BookWords,
 }
 
@@ -75,12 +78,16 @@ fn words() -> Words {
         reviewed: w!(u16, "last_review", 0, "K-32"),
         flags: w!(u32, "flags", 0, "K-32"),
         mode: w!(u8, "mode", 0, "FRT"),
+        founding: [w!(u8, "types", 0, "K-32"), w!(u8, "types", 1, "K-32"), w!(u8, "types", 2, "K-32")],
+        stance: w!(u8, "stance", 0, "K-32"),
+        head_office: w!(u32, "head_office", 0, "K-34"),
         books: BookWords::bind(&mut l),
     }
 }
 
 /// A firm as the opening begins it: its product, site and zone, productivity (its log factor), posted price, output a
-/// year, markup, sales a day it expects, and the day it opened, which stands as its last review.
+/// year, markup, sales a day it expects, the day it opened, which stands as its last review, its founding preferences'
+/// memory, switching and required-return types, its first stance, and its first office.
 #[derive(Clone, Copy, Debug)]
 pub struct FirmOpening {
     pub product: u16,
@@ -92,6 +99,9 @@ pub struct FirmOpening {
     pub markup: Missing<f64>,
     pub expected: Missing<f64>,
     pub opened: Day,
+    pub founding: [u8; 3],
+    pub stance: u8,
+    pub head_office: Missing<u32>,
 }
 
 /// The firms' store: their rows by slot, the map's region of each zone, the trades' price points their prices are
@@ -181,7 +191,14 @@ impl FirmStore {
             Opening::of(w.sold, 0),
             Opening::of(w.seen, 0),
             Opening::of(w.reviewed, reviewed),
+            Opening::of(w.stance, o.stance),
         ];
+        for (a, t) in w.founding.iter().zip(o.founding) {
+            opening.push(Opening::of(*a, t));
+        }
+        if let Missing::Present(first) = o.head_office {
+            opening.push(Opening::of(w.head_office, first));
+        }
         if let Missing::Present(m) = o.markup {
             opening.push(Opening::of(w.markup, whole(m * PART_ONE)));
         }
@@ -239,6 +256,15 @@ impl FirmStore {
     pub fn set_reviewed(&mut self, slot: Slot, day: Day) {
         let (w, off) = (self.w().reviewed, self.offset(day));
         self.set(slot, w, Missing::Present(off));
+    }
+
+    /// The stance its offices decide by, reconsidered.
+    pub fn set_stance(&mut self, slot: Slot, stance: u16) {
+        let Ok(stance) = u8::try_from(stance) else {
+            violation!(clause = "VAL.7", "a stance past its word", stance = stance);
+        };
+        let w = self.w().stance;
+        self.set(slot, w, Missing::Present(stance));
     }
 
     /// A carrier's mode.
@@ -361,6 +387,21 @@ impl FirmView<'_> {
     #[must_use]
     pub fn mode(&self) -> Option<u8> {
         present(self.warm.get(self.fs.w().mode.read()))
+    }
+
+    /// Its founding preferences' memory, switching and required-return types.
+    pub fn founding(&self) -> [Missing<u8>; 3] {
+        self.fs.w().founding.map(|a| self.warm.get(a.read()))
+    }
+
+    /// The stance its offices decide by.
+    pub fn stance(&self) -> Missing<u8> {
+        self.warm.get(self.fs.w().stance.read())
+    }
+
+    /// The first of its offices, the row its block begins.
+    pub fn head_office(&self) -> Missing<u32> {
+        self.warm.get(self.fs.w().head_office.read())
     }
 
     /// Whether it works its deposits as it last decided; none before it first decides.

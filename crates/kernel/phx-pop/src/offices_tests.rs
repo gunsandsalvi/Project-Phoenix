@@ -167,3 +167,22 @@ fn offices_save_round_trip() {
     assert_eq!(back.holder(a, &dir), Holder::Owner(p));
     assert_eq!(opened(&mut back, firm(2)), b, "the freed block waits in the save");
 }
+
+#[test]
+fn ended_firm_frees_block() {
+    let (mut dir, mut o) = fixture();
+    let p = dir.begin(PERSONS);
+    let a = opened(&mut o, firm(0));
+    o.fill_owned(a, p, Day::new(1));
+    assert_eq!(o.held(), 1);
+    o.close(a);
+    assert_eq!(o.held(), 0, "its offices vacated with it");
+    assert!(
+        refused(|| {
+            let _ = o.holder(a, &dir);
+        }),
+        "an ended institution's office is no one's"
+    );
+    assert_eq!(opened(&mut o, firm(0)), a, "its slot's next institution takes the block");
+    assert_eq!(o.holder(a, &dir), Holder::Vacant);
+}

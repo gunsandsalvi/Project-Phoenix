@@ -418,7 +418,7 @@ impl Core {
             if let (Some(ps), Some(hs)) = (self.persons.as_mut(), self.households.as_mut()) {
                 ps.end_person(&mut self.directory, &mut hs.heads(), *person, (day, Missing::Present(id)));
             }
-            self.person_left(key, person.word());
+            self.person_left(key, person.word(), day);
             record.gone += 1;
             let Some(cause) = w.causes.iter().find(|(i, _)| *i == at).map(|(_, e)| *e) else {
                 violation!(clause = "POP.15", "a person gone by no process", party = id.word());
@@ -489,7 +489,7 @@ impl Core {
                 ps.set_word(&self.directory, *r, p.word);
             }
             if p.get(state) == if_labour::class::RETIRED && word.get(state) != if_labour::class::RETIRED {
-                self.leave_jobs(key, r.word());
+                self.leave_jobs(key, r.word(), day);
                 record.retired += 1;
                 if let Some(country) = self.country_of_household(ctx, key)
                     && self.claim_pension((ctx.calendar, ctx.streams, day), (key, p), (r.word(), country))
@@ -508,8 +508,8 @@ impl Core {
 
     /// A person gone from its household: every contract naming it closes, and it no longer works in a firm it owns.
     #[clause("REP.3", "REP.26", "REP.31")]
-    fn person_left(&mut self, household: PartyKey, person: u64) {
-        self.stop_working(household, person);
+    fn person_left(&mut self, household: PartyKey, person: u64, day: Day) {
+        self.stop_working(household, person, day);
         for family in &mut self.families {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };
             let mine: Vec<Slot> = family.store.of(side, household.slot()).collect();

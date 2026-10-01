@@ -43,6 +43,8 @@ pub struct Core {
     pub banks: Option<crate::bank_store::BankStore>,
     /// The agencies' staffing on their kind's store, opened with the agencies.
     pub agency_store: Option<crate::agency_store::AgencyStore>,
+    /// The offices the firms decide through, each block opened at its firm's founding.
+    pub offices: Option<phx_pop::offices::Offices>,
     /// Each country's central bank, the issuer of its currency, by the currency's index.
     pub issuers: Vec<PartyKey>,
     pub bank_kind: Option<u8>,
@@ -325,7 +327,8 @@ impl Core {
             let bytes = phx_store::StoreStats::bytes(store) + own(kind);
             (*name, phx_exec::stats::Sample { rows_live: live, rows_ever: ever, bytes })
         });
-        kinds.chain([("directory", phx_exec::stats::Sample::of(&self.directory))]).collect()
+        let offices = self.offices.as_ref().map(|o| ("offices", phx_exec::stats::Sample::of(o)));
+        kinds.chain([("directory", phx_exec::stats::Sample::of(&self.directory))]).chain(offices).collect()
     }
 
     /// The persons live on the core, every one of them held in a household.

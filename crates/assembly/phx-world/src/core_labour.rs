@@ -1263,8 +1263,8 @@ impl Core {
 
     /// A person who retired leaves its jobs, the firm it works in as an owner and the searchers.
     #[clause("LAB.1", "LAB.6")]
-    pub(crate) fn leave_jobs(&mut self, household: PartyKey, person: u64) {
-        self.stop_working(household, person);
+    pub(crate) fn leave_jobs(&mut self, household: PartyKey, person: u64, day: Day) {
+        self.stop_working(household, person, day);
         let jobs = &self.bound;
         for (_, family) in self.families.iter_mut().enumerate().filter(|(i, _)| jobs.is_jobs(*i)) {
             let Some(side) = family.store.kinds.iter().position(|k| *k == household.kind()) else { continue };

@@ -2380,10 +2380,11 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   (K-32) · reserve 22. *Warm, 192*: agenda base u32 and 24 × u16 (K-43) · expected sales a day and the width of its
   surprises 2 × i64, in millionths of a unit (K-102) · wage bill
   i64 and staff hours 4 × u32 (K-54) · plant capacity i64 (K-67) · occupancy u32, overflow run u32, committed stock
-  i64 (K-60) · account u32 (K-47) · zone u16, legal form u8, flags u8, types 3 × u8 (K-32) · head's office u32 (K-34)
+  i64 (K-60) · account u32 (K-47) · zone u16, legal form u8, flags u8, founding types 3 × u8 (memory, switching,
+  required return) and the stance its offices decide by u8 (K-32) · its first office u32 (K-34)
   · industry u16, founded day u32, markup i64 (millionths), productivity i32 (its log factor in hundred-millionths),
   last review u16 (an offset from the run's first day) (K-32) · equity i64, net assets i64
-  (K-88) · cumulative output 2 × u64 (K-68) · reserve 9. *Cold, 112*: income-statement lines 10 × i64 (K-87) · tax
+  (K-88) · cumulative output 2 × u64 (K-68) · reserve 8. *Cold, 112*: income-statement lines 10 × i64 (K-87) · tax
   accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
   lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
 - **Institution**: per kind, the groups its declaration gives (most ≤ 1 024 B; unions and public authorities ≈ 3 KB).
@@ -2400,8 +2401,9 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   `PlaceStore`, built from the kind's declared `Place` alone, so no kind is branched on; a zoned kind's place is its
   own store's zone word, a person's its household's (K-33), and neither has a place store.
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
-  map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
-  S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
+  map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 38 B (S1.426 4, S1.441 1,
+  S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; the spare byte took the stance its
+  offices decide by at S1.210). A later step declares its
   words (`Extra`) into a named group's reserve, after the map's words.
 
 **API**: `Layout::compile(map, extras)` places each word at its offset, refusing a word twice, a group the map lacks
@@ -2598,25 +2600,28 @@ none for a form with no office; `office(first, (offset, kind), institution)` fin
 institution or kind stopping the run; `holder(o, dir)` → `Holder::Owner(PartyRef)` (its reference read from its slot's
 generation: a holder's death vacates its offices the same day, so its slot is never another's while it holds one),
 `Appointment(ContractLink)` or `Vacant`; `since`, `flags`; `begin_filling`, `fill_owned(o, person, day)`,
-`fill_appointed(o, contract)`, `vacate(o)` and `vacate_all` write it, nothing else; `grow(first, kind)` adds a line
+`fill_appointed(o, contract)`, `vacate(o)` and `vacate_all` write it, nothing else; `block_of(first)` walks an
+institution's offices in its form's order; `held()` counts those someone holds, once a run; `grow(first, kind)` adds a line
 head, moving the block whole to new rows (rare); `close(first)` frees it as the institution ends. `founding(types,
 institution)` reads an institution's founding preferences, its record's type index into its country's declared sets
 drawn at founding; an institution with none stops the run (never a default).
 
 **Algorithms and bounds**: an office is one row read; a block's open or close is its rows written; a grow moves one
 block. A person's offices (`offices_of`) are its appointments in its chain (K-53, S1.258) and the institutions it owns
-and manages (K-60, S1.283), read when those bases hold them; until then a death's caller names the offices it vacates.
+and manages (K-60, S1.283), read when those bases hold them; until then the owners' book names the firm whose offices
+a managing owner's death or retirement passes on or vacates (`core_owners`).
 
 **Save and load**: the rows raw and the freed blocks; nothing is derived.
 
 **Volumes and ratchets** (`[fin.parties]`): the design point's 2 M offices, 11 in 25 owner-managed: `office_bytes` 16;
 `holder_ns` 4.5 (3.3–3.6 measured, the step's 3); `mb` 1 251.7 with the offices' 32 MB.
 
-**Extension points**: S1.210 (the decision core's holders and founding preferences onto it); S1.343; S1.348;
+**Extension points**: S1.343; S1.348;
 S2.192; S3.111; S3.156; S8.104; S8.123–S8.125; S4.102; S4.142; S5.135; S5.136; S5.142; S5.144.
 
-**Today**: the core's decisions keep their holders and founding preferences in the decision core's own tables (§7.16,
-K-100) until S1.210 moves them onto this base.
+**Today**: the firms' offices are opened on it, their first rows in the firms' `head_office` words, their owners
+holding them (K-100); `offices_held` in the run report counts the offices someone holds. The other kinds' offices open
+with the processes that fill them.
 
 #### K-35 The per-day party cache
 
@@ -3352,24 +3357,32 @@ an office, so persons and minds attach to it later (S3.05, Stage 8) without a de
   counted with it.
 - **Offices.** Each legal form lists the offices it decides through (`PTY.legal_forms`, PTY.16): a company its chief
   executive and the head of its line, a bank its chief executive and its loan officers, a treasury its minister, a
-  central bank its governor. The core's `Offices` holds, per institution kind, each institution's founding preferences
-  by its slot, drawn at its opening (MND.16), and the offices' holders, a map from (institution, office) to a person,
-  empty until the processes that fill offices exist (S3.05); a person holding several offices, as an owner managing
-  its own firm, is several entries naming one person.
+  central bank its governor. `Decisions` keeps each decision's office's place among each kind's form's offices, and
+  how each kind's institutions hold their founding preferences (`Founding`, MND.16): drawn for each and kept in its
+  record (a firm's memory, switching and required-return types, `FRM.required_return` cut into
+  `FRM.required_return_types`, with the stance its offices decide by, K-32), the same for every one of the kind (a
+  bank's the shared `BNK.required_return`; a treasury's and an agency's none, their state founding them with no
+  preference of its own), or undeclared, whose office decisions stop the run. A firm's offices are a block of the
+  offices base (K-34), opened at its founding, its first row in its record, its owner holding them all while it
+  manages it, closed as it ends. The other kinds' offices open with the processes that fill them (S8.124, S8.125 a
+  bank's, S3.111 a central bank's, S5.144 a treasury's), their decisions reading their founding preferences until then.
 - **Preferences** (`phx_core::decisions::Prefs`): what a decider brings to a rule before minds — its memory type, its
   switching type and its stance on the heuristics' menu (VAL.6, VAL.7), the return it requires (FRM.15) and its
   management type (FRM.5's speeds and curvature, one declared type while no source measures their spread); each
-  `Missing` where the decider holds none. A firm's are its founding preferences; a household's are its store's
-  outlook words (VAL.23); a person's are its household's until S8.01 draws each person's.
+  `Missing` where the decider holds none. A firm's are its founding preferences, its owner holding its offices at its
+  own age class, read from its word on the day the age classes were last read (the year's close or the opening),
+  until persons hold minds of their own; a household's are its store's outlook words (VAL.23); a person's are its
+  household's until S8.01 draws each person's.
 - **Resolution.** `decide(point, party, input)` binds the point's kind once per pass (`bind`, an index, no lookup by
   name on the path), then for each party names the decider: the player where it keeps the decision, else the office's
-  holder, else the institution's founding preferences; a household's or a person's decision is its own. It hands the
+  holder (read through the institution's first office, O(1), an appointed office stopping the run until appointments
+  exist, K-53), else the institution's founding preferences; a household's or a person's decision is its own. It hands the
   input builder the decider's preferences — a rule reads an institution's preferences only there — calls the rule on
   the input, and counts the decision by its kind and the decider's standing (player, holder, founding preferences,
   household, person), counts any worker adds to (`phx_exec::Tally`) that the run report's `decisions` and LC-1-52 read.
   A decision whose taker is an office the party's form does not declare stops the run (MND.20).
 - **A decider's outlooks change with its decisions.** A reconsidered stance is written back to where the decider's
-  preferences live: the founding preferences for an office no one holds, the household's store for a household.
+  preferences live: the record of the institution whose office took it, the household's store for a household.
 - **Processes' decisions.** A decision taken inside a population process (retiring, trying for a child) reads its
   decider through the process view's `decider`, which the core supplies and counts; the rule is then called as any
   other's.
@@ -3867,10 +3880,10 @@ their output takes of it (`deal`), evenly where none takes it; a firm left with 
 household holds a share of the firm (`Owners::of`, `holds`) and the person works in it (`Owners::working`) its
 country's full-time week (`LAB.full_time_hours`) in its occupation, counted with the staff in the level, the posting
 rule's hours held and the staff's capacity, and as employed in the statistics. The first working owner manages the
-firm: it holds every office a decision is taken in by the firm's form (`Decisions::appoint`), with the preferences the
-firm was founded with, so the firm's decisions are counted as its holder's. A working owner who dies, emigrates or
-retires stops working there, its offices passing to the next owner working there or standing empty; the share stays
-its household's. A household that ends passes its shares to its estate, opened even with no money; a firm that ends
+firm: it holds every office of the firm's block (`Offices::fill_owned`, K-34) from the day it takes them, bringing the
+preferences the firm was founded with, so the firm's decisions are counted as its holder's. A working owner who dies,
+emigrates or retires stops working there, its offices passing the same day to the next owner working there or standing
+empty; the share stays its household's. A household that ends passes its shares to its estate, opened even with no money; a firm that ends
 makes its owners its estate's, its working owners search again (with no benefit, being paid no wage), and the estate
 pays what its claims leave to its owners, a share each; an estate with no owners pays it to its country's treasury, to
 which what the estate owns passes too. The owners' income while the firm runs is its payout (FRM.10, S2.03).

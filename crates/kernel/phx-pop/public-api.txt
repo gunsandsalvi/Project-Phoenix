@@ -240,11 +240,13 @@ impl phx_store::pod::__seal::Sealed for phx_pop::offices::OfficeRow
 pub struct phx_pop::offices::Offices<B: phx_store::backing::Backing>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_pop::offices::Offices<B>
 pub fn phx_pop::offices::Offices<B>::begin_filling(&mut self, phx_pop::offices::OfficeRef, bool)  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::block_of(&self, phx_pop::offices::OfficeRef) -> core::iter::adapters::map::Map<core::ops::range::Range<u32>, fn(u32) -> phx_pop::offices::OfficeRef>  // used by: phx-fin, phx-world
 pub fn phx_pop::offices::Offices<B>::close(&mut self, phx_pop::offices::OfficeRef)  // used by: phx-fin
 pub fn phx_pop::offices::Offices<B>::fill_appointed(&mut self, phx_pop::offices::OfficeRef, phx_id::ids::ContractLink)  // used by: phx-fin
 pub fn phx_pop::offices::Offices<B>::fill_owned(&mut self, phx_pop::offices::OfficeRef, phx_id::ids::PartyRef, phx_id::day::Day)  // used by: phx-fin
 pub fn phx_pop::offices::Offices<B>::flags(&self, phx_pop::offices::OfficeRef) -> (bool, bool)  // used by: phx-fin
 pub fn phx_pop::offices::Offices<B>::grow(&mut self, phx_pop::offices::OfficeRef, u16) -> phx_pop::offices::OfficeRef  // used by: phx-fin
+pub fn phx_pop::offices::Offices<B>::held(&self) -> u64  // used by: phx-fin, phx-world
 pub fn phx_pop::offices::Offices<B>::holder<D: phx_store::backing::Backing>(&self, phx_pop::offices::OfficeRef, &phx_pop::directory::Directory<D>) -> phx_pop::offices::Holder  // used by: phx-fin
 pub fn phx_pop::offices::Offices<B>::new(&mut phx_store::backing::AddressSpace, u8, u32) -> phx_pop::offices::Offices<B>  // used by: phx-fin
 pub fn phx_pop::offices::Offices<B>::office(&self, phx_pop::offices::OfficeRef, (u16, u16), phx_id::ids::PartyKey) -> phx_pop::offices::OfficeRef  // used by: phx-fin

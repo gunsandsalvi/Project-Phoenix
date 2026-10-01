@@ -17,7 +17,7 @@ use std::collections::BTreeMap;
 
 use phx_core::StreamDef;
 use phx_core::slots::DaySlot;
-use phx_id::{Day, PartyKey, PartyRef};
+use phx_id::{Day, PartyRef};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::Subject;
@@ -302,9 +302,9 @@ impl Outlooks {
 }
 
 impl crate::core::Core {
-    /// Each decider's age class at a year's close, and at the opening: a household's its head's, a working owner's its
-    /// own, the offices it holds carrying it; and each class's lived years, the mean age of the household heads in it,
-    /// by which the public series weight their closed years.
+    /// Each decider's age class at a year's close, and at the opening: a household's its head's, an office holder's
+    /// its own, read on that day; and each class's lived years, the mean age of the household heads in it, by which the
+    /// public series weight their closed years.
     #[clause("VAL.23")]
     pub(crate) fn refresh_windows(&mut self, types: &Types, date: phx_id::Date) {
         let mut ages = vec![(0_u64, 0_u64); types.windows.len()];
@@ -354,24 +354,7 @@ impl crate::core::Core {
         for o in [&mut self.goods.outlooks, &mut self.stats.outlooks] {
             (o.classes, o.lived) = (types.windows.len(), lived.clone());
         }
-        let working: Vec<(PartyKey, usize, PartyKey, u64)> = self
-            .owners
-            .working
-            .iter()
-            .flat_map(|(firm, ws)| ws.iter().enumerate().map(|(i, w)| (*firm, i, w.household, w.person)))
-            .collect();
-        for (firm, i, household, person) in working {
-            let window = match self.age_of((household, person), date) {
-                Some(age) => types.window_of(age),
-                None => Missing::Absent,
-            };
-            if let Some(w) = self.owners.working.get_mut(&firm).and_then(|ws| ws.get_mut(i)) {
-                w.window = window;
-            }
-            if i == 0 {
-                self.decisions.set_window(firm, person, window);
-            }
-        }
+        self.set_windows(&types.windows, date);
     }
 
     /// A household's stance reconsidered on its occasion, over its country's consumer index as published.

@@ -125,6 +125,12 @@ impl<B: Backing> Offices<B> {
         o
     }
 
+    /// Every office of the block an institution's first office begins, in its form's order.
+    pub fn block_of(&self, first: OfficeRef) -> std::iter::Map<std::ops::Range<u32>, fn(u32) -> OfficeRef> {
+        let (start, len) = self.block(first);
+        (start..start + len).map(|at| OfficeRef(Slot::new(at)))
+    }
+
     /// The block an institution's first office begins: its rows while they name the institution.
     fn block(&self, first: OfficeRef) -> (u32, u32) {
         let institution = self.row(first).institution;
@@ -164,6 +170,15 @@ impl<B: Backing> Offices<B> {
     pub fn flags(&self, o: OfficeRef) -> (bool, bool) {
         let f = self.row(o).flags;
         (f & OFFICE_FILLING != 0, f & OFFICE_TERM_BOUND != 0)
+    }
+
+    /// How many offices someone holds, read once a run for its report.
+    #[must_use]
+    pub fn held(&self) -> u64 {
+        let held = (0..whole(self.rows.len()))
+            .filter(|at| self.rows.get(Slot::new(*at)).is_some_and(|r| r.institution != NONE && r.holder != NONE))
+            .count();
+        u64::from(whole(held))
     }
 
     /// A fill begun: the office stays empty, or with its holder, until it is filled.

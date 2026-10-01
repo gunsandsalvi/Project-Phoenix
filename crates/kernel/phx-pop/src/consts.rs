@@ -89,9 +89,10 @@ const FIRM_HOT: GroupDecl = GroupDecl {
 
 /// A firm's warm row: its agenda, sales outlook (the sales a day it expects and the width of its surprises, in
 /// millionths of a unit), wage bill, staff hours and plant capacity, plant occupancy, committed stock, identity
-/// (account, zone, legal form, flags, founding preferences, memory and stance types, head's office, industry, founding
-/// day), markup (in millionths), productivity (its log factor in hundred-millionths) and the day of its last price
-/// review, equity and net assets, and cumulative output.
+/// (account, zone, legal form, flags, its founding preferences' memory, switching and required-return types, the
+/// stance its offices decide by, its first office, industry, founding day), markup (in millionths), productivity (its
+/// log factor in hundred-millionths) and the day of its last price review, equity and net assets, and cumulative
+/// output.
 const FIRM_WARM: GroupDecl = GroupDecl {
     name: "warm",
     width: 192,
@@ -111,6 +112,7 @@ const FIRM_WARM: GroupDecl = GroupDecl {
         word("legal_form", U8, 1, false, "K-32"),
         word("identity_flags", U8, 1, false, "K-32"),
         word("types", U8, 3, true, "K-32"),
+        word("stance", U8, 1, true, "K-32"),
         word("head_office", U32, 1, true, "K-34"),
         word("industry", U16, 1, true, "K-32"),
         word("founded", U32, 1, true, "K-32"),
@@ -283,10 +285,10 @@ const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
 const _: () = assert!(width(&FIRM) == 528 && FIRM_HOT.width == 192 && FIRM_WARM.width == 192);
 /// The reserves later steps fill: the household's 12 bytes.
 const _: () = assert!(HOUSEHOLD_HOT.width - used(&HOUSEHOLD_HOT) + HOUSEHOLD_WARM.width - used(&HOUSEHOLD_WARM) == 12);
-/// The firm's reserve, 39 bytes.
+/// The firm's reserve, 38 bytes.
 const _: () = assert!(
     FIRM_HOT.width - used(&FIRM_HOT) + FIRM_WARM.width - used(&FIRM_WARM) + FIRM_COLD.width - used(&FIRM_COLD)
         + FIRM_LISTS.width
         - used(&FIRM_LISTS)
-        == 39
+        == 38
 );

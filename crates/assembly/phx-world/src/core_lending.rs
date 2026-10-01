@@ -92,24 +92,24 @@ impl Core {
             return Err(format!("country {c}: more loan classes than a bank's lending record holds"));
         }
         self.credit = Credit { laws, filed, ..Credit::default() };
-        let mut founded = Vec::new();
+        let mut standards = Vec::new();
         for (bank, country) in self.lenders() {
             let Some(law) = self.credit.laws.get(country) else { continue };
             // A bank opens admitting every class but those in default.
             let standard =
                 law.default_rates.iter().position(|r| *r < 1.0).and_then(|p| u32::try_from(p).ok()).unwrap_or(0);
-            // The return its shareholders require is its preference at its founding, every bank's the same.
-            founded.push((
-                bank,
-                standard,
-                phx_core::Prefs { required_return: Missing::Present(law.required_return), ..phx_core::Prefs::NONE },
-            ));
+            standards.push((bank, standard));
         }
-        for (bank, standard, prefs) in founded {
+        for (bank, standard) in standards {
             if let Some(bs) = self.banks.as_mut() {
                 bs.set_standard(bank.slot(), standard);
             }
-            self.found(bank, prefs);
+        }
+        // The return its shareholders require is a bank's preference at its founding, every bank's the same.
+        if let Some(kind) = self.bank_kind {
+            let required = register.fixed(sys_bnk::REQUIRED_RETURN.id)?;
+            let prefs = phx_core::Prefs { required_return: Missing::Present(required), ..phx_core::Prefs::NONE };
+            self.found(kind, crate::core_decide::Founding::Shared(prefs));
         }
         self.class_opening_loans(today);
         Ok(())

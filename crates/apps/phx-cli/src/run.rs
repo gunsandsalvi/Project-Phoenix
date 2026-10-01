@@ -275,7 +275,7 @@ fn owners_report(w: Inspector<'_>) -> serde_json::Value {
         "unowned_at_opening": o.unowned,
         "firms_worked_by_owners": o.working.len(),
         "working_owners": o.works_at.len(),
-        "offices_held": w.core().decisions.held(),
+        "offices_held": w.core().offices.as_ref().map_or(0, phx_pop::offices::Offices::held),
         "holders": o.holds.len(),
     })
 }

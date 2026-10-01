@@ -81,3 +81,11 @@ owner = "FRM"
 source = "measured"
 source_ref = "The return a firm's management requires a year, its hurdle rate, drawn for each firm: normal, with the mean of 15% that US chief financial officers report (Jagannathan, Matsa, Meier and Tarhan 2016, Why do firms use high discount rates?, Journal of Financial Economics 120(3), table 1) and a spread of 5 points, near the interquartile range of their reported rates over its width in a normal's."
 value = { family = "normal", discretisation = "equal_shares", mean = "0.15", sd = "0.05" }
+
+[[primitive]]
+id = "FRM.required_return_types"
+kind = "RESOLUTION"
+owner = "FRM"
+source = "assumed"
+source_ref = "Resolution (NUM.4): the required return's distribution cut into five types, each a fifth of its mass at its conditional mean, so that a firm's founding preferences are type indices its record holds (the owner's choice, 2026-10-01)."
+value = 5

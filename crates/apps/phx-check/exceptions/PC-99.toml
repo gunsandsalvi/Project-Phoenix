@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 730 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 718 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -338,37 +338,7 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_decide.rs"
-item = "Core::open_decisions"
-what = "`.clone()`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_decide.rs"
-item = "Core::open_decisions"
-what = "`.collect()`"
-count = 6
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_decide.rs"
-item = "Core::open_decisions"
-what = "`vec!`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_decide.rs"
-item = "Decisions::appoint"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_decide.rs"
 item = "Decisions::taken"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_decide.rs"
-item = "Decisions::vacate"
 what = "`.collect()`"
 count = 1
 
@@ -1078,7 +1048,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_outlooks.rs"
 item = "Core::refresh_windows"
 what = "`.collect()`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_outlooks.rs"

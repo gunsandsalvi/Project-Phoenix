@@ -3,13 +3,12 @@
 //! a person — hands the decision's input that decider's preferences and nothing else, calls the decision's rule and
 //! counts the decision by its decider.
 
-use std::collections::BTreeMap;
-
 use phx_core::decisions::{DecisionKinds, DecisionPointDecl, Prefs, QueuedPayload, Say, Standing, TakenIn};
 use phx_core::kinds::LegalForm;
-use phx_id::{PartyKey, Slot};
+use phx_id::{PartyKey, PartyRef, Slot};
 use phx_macros::{clause, opening};
 use phx_num::{Missing, violation};
+use phx_pop::offices::{Holder, OfficeRef};
 
 use crate::core::Core;
 
@@ -107,28 +106,36 @@ impl Points {
     }
 }
 
-/// The decisions the world takes and who takes them: each decision's name and taker, the office it is taken in by
-/// each party kind whose form declares it, each kind's founding preferences by slot, the offices' holders with their
-/// own preferences, and the decisions taken, by kind and by the decider's standing.
+/// How a kind's institutions hold the preferences they were founded with: drawn for each and kept in its record — its
+/// memory, switching and required-return types, with each required-return type's return — or the same for every one;
+/// or not declared, for a kind founding none, whose office decisions stop the run.
+#[derive(Clone, Debug, PartialEq, phx_macros::Saved)]
+pub enum Founding {
+    Record(Vec<f64>),
+    Shared(Prefs),
+    Undeclared,
+}
+
+/// The decisions the world takes and who takes them: each decision's name and taker, the place of the office it is
+/// taken in among the offices of each party kind's form, how each kind's institutions hold their founding preferences,
+/// the age classes' first ages and the day a holder's age is read on, and the decisions taken, by kind and by the
+/// decider's standing.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Decisions {
     names: Vec<String>,
     taken_in: Vec<TakenIn>,
-    office: Vec<Vec<Option<u8>>>,
-    founding: Vec<Vec<Prefs>>,
-    holders: BTreeMap<(PartyKey, u8), (u64, Prefs)>,
+    office: Vec<Vec<Option<u16>>>,
+    founded: Vec<Founding>,
+    windows: Vec<i64>,
+    windows_on: Option<phx_id::Date>,
     taken: Vec<Vec<phx_exec::Tally>>,
 }
 
 impl Decisions {
-    /// Who takes a decision in an office for a party: its holder, else its institution's founding preferences; none
-    /// where the party's form does not declare the office.
-    fn in_office(&self, at: usize, party: PartyKey) -> Option<(Standing, Prefs)> {
-        let office = (*self.office.get(at)?.get(usize::from(party.kind()))?)?;
-        if let Some((_, prefs)) = self.holders.get(&(party, office)) {
-            return Some((Standing::Holder, *prefs));
-        }
-        Some((Standing::Founding, self.founding_of(party)))
+    /// The place of the office a decision is taken in among its party's form's offices; none where the form does not
+    /// declare it.
+    fn office_of(&self, at: usize, kind: u8) -> Option<u16> {
+        *self.office.get(at)?.get(usize::from(kind))?
     }
 
     /// Each decision's name and how many times it was taken by each standing of decider.
@@ -158,60 +165,49 @@ impl Decisions {
         self.names.iter().position(|n| n == name)
     }
 
-    /// A person put in every office a decision is taken in by its party's form, bringing its own preferences.
-    #[clause("PTY.16")]
-    pub(crate) fn appoint(&mut self, party: PartyKey, person: u64, prefs: Prefs) {
-        let kind = usize::from(party.kind());
-        let mut offices: Vec<u8> = self.office.iter().filter_map(|o| o.get(kind).copied().flatten()).collect();
-        offices.sort_unstable();
-        offices.dedup();
-        for office in offices {
-            self.holders.insert((party, office), (person, prefs));
-        }
-    }
-
-    /// The offices a person holds at a party left empty, or every one of its offices where no person is named.
-    #[clause("PTY.16")]
-    pub(crate) fn vacate(&mut self, party: PartyKey, person: Option<u64>) {
-        let held: Vec<(PartyKey, u8)> = self
-            .holders
-            .range((party, 0)..=(party, u8::MAX))
-            .filter(|(_, (holder, _))| person.is_none_or(|p| p == *holder))
-            .map(|(k, _)| *k)
-            .collect();
-        for k in held {
-            self.holders.remove(&k);
-        }
-    }
-
-    /// The age class of a party's office holder, where a person holds its offices.
-    pub(crate) fn set_window(&mut self, party: PartyKey, person: u64, window: Missing<u16>) {
-        for (_, (holder, prefs)) in self.holders.range_mut((party, 0)..=(party, u8::MAX)) {
-            if *holder == person {
-                prefs.window = window;
-            }
-        }
-    }
-
-    /// The preferences a party's institution was founded with.
-    pub(crate) fn founding_of(&self, party: PartyKey) -> Prefs {
-        self.founding
-            .get(usize::from(party.kind()))
-            .and_then(|f| f.get(usize::try_from(party.slot().get()).unwrap_or(usize::MAX)))
-            .copied()
-            .unwrap_or(Prefs::NONE)
-    }
-
-    /// How many offices a person holds.
-    #[must_use]
-    pub fn held(&self) -> usize {
-        self.holders.len()
-    }
-
     /// A decision counted as taken by a standing of decider.
     pub(crate) fn count(&self, at: usize, standing: Standing) {
         if let Some(c) = self.taken.get(at).and_then(|t| t.get(standing_at(standing))) {
             c.add(1);
+        }
+    }
+}
+
+/// An institution's founding preferences from its record: its memory, switching and required-return types, the last
+/// read as its type's return, and the stance its offices decide by. A type the record lacks stops the run.
+#[clause("MND.16")]
+fn founding_prefs((types, stance): ([Missing<u8>; 3], Missing<u8>), returns: &[f64], party: PartyKey) -> Prefs {
+    let [memory, switching, required] = types.map(|t| phx_pop::offices::founding(t, party));
+    let Some(required_return) = returns.get(usize::from(required)).copied() else {
+        violation!(clause = "MND.16", "a required-return type beyond its types", party = party.word());
+    };
+    Prefs {
+        memory: Missing::Present(u16::from(memory)),
+        switching: Missing::Present(u16::from(switching)),
+        stance: match stance {
+            Missing::Present(s) => Missing::Present(u16::from(s)),
+            Missing::Absent => Missing::Absent,
+        },
+        required_return: Missing::Present(required_return),
+        ..Prefs::NONE
+    }
+}
+
+/// Who decides in an office: the person who owns and manages its institution, bringing the institution's founding
+/// preferences at its own age class until persons hold minds of their own; else, while it is empty, the founding
+/// preferences. An appointed office waits for the appointments its holder is read through.
+#[clause("MND.16", "MND.20")]
+fn resolve(
+    holder: Holder,
+    founding: Prefs,
+    window: impl FnOnce(PartyRef) -> Missing<u16>,
+    party: PartyKey,
+) -> (Standing, Prefs) {
+    match holder {
+        Holder::Vacant => (Standing::Founding, founding),
+        Holder::Owner(p) => (Standing::Holder, Prefs { window: window(p), ..founding }),
+        Holder::Appointment(_) => {
+            violation!(clause = "PTY.16", "an appointed office read before appointments are", party = party.word())
         }
     }
 }
@@ -223,8 +219,9 @@ fn standing_at(standing: Standing) -> usize {
 
 impl Core {
     /// The decisions opened: each kind as the register declares it, its office found among the forms of the core's
-    /// kinds, each kind's founding preferences empty until its parties are drawn, and no office held.
+    /// kinds, and no kind's founding preferences known until its institutions are founded.
     #[clause("MND.20", "PTY.16")]
+    #[opening]
     pub fn open_decisions(&mut self, kinds: &DecisionKinds, forms: &[Option<&LegalForm>]) {
         let office = kinds
             .kinds
@@ -233,7 +230,7 @@ impl Core {
                 forms
                     .iter()
                     .map(|f| match (&k.taken_in, f) {
-                        (TakenIn::Office(o), Some(f)) => f.office(o).and_then(|i| u8::try_from(i).ok()),
+                        (TakenIn::Office(o), Some(f)) => f.office(o).and_then(|i| u16::try_from(i).ok()),
                         _ => None,
                     })
                     .collect()
@@ -243,8 +240,9 @@ impl Core {
             names: kinds.kinds.iter().map(|k| k.name.clone()).collect(),
             taken_in: kinds.kinds.iter().map(|k| k.taken_in.clone()).collect(),
             office,
-            founding: vec![Vec::new(); self.names.len()],
-            holders: BTreeMap::new(),
+            founded: vec![Founding::Undeclared; self.names.len()],
+            windows: Vec::new(),
+            windows_on: None,
             taken: kinds
                 .kinds
                 .iter()
@@ -253,23 +251,20 @@ impl Core {
         };
     }
 
-    /// A party's preferences drawn at its founding, read by each of its offices no one holds.
+    /// How a kind's institutions hold their founding preferences, read by each of their offices no one holds.
     #[clause("MND.16")]
-    pub(crate) fn found(&mut self, party: PartyKey, prefs: Prefs) {
-        let Some(by_slot) = self.decisions.founding.get_mut(usize::from(party.kind())) else {
-            violation!(
-                clause = "MND.16",
-                "founding preferences for a kind the core does not keep",
-                kind = party.kind()
-            );
+    pub(crate) fn found(&mut self, kind: u8, founding: Founding) {
+        let Some(f) = self.decisions.founded.get_mut(usize::from(kind)) else {
+            violation!(clause = "MND.16", "founding preferences for a kind the core does not keep", kind = kind);
         };
-        let at = usize::try_from(party.slot().get()).unwrap_or(usize::MAX);
-        if by_slot.len() <= at {
-            by_slot.resize(at + 1, Prefs::NONE);
-        }
-        if let Some(p) = by_slot.get_mut(at) {
-            *p = prefs;
-        }
+        *f = founding;
+    }
+
+    /// The age classes' first ages and the day a holder's age is read on, the last year's close or the opening.
+    pub(crate) fn set_windows(&mut self, windows: &[i64], on: phx_id::Date) {
+        self.decisions.windows.clear();
+        self.decisions.windows.extend_from_slice(windows);
+        self.decisions.windows_on = Some(on);
     }
 
     /// A decision point at the place bound for it; one bound to none, which the register does not declare, stops the
@@ -318,6 +313,33 @@ impl Core {
         }
     }
 
+    /// Who takes a decision in an institution's office, read through the first office its record keeps. An
+    /// institution founded without its preferences, or without its offices, stops the run.
+    #[clause("MND.16", "PTY.16")]
+    fn in_office(&self, party: PartyKey, office: u16, returns: &[f64]) -> (Standing, Prefs) {
+        let Some(v) = self.firm_of(party) else {
+            violation!(clause = "MND.16", "an office decision of an institution with no record", party = party.word());
+        };
+        let founding = founding_prefs((v.founding(), v.stance()), returns, party);
+        let (Missing::Present(first), Some(offices)) = (v.head_office(), self.offices.as_ref()) else {
+            violation!(clause = "PTY.16", "an institution whose offices were never opened", party = party.word());
+        };
+        let o = offices.office(OfficeRef::at(Slot::new(first)), (office, office), party);
+        resolve(offices.holder(o, &self.directory), founding, |p| self.holder_window(p), party)
+    }
+
+    /// A holder's age class on the day ages are read on; none before they are first read.
+    fn holder_window(&self, holder: PartyRef) -> Missing<u16> {
+        let Some(on) = self.decisions.windows_on else { return Missing::Absent };
+        let Some(view) = self.persons.as_ref().and_then(|ps| ps.view_at(holder.slot())) else {
+            violation!(clause = "PTY.17", "an office held by no live person", party = holder.word());
+        };
+        match u32::try_from(view.word().age_on(on)) {
+            Ok(age) => phx_val::types::window_in(&self.decisions.windows, age),
+            Err(_) => Missing::Absent,
+        }
+    }
+
     /// Who takes a decision for a party and the preferences it brings: the office's holder, else its institution's
     /// founding preferences; a household's own; a person's, its household's until each person holds its own. A party
     /// whose form lacks the decision's office stops the run.
@@ -326,14 +348,24 @@ impl Core {
         match self.decisions.taken_in.get(b.at) {
             Some(TakenIn::Household) => (Standing::Household, self.household_prefs(party.slot())),
             Some(TakenIn::Person) => (Standing::Person, self.household_prefs(party.slot())),
-            Some(TakenIn::Office(_)) => match self.decisions.in_office(b.at, party) {
-                Some(decider) => decider,
-                None => violation!(
-                    clause = "MND.20",
-                    "a decision taken in an office its party's form does not declare",
-                    kind = party.kind()
-                ),
-            },
+            Some(TakenIn::Office(_)) => {
+                let Some(office) = self.decisions.office_of(b.at, party.kind()) else {
+                    violation!(
+                        clause = "MND.20",
+                        "a decision taken in an office its party's form does not declare",
+                        kind = party.kind()
+                    );
+                };
+                match self.decisions.founded.get(usize::from(party.kind())) {
+                    Some(Founding::Record(returns)) => self.in_office(party, office, returns),
+                    Some(Founding::Shared(prefs)) => (Standing::Founding, *prefs),
+                    Some(Founding::Undeclared) | None => violation!(
+                        clause = "MND.16",
+                        "an office decision of a kind founded with no preferences",
+                        kind = party.kind()
+                    ),
+                }
+            }
             None => violation!(clause = "MND.20", "a decision bound beyond the kinds"),
         }
     }
@@ -394,24 +426,21 @@ impl Core {
         self.decisions.count(b.at, standing);
     }
 
-    /// A decider's stance, reconsidered in a decision, written where its preferences live: its holder's, its
-    /// institution's founding preferences, or its household's store.
+    /// A decider's stance, reconsidered in a decision, written where its preferences live: the record of the
+    /// institution whose office took it, or its household's store.
     #[clause("VAL.7", "MND.20")]
     pub(crate) fn set_stance<I, O>(&mut self, b: Bound<I, O>, party: PartyKey, stance: u16) {
         match self.decider(b, party).0 {
-            Standing::Holder => {
-                let office = self.decisions.office.get(b.at).and_then(|o| o.get(usize::from(party.kind()))).copied();
-                if let Some(Some(office)) = office
-                    && let Some((_, p)) = self.decisions.holders.get_mut(&(party, office))
-                {
-                    p.stance = Missing::Present(stance);
+            Standing::Holder | Standing::Founding => {
+                if !matches!(self.decisions.founded.get(usize::from(party.kind())), Some(Founding::Record(_))) {
+                    violation!(
+                        clause = "VAL.7",
+                        "a stance for an institution whose record keeps none",
+                        kind = party.kind()
+                    );
                 }
-            }
-            Standing::Founding => {
-                let at = usize::try_from(party.slot().get()).unwrap_or(usize::MAX);
-                if let Some(p) = self.decisions.founding.get_mut(usize::from(party.kind())).and_then(|f| f.get_mut(at))
-                {
-                    p.stance = Missing::Present(stance);
+                if let Some(fs) = self.firms.as_mut() {
+                    fs.set_stance(party.slot(), stance);
                 }
             }
             Standing::Household | Standing::Person => {
@@ -424,60 +453,81 @@ impl Core {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
-    use phx_core::decisions::{Prefs, Standing, TakenIn};
-    use phx_id::{PartyKey, Slot};
+    use phx_core::decisions::{Prefs, Standing};
+    use phx_id::{Day, PartyKey, Slot};
     use phx_num::Missing;
+    use phx_pop::directory::Directory;
+    use phx_pop::offices::{OfficeRef, Offices};
+    use phx_store::{AddressSpace, HeapBacking};
 
-    use super::Decisions;
+    use super::{founding_prefs, resolve};
 
-    /// A decision taken in the second office of kind 1's form, which kind 0's form lacks; kind 1's party at slot 2
-    /// founded with a required return.
-    fn fixture() -> (Decisions, PartyKey) {
-        let firm = PartyKey::new(1, Slot::new(2));
-        let founded = Prefs { required_return: Missing::Present(0.1), ..Prefs::NONE };
-        let decisions = Decisions {
-            names: vec!["FRM.close".to_owned()],
-            taken_in: vec![TakenIn::Office("chief_executive".to_owned())],
-            office: vec![vec![None, Some(1)]],
-            founding: vec![Vec::new(), vec![Prefs::NONE, Prefs::NONE, founded]],
-            holders: BTreeMap::new(),
-            taken: vec![Standing::ALL.iter().map(|_| phx_exec::Tally::default()).collect()],
-        };
-        (decisions, firm)
+    type Heap = HeapBacking<4096>;
+
+    const FIRMS: u8 = 0;
+    const PERSONS: u8 = 1;
+
+    /// A firm's two offices opened empty, its first office, and a person to hold them.
+    fn fixture() -> (Directory<Heap>, Offices<Heap>, PartyKey, OfficeRef, phx_id::PartyRef) {
+        let mut space = AddressSpace::empty();
+        let mut dir = Directory::new(&mut space, &[8, 8], 8, (Day::new(1), 730));
+        let firm = dir.begin(FIRMS);
+        let person = dir.begin(PERSONS);
+        let mut offices = Offices::new(&mut space, PERSONS, 8);
+        let firm = PartyKey::new(firm.kind(), firm.slot());
+        let Missing::Present(first) = offices.open(firm, &[0, 1]) else { panic!("a company declares offices") };
+        (dir, offices, firm, first, person)
+    }
+
+    fn founded() -> Prefs {
+        founding_prefs(
+            ([Missing::Present(1), Missing::Present(0), Missing::Present(2)], Missing::Present(3)),
+            &[0.05, 0.1, 0.15],
+            PartyKey::new(FIRMS, Slot::new(0)),
+        )
+    }
+
+    #[test]
+    fn founding_read_from_the_record() {
+        let p = founded();
+        assert_eq!((p.memory, p.switching, p.stance), (Missing::Present(1), Missing::Present(0), Missing::Present(3)));
+        assert_eq!(p.required_return, Missing::Present(0.15), "its type's return");
+        assert_eq!((p.window, p.management), (Missing::Absent, Missing::Absent));
+        let firm = PartyKey::new(FIRMS, Slot::new(0));
+        let none = [Missing::Present(1), Missing::Absent, Missing::Present(0)];
+        assert!(std::panic::catch_unwind(|| founding_prefs((none, Missing::Absent), &[0.1], firm)).is_err());
+        let beyond = [Missing::Present(1), Missing::Present(0), Missing::Present(1)];
+        assert!(std::panic::catch_unwind(|| founding_prefs((beyond, Missing::Absent), &[0.1], firm)).is_err());
     }
 
     #[test]
     fn vacant_office_reads_founding() {
-        let (d, firm) = fixture();
-        let (standing, prefs) = d.in_office(0, firm).expect("the form declares the office");
-        assert_eq!(standing, Standing::Founding);
-        assert_eq!(prefs.required_return, Missing::Present(0.1), "the institution's founding preferences");
-        assert!(d.in_office(0, PartyKey::new(0, Slot::new(2))).is_none(), "a form without the office");
-        let (_, unfounded) = d.in_office(0, PartyKey::new(1, Slot::new(7))).expect("the office");
-        assert_eq!(unfounded, Prefs::NONE, "no preference drawn is none held");
+        let (dir, offices, firm, first, _) = fixture();
+        let o = offices.office(first, (1, 1), firm);
+        let (standing, prefs) = resolve(offices.holder(o, &dir), founded(), |_| Missing::Present(4), firm);
+        assert_eq!((standing, prefs), (Standing::Founding, founded()), "the founding preferences, at no age");
     }
 
     #[test]
-    fn holder_reads_its_own() {
-        let (mut d, firm) = fixture();
-        let own = Prefs { required_return: Missing::Present(0.2), ..Prefs::NONE };
-        d.holders.insert((firm, 1), (42, own));
-        assert_eq!(d.in_office(0, firm), Some((Standing::Holder, own)), "the holder's, never the founding ones");
-    }
-
-    #[test]
-    fn owner_holds_every_office_until_it_leaves() {
-        let (mut d, firm) = fixture();
-        let own = Prefs { required_return: Missing::Present(0.2), ..Prefs::NONE };
-        d.appoint(firm, 42, own);
-        assert_eq!(d.in_office(0, firm), Some((Standing::Holder, own)), "the owner's own");
-        d.vacate(firm, Some(7));
-        assert_eq!(d.in_office(0, firm), Some((Standing::Holder, own)), "another person's leaving empties nothing");
-        d.vacate(firm, Some(42));
-        assert_eq!(d.in_office(0, firm).map(|x| x.0), Some(Standing::Founding), "empty, the founding preferences");
-        assert_eq!(d.held(), 0, "no office held");
+    fn owner_holds_until_it_leaves() {
+        let (dir, mut offices, firm, first, person) = fixture();
+        for at in 0..2 {
+            offices.fill_owned(offices.office(first, (at, at), firm), person, Day::new(3));
+        }
+        let o = offices.office(first, (1, 1), firm);
+        let (standing, prefs) = resolve(
+            offices.holder(o, &dir),
+            founded(),
+            |p| {
+                assert_eq!(p, person, "the holder's own age read");
+                Missing::Present(4)
+            },
+            firm,
+        );
+        assert_eq!((standing, prefs.window), (Standing::Holder, Missing::Present(4)));
+        assert_eq!(prefs.required_return, founded().required_return, "its institution's founding preferences");
+        offices.vacate(o);
+        assert_eq!(resolve(offices.holder(o, &dir), founded(), |_| Missing::Absent, firm).0, Standing::Founding);
     }
 
     /// Every decision the systems declare, as the register lists them, and the labour market's kind.

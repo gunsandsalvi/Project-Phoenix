@@ -28,6 +28,13 @@ declare_prim! {
     }
 }
 
+declare_prim! {
+    /// How many types the required return is cut into, each firm drawing one at its founding.
+    pub REQUIRED_RETURN_TYPES = "FRM.required_return_types" {
+        kind: Resolution, value: Count, clause: "NUM.4", scope: Shared
+    }
+}
+
 /// The products' opening prices, a unit's in its currency's smallest units, which the goods' system declares.
 pub const OPENING_PRICE: &str = "GDS.opening_price";
 /// Each product's price at the opening over its world price, by country.
@@ -112,6 +119,7 @@ impl System for Frm {
         d.decision(&points::STANCE);
         d.decision(&points::CLOSE);
         let _: phx_core::Prim<phx_core::register::values::Distribution> = d.prim(&REQUIRED_RETURN);
+        let _: phx_core::Prim<Count> = d.prim(&REQUIRED_RETURN_TYPES);
     }
 }
 

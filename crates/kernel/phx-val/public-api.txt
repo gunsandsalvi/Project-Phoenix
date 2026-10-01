@@ -159,7 +159,9 @@ pub fn phx_val::types::Types::compile(&phx_core::register::Register) -> core::re
 pub fn phx_val::types::Types::of_view(&self, usize) -> (usize, phx_num::missing::Missing<usize>)  // used by: phx-world
 pub fn phx_val::types::Types::views(&self) -> usize  // used by: phx-cli, phx-world
 pub fn phx_val::types::Types::window_of(&self, u32) -> phx_num::missing::Missing<u16>  // used by: phx-world
+pub fn phx_val::types::cut(&phx_core::register::Register, (&str, &str)) -> core::result::Result<(phx_core::register::values::TypeSet, alloc::vec::Vec<f64>), alloc::string::String>  // used by: sys-frm
 pub fn phx_val::types::view(usize, u16, phx_num::missing::Missing<u16>) -> usize  // used by: phx-cli, phx-obs, phx-world
+pub fn phx_val::types::window_in(&[i64], u32) -> phx_num::missing::Missing<u16>  // used by: phx-world
 pub mod phx_val::value  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-tax
 pub struct phx_val::value::Flow  // used by: phx-core, phx-fin, phx-market, phx-world
 pub phx_val::value::Flow::amount: f64  // used by: phx-core, phx-fin, phx-ledger, phx-market, phx-num, phx-world, sys-soc

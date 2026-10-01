@@ -129,7 +129,7 @@ fn household_layout_is_174_bytes() {
 fn firm_layout_is_528_bytes() {
     assert_eq!(width(&FIRM), 528);
     let reserve: u16 = FIRM.groups.iter().map(|g| g.width - used(g)).sum();
-    assert_eq!(reserve, 39);
+    assert_eq!(reserve, 38);
 }
 
 #[test]
