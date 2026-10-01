@@ -23,6 +23,11 @@ const WARM: u8 = 1;
 const SITE: Extra =
     Extra { group: "warm", word: WordDecl { name: "site", ty: IntTy::U32, count: 1, absent: true, writer: "FRM" } };
 
+/// A carrier's mode, drawn at the opening by the modes' shares of carriage's employment, in the warm row's reserve
+/// until a carrier's vehicles hold their mode.
+const MODE: Extra =
+    Extra { group: "warm", word: WordDecl { name: "mode", ty: IntTy::U8, count: 1, absent: true, writer: "FRT" } };
+
 /// The firm's words' write handles.
 #[derive(Clone, Copy, Debug)]
 struct Words {
@@ -39,12 +44,13 @@ struct Words {
     seen: AttrW<i64>,
     reviewed: AttrW<u16>,
     flags: AttrW<u32>,
+    mode: AttrW<u8>,
     books: BookWords,
 }
 
 fn words() -> Words {
-    let Ok(mut l) = Layout::compile(&FIRM, &[SITE]) else {
-        violation!(clause = "REP.1", "the firm's layout refused its site");
+    let Ok(mut l) = Layout::compile(&FIRM, &[SITE, MODE]) else {
+        violation!(clause = "REP.1", "the firm's layout refused its site or mode");
     };
     macro_rules! w {
         ($t:ty, $name:expr, $i:expr, $base:expr) => {
@@ -68,6 +74,7 @@ fn words() -> Words {
         seen: w!(i64, "sales_since_review", 1, "K-74"),
         reviewed: w!(u16, "last_review", 0, "K-32"),
         flags: w!(u32, "flags", 0, "K-32"),
+        mode: w!(u8, "mode", 0, "FRT"),
         books: BookWords::bind(&mut l),
     }
 }
@@ -119,8 +126,8 @@ impl FirmStore {
         capacity: u32,
         (zone_regions, points, first): (Vec<u32>, Vec<i64>, Day),
     ) -> FirmStore {
-        let Ok(layout) = Layout::compile(&FIRM, &[SITE]) else {
-            violation!(clause = "REP.1", "the firm's layout refused its site");
+        let Ok(layout) = Layout::compile(&FIRM, &[SITE, MODE]) else {
+            violation!(clause = "REP.1", "the firm's layout refused its site or mode");
         };
         let store = KindStore::new(space, kind, &layout, capacity);
         FirmStore { store, kind, zone_regions, points, first, words: Some(words()) }
@@ -234,6 +241,12 @@ impl FirmStore {
         self.set(slot, w, Missing::Present(off));
     }
 
+    /// A carrier's mode.
+    pub fn set_mode(&mut self, slot: Slot, mode: u8) {
+        let w = self.w().mode;
+        self.set(slot, w, Missing::Present(mode));
+    }
+
     /// Whether a firm works its deposits as it last decided, written to its flags; none clears the decision.
     pub fn set_extraction(&mut self, slot: Slot, works: Option<bool>) {
         let w = self.w().flags;
@@ -342,6 +355,12 @@ impl FirmView<'_> {
     #[must_use]
     pub fn seen_sold(&self) -> Option<i64> {
         present(self.hot.get(self.fs.w().seen.read()))
+    }
+
+    /// The mode it carries by; none for a firm that carries nothing.
+    #[must_use]
+    pub fn mode(&self) -> Option<u8> {
+        present(self.warm.get(self.fs.w().mode.read()))
     }
 
     /// Whether it works its deposits as it last decided; none before it first decides.

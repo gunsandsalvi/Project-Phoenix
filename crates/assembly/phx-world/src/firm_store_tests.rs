@@ -94,3 +94,14 @@ fn working_bit_declared_in_flags() {
     store.set_extraction(r.slot(), None);
     assert_eq!(store.view(r.slot()).unwrap().extraction(), None, "a decision cleared as its rights pass");
 }
+
+#[test]
+fn carrier_mode_word() {
+    let (mut dir, mut store) = fixture();
+    let (carrier, maker) = (dir.begin(FIRMS), dir.begin(FIRMS));
+    store.begin(&dir, carrier, &opening(Missing::Present(100.0)));
+    store.begin(&dir, maker, &opening(Missing::Present(100.0)));
+    store.set_mode(carrier.slot(), 2);
+    assert_eq!(store.view(carrier.slot()).unwrap().mode(), Some(2));
+    assert_eq!(store.view(maker.slot()).unwrap().mode(), None, "a firm that carries nothing has no mode");
+}

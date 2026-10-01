@@ -60,12 +60,12 @@ pub struct FreightDay {
     pub on_the_way: u64,
 }
 
-/// Freight: its technology, each carrier's mode, each region's market zone, the days between a shipper's decisions and
+/// Freight: its technology, its carriers (each one's mode a word of its row), each region's market zone, the days between a shipper's decisions and
 /// the day freight opened, the shipments on their way, today's bookings and the segments' loads, the days' records.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Freight {
     tech: FreightTech,
-    pub modes: BTreeMap<PartyKey, u16>,
+    pub carriers: Vec<phx_id::PartyRef>,
     markets: Vec<u16>,
     shipping_days: u32,
     began: u32,
@@ -127,7 +127,8 @@ impl Core {
                 Missing::Absent => Err("a region with no market zone".to_owned()),
             })
             .collect::<Result<Vec<u16>, String>>()?;
-        let mut modes = BTreeMap::new();
+        let mut carriers = Vec::new();
+        let mut modes = Vec::new();
         if let Some(firm) = self.bound.kinds.firm
             && whole > 0
         {
@@ -144,15 +145,24 @@ impl Core {
                 for (mode, share) in (0_u16..).zip(&shares) {
                     sum += share.unsigned_abs();
                     if at < sum {
-                        modes.insert(f.key, mode);
+                        let Ok(mode) = u8::try_from(mode) else {
+                            violation!(clause = "FRT.2", "a mode past a carrier's word", mode = mode);
+                        };
+                        carriers.push(id);
+                        modes.push((slot, mode));
                         break;
                     }
                 }
             }
         }
+        self.firm_write(|fs| {
+            for (slot, mode) in modes {
+                fs.set_mode(slot, mode);
+            }
+        });
         self.freight = Freight {
             tech,
-            modes,
+            carriers,
             markets,
             shipping_days,
             began: today.get(),
@@ -472,15 +482,24 @@ impl Core {
         ) else {
             return out;
         };
-        for (k, mode) in &self.freight.modes {
-            let Some(a_day) = self.freight.tech.tonne_km.get(usize::from(*mode)).copied() else { continue };
+        for r in &self.freight.carriers {
+            // A carrier ended since the opening carries nothing, whatever now holds its slot.
+            if self.directory.at(r.kind(), r.slot()) != Some(*r) {
+                continue;
+            }
+            let k = PartyKey::new(r.kind(), r.slot());
             let carrier = self.firm_view(k.slot());
-            let (Some(at), Some(price)) = (carrier.and_then(|v| v.region()), carrier.and_then(|v| v.price())) else {
+            let (Some(mode), Some(at), Some(price)) = (
+                carrier.and_then(|v| v.mode()).map(u16::from),
+                carrier.and_then(|v| v.region()),
+                carrier.and_then(|v| v.price()),
+            ) else {
                 continue;
             };
-            let vehicles = phx_core::units::capacity(&self.goods.stocks, &self.goods.units, *k, (kind, None), chain);
+            let Some(a_day) = self.freight.tech.tonne_km.get(usize::from(mode)).copied() else { continue };
+            let vehicles = phx_core::units::capacity(&self.goods.stocks, &self.goods.units, k, (kind, None), chain);
             let Some(room) = floor_to_i64(vehicles * a_day) else { continue };
-            out.entry((at, *mode)).or_default().push((*k, price, room));
+            out.entry((at, mode)).or_default().push((k, price, room));
         }
         out
     }

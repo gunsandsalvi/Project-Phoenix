@@ -378,7 +378,9 @@ more than a unit's worth to it, used as delivered (`buy_services`), as a provide
 price there counts in its unit cost, and the opening's expected sales count every product's use by the ways.
 
 **`sys-frt`** (FRT.1, FRT.4–FRT.10, GEO.13). At the opening each firm selling `FRT.carriage_product` is given a mode,
-drawn by `FRT.mode_share` on stream `FRT.opening`; a mode's route and its length between two regions are the network's
+drawn by `FRT.mode_share` on stream `FRT.opening` and held in a `mode` word of its row (an `Extra` in the warm
+reserve, `FirmView::mode`), the carriers kept as their references (`Freight::carriers`) for the day's offers, until a
+carrier's vehicles hold their mode (S1.466); a mode's route and its length between two regions are the network's
 between their market zones (K-26), read where it keeps them. On its `FRT.shipping_days` schedule, a business day, a firm of a stored product
 holding free units beyond its expected sales times the goods' days of cover weighs carrying the whole lots beyond to
 each other region of its country that marks its product: the mark there less its own price less the freight of a lot
