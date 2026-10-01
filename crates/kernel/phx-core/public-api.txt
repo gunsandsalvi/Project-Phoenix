@@ -184,6 +184,294 @@ pub const phx_core::capacity::WHEEL_DAYS: u32  // used by: phx-world
 pub fn phx_core::capacity::family_code(usize) -> core::option::Option<u8>
 pub const fn phx_core::capacity::slot_fits(u32) -> bool
 pub fn phx_core::capacity::table() -> impl core::iter::traits::iterator::Iterator<Item = phx_core::capacity::Capacity>  // used by: phx-check, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
+pub mod phx_core::catalogue  // used by: phx-fin
+pub mod phx_core::catalogue::decls  // used by: if-base, phx-fin, phx-obs, phx-store, phx-world, sys-tec
+pub enum phx_core::catalogue::decls::MarketForm  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::Administered  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::Bilateral  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::Book  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::Call  // used by: phx-check, phx-fin, phx-macros
+pub phx_core::catalogue::decls::MarketForm::Dealer  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::NetworkCall  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::PostedPrice  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::Queue  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketForm::Search  // used by: phx-fin, phx-geo
+pub enum phx_core::catalogue::decls::MeetingDays  // used by: phx-fin
+pub phx_core::catalogue::decls::MeetingDays::BusinessDays  // used by: phx-fin
+pub phx_core::catalogue::decls::MeetingDays::EveryDay
+pub phx_core::catalogue::decls::MeetingDays::Monthly(u8)
+pub phx_core::catalogue::decls::MeetingDays::Weekly(phx_id::day::Weekday)
+pub struct phx_core::catalogue::decls::CapitalDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::CapitalDecl::classes: &'a [&'a str]  // used by: if-credit, if-state, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-bnk, sys-cap, sys-frm, sys-sta
+pub phx_core::catalogue::decls::CapitalDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::CapitalDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::DecisionEntry<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::DecisionEntry::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::DecisionEntry::office: &'a str  // used by: phx-fin, phx-world
+pub phx_core::catalogue::decls::DecisionEntry::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::decls::DecisionEntry::taker: &'a str  // used by: phx-fin
+pub struct phx_core::catalogue::decls::Declared<'a>  // used by: phx-fin, phx-num, phx-pop, phx-world
+pub phx_core::catalogue::decls::Declared::capitals: &'a [phx_core::catalogue::decls::CapitalDecl<'a>]  // used by: phx-fin
+pub phx_core::catalogue::decls::Declared::decisions: &'a [phx_core::catalogue::decls::DecisionEntry<'a>]  // used by: if-credit, if-labour, if-state, phx-cli, phx-fin, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::decls::Declared::families: &'a [phx_core::catalogue::decls::FamilyDecl<'a>]  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub phx_core::catalogue::decls::Declared::forms: &'a [phx_core::catalogue::decls::FormDecl<'a>]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::decls::Declared::hazards: &'a [phx_core::catalogue::decls::HazardEntry<'a>]  // used by: phx-cli, phx-fin, phx-geo, phx-macros, phx-world
+pub phx_core::catalogue::decls::Declared::kinds: &'a [phx_core::catalogue::decls::KindEntry<'a>]  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub phx_core::catalogue::decls::Declared::lines: &'a [phx_core::catalogue::decls::LineDecl<'a>]  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::decls::Declared::markets: &'a [phx_core::catalogue::decls::MarketDecl<'a>]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::decls::Declared::prims: &'a [&'a str]  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
+pub phx_core::catalogue::decls::Declared::products: &'a [phx_core::catalogue::decls::ProductDecl<'a>]  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub phx_core::catalogue::decls::Declared::reasons: &'a [phx_core::catalogue::decls::ReasonDecl<'a>]  // used by: phx-fin
+pub phx_core::catalogue::decls::Declared::ways: &'a [phx_core::catalogue::decls::WayDecl<'a>]  // used by: if-base, phx-fin, phx-world, sys-frm, sys-lab, sys-tec
+pub struct phx_core::catalogue::decls::FamilyDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::FamilyDecl::jobs: bool  // used by: phx-cli, phx-fin, phx-market, phx-world, sys-lab, sys-soc
+pub phx_core::catalogue::decls::FamilyDecl::kinds: &'a [&'a str]  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub phx_core::catalogue::decls::FamilyDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::FamilyDecl::reason: &'a str  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
+pub phx_core::catalogue::decls::FamilyDecl::slots: u32  // used by: phx-exec, phx-fin, phx-id, phx-pop, phx-store, phx-world
+pub phx_core::catalogue::decls::FamilyDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::FormDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::FormDecl::endings: &'a [&'a str]  // used by: phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::decls::FormDecl::features: &'a [phx_core::kinds::Feature]  // used by: phx-fin
+pub phx_core::catalogue::decls::FormDecl::may_hold: &'a [&'a str]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::decls::FormDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::FormDecl::offices: &'a [&'a str]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::decls::FormDecl::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::catalogue::decls::FormDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::HazardEntry<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::HazardEntry::acts_on: &'a str  // used by: phx-fin, phx-geo, phx-macros, phx-world
+pub phx_core::catalogue::decls::HazardEntry::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::HazardEntry::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::KindEntry<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::KindEntry::form: &'a str  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub phx_core::catalogue::decls::KindEntry::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::KindEntry::place: phx_core::kinds::Place  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_core::catalogue::decls::KindEntry::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::LineDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::LineDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::LineDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::MarketDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketDecl::days: phx_core::catalogue::decls::MeetingDays  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::catalogue::decls::MarketDecl::form: phx_core::catalogue::decls::MarketForm  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub phx_core::catalogue::decls::MarketDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::MarketDecl::operator: &'a str  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketDecl::participants: &'a [&'a str]  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketDecl::points: &'a str  // used by: phx-fin, phx-geo, phx-num, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::MarketDecl::settles_after: u8  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::decls::MarketDecl::tick: &'a str  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketDecl::trades: &'a str  // used by: phx-fin
+pub phx_core::catalogue::decls::MarketDecl::valuer_method: phx_num::missing::Missing<&'a str>  // used by: phx-fin
+pub struct phx_core::catalogue::decls::ProductDecl<'a>  // used by: if-base, phx-fin, sys-tec
+pub phx_core::catalogue::decls::ProductDecl::grades: u8  // used by: phx-fin
+pub phx_core::catalogue::decls::ProductDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::ProductDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::ReasonDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::ReasonDecl::gate: phx_num::missing::Missing<&'a str>  // used by: phx-check, phx-fin
+pub phx_core::catalogue::decls::ReasonDecl::lines: &'a [&'a str]  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::decls::ReasonDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::ReasonDecl::payment_order: phx_num::missing::Missing<u8>  // used by: phx-fin, phx-ledger, phx-world
+pub phx_core::catalogue::decls::ReasonDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::decls::WayDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::decls::WayDecl::inputs: &'a [(&'a str, u8)]  // used by: if-base, phx-check, phx-exec, phx-fin, phx-world, sys-frm, sys-tec
+pub phx_core::catalogue::decls::WayDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::decls::WayDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub mod phx_core::catalogue::refusals  // used by: phx-check, phx-world
+pub fn phx_core::catalogue::refusals::compile(&phx_core::catalogue::decls::Declared<'_>) -> core::result::Result<phx_core::catalogue::Catalogue, alloc::vec::Vec<alloc::string::String>>  // used by: phx-fin, phx-pop, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub enum phx_core::catalogue::MarketForm  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::Administered  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::Bilateral  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::Book  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::Call  // used by: phx-check, phx-fin, phx-macros
+pub phx_core::catalogue::MarketForm::Dealer  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::NetworkCall  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::PostedPrice  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::Queue  // used by: phx-fin
+pub phx_core::catalogue::MarketForm::Search  // used by: phx-fin, phx-geo
+pub enum phx_core::catalogue::MeetingDays  // used by: phx-fin
+pub phx_core::catalogue::MeetingDays::BusinessDays  // used by: phx-fin
+pub phx_core::catalogue::MeetingDays::EveryDay
+pub phx_core::catalogue::MeetingDays::Monthly(u8)
+pub phx_core::catalogue::MeetingDays::Weekly(phx_id::day::Weekday)
+pub struct phx_core::catalogue::CapitalDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::CapitalDecl::classes: &'a [&'a str]  // used by: if-credit, if-state, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-bnk, sys-cap, sys-frm, sys-sta
+pub phx_core::catalogue::CapitalDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::CapitalDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::CapitalH(_)
+impl phx_core::catalogue::CapitalH
+pub const fn phx_core::catalogue::CapitalH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::Catalogue  // used by: phx-fin
+pub phx_core::catalogue::Catalogue::names: phx_core::catalogue::Names  // used by: if-base, phx-check, phx-cli, phx-fin, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-tec
+impl phx_core::catalogue::Catalogue
+pub fn phx_core::catalogue::Catalogue::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_core::catalogue::Catalogue::classes(&self, phx_core::catalogue::CapitalH) -> &[phx_core::catalogue::ProductH]  // used by: if-credit, if-state, phx-cli, phx-fin, phx-geo, phx-val, phx-world, sys-bnk, sys-cap, sys-frm, sys-sta
+pub fn phx_core::catalogue::Catalogue::decision(&self, phx_core::catalogue::DecisionH) -> phx_core::catalogue::DecisionRow  // used by: phx-check, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub fn phx_core::catalogue::Catalogue::families(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::catalogue::FamilyH>  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub fn phx_core::catalogue::Catalogue::family(&self, phx_core::catalogue::FamilyH) -> phx_core::catalogue::FamilyRow  // used by: phx-cli, phx-fin, phx-geo, phx-id, phx-macros, phx-obs, phx-rand, phx-store, phx-world, sys-dem
+pub fn phx_core::catalogue::Catalogue::family_kinds(&self, phx_core::catalogue::FamilyH) -> &[phx_core::catalogue::KindH]  // used by: phx-fin
+pub fn phx_core::catalogue::Catalogue::form(&self, phx_core::catalogue::FormH) -> phx_core::catalogue::FormRow  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub fn phx_core::catalogue::Catalogue::grades(&self, phx_core::catalogue::ProductH) -> u8  // used by: phx-fin
+pub fn phx_core::catalogue::Catalogue::has(&self, phx_core::catalogue::FormH, phx_core::kinds::Feature) -> bool  // used by: phx-world, sys-dem
+pub fn phx_core::catalogue::Catalogue::hazard(&self, phx_core::catalogue::HazardH) -> phx_core::catalogue::KindH  // used by: phx-cli, phx-geo, phx-macros, phx-pop, phx-world, sys-dem, sys-lab
+pub fn phx_core::catalogue::Catalogue::kind(&self, phx_core::catalogue::KindH) -> phx_core::catalogue::KindRow  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub fn phx_core::catalogue::Catalogue::market(&self, phx_core::catalogue::MarketH) -> phx_core::catalogue::MarketRow  // used by: if-labour, phx-check, phx-geo, phx-world, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-trs
+pub fn phx_core::catalogue::Catalogue::participants(&self, phx_core::catalogue::MarketH) -> &[phx_core::catalogue::KindH]  // used by: phx-fin
+pub fn phx_core::catalogue::Catalogue::reason(&self, phx_core::catalogue::ReasonH) -> phx_core::catalogue::ReasonRow  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
+pub fn phx_core::catalogue::Catalogue::reason_lines(&self, phx_core::catalogue::ReasonH) -> &[phx_core::catalogue::LineH]
+pub fn phx_core::catalogue::Catalogue::way_inputs(&self, phx_core::catalogue::WayH) -> &[phx_core::catalogue::GradeH]
+pub struct phx_core::catalogue::DecisionEntry<'a>  // used by: phx-fin
+pub phx_core::catalogue::DecisionEntry::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::DecisionEntry::office: &'a str  // used by: phx-fin, phx-world
+pub phx_core::catalogue::DecisionEntry::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::DecisionEntry::taker: &'a str  // used by: phx-fin
+pub struct phx_core::catalogue::DecisionH(_)
+impl phx_core::catalogue::DecisionH
+pub const fn phx_core::catalogue::DecisionH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::DecisionRow
+pub phx_core::catalogue::DecisionRow::office: u16  // used by: phx-fin, phx-world
+pub phx_core::catalogue::DecisionRow::taker: phx_core::catalogue::KindH  // used by: phx-fin
+pub struct phx_core::catalogue::Declared<'a>  // used by: phx-fin, phx-num, phx-pop, phx-world
+pub phx_core::catalogue::Declared::capitals: &'a [phx_core::catalogue::decls::CapitalDecl<'a>]  // used by: phx-fin
+pub phx_core::catalogue::Declared::decisions: &'a [phx_core::catalogue::decls::DecisionEntry<'a>]  // used by: if-credit, if-labour, if-state, phx-cli, phx-fin, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::Declared::families: &'a [phx_core::catalogue::decls::FamilyDecl<'a>]  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub phx_core::catalogue::Declared::forms: &'a [phx_core::catalogue::decls::FormDecl<'a>]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::Declared::hazards: &'a [phx_core::catalogue::decls::HazardEntry<'a>]  // used by: phx-cli, phx-fin, phx-geo, phx-macros, phx-world
+pub phx_core::catalogue::Declared::kinds: &'a [phx_core::catalogue::decls::KindEntry<'a>]  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub phx_core::catalogue::Declared::lines: &'a [phx_core::catalogue::decls::LineDecl<'a>]  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::Declared::markets: &'a [phx_core::catalogue::decls::MarketDecl<'a>]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::Declared::prims: &'a [&'a str]  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-pop, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
+pub phx_core::catalogue::Declared::products: &'a [phx_core::catalogue::decls::ProductDecl<'a>]  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub phx_core::catalogue::Declared::reasons: &'a [phx_core::catalogue::decls::ReasonDecl<'a>]  // used by: phx-fin
+pub phx_core::catalogue::Declared::ways: &'a [phx_core::catalogue::decls::WayDecl<'a>]  // used by: if-base, phx-fin, phx-world, sys-frm, sys-lab, sys-tec
+pub struct phx_core::catalogue::FamilyDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::FamilyDecl::jobs: bool  // used by: phx-cli, phx-fin, phx-market, phx-world, sys-lab, sys-soc
+pub phx_core::catalogue::FamilyDecl::kinds: &'a [&'a str]  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub phx_core::catalogue::FamilyDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::FamilyDecl::reason: &'a str  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
+pub phx_core::catalogue::FamilyDecl::slots: u32  // used by: phx-exec, phx-fin, phx-id, phx-pop, phx-store, phx-world
+pub phx_core::catalogue::FamilyDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::FamilyH(_)
+impl phx_core::catalogue::FamilyH
+pub const fn phx_core::catalogue::FamilyH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::FamilyRow
+pub phx_core::catalogue::FamilyRow::jobs: bool  // used by: phx-cli, phx-fin, phx-market, phx-world, sys-lab, sys-soc
+pub phx_core::catalogue::FamilyRow::kinds: phx_core::catalogue::Span  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub phx_core::catalogue::FamilyRow::reason: phx_core::catalogue::ReasonH  // used by: phx-check, phx-cli, phx-fin, phx-market, phx-world
+pub struct phx_core::catalogue::FormDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::FormDecl::endings: &'a [&'a str]  // used by: phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::FormDecl::features: &'a [phx_core::kinds::Feature]  // used by: phx-fin
+pub phx_core::catalogue::FormDecl::may_hold: &'a [&'a str]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::FormDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::FormDecl::offices: &'a [&'a str]  // used by: phx-fin, phx-world
+pub phx_core::catalogue::FormDecl::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-fin, phx-world
+pub phx_core::catalogue::FormDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::FormH(_)
+impl phx_core::catalogue::FormH
+pub const fn phx_core::catalogue::FormH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::FormRow
+pub phx_core::catalogue::FormRow::features: u8  // used by: phx-fin
+pub phx_core::catalogue::FormRow::holds: phx_core::catalogue::Span  // used by: phx-check, phx-fin, phx-world, sys-dem
+pub phx_core::catalogue::FormRow::holds_any: bool
+pub phx_core::catalogue::FormRow::offices: phx_core::catalogue::Span  // used by: phx-fin, phx-world
+pub phx_core::catalogue::FormRow::owners: phx_core::kinds::Owners  // used by: phx-cli, phx-fin, phx-world
+pub struct phx_core::catalogue::GateH(_)
+impl phx_core::catalogue::GateH
+pub const fn phx_core::catalogue::GateH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::GradeH
+pub phx_core::catalogue::GradeH::grade: u8  // used by: phx-geo, phx-world, sys-gds
+pub phx_core::catalogue::GradeH::product: phx_core::catalogue::ProductH  // used by: if-base, phx-check, phx-cli, phx-fin, phx-market, phx-num, phx-world, sys-frm, sys-tec
+pub struct phx_core::catalogue::HazardEntry<'a>  // used by: phx-fin
+pub phx_core::catalogue::HazardEntry::acts_on: &'a str  // used by: phx-fin, phx-geo, phx-macros, phx-world
+pub phx_core::catalogue::HazardEntry::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::HazardEntry::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::HazardH(_)
+impl phx_core::catalogue::HazardH
+pub const fn phx_core::catalogue::HazardH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::KindEntry<'a>  // used by: phx-fin
+pub phx_core::catalogue::KindEntry::form: &'a str  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub phx_core::catalogue::KindEntry::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::KindEntry::place: phx_core::kinds::Place  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_core::catalogue::KindEntry::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::KindH(_)
+impl phx_core::catalogue::KindH
+pub const fn phx_core::catalogue::KindH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::KindRow
+pub phx_core::catalogue::KindRow::form: phx_core::catalogue::FormH  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub phx_core::catalogue::KindRow::place: phx_core::kinds::Place  // used by: if-credit, phx-check, phx-cli, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-pop, phx-store, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub struct phx_core::catalogue::LineDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::LineDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::LineDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::LineH(_)
+impl phx_core::catalogue::LineH
+pub const fn phx_core::catalogue::LineH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::MarketDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::MarketDecl::days: phx_core::catalogue::decls::MeetingDays  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::catalogue::MarketDecl::form: phx_core::catalogue::decls::MarketForm  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub phx_core::catalogue::MarketDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::MarketDecl::operator: &'a str  // used by: phx-fin
+pub phx_core::catalogue::MarketDecl::participants: &'a [&'a str]  // used by: phx-fin
+pub phx_core::catalogue::MarketDecl::points: &'a str  // used by: phx-fin, phx-geo, phx-num, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::MarketDecl::settles_after: u8  // used by: phx-fin
+pub phx_core::catalogue::MarketDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::MarketDecl::tick: &'a str  // used by: phx-fin
+pub phx_core::catalogue::MarketDecl::trades: &'a str  // used by: phx-fin
+pub phx_core::catalogue::MarketDecl::valuer_method: phx_num::missing::Missing<&'a str>  // used by: phx-fin
+pub struct phx_core::catalogue::MarketH(_)
+impl phx_core::catalogue::MarketH
+pub const fn phx_core::catalogue::MarketH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::MarketRow
+pub phx_core::catalogue::MarketRow::days: phx_core::catalogue::decls::MeetingDays  // used by: phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sta
+pub phx_core::catalogue::MarketRow::form: phx_core::catalogue::decls::MarketForm  // used by: phx-acct, phx-fin, phx-macros, phx-world
+pub phx_core::catalogue::MarketRow::operator: phx_core::catalogue::KindH  // used by: phx-fin
+pub phx_core::catalogue::MarketRow::participants: phx_core::catalogue::Span  // used by: phx-fin
+pub phx_core::catalogue::MarketRow::points: u32  // used by: phx-fin, phx-geo, phx-num, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::MarketRow::settles_after: u8  // used by: phx-fin
+pub phx_core::catalogue::MarketRow::tick: u32  // used by: phx-fin
+pub phx_core::catalogue::MarketRow::trades: phx_core::catalogue::FamilyH  // used by: phx-fin
+pub phx_core::catalogue::MarketRow::valuer_method: phx_num::missing::Missing<u32>  // used by: phx-fin
+pub struct phx_core::catalogue::Names  // used by: phx-check
+pub phx_core::catalogue::Names::capitals: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-fin
+pub phx_core::catalogue::Names::decisions: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: if-credit, if-labour, if-state, phx-cli, phx-fin, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub phx_core::catalogue::Names::families: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-cli, phx-fin, phx-obs, phx-world
+pub phx_core::catalogue::Names::forms: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-fin, phx-world
+pub phx_core::catalogue::Names::gates: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-fin
+pub phx_core::catalogue::Names::hazards: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-cli, phx-fin, phx-geo, phx-macros, phx-world
+pub phx_core::catalogue::Names::kinds: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: if-state, phx-cli, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub phx_core::catalogue::Names::lines: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::Names::markets: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-fin, phx-world
+pub phx_core::catalogue::Names::offices: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-fin, phx-world
+pub phx_core::catalogue::Names::products: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub phx_core::catalogue::Names::reasons: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: phx-fin
+pub phx_core::catalogue::Names::ways: alloc::vec::Vec<alloc::boxed::Box<str>>  // used by: if-base, phx-fin, phx-world, sys-frm, sys-lab, sys-tec
+pub struct phx_core::catalogue::ProductDecl<'a>  // used by: if-base, phx-fin, sys-tec
+pub phx_core::catalogue::ProductDecl::grades: u8  // used by: phx-fin
+pub phx_core::catalogue::ProductDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::ProductDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::ProductH(_)
+impl phx_core::catalogue::ProductH
+pub const fn phx_core::catalogue::ProductH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::ReasonDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::ReasonDecl::gate: phx_num::missing::Missing<&'a str>  // used by: phx-check, phx-fin
+pub phx_core::catalogue::ReasonDecl::lines: &'a [&'a str]  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::ReasonDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::ReasonDecl::payment_order: phx_num::missing::Missing<u8>  // used by: phx-fin, phx-ledger, phx-world
+pub phx_core::catalogue::ReasonDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::ReasonH(_)
+impl phx_core::catalogue::ReasonH
+pub const fn phx_core::catalogue::ReasonH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub struct phx_core::catalogue::ReasonRow
+pub phx_core::catalogue::ReasonRow::gate: phx_num::missing::Missing<phx_core::catalogue::GateH>  // used by: phx-check, phx-fin
+pub phx_core::catalogue::ReasonRow::lines: phx_core::catalogue::Span  // used by: phx-check, phx-cli, phx-fin, phx-world, sys-frm
+pub phx_core::catalogue::ReasonRow::payment_order: u8  // used by: phx-fin, phx-ledger, phx-world
+pub struct phx_core::catalogue::Span  // used by: phx-check, phx-cli, phx-macros, phx-val
+pub struct phx_core::catalogue::WayDecl<'a>  // used by: phx-fin
+pub phx_core::catalogue::WayDecl::inputs: &'a [(&'a str, u8)]  // used by: if-base, phx-check, phx-exec, phx-fin, phx-world, sys-frm, sys-tec
+pub phx_core::catalogue::WayDecl::name: &'a str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::catalogue::WayDecl::system: &'a str  // used by: phx-check, phx-fin, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
+pub struct phx_core::catalogue::WayH(_)
+impl phx_core::catalogue::WayH
+pub const fn phx_core::catalogue::WayH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_core::catalogue::compile(&phx_core::catalogue::decls::Declared<'_>) -> core::result::Result<phx_core::catalogue::Catalogue, alloc::vec::Vec<alloc::string::String>>  // used by: phx-fin, phx-pop, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub mod phx_core::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_core::consts::BIT_WORD: usize
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
@@ -218,7 +506,10 @@ pub const phx_core::consts::EVENTS_UNPRUNED: (&str, u32, u32, phx_core::capacity
 pub const phx_core::consts::EVENT_LOG_DAYS: u32
 pub const phx_core::consts::EVENT_WORDS: u32
 pub const phx_core::consts::FAMILY_BITS: u32  // used by: phx-id
+pub const phx_core::consts::FAMILY_CODES: usize
+pub const phx_core::consts::FAMILY_SLOTS: u32
 pub const phx_core::consts::FLOW_GROUP_COST: u64  // used by: phx-world
+pub const phx_core::consts::FORM_FEATURES: usize
 pub const phx_core::consts::GROWTH_DIVISOR: u32
 pub const phx_core::consts::GROWTH_YEARS: u32
 pub const phx_core::consts::HOLDINGS_CODE: u8
@@ -243,6 +534,7 @@ pub const phx_core::consts::OPENING_PHYSICAL_STOCK: u8
 pub const phx_core::consts::OPENING_PRESENT_VALUES: u8
 pub const phx_core::consts::PARAM_EXP: u8
 pub const phx_core::consts::PARAM_SCALE_F64: f64
+pub const phx_core::consts::PARTY_KINDS: usize
 pub const phx_core::consts::PERCENT_F64: f64  // used by: phx-ledger, phx-world
 pub const phx_core::consts::PERSONS: (&str, u32, u32, phx_core::capacity::Growth)  // used by: phx-pop
 pub const phx_core::consts::PPM: u32  // used by: sys-frm, sys-tec

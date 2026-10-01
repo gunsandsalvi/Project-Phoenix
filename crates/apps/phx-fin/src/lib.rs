@@ -6,6 +6,7 @@ pub mod apply;
 pub mod apportion;
 pub mod budget;
 pub mod calendar;
+pub mod catalogue;
 pub mod compose;
 pub mod counters;
 pub mod daybuf;
@@ -156,6 +157,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(streams::StreamsBase::default()),
     || Box::new(calendar::CalendarBase::default()),
     || Box::new(policy::Policy::default()),
+    || Box::new(catalogue::CatalogueBase::default()),
 ];
 
 /// What a run fills, runs and reads.

@@ -5,6 +5,14 @@ pub const CALENDAR_WINDOW_YEARS: i32 = 64;
 /// The business-day conventions ISDA defines: following, modified following, preceding, modified preceding and
 /// unadjusted.
 pub const CONVENTIONS: usize = 5;
+/// The features a legal form may have: a separate party, limited liability, deposit taking, issuing a currency, owners.
+pub const FORM_FEATURES: usize = 5;
+/// The most families a contract link's code names, the last code being holdings'.
+pub const FAMILY_CODES: usize = (1 << phx_id::consts::FAMILY_BITS) - 1;
+/// The most rows one family holds, the slots a contract link names.
+pub const FAMILY_SLOTS: u32 = 1 << phx_id::consts::FAMILY_SLOT_BITS;
+/// The most party kinds a party key names beside nature.
+pub const PARTY_KINDS: usize = (1 << phx_id::consts::KEY_KIND_BITS) - 1;
 
 /// A year without 29 February, against which a fixed holiday is checked to exist every year.
 pub const COMMON_YEAR: i32 = 2001;

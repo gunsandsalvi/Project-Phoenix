@@ -19,6 +19,7 @@ pub const RULE: &str = "PC-92";
 /// Modules of hot crates the day never runs through, each with why: assembly, the opening and saving.
 const COLD: &[(&str, &str, &str)] = &[
     ("phx-core", "src/register/", "the register is read at assembly"),
+    ("phx-core", "src/catalogue/", "the kind catalogue is compiled at assembly"),
     ("phx-core", "src/contribution.rs", "contributions are laid down at the opening"),
     ("phx-store", "src/save.rs", "saving"),
     ("phx-store", "src/save_values.rs", "saving"),

@@ -860,7 +860,8 @@ carries no meaning (§6.2).
 
 ### 5.3 Schema compilation
 
-Declarations compile into: each kind's layout and its persons' (K-21, K-32); point tables; message, instrument, market and levy profiles; the stream
+Declarations compile into: the kind catalogue (K-21), every kind of thing's handles and rows; each kind's layout and
+its persons' (K-32); point tables; message, instrument, market and levy profiles; the stream
 registry; the primitive register checked against `data/` (NUM.3); schedules and wake conditions; audits and metrics. An attribute or count field whose value outgrows its width is a **contract violation** calling for a
 layout change; nothing saturates (Law 6). A policy schedule's count of bands is declared with it (the constitution's,
 POL) and fixed here: a platform or a budget moves its values and edges, never the count.
@@ -905,6 +906,13 @@ an interface item whose writer is not registered.
   For a population kind, every refusal is reported at once: a name declared twice, an attribute or person attribute
   of no values, roles or person attributes beyond a person's word, a kind sited by two attributes or by one it does
   not hold.
+
+  The kind catalogue (K-21) refuses, all at once, by item and system: a name declared twice in a table; a reference to
+  a name no system declares; a family with sides of a kind whose legal form may not hold it, or declaring more rows
+  than a link names; a reason of no place in the payment order; a market without participants, or admitting a kind
+  whose form may not trade what it trades; a primitive a market reads absent from the register; a decision taken in an
+  office its taker's form does not declare; a way reading a product at a grade it has not; a legal form with no ending
+  that issues no currency, or naming an office twice; more than 255 families or 31 party kinds.
 
   A legal form is refused whose owners fall outside the forms' vocabulary (`Owners`: the state, shareholders, its
   members, its heirs and creditors), or whose owners hold its equity (`Feature::HasOwners`) while being its own
@@ -1755,7 +1763,8 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams, K-19 and K-20 built, S1.177–S1.179; K-21–K-24 planned, S1.114, S1.180–S1.185)
+Status: building (streams, K-19, K-20 and K-21's compiler built, S1.177–S1.180; K-21's family codes and K-22–K-24
+planned, S1.114, S1.181–S1.185)
 
 #### Streams
 
@@ -1821,10 +1830,42 @@ every later stage's dated POLICY.
 
 #### K-21 The kind catalogue
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.180, S1.181).
+Everything that differs between kinds of thing is declared data, compiled once at assembly into dense tables read by
+typed handles, so no mechanism reads a name and adding a kind is a declaration. The systems' declarations
+(`catalogue/decls.rs`) name each item and the system that declared it, and every reference to another by that other's
+name: legal forms (`FormDecl`: what they may hold — families, or `any` — features, endings, owners, offices), party
+kinds (`KindEntry`: form, place), contract families (`FamilyDecl`: reason, side kinds, job or debt, the rows it is
+declared to hold), account lines (`LineDecl`), reasons (`ReasonDecl`: lines, place in the payment order, refusal gate
+by name), markets (`MarketDecl`: form of `MarketForm` — posted price, call, network call, book, dealer, bilateral,
+administered, search, queue — operator kind, `MeetingDays`, settlement a number of business days after the trade,
+participant kinds, the family traded, and the register's primitives holding its tick size, price points and valuer's
+method), hazards (`HazardEntry`), decision kinds (`DecisionEntry`: taker kind, office), products (`ProductDecl`:
+grades), ways (`WayDecl`: inputs by product and grade) and capital kinds (`CapitalDecl`: classes, newest first), all
+in one `Declared` with the register's primitive ids.
 
-**Today** (`kinds.rs`, `system.rs`, `pop.rs`): the kinds, legal forms and population items systems declare (§5.1).
+`compile` (`catalogue/refusals.rs`) interns each table's names in name order, so the same declarations registered in
+any order give the same handles (`FormH`, `KindH`, `FamilyH`, `LineH`, `ReasonH`, `GateH`, `MarketH`, `HazardH`,
+`DecisionH`, `ProductH`, `WayH`, `CapitalH`, each a `u16`; `GradeH` a product and a grade), resolves every reference
+to a handle and returns the `Catalogue`: a row per handle (`FormRow` with its features as bits, `KindRow`,
+`FamilyRow`, `ReasonRow`, `MarketRow`, `DecisionRow` with its office's place in the taker's form), each table's lists
+flattened into one column read by `Span`, and the names apart for reports and assembly (`Names`); a gate shared by
+several reasons is one gate. It reports every refusal at once, each naming its item and system (§5.4). A day path
+holds only handles and reads a row by one indexed load (`form`, `kind`, `family`, `family_kinds`, `reason`,
+`reason_lines`, `market`, `participants`, `hazard`, `decision`, `grades`, `way_inputs`, `classes`); `has` tests a
+form's feature bit. The catalogue is not saved: the build supplies it. Capacity: 255 families beside holdings' code
+(`FAMILY_CODES`), each at most 2²⁴ rows (`FAMILY_SLOTS`), and 31 party kinds beside nature (`PARTY_KINDS`).
+`[fin.catalogue]` over the finished world's counts — 26 kinds, 80 families, 300 lines, 400 reasons, 60 markets, 40
+hazards, 150 decision kinds, 250 products, 200 ways, 30 capital kinds, 5 000 primitives: `compile_ns` 1 370 000
+(0.54–1.09 ms measured, the step's 50 ms), `mb` 0.07 (0.055 MiB, the step's 10 MiB, which counted the attribute
+schemas K-32 adds) and `read_ns` 5.2 (a family's reason, payment order and sides, three reads, at 1.71–4.12 ns).
+
+**Today** (`kinds.rs`, `system.rs`, `pop.rs`): the kinds, legal forms and population items systems declare (§5.1),
+bound to handles by `Bound`; the catalogue replaces them as the world's kinds and families move onto it (S1.182), and
+the families take their fixed codes (S1.181). Extension points: each kind's attribute schemas (S1.196), offices and
+their holders (S1.209), record kinds (S1.215), dated-reason kinds (S1.225), levy sets, tallies and source kinds on
+reasons (S1.245–S1.255), families' columns and side modes (S1.257), instrument families (S1.279), unit and process
+kinds (S1.284, S1.287), capital chains' rates (S1.285), markets' lapse rules, points and marks (S1.296, S1.297,
+S1.326), each kind's lines (S1.328), valuers' methods (S1.335) and decision concerns (S1.348).
 
 #### K-22 The units registry
 

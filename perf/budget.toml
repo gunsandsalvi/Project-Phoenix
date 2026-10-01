@@ -446,6 +446,28 @@ counter = "fin.policy.resolve_ns"
 value = 995
 direction = "down"
 
+# The kind catalogue (S1.180, 2026-10-01; `tools/bench.sh -F catalogue`): the finished world's declarations — 26 party
+# kinds, 80 families, 300 lines, 400 reasons, 60 markets, 40 hazards, 150 decision kinds, 250 products, 200 ways, 30
+# capital kinds and 5 000 primitives — compiled in 0.54–1.09 ms over seven runs (the step's 50 ms) into 0.055 MiB of
+# tables (the step's 10 MiB, which counted the attribute schemas K-32 adds), and a family's reason, payment order and
+# sides read by handle in 1.71–4.12 ns (three reads; the step's 1 ns a read). The spread is this machine's noise. Each
+# ratchet stands a quarter above the highest.
+
+[[ratchet]]
+counter = "fin.catalogue.compile_ns"
+value = 1370000
+direction = "down"
+
+[[ratchet]]
+counter = "fin.catalogue.read_ns"
+value = 5.2
+direction = "down"
+
+[[ratchet]]
+counter = "fin.catalogue.mb"
+value = 0.07
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
