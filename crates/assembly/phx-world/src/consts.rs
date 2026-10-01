@@ -155,6 +155,11 @@ pub const LINES: usize = 10;
 /// The loan classes a bank's lending record holds, its words in the bank map.
 pub const LOAN_CLASSES: usize = 16;
 
+pub mod bank {
+    /// A reserves target's one: a share of deposits holds 32 bits of fraction.
+    pub const SHARE_ONE: f64 = 4_294_967_296.0;
+}
+
 pub mod household {
     /// The stance's place in a household's states byte: its top three bits, above the tenure's two and the credit
     /// stage's three.

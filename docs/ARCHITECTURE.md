@@ -478,7 +478,8 @@ settlement kernel with the issuer on one side, which never fails; a return that 
 overdue. Intraday credit is each bank's reserve account's facility: as much as every bank of its country held in
 reserves at the opening. Reserves left below nothing after the stage are the central bank's overdue claim, counted
 each day with the banks that owe it (BFL.10's liquidity failure; the bank's resolution is Stage 2's). The request (a
-placeholder naming BFL): a bank's target is its reserves over its deposits at its first fund stage, times its deposits
+placeholder naming BFL): a bank's target is its reserves over its deposits at its first fund stage — a share its
+`BankStore` row holds in 2⁻³² parts (`reserve_target`, written by CB, missing until that stage) — times its deposits
 now; it places what it holds above the target and borrows what it lacks as far as its collateral lends — its firm
 loans' balances less `CB.loan_haircut`. The corridor (placeholders naming CB) is the policy rate at the opening less
 `CB.deposit_spread` and plus `CB.lending_spread`. The opening's central-bank loans — the sheet's
@@ -2379,10 +2380,10 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
   lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
 - **Institution**: per kind, the groups its declaration gives (most ≤ 1 024 B; unions and public authorities ≈ 3 KB).
-  The bank's map (S1.200, S1.201), 336 B on `phx-world`'s `BankStore`: `books`, 96 B — income-statement lines
+  The bank's map (S1.200–S1.202), 344 B on `phx-world`'s `BankStore`: `books`, 96 B — income-statement lines
   10 × i64 (K-87), equity and net assets 2 × i64 (K-88); `lending`, 240 B — standard u32, applications, declined,
   quoted and lent 4 × u64, written off since the last review i64, loan-days 16 × u64 and defaults 16 × u32 by class
-  (BNK) · reserve 4. Its site stays in `phx-core`'s record until the remaining kinds move (S1.206).
+  (BNK) · reserve 4; `reserves`, 8 B — the reserves target, a share of deposits in 2⁻³² parts i64 (CB). Its site stays in `phx-core`'s record until the remaining kinds move (S1.206).
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
   map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its

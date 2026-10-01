@@ -12,10 +12,12 @@ use phx_pop::layout::{BANK, Layout};
 use phx_store::{AddressSpace, SystemBacking};
 
 use crate::account_lines::BookWords;
+use crate::consts::bank::SHARE_ONE;
 use crate::consts::{DAYS_A_YEAR, LOAN_CLASSES as CLASSES};
 
-/// The group a lending review gathers.
+/// The groups a lending review and a fund stage gather.
 const LENDING: u8 = 1;
+const RESERVES: u8 = 2;
 
 /// What a bank counts of the applications it reads.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,11 +48,11 @@ pub struct BankStore {
     pub store: KindStore<SystemBacking>,
     kind: u8,
     #[saved(skip, rebuild = BankStore::bind)]
-    words: Option<(BookWords, Lending)>,
+    words: Option<(BookWords, Lending, AttrW<i64>)>,
 }
 
 /// The bank map's layout and its words' handles.
-fn compiled() -> (Layout, BookWords, Lending) {
+fn compiled() -> (Layout, BookWords, Lending, AttrW<i64>) {
     let Ok(mut layout) = Layout::compile(&BANK, &[]) else {
         violation!(clause = "REP.1", "the bank's layout refused");
     };
@@ -63,7 +65,10 @@ fn compiled() -> (Layout, BookWords, Lending) {
     let loan_days = core::array::from_fn(|i| handle(l, "loan_days", i));
     let defaults = core::array::from_fn(|i| handle(l, "defaults", i));
     let lending = Lending { standard, applications, declined, quoted, lent, written, loan_days, defaults };
-    (layout, books, lending)
+    let Ok(target) = layout.writer("reserve_target", 0, "CB") else {
+        violation!(clause = "REP.1", "a bank's reserves target refused");
+    };
+    (layout, books, lending, target)
 }
 
 /// A lending word's write handle, handed to the banks once.
@@ -79,14 +84,14 @@ impl BankStore {
     #[must_use]
     #[phx_macros::opening]
     pub fn new(space: &mut AddressSpace, kind: u8, capacity: u32) -> BankStore {
-        let (layout, books, lending) = compiled();
-        BankStore { store: KindStore::new(space, kind, &layout, capacity), kind, words: Some((books, lending)) }
+        let (layout, books, lending, target) = compiled();
+        BankStore { store: KindStore::new(space, kind, &layout, capacity), kind, words: Some((books, lending, target)) }
     }
 
     /// A loaded store's handles, compiled again from the bank's layout.
     fn bind(&mut self) -> u64 {
-        let (_, books, lending) = compiled();
-        self.words = Some((books, lending));
+        let (_, books, lending, target) = compiled();
+        self.words = Some((books, lending, target));
         0
     }
 
@@ -101,7 +106,7 @@ impl BankStore {
         self.store.begin(dir, r, &[]);
     }
 
-    fn words(&self) -> (BookWords, Lending) {
+    fn words(&self) -> (BookWords, Lending, AttrW<i64>) {
         match self.words {
             Some(w) => w,
             None => violation!(clause = "REP.1", "a bank store read before its handles are bound"),
@@ -170,6 +175,22 @@ impl BankStore {
         self.store.set_at(slot, a, Missing::Present(v));
     }
 
+    /// The share of its deposits a bank's reserves are held to; none before its first fund stage sets it.
+    #[must_use]
+    pub fn reserve_target(&self, slot: Slot) -> Option<f64> {
+        let a = self.words().2;
+        match self.store.gather_at(slot, RESERVES)?.get(a.read()) {
+            Missing::Present(v) => Some(share_of(v)),
+            Missing::Absent => None,
+        }
+    }
+
+    /// A bank's reserves target set, as its word holds it.
+    pub fn set_reserve_target(&mut self, slot: Slot, share: f64) {
+        let a = self.words().2;
+        self.store.set_at(slot, a, Missing::Present(share_word(share)));
+    }
+
     /// A default the bank has seen in a class.
     pub fn add_default(&mut self, slot: Slot, class: usize) {
         let a = class_word(&self.words().1.defaults, class);
@@ -188,6 +209,22 @@ impl Lending {
             Count::Lent => self.lent,
         }
     }
+}
+
+/// A share as its word holds it, in 2⁻³² parts; one past the word stops the run.
+#[clause("MON.14")]
+#[must_use]
+pub fn share_word(share: f64) -> i64 {
+    match phx_rand::float::floor_to_i64((share * SHARE_ONE).round()) {
+        Some(v) => v,
+        None => violation!(clause = "MON.14", "a reserves target beyond its word"),
+    }
+}
+
+/// A share read back from its word.
+#[must_use]
+pub fn share_of(word: i64) -> f64 {
+    phx_rand::float::from_i64(word) / SHARE_ONE
 }
 
 /// A class's word; a class past the record's stops the run.

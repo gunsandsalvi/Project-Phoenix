@@ -190,9 +190,13 @@ const BANK_LENDING: GroupDecl = GroupDecl {
     ],
 };
 
-/// The bank's byte map: its books and its lending record; its site stays in the core's record until the remaining
-/// kinds move.
-pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS, BANK_LENDING] };
+/// A bank's reserves target: the share of its deposits its central bank's fund stage holds it to, in 2⁻³² parts.
+const BANK_RESERVES: GroupDecl =
+    GroupDecl { name: "reserves", width: 8, words: &[word("reserve_target", I64, 1, true, "CB")] };
+
+/// The bank's byte map: its books, its lending record and its reserves target; its site stays in the core's record
+/// until the remaining kinds move.
+pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS, BANK_LENDING, BANK_RESERVES] };
 
 /// Every group of the maps within its width, and each map within a store.
 const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM) && fits(&BANK));

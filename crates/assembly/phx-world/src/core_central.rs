@@ -54,13 +54,11 @@ pub const RESERVES: usize = 0;
 pub const TREASURY_ACCOUNT: usize = 1;
 pub const NOTES: usize = 2;
 
-/// The central banks on the core: each country's corridor, each bank's reserves target as a share of its deposits,
-/// the day each position opened, each central bank's net interest since its last remittance and the losses it kept,
+/// The central banks on the core: each country's corridor, the day each position opened, each central bank's net interest since its last remittance and the losses it kept,
 /// the month it last remitted in, the fund stages' days, and the issuers' money as they record it.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Central {
     pub corridors: Vec<Corridor>,
-    targets: BTreeMap<PartyKey, f64>,
     opened: BTreeMap<(usize, u32), Day>,
     pub income: Vec<i128>,
     pub kept: Vec<i128>,
@@ -450,9 +448,14 @@ impl Core {
         let a = self.kinds.get(usize::from(key.kind()))?.accounts.as_ref()?;
         let reserves = a.balance.get(key.slot())? + a.pending.get(key.slot())? + after.get(&key).copied().unwrap_or(0);
         let owed = deposits.get(usize::try_from(key.slot().get()).unwrap_or(usize::MAX)).copied().unwrap_or(0);
-        let ratio = *self.central.targets.entry(key).or_insert_with(|| {
-            if owed > 0 { phx_rand::float::from_i64(reserves) / phx_rand::float::from_i64(owed) } else { 0.0 }
-        });
+        // Its target is set at its first fund stage, its row's word the share every stage reads after.
+        let banks = self.banks.as_mut().filter(|b| b.kind() == key.kind())?;
+        if banks.reserve_target(key.slot()).is_none() {
+            let first =
+                if owed > 0 { phx_rand::float::from_i64(reserves) / phx_rand::float::from_i64(owed) } else { 0.0 };
+            banks.set_reserve_target(key.slot(), first);
+        }
+        let ratio = banks.reserve_target(key.slot())?;
         Some((reserves, phx_ledger::opening::whole(ratio * phx_rand::float::from_i64(owed))))
     }
 

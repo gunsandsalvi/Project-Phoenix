@@ -12,7 +12,7 @@ use crate::consts::{DAYS_A_YEAR, LOAN_CLASSES};
 #[test]
 fn lender_record_columns_declared() {
     assert_eq!(usize::from(phx_pop::consts::LOAN_CLASSES), LOAN_CLASSES, "the record's classes are the map's");
-    let (_, _, w) = compiled();
+    let (_, _, w, _) = compiled();
     let mut places: Vec<(u8, u16)> = [w.standard.read().place(), w.written.read().place()]
         .into_iter()
         .chain([w.applications, w.declined, w.quoted, w.lent].iter().map(|a| a.read().place()))
@@ -43,4 +43,20 @@ fn lender_record_columns_declared() {
     assert!((l.loan_years(3) - 730.0 / DAYS_A_YEAR).abs() < f64::EPSILON);
     assert_eq!((banks.take_written(slot), banks.take_written(slot)), (250, 0), "taken once, begun again at nothing");
     assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| banks.add_default(slot, LOAN_CLASSES))).is_err());
+}
+
+#[test]
+fn reserve_target_fixed_round_trip() {
+    use super::{share_of, share_word};
+    for share in [0.0, 0.035, 0.123_456_7, 1.5] {
+        assert!((share_of(share_word(share)) - share).abs() <= 1.0 / crate::consts::bank::SHARE_ONE);
+    }
+    let mut space = AddressSpace::empty();
+    let mut dir: Directory<SystemBacking> = Directory::new(&mut space, &[4], 4, (Day::new(0), 30));
+    let mut banks = BankStore::new(&mut space, 0, 4);
+    let bank = dir.begin(0);
+    banks.begin(&dir, bank);
+    assert_eq!(banks.reserve_target(bank.slot()), None, "no target before the first fund stage sets one");
+    banks.set_reserve_target(bank.slot(), 0.08);
+    assert_eq!(banks.reserve_target(bank.slot()), Some(share_of(share_word(0.08))));
 }
