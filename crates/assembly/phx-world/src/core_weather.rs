@@ -160,14 +160,10 @@ impl Core {
         let per_mille = i64::try_from(phx_geo::consts::PER_MILLE).unwrap_or(i64::MAX);
         // The firms sited on each struck tile, found in one pass over the firms.
         let mut sited: BTreeMap<u32, Vec<PartyKey>> = struck_tiles(struck);
-        if let Some(store) = self.kinds.get(firm) {
-            for s in self.directory.live_slots(kind_number(firm)) {
-                let site = store.record(s).get(crate::consts::firm::SITE).map(|w| w.get());
-                if let Some(Missing::Present(t)) = site
-                    && let Some(on) = u32::try_from(t).ok().and_then(|t| sited.get_mut(&t))
-                {
-                    on.push(PartyKey::new(kind_number(firm), s));
-                }
+        for s in self.directory.live_slots(kind_number(firm)) {
+            let site = self.firm_view(s).and_then(|v| v.site());
+            if let Some(on) = site.and_then(|t| sited.get_mut(&t)) {
+                on.push(PartyKey::new(kind_number(firm), s));
             }
         }
         let mut destroyed = 0;

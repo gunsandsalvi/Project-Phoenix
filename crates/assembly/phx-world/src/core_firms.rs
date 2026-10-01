@@ -3,22 +3,21 @@
 //! day-zero price from its own cost. Nothing about a firm's size is drawn: its output is its product's in the accounts
 //! shared by the demand its price wins, and its staff, plant and stocks follow from that output.
 
-use phx_core::store::{KindStore, Opening};
+use phx_core::store::Opening;
 use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams, opening_subject};
-use phx_id::{PartyKey, TileId};
+use phx_id::TileId;
 use phx_macros::{clause, opening};
 use phx_num::round::{Round, split_total};
-use phx_num::{MaybeI64, violation};
+use phx_num::violation;
 use phx_rand::float::{floor_to_i64, from_i64, from_u64, len_u64};
 use phx_rand::{below_u64, normal};
-use phx_store::SystemBacking;
 
-use crate::consts::AGENT_ROWS_PER_CHUNK;
 use crate::consts::firm::{
-    COMPENSATION, MANAGEMENT_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PUBLIC_ADMINISTRATION, PURPOSES, RECORD,
+    COMPENSATION, MANAGEMENT_PURPOSE, PRODUCTIVITY_ONE, PRODUCTIVITY_PURPOSE, PUBLIC_ADMINISTRATION, PURPOSES,
     SITE_PURPOSE,
 };
 use crate::core::Core;
+use crate::firm_store::{FirmOpening, FirmStore};
 use crate::opening::economy::table;
 
 /// A country's firms of one product in one region.
@@ -42,12 +41,6 @@ pub struct Snapshot {
     pub materials: Vec<f64>,
     pub labour: Vec<f64>,
     pub units: Vec<f64>,
-}
-
-/// A share or a rate in millionths, as a record word holds it.
-fn parts(x: f64) -> i64 {
-    floor_to_i64((x * crate::consts::firm::PART_ONE).round())
-        .unwrap_or_else(|| violation!(clause = "REP.9", "a part beyond a word"))
 }
 
 impl Snapshot {
@@ -200,6 +193,8 @@ pub struct FirmsOpening<'a> {
     pub stream: &'a StreamDecl,
     pub management: &'a sys_frm::decide::Management,
     pub today: phx_id::Day,
+    /// The map, whose zones the firms' sites lie in.
+    pub geo: &'a phx_geo::GeoState,
 }
 
 /// The firms' mean hours a unit, as a factor of their way's, at a shift of their log productivities: each firm's
@@ -283,9 +278,11 @@ impl Core {
     pub fn open_firms(&mut self, o: &FirmsOpening<'_>) -> Result<(), String> {
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let price_weight = o.register.fixed("SRV.price_weight")?;
-        let rows = self.kind_rows(firm);
-        let mut store: KindStore<SystemBacking> = KindStore::new(&mut self.space, rows, AGENT_ROWS_PER_CHUNK, RECORD)
-            .with_accounts(&mut self.space, rows, AGENT_ROWS_PER_CHUNK);
+        let kind = crate::core::kind_number(firm);
+        let zone_regions: Vec<u32> = o.geo.map.zones.iter().map(|z| u32::from(z.region.get())).collect();
+        let held = (zone_regions, o.management.points.clone(), o.today);
+        let capacity = self.kind_rows(firm);
+        self.firms = Some(FirmStore::new(&mut self.space, kind, capacity, held));
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
             let persons = self.persons_by_region(c);
             let snap = snapshot(o.register, c)?;
@@ -309,28 +306,32 @@ impl Core {
                 let Some(output) = floor_to_i64(d.output.round()) else {
                     return Err(format!("country {}: a firm's output beyond a count", c.id.get()));
                 };
-                let record = [
-                    MaybeI64::present(i64::from(d.product)),
-                    MaybeI64::present(i64::from(d.region)),
-                    MaybeI64::present(i64::from(d.site.get())),
-                    MaybeI64::present(d.productivity),
-                    MaybeI64::present(d.price),
-                    MaybeI64::present(output),
-                    MaybeI64::from_missing(phx_num::Missing::Absent),
-                    MaybeI64::present(parts(from_i64(output) / crate::consts::DAYS_A_YEAR)),
-                    MaybeI64::present(0),
-                    MaybeI64::present(i64::from(o.today.get())),
-                    MaybeI64::from_missing(phx_num::Missing::Absent),
-                    MaybeI64::present(0),
-                ];
-                let begun = self.directory.begin(crate::core::kind_number(firm));
-                let party = store.begin(begun, &record, Some(Opening { bank: d.bank, balance: share }));
-                let key = PartyKey::new(party.kind(), party.slot());
+                let phx_num::Missing::Present(zone) = o.geo.zone_of(d.site) else {
+                    return Err(format!("country {}: a firm sited on no zone's land", c.id.get()));
+                };
+                let (Ok(product), Ok(zone)) = (u16::try_from(d.product), u16::try_from(zone.get())) else {
+                    return Err(format!("country {}: a firm's product or zone beyond its word", c.id.get()));
+                };
+                let key = self.begin_party(firm, &[], Some(Opening { bank: d.bank, balance: share }));
+                let Some(r) = self.reference(key) else {
+                    violation!(clause = "PTY.1", "a firm begun the directory does not name", slot = key.slot().get());
+                };
+                let opening = FirmOpening {
+                    product,
+                    site: d.site.get(),
+                    zone,
+                    productivity: from_i64(d.productivity) / PRODUCTIVITY_ONE,
+                    price: d.price,
+                    output: from_i64(output),
+                    markup: phx_num::Missing::Absent,
+                    expected: phx_num::Missing::Present(from_i64(output) / crate::consts::DAYS_A_YEAR),
+                    opened: o.today,
+                };
+                if let Some(fs) = self.firms.as_mut() {
+                    fs.begin(&self.directory, r, &opening);
+                }
                 self.found(key, d.prefs);
             }
-        }
-        if let Some(k) = self.kinds.get_mut(firm) {
-            *k = store;
         }
         Ok(())
     }

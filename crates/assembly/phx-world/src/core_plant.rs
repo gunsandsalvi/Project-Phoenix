@@ -184,7 +184,7 @@ impl Core {
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let conditions = u8::try_from(classes).map_err(|e| e.to_string())?;
         for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
+            let Some(f) = self.firm_at(regions, slot) else { continue };
             let needs =
                 self.plant.needs.get(f.country * products + usize::from(f.product)).cloned().unwrap_or_default();
             for (kind, per) in needs.into_iter().filter(|(_, per)| *per > 0.0) {
@@ -335,7 +335,7 @@ impl Core {
         let investing = self.point(|p| p.invest, &sys_cap::points::INVEST);
         let mut wants = Vec::new();
         for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let Some(f) = self.firm_at(ctx.regions, slot) else { continue };
             let delivered = self.plant.sold.get(&f.key).copied().unwrap_or(0);
             let Some((seen, before)) = self.plant.reviewed.insert(f.key, (delivered, 0)) else { continue };
             let sold = delivered - seen;
@@ -367,9 +367,7 @@ impl Core {
         let price = from_i64(f.price) / lot;
         let margin = price - self.unit_cost(f)?;
         let staff = self.staff_capacity(f).map_or(f64::INFINITY, from_i64);
-        let expected =
-            from_i64(self.record_word(usize::from(f.key.kind()), f.key.slot(), crate::consts::firm::EXPECTED)?)
-                / crate::consts::firm::PART_ONE;
+        let expected = self.firm_view(f.key.slot())?.expected()?;
         let wanted = if expected < staff { expected } else { staff };
         let gap = wanted - self.plant_capacity(f.key, (f.country, f.product));
         if gap <= 0.0 || margin <= 0.0 || sold <= 0 || before <= 0 {
@@ -474,13 +472,9 @@ impl Core {
         }
     }
 
-    /// The region a firm or estate stands in, by its record.
+    /// The region a firm stands in; none for a party of another kind.
     fn region_of(&self, party: PartyKey) -> Option<u32> {
-        let store = self.kinds.get(usize::from(party.kind()))?;
-        match store.record(party.slot()).get(crate::consts::firm::REGION)?.get() {
-            Missing::Present(r) => u32::try_from(r).ok(),
-            Missing::Absent => None,
-        }
+        self.firm_of(party)?.region()
     }
 
     /// What every holder's projects cost so far, in one pass over the projects.

@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 231 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 230 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -485,12 +485,6 @@ path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::post_one"
 what = "`.unwrap_or`"
 count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::price_expected"
-what = "`.unwrap_or`"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_labour.rs"

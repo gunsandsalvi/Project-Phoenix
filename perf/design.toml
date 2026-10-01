@@ -25,7 +25,7 @@ load_s = 5
 persons = 6_000_000              # S1.207
 households = 1_768_000           # S1.196
 firms = 921_600                  # S1.196
-firm_bytes = 520                 # S1.196 (hot 192)
+firm_bytes = 528                 # S1.196 (hot 192), S1.198 (warm 192)
 banks = 35                       # S1.407
 institutions = 16_000            # S1.196: PTY.1's kinds 15 k and the trade unions 1 k
 offices = 2_000_000              # S1.209
@@ -1121,7 +1121,7 @@ preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 M
 2 = { name = "persons", mb = 402.4 }   # S1.207 495, S4.142 8 (503.0 at the steps' counts)
 3 = { name = "directory", mb = 50.6 }
 4 = { name = "households", mb = 307.6 }   # S1.196: 1.77 M × 174 B
-5 = { name = "firms", mb = 479.7 }   # S1.196 599, S5.176 0.6 (599.6)
+5 = { name = "firms", mb = 487.2 }   # S1.196 599, S1.198 9.2, S5.176 0.6 (608.8)
 6 = { name = "institutions", mb = 78.1 }
 7 = { name = "offices", mb = 32.0 }
 8 = { name = "accounts and side rows", mb = 228.2 }   # S1.240 148, S1.241 134.2 (9.37 M slots by kind), S5.159 3 (285.2)
@@ -1142,7 +1142,7 @@ preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 M
 23 = { name = "save buffers", mb = 13.0 }
 24 = { name = "plant cells", mb = 77.4 }   # 96.8 at the steps' counts, at two condition classes
 25 = { name = "windows", mb = 9.6 }
-total_mb = 3938.6   # 4 814.0 at the steps' counts; against fin.mem.peak_mb 4 349: 410 MB (9.4 %) below, 11.4 below the owner's 3 950
+total_mb = 3946.1   # 4 823.2 at the steps' counts; against fin.mem.peak_mb 4 349: 403 MB (9.3 %) below, 3.9 below the owner's 3 950
 
 [save]   # the save and load buffers' representation (ledger line 23), as the snapshot step S1.356 states it; not a valve
 frames_per_worker = 4

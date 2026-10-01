@@ -442,6 +442,10 @@ impl Core {
             phx_num::Missing::Absent => None,
         };
         let place = crate::core_kinds::of(&self.declared.kinds, k).place;
+        if place == phx_core::Place::Zone {
+            let region = self.firm_of(party)?.region()?;
+            return regions.get(usize::try_from(region).ok()?).map(|c| usize::from(c.get()));
+        }
         crate::core_kinds::country_by_place(place, record, (sited_by, regions), tile_country)
     }
 }

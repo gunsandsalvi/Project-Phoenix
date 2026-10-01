@@ -81,6 +81,8 @@ pub fn phx_pop::kind::PopKindDecl::role_name(&self, usize) -> &'static str
 pub fn phx_pop::kind::compile_kinds(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>  // used by: phx-world
 pub mod phx_pop::kinds  // used by: if-state, phx-cli, phx-core, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
 pub struct phx_pop::kinds::Attr<T>  // used by: phx-core, phx-fin, phx-obs
+impl<T: phx_pop::kinds::Word> phx_pop::kinds::Attr<T>
+pub fn phx_pop::kinds::Attr<T>::place(self) -> (u8, u16)
 impl<T> core::clone::Clone for phx_pop::kinds::Attr<T>
 pub fn phx_pop::kinds::Attr<T>::clone(&self) -> phx_pop::kinds::Attr<T>  // used by: phx-core, phx-fin, phx-obs
 impl<T> core::cmp::PartialEq for phx_pop::kinds::Attr<T>
@@ -107,6 +109,7 @@ pub fn phx_pop::kinds::KindStore<B>::begin<D: phx_store::backing::Backing>(&mut 
 pub fn phx_pop::kinds::KindStore<B>::chunks_mut<'a, D: phx_store::backing::Backing>(&'a mut self, &'a phx_pop::directory::Directory<D>, u32) -> phx_pop::kinds::Chunks<'a, D>  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::end<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef)  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::gather<D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, u8) -> phx_pop::kinds::Row<'_>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::gather_at(&self, phx_id::ids::Slot, u8) -> core::option::Option<phx_pop::kinds::Row<'_>>
 pub fn phx_pop::kinds::KindStore<B>::get<T: phx_pop::kinds::Word, D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::kinds::Attr<T>) -> phx_num::missing::Missing<T>  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::group_bytes(&self, u8) -> core::option::Option<usize>  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::index(&self, usize) -> core::option::Option<&phx_store::index::Index<B>>  // used by: phx-core, phx-fin, phx-world
@@ -115,6 +118,7 @@ pub fn phx_pop::kinds::KindStore<B>::new(&mut phx_store::backing::AddressSpace, 
 pub fn phx_pop::kinds::KindStore<B>::rows(&self) -> u32  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::scan(&self, u8) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::Slot, phx_pop::kinds::Row<'_>)> + '_  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::set<T: phx_pop::kinds::Word, D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::kinds::AttrW<T>, phx_num::missing::Missing<T>)  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::set_at<T: phx_pop::kinds::Word>(&mut self, phx_id::ids::Slot, phx_pop::kinds::AttrW<T>, phx_num::missing::Missing<T>)
 pub fn phx_pop::kinds::KindStore<B>::widths(&self) -> &[u16]  // used by: phx-core, phx-fin, phx-world
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::kinds::KindStore<B>
 pub fn phx_pop::kinds::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_pop::kinds::KindStore<B>, phx_store::save::LoadError>  // used by: phx-core, phx-fin, phx-world

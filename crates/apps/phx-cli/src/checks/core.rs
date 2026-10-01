@@ -467,13 +467,11 @@ fn prices_are_points(w: Inspector<'_>) -> Outcome {
     let Some(m) = w.management() else { return Outcome::NotYet("no firms' management compiled") };
     let core = w.core();
     let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
-    let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
     for slot in core.live_slots(firm) {
-        let price = store.record(slot).get(phx_world::consts::firm::PRICE).map(|w| w.get());
-        if let Some(phx_num::Missing::Present(p)) = price
-            && !m.is_point(p)
-        {
-            return Outcome::Fail(format!("firm slot {} posts {p}, no point of its trade", slot.get()));
+        match core.firm_view(slot).and_then(|v| v.price()) {
+            Some(p) if m.is_point(p) => {}
+            Some(p) => return Outcome::Fail(format!("firm slot {} posts {p}, no point of its trade", slot.get())),
+            None => return Outcome::Fail(format!("firm slot {} posts a code of no point", slot.get())),
         }
     }
     if let Some(d) = core.goods.days.iter().find(|d| d.repriced > d.reviews) {
@@ -593,34 +591,34 @@ pub const LC_0_41: Check = live_check! {
     check: hits_have_events,
 };
 
+/// The relative difference below which two firms' outlooks a unit of output are one: the millionth they are held in.
+const SAME_RATIO: f64 = 1e-6;
+
 /// Each firm's outlook of its sales is its own: among the makers of some product at some region, their expected sales
 /// a unit of their output take more than one value once they have reviewed on what each sold.
 fn outlooks_are_own(w: Inspector<'_>) -> Outcome {
-    use phx_world::consts::firm::{EXPECTED, OUTPUT, PRODUCT, REGION};
     let core = w.core();
     let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
-    let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
-    let word = |slot: phx_id::Slot, at: usize| match store.record(slot).get(at).map(|w| w.get()) {
-        Some(phx_num::Missing::Present(v)) => Some(v),
-        _ => None,
-    };
-    let mut ratios: std::collections::BTreeMap<(i64, i64), Vec<(i128, i128)>> = std::collections::BTreeMap::new();
+    let mut ratios: std::collections::BTreeMap<(u16, u32), Vec<(f64, f64)>> = std::collections::BTreeMap::new();
     for slot in core.live_slots(firm) {
+        let Some(v) = core.firm_view(slot) else { continue };
         let (Some(product), Some(region), Some(expected), Some(output)) =
-            (word(slot, PRODUCT), word(slot, REGION), word(slot, EXPECTED), word(slot, OUTPUT))
+            (v.product(), v.region(), v.expected(), v.output())
         else {
             continue;
         };
-        if output > 0 {
-            ratios.entry((product, region)).or_default().push((i128::from(expected), i128::from(output)));
+        if output > 0.0 {
+            ratios.entry((product, region)).or_default().push((expected, output));
         }
     }
     let cells = ratios.values().filter(|r| r.len() > 1).count();
     if cells == 0 {
         return Outcome::NotYet("no product has two makers at one region");
     }
-    // Two ratios are one where their cross products are.
-    let differ = |r: &Vec<(i128, i128)>| r.first().is_some_and(|(e0, o0)| r.iter().any(|(e, o)| e * o0 != e0 * o));
+    // Two ratios are one where their cross products agree to the millionth an outlook is held in.
+    let differ = |r: &Vec<(f64, f64)>| {
+        r.first().is_some_and(|(e0, o0)| r.iter().any(|(e, o)| (e * o0 - e0 * o).abs() > SAME_RATIO * (e0 * o).abs()))
+    };
     if ratios.values().any(differ) {
         Outcome::Pass
     } else {
@@ -740,26 +738,21 @@ pub const LC_1_23: Check = live_check! {
 /// Each trade's firms' markups at the close, their median, by product.
 #[must_use]
 pub fn markups_by_trade(w: Inspector<'_>) -> std::collections::BTreeMap<u16, f64> {
-    use phx_world::consts::firm::{MARKUP, PART_ONE, PRODUCT};
     let core = w.core();
-    let mut by: std::collections::BTreeMap<u16, Vec<i64>> = std::collections::BTreeMap::new();
-    let Some((firm, store)) = core.names.iter().position(|n| *n == "firm").and_then(|f| Some((f, core.kinds.get(f)?)))
-    else {
+    let mut by: std::collections::BTreeMap<u16, Vec<f64>> = std::collections::BTreeMap::new();
+    let Some(firm) = core.names.iter().position(|n| *n == "firm") else {
         return std::collections::BTreeMap::new();
     };
     for slot in core.live_slots(firm) {
-        let word = |at: usize| match store.record(slot).get(at).map(|x| x.get()) {
-            Some(phx_num::Missing::Present(v)) => Some(v),
-            _ => None,
-        };
-        if let (Some(p), Some(m)) = (word(PRODUCT).and_then(|p| u16::try_from(p).ok()), word(MARKUP)) {
+        let Some(v) = core.firm_view(slot) else { continue };
+        if let (Some(p), Some(m)) = (v.product(), v.markup()) {
             by.entry(p).or_default().push(m);
         }
     }
     by.into_iter()
         .filter_map(|(p, mut m)| {
-            m.sort_unstable();
-            m.get(m.len() / 2).map(|x| (p, phx_rand::float::from_i64(*x) / PART_ONE))
+            m.sort_unstable_by(f64::total_cmp);
+            m.get(m.len() / 2).map(|x| (p, *x))
         })
         .collect()
 }

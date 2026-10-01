@@ -31,6 +31,7 @@ pub mod core_stats;
 pub mod core_taxes;
 pub mod core_weather;
 pub mod day;
+pub mod firm_store;
 pub mod inspector;
 pub mod metrics;
 pub mod observe;

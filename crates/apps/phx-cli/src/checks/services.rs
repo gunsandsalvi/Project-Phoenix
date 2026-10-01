@@ -2,9 +2,7 @@
 //! reads — their share of the firms' sales and of the jobs, the retail margin of services and of goods, and how often
 //! and by how much each's prices move at a review; and no firm in arrears past its grace.
 
-use phx_num::Missing;
 use phx_world::Inspector;
-use phx_world::consts::firm::{EXPECTED, MARKUP, PART_ONE, PRICE, PRODUCT};
 
 use super::{Check, Outcome};
 use crate::live_check;
@@ -31,26 +29,21 @@ pub fn services(w: Inspector<'_>) -> Option<ServicesRead> {
     let core = w.core();
     let goods = &core.goods;
     let firm = core.names.iter().position(|n| *n == "firm")?;
-    let store = core.kinds.get(firm)?;
-    let is_service = |p: i64| usize::try_from(p).ok().and_then(|p| goods.stored.get(p)).is_some_and(|s| !*s);
+    let is_service = |p: u16| goods.stored.get(usize::from(p)).is_some_and(|s| !*s);
     let mut sales = [0.0; 2];
     let mut markups: [Vec<f64>; 2] = [Vec::new(), Vec::new()];
     let mut product_of = std::collections::BTreeMap::new();
     for slot in core.live_slots(firm) {
-        let word = |at: usize| match store.record(slot).get(at).map(|x| x.get()) {
-            Some(Missing::Present(v)) => Some(v),
-            _ => None,
-        };
-        let (Some(p), Some(expected), Some(price), Some(markup)) =
-            (word(PRODUCT), word(EXPECTED), word(PRICE), word(MARKUP))
+        let Some(v) = core.firm_view(slot) else { continue };
+        let (Some(p), Some(expected), Some(price), Some(markup)) = (v.product(), v.expected(), v.price(), v.markup())
         else {
             continue;
         };
         let at = usize::from(!is_service(p));
-        let lot = usize::try_from(p).ok().and_then(|p| goods.lots.get(p)).copied().unwrap_or(1.0);
+        let lot = goods.lots.get(usize::from(p)).copied().unwrap_or(1.0);
         if let (Some(s), Some(m)) = (sales.get_mut(at), markups.get_mut(at)) {
-            *s += phx_rand::float::from_i64(expected) / PART_ONE * phx_rand::float::from_i64(price) / lot;
-            m.push(phx_rand::float::from_i64(markup) / PART_ONE);
+            *s += expected * phx_rand::float::from_i64(price) / lot;
+            m.push(markup);
         }
         product_of.insert(slot.get(), p);
     }
@@ -71,7 +64,7 @@ pub fn services(w: Inspector<'_>) -> Option<ServicesRead> {
     }
     let mut tallies = [(0_u64, 0_u64, 0.0_f64); 2];
     for (p, t) in &goods.prices {
-        if let Some(x) = tallies.get_mut(usize::from(!is_service(i64::from(*p)))) {
+        if let Some(x) = tallies.get_mut(usize::from(!is_service(*p))) {
             *x = (x.0 + t.reviews, x.1 + t.changes, x.2 + t.size);
         }
     }
@@ -140,7 +133,6 @@ pub const LC_1_05: Check = live_check! {
 fn firms_end(w: Inspector<'_>) -> Outcome {
     let core = w.core();
     let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
-    let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
     for ((i, edge), since) in &core.insolvency.since {
         let Some(row) = core.families.get(*i).and_then(|f| f.store.edges.row(phx_id::Slot::new(*edge))) else {
             continue;
@@ -149,11 +141,7 @@ fn firms_end(w: Inspector<'_>) -> Outcome {
         if usize::from(payer.kind()) != firm {
             continue;
         }
-        let Some(Missing::Present(region)) =
-            store.record(payer.slot()).get(phx_world::consts::firm::REGION).map(|x| x.get())
-        else {
-            continue;
-        };
+        let Some(region) = core.firm_view(payer.slot()).and_then(|v| v.region()) else { continue };
         let country = usize::try_from(region).ok().and_then(|r| w.regions().get(r)).map(|c| usize::from(c.get()));
         let Some(Some(grace)) = country.and_then(|c| core.insolvency.grace.get(c)).copied() else { continue };
         let days = w.calendar().days_between(*since, w.today()).unwrap_or(0);
@@ -171,9 +159,7 @@ fn firms_end(w: Inspector<'_>) -> Outcome {
     let ended: std::collections::BTreeSet<u16> = core.insolvency.endings.iter().map(|e| e.product).collect();
     let mut held: std::collections::BTreeSet<u16> = ended.clone();
     for slot in core.live_slots(firm) {
-        if let Some(Missing::Present(p)) = store.record(slot).get(PRODUCT).map(|x| x.get())
-            && let Ok(p) = u16::try_from(p)
-        {
+        if let Some(p) = core.firm_view(slot).and_then(|v| v.product()) {
             held.insert(p);
         }
     }

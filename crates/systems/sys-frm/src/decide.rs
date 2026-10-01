@@ -155,14 +155,8 @@ impl Management {
         }
     }
 
-    /// The decade of a positive price from the table's own: how many powers of ten it lies above the table's top.
     fn decade_of(&self, price: f64) -> Option<i32> {
-        let top = from_i64(*self.points.last()?);
-        if price <= 0.0 || top <= 0.0 {
-            return None;
-        }
-        let d = libm::floor(libm::log10(price)) - libm::floor(libm::log10(top));
-        i32::try_from(phx_rand::float::floor_to_i64(d)?).ok()
+        decade_in(&self.points, price)
     }
 
     /// Whether a price is a point of the trade's table in some decade.
@@ -171,6 +165,12 @@ impl Management {
     pub fn is_point(&self, price: i64) -> bool {
         let Some(d) = self.decade_of(from_i64(price)) else { return false };
         self.points.iter().any(|m| Self::at_decade(*m, d) == Some(price))
+    }
+
+    /// A posted price as its point's code; none for a price that is no point.
+    #[must_use]
+    pub fn point_code(&self, price: i64) -> Option<u32> {
+        point_code(&self.points, price)
     }
 
     /// The posted prices near a price: the points of the decade it lies in and of the decades either side, each point
@@ -188,6 +188,36 @@ impl Management {
     }
 }
 
+/// The decade of a positive price from a table's own: how many powers of ten it lies above the table's top.
+fn decade_in(points: &[i64], price: f64) -> Option<i32> {
+    let top = from_i64(*points.last()?);
+    if price <= 0.0 || top <= 0.0 {
+        return None;
+    }
+    let d = libm::floor(libm::log10(price)) - libm::floor(libm::log10(top));
+    i32::try_from(phx_rand::float::floor_to_i64(d)?).ok()
+}
+
+/// A posted price as its point's code in a table: its decade from the table's own in the high byte, its place in the
+/// table in the low bytes; none for a price that is no point.
+#[clause("REP.34")]
+#[must_use]
+pub fn point_code(points: &[i64], price: i64) -> Option<u32> {
+    let d = decade_in(points, from_i64(price))?;
+    let at = points.iter().position(|m| Management::at_decade(*m, d) == Some(price))?;
+    let [hi, lo] = u16::try_from(at).ok()?.to_be_bytes();
+    let [decade] = i8::try_from(d).ok()?.to_be_bytes();
+    Some(u32::from_be_bytes([decade, 0, hi, lo]))
+}
+
+/// The posted price a point's code names in a table; none for a code of no point.
+#[must_use]
+pub fn point_price(points: &[i64], code: u32) -> Option<i64> {
+    let [decade, _, hi, lo] = code.to_be_bytes();
+    let point = points.get(usize::from(u16::from_be_bytes([hi, lo])))?;
+    Management::at_decade(*point, i32::from(i8::from_be_bytes([decade])))
+}
+
 #[cfg(test)]
 mod tests {
     use super::Management;
@@ -201,9 +231,8 @@ mod tests {
         .unwrap_or_else(|e| panic!("{e}"))
     }
 
-    #[test]
-    fn points_near_span_the_decades_around_a_price() {
-        let m = Management {
+    fn management() -> Management {
+        Management {
             production_days: 7.0,
             cover_days: 42.0,
             adjustment_days: 152.0,
@@ -230,7 +259,23 @@ mod tests {
                 discretisation: phx_core::register::values::Discretisation::EqualShares,
                 exp: 2,
             },
-        };
+        }
+    }
+
+    #[test]
+    fn a_point_round_trips_through_its_code() {
+        let m = management();
+        for price in [1, 100, 499, 999, 1_990, 4_990_000_000] {
+            let code = m.point_code(price).unwrap_or_else(|| panic!("{price} is a point"));
+            assert_eq!(super::point_price(&m.points, code), Some(price), "{price}");
+        }
+        assert_eq!(m.point_code(150), None, "a price between points has no code");
+        assert_eq!(m.point_code(0), None);
+    }
+
+    #[test]
+    fn points_near_span_the_decades_around_a_price() {
+        let m = management();
         assert_eq!(m.points_near(250.0), vec![10, 100, 199, 499, 999, 1000, 1990, 4990, 9990]);
         assert_eq!(m.points_near(2500.0), vec![100, 199, 499, 999, 1000, 1990, 4990, 9990, 10000, 19900, 49900, 99900]);
         assert!(m.points_near(0.0).is_empty());

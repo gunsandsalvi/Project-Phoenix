@@ -17,7 +17,6 @@ use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_rand::Subject;
 
-use crate::consts::firm::{MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT};
 use crate::core::Core;
 
 /// A bank's lending: the worst class it admits; the applications it answered, declined and quoted, and the loans it
@@ -91,28 +90,16 @@ impl Core {
     ) -> Result<(), String> {
         let laws = countries.iter().map(|c| sys_bnk::credit::law(register, c)).collect::<Result<Vec<Law>, String>>()?;
         let mut filed = BTreeMap::new();
-        if let Some(firm) = self.bound.kinds.firm
-            && let Some(store) = self.kinds.get(firm)
-        {
+        if let Some(firm) = self.bound.kinds.firm {
             for slot in self.directory.live_slots(crate::core::kind_number(firm)) {
-                let word = |at: usize| match store.record(slot).get(at).map(|w| w.get()) {
-                    Some(Missing::Present(v)) => Some(phx_rand::float::from_i64(v)),
-                    _ => None,
-                };
+                let Some(v) = self.firm_view(slot) else { continue };
                 let (Some(product), Some(price), Some(markup), Some(output)) =
-                    (word(PRODUCT), word(PRICE), word(MARKUP), word(OUTPUT))
+                    (v.product(), v.price(), v.markup(), v.output())
                 else {
                     continue;
                 };
-                let Some(lot) = phx_rand::float::floor_to_i64(product)
-                    .and_then(|p| usize::try_from(p).ok())
-                    .and_then(|p| self.goods.lots.get(p))
-                    .copied()
-                else {
-                    continue;
-                };
-                let markup = markup / PART_ONE;
-                let margin = price / lot * markup / (1.0 + markup);
+                let Some(lot) = self.goods.lots.get(usize::from(product)).copied() else { continue };
+                let margin = phx_rand::float::from_i64(price) / lot * markup / (1.0 + markup);
                 filed.insert(PartyKey::new(crate::core::kind_number(firm), slot), margin * output);
             }
         }

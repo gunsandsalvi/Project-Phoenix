@@ -11,7 +11,6 @@ use phx_core::flows::Flow;
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
 
-use crate::consts::firm::{PRODUCT, REGION};
 use crate::core::Core;
 use crate::core_labour::LabourCtx;
 
@@ -104,8 +103,8 @@ impl Core {
             if payer.kind() != firm_kind {
                 continue;
             }
-            let Some(region) = self.record_of(firm, payer.slot(), REGION) else { continue };
-            let country = ctx.country_of(u32::try_from(region).unwrap_or(u32::MAX));
+            let Some(region) = self.firm_view(payer.slot()).and_then(|v| v.region()) else { continue };
+            let country = ctx.country_of(region);
             let Some(Some(grace)) = self.insolvency.grace.get(usize::from(country)).copied() else {
                 phx_num::violation!(clause = "FRM.15", "a firm's country with no insolvency grace", country = country);
             };
@@ -123,13 +122,6 @@ impl Core {
         }
         self.close_ended(&ended);
         phx_rand::float::len_u64(due.len())
-    }
-
-    fn record_of(&self, kind: usize, slot: Slot, at: usize) -> Option<i64> {
-        match self.kinds.get(kind)?.record(slot).get(at).map(|w| w.get()) {
-            Some(phx_num::Missing::Present(v)) => Some(v),
-            _ => None,
-        }
     }
 
     /// What the day's ended firms leave in the labour market and the plant, each firm by its estate, closed in one pass
@@ -169,9 +161,8 @@ impl Core {
         // Services it has not yet bought for what it made are owed by no one once it ends.
         self.goods.services_owed.remove(&key);
         let place = usize::from(key.kind());
-        let (Some(product), Some(region)) =
-            (self.record_of(place, key.slot(), PRODUCT), self.record_of(place, key.slot(), REGION))
-        else {
+        let rows = self.firm_of(key);
+        let (Some(product), Some(region)) = (rows.and_then(|v| v.product()), rows.and_then(|v| v.region())) else {
             return None;
         };
         let (bank, money) =
@@ -200,12 +191,7 @@ impl Core {
         self.goods.outlooks.awaiting.remove(&key.slot().get());
         self.goods.stocks.end(key);
         self.end_party(key, day, Some(estate));
-        self.insolvency.endings.push(Ending {
-            day: day.get(),
-            product: u16::try_from(product).unwrap_or(u16::MAX),
-            region: u32::try_from(region).unwrap_or(u32::MAX),
-            defaulted,
-        });
+        self.insolvency.endings.push(Ending { day: day.get(), product, region, defaulted });
         Some(estate)
     }
 

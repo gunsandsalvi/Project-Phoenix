@@ -16,7 +16,7 @@ use phx_num::Missing;
 use phx_rand::float::len_u64;
 
 use crate::consts::WEEKS_A_YEAR;
-use crate::consts::firm::{COMPENSATION, OWNERS_PURPOSE, PRODUCT, PURPOSES, SURPLUS};
+use crate::consts::firm::{COMPENSATION, OWNERS_PURPOSE, PURPOSES, SURPLUS};
 use crate::core::{Core, kind_number};
 use crate::core_jobs::{JobsOpening, deal, month_point};
 use crate::opening::economy::table;
@@ -126,7 +126,7 @@ impl Core {
             let here = firms.get(&region).map_or(&[][..], Vec::as_slice);
             let mut share = Vec::with_capacity(here.len());
             for (slot, _) in here {
-                let product = self.record_word(firm, *slot, PRODUCT).and_then(|p| usize::try_from(p).ok());
+                let product = self.firm_view(*slot).and_then(|v| v.product()).map(usize::from);
                 let Some(s) = product.and_then(|p| owned.get(&country)?.get(p).copied()) else {
                     return Err(format!("country {country}: a firm's product with no self-employed share"));
                 };
@@ -176,7 +176,9 @@ impl Core {
     /// its compensation, so its self-employed would earn nothing.
     #[clause("GEN.4", "GEN.15", "FRM.14")]
     pub fn price_owners(&mut self, o: &JobsOpening<'_>) -> Result<(), String> {
-        let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
+        if self.bound.kinds.firm.is_none() {
+            return Ok(());
+        }
         let working: Vec<(PartyKey, Vec<Worker>)> = self.owners.working.iter().map(|(k, w)| (*k, w.clone())).collect();
         for c in o.countries {
             let id = c.id.get();
@@ -196,16 +198,16 @@ impl Core {
             // Each owner with the employee wage an hour of its activity and occupation, where its activity has one.
             let mut owners: Vec<(Worker, usize, f64)> = Vec::new();
             for (key, workers) in &working {
-                let (Some(product), Some(region)) = (
-                    self.record_word(firm, key.slot(), crate::consts::firm::PRODUCT),
-                    self.record_word(firm, key.slot(), crate::consts::firm::REGION),
-                ) else {
+                let firm_rows = self.firm_view(key.slot());
+                let (Some(product), Some(region)) =
+                    (firm_rows.and_then(|v| v.product()), firm_rows.and_then(|v| v.region()))
+                else {
                     continue;
                 };
-                if !c.regions.iter().any(|(r, _)| i64::from(*r) == region) {
+                if !c.regions.iter().any(|(r, _)| *r == region) {
                     continue;
                 }
-                let activity = usize::try_from(product).unwrap_or(usize::MAX);
+                let activity = usize::from(product);
                 for w in workers {
                     if let Some(wage) = self.drawn.wage_in((id, activity), w.occupation) {
                         owners.push((*w, activity, wage));

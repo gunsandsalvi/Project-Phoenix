@@ -27,7 +27,6 @@ use phx_pop::person::{pack, unpack};
 use phx_rand::float::{from_i64, from_u64, len_u64};
 use phx_rand::{Draws, Subject, SubjectTag};
 
-use crate::consts::firm::{OUTPUT, PRICE, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, REGION};
 use crate::consts::{DAYS_A_WEEK, DAYS_A_YEAR, LEAST_MATCH_DAYS, PERCENT, WEEKS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_day::Due;
@@ -237,27 +236,20 @@ impl Core {
         self.bound.families.employment
     }
 
-    fn firm_record(&self, firm: usize, slot: Slot) -> Option<Firm> {
-        let rec = self.kinds.get(firm)?.record(slot);
-        let read = |i: usize| match rec.get(i).map(|w| w.get()) {
-            Some(Missing::Present(v)) => Some(v),
-            _ => None,
-        };
+    fn firm_record(&self, slot: Slot) -> Option<Firm> {
+        let v = self.firm_view(slot)?;
         Some(Firm {
-            product: usize::try_from(read(PRODUCT)?).ok()?,
-            region: u32::try_from(read(REGION)?).ok()?,
-            productivity: from_i64(read(PRODUCTIVITY)?) / PRODUCTIVITY_ONE,
-            price: read(PRICE)?,
-            output: from_i64(read(OUTPUT)?),
+            product: usize::from(v.product()?),
+            region: v.region()?,
+            productivity: v.productivity()?,
+            price: v.price()?,
+            output: v.output()?,
         })
     }
 
-    /// The sales a day a firm expects, as its record holds them.
-    fn expected_of(&self, firm: usize, slot: Slot) -> Option<f64> {
-        match self.kinds.get(firm)?.record(slot).get(crate::consts::firm::EXPECTED).map(|w| w.get()) {
-            Some(Missing::Present(v)) => Some(from_i64(v) / crate::consts::firm::PART_ONE),
-            _ => None,
-        }
+    /// The sales a day a firm expects.
+    fn expected_of(&self, slot: Slot) -> Option<f64> {
+        self.firm_view(slot)?.expected()
     }
 
     /// A firm's staff not under notice: each job's occupation and weekly hours, and its monthly wage.
@@ -303,7 +295,7 @@ impl Core {
         let (mut staff_hours, mut way_hours) = (zeros.clone(), zeros);
         let slots: Vec<Slot> = self.directory.live_slots(crate::core::kind_number(firm)).collect();
         for slot in &slots {
-            let Some(f) = self.firm_record(firm, *slot) else { continue };
+            let Some(f) = self.firm_record(*slot) else { continue };
             let c = usize::from(ctx.country_of(f.region));
             let key = PartyKey::new(kind_number(firm), *slot);
             let owners: Vec<(u32, u32)> = self.owners.hours_of(key).collect();
@@ -470,7 +462,7 @@ impl Core {
         (firm, family): (usize, usize),
         (slot, own): (Slot, &[usize]),
     ) -> (u64, u64, u64) {
-        let Some(f) = self.firm_record(firm, slot) else { return (0, 0, 0) };
+        let Some(f) = self.firm_record(slot) else { return (0, 0, 0) };
         let key = PartyKey::new(kind_number(firm), slot);
         let c = ctx.country_of(f.region);
         let law = at_country(&self.labour.laws, c).clone();
@@ -514,13 +506,13 @@ impl Core {
             Missing::Absent => 0.0,
         };
         // What a unit leaves over its cost of making it at the price the head of its line expects.
-        if let Some(cost) = self.unit_cost_of(ctx.regions, firm, slot) {
+        if let Some(cost) = self.unit_cost_of(ctx.regions, slot) {
             let (_, prefs) = self.decider(self.point(|p| p.offer, ctx.kind.offer), key);
-            if let Missing::Present(price) = self.price_expected(firm, slot, lot, &prefs) {
+            if let Missing::Present(price) = self.price_expected(slot, lot, &prefs) {
                 self.review_wages(ctx, day, (family, key, &law), (price - cost, &needs, &staff, f.region));
             }
         }
-        let Some(units_a_day) = self.expected_of(firm, slot) else { return (0, 0, 0) };
+        let Some(units_a_day) = self.expected_of(slot) else { return (0, 0, 0) };
         let input = PostIn { price: from_i64(f.price) / lot, units_a_day, financing, minimum_hour, needs };
         let out = self.decide(self.point(|p| p.post, ctx.kind.post), key, |_| input);
         let mut posted = 0;
@@ -570,26 +562,21 @@ impl Core {
 
     /// The price a unit a firm expects its product to sell for: its stance's outlook of its product's mark in its
     /// region, or, before the mark has printed there, its own price; missing where it holds no price or stance.
-    pub(crate) fn price_expected(&self, firm: usize, slot: Slot, lot: f64, prefs: &phx_core::Prefs) -> Missing<f64> {
-        let Some(store) = self.kinds.get(firm) else { return Missing::Absent };
-        let rec = store.record(slot);
-        let read = |i: usize| match rec.get(i).map(|w| w.get()) {
-            Some(Missing::Present(v)) => usize::try_from(v).ok(),
-            _ => None,
-        };
+    pub(crate) fn price_expected(&self, slot: Slot, lot: f64, prefs: &phx_core::Prefs) -> Missing<f64> {
+        let Some(v) = self.firm_view(slot) else { return Missing::Absent };
         let as_index = |m: Missing<u16>| match m {
             Missing::Present(v) => Some(usize::from(v)),
             Missing::Absent => None,
         };
         let (Some(product), Some(region), Some(view), Some(stance), Some(price)) =
-            (read(PRODUCT), read(REGION), self.goods.outlooks.view(prefs), as_index(prefs.stance), read(PRICE))
+            (v.product(), v.region(), self.goods.outlooks.view(prefs), as_index(prefs.stance), v.price())
         else {
             return Missing::Absent;
         };
-        let series = (u16::try_from(product).unwrap_or(u16::MAX), u32::try_from(region).unwrap_or(u32::MAX));
+        let series = (product, region);
         match self.goods.outlooks.outlook(series, view, stance) {
             Missing::Present(mark) => Missing::Present(mark / lot),
-            Missing::Absent => Missing::Present(from_u64(u64::try_from(price).unwrap_or(0)) / lot),
+            Missing::Absent => Missing::Present(from_i64(price) / lot),
         }
     }
 

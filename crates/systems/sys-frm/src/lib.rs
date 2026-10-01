@@ -15,7 +15,7 @@ use phx_core::{AttrDecl, Declarations, StreamDef, System, declare_kind, declare_
 use phx_macros::opening;
 use phx_num::{Count, Fixed};
 
-declare_kind! { pub FIRM = "firm" { legal_form: "company", place: Region { word: 1 }, store: "firms", clause: "FRM.1" } }
+declare_kind! { pub FIRM = "firm" { legal_form: "company", place: Zone, store: "firms", clause: "FRM.1" } }
 
 declare_stream! { pub OpeningStream = "FRM.opening" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub VisitStream = "FRM.visits" { family: World, purpose: Occasion, keyed: false, clause: "REP.21" } }

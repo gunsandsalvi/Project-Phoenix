@@ -106,6 +106,8 @@ impl<B: Backing> KindStore<B> {
     pub fn new(space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32, stride: usize) -> KindStore<B> {
         let words = u32::try_from(at(Slot::new(capacity), stride, 0))
             .unwrap_or_else(|_| violation!(clause = "REP.1", "a kind's records beyond a column"));
+        // A kind of no record words still reserves a row: a reservation of nothing has nothing to map.
+        let words = if words == 0 { 1 } else { words };
         KindStore { records: Column::new(space, words, rows_per_chunk), stride, accounts: None, cash: None }
     }
 

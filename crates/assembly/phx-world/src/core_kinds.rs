@@ -108,6 +108,8 @@ pub(crate) fn country_by_place(
         },
         Place::Country { word: at } => usize::try_from(word(usize::from(at))?).ok(),
         Place::Site { word: at } => tile_country(u32::try_from(word(usize::from(at))?).ok()?),
+        // A zone is its kind's store's to read, not its record's.
+        Place::Zone => None,
     }
 }
 

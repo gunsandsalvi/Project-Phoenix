@@ -12,7 +12,7 @@ use phx_macros::{clause, opening};
 use phx_num::{Missing, violation};
 use phx_rand::float::{from_i64, len_u64};
 
-use crate::consts::firm::{LOANS_PURPOSE, OUTPUT, PRICE, PRODUCT, PURPOSES, REGION};
+use crate::consts::firm::{LOANS_PURPOSE, PURPOSES};
 use crate::consts::reason::REPAID;
 use crate::consts::{AGENT_ROWS_PER_CHUNK, MONTHS};
 use crate::core::{Core, kind_number};
@@ -257,20 +257,17 @@ impl Core {
             let ccy = phx_ledger::opening::currency(c.id);
             let mut firms: Vec<(PartyKey, u64)> = Vec::new();
             for slot in self.directory.live_slots(crate::core::kind_number(firm)).collect::<Vec<_>>() {
-                let read = |at: usize| match self.kinds.get(firm)?.record(slot).get(at).map(|w| w.get()) {
-                    Some(Missing::Present(v)) => Some(v),
-                    _ => None,
-                };
+                let Some(v) = self.firm_view(slot) else { continue };
                 let (Some(region), Some(price), Some(output), Some(product)) =
-                    (read(REGION), read(PRICE), read(OUTPUT), read(PRODUCT))
+                    (v.region(), v.price(), v.output(), v.product())
                 else {
                     continue;
                 };
-                if !c.regions.iter().any(|(r, _)| i64::from(*r) == region) {
+                if !c.regions.iter().any(|(r, _)| *r == region) {
                     continue;
                 }
-                let lot = sys_frm::FilingPrims::lot(o.register, u16::try_from(product).unwrap_or(u16::MAX));
-                let turnover = phx_rand::float::floor_to_u64(from_i64(price) / lot * from_i64(output)).unwrap_or(0);
+                let lot = sys_frm::FilingPrims::lot(o.register, product);
+                let turnover = phx_rand::float::floor_to_u64(from_i64(price) / lot * output).unwrap_or(0);
                 firms.push((PartyKey::new(kind_number(firm), slot), turnover));
             }
             let weights: Vec<u64> = firms.iter().map(|(_, t)| *t).collect();

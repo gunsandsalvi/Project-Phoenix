@@ -15,12 +15,9 @@ use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams, opening_subje
 use phx_id::{Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_num::violation;
-use phx_rand::float::{floor_to_i64, from_i64, len_u64};
+use phx_rand::float::{floor_to_i64, len_u64};
 
-use crate::consts::firm::{
-    COMPENSATION, JOBS_PURPOSE, OUTPUT, PRODUCT, PRODUCTIVITY, PRODUCTIVITY_ONE, PUBLIC_ADMINISTRATION, PURPOSES,
-    REGION,
-};
+use crate::consts::firm::{COMPENSATION, JOBS_PURPOSE, PUBLIC_ADMINISTRATION, PURPOSES};
 use crate::consts::{AGENT_ROWS_PER_CHUNK, MONTHS_A_YEAR, WEEKS_A_YEAR};
 use crate::core::{Core, kind_number};
 use crate::core_day::{DatedFamily, Due, WAGE};
@@ -193,7 +190,6 @@ impl Core {
     /// occupation a unit, fewer by its productivity's factor; by region, each firm with its slot.
     pub(crate) fn firm_hours(&self, o: &JobsOpening<'_>, firm: usize) -> Result<ByRegion, String> {
         let mut by_region: ByRegion = BTreeMap::new();
-        let Some(store) = self.kinds.get(firm) else { return Ok(by_region) };
         let mut ways: BTreeMap<u8, Vec<Vec<f64>>> = BTreeMap::new();
         for c in o.countries {
             ways.insert(c.id.get(), table(o.register, "TEC.labour", c.id)?.0);
@@ -201,18 +197,18 @@ impl Core {
         let country_of =
             |r: u32| o.countries.iter().find(|c| c.regions.iter().any(|(x, _)| *x == r)).map(|c| c.id.get());
         for slot in self.directory.live_slots(crate::core::kind_number(firm)) {
-            let rec = store.record(slot);
-            let read = |i: usize| match rec.get(i).map(|w| w.get()) {
-                Some(phx_num::Missing::Present(v)) => v,
-                _ => violation!(clause = "FRM.23", "a firm missing a word of its record", slot = slot.get()),
+            let Some(v) = self.firm_view(slot) else {
+                violation!(clause = "FRM.23", "a live firm with no rows", slot = slot.get());
             };
-            let (product, region) = (read(PRODUCT), u32::try_from(read(REGION)).unwrap_or(u32::MAX));
-            let productivity = from_i64(read(PRODUCTIVITY)) / PRODUCTIVITY_ONE;
-            let output = from_i64(read(OUTPUT));
+            let (Some(product), Some(region), Some(productivity), Some(output)) =
+                (v.product(), v.region(), v.productivity(), v.output())
+            else {
+                violation!(clause = "FRM.23", "a firm missing a word of its own", slot = slot.get());
+            };
             let Some(labour) = country_of(region).and_then(|c| ways.get(&c)) else {
                 return Err(format!("a firm's region {region} in no country"));
             };
-            let p = usize::try_from(product).unwrap_or(usize::MAX);
+            let p = usize::from(product);
             let hours = labour
                 .iter()
                 .map(|occ| {
@@ -336,7 +332,7 @@ impl Core {
             let parts = deal(rest, &net_needs(&weights, &owners, hours));
             let mut next = left.into_iter();
             for ((slot, _), n) in here.iter().zip(parts) {
-                let Some(product) = self.record_word(firm, *slot, PRODUCT).and_then(|p| usize::try_from(p).ok()) else {
+                let Some(product) = self.firm_view(*slot).and_then(|v| v.product()).map(usize::from) else {
                     violation!(clause = "FRM.23", "a firm with no product", slot = slot.get());
                 };
                 let employer = PartyKey::new(kind_number(firm), *slot);
@@ -437,7 +433,7 @@ impl Core {
 
     /// A household's income a year; none where its record holds none.
     pub(crate) fn income_of(&self, household: PartyKey) -> Option<i64> {
-        self.record_word(usize::from(household.kind()), household.slot(), self.income_word()?)
+        self.household_word(usize::from(household.kind()), household.slot(), self.income_word()?)
     }
 
     /// A household's income a year raised by an amount.
@@ -445,7 +441,7 @@ impl Core {
         let (Some(at), Some(held)) = (self.income_word(), self.income_of(household)) else {
             violation!(clause = "GEN.2", "a household with no income to add a wage to", slot = household.slot().get());
         };
-        self.set_record_word(usize::from(household.kind()), household.slot(), at, held + amount);
+        self.set_household_word(usize::from(household.kind()), household.slot(), at, held + amount);
     }
 
     /// A person's last wage point written to it.

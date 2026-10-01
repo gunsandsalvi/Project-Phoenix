@@ -126,8 +126,8 @@ fn household_layout_is_174_bytes() {
 }
 
 #[test]
-fn firm_layout_is_520_bytes() {
-    assert_eq!(width(&FIRM), 520);
+fn firm_layout_is_528_bytes() {
+    assert_eq!(width(&FIRM), 528);
     let reserve: u16 = FIRM.groups.iter().map(|g| g.width - used(g)).sum();
     assert_eq!(reserve, 39);
 }
@@ -157,6 +157,8 @@ fn one_writer_per_attribute() {
     assert!(l.writer::<u32>("residence", 0, "K-60").is_err(), "a base other than the word's writer");
     assert!(l.writer::<u32>("residence", 0, "K-32").is_ok());
     assert!(l.writer::<u32>("residence", 0, "K-32").is_err(), "the word's one writer already handed out");
+    assert!(l.writer::<i64>("positions", 0, "K-32").is_ok() && l.writer::<i64>("positions", 1, "K-32").is_ok());
+    assert!(l.writer::<i64>("positions", 1, "K-32").is_err(), "each value its own attribute, one writer each");
     assert!(l.attr::<u32>("residence", 0).is_ok(), "reads are anyone's");
     assert!(l.attr::<u16>("residence", 0).is_err(), "a word read as another type");
     assert!(l.attr::<i64>("positions", 3).is_err(), "past the word's count");

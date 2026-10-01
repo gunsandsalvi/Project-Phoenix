@@ -149,23 +149,12 @@ pub const CORE_RANGE_BITS: u32 = 12;
 /// management's memory and switching types, the heuristic it relies on, the width of its sales' surprises and its sales as last seen, the return its management requires; the purposes its opening draws and its
 /// jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
 pub mod firm {
-    pub const RECORD: usize = 12;
-    pub const PRODUCT: usize = 0;
-    pub const REGION: usize = 1;
-    pub const SITE: usize = 2;
-    pub const PRODUCTIVITY: usize = 3;
-    pub const PRICE: usize = 4;
-    pub const OUTPUT: usize = 5;
-    pub const MARKUP: usize = 6;
-    pub const EXPECTED: usize = 7;
-    pub const SOLD: usize = 8;
-    pub const REVIEWED: usize = 9;
-    /// The width of its surprises at its own sales a day, in millionths, absent before its first look has seen one;
-    /// and its units sold since its last review as it last looked at them.
-    pub const SALES_WIDTH: usize = 10;
-    pub const SEEN_SOLD: usize = 11;
+    /// A share, a rate or a firm's sales in millionths, as a firm's words hold them.
     pub const PART_ONE: f64 = 1_000_000.0;
-    pub const PRODUCTIVITY_ONE: f64 = 1_000_000_000.0;
+    /// A firm's productivity's log factor in hundred-millionths: a word of 32 bits spans ±21, past the drawn spread.
+    pub const PRODUCTIVITY_ONE: f64 = 100_000_000.0;
+    /// An output rate's one: a rate a day holds 32 bits of fraction below its units.
+    pub const RATE_ONE: f64 = 4_294_967_296.0;
     pub const PURPOSES: u32 = 6;
     pub const PRODUCTIVITY_PURPOSE: u32 = 0;
     pub const SITE_PURPOSE: u32 = 1;

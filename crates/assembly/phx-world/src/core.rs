@@ -32,6 +32,8 @@ pub struct Core {
     pub kinds: Vec<KindStore<SystemBacking>>,
     pub persons: Vec<Option<Persons<SystemBacking>>>,
     pub directory: Directory<SystemBacking>,
+    /// The firms' own state on their kind's store, opened with the firms.
+    pub firms: Option<crate::firm_store::FirmStore>,
     /// Each country's central bank, the issuer of its currency, by the currency's index.
     pub issuers: Vec<PartyKey>,
     pub bank_kind: Option<u8>,

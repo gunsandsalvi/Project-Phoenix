@@ -132,7 +132,7 @@ impl Core {
             && whole > 0
         {
             for slot in self.firm_slots(firm) {
-                let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
+                let Some(f) = self.firm_at(regions, slot) else { continue };
                 if f.product != tech.carriage_product {
                     continue;
                 }
@@ -188,7 +188,7 @@ impl Core {
             if !(day.get() + slot.get()).is_multiple_of(days) {
                 continue;
             }
-            let Some(f) = self.goods_firm(ctx.regions, firm, slot) else { continue };
+            let Some(f) = self.firm_at(ctx.regions, slot) else { continue };
             let country = CountryId::new(u8::try_from(f.country).unwrap_or(u8::MAX));
             if !self.is_stored(f.product) || !ctx.calendar.is_business(country, day) {
                 continue;
@@ -216,9 +216,7 @@ impl Core {
     ) -> Option<(u16, Weighed)> {
         let lot = self.lot(f.product);
         let lot_units = floor_to_i64(lot)?;
-        let expected =
-            from_i64(self.record_word(usize::from(f.key.kind()), f.key.slot(), crate::consts::firm::EXPECTED)?)
-                / crate::consts::firm::PART_ONE;
+        let expected = self.firm_view(f.key.slot())?.expected()?;
         let free = self.free_held(f.key, f.product, f.region);
         let spare = from_i64(free) - expected * self.goods.cover;
         let lots = floor_to_i64(spare / lot)?;
@@ -452,14 +450,14 @@ impl Core {
         let mut held: BTreeMap<(u16, u32), (f64, f64)> = BTreeMap::new();
         let Some(firm) = self.bound.kinds.firm else { return BTreeMap::new() };
         for slot in self.firm_slots(firm) {
-            let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
+            let Some(f) = self.firm_at(regions, slot) else { continue };
             if !self.is_stored(f.product) {
                 continue;
             }
-            let Some(expected) = self.record_word(firm, slot, crate::consts::firm::EXPECTED) else { continue };
+            let Some(expected) = self.firm_view(slot).and_then(|v| v.expected()) else { continue };
             let e = held.entry((f.product, f.region)).or_insert((0.0, 0.0));
             e.0 += from_i64(self.free_held(f.key, f.product, f.region));
-            e.1 += from_i64(expected) / crate::consts::firm::PART_ONE;
+            e.1 += expected;
         }
         held.into_iter().filter(|(_, (_, e))| *e > 0.0).map(|(k, (h, e))| (k, h / e)).collect()
     }
@@ -476,9 +474,10 @@ impl Core {
         };
         for (k, mode) in &self.freight.modes {
             let Some(a_day) = self.freight.tech.tonne_km.get(usize::from(*mode)).copied() else { continue };
-            let at = self.record_word(usize::from(k.kind()), k.slot(), crate::consts::firm::REGION);
-            let price = self.record_word(usize::from(k.kind()), k.slot(), crate::consts::firm::PRICE);
-            let (Some(at), Some(price)) = (at.and_then(|r| u32::try_from(r).ok()), price) else { continue };
+            let carrier = self.firm_view(k.slot());
+            let (Some(at), Some(price)) = (carrier.and_then(|v| v.region()), carrier.and_then(|v| v.price())) else {
+                continue;
+            };
             let vehicles = phx_core::units::capacity(&self.goods.stocks, &self.goods.units, *k, (kind, None), chain);
             let Some(room) = floor_to_i64(vehicles * a_day) else { continue };
             out.entry((at, *mode)).or_default().push((*k, price, room));

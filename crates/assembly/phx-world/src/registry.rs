@@ -91,9 +91,9 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .collect()
 }
 
-/// Kinds whose place their records do not hold: a word beyond the record its parties are begun with — a population
-/// kind's its attributes and positions, the firm's its record, every other kind's one word, its site's tile or its
-/// country — or a kind sited by a population declaration that sites it by none.
+/// Kinds whose place their records do not hold: a population kind's place word beyond its attributes and positions,
+/// or a kind sited by a population declaration that sites it by none. Every other kind's record is made to reach its
+/// place's word, and a kind placed by its zone keeps it in its store.
 #[opening]
 fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]) -> Vec<String> {
     d.kinds
@@ -105,12 +105,8 @@ fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]
             {
                 return Some(format!("kind `{}` is sited by a population declaration that sites it by none", k.name));
             }
-            let words = match declared {
-                Some(p) => p.attrs.len() + p.positions.len(),
-                None if k.name == sys_frm::FIRM.name => crate::consts::firm::RECORD,
-                None => 1,
-            };
-            k.place.check(k.name, words).err()
+            let p = declared?;
+            k.place.check(k.name, p.attrs.len() + p.positions.len()).err()
         })
         .collect()
 }
@@ -534,6 +530,7 @@ fn core_of(
             stream: &<sys_frm::OpeningStream as phx_core::StreamDef>::DECL,
             management: frm.management(),
             today,
+            geo,
         })
     })
     .map_err(|e| AssemblyErrors(vec![e]))?;

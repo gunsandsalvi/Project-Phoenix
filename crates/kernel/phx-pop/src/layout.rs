@@ -113,13 +113,14 @@ pub struct Placed {
     pub decl: WordDecl,
 }
 
-/// A kind's compiled layout: each group's width, each word placed, and which words have handed out their writer.
+/// A kind's compiled layout: each group's width, each word placed, and which of each word's values have handed out
+/// their writer, a bit a value.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Layout {
     pub kind: &'static str,
     pub widths: Vec<u16>,
     pub words: Vec<Placed>,
-    written: Vec<bool>,
+    written: Vec<u64>,
 }
 
 impl Layout {
@@ -165,7 +166,13 @@ impl Layout {
         if let Some(w) = names.windows(2).find(|w| matches!(w, [a, b] if a == b)).and_then(|w| w.first()) {
             return Err(format!("kind `{}` declares `{w}` twice", map.kind));
         }
-        let written = vec![false; words.len()];
+        if let Some(w) = words.iter().find(|w| u32::from(w.decl.count) > u64::BITS) {
+            return Err(format!(
+                "kind `{}`: `{}` holds more values than its writers are told apart",
+                map.kind, w.decl.name
+            ));
+        }
+        let written = vec![0; words.len()];
         Ok(Layout { kind: map.kind, widths: map.groups.iter().map(|g| g.width).collect(), words, written })
     }
 
@@ -214,12 +221,13 @@ impl Layout {
         if declared != Some(base) {
             return Err(format!("kind `{}`: `{name}` is written by {declared:?}, not `{base}`", self.kind));
         }
+        let bit = 1_u64 << i;
         match self.written.get_mut(at) {
-            Some(handed) if !*handed => {
-                *handed = true;
+            Some(handed) if *handed & bit == 0 => {
+                *handed |= bit;
                 Ok(crate::kinds::AttrW(a))
             }
-            _ => Err(format!("kind `{}`: `{name}` has its one writer already", self.kind)),
+            _ => Err(format!("kind `{}`: `{name}`'s value {i} has its one writer already", self.kind)),
         }
     }
 

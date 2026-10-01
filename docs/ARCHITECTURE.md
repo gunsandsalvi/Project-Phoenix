@@ -923,8 +923,8 @@ an interface item whose writer is not registered.
   members.
 
   A kind is refused whose place (`KindDecl::place`: its site's tile, its region or its country in a word of its
-  record, or `Sited` by its population declaration) is read from a word beyond the record its parties are begun with,
-  or which is sited by a population declaration that sites it by none.
+  record, `Sited` by its population declaration, or `Zone`, its zone on its kind's store) is read from a word beyond
+  the record its parties are begun with, or which is sited by a population declaration that sites it by none.
 
   The opening refuses a primitive absent for what the world holds, naming it, rather than reading it as zero: a product
   with no lead time (`TEC.lead_time`, compiled once into `CoreGoods::lead`), a country with no lending rate
@@ -2011,8 +2011,8 @@ step's 200), `find_ns` 37.2 (23.2–29.7) and `ids_mb` 3 (2.875 MiB of rows and 
 its size band and one quality band and age class. The world declares its goods' extents at the opening (its products,
 one grade, its regions), so every good's id is read at its place. A flow still carries a unit in 15 bits
 (`Denom::units`): the registry's id is carried in them, and an id past them stops the run (`carried`) until the flows'
-batch header widens to 24 (S1.245). A firm's own unit id becomes its record's hot attribute with its typed columns
-(S1.198); until then a firm's units are read at their dense place by product and region.
+batch header widens to 24 (S1.245). A firm's product is the first of its store's unit words (K-32), and its units are
+read at their dense place by product and region until the holdings (S1.271) put its own unit's id there.
 
 #### K-23 The stage table
 
@@ -2311,7 +2311,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; K-32's kind stores and windowed groups written; S1.198–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, the firms on one; S1.199–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2353,7 +2353,7 @@ and ever are the directory's (`Core::store_samples`). A table of nature's kind i
 
 `phx-pop`'s `KindStore` (`kinds.rs`; PTY.5, REP.1) holds a kind's parties' state as fixed-width groups by slot, at the
 slot the directory (K-31) gave each party, and its windowed groups the columns that exist only inside a dated window;
-today's kinds move onto the stores at S1.198–S1.206.
+the firms are on one (S1.198); the other kinds move at S1.199–S1.206.
 
 **Layout** (`layout.rs`, the maps in `consts.rs`): a kind's `KindMap` names its groups, hot first, at most four; a
 group (`GroupDecl`) is a width in bytes and the words the bases declare in it (`WordDecl`: name, integer type, count
@@ -2366,13 +2366,15 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   · persons head u32 (K-33) · chain head u32 (K-53) · positions 3 × i64 (recent income, debt service, buffer target;
   K-32) · own outlooks 4 × i32 (`Fixed`; K-102) · agenda base u32 and 27 × u16 (K-43) · reserve 10. *Warm, 46*: two
   named-unit slots, each owner u32, unit u32, count u32, cost i64 (K-60) · reserve 6.
-- **Firm, 520 B.** *Hot, 192*: own and four input unit ids 5 × u32 (K-60) · stall u32 (K-71) · own stock units and cost
+- **Firm, 528 B.** *Hot, 192*: own and four input unit ids 5 × u32 (K-60) · stall u32 (K-71) · own stock units and cost
   2 × i64 and four input stocks 8 × i64 (K-60) · work in progress i64 (K-69) · rate i64, anchor day u32, realised i64
   (K-68) · unit cost i64 and its day u16 (K-35) · sales since review 2 × i64 and expected sales i64 (K-74) · flags u32
-  (K-32) · reserve 22. *Warm, 184*: agenda base u32 and 24 × u16 (K-43) · sales outlook 3 × i32 (K-102) · wage bill
+  (K-32) · reserve 22. *Warm, 192*: agenda base u32 and 24 × u16 (K-43) · expected sales a day and the width of its
+  surprises 2 × i64, in millionths of a unit (K-102) · wage bill
   i64 and staff hours 4 × u32 (K-54) · plant capacity i64 (K-67) · occupancy u32, overflow run u32, committed stock
   i64 (K-60) · account u32 (K-47) · zone u16, legal form u8, flags u8, types 3 × u8 (K-32) · head's office u32 (K-34)
-  · industry u16, founded day u32, markup i32, productivity i32, last review u16 (K-32) · equity i64, net assets i64
+  · industry u16, founded day u32, markup i64 (millionths), productivity i32 (its log factor in hundred-millionths),
+  last review u16 (an offset from the run's first day) (K-32) · equity i64, net assets i64
   (K-88) · cumulative output 2 × u64 (K-68) · reserve 9. *Cold, 112*: income-statement lines 10 × i64 (K-87) · tax
   accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
   lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
@@ -2411,7 +2413,7 @@ raw; indexes are left out and kept again from the directory's live slots after a
 **Capacity**: each group's column at the kind's declared capacity times its width, within a column's `u32` of bytes.
 
 **Volumes and ratchets** (`[fin.parties]` at the design point: 1.77 M households, 0.92 M firms, 16 000 institutions at
-a 1 024-byte record; 777 MiB committed): `household_bytes` 174, `household_hot_bytes` 128, `firm_bytes` 520,
+a 1 024-byte record; 777 MiB committed): `household_bytes` 174, `household_hot_bytes` 128, `firm_bytes` 528,
 `firm_hot_bytes` 192 — a party's declared widths, which only a widened group raises; `gather_ns` 35.8 (28.5 measured:
 a hot row a memory latency away, in slot order); `attr_ns` 1 (0.47 measured, after the gather); `wake_scan_ns` 16.7
 (12.7–13.3 measured, the step's 3.8: a bare read of the rows' first words at their stride takes 9–10 ns a record here,
@@ -2433,7 +2435,19 @@ open. The save keeps each open window — subject, slots, days and its written r
 12 (9.1 measured); `window_open_ns` 100 000 (12–14 µs); `window_close_ns` 258 000 (120–210 µs, the step's 0.1 ms: its
 written pages returned a page at a time); `window_write_ns` 30 (21–24, the directory's live check and the row's growth).
 
-**Extension points**: the kinds' migrations (S1.198–S1.206); the persons head (S1.207);
+**Firms** (`phx-world`'s `firm_store.rs`): the firm kind's state is on a `KindStore`, its place `Place::Zone` and its
+record in `phx-core` none. `FirmStore` keeps the map's region of each zone, the trades' price points and the run's
+first day, and the write handles of the words the firms' rules read and write: product (in the first unit word), zone, site
+(`FRM.site`, an `Extra` in the warm reserve until the place index finds a plant's tile), productivity, posted price (the
+stall word, a point's code: its decade in the high byte, its place in the ladder below), output rate (units a day in
+2⁻³² parts), markup, expected sales and their width, sales since the review and as last seen, and the review's day. A
+visit gathers the firm's hot and warm rows once (`FirmStore::view`, a `FirmView` whose getters read `Missing` as
+`None` and convert to the rules' units); writes go through `set_*` on the day's one writer. Both address the slot the
+day named the firm by, which no other party takes before the close (`KindStore::gather_at`, `set_at`), so a visit
+pays no directory read; a reference from elsewhere is checked first (`Core::firm_of`). Markups reach tens and outlooks
+millions of units a day, so both are i64 millionths.
+
+**Extension points**: the kinds' migrations (S1.199–S1.206); the persons head (S1.207);
 cache words (S1.211); agenda slots (S1.227); K-54's aggregates (S1.261); and each reserve's declaring step above.
 
 **Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps, at the slot the directory
@@ -3685,9 +3699,9 @@ defined-benefit schemes are S4.04's, with their sources.
 **Firms of one kind** (`core_firms`): the firm kind's store is begun with every country's firms, counted product by
 product: the country's employed — its people from 15 at its employment rate — shared over the staffed activities by
 the hours each one's output asks, times the product's density over its employed (`FRM.firms_per_employed`), and over
-the regions by the persons the core's households hold there. A firm's record is its product, region, site tile,
-productivity (billionths of a log point, drawn from the group's spread), its posted price of a lot and its output a
-year in units. Its productivity and site each draw from their own subject under the firms' opening stream; its bank
+the regions by the persons the core's households hold there. A firm's words on its kind's store (K-32) are its
+product, zone, site tile, productivity (a log factor drawn from the group's spread), its posted price of a lot and its
+output a year in units. Its productivity and site each draw from their own subject under the firms' opening stream; its bank
 is drawn by the banks' deposits. Every firm makes one product, drawn per product and region with the firm count;
 `sys-tec` gives it its product's way in its country as `TEC.known` (`sys-tec`'s `known`).
 

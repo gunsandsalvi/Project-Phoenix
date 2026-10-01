@@ -46,7 +46,8 @@ pub struct KindDecl {
 }
 
 /// Where a kind's parties' region and country are read from: the tile of their site, their region or their country,
-/// each in a word of their record, or their region in the attribute their population declaration sites them by.
+/// each in a word of their record; their region in the attribute their population declaration sites them by; or their
+/// zone, an attribute of their kind's store, whose region and country the map gives.
 #[clause("PTY.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
@@ -54,15 +55,17 @@ pub enum Place {
     Region { word: u16 },
     Country { word: u16 },
     Sited,
+    Zone,
 }
 
 impl Place {
-    /// The record word the place is read from; none for a kind its population declaration sites.
+    /// The record word the place is read from; none for a kind its population declaration sites, or whose store
+    /// holds its zone.
     #[must_use]
     pub const fn word(self) -> Option<u16> {
         match self {
             Place::Site { word } | Place::Region { word } | Place::Country { word } => Some(word),
-            Place::Sited => None,
+            Place::Sited | Place::Zone => None,
         }
     }
 

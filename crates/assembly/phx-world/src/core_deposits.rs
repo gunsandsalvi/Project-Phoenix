@@ -15,7 +15,6 @@ use phx_macros::{clause, opening};
 use phx_num::{Missing, QtyRaw, violation};
 use phx_rand::float::from_i64;
 
-use crate::consts::firm::{PRODUCT, REGION, SITE};
 use crate::core::{Core, kind_number};
 
 /// The deposits: each one's holder, what it has given and, where finite, what it holds and opened with, and its
@@ -52,24 +51,11 @@ impl Core {
             sys_tec::deposit_draws(register)?.into_iter().map(|d| d.map(|(r, per)| (r, per.raw()))).collect();
         let days = u32::try_from(register.count(sys_gds::EXTRACTION_DAYS.id)?).map_err(|e| e.to_string())?;
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
-        let word = |store: &phx_core::store::KindStore<_>, s: Slot, at: usize| match store.record(s).get(at) {
-            Some(w) => match w.get() {
-                Missing::Present(v) => u32::try_from(v).ok(),
-                Missing::Absent => None,
-            },
-            None => None,
-        };
         let mut firms: Vec<(Slot, u16, u32, u32)> = Vec::new();
-        if let Some(store) = self.kinds.get(firm) {
-            for s in self.directory.live_slots(crate::core::kind_number(firm)) {
-                let (Some(p), Some(r), Some(t)) =
-                    (word(store, s, PRODUCT), word(store, s, REGION), word(store, s, SITE))
-                else {
-                    continue;
-                };
-                if let Ok(p) = u16::try_from(p) {
-                    firms.push((s, p, r, t));
-                }
+        for s in self.directory.live_slots(crate::core::kind_number(firm)) {
+            let Some(v) = self.firm_view(s) else { continue };
+            if let (Some(p), Some(r), Some(t)) = (v.product(), v.region(), v.site()) {
+                firms.push((s, p, r, t));
             }
         }
         let mut d = Deposits { draws, days, ..Deposits::default() };
@@ -188,7 +174,7 @@ impl Core {
             if !due && self.deposits.working.contains_key(&key) {
                 continue;
             }
-            let Some(f) = self.goods_firm(regions, firm, slot) else { continue };
+            let Some(f) = self.firm_at(regions, slot) else { continue };
             if self.draw_of(f.product).is_none() {
                 continue;
             }

@@ -76,6 +76,12 @@ impl<T: Word> Attr<T> {
         Attr { group, offset, absent, ty: PhantomData }
     }
 
+    /// Where the word lies: its group and its offset in the group's row.
+    #[must_use]
+    pub fn place(self) -> (u8, u16) {
+        (self.group, self.offset)
+    }
+
     fn span(self) -> std::ops::Range<usize> {
         let at = usize::from(self.offset);
         at..at + usize::from(T::TY.bytes())
@@ -84,11 +90,8 @@ impl<T: Word> Attr<T> {
     /// The word in a group's row, `Missing` where it holds its sentinel.
     #[inline]
     pub(crate) fn read_in(self, row: &[u8]) -> Missing<T> {
-        match row.get(self.span()).and_then(T::read) {
-            Some(v) if self.absent && v == T::ABSENT => Missing::Absent,
-            Some(v) => Missing::Present(v),
-            None => violation!(clause = "REP.1", "a word past its group's row", offset = self.offset),
-        }
+        let Some(v) = row.get(self.span()).and_then(T::read) else { past_row(self.offset) };
+        if self.absent && v == T::ABSENT { Missing::Absent } else { Missing::Present(v) }
     }
 
     pub(crate) fn write_in(self, row: &mut [u8], v: Missing<T>) {
@@ -369,9 +372,23 @@ impl<B: Backing> KindStore<B> {
         }
     }
 
+    /// The row of one group at a slot, as the day names its parties by their place: the slot's party now, live or
+    /// ended this day, its slot not handed out again before the day closes. None past the slots begun.
+    #[inline]
+    #[must_use]
+    pub fn gather_at(&self, slot: Slot, group: u8) -> Option<Row<'_>> {
+        self.row(group, slot).map(|bytes| Row { group, bytes })
+    }
+
     /// A word of a party written, every index on the word moved with it.
     pub fn set<T: Word, D: Backing>(&mut self, dir: &Directory<D>, r: PartyRef, a: AttrW<T>, v: Missing<T>) {
         let slot = self.check(dir, r);
+        self.set_at(slot, a, v);
+    }
+
+    /// A word of the party at a slot written, as the day names its parties by their place; a slot past those begun
+    /// stops the run.
+    pub fn set_at<T: Word>(&mut self, slot: Slot, a: AttrW<T>, v: Missing<T>) {
         let a = a.0;
         let mut moved = [None; KIND_INDEXES];
         for (k, m) in self.keyed.iter().zip(&mut moved).filter(|(k, _)| (k.group, k.offset) == (a.group, a.offset)) {
@@ -450,10 +467,23 @@ impl Row<'_> {
     #[inline]
     pub fn get<T: Word>(&self, a: Attr<T>) -> Missing<T> {
         if a.group != self.group {
-            violation!(clause = "REP.1", "a word read from another group's row", group = a.group);
+            other_group(a.group);
         }
         a.read_in(self.bytes)
     }
+}
+
+/// A read past its row, kept out of line so the reads that never meet it stay small.
+#[cold]
+#[inline(never)]
+fn past_row(offset: u16) -> ! {
+    violation!(clause = "REP.1", "a word past its group's row", offset = offset)
+}
+
+#[cold]
+#[inline(never)]
+fn other_group(group: u8) -> ! {
+    violation!(clause = "REP.1", "a word read from another group's row", group = group)
 }
 
 /// The store's rows handed out a chunk at a time.

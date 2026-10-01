@@ -166,10 +166,16 @@ impl Core {
         let mut persons = Vec::new();
         for traits in &declared.0 {
             let populated = traits.name == household.kind;
+            // A kind's record reaches as far as the word its place is read from; a kind whose place is its store's
+            // zone keeps no record word.
             let (chunk, stride) = if populated {
                 (AGENT_ROWS_PER_CHUNK, household.attrs.len() + household.positions.len())
             } else {
-                (KIND_ROWS_PER_CHUNK, 1)
+                let words = match traits.place.word() {
+                    Some(w) => usize::from(w) + 1,
+                    None => 0,
+                };
+                (KIND_ROWS_PER_CHUNK, words)
             };
             let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, traits.rows, chunk, stride);
             if traits.holds_money {
@@ -197,6 +203,7 @@ impl Core {
             kinds,
             persons,
             directory,
+            firms: None,
             issuers: Vec::new(),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),

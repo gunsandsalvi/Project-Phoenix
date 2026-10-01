@@ -692,9 +692,12 @@ counter = "fin.parties.household_hot_bytes"
 value = 128
 direction = "down"
 
+# The firm's warm row widened by 8 bytes to 192 (S1.198, 2026-10-01): its expected sales and their surprises' width
+# reach 6.8·10¹² millionths of a unit a day at the opening and its markup 2.9·10¹³ millionths by day 20 (S1.272's E13),
+# none of which an i32 holds, so each is an i64; the firm is 528 bytes, its warm row three whole lines.
 [[ratchet]]
 counter = "fin.parties.firm_bytes"
-value = 520
+value = 528
 direction = "down"
 
 [[ratchet]]

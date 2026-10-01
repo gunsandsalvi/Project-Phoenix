@@ -1150,6 +1150,7 @@ pub phx_core::kinds::Place::Region::word: u16  // used by: phx-check, phx-cli, p
 pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::kinds::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Sited  // used by: phx-world
+pub phx_core::kinds::Place::Zone
 impl phx_core::kinds::Place
 pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
 pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
@@ -2424,6 +2425,7 @@ pub phx_core::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec
 pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Sited  // used by: phx-world
+pub phx_core::Place::Zone
 impl phx_core::kinds::Place
 pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
 pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world

@@ -84,16 +84,19 @@ const FIRM_HOT: GroupDecl = GroupDecl {
     ],
 };
 
-/// A firm's warm row: its agenda, sales outlook, wage bill, staff hours and plant capacity, plant occupancy, committed
-/// stock, identity (account, zone, legal form, flags, founding preferences, memory and stance types, head's office,
-/// industry, founding day), markup, productivity and last price review, equity and net assets, and cumulative output.
+/// A firm's warm row: its agenda, sales outlook (the sales a day it expects and the width of its surprises, in
+/// millionths of a unit), wage bill, staff hours and plant capacity, plant occupancy, committed stock, identity
+/// (account, zone, legal form, flags, founding preferences, memory and stance types, head's office, industry, founding
+/// day), markup (in millionths), productivity (its log factor in hundred-millionths) and the day of its last price
+/// review, equity and net assets, and cumulative output.
 const FIRM_WARM: GroupDecl = GroupDecl {
     name: "warm",
-    width: 184,
+    width: 192,
     words: &[
         word("agenda_base", U32, 1, true, "K-43"),
         word("agenda", U16, 24, true, "K-43"),
-        word("sales_outlook", I32, 3, true, "K-102"),
+        word("expected", I64, 1, true, "K-102"),
+        word("sales_width", I64, 1, true, "K-102"),
         word("wage_bill", I64, 1, false, "K-54"),
         word("staff_hours", U32, 4, false, "K-54"),
         word("plant_capacity", I64, 1, false, "K-67"),
@@ -108,7 +111,7 @@ const FIRM_WARM: GroupDecl = GroupDecl {
         word("head_office", U32, 1, true, "K-34"),
         word("industry", U16, 1, true, "K-32"),
         word("founded", U32, 1, true, "K-32"),
-        word("markup", I32, 1, true, "K-32"),
+        word("markup", I64, 1, true, "K-32"),
         word("productivity", I32, 1, true, "K-32"),
         word("last_review", U16, 1, true, "K-32"),
         word("equity", I64, 1, false, "K-88"),
@@ -142,15 +145,15 @@ const FIRM_LISTS: GroupDecl = GroupDecl {
     ],
 };
 
-/// The firm's byte map, 520 bytes.
+/// The firm's byte map, 528 bytes.
 pub const FIRM: KindMap = KindMap { kind: "firm", groups: &[FIRM_HOT, FIRM_WARM, FIRM_COLD, FIRM_LISTS] };
 
 /// Every group of both maps within its width, and each map within a store.
 const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM));
 /// The household's 174 bytes, 128 of them hot: two cache lines a visit gathers.
 const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
-/// The firm's 520 bytes, 192 of them hot: three cache lines.
-const _: () = assert!(width(&FIRM) == 520 && FIRM_HOT.width == 192);
+/// The firm's 528 bytes, 192 of them hot and 192 warm: three cache lines each.
+const _: () = assert!(width(&FIRM) == 528 && FIRM_HOT.width == 192 && FIRM_WARM.width == 192);
 /// The reserves later steps fill: the household's 16 bytes.
 const _: () = assert!(HOUSEHOLD_HOT.width - used(&HOUSEHOLD_HOT) + HOUSEHOLD_WARM.width - used(&HOUSEHOLD_WARM) == 16);
 /// The firm's reserve, 39 bytes.
