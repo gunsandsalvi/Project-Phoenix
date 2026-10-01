@@ -105,6 +105,7 @@ pub fn params(p: &GeoPrims, r: &Register, a: &Allotment) -> Result<MapParams, St
     Ok(MapParams {
         land_tiles: a.land.iter().sum(),
         tile_m: count(p.tile_m.shared(r).get())?,
+        cell_m: count(p.cell_m.shared(r).get())?,
         sea_share: p.sea_share.shared(r).to_f64(),
         cells_per_tile: count(p.relief_cells.shared(r).get())?,
         relief: relief_params,
@@ -218,6 +219,7 @@ impl GeoState {
         let regions = crate::climate::regions(p, r, &map);
         let distances = ZoneDistances::measure(&map);
         let modes = modes(r).map_err(one)?;
+        let _ = crate::cells::CellGrid::new(map.grid, map_params.cell_m).map_err(one)?;
         let mut state = GeoState {
             params: map_params,
             map,
@@ -273,6 +275,15 @@ impl GeoState {
         match found {
             Some(r) => Missing::Present(r.country),
             None => Missing::Absent,
+        }
+    }
+
+    /// The map's cells, at the declared cell side; assembly checked they fit their identities.
+    #[must_use]
+    pub fn cells(&self) -> crate::cells::CellGrid {
+        match crate::cells::CellGrid::new(self.map.grid, self.params.cell_m) {
+            Ok(c) => c,
+            Err(_) => phx_num::violation!(clause = "GEO.19", "the map's cells past what assembly admitted"),
         }
     }
 

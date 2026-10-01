@@ -10,6 +10,14 @@ source_ref = "The owner's map (plan §12, 2026-09-23): tiles of 10 km, the same 
 value = 10000
 
 [[primitive]]
+id = "GEO.cell_m"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "The owner's cells (E 29, plan §12, 2026-09-30): each tile divided into cells of 100 m, ten thousand a tile, fixed like the tiles and no valve."
+value = 100
+
+[[primitive]]
 id = "GEO.share_tolerance_per_mille"
 kind = "SHAPE"
 owner = "GEO"

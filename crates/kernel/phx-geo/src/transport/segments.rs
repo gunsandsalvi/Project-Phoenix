@@ -74,6 +74,12 @@ impl SegmentRow {
         if self.flag(SEGMENT_HELD) { Missing::Present(self.unit) } else { Missing::Absent }
     }
 
+    /// Whether the segment was removed; its row stays.
+    #[must_use]
+    pub fn removed(self) -> bool {
+        self.flag(SEGMENT_REMOVED)
+    }
+
     /// Whether the segment carries on a day: not removed, and not closed or closed only until an earlier day.
     #[must_use]
     pub fn open_on(self, day: Day) -> bool {

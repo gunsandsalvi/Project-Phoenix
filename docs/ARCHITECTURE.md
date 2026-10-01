@@ -1226,7 +1226,8 @@ S1.269–S1.312, S1.326, S1.348, S2.211, S4.130, S4.131).
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
 planned (S1.360).
 
-**Today** (`arena.rs`, `block_list.rs`): a chunk's arena is 8-byte words holding its rows' lists by
+**Today** (`arena.rs`, `block_list.rs`): a chunk's arena is 8-byte words (or the rows of one plain type a store keeps in
+it, `ChunkArena<B, W>`, as K-28's parcels and segment index do) holding its rows' lists by
 `ListRef { off, len, cap }`; a list grows in place while it has room and otherwise moves to the arena's end with 5/4 of
 its need, rounded up to four words, leaving its old span dead; removal shifts down, so a sorted list stays sorted. When
 dead words pass an eighth of the used, compaction copies every live list in slot order through a chunk-sized scratch
@@ -2057,7 +2058,7 @@ holds the table to `[store]`.
 
 ### 7.4 phx-geo
 
-Status: building (K-26 written and followed; S1.190–S1.193 planned)
+Status: building (K-26, K-28 written; S1.191–S1.193 planned)
 
 #### K-25 Tiles, zones and distances
 
@@ -2191,8 +2192,46 @@ carriage meeting of a day shares the segments' capacity.
 
 #### K-28 Cells
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.190).
+Each tile is divided into square cells of `GEO.cell_m` (100 m, the owner's, E 29; a RESOLUTION with no valve):
+`CellGrid` (`cells/`) holds the tiles' grid and the cells a tile's side holds (100, at most 255 so a parcel's side fits a
+byte), and assembly refuses a cell that does not divide its tile or more cells than 32 bits name. A `CellId` is its
+tile's identity times the cells a tile holds plus its place in the tile, row by row; its tile, place, column and row
+across the surface are arithmetic on it, and its surface and terrain are its tile's, so nothing is kept per cell
+(GEO.14). `at(column, row)` takes either round the seams; `distance_m` is the closed surface's, the shorter way round.
+
+**Lines.** A path's `Line` runs between two cells' centres, the shorter way round each seam, and holds its first cell's
+column and row and its run, so a test against a cell needs no division. A line touches a cell when the segment between
+the centres touches the cell's square, corners included: |2·(dx·cy − dy·cx)| ≤ |dx| + |dy| within the box between the
+ends, in integers. `cells_of` walks those cells along the longer axis, a column's few at each step; `tiles_of` walks
+the same cover a tile's width at a time, the cells across read at each stretch's two ends, and lists the tiles once.
+A segment's line runs between its zones' nodes, the centre cells of their centroid tiles (`segment_line`).
+
+**Parcels** (`parcels.rs`, GEO.5): land held apart from its tile is one 24-byte `Pod` row a parcel — cost i64, owner
+u32, tile u32, origin u16 (its first cell's place), why u16 (declared flags: owned apart, leased apart; a parcel held
+for no reason is refused), width u8, height u8 — a rectangle within one tile. Each tile's run lies in one
+`ChunkArena<_, Parcel>` (K-04, now generic over its element) behind a `CellListRef` of the tile's directory, sorted by
+origin, with its tallest parcel's height. `insert` refuses a rectangle leaving its tile or over another; `parcel_at`
+reads a run of up to 32 in order to the first origin past the cell, and searches a longer one, walking back while a
+parcel that tall could reach the cell's row; `release` gives the land back; `transfer` is the one writer of an owner and
+cost after a parcel is laid (the holdings' transfer, S1.271). `split` cuts a part out of the parcel covering it by
+guillotine cuts — the rows above and below across its width, the columns left and right across the part's rows, at
+most four pieces, fewer on an edge — the cost shared by cells with the residue to the largest remainders (`apportion`),
+the part taking the parcel's row and the run sorted again. The rows are saved in tile order and laid again at load
+(`parcels_save.rs`, cold), the runs and directory rebuilt.
+
+**The segment index** (`segment_index.rs`, GEO.19): each tile's list of the segments whose line crosses it, in identity
+order, in a `ChunkArena<_, u32>`; `index_segment` and `unindex_segment` follow a segment's opening and removal (`follow`
+takes K-26's change log), `rebuild` lists every segment not removed again at load, and `crossing(cell)` tests its
+tile's segments against the cell, reading each line where the segments keep it. `held(cell)` is a named unit's site, a
+parcel covering it or a path crossing it: three reads, never a row of the cell's own. Neither the world nor its saves
+hold the cells yet: their first users are S1.271's parcels as holdings and S1.284's sites.
+
+`[fin.cells]` at the design point (40 000 tiles; 800 000 parcels, about twenty a tile; 500 000 segments, 1.10 M index
+entries): `insert_ns` 488 (359–390 measured, the step's 1 µs), `index_ns` 405 (284–324, the step's 1 µs), `lookup_ns`
+268 (210–214, the step's 60: a drawn tile's run is a memory latency away across 22 MB of rows), `crossing_ns` 1 740
+(1 332–1 391, the step's 150: one latency a listed segment's line, rather than the lines copied into the index at three
+times its bytes), `split_ns` 4 910 (3.4–3.9 µs, the step's 1: the parcel's read and its run's re-sort and moves in the
+arena), `mb` 27.6 (the step's 38).
 
 #### K-29 Deposits
 

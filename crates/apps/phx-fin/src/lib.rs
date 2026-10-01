@@ -7,6 +7,7 @@ pub mod apportion;
 pub mod budget;
 pub mod calendar;
 pub mod catalogue;
+pub mod cells;
 pub mod compose;
 pub mod counters;
 pub mod daybuf;
@@ -164,6 +165,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(units::Units::default()),
     || Box::new(stages::Stages::default()),
     || Box::new(routes::RoutesBase::default()),
+    || Box::new(cells::CellsBase::default()),
 ];
 
 /// What a run fills, runs and reads.

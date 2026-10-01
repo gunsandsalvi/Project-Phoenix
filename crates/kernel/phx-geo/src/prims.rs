@@ -7,6 +7,11 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// A cell's side, in metres: a tile's side a whole number of cells.
+    pub CELL_M = "GEO.cell_m" { kind: Resolution, value: Count, clause: "GEO.19", scope: Shared }
+}
+
+declare_prim! {
     /// The share of the map's tiles under the sea, which sets the sea level.
     pub SEA_SHARE = "GEO.sea_share" {
         kind: Shape, value: Fixed { exp: 2 }, clause: "GEO.10", scope: Shared,
@@ -503,6 +508,7 @@ pub struct DepositPrims {
 #[derive(Clone, Debug)]
 pub struct GeoPrims {
     pub tile_m: Prim<Count>,
+    pub cell_m: Prim<Count>,
     pub sea_share: Prim<Fixed<2>>,
     pub base_cells: Prim<Count>,
     pub octaves: Prim<Count>,
@@ -563,6 +569,7 @@ impl GeoPrims {
             .collect();
         GeoPrims {
             tile_m: d.prim(&TILE_M),
+            cell_m: d.prim(&CELL_M),
             sea_share: d.prim(&SEA_SHARE),
             base_cells: d.prim(&BASE_CELLS),
             octaves: d.prim(&OCTAVES),

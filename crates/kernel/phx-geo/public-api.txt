@@ -7,6 +7,143 @@ pub fn phx_geo::catastrophe::days_in_year(phx_id::day::Date) -> u32  // used by:
 pub fn phx_geo::catastrophe::distinct_picks(&mut phx_rand::draws::Draws, u64, u64) -> alloc::vec::Vec<u64>
 pub fn phx_geo::catastrophe::footprint(&phx_geo::grid::Grid, &[core::option::Option<u8>], &[f64], phx_id::ids::TileId, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
 pub fn phx_geo::catastrophe::hazard_day(&phx_geo::state::GeoState, &phx_geo::state::HazardState, usize, u32, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_core::events::EventIntent>  // used by: phx-world
+pub mod phx_geo::cells  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+pub mod phx_geo::cells::parcels  // used by: phx-fin
+pub struct phx_geo::cells::parcels::Held(pub u16)  // used by: phx-cli, phx-core, phx-fin, phx-pop, phx-world
+#[repr(C)] pub struct phx_geo::cells::parcels::Parcel
+impl phx_geo::cells::parcels::Parcel
+pub fn phx_geo::cells::parcels::Parcel::cells(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+pub fn phx_geo::cells::parcels::Parcel::cost(&self) -> i64  // used by: phx-cli, phx-core, phx-exec, phx-market, phx-val, phx-world, sys-cap, sys-frm, sys-gds
+pub fn phx_geo::cells::parcels::Parcel::held(&self) -> phx_geo::cells::parcels::Held  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-frm
+pub fn phx_geo::cells::parcels::Parcel::owner(&self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-store, phx-world
+pub fn phx_geo::cells::parcels::Parcel::rect(&self) -> phx_geo::cells::parcels::Rect  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcel::tile(&self) -> phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-fin, phx-world
+impl phx_store::pod::Pod for phx_geo::cells::parcels::Parcel
+pub fn phx_geo::cells::parcels::Parcel::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::cells::parcels::Parcel
+pub struct phx_geo::cells::parcels::Parcels<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::bytes(&self) -> usize  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::in_tile(&self, phx_id::ids::TileId) -> &[phx_geo::cells::parcels::Parcel]  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::insert(&mut self, phx_id::ids::TileId, phx_geo::cells::parcels::Rect, (u32, i64), phx_geo::cells::parcels::Held)  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::is_empty(&self) -> bool  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::len(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::new(&mut phx_store::backing::AddressSpace, phx_geo::cells::CellGrid, u32) -> phx_geo::cells::parcels::Parcels<B>  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::parcel_at(&self, phx_geo::cells::CellId) -> phx_num::missing::Missing<phx_geo::cells::parcels::Parcel>  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::release(&mut self, phx_geo::cells::CellId) -> phx_geo::cells::parcels::Parcel  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::split(&mut self, phx_geo::cells::parcels::Rect, phx_id::ids::TileId) -> phx_geo::cells::parcels::Parcel  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::transfer(&mut self, phx_geo::cells::CellId, u32, i64)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> core::cmp::PartialEq for phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::eq(&self, &phx_geo::cells::parcels::Parcels<B>) -> bool  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_geo::cells::parcels::Parcels<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_geo::cells::parcels::Rect  // used by: phx-fin
+pub phx_geo::cells::parcels::Rect::height: u8  // used by: phx-fin, phx-rand, phx-store
+pub phx_geo::cells::parcels::Rect::origin: u16  // used by: phx-fin, phx-world
+pub phx_geo::cells::parcels::Rect::width: u8  // used by: phx-core, phx-fin, phx-store, phx-val, phx-world
+pub mod phx_geo::cells::segment_index  // used by: phx-fin
+pub struct phx_geo::cells::segment_index::SegmentIndex<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_geo::cells::segment_index::SegmentIndex<B>
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::bytes(&self) -> usize  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::crossing(&self, phx_geo::cells::CellId, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line, &mut alloc::vec::Vec<phx_geo::transport::segments::SegmentId>) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::follow(&mut self, &[(phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::Change)], impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::in_tile(&self, phx_id::ids::TileId) -> &[u32]  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::index_segment(&mut self, phx_geo::transport::segments::SegmentId, phx_geo::cells::Line) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::new(&mut phx_store::backing::AddressSpace, phx_geo::cells::CellGrid, u32) -> phx_geo::cells::segment_index::SegmentIndex<B>  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::rebuild(&mut self, &phx_geo::transport::segments::Segments, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::unindex_segment(&mut self, phx_geo::transport::segments::SegmentId, phx_geo::cells::Line) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_geo::cells::segment_index::SegmentIndex<B>
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_geo::cells::CellGrid  // used by: phx-fin
+impl phx_geo::cells::CellGrid
+pub fn phx_geo::cells::CellGrid::at(&self, i64, i64) -> phx_geo::cells::CellId  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-soc, sys-tec
+pub fn phx_geo::cells::CellGrid::cell(&self, phx_id::ids::TileId, u16) -> phx_geo::cells::CellId  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-store, phx-world
+pub fn phx_geo::cells::CellGrid::cells_of(&self, phx_geo::cells::Line, impl core::ops::function::FnMut(phx_geo::cells::CellId)) -> u64
+pub fn phx_geo::cells::CellGrid::centre_of(&self, phx_id::ids::TileId) -> phx_geo::cells::CellId
+pub fn phx_geo::cells::CellGrid::coords(&self, phx_geo::cells::CellId) -> (u32, u32)
+pub fn phx_geo::cells::CellGrid::crosses(&self, phx_geo::cells::Line, phx_geo::cells::CellId) -> bool
+pub fn phx_geo::cells::CellGrid::crosses_point(&self, phx_geo::cells::Line, (i64, i64)) -> bool
+pub fn phx_geo::cells::CellGrid::distance_m(&self, phx_geo::cells::CellId, phx_geo::cells::CellId) -> u64
+pub fn phx_geo::cells::CellGrid::grid(&self) -> phx_geo::grid::Grid  // used by: phx-cli, phx-fin, phx-world, sys-hh
+pub fn phx_geo::cells::CellGrid::line(&self, phx_geo::cells::CellId, phx_geo::cells::CellId) -> phx_geo::cells::Line  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-world
+pub fn phx_geo::cells::CellGrid::new(phx_geo::grid::Grid, u32) -> core::result::Result<phx_geo::cells::CellGrid, alloc::string::String>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_geo::cells::CellGrid::per_tile(&self) -> u32  // used by: phx-fin
+pub fn phx_geo::cells::CellGrid::place_of(&self, phx_geo::cells::CellId) -> u16  // used by: phx-pop, phx-world
+pub fn phx_geo::cells::CellGrid::point(&self, phx_geo::cells::CellId) -> (i64, i64)  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-rand, phx-world, sys-frm, sys-hh, sys-lab
+pub fn phx_geo::cells::CellGrid::side(&self) -> u8  // used by: phx-core, phx-fin, phx-ledger, phx-obs, phx-store, phx-world
+pub fn phx_geo::cells::CellGrid::tile_of(&self, phx_geo::cells::CellId) -> phx_id::ids::TileId
+pub fn phx_geo::cells::CellGrid::tiles_of(&self, phx_geo::cells::Line, &mut alloc::vec::Vec<phx_id::ids::TileId>)
+impl phx_geo::cells::CellGrid
+pub fn phx_geo::cells::CellGrid::cell_m(&self) -> u32
+#[repr(C)] pub struct phx_geo::cells::CellId(_)
+impl phx_geo::cells::CellId
+pub const fn phx_geo::cells::CellId::get(self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub const fn phx_geo::cells::CellId::new(u32) -> phx_geo::cells::CellId  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_store::pod::Pod for phx_geo::cells::CellId
+pub fn phx_geo::cells::CellId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::cells::CellId
+pub struct phx_geo::cells::Held(pub u16)  // used by: phx-cli, phx-core, phx-fin, phx-pop, phx-world
+pub struct phx_geo::cells::Line  // used by: phx-core, phx-fin, phx-id, phx-rand, phx-world, sys-frm
+#[repr(C)] pub struct phx_geo::cells::Parcel
+impl phx_geo::cells::parcels::Parcel
+pub fn phx_geo::cells::parcels::Parcel::cells(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+pub fn phx_geo::cells::parcels::Parcel::cost(&self) -> i64  // used by: phx-cli, phx-core, phx-exec, phx-market, phx-val, phx-world, sys-cap, sys-frm, sys-gds
+pub fn phx_geo::cells::parcels::Parcel::held(&self) -> phx_geo::cells::parcels::Held  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-frm
+pub fn phx_geo::cells::parcels::Parcel::owner(&self) -> u32  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-num, phx-store, phx-world
+pub fn phx_geo::cells::parcels::Parcel::rect(&self) -> phx_geo::cells::parcels::Rect  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcel::tile(&self) -> phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-fin, phx-world
+impl phx_store::pod::Pod for phx_geo::cells::parcels::Parcel
+pub fn phx_geo::cells::parcels::Parcel::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::cells::parcels::Parcel
+pub struct phx_geo::cells::Parcels<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::bytes(&self) -> usize  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::in_tile(&self, phx_id::ids::TileId) -> &[phx_geo::cells::parcels::Parcel]  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::insert(&mut self, phx_id::ids::TileId, phx_geo::cells::parcels::Rect, (u32, i64), phx_geo::cells::parcels::Held)  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::is_empty(&self) -> bool  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::len(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::new(&mut phx_store::backing::AddressSpace, phx_geo::cells::CellGrid, u32) -> phx_geo::cells::parcels::Parcels<B>  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::parcel_at(&self, phx_geo::cells::CellId) -> phx_num::missing::Missing<phx_geo::cells::parcels::Parcel>  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::release(&mut self, phx_geo::cells::CellId) -> phx_geo::cells::parcels::Parcel  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::split(&mut self, phx_geo::cells::parcels::Rect, phx_id::ids::TileId) -> phx_geo::cells::parcels::Parcel  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::transfer(&mut self, phx_geo::cells::CellId, u32, i64)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> core::cmp::PartialEq for phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::eq(&self, &phx_geo::cells::parcels::Parcels<B>) -> bool  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_geo::cells::parcels::Parcels<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_geo::cells::parcels::Parcels<B>
+pub fn phx_geo::cells::parcels::Parcels<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::parcels::Parcels<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub struct phx_geo::cells::Rect  // used by: phx-fin
+pub phx_geo::cells::Rect::height: u8  // used by: phx-fin, phx-rand, phx-store
+pub phx_geo::cells::Rect::origin: u16  // used by: phx-fin, phx-world
+pub phx_geo::cells::Rect::width: u8  // used by: phx-core, phx-fin, phx-store, phx-val, phx-world
+pub struct phx_geo::cells::SegmentIndex<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_geo::cells::segment_index::SegmentIndex<B>
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::bytes(&self) -> usize  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::crossing(&self, phx_geo::cells::CellId, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line, &mut alloc::vec::Vec<phx_geo::transport::segments::SegmentId>) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::follow(&mut self, &[(phx_geo::transport::segments::SegmentId, phx_geo::transport::segments::Change)], impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::in_tile(&self, phx_id::ids::TileId) -> &[u32]  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::index_segment(&mut self, phx_geo::transport::segments::SegmentId, phx_geo::cells::Line) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::new(&mut phx_store::backing::AddressSpace, phx_geo::cells::CellGrid, u32) -> phx_geo::cells::segment_index::SegmentIndex<B>  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::rebuild(&mut self, &phx_geo::transport::segments::Segments, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::unindex_segment(&mut self, phx_geo::transport::segments::SegmentId, phx_geo::cells::Line) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_geo::cells::segment_index::SegmentIndex<B>
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::segment_index::SegmentIndex<B>::rows_live(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::cells::held<B: phx_store::backing::Backing>(phx_geo::cells::CellId, (&phx_geo::cells::parcels::Parcels<B>, &phx_geo::cells::segment_index::SegmentIndex<B>), (impl core::ops::function::Fn(phx_geo::cells::CellId) -> bool, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentId) -> phx_geo::cells::Line), &mut alloc::vec::Vec<phx_geo::transport::segments::SegmentId>) -> bool  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-pop, phx-store, phx-world, sys-cap, sys-dem, sys-frm
+pub fn phx_geo::cells::segment_line(&phx_geo::cells::CellGrid, &phx_geo::generate::Map, phx_geo::transport::segments::SegmentRow) -> phx_geo::cells::Line
+pub fn phx_geo::cells::tile_index(phx_id::ids::TileId) -> usize
 pub mod phx_geo::climate  // used by: phx-cli, phx-world
 pub enum phx_geo::climate::Marginal
 pub phx_geo::climate::Marginal::Beta  // used by: phx-core
@@ -54,6 +191,9 @@ pub const phx_geo::consts::MAP_MAX_ATTEMPTS: u64
 pub const phx_geo::consts::METRES_PER_KM: u64  // used by: phx-world
 pub const phx_geo::consts::MONTHS: i64  // used by: phx-core, phx-id, phx-world
 pub const phx_geo::consts::MONTHS_U8: u8  // used by: phx-cli
+pub const phx_geo::consts::PARCEL_LEASED_APART: u16
+pub const phx_geo::consts::PARCEL_OWNED_APART: u16  // used by: phx-fin
+pub const phx_geo::consts::PARCEL_SHORT_RUN: usize
 pub const phx_geo::consts::PER_MILLE: u64  // used by: phx-cli, phx-world
 pub const phx_geo::consts::PER_MILLE_F64: f64
 pub const phx_geo::consts::ROUNDING_PARTS: u64
@@ -130,6 +270,7 @@ pub fn phx_geo::generate::Map::load(&mut phx_store::save::Reader<'_>) -> core::r
 pub fn phx_geo::generate::Map::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::generate::Map::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_geo::generate::MapParams
+pub phx_geo::generate::MapParams::cell_m: u32
 pub phx_geo::generate::MapParams::cells_per_tile: u32
 pub phx_geo::generate::MapParams::land_heights: phx_geo::generate::HeightCurve
 pub phx_geo::generate::MapParams::land_relief: phx_geo::generate::HeightCurve
@@ -238,6 +379,7 @@ pub phx_geo::prims::DepositPrims::unbounded: phx_core::register::Prim<phx_core::
 pub struct phx_geo::prims::GeoPrims  // used by: phx-world
 pub phx_geo::prims::GeoPrims::area_exponent: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::prims::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::prims::GeoPrims::cell_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::climate_lowland: phx_core::register::Prim<phx_core::register::values::Table2>
 pub phx_geo::prims::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::cool_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
@@ -298,6 +440,7 @@ pub phx_geo::prims::WeatherPrims::wind_scale: phx_core::register::Prim<phx_core:
 pub phx_geo::prims::WeatherPrims::wind_shape: phx_core::register::Prim<phx_core::register::values::Table2>
 pub const phx_geo::prims::AREA_EXPONENT: phx_core::register::PrimDecl
 pub const phx_geo::prims::BASE_CELLS: phx_core::register::PrimDecl
+pub const phx_geo::prims::CELL_M: phx_core::register::PrimDecl  // used by: phx-fin
 pub const phx_geo::prims::CLIMATE_LOWLAND: phx_core::register::PrimDecl
 pub const phx_geo::prims::COAST_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::COOL_LATITUDE: phx_core::register::PrimDecl
@@ -417,6 +560,7 @@ pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>  // used by: p
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-val, phx-world, sys-dem, sys-tec
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::state::GeoState::cells(&self) -> phx_geo::cells::CellGrid  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
 pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-cli, phx-core, phx-world, sys-dem, sys-lab
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
@@ -539,6 +683,7 @@ pub fn phx_geo::transport::segments::SegmentRow::ends(self) -> (u16, u16)  // us
 pub fn phx_geo::transport::segments::SegmentRow::metres(self) -> u32  // used by: phx-fin, phx-market, phx-world
 pub fn phx_geo::transport::segments::SegmentRow::mode(self) -> u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
 pub fn phx_geo::transport::segments::SegmentRow::open_on(self, phx_id::day::Day) -> bool
+pub fn phx_geo::transport::segments::SegmentRow::removed(self) -> bool  // used by: phx-check, phx-core
 pub fn phx_geo::transport::segments::SegmentRow::unit(self) -> phx_num::missing::Missing<u32>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 impl phx_store::pod::Pod for phx_geo::transport::segments::SegmentRow
 pub fn phx_geo::transport::segments::SegmentRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
@@ -602,6 +747,7 @@ pub fn phx_geo::transport::segments::SegmentRow::ends(self) -> (u16, u16)  // us
 pub fn phx_geo::transport::segments::SegmentRow::metres(self) -> u32  // used by: phx-fin, phx-market, phx-world
 pub fn phx_geo::transport::segments::SegmentRow::mode(self) -> u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
 pub fn phx_geo::transport::segments::SegmentRow::open_on(self, phx_id::day::Day) -> bool
+pub fn phx_geo::transport::segments::SegmentRow::removed(self) -> bool  // used by: phx-check, phx-core
 pub fn phx_geo::transport::segments::SegmentRow::unit(self) -> phx_num::missing::Missing<u32>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-cap, sys-frm, sys-tec
 impl phx_store::pod::Pod for phx_geo::transport::segments::SegmentRow
 pub fn phx_geo::transport::segments::SegmentRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
@@ -677,6 +823,7 @@ pub fn phx_geo::system::Geo::declare(&mut phx_core::system::Declarations)  // us
 pub struct phx_geo::GeoPrims  // used by: phx-world
 pub phx_geo::GeoPrims::area_exponent: phx_core::register::Prim<phx_num::fixed::Fixed<2>>
 pub phx_geo::GeoPrims::base_cells: phx_core::register::Prim<phx_num::qty::Count>
+pub phx_geo::GeoPrims::cell_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::climate_lowland: phx_core::register::Prim<phx_core::register::values::Table2>
 pub phx_geo::GeoPrims::coast_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::cool_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
@@ -728,6 +875,7 @@ pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>  // used by: phx-worl
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-val, phx-world, sys-dem, sys-tec
 pub fn phx_geo::state::GeoState::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::state::GeoState::cells(&self) -> phx_geo::cells::CellGrid  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
 pub fn phx_geo::state::GeoState::country_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-cli, phx-core, phx-world, sys-dem, sys-lab
 pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num::missing::Missing<phx_id::ids::ZoneId>>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world

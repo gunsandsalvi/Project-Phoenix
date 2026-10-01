@@ -42,3 +42,9 @@ pub const SEGMENT_CLOSED: u16 = 1;
 pub const SEGMENT_REMOVED: u16 = 1 << 1;
 /// A segment held as a named unit.
 pub const SEGMENT_HELD: u16 = 1 << 2;
+/// Why land is held apart from its tile, as a parcel's flags: owned apart, leased apart.
+pub const PARCEL_OWNED_APART: u16 = 1;
+pub const PARCEL_LEASED_APART: u16 = 1 << 1;
+/// A tile's parcels read through in order rather than searched: a few cache lines, about a tile's parcels at the design
+/// point.
+pub const PARCEL_SHORT_RUN: usize = 32;

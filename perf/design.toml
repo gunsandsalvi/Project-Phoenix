@@ -1128,7 +1128,7 @@ preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 M
 9 = { name = "contracts", mb = 865.6 }   # S1.257 1 074.0, S4.150 8 (1 082.0)
 10 = { name = "terms", mb = 28.0 }   # S1.263 33.6 (S1.168's 16 B rows and 12 B of index an id), S2.207 1.4 (35.0)
 11 = { name = "holdings", mb = 150.2 }   # S1.276 22, S1.280 165, S4.115 0.7 (187.7)
-12 = { name = "units, cells, owner index", mb = 117.5 }   # 144.8 at the steps' counts, S1.190's cells 37.7 of it (parcels 32.0; segment index 5.3 and directories 0.4, unscaled); the zones' 2.5 unscaled
+12 = { name = "units, cells, owner index", mb = 113.8 }   # 140.2 at the steps' counts, S1.190's cells 33.1 of it (measured: parcels 22.0 at the design point's 800 000, 27.5 at the steps' 1.0 M; segment index and directories 5.6, unscaled); the zones' 2.5 unscaled
 13 = { name = "liens and processes", mb = 58.2 }   # S1.277 30, S1.287 40, S1.332 1, S3.106 0.1, S3.195 0.6, S4.109 0.04, S5.131 0.1, S5.178 0.6, S6.119 0.24 (72.7)
 14 = { name = "wheel and agenda", mb = 120.8 }
 15 = { name = "hazards", mb = 1.4 }
@@ -1142,7 +1142,7 @@ preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 M
 23 = { name = "save buffers", mb = 13.0 }
 24 = { name = "plant cells", mb = 77.4 }   # 96.8 at the steps' counts, at two condition classes
 25 = { name = "windows", mb = 9.6 }
-total_mb = 3946.3   # 4 822.6 at the steps' counts; against fin.mem.peak_mb 4 349: 403 MB (9.3 %) below, 3.7 below the owner's 3 950
+total_mb = 3942.6   # 4 818.0 at the steps' counts; against fin.mem.peak_mb 4 349: 406 MB (9.3 %) below, 7.4 below the owner's 3 950
 
 [save]   # the save and load buffers' representation (ledger line 23), as the snapshot step S1.356 states it; not a valve
 frames_per_worker = 4

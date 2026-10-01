@@ -42,6 +42,7 @@ pub struct HeightCurve {
 pub struct MapParams {
     pub land_tiles: u64,
     pub tile_m: u32,
+    pub cell_m: u32,
     pub sea_share: f64,
     pub cells_per_tile: u32,
     pub relief: ReliefParams,
@@ -520,6 +521,7 @@ pub(crate) mod tests {
         MapParams {
             land_tiles,
             tile_m: 10_000,
+            cell_m: 100,
             sea_share: 0.4,
             cells_per_tile: 3,
             relief: ReliefParams {

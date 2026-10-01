@@ -1,4 +1,5 @@
 pub mod catastrophe;
+pub mod cells;
 pub mod climate;
 pub mod consts;
 pub mod deposits;

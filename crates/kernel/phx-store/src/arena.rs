@@ -1,4 +1,6 @@
 use phx_macros::Pod;
+
+use crate::pod::Pod as Plain;
 use phx_num::{capacity_exceeded, violation};
 
 use crate::backing::{AddressSpace, Backing, SystemBacking};
@@ -44,11 +46,12 @@ struct Overflow {
     list: ListRef,
 }
 
-/// The variable-length lists of one chunk's rows, as 8-byte words: a list grows in place while it has room, moves
-/// to the end when it does not, and compaction closes the gaps in slot order.
+/// The variable-length lists of one chunk's rows, as elements of one plain type (8-byte words unless a store keeps
+/// rows of its own): a list grows in place while it has room, moves to the end when it does not, and compaction closes
+/// the gaps in slot order.
 #[derive(Debug)]
-pub struct ChunkArena<B: Backing = SystemBacking> {
-    words: Region<u64, B>,
+pub struct ChunkArena<B: Backing = SystemBacking, W: Plain = u64> {
+    words: Region<W, B>,
     end: u32,
     dead: u32,
     compactions: u64,
@@ -59,8 +62,8 @@ pub struct ChunkArena<B: Backing = SystemBacking> {
 /// The lists that live in one arena, in the slot order of the rows that own them.
 pub trait ArenaLists {
     fn count(&self) -> usize;
-    fn list<B: Backing>(&self, arena: &ChunkArena<B>, i: usize) -> ListRef;
-    fn relocate<B: Backing>(&mut self, arena: &mut ChunkArena<B>, i: usize, off: u32);
+    fn list<B: Backing, W: Plain>(&self, arena: &ChunkArena<B, W>, i: usize) -> ListRef;
+    fn relocate<B: Backing, W: Plain>(&mut self, arena: &mut ChunkArena<B, W>, i: usize, off: u32);
 }
 
 impl ArenaLists for [ListRef] {
@@ -68,14 +71,14 @@ impl ArenaLists for [ListRef] {
         self.len()
     }
 
-    fn list<B: Backing>(&self, _: &ChunkArena<B>, i: usize) -> ListRef {
+    fn list<B: Backing, W: Plain>(&self, _: &ChunkArena<B, W>, i: usize) -> ListRef {
         let Some(list) = self.get(i).copied() else {
             violation!(clause = "SET.12", "a list past the lists given", i = i);
         };
         list
     }
 
-    fn relocate<B: Backing>(&mut self, _: &mut ChunkArena<B>, i: usize, off: u32) {
+    fn relocate<B: Backing, W: Plain>(&mut self, _: &mut ChunkArena<B, W>, i: usize, off: u32) {
         if let Some(r) = self.get_mut(i) {
             r.off = off;
         }
@@ -103,14 +106,14 @@ impl ArenaLists for CellLists<'_> {
         self.refs.len()
     }
 
-    fn list<B: Backing>(&self, arena: &ChunkArena<B>, i: usize) -> ListRef {
+    fn list<B: Backing, W: Plain>(&self, arena: &ChunkArena<B, W>, i: usize) -> ListRef {
         let Some(r) = self.refs.get(i).copied() else {
             violation!(clause = "SET.12", "a list past the lists given", i = i);
         };
         arena.resolve(self.owner(i), r)
     }
 
-    fn relocate<B: Backing>(&mut self, arena: &mut ChunkArena<B>, i: usize, off: u32) {
+    fn relocate<B: Backing, W: Plain>(&mut self, arena: &mut ChunkArena<B, W>, i: usize, off: u32) {
         let owner = self.owner(i);
         if let Some(r) = self.refs.get_mut(i) {
             let list = ListRef { off, ..arena.resolve(owner, *r) };
@@ -133,8 +136,8 @@ fn grown(needed: u32) -> u32 {
     cap
 }
 
-impl<B: Backing> ChunkArena<B> {
-    pub fn new(space: &mut AddressSpace, reserved_words: u32) -> ChunkArena<B> {
+impl<B: Backing, W: Plain> ChunkArena<B, W> {
+    pub fn new(space: &mut AddressSpace, reserved_words: u32) -> ChunkArena<B, W> {
         ChunkArena {
             words: Region::reserve(space, to_usize(reserved_words)),
             end: 0,
@@ -174,7 +177,7 @@ impl<B: Backing> ChunkArena<B> {
     }
 
     #[must_use]
-    pub fn read(&self, list: ListRef) -> &[u64] {
+    pub fn read(&self, list: ListRef) -> &[W] {
         self.check(list);
         let Some(words) = self.words.slice(to_usize(self.end)).get(span(list, list.len)) else {
             violation!(clause = "SET.12", "a list reference outside its arena", off = list.off, len = list.len);
@@ -182,7 +185,7 @@ impl<B: Backing> ChunkArena<B> {
         words
     }
 
-    pub fn read_mut(&mut self, list: ListRef) -> &mut [u64] {
+    pub fn read_mut(&mut self, list: ListRef) -> &mut [W] {
         self.check(list);
         let Some(words) = self.words.slice_mut(to_usize(self.end)).get_mut(span(list, list.len)) else {
             violation!(clause = "SET.12", "a list reference outside its arena", off = list.off, len = list.len);
@@ -202,7 +205,7 @@ impl<B: Backing> ChunkArena<B> {
     }
 
     /// Adds words at a list's end: in place while the list has room, else at the arena's end with room to grow.
-    pub fn append(&mut self, list: &mut ListRef, words: &[u64]) {
+    pub fn append(&mut self, list: &mut ListRef, words: &[W]) {
         self.check(*list);
         let Some(needed) = list.len.checked_add(to_u32(words.len())) else {
             capacity_exceeded!("list words", u32::MAX, u64::from(list.len) + u64::from(to_u32(words.len())));
@@ -255,7 +258,7 @@ impl<B: Backing> ChunkArena<B> {
 
     /// Copies every live list, in the order given, into the scratch and back to the arena's start, rewrites each
     /// reference, and returns the pages above the new end.
-    pub fn compact<L: ArenaLists + ?Sized>(&mut self, lists: &mut L, scratch: &mut Region<u64, B>) {
+    pub fn compact<L: ArenaLists + ?Sized>(&mut self, lists: &mut L, scratch: &mut Region<W, B>) {
         let mut at = 0_u32;
         for i in 0..lists.count() {
             let list = lists.list(self, i);
@@ -333,7 +336,7 @@ impl<B: Backing> ChunkArena<B> {
     }
 }
 
-impl<B: Backing> crate::save::Saved for ChunkArena<B> {
+impl<B: Backing, W: Plain> crate::save::Saved for ChunkArena<B, W> {
     fn save(&self, w: &mut crate::save::Writer<'_>) {
         self.dead.save(w);
         self.compactions.save(w);
@@ -341,7 +344,7 @@ impl<B: Backing> crate::save::Saved for ChunkArena<B> {
         self.overflow.save_prefix(self.n_overflow, w, crate::Transform::Plain);
     }
 
-    fn load(r: &mut crate::save::Reader<'_>) -> Result<ChunkArena<B>, crate::save::LoadError> {
+    fn load(r: &mut crate::save::Reader<'_>) -> Result<ChunkArena<B, W>, crate::save::LoadError> {
         let (dead, compactions) = (u32::load(r)?, u64::load(r)?);
         let (words, end) = Region::load_prefix(r, crate::Transform::Plain)?;
         let (overflow, n_overflow) = Region::load_prefix(r, crate::Transform::Plain)?;

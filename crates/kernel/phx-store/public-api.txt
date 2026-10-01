@@ -65,28 +65,28 @@ pub phx_store::arena::CellLists::first_owner: u32
 pub phx_store::arena::CellLists::refs: &'a mut [phx_store::arena::CellListRef]  // used by: phx-fin, phx-pop
 impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
-pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
-pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
-pub struct phx_store::arena::ChunkArena<B: phx_store::backing::Backing>  // used by: phx-core, phx-pop
-impl<B: phx_store::backing::Backing> phx_store::arena::ChunkArena<B>
-pub fn phx_store::arena::ChunkArena<B>::append(&mut self, &mut phx_store::arena::ListRef, &[u64])  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::bytes_committed(&self) -> usize  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::clear(&mut self, &mut phx_store::arena::ListRef)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::compact<L: phx_store::arena::ArenaLists + ?core::marker::Sized>(&mut self, &mut L, &mut phx_store::region::Region<u64, B>)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::compactions(&self) -> u64  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::dead_words(&self) -> u32  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::needs_compaction(&self) -> bool  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::arena::ChunkArena<B>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::read(&self, phx_store::arena::ListRef) -> &[u64]  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::read_mut(&mut self, phx_store::arena::ListRef) -> &mut [u64]  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::remove(&mut self, &mut phx_store::arena::ListRef, u32, u32)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32  // used by: phx-core, phx-pop
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
-pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-geo
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)  // used by: phx-geo
+pub struct phx_store::arena::ChunkArena<B: phx_store::backing::Backing, W: phx_store::pod::Pod>  // used by: phx-core, phx-geo, phx-pop
+impl<B: phx_store::backing::Backing, W: phx_store::pod::Pod> phx_store::arena::ChunkArena<B, W>
+pub fn phx_store::arena::ChunkArena<B, W>::append(&mut self, &mut phx_store::arena::ListRef, &[W])  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::bytes_committed(&self) -> usize  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::clear(&mut self, &mut phx_store::arena::ListRef)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::compact<L: phx_store::arena::ArenaLists + ?core::marker::Sized>(&mut self, &mut L, &mut phx_store::region::Region<W, B>)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::compactions(&self) -> u64  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::dead_words(&self) -> u32  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::needs_compaction(&self) -> bool  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::arena::ChunkArena<B, W>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::read(&self, phx_store::arena::ListRef) -> &[W]  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::read_mut(&mut self, phx_store::arena::ListRef) -> &mut [W]  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::remove(&mut self, &mut phx_store::arena::ListRef, u32, u32)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::used_words(&self) -> u32  // used by: phx-core, phx-geo, phx-pop
+impl<B: phx_store::backing::Backing, W: phx_store::pod::Pod> phx_store::save::Saved for phx_store::arena::ChunkArena<B, W>
+pub fn phx_store::arena::ChunkArena<B, W>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B, W>, phx_store::save::LoadError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-geo, phx-pop
 #[repr(C)] pub struct phx_store::arena::ListRef
 pub phx_store::arena::ListRef::cap: u32  // used by: phx-exec, phx-market, phx-world
 pub phx_store::arena::ListRef::len: u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-gds, sys-hh, sys-lab, sys-sov, sys-sta, sys-tax, sys-tec
@@ -98,16 +98,16 @@ pub fn phx_store::arena::ListRef::layout(u16, phx_store::descriptor::Transform, 
 impl phx_store::pod::__seal::Sealed for phx_store::arena::ListRef
 pub trait phx_store::arena::ArenaLists
 pub fn phx_store::arena::ArenaLists::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
-pub fn phx_store::arena::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
-pub fn phx_store::arena::ArenaLists::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn phx_store::arena::ArenaLists::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
+pub fn phx_store::arena::ArenaLists::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)
 impl phx_store::arena::ArenaLists for [phx_store::arena::ListRef]
 pub fn [phx_store::arena::ListRef]::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
-pub fn [phx_store::arena::ListRef]::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
-pub fn [phx_store::arena::ListRef]::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn [phx_store::arena::ListRef]::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
+pub fn [phx_store::arena::ListRef]::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)
 impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
-pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
-pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-geo
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)  // used by: phx-geo
 pub mod phx_store::backing  // used by: phx-core, phx-pop
 pub struct phx_store::backing::AddressSpace  // used by: phx-core, phx-exec, phx-fin, phx-pop, phx-world
 impl phx_store::backing::AddressSpace
@@ -970,10 +970,10 @@ impl<A: phx_store::save::Saved, B: phx_store::save::Saved> phx_store::save::Save
 pub fn (A, B)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B), phx_store::save::LoadError>
 pub fn (A, B)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
-pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+impl<B: phx_store::backing::Backing, W: phx_store::pod::Pod> phx_store::save::Saved for phx_store::arena::ChunkArena<B, W>
+pub fn phx_store::arena::ChunkArena<B, W>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B, W>, phx_store::save::LoadError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-geo, phx-pop
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::intern::Interner<B>
 pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
@@ -1313,28 +1313,28 @@ pub phx_store::CellLists::first_owner: u32
 pub phx_store::CellLists::refs: &'a mut [phx_store::arena::CellListRef]  // used by: phx-fin, phx-pop
 impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
-pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
-pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
-pub struct phx_store::ChunkArena<B: phx_store::backing::Backing>  // used by: phx-core, phx-pop
-impl<B: phx_store::backing::Backing> phx_store::arena::ChunkArena<B>
-pub fn phx_store::arena::ChunkArena<B>::append(&mut self, &mut phx_store::arena::ListRef, &[u64])  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::bytes_committed(&self) -> usize  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::clear(&mut self, &mut phx_store::arena::ListRef)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::compact<L: phx_store::arena::ArenaLists + ?core::marker::Sized>(&mut self, &mut L, &mut phx_store::region::Region<u64, B>)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::compactions(&self) -> u64  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::dead_words(&self) -> u32  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::needs_compaction(&self) -> bool  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::arena::ChunkArena<B>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::read(&self, phx_store::arena::ListRef) -> &[u64]  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::read_mut(&mut self, phx_store::arena::ListRef) -> &mut [u64]  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::remove(&mut self, &mut phx_store::arena::ListRef, u32, u32)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::used_words(&self) -> u32  // used by: phx-core, phx-pop
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
-pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-geo
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)  // used by: phx-geo
+pub struct phx_store::ChunkArena<B: phx_store::backing::Backing, W: phx_store::pod::Pod>  // used by: phx-core, phx-geo, phx-pop
+impl<B: phx_store::backing::Backing, W: phx_store::pod::Pod> phx_store::arena::ChunkArena<B, W>
+pub fn phx_store::arena::ChunkArena<B, W>::append(&mut self, &mut phx_store::arena::ListRef, &[W])  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::bytes_committed(&self) -> usize  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::clear(&mut self, &mut phx_store::arena::ListRef)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::compact<L: phx_store::arena::ArenaLists + ?core::marker::Sized>(&mut self, &mut L, &mut phx_store::region::Region<W, B>)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::compactions(&self) -> u64  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::dead_words(&self) -> u32  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::needs_compaction(&self) -> bool  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::new(&mut phx_store::backing::AddressSpace, u32) -> phx_store::arena::ChunkArena<B, W>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::read(&self, phx_store::arena::ListRef) -> &[W]  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::read_mut(&mut self, phx_store::arena::ListRef) -> &mut [W]  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::remove(&mut self, &mut phx_store::arena::ListRef, u32, u32)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::resolve(&self, u32, phx_store::arena::CellListRef) -> phx_store::arena::ListRef  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::store(&mut self, u32, &mut phx_store::arena::CellListRef, phx_store::arena::ListRef)  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::used_words(&self) -> u32  // used by: phx-core, phx-geo, phx-pop
+impl<B: phx_store::backing::Backing, W: phx_store::pod::Pod> phx_store::save::Saved for phx_store::arena::ChunkArena<B, W>
+pub fn phx_store::arena::ChunkArena<B, W>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B, W>, phx_store::save::LoadError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-geo, phx-pop
 pub struct phx_store::ChunkMut<'a, T>
 pub phx_store::ChunkMut::chunk: u32  // used by: phx-core, phx-exec, phx-fin, phx-market, phx-pop, phx-world
 pub phx_store::ChunkMut::first: phx_id::ids::Slot  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-pop, phx-rand, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
@@ -1814,16 +1814,16 @@ pub fn phx_store::save::Writer<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) ->
 pub const phx_store::EPOCH_CHUNK_ROWS: u32  // used by: phx-fin
 pub trait phx_store::ArenaLists
 pub fn phx_store::ArenaLists::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
-pub fn phx_store::ArenaLists::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
-pub fn phx_store::ArenaLists::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn phx_store::ArenaLists::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
+pub fn phx_store::ArenaLists::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)
 impl phx_store::arena::ArenaLists for [phx_store::arena::ListRef]
 pub fn [phx_store::arena::ListRef]::count(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
-pub fn [phx_store::arena::ListRef]::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
-pub fn [phx_store::arena::ListRef]::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn [phx_store::arena::ListRef]::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-macros, phx-market, phx-pop, sys-dem
+pub fn [phx_store::arena::ListRef]::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)
 impl phx_store::arena::ArenaLists for phx_store::arena::CellLists<'_>
 pub fn phx_store::arena::CellLists<'_>::count(&self) -> usize
-pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing>(&self, &phx_store::arena::ChunkArena<B>, usize) -> phx_store::arena::ListRef
-pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing>(&mut self, &mut phx_store::arena::ChunkArena<B>, usize, u32)
+pub fn phx_store::arena::CellLists<'_>::list<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&self, &phx_store::arena::ChunkArena<B, W>, usize) -> phx_store::arena::ListRef  // used by: phx-geo
+pub fn phx_store::arena::CellLists<'_>::relocate<B: phx_store::backing::Backing, W: phx_store::pod::Pod>(&mut self, &mut phx_store::arena::ChunkArena<B, W>, usize, u32)  // used by: phx-geo
 pub unsafe trait phx_store::Backing: core::marker::Send + core::marker::Sync  // used by: phx-core, phx-pop, phx-world
 pub fn phx_store::Backing::base(&self) -> core::ptr::non_null::NonNull<u8>  // used by: if-state, phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-pop, phx-rand, phx-world, sys-idx
 pub fn phx_store::Backing::commit(&mut self, core::ops::range::Range<usize>)  // used by: phx-check, phx-core, phx-world
@@ -2045,10 +2045,10 @@ impl<A: phx_store::save::Saved, B: phx_store::save::Saved> phx_store::save::Save
 pub fn (A, B)::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<(A, B), phx_store::save::LoadError>
 pub fn (A, B)::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>
 pub fn (A, B)::save(&self, &mut phx_store::save::Writer<'_>)
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::arena::ChunkArena<B>
-pub fn phx_store::arena::ChunkArena<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B>, phx_store::save::LoadError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-pop
-pub fn phx_store::arena::ChunkArena<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-pop
+impl<B: phx_store::backing::Backing, W: phx_store::pod::Pod> phx_store::save::Saved for phx_store::arena::ChunkArena<B, W>
+pub fn phx_store::arena::ChunkArena<B, W>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::arena::ChunkArena<B, W>, phx_store::save::LoadError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-geo, phx-pop
+pub fn phx_store::arena::ChunkArena<B, W>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-geo, phx-pop
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::intern::Interner<B>
 pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin

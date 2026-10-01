@@ -560,6 +560,47 @@ counter = "fin.routes.use_mb"
 value = 4.3
 direction = "down"
 
+# Cells (S1.190, 2026-10-01; `tools/bench.sh -F cells`): 40 000 tiles of 10 000 cells; the design point's 800 000
+# parcels laid in a drawn order, about twenty a tile, at 359–390 ns each (the step's 1 µs an insert); 500 000 segments'
+# lines, about two tiles each (1.10 M entries), indexed at 284–324 ns a segment (the step's 1 µs); a parcel found at a
+# drawn cell in 210–214 ns (the step's 60: a drawn tile's run is one memory latency away across 22 MB of rows on this
+# machine, the run then read through in order); the paths crossing a drawn cell in 1 332–1 391 ns (the step's 150:
+# each of a tile's ≈ 27 listed segments' lines is read where the segments keep it, one latency each, rather than
+# copied into the index at three times its bytes); a part cut out of a parcel in 3.4–3.9 µs (the step's 1: the parcel's
+# read, its run re-sorted and, as runs outgrow their room, moved in the arena, whose compaction it shares). The
+# parcels, the index and their directories hold 27.6 MiB (the step's 38). Each time ratchet stands a quarter above the
+# highest; the bytes, which do not vary, at the measure.
+
+[[ratchet]]
+counter = "fin.cells.insert_ns"
+value = 488
+direction = "down"
+
+[[ratchet]]
+counter = "fin.cells.index_ns"
+value = 405
+direction = "down"
+
+[[ratchet]]
+counter = "fin.cells.lookup_ns"
+value = 268
+direction = "down"
+
+[[ratchet]]
+counter = "fin.cells.crossing_ns"
+value = 1740
+direction = "down"
+
+[[ratchet]]
+counter = "fin.cells.split_ns"
+value = 4910
+direction = "down"
+
+[[ratchet]]
+counter = "fin.cells.mb"
+value = 27.6
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers
