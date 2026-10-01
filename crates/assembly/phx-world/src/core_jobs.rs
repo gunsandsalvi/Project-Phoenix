@@ -200,7 +200,7 @@ impl Core {
         }
         let country_of =
             |r: u32| o.countries.iter().find(|c| c.regions.iter().any(|(x, _)| *x == r)).map(|c| c.id.get());
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(crate::core::kind_number(firm)) {
             let rec = store.record(slot);
             let read = |i: usize| match rec.get(i).map(|w| w.get()) {
                 Some(phx_num::Missing::Present(v)) => v,

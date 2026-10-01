@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 243 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 231 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -106,7 +106,7 @@ count = 2
 path = "crates/assembly/phx-world/src/core_audit.rs"
 item = "Core::held"
 what = "`.map_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_audit.rs"
@@ -160,7 +160,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_central.rs"
 item = "Core::bank_deposits"
 what = "`.map_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_central.rs"
@@ -172,7 +172,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_central.rs"
 item = "Core::fund_stage"
 what = "`.map_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_central.rs"
@@ -225,12 +225,6 @@ count = 2
 [[site]]
 path = "crates/assembly/phx-world/src/core_credit.rs"
 item = "Core::firm_loans"
-what = "`.unwrap_or_default`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_credit.rs"
-item = "Core::firm_loans"
 what = "`.unwrap_or`"
 count = 1
 
@@ -256,7 +250,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_day.rs"
 item = "Core::run_day"
 what = "`.map_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_day.rs"
@@ -368,12 +362,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::attend"
-what = "`.unwrap_or_default`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::book_sale"
 what = "`.map_or`"
 count = 1
@@ -404,12 +392,6 @@ count = 2
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::firm_slots"
-what = "`.unwrap_or_default`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::free_units"
 what = "`.map_or`"
 count = 1
@@ -418,12 +400,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::making"
 what = "`.unwrap_or`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::open_goods"
-what = "`.unwrap_or_default`"
 count = 1
 
 [[site]]
@@ -491,12 +467,6 @@ path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::hire"
 what = "`.unwrap_or`"
 count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::open_labour"
-what = "`.unwrap_or_default`"
-count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_labour.rs"
@@ -662,12 +632,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_outlooks.rs"
-item = "Core::refresh_windows"
-what = "`.unwrap_or_default`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_outlooks.rs"
 item = "Outlooks"
 what = "field `awaiting`: `BTreeMap` keyed by `u32`"
 count = 1
@@ -766,18 +730,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_plant.rs"
 item = "Plant"
 what = "field `sold`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::open_hazards"
-what = "`.map_or`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::open_hazards"
-what = "`.unwrap_or_default`"
 count = 1
 
 [[site]]

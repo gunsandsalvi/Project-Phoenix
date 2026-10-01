@@ -203,7 +203,7 @@ fn cohorts_leave(w: Inspector<'_>) -> Outcome {
         }
     }
     let date = w.date(w.today());
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(place) {
         let region = store.record(slot).get(region_at).and_then(|x| match x.get() {
             phx_num::Missing::Present(v) => usize::try_from(v).ok(),
             phx_num::Missing::Absent => None,
@@ -266,12 +266,12 @@ pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let core = w.core();
     let place = core.names.iter().position(|n| *n == "household")?;
     let decl = core.declared.household.as_ref()?;
-    let (store, persons) = (core.kinds.get(place)?, core.persons.get(place)?.as_ref()?);
+    let persons = core.persons.get(place)?.as_ref()?;
     let bounds = w.register().partition("DEM.age_classes").ok()?.bounds.to_vec();
     let mut classes: Vec<(i64, [u64; 2])> = bounds.iter().map(|b| (*b, [0, 0])).collect();
     let date = w.date(w.today());
     let (mut women, mut counted) = (0_u64, 0_u64);
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(place) {
         for p in persons.of(slot) {
             let person = phx_pop::person::unpack(decl, p.word);
             let (age, sex) = (person.age_on(date), person.attr(if_pop::SEX.name)?);

@@ -118,7 +118,7 @@ L0 foundation      phx-macros phx-num phx-rand phx-id
 | --- | --- | --- |
 | `phx-num` | NUM.1, NUM.2, NUM.5, NUM.6, MON.16, Law 7 | `Money`, `Qty`, tick-unit `Price` and `Rate`, fixed-point position values, `Missing<T>`, rounding conventions, apportionment with a named residue, checked `i64`/`i128` arithmetic, `violation!` and its payload, **point tables** (a trade's price points as `i64`, REP.34). No floating-point type in any store. It has no named comparisons: `min` and `max` are refused (§16) and callers compare inline. |
 | `phx-rand` | CHN.1, CHN.6, CHN.7 | Philox; stream keys; batch samplers: binomial (inversion, BTPE) and **zero-truncated** binomial, multinomial (conditional binomials; alias tables when draws are fewer than categories), hypergeometric (inversion when small, Stadlober's ratio of uniforms otherwise) and multivariate hypergeometric, weighted picks over prefix sums, geometric (for next-candidate days), normal, log-normal, Pareto, Gumbel; rejection thinning. |
-| `phx-id` | TIME.1, TIME.2 (the day and civil dates), PTY.1 (identities) | Identifier types (`PartyId`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
+| `phx-id` | TIME.1, TIME.2 (the day and civil dates), PTY.1 (identities) | Identifier types (`PartyRef`, `PartyKey`, slots, `LineId`, `RowRef`, `InstrumentId`, day-local ids), `Day`, `Date`. |
 | `phx-macros` | — | `#[clause]` (which checks each name is a clause identifier), `#[derive(Pod)]`, `#[derive(Saved)]`, `declare_prim!`, `declare_fact!`, `declare_kind!`, `declare_stream!`, `declare_hazard!`. |
 
 **`phx-macros`.** `#[clause("…")]` emits its item unchanged and refuses, at compile time, any name that is not a
@@ -188,8 +188,10 @@ strictly increasing `i64` array in the registry, searched by `at_or_below` and `
 non-finite, out of range, zero divisor) is only for pure functions whose inputs meet it in a legal world.
 
 **`phx-id`.** Every id is `repr(transparent)` over its integer, `Copy`, `Eq`, `Ord` and `Hash`, with no `Default`
-and no `From` between ids. `PartyId(u64)` comes from the directory's one monotone counter, is never zero, stays below
-2⁶⁰ and is never reused; `LineId` and `InstrumentId` are never reused either; a `Slot` is a storage index and may be.
+and no `From` between ids. A party's lasting identity is its `PartyRef` — kind, generation and slot, which the directory
+(K-31) hands out and never hands out twice — and `packed` gives it in 56 bits, as a tombstone keys it and a draw's
+subject carries it; `PartyKey` is its place within the day, kind and slot. `LineId` and `InstrumentId` are never
+reused either; a `Slot` is a storage index and may be.
 `Day(u32)` counts days from the epoch of `data/world.toml`, with day zero the day before the first; `Day::succ` is
 checked and `Day::earlier`/`Day::later` are the named comparisons. `Date` is proleptic Gregorian, converted by
 Hinnant's algorithms over `i64` serials; a weekday is derived from the epoch's civil date, which the caller passes,
@@ -1097,8 +1099,8 @@ shrinks.
 Status: K-02, K-03 and K-05–K-10 built (S1.159–S1.168)
 
 Every store base implements `StoreStats` (`stats.rs`): its rows live now, its rows ever and its bytes, which the
-counters sample (K-15) and the world never reads. A kind's `Parties` and a table's `SlotAlloc` report their live and
-ever-handed slots and the bytes of their slots, generations and identities; `phx-core`'s `KindStore` adds its records, accounts and cash lines. The rows a walk visits are counted by the traversal that walks it, in
+counters sample (K-15) and the world never reads. The directory (K-31) and a table's `SlotAlloc` report their live and
+ever-handed slots and the bytes of their slots, generations and tombstones; `phx-core`'s `KindStore` adds its records, accounts and cash lines. The rows a walk visits are counted by the traversal that walks it, in
 `phx-exec`, since no `phx-store` code may share a counter across workers.
 
 #### K-01 Columns in reserved address space
@@ -1131,7 +1133,7 @@ free and appends it to the day's released list; `close_day` sorts the day's rele
 to the ring's tail. `Generations::alloc(&mut SlotAlloc)` takes a slot and raises its generation (a slot's first row is
 generation zero) and returns the `GenRef`; `resolve(&SlotAlloc, GenRef<T>)` is the live bit and one generation
 compare, branch-free, and refuses a reference of another table at compile time. `ShortRef::resolve(live, generation)`
-compares the byte, modulo 256. `Parties::begin` and `resolve` stand on these.
+compares the byte, modulo 256. The directory's `begin` and `resolve` (K-31) stand on these.
 
 **Algorithms and bounds**: which slot a row gets depends only on the order of allocations and releases (CHN.6); a slot
 released today is not handed out before the close (SET.7), and the free slot that has waited longest is handed out
@@ -2309,7 +2311,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written; S1.195–S1.211 planned)
+Status: building (K-31 written and followed; S1.196–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2338,15 +2340,21 @@ tombstones as one run (`directory_save.rs`, cold); the fence is laid again at lo
 (50–52), `begin_end_ns` 242 (181–193, the step's 100: each a slot's generation and live bit away from the last), and
 `mass_end_ns` 60.3 ms for a mass failure's 115 000 endings, as many begun, and the close (45–48 ms, the step's 12).
 
-**Today** (`phx-world`'s `core.rs`): `Core::key` finds a party's key by its identity.
+**Followed** (S1.195): the core keeps one directory over every kind it declares, each kind with its declared capacity's
+slots, its first day the opening's and its horizon `REP.tombstone_horizon_days` (two years, the longest horizon of a
+record that may name a party). `Core::begin_party` takes the directory's slot and writes the kind's record there;
+`Core::end_party` ends a party on its day naming the estate it leaves; the day's close closes the directory. Every
+whole-kind walk reads the directory's live slots, and every draw about a party is keyed by its packed reference
+(`Subject::from(PartyRef)`); a person draws under its own tag (`SubjectTag::Person`). No identity table is kept beside
+the reference; the directory is saved with the core. A table of nature's kind is refused (Law 5).
 
 #### K-32 Kind stores and windowed groups
 
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
 planned (S1.196–S1.206).
 
-**Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps its `Parties`,
-each party's record of `stride` words in one column, and, if it holds money, its accounts (bank, balance, pending,
+**Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps, at the slot the directory
+handed its party, each party's record of `stride` words in one column, and, if it holds money, its accounts (bank, balance, pending,
 held, facility) and cash lines, each a column indexed by slot, so a party begun in a released slot writes its own words
 over the ended one's; a kind of money requires an account at `begin` and any other refuses one. `books` makes
 settlement's `Books` from the kinds, and `deposits_of` sums what each bank owes. The population kinds are compiled from the systems' items (`kind::compile_kinds`): a kind is declared item by
@@ -2685,7 +2693,7 @@ pledged to carriers; the rest is free.
 - A party ends holding nothing (PTY.9).
 - A transformation is a flow with `NATURE` on the side a counterparty would stand: making, use, spoilage, a loss, a
   shipment's leaving and arriving. What accounts for it is its source. Nature's kind is the last of the 32
-  (`phx_id::consts::NATURE_KIND`), and `Parties::new` refuses a table of it. `Stocks::apply` applies a flow of units:
+  (`phx_id::consts::NATURE_KIND`), and the directory refuses a table of it. `Stocks::apply` applies a flow of units:
   the payer delivers from a bound, and the payee receives at a price paid, a making's cost, or what the units carried
   out.
 - A sale's goods leg (`GoodsLeg`) goes to the buyer, who holds it as a firm holds its inputs, or to nature with the
@@ -4203,8 +4211,8 @@ credited while the world holds it (GEN.10).
     | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs` (planned, S1.160), `IntentBuf`, `OptionSet` (planned, S1.154)); tests are not read; its exceptions file admits no site since S1.169 |
     | PC-98 | in PC-92's hot set, outside functions marked `#[opening]` (`phx-macros`: a marker on a function, emitted unchanged, refused on anything else), a read by name: a call of the register's readers (`count`, `fixed`, `table1`, `table2`, `products`, `stored_by_id`, `value`) or any method whose first argument is a string literal on a receiver held as `register` or `reg`; `==` or `!=` with a string literal; `.starts_with`, `.ends_with` or `.contains` of a string literal. A primitive, kind, family, reason or market is read by its handle, bound in the opening (Law 10); a literal in a message is no comparison; its exceptions file admits today's sites (S1.123) |
     | PC-99 | in PC-92's hot set, outside functions marked `#[cold]` (an error path) or `#[opening]`, the syntax of allocation: `Vec::new`, `Vec::with_capacity`, `Box::new`, `String::new`, `String::from`, `vec!`, `format!`, and `.collect()`, `.to_vec()`, `.to_owned()`, `.to_string()`, `.clone()`; a push into a kernel buffer is admitted, and the arguments of `violation!` and `capacity_exceeded!` are tokens, not calls; what the syntax cannot see the bench's allocation counter measures (K-15); its exceptions file admits today's sites (S1.124) |
-    | PC-100 | in a world crate, a field of a struct deriving `Saved` (not marked `#[saved(skip)]`) that names a party or row by where it is now: a map or set (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map) keyed by `u32`, `PartyKey`, `PartyId`, `Slot` or an edge slot, or by a tuple they lead; a `PartyMap`; a `Vec<(PartyKey, _)>`. It keys by a generation-checked reference (`PartyRef`, `GenRef<T>` (planned, S1.159), `ContractRef` (planned, S1.174)) or becomes its base's column (S1.125). And in a world crate outside tests, an absent value read as zero — `unwrap_or(0)`, `unwrap_or(0.0)`, `unwrap_or(…::ZERO)`, `map_or(0, …)`, `unwrap_or_default()` — outside a function marked `#[absent_is_zero(reason = "…")]` (`phx-macros`: a marker on a function whose reason is not empty, for an absence that truly is zero, a count of an entry not there) (S1.126); its exceptions file admits today's sites. And, with no exception, a literal capacity: a `const` named `*_ROWS`, `*_WORDS`, `*_CAPACITY` or `INSTRUMENTS` whose value is a shift of literals outside `phx-core`'s `capacity.rs`, or a shift of literals handed to a store's constructor (`Column`, `Parties`, `KindStore`, `Table`, `SlotAlloc`, `Region`, `EdgeTable`, `BlockPool`, `Persons`, `ChunkArena`); a chunk size stays an engineering constant (S1.127) |
-    | PC-22 | in `phx-audit`, outside tests, a world store (`Column`, `Table`, `SlotAlloc`, `Parties`, `KindStore`, `EdgeTable`, `ChunkArena`, `BlockList`, `BlockPool`, `Region`, `Persons`, `DueWheel`, `EventStore`, `Register`, `Calendar`, `Core`, `World`) held by `&mut`: the audit holds the world by shared reference; its reads of maintained aggregates are PC-101's (re-aimed at S1.128, the family context it named gone) |
+    | PC-100 | in a world crate, a field of a struct deriving `Saved` (not marked `#[saved(skip)]`) that names a party or row by where it is now: a map or set (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map) keyed by `u32`, `PartyKey`, `Slot` or an edge slot, or by a tuple they lead; a `PartyMap`; a `Vec<(PartyKey, _)>`. It keys by a generation-checked reference (`PartyRef`, `GenRef<T>` (planned, S1.159), `ContractRef` (planned, S1.174)) or becomes its base's column (S1.125). And in a world crate outside tests, an absent value read as zero — `unwrap_or(0)`, `unwrap_or(0.0)`, `unwrap_or(…::ZERO)`, `map_or(0, …)`, `unwrap_or_default()` — outside a function marked `#[absent_is_zero(reason = "…")]` (`phx-macros`: a marker on a function whose reason is not empty, for an absence that truly is zero, a count of an entry not there) (S1.126); its exceptions file admits today's sites. And, with no exception, a literal capacity: a `const` named `*_ROWS`, `*_WORDS`, `*_CAPACITY` or `INSTRUMENTS` whose value is a shift of literals outside `phx-core`'s `capacity.rs`, or a shift of literals handed to a store's constructor (`Column`, `Directory`, `KindStore`, `Table`, `SlotAlloc`, `Region`, `EdgeTable`, `BlockPool`, `Persons`, `ChunkArena`); a chunk size stays an engineering constant (S1.127) |
+    | PC-22 | in `phx-audit`, outside tests, a world store (`Column`, `Table`, `SlotAlloc`, `Directory`, `KindStore`, `EdgeTable`, `ChunkArena`, `BlockList`, `BlockPool`, `Region`, `Persons`, `DueWheel`, `EventStore`, `Register`, `Calendar`, `Core`, `World`) held by `&mut`: the audit holds the world by shared reference; its reads of maintained aggregates are PC-101's (re-aimed at S1.128, the family context it named gone) |
     | PC-101 | a field marked `#[maintained(writer = path)]` (the `Maintained` derive of `phx-macros`, which refuses a missing writer or a type that is no integer) whose type is no integer (`i8`–`i64`, `u8`–`u64`, or `phx-num`'s `Amount`, `Count`, `Money`, `Qty`, `QtyRaw`, `PriceRaw`, `Fixed`); and in `phx-audit`, outside tests, a field access naming any maintained field, which the audit recounts from source rows instead (N1's independence), a clash of names resolved by renaming (S1.128); and in a world crate, outside tests, a call of a function marked `#[per_day]` (`phx-macros`: a marker on a function, emitted unchanged), which is only ever named as a path handed to the day's cache (`DayCached::get_or` (planned, S1.211), K-35), so a per-day value is computed once a day (S1.129); and a field marked `#[saved(skip)]` without `rebuild = path`, its exceptions file admitting today's sites (S1.130) |
     | PC-94 | a name — an identifier, or a declared name in a string — in a world crate ending `_small` or `_large`: a mechanism split by size, where a firm is one kind whatever its size (S1.24) |
 

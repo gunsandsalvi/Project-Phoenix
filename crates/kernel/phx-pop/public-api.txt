@@ -15,12 +15,19 @@ pub phx_pop::directory::Resolved::EndedBeyondHorizon
 pub phx_pop::directory::Resolved::Live(phx_id::ids::Slot)  // used by: phx-fin
 pub struct phx_pop::directory::Directory<B: phx_store::backing::Backing>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_pop::directory::Directory<B>
+pub fn phx_pop::directory::Directory<B>::at(&self, u8, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-fin, phx-world
 pub fn phx_pop::directory::Directory<B>::begin(&mut self, u8) -> phx_id::ids::PartyRef  // used by: phx-fin
 pub fn phx_pop::directory::Directory<B>::close_day(&mut self, phx_id::day::Day) -> u64  // used by: phx-fin
 pub fn phx_pop::directory::Directory<B>::end(&mut self, phx_id::ids::PartyRef, phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyRef>)  // used by: phx-fin
 pub fn phx_pop::directory::Directory<B>::follow(&self, phx_id::ids::PartyRef) -> (phx_id::ids::PartyRef, phx_pop::directory::Resolved)  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::high_water(&self, u8) -> u32  // used by: phx-fin, phx-world
+pub fn phx_pop::directory::Directory<B>::is_live(&self, u8, phx_id::ids::Slot) -> bool  // used by: phx-fin, phx-world
+pub fn phx_pop::directory::Directory<B>::kind_numbers(&self) -> impl core::iter::traits::iterator::Iterator<Item = u8> + use<B>  // used by: phx-fin, phx-world
+pub fn phx_pop::directory::Directory<B>::kinds(&self) -> usize  // used by: phx-fin, phx-world
 pub fn phx_pop::directory::Directory<B>::live(&self, u8) -> u64  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::live_slots(&self, u8) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-fin, phx-world
 pub fn phx_pop::directory::Directory<B>::new(&mut phx_store::backing::AddressSpace, &[u32], u32, (phx_id::day::Day, u32)) -> phx_pop::directory::Directory<B>  // used by: phx-fin
+pub fn phx_pop::directory::Directory<B>::reference(&self, u8, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-fin, phx-world
 pub fn phx_pop::directory::Directory<B>::resolve(&self, phx_id::ids::PartyRef) -> phx_pop::directory::Resolved  // used by: phx-fin
 pub fn phx_pop::directory::Directory<B>::set_successor(&mut self, phx_id::ids::PartyRef, phx_id::ids::PartyRef)  // used by: phx-fin
 pub fn phx_pop::directory::Directory<B>::sort_endings(&mut self)  // used by: phx-fin
@@ -93,6 +100,7 @@ pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_
 pub mod phx_pop::prims  // used by: phx-cli, phx-core, phx-geo, phx-market, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
 pub struct phx_pop::prims::RepPrims  // used by: phx-world
 pub phx_pop::prims::RepPrims::persons: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_pop::prims::RepPrims::tombstone_horizon_days: phx_core::register::Prim<phx_num::qty::Count>
 impl phx_pop::prims::RepPrims
 pub fn phx_pop::prims::RepPrims::declare(&mut phx_core::system::Declarations) -> phx_pop::prims::RepPrims  // used by: phx-acct, phx-core, phx-geo, phx-market, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct phx_pop::prims::Representation  // used by: phx-cli, phx-world
@@ -105,3 +113,4 @@ pub fn phx_pop::prims::Representation::load(&mut phx_store::save::Reader<'_>) ->
 pub fn phx_pop::prims::Representation::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_pop::prims::Representation::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub const phx_pop::prims::PERSONS: phx_core::register::PrimDecl  // used by: phx-core
+pub const phx_pop::prims::TOMBSTONE_HORIZON_DAYS: phx_core::register::PrimDecl  // used by: phx-world

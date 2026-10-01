@@ -6,11 +6,12 @@ use std::collections::BTreeMap;
 
 use phx_exec::trace::{Reading, Spent};
 use phx_exec::{Pool, PoolSpec};
-use phx_id::PartyId;
+use phx_id::Day;
+use phx_pop::directory::Directory;
 use phx_rand::uniform::below_u64;
 use phx_store::consts::SAVE_FRAME_BYTES;
 use phx_store::hash::{frame_hash, frame_root};
-use phx_store::{AddressSpace, Parties, Pod, Reader, Saved, Transform, Writer, encode_rows};
+use phx_store::{AddressSpace, Pod, Reader, Saved, Transform, Writer, encode_rows};
 
 use crate::design::Design;
 use crate::fill::Streams;
@@ -30,6 +31,9 @@ const MB: f64 = 1_000_000.0;
 /// The ledger's lines no save holds: the build's code, the day's buffers, slack and the save's own buffers.
 const UNSAVED: [&str; 4] = ["process", "day buffers", "slack", "save buffers"];
 
+/// The days the directory keeps tombstones, two years.
+const HORIZON: u32 = 730;
+
 /// The key the frames are hashed under in the measure.
 const KEY: [u64; 2] = [3, 5];
 
@@ -40,7 +44,7 @@ type Row = [u64; 4];
 /// on, what the last pass rebuilt and the CPU it took, the encoding's rate a core, and the frames' hashing time.
 #[derive(Default)]
 pub struct Save {
-    parties: Option<Parties>,
+    parties: Option<Directory>,
     rows: Vec<Row>,
     saved_mb: f64,
     pool: Option<Pool>,
@@ -102,13 +106,14 @@ impl FinBase for Save {
         BASE
     }
 
-    /// `[store] directory_slots` parties begun in one kind's table.
+    /// `[store] directory_slots` parties begun in one kind's table of the directory.
     fn fill(&mut self, design: &Design, streams: &Streams) -> Result<Filled, FinError> {
         let rows = count(&design.store, "directory_slots", "store")?;
         let mut space = AddressSpace::empty();
-        let mut parties = Parties::new(&mut space, 1, slots(rows)?, phx_core::consts::CHUNK_ROWS);
-        for id in 1..=rows {
-            let _ = parties.begin(PartyId::new(id));
+        let mut parties: Directory =
+            Directory::new(&mut space, &[slots(rows)?], phx_core::consts::CHUNK_ROWS, (Day::new(0), HORIZON));
+        for _ in 0..rows {
+            let _ = parties.begin(0);
         }
         self.parties = Some(parties);
         // Words of mixed widths, as a row's identity, counts, amounts and dates encode, each row its own subject's draws.
@@ -139,7 +144,7 @@ impl FinBase for Save {
         w.finish().map_err(|e| FinError(e.to_string()))?;
         let mut source = bytes.as_slice();
         let mut r = Reader::new(&mut source).map_err(|e| FinError(e.to_string()))?;
-        let mut back: Parties = Parties::load(&mut r).map_err(|e| FinError(format!("{e:?}")))?;
+        let mut back: Directory = Directory::load(&mut r).map_err(|e| FinError(format!("{e:?}")))?;
         let (rebuilt, spent) = m.read(BASE, "rebuild", 1, || {
             let before = Reading::now();
             let rebuilt = phx_store::rebuild(&mut back);

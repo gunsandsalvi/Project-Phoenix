@@ -7,7 +7,7 @@ use phx_num::Missing;
 
 use crate::consts::{
     FAMILY_BITS, FAMILY_SLOT_BITS, GENERATION_BITS, GENERATION_SHIFT, KEY_KIND_BITS, KEY_SLOT_BITS, KIND_SHIFT,
-    PARTY_ID_BITS, SYSTEM_CODE_MAX,
+    SYSTEM_CODE_MAX,
 };
 
 /// An identifier over one raw width: comparable and hashable, never defaulted, never converted into another kind.
@@ -61,33 +61,6 @@ id!(
 );
 id!(StreamId(u32));
 
-/// A party's identity: allocated once from one monotone counter and never reused. It is never zero, but is held as a
-/// plain integer so that every stored bit pattern is some identity.
-#[must_use]
-#[repr(transparent)]
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Debug)]
-pub struct PartyId(u64);
-
-impl PartyId {
-    /// Zero is no party; an identity at or above 2^60 would not fit a random draw's subject.
-    #[clause("PTY.1")]
-    pub fn new(raw: u64) -> PartyId {
-        if raw == 0 {
-            violation!(clause = "PTY.1", "party identity zero");
-        }
-        let limit = 1_u64 << PARTY_ID_BITS;
-        if raw >= limit {
-            capacity_exceeded!("party identity bits", limit, raw);
-        }
-        PartyId(raw)
-    }
-
-    #[must_use]
-    pub const fn get(self) -> u64 {
-        self.0
-    }
-}
-
 /// Where a party is held: its kind's table, its slot there, and the slot's generation when it took the party, so a
 /// reference kept past the party's end is known stale once the slot holds another.
 #[clause("PTY.1", "PTY.10")]
@@ -135,6 +108,25 @@ impl PartyRef {
     /// The party's place within the day.
     pub fn key(self) -> PartyKey {
         PartyKey::new(self.kind(), self.slot())
+    }
+
+    /// The reference in the fewest bits that hold it, its key above its generation: as a tombstone keys it and a
+    /// draw's subject carries it.
+    #[must_use]
+    pub fn packed(self) -> u64 {
+        u64::from(self.key().word()) << GENERATION_BITS | u64::from(self.generation())
+    }
+
+    /// A reference from its packed bits; bits past a key's stop the run.
+    pub fn from_packed(packed: u64) -> PartyRef {
+        let generation = packed & ((1 << GENERATION_BITS) - 1);
+        match (u32::try_from(packed >> GENERATION_BITS), u32::try_from(generation)) {
+            (Ok(key), Ok(g)) => {
+                let key = PartyKey::from_word(key);
+                PartyRef::new(key.kind(), g, key.slot())
+            }
+            _ => violation!(clause = "PTY.13", "packed bits past a reference's", packed = packed),
+        }
     }
 }
 

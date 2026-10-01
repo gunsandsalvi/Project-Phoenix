@@ -4,8 +4,9 @@
 //! own opening (`core_open`).
 
 use phx_id::consts::NATURE_KIND;
-use phx_id::{PartyId, PartyKey, Slot};
+use phx_id::{PartyKey, PartyRef};
 use phx_num::violation;
+use phx_pop::directory::Directory;
 use phx_pop::persons::Persons;
 use phx_store::{AddressSpace, SystemBacking};
 
@@ -19,8 +20,8 @@ pub struct RunCounts {
     pub sales: phx_exec::Tally,
 }
 
-/// Each kind's parties on the core, the persons of the kind that holds them, and every party's key by its identity,
-/// sorted.
+/// Each kind's parties on the core: their slots and generations in the directory, their records in the kinds' stores,
+/// and the persons of the kind that holds them.
 #[derive(Debug, phx_macros::Saved)]
 pub struct Core {
     #[saved(skip)]
@@ -30,7 +31,7 @@ pub struct Core {
     pub names: Vec<&'static str>,
     pub kinds: Vec<KindStore<SystemBacking>>,
     pub persons: Vec<Option<Persons<SystemBacking>>>,
-    pub keys: Vec<(PartyId, PartyKey)>,
+    pub directory: Directory<SystemBacking>,
     /// Each country's central bank, the issuer of its currency, by the currency's index.
     pub issuers: Vec<PartyKey>,
     pub bank_kind: Option<u8>,
@@ -82,7 +83,7 @@ pub struct Core {
     pub decisions: crate::core_decide::Decisions,
     /// The player's household, its intents and each day a decision came for it.
     pub player: crate::core_player::PlayerDesk,
-    /// The next identity the core hands a party or person it begins.
+    /// The next identity the core hands a person it begins.
     pub next_id: u64,
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.
     pub banks_of: Vec<Vec<(u32, u64)>>,
@@ -209,8 +210,9 @@ impl Core {
 
     /// Each kind's parties, for the bench's trace.
     pub(crate) fn note_parties(&self) {
-        for (kind, store) in self.names.iter().zip(&self.kinds) {
-            phx_exec::trace::note(kind, &[("parties", phx_exec::trace::count(store.parties.live_slots().count()))]);
+        for (place, kind) in self.names.iter().enumerate() {
+            let live = i64::try_from(self.directory.live(kind_number(place))).unwrap_or(i64::MAX);
+            phx_exec::trace::note(kind, &[("parties", live)]);
         }
     }
 
@@ -243,7 +245,9 @@ pub(crate) fn declared_kind(kind: Option<usize>) -> usize {
     }
 }
 
-pub(crate) fn kind_number(place: usize) -> u8 {
+/// A kind's number from its place among the kinds; a place past what a key names stops the run.
+#[must_use]
+pub fn kind_number(place: usize) -> u8 {
     match u8::try_from(place) {
         Ok(k) if k < NATURE_KIND => k,
         _ => violation!(clause = "REP.1", "more kinds of party than a key can name", kind = place),
@@ -263,20 +267,38 @@ impl Core {
         persons.of(household.slot()).nth(place).map(|p| p.id)
     }
 
-    /// A party's key on the core, none for a party it does not hold.
+    /// The reference of the party at a key, live or ended this day; none for a slot never handed out.
     #[must_use]
-    pub fn key(&self, party: PartyId) -> Option<PartyKey> {
-        self.keys.binary_search_by_key(&party, |(id, _)| *id).ok().and_then(|i| self.keys.get(i)).map(|(_, k)| *k)
+    pub fn reference(&self, key: PartyKey) -> Option<PartyRef> {
+        self.directory.reference(key.kind(), key.slot())
+    }
+
+    /// The live party at a key ended on a day, naming its estate where it leaves one; a party already ended stays so.
+    pub(crate) fn end_party(&mut self, key: PartyKey, day: phx_id::Day, estate: Option<PartyKey>) {
+        let successor = match estate.and_then(|e| self.reference(e)) {
+            Some(e) => phx_num::Missing::Present(e),
+            None => phx_num::Missing::Absent,
+        };
+        if let Some(party) = self.directory.at(key.kind(), key.slot()) {
+            self.directory.end(party, day, successor);
+        }
+    }
+
+    /// The live slots of the kind at a place among the kinds.
+    pub fn live_slots(&self, place: usize) -> impl Iterator<Item = phx_id::Slot> + '_ {
+        self.directory.live_slots(kind_number(place))
+    }
+
+    /// Whether the party at a key lives.
+    #[must_use]
+    pub fn lives(&self, key: PartyKey) -> bool {
+        self.directory.is_live(key.kind(), key.slot())
     }
 
     /// The parties of a kind the core holds, by the kind's name.
     #[must_use]
     pub fn count(&self, name: &str) -> u64 {
-        self.names
-            .iter()
-            .position(|n| *n == name)
-            .and_then(|i| self.kinds.get(i))
-            .map_or(0, |k| k.parties.live_slots().map(|_: Slot| 1_u64).sum())
+        self.names.iter().position(|n| *n == name).map_or(0, |i| self.directory.live(kind_number(i)))
     }
 
     /// The persons every household on the core holds.

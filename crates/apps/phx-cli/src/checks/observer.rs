@@ -19,7 +19,7 @@ fn player_decides(w: Inspector<'_>) -> Outcome {
     let Some(store) = core.kinds.get(usize::from(key.kind())) else {
         return Outcome::Fail("the player's household is of no kind".to_owned());
     };
-    if store.parties.at(key.slot()).is_none() {
+    if !core.lives(key) {
         return Outcome::Fail(format!("the player's household {} is not live", key.word()));
     }
     let region = core.declared.household.as_ref().and_then(|d| match d.sited_by {

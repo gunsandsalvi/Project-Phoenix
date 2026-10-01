@@ -1,7 +1,7 @@
 //! A process that acts on the persons of a population's agents: a person's daily chance of a hit, read by the
 //! kernel's draw, and its outcome on the household the hit reached, made explicit by the kernel.
 
-use phx_id::{CountryId, Date, PartyId};
+use phx_id::{CountryId, Date, PartyRef};
 use phx_macros::clause;
 
 use crate::register::Register;
@@ -11,7 +11,7 @@ use crate::register::Register;
 /// it is taken: by the rule at its decider's preferences, by the player's queued intent, or not that day.
 pub struct AgentView<'a> {
     pub kind: &'static str,
-    pub party: PartyId,
+    pub party: PartyRef,
     pub attr: &'a dyn Fn(&str) -> Option<u32>,
     pub country_of: &'a dyn Fn(u32) -> Option<CountryId>,
     pub date: Date,

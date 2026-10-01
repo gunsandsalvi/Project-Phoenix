@@ -164,10 +164,33 @@ fn empty_kind_empty_store() {
     let mut space = phx_store::AddressSpace::empty();
     let store: phx_core::store::KindStore<phx_store::SystemBacking> = phx_core::store::KindStore::new(
         &mut space,
-        0,
         crate::consts::KIND_ROWS_PER_CHUNK,
         crate::consts::KIND_ROWS_PER_CHUNK,
         1,
     );
-    assert_eq!(store.parties.live_slots().count(), 0);
+    assert_eq!(phx_store::StoreStats::rows_ever(&store), 0);
+}
+
+#[test]
+fn reference_names_party_without_table() {
+    use phx_id::Day;
+    use phx_num::{MaybeI64, Missing};
+    use phx_pop::directory::{Directory, Resolved};
+
+    // An estate's party, begun at the directory's slot and ended into its estate, is named by its reference alone.
+    let mut space = phx_store::AddressSpace::empty();
+    let rows = crate::consts::KIND_ROWS_PER_CHUNK;
+    let mut dir: Directory = Directory::new(&mut space, &[rows, rows], rows, (Day::new(0), 2));
+    let mut firms: phx_core::store::KindStore<phx_store::SystemBacking> =
+        phx_core::store::KindStore::new(&mut space, rows, rows, 1);
+    let firm = firms.begin(dir.begin(0), &[MaybeI64::present(7)], None);
+    let estate = dir.begin(1);
+    assert_eq!(dir.resolve(firm), Resolved::Live(firm.slot()));
+    dir.end(firm, Day::new(1), Missing::Present(estate));
+    assert_eq!(dir.resolve(firm), Resolved::Ended { day: Day::new(1), successor: Missing::Present(estate) });
+    let _ = dir.close_day(Day::new(1));
+    let again = firms.begin(dir.begin(0), &[MaybeI64::present(8)], None);
+    assert_eq!(again.slot(), firm.slot(), "the slot is handed out again after the day closes");
+    assert_ne!(again, firm, "at its next generation, so the old reference still names the ended party");
+    assert_eq!(dir.follow(firm), (estate, Resolved::Live(estate.slot())));
 }

@@ -49,9 +49,11 @@ pub enum SubjectTag {
     Opening,
     /// A joint value of a population kind's profile group, as an event names the members a hit reached.
     ProfileValue,
+    /// A person, by its own identity, apart from the household it belongs to.
+    Person,
 }
 
-const TAGS: [SubjectTag; 12] = [
+const TAGS: [SubjectTag; 13] = [
     SubjectTag::World,
     SubjectTag::Party,
     SubjectTag::Part,
@@ -64,6 +66,7 @@ const TAGS: [SubjectTag; 12] = [
     SubjectTag::Instrument,
     SubjectTag::Opening,
     SubjectTag::ProfileValue,
+    SubjectTag::Person,
 ];
 
 /// A tagged identity: four bits of tag above sixty bits of identity.

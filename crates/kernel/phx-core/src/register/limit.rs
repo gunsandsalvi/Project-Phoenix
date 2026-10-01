@@ -1,4 +1,4 @@
-use phx_id::{CountryId, Day, PartyId};
+use phx_id::{CountryId, Day, PartyRef};
 use phx_macros::clause;
 use phx_num::{Amount, Count, Money, Qty, QtyRaw, violation};
 
@@ -173,7 +173,7 @@ impl<T: Copy> Bound<T> {
 /// A limit that bound a party's want on a day: an event its party reads.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Binding {
-    pub party: PartyId,
+    pub party: PartyRef,
     pub day: Day,
     pub excess: i128,
 }
@@ -187,7 +187,7 @@ pub struct Bindings {
 impl Bindings {
     /// The part taken, recording the binding when the want exceeded the limit.
     #[clause("Law 6")]
-    pub fn take<T: Limited>(&mut self, party: PartyId, day: Day, bound: Bound<T>) -> T {
+    pub fn take<T: Limited>(&mut self, party: PartyRef, day: Day, bound: Bound<T>) -> T {
         let excess = bound.excess.smallest_units();
         if excess != 0 {
             self.records.push(Binding { party, day, excess });
@@ -210,7 +210,7 @@ impl Bindings {
 mod tests {
     use phx_num::{Amount, Ccy, Money};
 
-    use phx_id::{Day, PartyId};
+    use phx_id::{Day, PartyRef};
 
     use super::{Binding, Bindings, DeclaredLimit, TermsToken};
 
@@ -218,7 +218,7 @@ mod tests {
     fn declared_limit_binds_and_reports_excess() {
         let limit = DeclaredLimit::from_terms(TermsToken::new(), Amount::from_raw(100));
         let mut bindings = Bindings::default();
-        let (party, day) = (PartyId::new(7), Day::new(3));
+        let (party, day) = (PartyRef::new(0, 0, phx_id::Slot::new(7)), Day::new(3));
         let bound = limit.bind(Amount::from_raw(120));
         assert_eq!(bound.excess(), Amount::from_raw(20));
         assert_eq!(bindings.take(party, day, bound), Amount::from_raw(100));

@@ -1,6 +1,3 @@
-/// Party identities stay below 2^60, the identity bits a random draw's subject carries.
-pub const PARTY_ID_BITS: u32 = 60;
-
 /// A system's code is two to four capital letters.
 pub const SYSTEM_CODE_MAX: usize = 4;
 

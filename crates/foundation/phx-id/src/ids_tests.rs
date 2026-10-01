@@ -1,24 +1,10 @@
 //! Identities and references over hand-given values: their widths packed and refused past, and staleness told.
 #![cfg(test)]
 
-use phx_num::{CapacityExceeded, Missing, Violation};
+use phx_num::{CapacityExceeded, Missing};
 
-use super::{ContractLink, ContractRef, HoldingRef, PartyId, PartyKey, PartyRef, SystemCode, TableRef};
+use super::{ContractLink, ContractRef, HoldingRef, PartyKey, PartyRef, SystemCode, TableRef};
 use crate::Slot;
-
-#[test]
-fn party_id_refuses_2_pow_60() {
-    assert_eq!(PartyId::new((1 << 60) - 1).get(), (1 << 60) - 1);
-    let Err(payload) = std::panic::catch_unwind(|| PartyId::new(1 << 60)) else {
-        panic!("2^60 accepted");
-    };
-    let c = payload.downcast_ref::<CapacityExceeded>().expect("a capacity payload");
-    assert_eq!((c.declared, c.needed), (1 << 60, 1 << 60));
-    let Err(payload) = std::panic::catch_unwind(|| PartyId::new(0)) else {
-        panic!("zero accepted");
-    };
-    assert_eq!(payload.downcast_ref::<Violation>().expect("a violation").clause, "PTY.1");
-}
 
 #[test]
 fn system_codes_are_two_to_four_capitals() {
@@ -86,4 +72,13 @@ fn table_ref_packs_slot_and_generation() {
     let h = HoldingRef::from_parts(Slot::new(0xdead_beef), 0x0102_0304);
     assert_eq!((h.slot().get(), h.generation()), (0xdead_beef, 0x0102_0304));
     assert_eq!(HoldingRef::from_word(h.word()), h);
+}
+
+#[test]
+fn a_reference_packs_into_its_key_and_generation() {
+    let r = PartyRef::new(31, (1 << 24) - 1, Slot::new((1 << 27) - 1));
+    assert_eq!(r.packed(), (1 << 56) - 1, "kind, slot and generation fill 56 bits");
+    assert_eq!(PartyRef::from_packed(r.packed()), r);
+    let small = PartyRef::new(2, 5, Slot::new(9));
+    assert_eq!(small.packed(), u64::from(small.key().word()) << 24 | 5);
 }

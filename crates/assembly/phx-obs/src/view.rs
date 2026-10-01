@@ -3,7 +3,7 @@
 
 use std::sync::Arc;
 
-use phx_id::{Day, PartyId};
+use phx_id::{Day, PartyRef};
 use phx_macros::clause;
 use phx_num::Missing;
 use phx_world::Inspector;
@@ -21,7 +21,7 @@ pub struct View {
     pub reads: Vec<(String, Missing<i128>)>,
     pub histograms: Vec<(String, Histogram)>,
     /// For each histogram, the bin of each agent of a fixed sample, so its moves within it are read between two views.
-    pub sampled: Vec<Vec<(PartyId, Option<usize>)>>,
+    pub sampled: Vec<Vec<(PartyRef, Option<usize>)>>,
 }
 
 /// What a histogram reads of each agent.
@@ -113,8 +113,9 @@ impl Views {
             else {
                 continue;
             };
+            let Ok(kind) = u8::try_from(r.kind) else { continue };
             let mut sample = Vec::new();
-            for slot in store.parties.live_slots() {
+            for slot in core.directory.live_slots(kind) {
                 let value = match r.of {
                     Of::Persons => i64::try_from(persons.map_or(0, |p| p.count(slot))).unwrap_or(i64::MAX),
                     Of::Attr(attr) => match store.record(slot).get(attr).map(|w| w.get()) {
@@ -127,8 +128,8 @@ impl Views {
                         .map_or(0, |f| i64::try_from(f.store.of(side, slot).count()).unwrap_or(i64::MAX)),
                 };
                 h.add(value, 1);
-                let Some(party) = store.parties.id(slot) else { continue };
-                if party.get() % MOBILITY_SAMPLE == 0 {
+                let Some(party) = core.directory.at(kind, slot) else { continue };
+                if u64::from(slot.get()) % MOBILITY_SAMPLE == 0 {
                     sample.push((party, h.bin_of(value)));
                 }
             }

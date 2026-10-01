@@ -56,12 +56,8 @@ impl Core {
                 Missing::Absent => None,
             };
             let mean = laws.get(i).map(|l| l.mean_monthly * crate::consts::MONTHS_A_YEAR);
-            let payee = self
-                .treasuries
-                .get(i)
-                .copied()
-                .flatten()
-                .and_then(|k| self.kinds.get(usize::from(k.kind()))?.parties.id(k.slot()));
+            let payee =
+                self.treasuries.get(i).copied().flatten().and_then(|k| self.directory.reference(k.kind(), k.slot()));
             s.withholding.push(tax.as_ref().zip(mean).zip(payee).map(|((t, mean), payee)| {
                 phx_ledger::levy::Withholding {
                     kind: 0,
@@ -260,7 +256,7 @@ impl Core {
             let rate = sys_bnk::rate(c.derived("GEN.lending_rate").ok_or("no lending rate")?);
             let ccy = phx_ledger::opening::currency(c.id);
             let mut firms: Vec<(PartyKey, u64)> = Vec::new();
-            for slot in self.kinds.get(firm).map(|k| k.parties.live_slots().collect::<Vec<_>>()).unwrap_or_default() {
+            for slot in self.directory.live_slots(crate::core::kind_number(firm)).collect::<Vec<_>>() {
                 let read = |at: usize| match self.kinds.get(firm)?.record(slot).get(at).map(|w| w.get()) {
                     Some(Missing::Present(v)) => Some(v),
                     _ => None,

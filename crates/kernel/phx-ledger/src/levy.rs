@@ -48,7 +48,7 @@ fn yearly_levy(yearly: i64, bands: &[Band]) -> i64 {
 pub struct Withholding {
     pub kind: u16,
     pub ccy: phx_num::Ccy,
-    pub payee: phx_id::PartyId,
+    pub payee: phx_id::PartyRef,
     pub bands: Vec<Band>,
     pub periods: i64,
 }
@@ -82,7 +82,7 @@ mod tests {
         let w = super::Withholding {
             kind: 0,
             ccy: phx_num::Ccy::new(0),
-            payee: phx_id::PartyId::new(1),
+            payee: phx_id::PartyRef::new(0, 0, phx_id::Slot::new(1)),
             bands: vec![Band { from: 0, share: 0 }, Band { from: 12_000, share: 2 * TENTH }],
             periods: 12,
         };

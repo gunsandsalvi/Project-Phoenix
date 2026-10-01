@@ -61,7 +61,7 @@ impl Core {
         };
         let mut firms: Vec<(Slot, u16, u32, u32)> = Vec::new();
         if let Some(store) = self.kinds.get(firm) {
-            for s in store.parties.live_slots() {
+            for s in self.directory.live_slots(crate::core::kind_number(firm)) {
                 let (Some(p), Some(r), Some(t)) =
                     (word(store, s, PRODUCT), word(store, s, REGION), word(store, s, SITE))
                 else {

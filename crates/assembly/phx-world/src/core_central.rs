@@ -262,9 +262,7 @@ impl Core {
         if let Some(buf) = work.fund.chunks_mut().first_mut() {
             buf.extend_from_slice(&flows);
         }
-        let banks = self.bank_kind.map_or(0, |b| {
-            usize::try_from(self.kinds.get(usize::from(b)).map_or(0, |k| k.parties.high_water())).unwrap_or(0)
-        });
+        let banks = self.bank_kind.map_or(0, |b| usize::try_from(self.directory.high_water(b)).unwrap_or(0));
         let mut deposits = deposits_of(self.kinds.iter(), banks);
         let closed = vec![false; banks];
         let mut failed: Vec<Flow> = Vec::new();
@@ -437,9 +435,7 @@ impl Core {
 
     /// Each bank's deposits, what it owes its customers.
     pub(crate) fn bank_deposits(&self) -> Vec<i64> {
-        let banks = self.bank_kind.map_or(0, |b| {
-            usize::try_from(self.kinds.get(usize::from(b)).map_or(0, |k| k.parties.high_water())).unwrap_or(0)
-        });
+        let banks = self.bank_kind.map_or(0, |b| usize::try_from(self.directory.high_water(b)).unwrap_or(0));
         deposits_of(self.kinds.iter(), banks)
     }
 

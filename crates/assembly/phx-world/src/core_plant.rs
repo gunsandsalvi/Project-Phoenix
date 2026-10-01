@@ -262,9 +262,8 @@ impl Core {
             return;
         }
         let mut holders: Vec<PartyKey> = Vec::new();
-        for (k, store) in self.kinds.iter().enumerate() {
-            let Ok(kind) = u8::try_from(k) else { continue };
-            holders.extend(store.parties.live_slots().map(|s| PartyKey::new(kind, s)));
+        for kind in self.directory.kind_numbers() {
+            holders.extend(self.directory.live_slots(kind).map(|s| PartyKey::new(kind, s)));
         }
         let chains = self.plant.chains.clone();
         for holder in holders {

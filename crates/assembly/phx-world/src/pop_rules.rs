@@ -2,7 +2,7 @@
 //! and stream; a household's persons' chances read on a day; and a booking come due followed on to its hits.
 
 use phx_core::{ActsOn, AgentView, Declarations, Household, PopProcess, Register, StreamDecl};
-use phx_id::{CountryId, Day, PartyId};
+use phx_id::{CountryId, Day, PartyRef};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_pop::hazard::{Booking, any_hit, next_booking, reached};
@@ -109,7 +109,7 @@ pub(crate) struct Reading<'a> {
 #[clause("REP.7", "REP.25")]
 pub(crate) fn chances(
     reading: &Reading<'_>,
-    (kind, party): (&'static str, PartyId),
+    (kind, party): (&'static str, PartyRef),
     bound: &Bound,
     household: &Household,
     day: Day,
@@ -127,7 +127,7 @@ pub(crate) fn chances(
         s.qs.push(bound.process.rate(reading.register, &view, person));
         if let Some(on) = bound.process.changes_after(person, date) {
             let Some(on) = reading.calendar.day(on) else {
-                violation!(clause = "TIME.2", "a person's chance changing before the epoch", party = party.get());
+                violation!(clause = "TIME.2", "a person's chance changing before the epoch", party = party.word());
             };
             change = Some(match change {
                 Some(earlier) if earlier <= on => earlier,
@@ -186,7 +186,7 @@ pub(crate) struct Followed {
 #[clause("REP.7", "REP.12", "CHN.4")]
 pub(crate) fn follow(
     r: &Reading<'_>,
-    who: (&'static str, PartyId),
+    who: (&'static str, PartyRef),
     b: &Bound,
     (h, buffers): (&Household, &mut Buffers),
     (today, start): (Day, (Day, bool)),
@@ -221,7 +221,7 @@ pub(crate) fn follow(
 /// returned, the day any may change.
 fn open(
     r: &Reading<'_>,
-    (who, b, h): ((&'static str, PartyId), &Bound, &Household),
+    (who, b, h): ((&'static str, PartyRef), &Bound, &Household),
     day: Day,
     reached_all: &[usize],
     s: &mut Buffers,
@@ -248,8 +248,8 @@ mod tests {
     use phx_pop::kind::PopKindDecl;
 
     use phx_core::Household;
-    use phx_id::{Day, PartyId};
-    use phx_rand::{Draws, Subject, SubjectTag};
+    use phx_id::{Day, PartyRef};
+    use phx_rand::{Draws, Subject};
 
     use super::{Buffers, Reading, bind_one, follow};
 
@@ -363,8 +363,8 @@ mod tests {
                 for (k, h) in chunk {
                     let k = u32::try_from(*k).unwrap();
                     let start = (Day::new(400 - k * 7), k % 2 == 0);
-                    let id = PartyId::new(u64::from(k) + 1);
-                    let mut draws = Draws::new(key, Subject::new(SubjectTag::Party, id.get()), today.get(), 0);
+                    let id = PartyRef::new(0, 0, phx_id::Slot::new(k));
+                    let mut draws = Draws::new(key, Subject::from(id), today.get(), 0);
                     let f = follow(&reading, ("household", id), &bound, (h, &mut buffers), (today, start), &mut draws);
                     out.push((f.reached, f.next));
                 }

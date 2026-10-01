@@ -1,4 +1,4 @@
-use phx_id::PartyId;
+use phx_id::PartyRef;
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 
@@ -248,7 +248,7 @@ impl Say {
 /// A player's intent for one decision point, as queued for the next turn.
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct QueuedIntent {
-    pub party: PartyId,
+    pub party: PartyRef,
     pub point: &'static str,
     pub words: Vec<i64>,
 }

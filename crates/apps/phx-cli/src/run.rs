@@ -308,21 +308,22 @@ fn apportioned_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
         .collect()
 }
 
-/// The opening's writes, every party's: its kind, its identity, the bank its account is at and the money written to
+/// The opening's writes, every party's: its kind, its reference, the bank its account is at and the money written to
 /// it, as the GEN report lists them, in the run's own directory.
 fn write_opening(w: Inspector<'_>, path: &Path) -> Result<(), String> {
     use std::fmt::Write as _;
-    let mut text = String::from("kind,identity,bank,amount\n");
+    let mut text = String::from("kind,reference,bank,amount\n");
     let core = w.core();
-    for (name, store) in core.names.iter().zip(&core.kinds) {
+    for (place, (name, store)) in core.names.iter().zip(&core.kinds).enumerate() {
         let Some(a) = store.accounts.as_ref() else { continue };
-        for slot in store.parties.live_slots() {
+        for slot in core.live_slots(place) {
+            let key = phx_id::PartyKey::new(phx_world::core::kind_number(place), slot);
             let (Some(id), Some(bank), Some(m), Some(p)) =
-                (store.parties.id(slot), a.bank.get(slot), a.balance.get(slot), a.pending.get(slot))
+                (core.reference(key), a.bank.get(slot), a.balance.get(slot), a.pending.get(slot))
             else {
                 continue;
             };
-            writeln!(text, "{name},{},{bank},{}", id.get(), i128::from(m) + i128::from(p))
+            writeln!(text, "{name},{},{bank},{}", id.word(), i128::from(m) + i128::from(p))
                 .map_err(|e| e.to_string())?;
         }
     }

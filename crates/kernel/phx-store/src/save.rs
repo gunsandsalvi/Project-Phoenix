@@ -764,7 +764,7 @@ pub(crate) fn capacity<T>(r: &mut Reader<'_>) -> Result<usize, LoadError> {
 mod tests {
     use std::collections::BTreeMap;
 
-    use phx_id::{PartyId, Slot, TableId};
+    use phx_id::{PartyKey, Slot, TableId};
     use phx_num::Missing;
 
     use super::{LoadError, Reader, Saved, Writer};
@@ -776,7 +776,7 @@ mod tests {
     use crate::table::Table;
 
     type Heap = HeapBacking<4096>;
-    type Value = (BTreeMap<PartyId, (i128, Missing<String>)>, Vec<Option<f64>>, bool);
+    type Value = (BTreeMap<PartyKey, (i128, Missing<String>)>, Vec<Option<f64>>, bool);
 
     fn write(f: impl FnOnce(&mut Writer<'_>)) -> Vec<u8> {
         let mut out = Vec::new();
@@ -832,9 +832,9 @@ mod tests {
 
     #[test]
     fn values_roundtrip() {
-        let map: BTreeMap<PartyId, (i128, Missing<String>)> = [
-            (PartyId::new(3), (-7, Missing::Present("bank".to_owned()))),
-            (PartyId::new(9), (i128::MAX, Missing::Absent)),
+        let map: BTreeMap<PartyKey, (i128, Missing<String>)> = [
+            (PartyKey::new(0, Slot::new(3)), (-7, Missing::Present("bank".to_owned()))),
+            (PartyKey::new(0, Slot::new(9)), (i128::MAX, Missing::Absent)),
         ]
         .into();
         let v: Value = (map, vec![Some(1.5_f64), None], true);
@@ -847,7 +847,7 @@ mod tests {
     enum Shape {
         Empty,
         Pair(u8, i64),
-        Named { name: String, at: Missing<PartyId> },
+        Named { name: String, at: Missing<PartyKey> },
     }
 
     #[derive(Debug, PartialEq, phx_macros::Saved)]
@@ -896,7 +896,7 @@ mod tests {
             shapes: vec![
                 Shape::Empty,
                 Shape::Pair(4, -9),
-                Shape::Named { name: "reserves".to_owned(), at: Missing::Present(PartyId::new(2)) },
+                Shape::Named { name: "reserves".to_owned(), at: Missing::Present(PartyKey::new(0, Slot::new(2))) },
             ],
             index: vec![1, 2],
         };

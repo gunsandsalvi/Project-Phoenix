@@ -176,7 +176,7 @@ const INSTRUMENTS: &str = "INSTRUMENTS";
 /// The stores whose constructors take a capacity.
 const STORES: &[&str] = &[
     "Column",
-    "Parties",
+    "Directory",
     "KindStore",
     "Table",
     "SlotAlloc",

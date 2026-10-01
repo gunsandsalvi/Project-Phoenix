@@ -616,10 +616,10 @@ pub fn phx_core::contribution::Adjustment::rebuild_derived(&mut self, &mut phx_s
 pub fn phx_core::contribution::Adjustment::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::contribution::Apportioned  // used by: phx-world
 pub phx_core::contribution::Apportioned::drawn: u64  // used by: phx-fin, phx-world, sys-dem
-pub phx_core::contribution::Apportioned::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
+pub phx_core::contribution::Apportioned::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
 pub phx_core::contribution::Apportioned::realised: u64  // used by: phx-cli, phx-world
 pub phx_core::contribution::Apportioned::stratum: alloc::string::String  // used by: phx-cli, phx-world
-impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyRef: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::Apportioned::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -628,17 +628,17 @@ pub phx_core::contribution::GenReport::adjustments: alloc::vec::Vec<phx_core::co
 pub phx_core::contribution::GenReport::agent_issuers: u64
 pub phx_core::contribution::GenReport::apportioned: u64  // used by: phx-cli, phx-world
 pub phx_core::contribution::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>  // used by: phx-cli, phx-world
-pub phx_core::contribution::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>  // used by: phx-check, phx-world
+pub phx_core::contribution::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyRef, i128)>  // used by: phx-check, phx-world
 pub phx_core::contribution::GenReport::unfounded: alloc::vec::Vec<phx_core::contribution::Apportioned>  // used by: phx-cli, phx-world
-pub phx_core::contribution::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyId>  // used by: phx-cli, phx-macros, phx-world
+pub phx_core::contribution::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyRef>  // used by: phx-cli, phx-macros, phx-world
 pub phx_core::contribution::GenReport::writes: u64  // used by: phx-check
 impl phx_core::contribution::GenReport
 pub fn phx_core::contribution::GenReport::apportion(&mut self, phx_core::contribution::Apportioned)  // used by: phx-cli, phx-fin, phx-geo, phx-num, phx-world, sys-dem
-pub fn phx_core::contribution::GenReport::close(&mut self, alloc::vec::Vec<phx_id::ids::PartyId>) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-store, phx-world, sys-frm
-pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyId) -> bool  // used by: phx-check, phx-macros, phx-num, phx-world, sys-cap, sys-frm, sys-tec
+pub fn phx_core::contribution::GenReport::close(&mut self, alloc::vec::Vec<phx_id::ids::PartyRef>) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-frm
+pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyRef) -> bool  // used by: phx-check, phx-fin, phx-macros, phx-num, phx-world, sys-cap, sys-frm, sys-tec
 pub fn phx_core::contribution::GenReport::new(core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>) -> phx_core::contribution::GenReport  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contribution::WriteRecord)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
+impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyRef>: phx_store::save::Saved + core::default::Default, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyRef, i128)>: phx_store::save::Saved, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::GenReport::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -673,10 +673,10 @@ pub fn phx_core::contribution::OpeningCtx<'a>::new(&'a phx_core::streams::WorldS
 pub fn phx_core::contribution::OpeningCtx<'a>::phase(&self) -> phx_core::streams::OpeningPhase  // used by: phx-geo, phx-world, sys-bnk, sys-cb, sys-dem
 pub struct phx_core::contribution::WriteRecord
 pub phx_core::contribution::WriteRecord::amount: i128  // used by: phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
-pub phx_core::contribution::WriteRecord::counter: phx_id::ids::PartyId  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-rand
+pub phx_core::contribution::WriteRecord::counter: phx_id::ids::PartyRef  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-rand
 pub phx_core::contribution::WriteRecord::identity: u64
-pub phx_core::contribution::WriteRecord::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
+pub phx_core::contribution::WriteRecord::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
+impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyRef: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::WriteRecord::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -766,10 +766,10 @@ pub fn phx_core::decisions::Prefs::load(&mut phx_store::save::Reader<'_>) -> cor
 pub fn phx_core::decisions::Prefs::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::decisions::Prefs::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub struct phx_core::decisions::QueuedIntent  // used by: phx-world
-pub phx_core::decisions::QueuedIntent::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
+pub phx_core::decisions::QueuedIntent::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
 pub phx_core::decisions::QueuedIntent::point: &'static str  // used by: phx-check, phx-cli, phx-fin, phx-num, phx-rand, phx-world, sys-frm, sys-hh, sys-lab
 pub phx_core::decisions::QueuedIntent::words: alloc::vec::Vec<i64>  // used by: phx-check, phx-exec, phx-fin, phx-pop, phx-rand, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyRef: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::decisions::QueuedIntent::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -900,11 +900,11 @@ pub phx_core::findings::FindingOwner::Event(u64)  // used by: phx-cli, phx-fin, 
 pub phx_core::findings::FindingOwner::Instrument(phx_id::ids::InstrumentId)  // used by: phx-id, phx-rand
 pub phx_core::findings::FindingOwner::Line(phx_id::ids::LineId)  // used by: phx-fin, phx-id, phx-rand, phx-world, sys-frm
 pub phx_core::findings::FindingOwner::Market(phx_id::ids::MarketId)  // used by: phx-id, phx-rand, phx-world
-pub phx_core::findings::FindingOwner::Party(phx_id::ids::PartyId)  // used by: phx-fin, phx-id, phx-macros, phx-market, phx-rand, phx-world
+pub phx_core::findings::FindingOwner::Party(phx_id::ids::PartyRef)  // used by: phx-fin, phx-id, phx-macros, phx-market, phx-pop, phx-rand, phx-world
 pub phx_core::findings::FindingOwner::Run  // used by: phx-cli, phx-world
 pub phx_core::findings::FindingOwner::Table(phx_id::ids::TableId)  // used by: phx-check, phx-fin, phx-market, phx-store
 pub phx_core::findings::FindingOwner::Tile(phx_id::ids::TileId)  // used by: phx-cli, phx-geo, phx-id, phx-rand, phx-world
-impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved, phx_id::ids::TableId: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyRef: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved, phx_id::ids::TableId: phx_store::save::Saved
 pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::findings::Unit  // used by: phx-macros, phx-world
@@ -1269,7 +1269,7 @@ pub phx_core::pop_process::AgentView::country_of: &'a dyn core::ops::function::F
 pub phx_core::pop_process::AgentView::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::pop_process::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say  // used by: phx-world
 pub phx_core::pop_process::AgentView::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
-pub phx_core::pop_process::AgentView::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
+pub phx_core::pop_process::AgentView::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
 impl phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>  // used by: phx-world, sys-dem, sys-lab
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
@@ -1347,8 +1347,8 @@ pub mod phx_core::register::limit  // used by: phx-id, phx-ledger, phx-market, p
 pub struct phx_core::register::limit::Binding
 pub phx_core::register::limit::Binding::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_core::register::limit::Binding::excess: i128  // used by: if-state, phx-world, sys-sov
-pub phx_core::register::limit::Binding::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
+pub phx_core::register::limit::Binding::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
+impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyRef: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
 pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::register::limit::Binding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -1356,7 +1356,7 @@ pub struct phx_core::register::limit::Bindings
 impl phx_core::register::limit::Bindings
 pub fn phx_core::register::limit::Bindings::append(&mut self, phx_core::register::limit::Bindings)  // used by: phx-fin, phx-pop, phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_  // used by: phx-store, phx-world
-pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
+pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyRef, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
 impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
 pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
@@ -1963,21 +1963,20 @@ pub fn phx_core::store::Family<R, B>::save(&self, &mut phx_store::save::Writer<'
 pub struct phx_core::store::KindStore<B: phx_store::backing::Backing>  // used by: phx-world
 pub phx_core::store::KindStore::accounts: core::option::Option<phx_core::store::Accounts<B>>  // used by: phx-cli, phx-fin, phx-world, sys-bnk
 pub phx_core::store::KindStore::cash: core::option::Option<phx_core::store::CashLines<B>>  // used by: if-state, phx-world, sys-hh, sys-sov
-pub phx_core::store::KindStore::parties: phx_store::parties::Parties<B>  // used by: phx-cli, phx-fin, phx-obs, phx-store, phx-world
 pub phx_core::store::KindStore::records: phx_store::column::Column<phx_num::missing::MaybeI64, B>  // used by: phx-cli, phx-fin
 pub phx_core::store::KindStore::stride: usize  // used by: phx-world
 impl<B: phx_store::backing::Backing> phx_core::store::KindStore<B>
 pub fn phx_core::store::KindStore<B>::add_accounts(&mut self, &mut phx_store::backing::AddressSpace, u32, u32)  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::begin(&mut self, phx_id::ids::PartyId, &[phx_num::missing::MaybeI64], core::option::Option<phx_core::store::Opening>) -> phx_id::ids::PartyRef  // used by: phx-world
+pub fn phx_core::store::KindStore<B>::begin(&mut self, phx_id::ids::PartyRef, &[phx_num::missing::MaybeI64], core::option::Option<phx_core::store::Opening>) -> phx_id::ids::PartyRef  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::book(&mut self) -> core::option::Option<phx_core::settle::Book<'_>>  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::money(&self) -> i128  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32, usize) -> phx_core::store::KindStore<B>  // used by: phx-world
+pub fn phx_core::store::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, usize) -> phx_core::store::KindStore<B>  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::open_account(&mut self, phx_id::ids::Slot, phx_core::store::Opening)  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::record(&self, phx_id::ids::Slot) -> &[phx_num::missing::MaybeI64]  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::record_mut(&mut self, phx_id::ids::Slot) -> &mut [phx_num::missing::MaybeI64]  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::with_accounts(self, &mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::store::KindStore<B>  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::with_cash(self, &mut phx_store::backing::AddressSpace, (u32, u32), usize, (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<core::option::Option<usize>>)) -> phx_core::store::KindStore<B>  // used by: phx-world
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindStore<B> where phx_store::parties::Parties<B>: phx_store::save::Saved, phx_store::column::Column<phx_num::missing::MaybeI64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindStore<B> where phx_store::column::Column<phx_num::missing::MaybeI64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
 pub fn phx_core::store::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
 pub fn phx_core::store::KindStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
@@ -2365,11 +2364,11 @@ pub phx_core::FindingOwner::Event(u64)  // used by: phx-cli, phx-fin, phx-ledger
 pub phx_core::FindingOwner::Instrument(phx_id::ids::InstrumentId)  // used by: phx-id, phx-rand
 pub phx_core::FindingOwner::Line(phx_id::ids::LineId)  // used by: phx-fin, phx-id, phx-rand, phx-world, sys-frm
 pub phx_core::FindingOwner::Market(phx_id::ids::MarketId)  // used by: phx-id, phx-rand, phx-world
-pub phx_core::FindingOwner::Party(phx_id::ids::PartyId)  // used by: phx-fin, phx-id, phx-macros, phx-market, phx-rand, phx-world
+pub phx_core::FindingOwner::Party(phx_id::ids::PartyRef)  // used by: phx-fin, phx-id, phx-macros, phx-market, phx-pop, phx-rand, phx-world
 pub phx_core::FindingOwner::Run  // used by: phx-cli, phx-world
 pub phx_core::FindingOwner::Table(phx_id::ids::TableId)  // used by: phx-check, phx-fin, phx-market, phx-store
 pub phx_core::FindingOwner::Tile(phx_id::ids::TileId)  // used by: phx-cli, phx-geo, phx-id, phx-rand, phx-world
-impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved, phx_id::ids::TableId: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::findings::FindingOwner where phx_id::ids::PartyRef: phx_store::save::Saved, phx_id::ids::TileId: phx_store::save::Saved, phx_id::ids::LineId: phx_store::save::Saved, phx_id::ids::InstrumentId: phx_store::save::Saved, phx_id::ids::MarketId: phx_store::save::Saved, phx_id::ids::CountryId: phx_store::save::Saved, u64: phx_store::save::Saved, phx_id::ids::TableId: phx_store::save::Saved
 pub fn phx_core::findings::FindingOwner::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::findings::FindingOwner::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub enum phx_core::HeldFor  // used by: phx-acct
@@ -2622,17 +2621,17 @@ pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> cor
 pub phx_core::AgentView::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say  // used by: phx-world
 pub phx_core::AgentView::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
-pub phx_core::AgentView::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
+pub phx_core::AgentView::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
 impl phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>  // used by: phx-world, sys-dem, sys-lab
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-world, sys-dem, sys-lab
 pub struct phx_core::Apportioned  // used by: phx-world
 pub phx_core::Apportioned::drawn: u64  // used by: phx-fin, phx-world, sys-dem
-pub phx_core::Apportioned::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
+pub phx_core::Apportioned::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
 pub phx_core::Apportioned::realised: u64  // used by: phx-cli, phx-world
 pub phx_core::Apportioned::stratum: alloc::string::String  // used by: phx-cli, phx-world
-impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyId: phx_store::save::Saved, u64: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc::string::String: phx_store::save::Saved, phx_id::ids::PartyRef: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::Apportioned::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -2643,8 +2642,8 @@ pub phx_core::AttrDecl::values: u32  // used by: if-pop, if-state, phx-check, ph
 pub struct phx_core::Binding
 pub phx_core::Binding::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_core::Binding::excess: i128  // used by: if-state, phx-world, sys-sov
-pub phx_core::Binding::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyId: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
+pub phx_core::Binding::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
+impl phx_store::save::Saved for phx_core::register::limit::Binding where phx_id::ids::PartyRef: phx_store::save::Saved, phx_id::day::Day: phx_store::save::Saved, i128: phx_store::save::Saved
 pub fn phx_core::register::limit::Binding::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::register::limit::Binding::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::register::limit::Binding::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -2652,7 +2651,7 @@ pub struct phx_core::Bindings
 impl phx_core::register::limit::Bindings
 pub fn phx_core::register::limit::Bindings::append(&mut self, phx_core::register::limit::Bindings)  // used by: phx-fin, phx-pop, phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::drain(&mut self) -> impl core::iter::traits::iterator::Iterator<Item = phx_core::register::limit::Binding> + '_  // used by: phx-store, phx-world
-pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyId, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
+pub fn phx_core::register::limit::Bindings::take<T: phx_core::register::limit::Limited>(&mut self, phx_id::ids::PartyRef, phx_id::day::Day, phx_core::register::limit::Bound<T>) -> T  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-hh, sys-lab
 impl phx_store::save::Saved for phx_core::register::limit::Bindings where alloc::vec::Vec<phx_core::register::limit::Binding>: phx_store::save::Saved
 pub fn phx_core::register::limit::Bindings::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::register::limit::Bindings::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
@@ -2857,17 +2856,17 @@ pub phx_core::GenReport::adjustments: alloc::vec::Vec<phx_core::contribution::Ad
 pub phx_core::GenReport::agent_issuers: u64
 pub phx_core::GenReport::apportioned: u64  // used by: phx-cli, phx-world
 pub phx_core::GenReport::distributions: alloc::vec::Vec<(alloc::string::String, alloc::string::String)>  // used by: phx-cli, phx-world
-pub phx_core::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyId, i128)>  // used by: phx-check, phx-world
+pub phx_core::GenReport::equity: alloc::vec::Vec<(phx_id::ids::PartyRef, i128)>  // used by: phx-check, phx-world
 pub phx_core::GenReport::unfounded: alloc::vec::Vec<phx_core::contribution::Apportioned>  // used by: phx-cli, phx-world
-pub phx_core::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyId>  // used by: phx-cli, phx-macros, phx-world
+pub phx_core::GenReport::unnamed: alloc::vec::Vec<phx_id::ids::PartyRef>  // used by: phx-cli, phx-macros, phx-world
 pub phx_core::GenReport::writes: u64  // used by: phx-check
 impl phx_core::contribution::GenReport
 pub fn phx_core::contribution::GenReport::apportion(&mut self, phx_core::contribution::Apportioned)  // used by: phx-cli, phx-fin, phx-geo, phx-num, phx-world, sys-dem
-pub fn phx_core::contribution::GenReport::close(&mut self, alloc::vec::Vec<phx_id::ids::PartyId>) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-store, phx-world, sys-frm
-pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyId) -> bool  // used by: phx-check, phx-macros, phx-num, phx-world, sys-cap, sys-frm, sys-tec
+pub fn phx_core::contribution::GenReport::close(&mut self, alloc::vec::Vec<phx_id::ids::PartyRef>) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-obs, phx-pop, phx-store, phx-world, sys-frm
+pub fn phx_core::contribution::GenReport::named(&self, phx_id::ids::PartyRef) -> bool  // used by: phx-check, phx-fin, phx-macros, phx-num, phx-world, sys-cap, sys-frm, sys-tec
 pub fn phx_core::contribution::GenReport::new(core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>) -> phx_core::contribution::GenReport  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
 pub fn phx_core::contribution::GenReport::write(&mut self, phx_core::contribution::WriteRecord)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyId>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyId, i128)>: phx_store::save::Saved, alloc::vec::Vec<u64>: core::default::Default, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
+impl phx_store::save::Saved for phx_core::contribution::GenReport where alloc::vec::Vec<(alloc::string::String, alloc::string::String)>: phx_store::save::Saved, u64: phx_store::save::Saved, alloc::vec::Vec<phx_id::ids::PartyRef>: phx_store::save::Saved + core::default::Default, alloc::vec::Vec<phx_core::contribution::Apportioned>: phx_store::save::Saved, alloc::vec::Vec<phx_core::contribution::Adjustment>: phx_store::save::Saved, alloc::vec::Vec<(phx_id::ids::PartyRef, i128)>: phx_store::save::Saved, core::option::Option<alloc::boxed::Box<dyn phx_core::contribution::ReportSink>>: core::default::Default
 pub fn phx_core::contribution::GenReport::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::GenReport::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::GenReport::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -3121,10 +3120,10 @@ pub phx_core::ProfileValue::name: alloc::string::String  // used by: if-pop, phx
 pub phx_core::ProfileValue::sd: i64  // used by: phx-geo
 pub phx_core::ProfileValue::transform: phx_core::register::profile::Transform  // used by: phx-macros, phx-store
 pub struct phx_core::QueuedIntent  // used by: phx-world
-pub phx_core::QueuedIntent::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
+pub phx_core::QueuedIntent::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
 pub phx_core::QueuedIntent::point: &'static str  // used by: phx-check, phx-cli, phx-fin, phx-num, phx-rand, phx-world, sys-frm, sys-hh, sys-lab
 pub phx_core::QueuedIntent::words: alloc::vec::Vec<i64>  // used by: phx-check, phx-exec, phx-fin, phx-pop, phx-rand, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyId: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_core::decisions::QueuedIntent where phx_id::ids::PartyRef: phx_store::save::Saved, &'static str: phx_store::save::Saved, alloc::vec::Vec<i64>: phx_store::save::Saved
 pub fn phx_core::decisions::QueuedIntent::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::decisions::QueuedIntent::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::decisions::QueuedIntent::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -3251,10 +3250,10 @@ pub fn phx_core::streams::WorldStreams::open_keyed(&self, &phx_core::streams::St
 pub fn phx_core::streams::WorldStreams::open_keyed_at(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, u32) -> phx_rand::draws::Draws
 pub struct phx_core::WriteRecord
 pub phx_core::WriteRecord::amount: i128  // used by: phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-val, phx-world, sys-soc
-pub phx_core::WriteRecord::counter: phx_id::ids::PartyId  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-rand
+pub phx_core::WriteRecord::counter: phx_id::ids::PartyRef  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-rand
 pub phx_core::WriteRecord::identity: u64
-pub phx_core::WriteRecord::party: phx_id::ids::PartyId  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-store, phx-world
-impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyId: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
+pub phx_core::WriteRecord::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
+impl phx_store::save::Saved for phx_core::contribution::WriteRecord where phx_id::ids::PartyRef: phx_store::save::Saved, i128: phx_store::save::Saved, u64: phx_store::save::Saved
 pub fn phx_core::contribution::WriteRecord::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::WriteRecord::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::WriteRecord::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world

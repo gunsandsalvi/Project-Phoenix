@@ -402,7 +402,7 @@ impl Core {
     }
 
     pub(crate) fn firm_slots(&self, firm: usize) -> Vec<Slot> {
-        self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default()
+        self.directory.live_slots(crate::core::kind_number(firm)).collect()
     }
 
     /// Goods opened on the core: each country's ways' inputs and each product's lead, every firm's opening stocks
@@ -469,10 +469,10 @@ impl Core {
         let Some(stream) = ctx.streams.named(sys_hh::VisitStream::DECL.name) else {
             return Err("the households' visit stream is not declared".to_owned());
         };
-        let slots: Vec<Slot> = self.kinds.get(place).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+        let slots: Vec<Slot> = self.directory.live_slots(crate::core::kind_number(place)).collect();
         for slot in slots {
-            let Some(id) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { continue };
-            let mut d = ctx.streams.open(&stream, Subject::new(SubjectTag::Party, id.get()), today, 0);
+            let Some(id) = self.directory.reference(crate::core::kind_number(place), slot) else { continue };
+            let mut d = ctx.streams.open(&stream, Subject::from(id), today, 0);
             let phase = phx_rand::below_u64(&mut d, u64::from(days));
             wheel.schedule(slot.get(), after(today.succ(), phase));
         }
@@ -509,7 +509,7 @@ impl Core {
         let Missing::Present(region_at) = decl.sited_by else { return out };
         let next = after(today, u64::from(self.goods.spend_days));
         let Some(store) = self.kinds.get(place) else { return out };
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(kind_number(place)) {
             let (Some(money), Some(income), Some(Missing::Present(region))) = (
                 store.accounts.as_ref().and_then(|a| a.balance.get(slot)),
                 self.record_word(place, slot, income_at).map(from_i64).filter(|y| *y > 0.0),
@@ -599,7 +599,7 @@ impl Core {
         let Some(decl) = self.declared.household.as_ref() else { return persons };
         let Missing::Present(at) = decl.sited_by else { return persons };
         if let (Some(store), Some(Some(ps))) = (self.kinds.get(place), self.persons.get(place)) {
-            for slot in store.parties.live_slots() {
+            for slot in self.directory.live_slots(kind_number(place)) {
                 let Some(Missing::Present(r)) = store.record(slot).get(at).map(|w| w.get()) else { continue };
                 if let Some(p) = usize::try_from(r).ok().and_then(|r| persons.get_mut(r)) {
                     *p += from_i64(i64::try_from(ps.count(slot)).unwrap_or(0));
@@ -986,9 +986,8 @@ impl Core {
             return;
         }
         let mut holders: Vec<PartyKey> = Vec::new();
-        for (k, store) in self.kinds.iter().enumerate() {
-            let Ok(kind) = u8::try_from(k) else { continue };
-            holders.extend(store.parties.live_slots().map(|s| PartyKey::new(kind, s)));
+        for kind in self.directory.kind_numbers() {
+            holders.extend(self.directory.live_slots(kind).map(|s| PartyKey::new(kind, s)));
         }
         let units = &self.goods.units;
         let rates = &self.goods.spoil_rates;
@@ -1258,7 +1257,7 @@ impl Core {
         let spending = self.point(|p| p.spend, &sys_hh::points::SPEND);
         for s in due {
             let slot = Slot::new(s);
-            let Some(id) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { continue };
+            let Some(id) = self.directory.reference(crate::core::kind_number(place), slot) else { continue };
             let next = after(day, u64::from(self.goods.spend_days));
             if let Some(w) = self.goods.spenders.as_mut() {
                 w.schedule(s, next);
@@ -1317,7 +1316,8 @@ impl Core {
             for (product, share) in (0_u16..).zip(shares) {
                 let amount = floor_to_i64(spent * share).unwrap_or(0);
                 if amount > 0 {
-                    wants.push((product, Buyer { party, subject: id.get(), want: Want::Money(amount), place: region }));
+                    wants
+                        .push((product, Buyer { party, subject: id.word(), want: Want::Money(amount), place: region }));
                     total += amount;
                 }
             }
@@ -1439,7 +1439,7 @@ impl Core {
             let price = from_i64(f.price);
             // Its stance reconsidered, then what it expects its product's next mark in its region to be by it, where
             // the mark has printed there.
-            let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
+            let Some(id) = self.directory.reference(crate::core::kind_number(firm), slot) else { continue };
             let series = (f.product, f.region);
             let chosen = self.decide(reconsidering, f.key, |_| {
                 self.goods.outlooks.stance_in((series, view, beta), (ctx.streams, &stance_stream), (id, day))
@@ -1629,7 +1629,7 @@ impl Core {
         let Some(stream) = ctx.streams.named(sys_frm::VisitStream::DECL.name) else {
             violation!(clause = "REP.21", "the firms' visit stream is not declared");
         };
-        let slots: Vec<Slot> = self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+        let slots: Vec<Slot> = self.directory.live_slots(crate::core::kind_number(firm)).collect();
         let mut attending = Vec::new();
         let attends = self.point(|p| p.attend, &sys_frm::points::ATTEND);
         for slot in slots {
@@ -1640,9 +1640,8 @@ impl Core {
             };
             self.look_at_sales(ctx, (firm, slot), (day, memory));
             let Some(weighed) = self.review_chance(ctx, (firm, slot), view) else { continue };
-            let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
-            let mut d =
-                ctx.streams.open_at(&stream, Subject::new(SubjectTag::Party, id.get()), day, DaySlot::S5b.ordinal());
+            let Some(id) = self.directory.reference(crate::core::kind_number(firm), slot) else { continue };
+            let mut d = ctx.streams.open_at(&stream, Subject::from(id), day, DaySlot::S5b.ordinal());
             let draw = phx_rand::open_unit(&mut d);
             if self.decide(attends, key, |_| sys_frm::rules::review::AttendIn { draw, ..weighed }) {
                 attending.push(slot.get());
@@ -1679,7 +1678,7 @@ impl Core {
         let Some(store) = self.kinds.get(firm) else { return };
         let reads = self.point(|p| p.firm_stance, &sys_frm::points::STANCE);
         let mut surprised = Vec::new();
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(kind_number(firm)) {
             let rec = store.record(slot);
             let read = |i: usize| match rec.get(i).map(|w| w.get()) {
                 Some(Missing::Present(v)) => Some(v),
@@ -1711,10 +1710,9 @@ impl Core {
     /// The day's stances counted over every firm, after its reviews.
     fn count_stances(&mut self, day: Day) {
         let Some(firm) = self.bound.kinds.firm else { return };
-        let Some(store) = self.kinds.get(firm) else { return };
         let reads = self.point(|p| p.firm_stance, &sys_frm::points::STANCE);
         let mut by = [0_u64; crate::core_outlooks::HEURISTICS];
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(kind_number(firm)) {
             if let Missing::Present(h) = self.decider(reads, PartyKey::new(kind_number(firm), slot)).1.stance
                 && let Some(n) = by.get_mut(usize::from(h))
             {

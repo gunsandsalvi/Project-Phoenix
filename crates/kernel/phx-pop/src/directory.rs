@@ -11,8 +11,7 @@ use phx_store::{AddressSpace, Backing, Generations, SlotAlloc, StoreStats, Syste
 use crate::consts::TOMB_KEY_BITS;
 use crate::tombs::{Tomb, Tombs};
 
-/// The slots a packed reference gives a kind, and the generations it gives a slot.
-const SLOT_BITS: u32 = phx_id::consts::KEY_SLOT_BITS;
+/// The generations a reference gives a slot.
 const GENERATION_BITS: u32 = phx_id::consts::GENERATION_BITS;
 const KEY_MASK: u64 = (1 << TOMB_KEY_BITS) - 1;
 /// A tombstone with no successor holds this in its successor's key.
@@ -42,32 +41,13 @@ pub(crate) struct KindTable<B: Backing> {
 }
 
 /// Every kind's table and the tombstones within the horizon.
-#[clause("PTY.1", "PTY.9", "PTY.10", "PTY.13", "SET.13")]
+#[clause("PTY.1", "PTY.9", "PTY.10", "PTY.13", "SET.13", "REP.13")]
 #[derive(Debug)]
 pub struct Directory<B: Backing = SystemBacking> {
     pub(crate) kinds: Vec<KindTable<B>>,
     pub(crate) tombs: Tombs,
     pub(crate) first: Day,
     pub(crate) horizon: u32,
-}
-
-/// A reference packed as a tombstone keys it: kind, slot, generation.
-fn pack(r: PartyRef) -> u64 {
-    let (kind, slot, generation) = (u64::from(r.kind()), u64::from(r.slot().get()), u64::from(r.generation()));
-    if slot >> SLOT_BITS != 0 {
-        capacity_exceeded!("slots a tombstone keys", 1_u64 << SLOT_BITS, slot);
-    }
-    kind << (SLOT_BITS + GENERATION_BITS) | slot << GENERATION_BITS | generation
-}
-
-fn unpack(key: u64) -> PartyRef {
-    let generation = key & ((1 << GENERATION_BITS) - 1);
-    let slot = (key >> GENERATION_BITS) & ((1 << SLOT_BITS) - 1);
-    let kind = key >> (SLOT_BITS + GENERATION_BITS);
-    match (u8::try_from(kind), u32::try_from(generation), u32::try_from(slot)) {
-        (Ok(k), Ok(g), Ok(s)) => PartyRef::new(k, g, Slot::new(s)),
-        _ => violation!(clause = "PTY.13", "a tombstone's key past a reference's parts", key = key),
-    }
 }
 
 impl<B: Backing> Directory<B> {
@@ -81,6 +61,9 @@ impl<B: Backing> Directory<B> {
         rows_per_chunk: u32,
         (first, horizon): (Day, u32),
     ) -> Directory<B> {
+        if capacities.len() > usize::from(phx_id::consts::NATURE_KIND) {
+            violation!(clause = "Law 5", "a table of nature's kind, which holds no party", kinds = capacities.len());
+        }
         let kinds = capacities
             .iter()
             .map(|max| KindTable {
@@ -130,11 +113,11 @@ impl<B: Backing> Directory<B> {
         t.live -= 1;
         let [high, low] = offset.to_be_bytes();
         let next = match successor {
-            Missing::Present(s) => pack(s),
+            Missing::Present(s) => s.packed(),
             Missing::Absent => NONE,
         };
         self.tombs.push(Tomb {
-            ended: u64::from(high) << TOMB_KEY_BITS | pack(party),
+            ended: u64::from(high) << TOMB_KEY_BITS | party.packed(),
             successor: u64::from(low) << TOMB_KEY_BITS | next,
         });
     }
@@ -160,10 +143,10 @@ impl<B: Backing> Directory<B> {
     /// within the horizon stops the run.
     #[clause("PTY.10")]
     pub fn set_successor(&mut self, ended: PartyRef, successor: PartyRef) {
-        let Some(t) = self.tombs.find_mut(pack(ended)) else {
+        let Some(t) = self.tombs.find_mut(ended.packed()) else {
             violation!(clause = "PTY.10", "a successor named for a party with no tombstone", party = ended.word());
         };
-        t.successor = (t.successor & !KEY_MASK) | pack(successor);
+        t.successor = (t.successor & !KEY_MASK) | successor.packed();
     }
 
     /// What a reference names now: its live slot while its generation is the slot's and the slot is live; else its
@@ -187,10 +170,11 @@ impl<B: Backing> Directory<B> {
         if generation.is_none_or(|g| g < r.generation()) {
             violation!(clause = "PTY.13", "a reference to a generation never issued", party = r.word());
         }
-        match self.tombs.find(pack(r)) {
+        match self.tombs.find(r.packed()) {
             Some(tomb) => {
                 let next = tomb.successor & KEY_MASK;
-                let successor = if next == NONE { Missing::Absent } else { Missing::Present(unpack(next)) };
+                let successor =
+                    if next == NONE { Missing::Absent } else { Missing::Present(PartyRef::from_packed(next)) };
                 Resolved::Ended { day: Day::unpacked(self.first, tomb.offset()), successor }
             }
             None => Resolved::EndedBeyondHorizon,
@@ -227,6 +211,55 @@ impl<B: Backing> Directory<B> {
             Ok(n) => n,
             Err(_) => capacity_exceeded!("tombstones", u64::MAX, read),
         }
+    }
+
+    /// A kind's live slots, in order.
+    pub fn live_slots(&self, kind: u8) -> impl Iterator<Item = Slot> + '_ {
+        self.table(kind).slots.live_slots()
+    }
+
+    /// A kind's slots ever handed out: every live party's slot lies below, so a column of the kind is this long.
+    #[must_use]
+    pub fn high_water(&self, kind: u8) -> u32 {
+        self.table(kind).slots.high_water()
+    }
+
+    #[must_use]
+    pub fn is_live(&self, kind: u8, slot: Slot) -> bool {
+        self.table(kind).slots.is_live(slot)
+    }
+
+    /// The live party at a slot of a kind, or none.
+    #[must_use]
+    pub fn at(&self, kind: u8, slot: Slot) -> Option<PartyRef> {
+        let t = self.table(kind);
+        if !t.slots.is_live(slot) {
+            return None;
+        }
+        t.generations.get(slot).map(|g| PartyRef::new(kind, g, slot))
+    }
+
+    /// The party a slot of a kind holds, live or ended this day: its slot is not handed out again before the day
+    /// closes. None for a slot never handed out.
+    #[must_use]
+    pub fn reference(&self, kind: u8, slot: Slot) -> Option<PartyRef> {
+        let t = self.table(kind);
+        (slot.get() < t.slots.high_water())
+            .then(|| t.generations.get(slot).map(|g| PartyRef::new(kind, g, slot)))
+            .flatten()
+    }
+
+    /// The kinds the directory holds.
+    #[must_use]
+    pub fn kinds(&self) -> usize {
+        self.kinds.len()
+    }
+
+    /// Each kind's number, in order.
+    pub fn kind_numbers(&self) -> impl Iterator<Item = u8> + use<B> {
+        let kinds = u8::try_from(self.kinds.len())
+            .unwrap_or_else(|_| capacity_exceeded!("kinds of party", u8::MAX, self.kinds.len()));
+        0..kinds
     }
 
     /// The parties of a kind live now.

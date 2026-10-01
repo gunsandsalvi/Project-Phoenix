@@ -2,7 +2,7 @@
 
 use phx_id::{
     ContractLink, CountryId, Day, DayLocalId, EstateRef, HoldingRef, InstrumentId, LineId, MarketId, MessageRef, MsgId,
-    OfferRef, PartyId, PartyKey, PartyRef, ProcessRef, RegionId, SeriesId, Slot, StreamId, TableId, TileId, ZoneId,
+    OfferRef, PartyKey, PartyRef, ProcessRef, RegionId, SeriesId, Slot, StreamId, TableId, TileId, ZoneId,
 };
 use phx_num::{Amount, Ccy, Count, Fixed, MaybeI64, PointIdx, PriceRaw, QtyRaw, UnitId, capacity_exceeded};
 
@@ -61,7 +61,7 @@ macro_rules! base_pod {
 
 base_pod!(u8, u16, u32, u64, i8, i16, i32, i64);
 base_pod!(Slot, TableId, LineId, InstrumentId, MarketId, TileId, ZoneId, RegionId, CountryId, DayLocalId, MsgId);
-base_pod!(StreamId, PartyId, PartyKey, PartyRef, Day, SeriesId);
+base_pod!(StreamId, PartyKey, PartyRef, Day, SeriesId);
 base_pod!(ContractLink, HoldingRef, OfferRef, MessageRef, ProcessRef, EstateRef);
 base_pod!(Amount, QtyRaw, PriceRaw, MaybeI64, PointIdx, Ccy, UnitId, Count);
 

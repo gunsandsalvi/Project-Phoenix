@@ -21,14 +21,14 @@ pub phx_market::carriage::CarriageDay::no_room: alloc::vec::Vec<usize>  // used 
 pub phx_market::carriage::CarriageDay::no_route: alloc::vec::Vec<usize>  // used by: phx-world
 pub phx_market::carriage::CarriageDay::over_capacity: alloc::vec::Vec<usize>  // used by: phx-world
 pub struct phx_market::carriage::Carrier  // used by: phx-world
-pub phx_market::carriage::Carrier::carrier: phx_id::ids::PartyId  // used by: phx-cli, phx-core, phx-world
+pub phx_market::carriage::Carrier::carrier: phx_id::ids::PartyRef  // used by: phx-cli, phx-core, phx-world
 pub phx_market::carriage::Carrier::price: phx_num::price::PriceRaw  // used by: if-labour, if-state, phx-cli, phx-fin, phx-num, phx-val, phx-world, sys-dem, sys-frm, sys-gds, sys-lab, sys-sov, sys-tax
 pub phx_market::carriage::Carrier::room: i64  // used by: phx-store, phx-world, sys-lab
 pub struct phx_market::carriage::Consignment<'r>  // used by: phx-world
 pub phx_market::carriage::Consignment::load: i64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
 pub phx_market::carriage::Consignment::need: i64  // used by: phx-store, phx-world, sys-sov
 pub phx_market::carriage::Consignment::route: phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>  // used by: phx-fin, phx-geo, phx-world
-pub phx_market::carriage::Consignment::shipper: phx_id::ids::PartyId  // used by: phx-world
+pub phx_market::carriage::Consignment::shipper: phx_id::ids::PartyRef  // used by: phx-world
 pub struct phx_market::carriage::FreightTech  // used by: phx-world, sys-frt
 pub phx_market::carriage::FreightTech::carriage_a_tonne_km: alloc::vec::Vec<f64>  // used by: phx-world, sys-frt
 pub phx_market::carriage::FreightTech::carriage_product: u16  // used by: phx-world, sys-frt

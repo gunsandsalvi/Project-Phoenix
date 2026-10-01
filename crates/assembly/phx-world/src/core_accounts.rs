@@ -158,7 +158,7 @@ impl Core {
 
     /// Each bank's customers' deposits, by its slot.
     fn deposits(&self) -> Vec<i64> {
-        let banks = self.bank_kind.and_then(|b| self.kinds.get(usize::from(b))).map_or(0, |k| k.parties.high_water());
+        let banks = self.bank_kind.map_or(0, |b| self.directory.high_water(b));
         phx_core::store::deposits_of(self.kinds.iter(), usize::try_from(banks).unwrap_or(0))
     }
 
@@ -167,9 +167,8 @@ impl Core {
     pub fn open_accounts(&mut self, today: Day) {
         let (deposits, projects) = (self.deposits(), self.project_costs());
         let mut opening = PartyMap::default();
-        for (k, store) in self.kinds.iter().enumerate() {
-            let Ok(kind) = u8::try_from(k) else { continue };
-            for slot in store.parties.live_slots() {
+        for kind in self.directory.kind_numbers() {
+            for slot in self.directory.live_slots(kind) {
                 let party = PartyKey::new(kind, slot);
                 if self.owned(party)
                     && let Some(worth) = self.net_assets(party, (&deposits, &projects))
@@ -250,7 +249,7 @@ impl Core {
         let mut found = Vec::new();
         let mut ended = Vec::new();
         for party in parties {
-            let live = self.kinds.get(usize::from(party.kind())).is_some_and(|k| k.parties.at(party.slot()).is_some());
+            let live = self.directory.is_live(party.kind(), party.slot());
             if !live {
                 ended.push(party);
                 continue;

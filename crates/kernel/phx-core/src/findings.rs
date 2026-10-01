@@ -1,10 +1,10 @@
-use phx_id::{CountryId, Day, InstrumentId, LineId, MarketId, PartyId, TableId, TileId};
+use phx_id::{CountryId, Day, InstrumentId, LineId, MarketId, PartyRef, TableId, TileId};
 use phx_num::{Ccy, UnitId};
 
 /// What a finding is about.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub enum FindingOwner {
-    Party(PartyId),
+    Party(PartyRef),
     Tile(TileId),
     Line(LineId),
     Instrument(InstrumentId),
@@ -79,7 +79,7 @@ impl Findings {
 
 #[cfg(test)]
 mod tests {
-    use phx_id::{Day, PartyId};
+    use phx_id::{Day, PartyRef};
     use phx_num::Ccy;
 
     use super::{Finding, FindingOwner, Findings, Unit};
@@ -90,7 +90,7 @@ mod tests {
         let finding = |family, size| Finding {
             family,
             clause: "MON.1",
-            owner: FindingOwner::Party(PartyId::new(4)),
+            owner: FindingOwner::Party(PartyRef::new(0, 0, phx_id::Slot::new(4))),
             size,
             unit: Unit::Money(Ccy::new(0)),
             day: Day::new(2),

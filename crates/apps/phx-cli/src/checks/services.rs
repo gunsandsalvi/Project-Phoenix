@@ -36,7 +36,7 @@ pub fn services(w: Inspector<'_>) -> Option<ServicesRead> {
     let mut sales = [0.0; 2];
     let mut markups: [Vec<f64>; 2] = [Vec::new(), Vec::new()];
     let mut product_of = std::collections::BTreeMap::new();
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(firm) {
         let word = |at: usize| match store.record(slot).get(at).map(|x| x.get()) {
             Some(Missing::Present(v)) => Some(v),
             _ => None,
@@ -170,7 +170,7 @@ fn firms_end(w: Inspector<'_>) -> Outcome {
     }
     let ended: std::collections::BTreeSet<u16> = core.insolvency.endings.iter().map(|e| e.product).collect();
     let mut held: std::collections::BTreeSet<u16> = ended.clone();
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(firm) {
         if let Some(Missing::Present(p)) = store.record(slot).get(PRODUCT).map(|x| x.get())
             && let Ok(p) = u16::try_from(p)
         {

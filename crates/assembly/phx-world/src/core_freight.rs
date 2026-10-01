@@ -136,8 +136,8 @@ impl Core {
                 if f.product != tech.carriage_product {
                     continue;
                 }
-                let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
-                let subject = Subject::new(SubjectTag::Party, id.get());
+                let Some(id) = self.directory.reference(crate::core::kind_number(firm), slot) else { continue };
+                let subject = Subject::from(id);
                 let mut d = streams.open(&sys_frt::OpeningStream::DECL, subject, today, 0);
                 let at = phx_rand::uniform::below_u64(&mut d, whole.unsigned_abs());
                 let mut sum = 0;
@@ -297,14 +297,14 @@ impl Core {
         let offers: Vec<Carrier> = carriers
             .iter()
             .filter_map(|(k, price, room)| {
-                let id = self.kinds.get(usize::from(k.kind()))?.parties.id(k.slot())?;
+                let id = self.directory.reference(k.kind(), k.slot())?;
                 Some(Carrier { carrier: id, price: PriceRaw::from_raw(*price), room: *room })
             })
             .collect();
         let consignments: Vec<Consignment<'_>> = weighed
             .iter()
             .filter_map(|w| {
-                let id = self.kinds.get(usize::from(w.shipper.kind()))?.parties.id(w.shipper.slot())?;
+                let id = self.directory.reference(w.shipper.kind(), w.shipper.slot())?;
                 let need = floor_to_i64((2.0 * w.tonnes * w.km).ceil())?;
                 let load = floor_to_i64(w.tonnes.ceil())?;
                 Some(Consignment { shipper: id, need, load, route: self.route_between(geo, mode, w.regions) })

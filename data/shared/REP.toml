@@ -8,3 +8,11 @@ owner = "REP"
 source = "assumed"
 source_ref = "Resolution (spec REP.40, N8.5): the persons the world holds, set by measuring the budget. At 750 000 persons (221 515 household agents and 102 579 small firms at the opening of seed 1), a business day took 1.4 to 1.6 s on the build machine's four cores (2026-09-27, 62-day runs), the most within N8.2 there; the device's measure resets it."
 value = 750000
+
+[[primitive]]
+id = "REP.tombstone_horizon_days"
+kind = "RESOLUTION"
+owner = "REP"
+source = "assumed"
+source_ref = "Two years: the longest horizon of a record that may name a party, as the series, filings, marks and statements keep two years (spec SET.13); an ended party a record older than that names reads as ended before the horizon (PTY.10)."
+value = 730

@@ -3,7 +3,7 @@
 #![cfg(test)]
 
 use phx_geo::transport::{Route, SegmentDecl, SegmentId, SegmentUse, Segments, Transport};
-use phx_id::{Day, PartyId};
+use phx_id::{Day, PartyRef};
 use phx_num::{Missing, PriceRaw};
 use phx_rand::{Draws, Seed, Subject, SubjectTag, stream_key};
 
@@ -28,14 +28,14 @@ fn segments(decls: &[SegmentDecl]) -> Segments {
     s
 }
 
-fn consignment(shipper: u64, load: i64, route: Missing<Route<'_>>) -> Consignment<'_> {
-    Consignment { shipper: PartyId::new(shipper), need: load * 2, load, route }
+fn consignment(shipper: u32, load: i64, route: Missing<Route<'_>>) -> Consignment<'_> {
+    Consignment { shipper: PartyRef::new(0, 0, phx_id::Slot::new(shipper)), need: load * 2, load, route }
 }
 
 fn carriers() -> [Carrier; 2] {
     [
-        Carrier { carrier: PartyId::new(1), price: PriceRaw::from_raw(9), room: 1_000 },
-        Carrier { carrier: PartyId::new(2), price: PriceRaw::from_raw(5), room: 30 },
+        Carrier { carrier: PartyRef::new(0, 0, phx_id::Slot::new(1)), price: PriceRaw::from_raw(9), room: 1_000 },
+        Carrier { carrier: PartyRef::new(0, 0, phx_id::Slot::new(2)), price: PriceRaw::from_raw(5), room: 30 },
     ]
 }
 

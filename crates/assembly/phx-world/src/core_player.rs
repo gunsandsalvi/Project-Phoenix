@@ -67,9 +67,9 @@ impl Core {
             return Err("households sited by no region".to_owned());
         };
         let store = self.kinds.get(place).ok_or("no household kind")?;
-        let of_country: Vec<Slot> = store
-            .parties
-            .live_slots()
+        let of_country: Vec<Slot> = self
+            .directory
+            .live_slots(crate::core::kind_number(place))
             .filter(|s| {
                 let region = store.record(*s).get(sited).and_then(|w| match w.get() {
                     Missing::Present(r) => usize::try_from(r).ok(),
@@ -104,13 +104,13 @@ impl Core {
     /// The player's intents for the next turn, each for its own household and a decision the world takes.
     #[clause("OBS.4")]
     pub(crate) fn queue(&mut self, intents: &[QueuedIntent], today: Day) {
-        let household = self.player.household.and_then(|k| self.kinds.get(usize::from(k.kind()))?.parties.id(k.slot()));
+        let household = self.player.household.and_then(|k| self.directory.reference(k.kind(), k.slot()));
         for intent in intents {
             if Some(intent.party) != household {
                 violation!(
                     clause = "OBS.4",
                     "an intent queued for a party not the player's",
-                    party = intent.party.get()
+                    party = intent.party.word()
                 );
             }
             let Some(point) = self.decisions.position(intent.point).and_then(|p| u16::try_from(p).ok()) else {

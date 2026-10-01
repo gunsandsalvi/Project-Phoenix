@@ -5,7 +5,7 @@
 
 use phx_core::store::{KindStore, Opening};
 use phx_core::{OpeningCountry, Register, StreamDecl, WorldStreams, opening_subject};
-use phx_id::{PartyId, PartyKey, TileId};
+use phx_id::{PartyKey, TileId};
 use phx_macros::{clause, opening};
 use phx_num::round::{Round, split_total};
 use phx_num::{MaybeI64, violation};
@@ -20,7 +20,6 @@ use crate::consts::firm::{
 };
 use crate::core::Core;
 use crate::opening::economy::table;
-use phx_core::capacity::AGENT_ROWS;
 
 /// A country's firms of one product in one region.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -284,9 +283,9 @@ impl Core {
     pub fn open_firms(&mut self, o: &FirmsOpening<'_>) -> Result<(), String> {
         let Some(firm) = self.bound.kinds.firm else { return Ok(()) };
         let price_weight = o.register.fixed("SRV.price_weight")?;
-        let mut store: KindStore<SystemBacking> =
-            KindStore::new(&mut self.space, crate::core::kind_number(firm), AGENT_ROWS, AGENT_ROWS_PER_CHUNK, RECORD)
-                .with_accounts(&mut self.space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK);
+        let rows = self.kind_rows(firm);
+        let mut store: KindStore<SystemBacking> = KindStore::new(&mut self.space, rows, AGENT_ROWS_PER_CHUNK, RECORD)
+            .with_accounts(&mut self.space, rows, AGENT_ROWS_PER_CHUNK);
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
             let persons = self.persons_by_region(c);
             let snap = snapshot(o.register, c)?;
@@ -324,12 +323,9 @@ impl Core {
                     MaybeI64::from_missing(phx_num::Missing::Absent),
                     MaybeI64::present(0),
                 ];
-                let id = PartyId::new(self.next_id);
-                self.next_id += 1;
-                let party = store.begin(id, &record, Some(Opening { bank: d.bank, balance: share }));
-                let key = PartyKey::new(crate::core::kind_number(firm), party.slot());
-                let at_key = self.keys.partition_point(|(i, _)| *i < id);
-                self.keys.insert(at_key, (id, key));
+                let begun = self.directory.begin(crate::core::kind_number(firm));
+                let party = store.begin(begun, &record, Some(Opening { bank: d.bank, balance: share }));
+                let key = PartyKey::new(party.kind(), party.slot());
                 self.found(key, d.prefs);
             }
         }
@@ -466,7 +462,7 @@ impl Core {
             return out;
         };
         let phx_num::Missing::Present(region_at) = decl.sited_by else { return out };
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             let Some(r) = store.record(slot).get(region_at).and_then(|w| match w.get() {
                 phx_num::Missing::Present(v) => u32::try_from(v).ok(),
                 phx_num::Missing::Absent => None,

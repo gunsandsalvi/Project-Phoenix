@@ -3,12 +3,12 @@
 //! heads its listed sides' kinds keep, and the wheel its contracts come due on. Every column is indexed by slot, so a
 //! party's or a contract's words are found by its slot alone.
 
-use phx_id::{Day, PartyId, PartyRef, Slot};
+use phx_id::{Day, PartyRef, Slot};
 use phx_macros::clause;
 use phx_num::{MaybeI64, capacity_exceeded, violation};
 use phx_store::backing::{AddressSpace, Backing};
 use phx_store::edges::{NONE, Row};
-use phx_store::{Column, EdgeTable, Parties, StoreStats};
+use phx_store::{Column, EdgeTable, StoreStats};
 
 use crate::settle::{Book, Books, Lines};
 use crate::wheel::DueWheel;
@@ -34,24 +34,26 @@ pub struct CashLines<B: Backing> {
     pub received: Vec<Option<usize>>,
 }
 
-/// A kind's parties, their records, and their accounts and cash lines if the kind holds money.
+/// A kind's parties' records, and their accounts and cash lines if the kind holds money, each at the slot the
+/// directory gave its party.
 #[derive(Debug, phx_macros::Saved)]
 pub struct KindStore<B: Backing> {
-    pub parties: Parties<B>,
     pub records: Column<MaybeI64, B>,
     pub stride: usize,
     pub accounts: Option<Accounts<B>>,
     pub cash: Option<CashLines<B>>,
 }
 
-/// A kind's rows are its parties'; its bytes are theirs with every column each party keeps.
+/// A kind's rows are its records, one for each slot ever handed out; which are live is the directory's.
 impl<B: Backing> StoreStats for KindStore<B> {
     fn rows_live(&self) -> u64 {
-        self.parties.rows_live()
+        self.rows_ever()
     }
 
+    #[phx_macros::absent_is_zero(reason = "a kind of empty records holds no words, whatever its slots")]
     fn rows_ever(&self) -> u64 {
-        self.parties.rows_ever()
+        let rows = self.records.len().checked_div(self.stride).unwrap_or(0);
+        u64::try_from(rows).unwrap_or(u64::MAX)
     }
 
     fn bytes(&self) -> u64 {
@@ -63,8 +65,7 @@ impl<B: Backing> StoreStats for KindStore<B> {
         });
         let own =
             self.records.bytes_committed() + accounts + self.cash.as_ref().map_or(0, |c| c.amounts.bytes_committed());
-        let own = u64::try_from(own).unwrap_or_else(|_| capacity_exceeded!("a store's bytes", u64::MAX, own));
-        self.parties.bytes() + own
+        u64::try_from(own).unwrap_or_else(|_| capacity_exceeded!("a store's bytes", u64::MAX, own))
     }
 }
 
@@ -102,16 +103,10 @@ fn place<T: phx_store::pod::Pod, B: Backing>(column: &mut Column<T, B>, slot: Sl
 impl<B: Backing> KindStore<B> {
     /// An empty kind of up to `capacity` parties, each with a record of `stride` words.
     #[must_use]
-    pub fn new(space: &mut AddressSpace, kind: u8, capacity: u32, rows_per_chunk: u32, stride: usize) -> KindStore<B> {
+    pub fn new(space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32, stride: usize) -> KindStore<B> {
         let words = u32::try_from(at(Slot::new(capacity), stride, 0))
             .unwrap_or_else(|_| violation!(clause = "REP.1", "a kind's records beyond a column"));
-        KindStore {
-            parties: Parties::new(space, kind, capacity, rows_per_chunk),
-            records: Column::new(space, words, rows_per_chunk),
-            stride,
-            accounts: None,
-            cash: None,
-        }
+        KindStore { records: Column::new(space, words, rows_per_chunk), stride, accounts: None, cash: None }
     }
 
     /// The kind with accounts, one a party.
@@ -136,17 +131,16 @@ impl<B: Backing> KindStore<B> {
         self
     }
 
-    /// Begins a party with its record, its words past the record's missing, and its account, which a kind holding
-    /// money requires and any other refuses.
+    /// A party the directory began given its record, its words past the record's missing, and its account, which a
+    /// kind holding money requires and any other refuses; all at the slot the directory handed out.
     #[clause("PTY.9", "REP.1")]
-    pub fn begin(&mut self, id: PartyId, record: &[MaybeI64], account: Option<Opening>) -> PartyRef {
+    pub fn begin(&mut self, party: PartyRef, record: &[MaybeI64], account: Option<Opening>) -> PartyRef {
         if record.len() > self.stride {
             violation!(clause = "REP.1", "a record longer than its kind's", words = record.len());
         }
         if self.accounts.is_some() != account.is_some() {
             violation!(clause = "Law 5", "an account for a kind that holds no money, or none for one that does");
         }
-        let party = self.parties.begin(id);
         let slot = party.slot();
         for i in 0..self.stride {
             let v = record.get(i).copied().unwrap_or(MaybeI64::ABSENT);
@@ -178,7 +172,7 @@ impl<B: Backing> KindStore<B> {
     /// Accounts added to a kind whose parties have begun, each to be opened before settlement reads it.
     pub fn add_accounts(&mut self, space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32) {
         if self.accounts.is_some() {
-            violation!(clause = "Law 5", "a kind given accounts twice", kind = self.parties.kind());
+            violation!(clause = "Law 5", "a kind given accounts twice", stride = self.stride);
         }
         self.accounts = Some(Accounts {
             bank: Column::new(space, capacity, rows_per_chunk),

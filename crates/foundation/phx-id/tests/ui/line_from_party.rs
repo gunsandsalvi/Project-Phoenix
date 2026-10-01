@@ -1,5 +1,5 @@
-use phx_id::{LineId, PartyId};
+use phx_id::{LineId, PartyRef, Slot};
 
 fn main() {
-    let _ = LineId::from(PartyId::new(1));
+    let _ = LineId::from(PartyRef::new(0, 0, Slot::new(1)));
 }

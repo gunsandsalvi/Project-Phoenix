@@ -17,7 +17,6 @@ impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MessageRef
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::OfferRef
-impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyKey
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyRef
 impl phx_store::pod::__seal::Sealed for phx_id::ids::ProcessRef
@@ -609,28 +608,6 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
-pub mod phx_store::parties  // used by: phx-cli, phx-core, phx-fin, phx-obs, phx-world
-pub struct phx_store::parties::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
-impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::close_day(&mut self)  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core, phx-fin
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
-impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
-pub struct phx_store::parties::PartyRows
 pub mod phx_store::pod  // used by: phx-check, phx-core, phx-macros
 pub mod phx_store::pod::__seal  // used by: phx-macros
 pub trait phx_store::pod::__seal::Sealed  // used by: phx-macros
@@ -650,7 +627,6 @@ impl phx_store::pod::__seal::Sealed for phx_id::ids::MarketId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MessageRef
 impl phx_store::pod::__seal::Sealed for phx_id::ids::MsgId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::OfferRef
-impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyId
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyKey
 impl phx_store::pod::__seal::Sealed for phx_id::ids::PartyRef
 impl phx_store::pod::__seal::Sealed for phx_id::ids::ProcessRef
@@ -717,8 +693,6 @@ impl phx_store::pod::Pod for phx_id::ids::MsgId
 pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::OfferRef
 pub fn phx_id::ids::OfferRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
-impl phx_store::pod::Pod for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyKey
 pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyRef
@@ -978,10 +952,6 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::inter
 pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
@@ -1096,10 +1066,6 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
-impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::sumtree::SumTrees<B>
 pub fn phx_store::sumtree::SumTrees<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::sumtree::SumTrees<B>::rows_ever(&self) -> u64  // used by: phx-fin
@@ -1651,26 +1617,6 @@ pub fn phx_store::edges::Pair::set_end(&mut self, usize, phx_id::ids::PartyKey) 
 impl phx_store::pod::Pod for phx_store::edges::Pair
 pub fn phx_store::edges::Pair::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::__seal::Sealed for phx_store::edges::Pair
-pub struct phx_store::Parties<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin
-impl<B: phx_store::backing::Backing> phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::at(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyRef>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::begin(&mut self, phx_id::ids::PartyId) -> phx_id::ids::PartyRef  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::close_day(&mut self)  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::end(&mut self, phx_id::ids::PartyRef)  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::high_water(&self) -> u32  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::id(&self, phx_id::ids::Slot) -> core::option::Option<phx_id::ids::PartyId>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::kind(&self) -> u8  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::live_slots(&self) -> impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot> + '_  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::new(&mut phx_store::backing::AddressSpace, u8, u32, u32) -> phx_store::parties::Parties<B>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::resolve(&self, phx_id::ids::PartyRef) -> core::option::Option<phx_id::ids::Slot>  // used by: phx-core, phx-fin
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
-impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 pub struct phx_store::Placed  // used by: phx-world
 pub phx_store::Placed::bytes: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-world
 pub phx_store::Placed::decl: usize  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
@@ -1879,8 +1825,6 @@ impl phx_store::pod::Pod for phx_id::ids::MsgId
 pub fn phx_id::ids::MsgId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::OfferRef
 pub fn phx_id::ids::OfferRef::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
-impl phx_store::pod::Pod for phx_id::ids::PartyId
-pub fn phx_id::ids::PartyId::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyKey
 pub fn phx_id::ids::PartyKey::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin
 impl phx_store::pod::Pod for phx_id::ids::PartyRef
@@ -2053,10 +1997,6 @@ impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::inter
 pub fn phx_store::intern::Interner<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::intern::Interner<B>, phx_store::save::LoadError>  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::parties::Parties<B> where u8: phx_store::save::Saved, phx_store::table::SlotAlloc<B>: phx_store::save::Saved, phx_store::genref::Generations<phx_store::parties::PartyRows, B>: phx_store::save::Saved, phx_store::column::Column<phx_id::ids::PartyId, B>: phx_store::save::Saved
-pub fn phx_store::parties::Parties<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_store::table::SlotAlloc<B>
 pub fn phx_store::table::SlotAlloc<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_store::table::SlotAlloc<B>, phx_store::save::LoadError>  // used by: phx-fin
 pub fn phx_store::table::SlotAlloc<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-fin
@@ -2165,10 +2105,6 @@ impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store:
 pub fn phx_store::intern::Interner<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rows_ever(&self) -> u64  // used by: phx-fin
 pub fn phx_store::intern::Interner<B>::rows_live(&self) -> u64  // used by: phx-fin
-impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::parties::Parties<B>
-pub fn phx_store::parties::Parties<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin
-pub fn phx_store::parties::Parties<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin
 impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_store::sumtree::SumTrees<B>
 pub fn phx_store::sumtree::SumTrees<B>::bytes(&self) -> u64  // used by: phx-fin
 pub fn phx_store::sumtree::SumTrees<B>::rows_ever(&self) -> u64  // used by: phx-fin

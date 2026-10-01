@@ -21,7 +21,7 @@ const WORLD_TYPES: &[&str] = &[
     "EventStore",
     "RecordStore",
     "Books",
-    "Parties",
+    "Directory",
     "Ledger",
     "CellTable",
     "Population",

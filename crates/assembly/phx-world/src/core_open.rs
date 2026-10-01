@@ -14,9 +14,10 @@ use phx_core::calendar::Calendar;
 use phx_core::settle::AT_ISSUER;
 use phx_core::store::{KindStore, Opening};
 use phx_core::{Household, OpeningCountry, OpeningCtx, Register, StreamDef, WorldStreams};
-use phx_id::{Day, PartyId, PartyKey};
+use phx_id::{Day, PartyKey};
 use phx_macros::{clause, opening};
 use phx_num::{MaybeI64, Missing, violation};
+use phx_pop::directory::Directory;
 use phx_pop::kind::PopKindDecl;
 use phx_pop::persons::{Held, Persons};
 use phx_rand::float::len_u64;
@@ -133,6 +134,12 @@ struct Rules {
     types: phx_val::types::Types,
 }
 
+/// The days the directory keeps an ended party's tombstone.
+#[opening]
+fn tombstone_horizon(register: &Register) -> Result<u32, String> {
+    u32::try_from(register.count(phx_pop::prims::TOMBSTONE_HORIZON_DAYS.id)?).map_err(|e| e.to_string())
+}
+
 impl Rules {
     fn of(register: &Register) -> Result<Rules, String> {
         Ok(Rules {
@@ -149,19 +156,22 @@ impl Core {
     /// The core with no party yet: each declared kind's store, in the catalogue's order, reserving its capacity's rows;
     /// the population kind's with its record of attributes and positions, and its persons.
     #[opening]
-    fn empty(household: &PopKindDecl, household_pop: usize, declared: &crate::core_kinds::Bound) -> Core {
+    fn empty(
+        (household, household_pop): (&PopKindDecl, usize),
+        declared: &crate::core_kinds::Bound,
+        (first, horizon): (Day, u32),
+    ) -> Core {
         let mut space = AddressSpace::empty();
         let mut kinds = Vec::new();
         let mut persons = Vec::new();
-        for (place, traits) in declared.0.iter().enumerate() {
-            let kind = kind_number(place);
+        for traits in &declared.0 {
             let populated = traits.name == household.kind;
             let (chunk, stride) = if populated {
                 (AGENT_ROWS_PER_CHUNK, household.attrs.len() + household.positions.len())
             } else {
                 (KIND_ROWS_PER_CHUNK, 1)
             };
-            let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, kind, traits.rows, chunk, stride);
+            let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, traits.rows, chunk, stride);
             if traits.holds_money {
                 store = store.with_accounts(&mut space, traits.rows, chunk);
             }
@@ -169,6 +179,8 @@ impl Core {
             persons.push(populated.then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK)));
         }
         let names: Vec<&'static str> = declared.0.iter().map(|k| k.name).collect();
+        let capacities: Vec<u32> = declared.0.iter().map(|k| k.rows).collect();
+        let directory = Directory::new(&mut space, &capacities, KIND_ROWS_PER_CHUNK, (first, horizon));
         let happened = phx_core::EventStore::new(
             &mut space,
             phx_core::capacity::EVENT_ROWS,
@@ -184,7 +196,7 @@ impl Core {
 
             kinds,
             persons,
-            keys: Vec::new(),
+            directory,
             issuers: Vec::new(),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),
@@ -243,17 +255,14 @@ impl Core {
         }
     }
 
-    /// A party begun on the core with the next identity, its record and its account where its kind holds money.
-    fn begin_party(&mut self, place: usize, record: &[MaybeI64], account: Option<Opening>) -> PartyKey {
-        let id = PartyId::new(self.next_id);
-        self.next_id += 1;
+    /// A party begun on the core at the slot the directory hands out, with its record and its account where its kind
+    /// holds money.
+    pub(crate) fn begin_party(&mut self, place: usize, record: &[MaybeI64], account: Option<Opening>) -> PartyKey {
         let Some(store) = self.kinds.get_mut(place) else {
             violation!(clause = "REP.1", "a party of a kind the core does not keep", kind = place);
         };
-        let party = store.begin(id, record, account);
-        let key = PartyKey::new(kind_number(place), party.slot());
-        self.keys.push((id, key));
-        key
+        let party = store.begin(self.directory.begin(kind_number(place)), record, account);
+        PartyKey::new(party.kind(), party.slot())
     }
 
     /// The world's opening drawn on the core.
@@ -263,7 +272,7 @@ impl Core {
     #[clause("GEN.2", "GEN.3", "GEN.4", "PTY.1", "PTY.3", "PTY.9", "REP.26", "BNK.1", "SOC.3", "MON.1")]
     pub fn open(o: &CoreOpening<'_>) -> Result<Core, String> {
         let (decl, household_pop) = o.household;
-        let mut core = Core::empty(decl, household_pop, o.declared);
+        let mut core = Core::empty((decl, household_pop), o.declared, (o.today, tombstone_horizon(o.register)?));
         let rules = Rules::of(o.register)?;
         let ctx = OpeningCtx::new(o.streams, phx_core::CONTRACTS);
         let date = o.calendar.date(o.today);

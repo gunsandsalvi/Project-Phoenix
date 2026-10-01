@@ -2,7 +2,7 @@ use phx_core::calendar::Calendar;
 use phx_core::calendar::daycount::{DayCount, actual_days, day_fraction};
 use phx_core::calendar::period::{Period, ScheduleDates, advance};
 use phx_core::consts::MONTHS_PER_YEAR;
-use phx_id::{Date, Day, InstrumentId, PartyId, SeriesId, ZoneId};
+use phx_id::{Date, Day, InstrumentId, PartyRef, SeriesId, ZoneId};
 use phx_macros::clause;
 use phx_num::{Ccy, DayFraction, Missing, Money, Qty, Rate, RatePeriod, Round, accrue, capacity_exceeded};
 
@@ -50,7 +50,7 @@ pub enum Repayment {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct EventRef {
     pub kind: u16,
-    pub party: Missing<PartyId>,
+    pub party: Missing<PartyRef>,
 }
 
 /// What a contingent leg pays when its event happens.

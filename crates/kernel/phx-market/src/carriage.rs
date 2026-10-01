@@ -3,7 +3,7 @@
 //! day's capacity is refused, never repriced, and one no route serves fails.
 
 use phx_geo::transport::{Route, SegmentUse, Segments};
-use phx_id::{Day, PartyId};
+use phx_id::{Day, PartyRef};
 use phx_macros::clause;
 use phx_num::{Missing, PriceRaw, capacity_exceeded};
 use phx_rand::Draws;
@@ -44,7 +44,7 @@ pub fn freight(
 /// A carrier's offer at the origin: its posted price and the room its vehicles have left today.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Carrier {
-    pub carrier: PartyId,
+    pub carrier: PartyRef,
     pub price: PriceRaw,
     pub room: i64,
 }
@@ -53,7 +53,7 @@ pub struct Carrier {
 /// and the route the network gives it today, read where the network keeps it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Consignment<'r> {
-    pub shipper: PartyId,
+    pub shipper: PartyRef,
     pub need: i64,
     pub load: i64,
     pub route: Missing<Route<'r>>,

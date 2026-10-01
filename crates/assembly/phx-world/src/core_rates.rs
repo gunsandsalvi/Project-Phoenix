@@ -5,7 +5,7 @@
 use std::collections::BTreeMap;
 
 use phx_core::pop_process::{AgentView, Household, Person};
-use phx_id::{Date, Day, PartyId, Slot};
+use phx_id::{Date, Day, PartyRef, Slot};
 use phx_macros::clause;
 
 use crate::consts::RATE_SAMPLE;
@@ -24,13 +24,13 @@ pub struct RateTally {
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Rates {
     pub tallies: BTreeMap<(u32, u32, u32), RateTally>,
-    sample: Option<Vec<(Slot, PartyId)>>,
+    sample: Option<Vec<(Slot, PartyRef)>>,
 }
 
 /// Whether a household is among those the rates are measured over: its identity's mix.
 #[must_use]
-pub fn sampled(party: PartyId) -> bool {
-    phx_exec::mix64(party.get()).is_multiple_of(RATE_SAMPLE)
+pub fn sampled(party: PartyRef) -> bool {
+    phx_exec::mix64(party.word()).is_multiple_of(RATE_SAMPLE)
 }
 
 /// A person's whole years on a date, as the tallies key them.
@@ -70,17 +70,12 @@ impl Core {
     pub(crate) fn measure_rates(&mut self, ctx: &Ctx<'_>, day: Day) {
         let Some(place) = self.bound.kinds.household else { return };
         let Some(decl) = self.declared.household.clone() else { return };
-        let Some(store) = self.kinds.get(place) else { return };
+        let (kind, dir) = (crate::core::kind_number(place), &self.directory);
         // The sample is found in one sweep the first day, then read alone; a household that ended leaves it.
         let mut sample = self.rates.sample.take().unwrap_or_else(|| {
-            store
-                .parties
-                .live_slots()
-                .filter_map(|s| store.parties.id(s).map(|p| (s, p)))
-                .filter(|(_, p)| sampled(*p))
-                .collect()
+            dir.live_slots(kind).filter_map(|s| dir.at(kind, s).map(|p| (s, p))).filter(|(_, p)| sampled(*p)).collect()
         });
-        sample.retain(|(slot, party)| store.parties.id(*slot) == Some(*party));
+        sample.retain(|(slot, party)| dir.at(kind, *slot) == Some(*party));
         let date = ctx.calendar.date(day);
         let year = year_of(date);
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();

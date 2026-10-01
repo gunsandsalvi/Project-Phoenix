@@ -10,15 +10,23 @@ declare_prim! {
     pub PERSONS = "REP.persons" { kind: Resolution, value: Count, clause: "REP.40", scope: Shared }
 }
 
+declare_prim! {
+    /// The days an ended party's tombstone is kept: the longest horizon of any record that may name a party.
+    pub TOMBSTONE_HORIZON_DAYS = "REP.tombstone_horizon_days" {
+        kind: Resolution, value: Count, clause: "SET.13", scope: Shared
+    }
+}
+
 /// The representation's primitive as the world reads it.
 #[derive(Debug)]
 pub struct RepPrims {
     pub persons: Prim<Count>,
+    pub tombstone_horizon_days: Prim<Count>,
 }
 
 impl RepPrims {
     pub fn declare(d: &mut Declarations) -> RepPrims {
-        RepPrims { persons: d.prim(&PERSONS) }
+        RepPrims { persons: d.prim(&PERSONS), tombstone_horizon_days: d.prim(&TOMBSTONE_HORIZON_DAYS) }
     }
 }
 

@@ -3,7 +3,7 @@
 #![cfg(test)]
 
 use phx_core::flows::{Denom, Flow};
-use phx_id::{CountryId, Date, Day, PartyId, PartyKey, Slot};
+use phx_id::{CountryId, Date, Day, PartyKey, PartyRef, Slot};
 use phx_ledger::levy::{Band, Withholding};
 use phx_num::Ccy;
 use phx_num::consts::RATE_SCALE;
@@ -101,7 +101,7 @@ fn no_withholding_opens_no_debt() {
     let law = Withholding {
         kind: 0,
         ccy: Ccy::new(0),
-        payee: PartyId::new(1),
+        payee: PartyRef::new(0, 0, Slot::new(1)),
         bands: vec![Band { from: 0, share: tenth }],
         periods: 12,
     };

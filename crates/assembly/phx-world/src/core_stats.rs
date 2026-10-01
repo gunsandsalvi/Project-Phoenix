@@ -332,7 +332,7 @@ impl Core {
             return out;
         };
         let days = u64::from(days);
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             let Some(region) = store.record(slot).get(region_at).and_then(|w| match w.get() {
                 phx_num::Missing::Present(v) => usize::try_from(v).ok(),
                 phx_num::Missing::Absent => None,
@@ -361,7 +361,7 @@ impl Core {
         let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
         let phx_num::Missing::Present(region_at) = decl.sited_by else { return out };
         let employed = self.employed_ids();
-        for slot in store.parties.live_slots() {
+        for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             let Some(region) = store.record(slot).get(region_at).and_then(|w| match w.get() {
                 phx_num::Missing::Present(v) => usize::try_from(v).ok(),
                 phx_num::Missing::Absent => None,
@@ -411,7 +411,7 @@ impl Core {
         for (k, store) in self.kinds.iter().enumerate() {
             let Some(a) = store.accounts.as_ref() else { continue };
             let class = crate::core_kinds::of(&self.declared.kinds, k).money_class;
-            for slot in store.parties.live_slots() {
+            for slot in self.directory.live_slots(crate::core::kind_number(k)) {
                 let party = PartyKey::new(crate::core::kind_number(k), slot);
                 let Some(country) = self.country_of_party(party, (regions, geo)) else {
                     continue;

@@ -17,10 +17,10 @@ use std::collections::BTreeMap;
 
 use phx_core::StreamDef;
 use phx_core::slots::DaySlot;
-use phx_id::{Day, PartyId, PartyKey};
+use phx_id::{Day, PartyKey, PartyRef};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
-use phx_rand::{Subject, SubjectTag};
+use phx_rand::Subject;
 use phx_val::heuristic::{HeuristicId, MENU, Params, Seen};
 use phx_val::types::Types;
 
@@ -289,14 +289,14 @@ impl Outlooks {
         &self,
         (key, view, beta): ((u16, u32), usize, f64),
         (streams, stream): (&phx_core::WorldStreams, &phx_core::StreamDecl),
-        (party, day): (PartyId, Day),
+        (party, day): (PartyRef, Day),
     ) -> phx_val::switching::StanceIn {
         let performance = self
             .series
             .get(&key)
             .and_then(|s| s.methods.get(view))
             .map_or([Missing::Absent; HEURISTICS], |v| v.performance);
-        let mut d = streams.open_at(stream, Subject::new(SubjectTag::Party, party.get()), day, DaySlot::S5b.ordinal());
+        let mut d = streams.open_at(stream, Subject::from(party), day, DaySlot::S5b.ordinal());
         phx_val::switching::StanceIn { performance, intensity: beta, taste: phx_rand::open_unit(&mut d) }
     }
 }
@@ -309,8 +309,7 @@ impl crate::core::Core {
     pub(crate) fn refresh_windows(&mut self, types: &Types, date: phx_id::Date) {
         let mut ages = vec![(0_u64, 0_u64); types.windows.len()];
         if let (Some((place, [_, _, _, w])), Some(decl)) = (self.decisions.household, self.declared.household.clone()) {
-            let slots: Vec<phx_id::Slot> =
-                self.kinds.get(place).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+            let slots: Vec<phx_id::Slot> = self.directory.live_slots(crate::core::kind_number(place)).collect();
             for slot in slots {
                 let Some(Some(ps)) = self.persons.get(place) else { break };
                 let persons: Vec<phx_core::Person> =
@@ -366,7 +365,7 @@ impl crate::core::Core {
     pub(crate) fn reconsider_household(
         &mut self,
         (streams, types): (&phx_core::WorldStreams, &Types),
-        (household, id): (phx_id::PartyKey, PartyId),
+        (household, id): (phx_id::PartyKey, PartyRef),
         (country, day): (u8, Day),
     ) {
         let Some(stream) = streams.named(sys_hh::StanceStream::DECL.name) else {

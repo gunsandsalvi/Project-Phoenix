@@ -2,7 +2,7 @@
 //! stood still from one day to the next, how far each opening distribution has moved from the world's own, and how far
 //! its members have moved within it.
 
-use phx_id::{Day, PartyId};
+use phx_id::{Day, PartyRef};
 use phx_macros::clause;
 use phx_num::Missing;
 use phx_rand::float::from_u64;
@@ -70,7 +70,7 @@ pub fn drift(opening: &View, later: &View) -> Vec<Drift> {
 
 /// The share of the agents sampled in both views whose bin moved; absent when none is in both.
 #[clause("GEN.8")]
-pub fn moved(then: &[(PartyId, Option<usize>)], now: &[(PartyId, Option<usize>)]) -> Missing<f64> {
+pub fn moved(then: &[(PartyRef, Option<usize>)], now: &[(PartyRef, Option<usize>)]) -> Missing<f64> {
     let (mut both, mut moved) = (0_u64, 0_u64);
     for (party, bin) in then {
         if let Ok(at) = now.binary_search_by_key(party, |(p, _)| *p)
@@ -90,14 +90,14 @@ mod tests {
     use phx_id::Day;
     use phx_num::Missing;
 
-    use phx_id::PartyId;
+    use phx_id::PartyRef;
 
     use super::{moved, rises_throughout, still_from};
     use crate::reads::Series;
 
     #[test]
     fn agents_moved_are_counted_among_those_in_both() {
-        let p = PartyId::new;
+        let p = |n: u32| PartyRef::new(0, 0, phx_id::Slot::new(n));
         let then = [(p(64), Some(0)), (p(128), Some(1)), (p(192), None), (p(256), Some(2)), (p(320), Some(2))];
         let now = [(p(64), Some(1)), (p(128), Some(1)), (p(256), Some(2)), (p(320), Some(2))];
         assert_eq!(moved(&then, &now), Missing::Present(0.25), "one of the four in both moved");

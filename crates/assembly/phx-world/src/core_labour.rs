@@ -301,7 +301,7 @@ impl Core {
         let occupations = usize::try_from(class::NO_OCCUPATION).unwrap_or(0);
         let zeros = vec![vec![0.0; occupations]; labour.laws.len()];
         let (mut staff_hours, mut way_hours) = (zeros.clone(), zeros);
-        let slots: Vec<Slot> = self.kinds.get(firm).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+        let slots: Vec<Slot> = self.directory.live_slots(crate::core::kind_number(firm)).collect();
         for slot in &slots {
             let Some(f) = self.firm_record(firm, *slot) else { continue };
             let c = usize::from(ctx.country_of(f.region));
@@ -329,8 +329,8 @@ impl Core {
             u32::try_from(ctx.register.count("FRM.production_days")?).map_err(|e| e.to_string())?;
         let mut wheel = DueWheel::new(today.succ(), WHEEL_DAYS);
         for slot in slots {
-            let Some(id) = self.kinds.get(firm).and_then(|k| k.parties.id(slot)) else { continue };
-            let mut d = ctx.draws(ctx.kind.review_stream, Subject::new(SubjectTag::Party, id.get()), today);
+            let Some(id) = self.directory.reference(crate::core::kind_number(firm), slot) else { continue };
+            let mut d = ctx.draws(ctx.kind.review_stream, Subject::from(id), today);
             let phase = phx_rand::below_u64(&mut d, u64::from(labour.production_days));
             let first = after(today.succ(), phase);
             wheel.schedule(slot.get(), first);
@@ -347,8 +347,8 @@ impl Core {
         let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
-        let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
-        for slot in store.parties.live_slots() {
+        let Some(Some(persons)) = self.persons.get(place) else { return out };
+        for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             for p in persons.of(slot) {
                 if unpack(decl, p.word).attr(ctx.kind.state) == Some(class::SEARCHING) {
                     out.insert((PartyKey::new(kind_number(place), slot), p.id));
@@ -409,7 +409,7 @@ impl Core {
         }
         for s in due {
             let slot = Slot::new(s);
-            if self.kinds.get(firm).is_none_or(|k| k.parties.id(slot).is_none()) {
+            if self.directory.reference(crate::core::kind_number(firm), slot).is_none() {
                 continue;
             }
             let key = PartyKey::new(kind_number(firm), slot);
@@ -426,8 +426,8 @@ impl Core {
             }
         }
         // A firm its owner wound down today reviews and buys nothing more.
-        let firms = self.kinds.get(firm);
-        self.labour.due_today.retain(|s| firms.is_some_and(|k| k.parties.at(Slot::new(*s)).is_some()));
+        let (dir, kind) = (&self.directory, crate::core::kind_number(firm));
+        self.labour.due_today.retain(|s| dir.is_live(kind, Slot::new(*s)));
         totals
     }
 
@@ -612,8 +612,8 @@ impl Core {
             None => {
                 let end = ctx.calendar.plus(day, period);
                 let Some(days) = ctx.calendar.days_between(day, end) else { return false };
-                let mut d =
-                    ctx.draws(ctx.kind.review_stream, Subject::new(SubjectTag::Party, u64::from(employer.word())), day);
+                let Some(employer_ref) = self.reference(employer) else { return false };
+                let mut d = ctx.draws(ctx.kind.review_stream, Subject::from(employer_ref), day);
                 // The first round falls on one of the period's days after today, so a phase is never nought.
                 let phase = phx_rand::below_u64(&mut d, u64::from(days)) + 1;
                 self.labour.reviews.insert(employer, after(day, phase));
@@ -734,7 +734,7 @@ impl Core {
             if mine.is_empty() {
                 continue;
             }
-            let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Person, subject), day);
             // A search the player keeps and queued nothing for sees no vacancy today.
             let choose = |s: &Seeker, reach: Vec<(u32, f64)>, draws: Vec<f64>| {
                 self.decide_own(searching, s.household, |_| SearchIn { reach, draws }).unwrap_or_default()
@@ -852,8 +852,7 @@ impl Core {
                 let at = ps.place_of(household.slot(), person)?;
                 ps.of(household.slot()).nth(at)
             });
-            let Some(h) =
-                held.filter(|_| self.kinds.get(place).is_some_and(|k| k.parties.at(household.slot()).is_some()))
+            let Some(h) = held.filter(|_| self.directory.is_live(crate::core::kind_number(place), household.slot()))
             else {
                 gone.push((household, person));
                 continue;
@@ -921,7 +920,7 @@ impl Core {
             if mine.is_empty() {
                 continue;
             }
-            let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, subject), day);
+            let draws = |subject: u64| ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Person, subject), day);
             // A search the player keeps and queued nothing for sees no vacancy today.
             let choose = |s: &Seeker, reach: Vec<(u32, f64)>, draws: Vec<f64>| {
                 self.decide_own(searching, s.household, |_| SearchIn { reach, draws }).unwrap_or_default()
@@ -949,7 +948,7 @@ impl Core {
         let laws = self.labour.laws.clone();
         let met = |a: &Application| {
             let Some(p) = postings.get(usize::try_from(a.vacancy).unwrap_or(usize::MAX)) else { return false };
-            let mut d = ctx.draws(ctx.kind.meeting_stream, Subject::new(SubjectTag::Party, a.seeker.person), day);
+            let mut d = ctx.draws(ctx.kind.meeting_stream, Subject::new(SubjectTag::Person, a.seeker.person), day);
             phx_rand::open_unit(&mut d) < at_country(&laws, p.country).seen_chance
         };
         let lots = |v: u32| {
@@ -985,7 +984,7 @@ impl Core {
         let accepts = |o: &Application, v: &Vacancy| {
             let Some(p) = postings.get(usize::try_from(o.vacancy).unwrap_or(usize::MAX)) else { return false };
             let law = at_country(&laws, p.country);
-            let mut d = ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Party, o.seeker.person), day);
+            let mut d = ctx.draws(ctx.kind.taste_stream, Subject::new(SubjectTag::Person, o.seeker.person), day);
             let taste = phx_rand::gumbel(&mut d, 0.0, 1.0) - phx_rand::gumbel(&mut d, 0.0, 1.0);
             // An offer the player keeps and queued nothing for is not accepted today.
             self.decide_own(accepting, o.seeker.household, |_| AcceptIn {
@@ -1019,8 +1018,7 @@ impl Core {
             return false;
         };
         let Some(family) = self.employer_family(v.employer) else { return false };
-        let employer_live =
-            self.kinds.get(usize::from(v.employer.kind())).is_some_and(|k| k.parties.at(v.employer.slot()).is_some());
+        let employer_live = self.directory.is_live(v.employer.kind(), v.employer.slot());
         if !employer_live {
             violation!(clause = "LAB.15", "a hire by an employer that has ended", employer = v.employer.word());
         }
@@ -1100,7 +1098,10 @@ impl Core {
             violation!(clause = "LAB.16", "a notice beyond a period", days = law.notice_days);
         };
         let effective = ctx.calendar.on_or_after(CountryId::new(country), ctx.calendar.plus(day, period));
-        let mut d = ctx.draws(ctx.kind.layoff_stream, Subject::new(SubjectTag::Party, u64::from(firm.word())), day);
+        let Some(firm_ref) = self.reference(firm) else {
+            violation!(clause = "PTY.1", "a firm laying off that the directory never held", firm = firm.word());
+        };
+        let mut d = ctx.draws(ctx.kind.layoff_stream, Subject::from(firm_ref), day);
         let mut given = 0;
         for &(occupation, count) in layoffs {
             let Some(f) = self.families.get(family) else { break };
@@ -1272,7 +1273,7 @@ impl Core {
         else {
             return false;
         };
-        let mut d = streams.open_keyed(&sys_soc::CoveredStream::DECL, Subject::new(SubjectTag::Party, id));
+        let mut d = streams.open_keyed(&sys_soc::CoveredStream::DECL, Subject::new(SubjectTag::Person, id));
         if from_i64(person.age_on(calendar.date(day))) < *age || phx_rand::open_unit(&mut d) >= *share {
             return false;
         }

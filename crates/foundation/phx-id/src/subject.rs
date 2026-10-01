@@ -1,6 +1,6 @@
 use phx_rand::{Subject, SubjectTag};
 
-use crate::ids::{CountryId, InstrumentId, LineId, MarketId, PartyId, RegionId, TileId, ZoneId};
+use crate::ids::{CountryId, InstrumentId, LineId, MarketId, PartyRef, RegionId, TileId, ZoneId};
 
 /// Each identity draws under its own tag, so two kinds with the same number never share a draw.
 macro_rules! subject {
@@ -13,8 +13,14 @@ macro_rules! subject {
     };
 }
 
+/// A party draws under its reference, which names it alone over its life.
+impl From<PartyRef> for Subject {
+    fn from(r: PartyRef) -> Subject {
+        Subject::new(SubjectTag::Party, r.packed())
+    }
+}
+
 subject!(
-    PartyId => Party,
     LineId => Line,
     InstrumentId => Instrument,
     MarketId => Market,
@@ -28,12 +34,14 @@ subject!(
 mod tests {
     use phx_rand::{Subject, SubjectTag};
 
-    use crate::ids::{LineId, PartyId, TileId};
+    use crate::Slot;
+    use crate::ids::{LineId, PartyRef, TileId};
 
     #[test]
     fn subjects_carry_their_tag() {
-        assert_eq!(Subject::from(PartyId::new(9)), Subject::new(SubjectTag::Party, 9));
+        let party = PartyRef::new(0, 0, Slot::new(9));
+        assert_eq!(Subject::from(party), Subject::new(SubjectTag::Party, party.packed()));
         assert_eq!(Subject::from(LineId::new(9)), Subject::new(SubjectTag::Line, 9));
-        assert_ne!(Subject::from(PartyId::new(9)), Subject::from(TileId::new(9)));
+        assert_ne!(Subject::from(party), Subject::from(TileId::new(party.packed().try_into().unwrap())));
     }
 }

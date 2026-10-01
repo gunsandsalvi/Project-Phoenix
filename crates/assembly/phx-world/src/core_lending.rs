@@ -15,7 +15,7 @@ use phx_core::slots::DaySlot;
 use phx_id::{Day, PartyKey};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
-use phx_rand::{Subject, SubjectTag};
+use phx_rand::Subject;
 
 use crate::consts::firm::{MARKUP, OUTPUT, PART_ONE, PRICE, PRODUCT};
 use crate::core::Core;
@@ -94,7 +94,7 @@ impl Core {
         if let Some(firm) = self.bound.kinds.firm
             && let Some(store) = self.kinds.get(firm)
         {
-            for slot in store.parties.live_slots() {
+            for slot in self.directory.live_slots(crate::core::kind_number(firm)) {
                 let word = |at: usize| match store.record(slot).get(at).map(|w| w.get()) {
                     Some(Missing::Present(v)) => Some(phx_rand::float::from_i64(v)),
                     _ => None,
@@ -116,12 +116,9 @@ impl Core {
                 filed.insert(PartyKey::new(crate::core::kind_number(firm), slot), margin * output);
             }
         }
-        let lenders = self.bank_kind.and_then(|b| self.kinds.get(usize::from(b)).map(|k| (b, k))).map_or_else(
-            BTreeMap::new,
-            |(b, k)| {
-                k.parties.live_slots().map(|s| (PartyKey::new(b, s), Lender::default())).collect::<BTreeMap<_, _>>()
-            },
-        );
+        let lenders = self.bank_kind.map_or_else(BTreeMap::new, |b| {
+            self.directory.live_slots(b).map(|s| (PartyKey::new(b, s), Lender::default())).collect::<BTreeMap<_, _>>()
+        });
         self.credit = Credit { laws, filed, lenders, ..Credit::default() };
         let mut founded = Vec::new();
         for (bank, lender) in &mut self.credit.lenders {
@@ -303,7 +300,10 @@ impl Core {
             .unwrap_or_default();
         others.retain(|b| *b != own);
         let asked_stream = streams.named(sys_bnk::AskedStream::DECL.name)?;
-        let subject = Subject::new(SubjectTag::Party, u64::from(key.word()));
+        let Some(party) = self.reference(key) else {
+            violation!(clause = "PTY.1", "a borrower the directory never held", key = key.word());
+        };
+        let subject = Subject::from(party);
         let mut draws = streams.open_at(&asked_stream, subject, day, DaySlot::S5c.ordinal());
         let count = asked(&law.lenders_asked, phx_rand::open_unit(&mut draws));
         let mut chosen = vec![own];

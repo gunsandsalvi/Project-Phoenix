@@ -468,7 +468,7 @@ fn prices_are_points(w: Inspector<'_>) -> Outcome {
     let core = w.core();
     let Some(firm) = core.names.iter().position(|n| *n == "firm") else { return Outcome::NotYet("no firm kind") };
     let Some(store) = core.kinds.get(firm) else { return Outcome::NotYet("no firm kind") };
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(firm) {
         let price = store.record(slot).get(phx_world::consts::firm::PRICE).map(|w| w.get());
         if let Some(phx_num::Missing::Present(p)) = price
             && !m.is_point(p)
@@ -605,7 +605,7 @@ fn outlooks_are_own(w: Inspector<'_>) -> Outcome {
         _ => None,
     };
     let mut ratios: std::collections::BTreeMap<(i64, i64), Vec<(i128, i128)>> = std::collections::BTreeMap::new();
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(firm) {
         let (Some(product), Some(region), Some(expected), Some(output)) =
             (word(slot, PRODUCT), word(slot, REGION), word(slot, EXPECTED), word(slot, OUTPUT))
         else {
@@ -743,10 +743,11 @@ pub fn markups_by_trade(w: Inspector<'_>) -> std::collections::BTreeMap<u16, f64
     use phx_world::consts::firm::{MARKUP, PART_ONE, PRODUCT};
     let core = w.core();
     let mut by: std::collections::BTreeMap<u16, Vec<i64>> = std::collections::BTreeMap::new();
-    let Some(store) = core.names.iter().position(|n| *n == "firm").and_then(|f| core.kinds.get(f)) else {
+    let Some((firm, store)) = core.names.iter().position(|n| *n == "firm").and_then(|f| Some((f, core.kinds.get(f)?)))
+    else {
         return std::collections::BTreeMap::new();
     };
-    for slot in store.parties.live_slots() {
+    for slot in core.live_slots(firm) {
         let word = |at: usize| match store.record(slot).get(at).map(|x| x.get()) {
             Some(phx_num::Missing::Present(v)) => Some(v),
             _ => None,
@@ -903,7 +904,7 @@ pub const LC_0_56: Check = live_check! {
 };
 
 /// The opening report lists every closure that balanced each country's sheet and every apportionment, and every party
-/// the core holds is named: each live row carries an identity.
+/// the directory holds has its record in its kind's store.
 fn opening_reported(w: Inspector<'_>) -> Outcome {
     let core = w.core();
     let countries = w.countries().len();
@@ -920,9 +921,10 @@ fn opening_reported(w: Inspector<'_>) -> Outcome {
         return Outcome::Fail("the opening reports no apportionment".to_owned());
     }
     for (k, store) in core.kinds.iter().enumerate() {
-        if let Some(slot) = store.parties.live_slots().find(|s| store.parties.id(*s).is_none()) {
+        let rows = phx_store::StoreStats::rows_ever(store);
+        if let Some(slot) = core.live_slots(k).find(|s| u64::from(s.get()) >= rows) {
             return Outcome::Fail(format!(
-                "a {} at slot {} carries no identity",
+                "a {} at slot {} has no record",
                 core.names.get(k).map_or("party", |n| n),
                 slot.get()
             ));

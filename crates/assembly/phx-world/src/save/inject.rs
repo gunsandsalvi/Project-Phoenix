@@ -41,7 +41,7 @@ impl Core {
     /// A live party of a kind, by its name: the first in slot order.
     fn first_of(&self, kind: &str) -> Option<PartyKey> {
         let place = self.names.iter().position(|n| *n == kind)?;
-        let slot = self.kinds.get(place)?.parties.live_slots().next()?;
+        let slot = self.directory.live_slots(crate::core::kind_number(place)).next()?;
         Some(PartyKey::new(crate::core::kind_number(place), slot))
     }
 
@@ -78,7 +78,7 @@ impl Core {
             }
             "contracts" => {
                 let place = self.bound.kinds.household.ok_or_else(refused)?;
-                let never = Slot::new(self.kinds.get(place).ok_or_else(refused)?.parties.high_water());
+                let never = Slot::new(self.directory.high_water(crate::core::kind_number(place)));
                 let jobs = self
                     .families
                     .iter_mut()

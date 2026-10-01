@@ -15,7 +15,7 @@ const STORES: &[&str] = &[
     "Column",
     "Table",
     "SlotAlloc",
-    "Parties",
+    "Directory",
     "KindStore",
     "EdgeTable",
     "ChunkArena",
@@ -89,7 +89,7 @@ mod tests {
     #[test]
     fn pc22_holds_stores_by_reference() {
         let audit = "fn recount(c: &Column<i64>, k: &KindStore<B>) -> i64 { 0 }\n\
-                     fn repair(c: &mut Column<i64>, p: &mut Parties) {}\n\
+                     fn repair(c: &mut Column<i64>, p: &mut Directory) {}\n\
                      #[cfg(test)]\nmod tests { fn t(d: &mut Column<u8>) {} }";
         let aud = with_source(krate("phx-audit", Layer::Kernel), "src/recount.rs", audit);
         let found: Vec<String> = run(&Workspace::new(vec![aud])).into_iter().map(|b| b.message).collect();

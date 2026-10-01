@@ -199,11 +199,7 @@ impl Core {
         self.labour.reviews.remove(&key);
         self.goods.outlooks.awaiting.remove(&key.slot().get());
         self.goods.stocks.end(key);
-        if let Some(k) = self.kinds.get_mut(place)
-            && let Some(r) = k.parties.at(key.slot())
-        {
-            k.parties.end(r);
-        }
+        self.end_party(key, day, Some(estate));
         self.insolvency.endings.push(Ending {
             day: day.get(),
             product: u16::try_from(product).unwrap_or(u16::MAX),

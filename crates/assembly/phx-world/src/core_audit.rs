@@ -26,9 +26,7 @@ pub(crate) struct Held {
 impl Core {
     /// What the money and goods families read at a close, as it stands.
     pub(crate) fn held(&self) -> Held {
-        let banks = self.bank_kind.map_or(0, |b| {
-            usize::try_from(self.kinds.get(usize::from(b)).map_or(0, |k| k.parties.high_water())).unwrap_or(0)
-        });
+        let banks = self.bank_kind.map_or(0, |b| usize::try_from(self.directory.high_water(b)).unwrap_or(0));
         Held {
             money: self.money_totals(),
             deposits: phx_core::store::deposits_of(self.kinds.iter(), banks),
@@ -69,8 +67,7 @@ impl Core {
             for edge in edges.open_slots() {
                 for side in 0..2 {
                     let Some(end) = edges.end(edge, side) else { continue };
-                    let live =
-                        self.kinds.get(usize::from(end.kind())).is_some_and(|k| k.parties.at(end.slot()).is_some());
+                    let live = self.directory.is_live(end.kind(), end.slot());
                     if !live {
                         found.push(Finding {
                             family: "contracts",
@@ -88,9 +85,9 @@ impl Core {
         // A household is its persons: one with none left must have ended.
         if let (Some(place), Some(persons)) =
             (self.bound.kinds.household, self.bound.kinds.household.and_then(|p| self.persons.get(p)?.as_ref()))
-            && let Some(store) = self.kinds.get(place)
         {
-            let empty = store.parties.live_slots().filter(|s| persons.count(*s) == 0).count();
+            let kind = crate::core::kind_number(place);
+            let empty = self.directory.live_slots(kind).filter(|s| persons.count(*s) == 0).count();
             if empty > 0 {
                 found.push(Finding {
                     family: "persons",

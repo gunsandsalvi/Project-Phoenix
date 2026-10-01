@@ -115,7 +115,13 @@ impl Core {
 
     /// A hit recorded as an event: its household the subject, each person it reached a detail of one person.
     #[clause("OBS.3", "CHN.4")]
-    fn record_event(&mut self, kind: u16, (place, slot, household): (usize, Slot, u64), reached: &[usize], day: Day) {
+    fn record_event(
+        &mut self,
+        kind: u16,
+        (place, slot, household): (usize, Slot, phx_id::PartyRef),
+        reached: &[usize],
+        day: Day,
+    ) {
         let ids: Vec<u64> = self
             .persons
             .get(place)
@@ -125,13 +131,13 @@ impl Core {
         let details: Vec<(Subject, i64)> = reached
             .iter()
             .filter_map(|at| ids.get(*at))
-            .map(|person| (Subject::new(SubjectTag::Party, *person), 1))
+            .map(|person| (Subject::new(SubjectTag::Person, *person), 1))
             .collect();
         self.happened.record(phx_core::NewEvent {
             day,
             slot: DaySlot::S3b,
             kind,
-            subjects: &[Subject::new(SubjectTag::Party, household)],
+            subjects: &[Subject::from(household)],
             details: &details,
             develops_from: phx_num::Missing::Absent,
         });
@@ -177,7 +183,7 @@ impl Core {
         let Some((place, pop_at)) = self.household() else { return };
         let Some((decl, _)) = pop.get(pop_at) else { return };
         self.declared.household = Some(decl.clone());
-        let high = self.kinds.get(place).map_or(0, |k| k.parties.high_water());
+        let high = self.directory.high_water(crate::core::kind_number(place));
         self.hazards = ctx
             .processes
             .iter()
@@ -189,7 +195,7 @@ impl Core {
                 next: vec![None; usize::try_from(high).unwrap_or(0)],
             })
             .collect();
-        let slots: Vec<Slot> = self.kinds.get(place).map(|k| k.parties.live_slots().collect()).unwrap_or_default();
+        let slots: Vec<Slot> = self.directory.live_slots(crate::core::kind_number(place)).collect();
         let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
         let mut buffers = Buffers::default();
         for slot in slots {
@@ -207,13 +213,13 @@ impl Core {
         (h, buffers): (&Household, &mut Buffers),
         from: Day,
     ) {
-        let Some(party) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { return };
+        let Some(party) = self.directory.reference(crate::core::kind_number(place), slot) else { return };
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let reading = Reading { register: ctx.register, calendar: ctx.calendar, country_of: &country_of };
         for hz in &mut self.hazards {
             let Some(b) = ctx.processes.get(hz.process) else { continue };
             let change = chances(&reading, (decl.kind, party), b, h, from, buffers);
-            let subject = Subject::new(SubjectTag::Party, party.get());
+            let subject = Subject::from(party);
             let mut d = ctx.streams.open_at(&b.stream, subject, from, DaySlot::S10b.ordinal());
             let booking = next_booking(&mut d, any_hit(&buffers.qs), from, change);
             book(hz, slot, booking);
@@ -236,7 +242,7 @@ impl Core {
         // A household whose persons labour changed since the last draws has its chances read again from today.
         for s in std::mem::take(&mut self.touched) {
             let slot = Slot::new(s);
-            if self.kinds.get(place).and_then(|k| k.parties.at(slot)).is_none() {
+            if self.directory.at(crate::core::kind_number(place), slot).is_none() {
                 continue;
             }
             self.read_household((place, decl), slot, &mut h);
@@ -251,7 +257,7 @@ impl Core {
             for slot in due.iter().copied().map(Slot::new) {
                 let booked = self.hazards.get(at).and_then(|hz| hz.next.get(index(slot)).copied().flatten());
                 let Some(start) = booked.filter(|(d, _)| *d == day) else { continue };
-                if self.kinds.get(place).and_then(|k| k.parties.at(slot)).is_none() {
+                if self.directory.at(crate::core::kind_number(place), slot).is_none() {
                     continue;
                 }
                 follows.todo.push((slot, at, start));
@@ -275,13 +281,13 @@ impl Core {
             for &(slot, at, start) in rows {
                 let process = this.hazards.get(at).map(|hz| hz.process);
                 let (Some(id), Some(b)) = (
-                    this.kinds.get(place).and_then(|k| k.parties.id(slot)),
+                    this.directory.reference(crate::core::kind_number(place), slot),
                     process.and_then(|p| ctx.processes.get(p)),
                 ) else {
                     violation!(clause = "REP.7", "a booking due for no household or process", slot = slot.get());
                 };
                 this.read_household((place, decl), slot, &mut chunk.h);
-                let subject = Subject::new(SubjectTag::Party, id.get());
+                let subject = Subject::from(id);
                 let mut d = ctx.streams.open_at(&b.stream, subject, day, DaySlot::S3b.ordinal());
                 let f = follow(&reading, (decl.kind, id), b, (&chunk.h, &mut chunk.buffers), (day, start), &mut d);
                 chunk.out.push(f);
@@ -289,9 +295,10 @@ impl Core {
         });
         let followed = chunks.iter_mut().flat_map(|c| c.out.drain(..));
         for ((slot, at, _), f) in todo.iter().copied().zip(followed) {
-            let (Some(process), Some(id)) =
-                (self.hazards.get(at).map(|hz| hz.process), self.kinds.get(place).and_then(|k| k.parties.id(slot)))
-            else {
+            let (Some(process), Some(id)) = (
+                self.hazards.get(at).map(|hz| hz.process),
+                self.directory.reference(crate::core::kind_number(place), slot),
+            ) else {
                 continue;
             };
             let Some(b) = ctx.processes.get(process) else { continue };
@@ -302,7 +309,7 @@ impl Core {
             if !f.reached.is_empty() {
                 record.hits += 1;
                 self.count_event(b.event, phx_rand::float::len_u64(f.reached.len()));
-                self.record_event(b.event, (place, slot, id.get()), &f.reached, day);
+                self.record_event(b.event, (place, slot, id), &f.reached, day);
                 if crate::core_rates::sampled(id) {
                     self.read_household((place, decl), slot, &mut h);
                     self.rates.realised(process, &h, &f.reached, ctx.calendar.date(day));
@@ -332,7 +339,7 @@ impl Core {
         (hits, day): (&[Hit], Day),
         record: &mut PopDay,
     ) {
-        let Some(id) = self.kinds.get(place).and_then(|k| k.parties.id(slot)) else { return };
+        let Some(id) = self.directory.reference(crate::core::kind_number(place), slot) else { return };
         let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
         self.read_household((place, decl), slot, &mut h);
         let before = h.persons.len();
@@ -358,8 +365,7 @@ impl Core {
             if places.is_empty() {
                 continue;
             }
-            let mut d =
-                ctx.streams.open_at(&b.stream, Subject::new(SubjectTag::Party, id.get()), day, DaySlot::S3b.ordinal());
+            let mut d = ctx.streams.open_at(&b.stream, Subject::from(id), day, DaySlot::S3b.ordinal());
             b.process.outcome(ctx.register, &view, &mut h, &places, &mut d);
             for (p, cause) in h.persons.iter().zip(causes.iter_mut()) {
                 if p.gone && cause.is_none() {
@@ -371,7 +377,7 @@ impl Core {
             violation!(
                 clause = "REP.26",
                 "an outcome took persons out rather than marking them gone",
-                party = id.get()
+                party = id.word()
             );
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
@@ -392,13 +398,13 @@ impl Core {
             if h.persons.get(at).is_some_and(|p| p.gone) {
                 let Some(Some(persons)) = self.persons.get_mut(place) else { continue };
                 let Some(person) = persons.of(slot).nth(at).map(|x| x.id) else {
-                    violation!(clause = "REP.26", "a person gone that its household does not hold", party = id.get());
+                    violation!(clause = "REP.26", "a person gone that its household does not hold", party = id.word());
                 };
                 persons.remove(&mut self.space, slot, at);
                 self.person_left(key, person);
                 record.gone += 1;
                 let Some(cause) = causes.get(at).copied().flatten() else {
-                    violation!(clause = "POP.15", "a person gone by no process", party = id.get());
+                    violation!(clause = "POP.15", "a person gone by no process", party = id.word());
                 };
                 died.push(Death { day, person, household: key, cause, to: Destination::Household(key) });
             }
@@ -420,7 +426,7 @@ impl Core {
             let region = sited.and_then(|a| h.attrs.iter().find(|(n, _)| *n == a.item.name).map(|(_, v)| *v));
             let country = region.and_then(|r| ctx.regions.get(usize::try_from(r).ok()?).copied());
             let Some(country) = country else {
-                violation!(clause = "PTY.5", "an ended household sited in no country", party = id.get());
+                violation!(clause = "PTY.5", "an ended household sited in no country", party = id.word());
             };
             let to = self.end_household(key, (country, day)).map_or(Destination::Nothing, Destination::Estate);
             self.deaths.extend(died.into_iter().map(|d| Death { to, ..d }));
@@ -554,11 +560,7 @@ impl Core {
         if let Some(Some(p)) = self.persons.get_mut(place) {
             p.clear(&mut self.space, key.slot());
         }
-        if let Some(k) = self.kinds.get_mut(place)
-            && let Some(r) = k.parties.at(key.slot())
-        {
-            k.parties.end(r);
-        }
+        self.end_party(key, day, estate);
         estate
     }
 }

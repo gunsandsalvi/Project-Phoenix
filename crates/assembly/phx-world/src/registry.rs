@@ -770,11 +770,12 @@ fn opened(core: &crate::core::Core, register: &phx_core::Register) -> crate::met
         .names
         .iter()
         .zip(&core.kinds)
-        .map(|(name, store)| {
+        .enumerate()
+        .map(|(k, (name, store))| {
             let money = store.accounts.as_ref().map_or(0, |a| {
                 a.balance.slice().iter().zip(a.pending.slice()).map(|(m, p)| i128::from(*m) + i128::from(*p)).sum()
             });
-            let parties = phx_rand::float::len_u64(store.parties.live_slots().count());
+            let parties = core.directory.live(crate::core::kind_number(k));
             crate::metrics::OpenedKind { kind: (*name).to_owned(), parties, money }
         })
         .collect();

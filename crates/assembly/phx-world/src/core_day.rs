@@ -472,7 +472,7 @@ impl Core {
         for f in buf.iter_mut().filter(|f| f.reason == WAGE && f.denomination.is_money()) {
             let law = self.state.withholding.get(usize::from(f.denomination.ccy())).and_then(Option::as_ref);
             let Some((a, gross)) = crate::core_taxes::withheld(f, law) else { continue };
-            let id = self.kinds.get(usize::from(a.payer.kind())).and_then(|k| k.parties.id(a.payer.slot()));
+            let id = self.directory.reference(a.payer.kind(), a.payer.slot());
             if id.is_some_and(crate::core_rates::sampled) {
                 self.taxes.sample.push((gross, a.tax, a.ccy));
             }
@@ -487,17 +487,9 @@ impl Core {
         let Some(place) = self.bound.kinds.estate else {
             violation!(clause = "PTY.9", "an estate with no kind to hold it");
         };
-        let id = phx_id::PartyId::new(self.next_id);
-        self.next_id += 1;
-        let Some(store) = self.kinds.get_mut(place) else {
-            violation!(clause = "PTY.9", "an estate kind with no store");
-        };
         // The estate's one record word is its country, where its kind declares its place.
         let record = [phx_num::MaybeI64::present(i64::from(country.get()))];
-        let party = store.begin(id, &record, Some(phx_core::store::Opening { bank, balance: money }));
-        let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), party.slot());
-        let at = self.keys.partition_point(|(i, _)| *i < id);
-        self.keys.insert(at, (id, key));
+        let key = self.begin_party(place, &record, Some(phx_core::store::Opening { bank, balance: money }));
         self.estates.push((key, country, day));
         key
     }
@@ -613,7 +605,7 @@ impl Core {
             if a == b {
                 continue;
             }
-            let party = self.bank_kind.and_then(|k| self.kinds.get(usize::from(k))?.parties.id(Slot::new(slot)));
+            let party = self.bank_kind.and_then(|k| self.directory.reference(k, Slot::new(slot)));
             found.push(finding(
                 (day, "Law 2"),
                 party.map_or(FindingOwner::Run, FindingOwner::Party),
@@ -844,7 +836,7 @@ impl Core {
     }
 
     /// Each estate that paid all it held today ended; returns them.
-    fn end_settled(&mut self, settling: Vec<PartyKey>) -> u64 {
+    fn end_settled(&mut self, settling: Vec<PartyKey>, day: Day) -> u64 {
         let mut ended = 0;
         let projects = if settling.is_empty() { BTreeMap::new() } else { self.project_costs() };
         let mut gone: std::collections::BTreeSet<PartyKey> = std::collections::BTreeSet::new();
@@ -867,11 +859,7 @@ impl Core {
                 self.waiting.remove(&estate);
                 self.goods.stocks.end(estate);
                 gone.insert(estate);
-                if let Some(k) = self.kinds.get_mut(usize::from(estate.kind()))
-                    && let Some(r) = k.parties.at(estate.slot())
-                {
-                    k.parties.end(r);
-                }
+                self.end_party(estate, day, None);
                 ended += 1;
             }
         }
@@ -1009,11 +997,9 @@ impl Core {
             c.gather((day, calendar, streams), (&mut work.flows, families), &mut record)
         });
         work.flows.split_last(phx_core::consts::FLOW_GROUP_COST);
-        let high: Vec<u32> = self.kinds.iter().map(|k| k.parties.high_water()).collect();
+        let high: Vec<u32> = self.directory.kind_numbers().map(|k| self.directory.high_water(k)).collect();
         let ranges = Ranges::new(self.range_bits, &high);
-        let banks = self.bank_kind.map_or(0, |b| {
-            usize::try_from(self.kinds.get(usize::from(b)).map_or(0, |k| k.parties.high_water())).unwrap_or(0)
-        });
+        let banks = self.bank_kind.map_or(0, |b| usize::try_from(self.directory.high_water(b)).unwrap_or(0));
         let mut deposits = deposits_of(self.kinds.iter(), banks);
         let closed = vec![false; banks];
         let failed = self.timed(clock, "settle.money", |c| {
@@ -1038,12 +1024,10 @@ impl Core {
             record.wages = phx_exec::trace::span("settle.wages", || c.record_wages_settled(&failed));
             record.breaks +=
                 phx_exec::trace::span("settle.money_breaks", || c.money_breaks((day, before), moved, &mut deposits));
-            record.estates += phx_exec::trace::span("settle.end_settled", || c.end_settled(settling));
+            record.estates += phx_exec::trace::span("settle.end_settled", || c.end_settled(settling, day));
             phx_exec::trace::span("settle.keep_books", || c.keep_books(day, calendar));
         });
-        for k in &mut self.kinds {
-            k.parties.close_day();
-        }
+        let _ = self.directory.close_day(day);
         for f in &mut self.families {
             f.store.edges.close_day();
         }

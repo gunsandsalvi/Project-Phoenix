@@ -1,6 +1,6 @@
 use core::any::Any;
 
-use phx_id::{CountryId, PartyId, TileId};
+use phx_id::{CountryId, PartyRef, TileId};
 use phx_macros::clause;
 use phx_rand::{Draws, Subject};
 
@@ -90,10 +90,10 @@ pub fn opening_subject(stratum: u32, ordinal: u32) -> Subject {
 /// served, and the counterparty whose entry answers it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct WriteRecord {
-    pub party: PartyId,
+    pub party: PartyRef,
     pub amount: i128,
     pub identity: u64,
-    pub counter: PartyId,
+    pub counter: PartyRef,
 }
 
 /// A counterparty's realised side against its drawn size: the stratum apportioned, the party, what its drawn size
@@ -101,7 +101,7 @@ pub struct WriteRecord {
 #[derive(Clone, Debug, PartialEq, Eq, phx_macros::Saved)]
 pub struct Apportioned {
     pub stratum: String,
-    pub party: PartyId,
+    pub party: PartyRef,
     pub drawn: u64,
     pub realised: u64,
 }
@@ -127,16 +127,16 @@ pub trait ReportSink: core::fmt::Debug + Send + Sync {
 pub struct GenReport {
     pub distributions: Vec<(String, String)>,
     pub writes: u64,
-    pub unnamed: Vec<PartyId>,
+    pub unnamed: Vec<PartyRef>,
     pub apportioned: u64,
     pub unfounded: Vec<Apportioned>,
     pub adjustments: Vec<Adjustment>,
-    pub equity: Vec<(PartyId, i128)>,
+    pub equity: Vec<(PartyRef, i128)>,
     /// The parties that issue an instrument and are held in a population, where every issuer is an individual.
     pub agent_issuers: u64,
-    /// The parties the writes named, a bit to a party, while the opening runs.
+    /// The parties the writes named, in reference order, while the opening runs.
     #[saved(skip)]
-    named: Vec<u64>,
+    named: Vec<PartyRef>,
     #[saved(skip)]
     sink: Option<Box<dyn ReportSink>>,
 }
@@ -155,12 +155,8 @@ impl GenReport {
         }
         self.writes += 1;
         for p in [w.party, w.counter] {
-            let (word, bit) = bit_of(p);
-            if self.named.len() <= word {
-                self.named.resize(word + 1, 0);
-            }
-            if let Some(x) = self.named.get_mut(word) {
-                *x |= bit;
+            if let Err(at) = self.named.binary_search(&p) {
+                self.named.insert(at, p);
             }
         }
     }
@@ -178,9 +174,8 @@ impl GenReport {
 
     /// Whether a write named the party while the opening ran.
     #[must_use]
-    pub fn named(&self, p: PartyId) -> bool {
-        let (word, bit) = bit_of(p);
-        self.named.get(word).is_some_and(|x| x & bit != 0)
+    pub fn named(&self, p: PartyRef) -> bool {
+        self.named.binary_search(&p).is_ok()
     }
 
     /// The opening's report closed: the parties begun that no write named kept, the marks let go and the listing
@@ -188,7 +183,7 @@ impl GenReport {
     ///
     /// # Errors
     /// What the listing could not put.
-    pub fn close(&mut self, unnamed: Vec<PartyId>) -> Result<(), String> {
+    pub fn close(&mut self, unnamed: Vec<PartyRef>) -> Result<(), String> {
         self.unnamed = unnamed;
         self.named = Vec::new();
         match self.sink.take() {
@@ -196,15 +191,6 @@ impl GenReport {
             None => Ok(()),
         }
     }
-}
-
-/// A party's word and bit in a set of parties kept a bit to a party.
-fn bit_of(p: PartyId) -> (usize, u64) {
-    let bits = u64::from(u64::BITS);
-    let Ok(word) = usize::try_from(p.get() / bits) else {
-        phx_num::capacity_exceeded!("parties named", usize::MAX, p.get());
-    };
-    (word, 1 << (p.get() % bits))
 }
 
 /// A drawn amount the balancing changed, only as far as the accounts needed: what it was, as drawn and as set.
