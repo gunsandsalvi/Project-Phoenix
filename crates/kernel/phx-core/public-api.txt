@@ -1144,15 +1144,9 @@ impl phx_core::kinds::Owners
 pub fn phx_core::kinds::Owners::parse(&str) -> core::result::Result<phx_core::kinds::Owners, alloc::string::String>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-macros
 pub enum phx_core::kinds::Place  // used by: phx-fin, phx-market, phx-world, sys-dem
 pub phx_core::kinds::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
-pub phx_core::kinds::Place::Country::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
-pub phx_core::kinds::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
-pub phx_core::kinds::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Zone
-impl phx_core::kinds::Place
-pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
-pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub struct phx_core::kinds::KindDecl  // used by: phx-macros, phx-world
 pub phx_core::kinds::KindDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::kinds::KindDecl::legal_form: &'static str  // used by: phx-world
@@ -1947,35 +1941,32 @@ pub fn phx_core::store::Family<R, B>::open(&mut self, R, core::option::Option<ph
 impl<R: phx_store::edges::Row, B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::Family<R, B>
 pub fn phx_core::store::Family<R, B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_core::store::Family<R, B>, phx_store::save::LoadError>  // used by: phx-world, sys-dem
 pub fn phx_core::store::Family<R, B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world, sys-dem
-pub struct phx_core::store::KindStore<B: phx_store::backing::Backing>  // used by: phx-world
-pub phx_core::store::KindStore::accounts: core::option::Option<phx_core::store::Accounts<B>>  // used by: phx-cli, phx-fin, phx-world, sys-bnk
-pub phx_core::store::KindStore::cash: core::option::Option<phx_core::store::CashLines<B>>  // used by: if-state, phx-world, sys-hh, sys-sov
-pub phx_core::store::KindStore::records: phx_store::column::Column<phx_num::missing::MaybeI64, B>  // used by: phx-cli, phx-fin
-pub phx_core::store::KindStore::stride: usize  // used by: phx-world
-impl<B: phx_store::backing::Backing> phx_core::store::KindStore<B>
-pub fn phx_core::store::KindStore<B>::add_accounts(&mut self, &mut phx_store::backing::AddressSpace, u32, u32)  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::begin(&mut self, phx_id::ids::PartyRef, &[phx_num::missing::MaybeI64], core::option::Option<phx_core::store::Opening>) -> phx_id::ids::PartyRef  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::book(&mut self) -> core::option::Option<phx_core::settle::Book<'_>>  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::money(&self) -> i128  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u32, u32, usize) -> phx_core::store::KindStore<B>  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::open_account(&mut self, phx_id::ids::Slot, phx_core::store::Opening)  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::record(&self, phx_id::ids::Slot) -> &[phx_num::missing::MaybeI64]  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::record_mut(&mut self, phx_id::ids::Slot) -> &mut [phx_num::missing::MaybeI64]  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::with_accounts(self, &mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::store::KindStore<B>  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::with_cash(self, &mut phx_store::backing::AddressSpace, (u32, u32), usize, (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<core::option::Option<usize>>)) -> phx_core::store::KindStore<B>  // used by: phx-world
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindStore<B> where phx_store::column::Column<phx_num::missing::MaybeI64, B>: phx_store::save::Saved, usize: phx_store::save::Saved, core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
-pub fn phx_core::store::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
-impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_core::store::KindStore<B>
-pub fn phx_core::store::KindStore<B>::bytes(&self) -> u64  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::rows_ever(&self) -> u64  // used by: phx-world
-pub fn phx_core::store::KindStore<B>::rows_live(&self) -> u64  // used by: phx-world
+pub struct phx_core::store::KindMoney<B: phx_store::backing::Backing>  // used by: phx-world
+pub phx_core::store::KindMoney::accounts: core::option::Option<phx_core::store::Accounts<B>>  // used by: phx-cli, phx-fin, phx-world, sys-bnk
+pub phx_core::store::KindMoney::cash: core::option::Option<phx_core::store::CashLines<B>>  // used by: if-state, phx-world, sys-hh, sys-sov
+impl<B: phx_store::backing::Backing> phx_core::store::KindMoney<B>
+pub fn phx_core::store::KindMoney<B>::add_accounts(&mut self, &mut phx_store::backing::AddressSpace, u32, u32)  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::begin(&mut self, phx_id::ids::PartyRef, core::option::Option<phx_core::store::Opening>) -> phx_id::ids::PartyRef  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::book(&mut self) -> core::option::Option<phx_core::settle::Book<'_>>  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::money(&self) -> i128  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::open_account(&mut self, phx_id::ids::Slot, phx_core::store::Opening)  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::with_accounts(self, &mut phx_store::backing::AddressSpace, u32, u32) -> phx_core::store::KindMoney<B>  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::with_cash(self, &mut phx_store::backing::AddressSpace, (u32, u32), usize, (alloc::vec::Vec<core::option::Option<usize>>, alloc::vec::Vec<core::option::Option<usize>>)) -> phx_core::store::KindMoney<B>  // used by: phx-world
+impl<B: phx_store::backing::Backing> core::default::Default for phx_core::store::KindMoney<B>
+pub fn phx_core::store::KindMoney<B>::default() -> Self  // used by: phx-world
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_core::store::KindMoney<B> where core::option::Option<phx_core::store::Accounts<B>>: phx_store::save::Saved, core::option::Option<phx_core::store::CashLines<B>>: phx_store::save::Saved
+pub fn phx_core::store::KindMoney<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-world
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_core::store::KindMoney<B>
+pub fn phx_core::store::KindMoney<B>::bytes(&self) -> u64  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::rows_ever(&self) -> u64  // used by: phx-world
+pub fn phx_core::store::KindMoney<B>::rows_live(&self) -> u64  // used by: phx-world
 pub struct phx_core::store::Opening  // used by: phx-check, phx-geo, phx-rand, phx-world
 pub phx_core::store::Opening::balance: i64  // used by: phx-cli, phx-fin, phx-world
 pub phx_core::store::Opening::bank: u32  // used by: phx-cli, phx-fin, phx-world, sys-bnk
-pub fn phx_core::store::books<'a, B: phx_store::backing::Backing>(&'a mut [phx_core::store::KindStore<B>], u8, (&'a mut [i64], &'a [bool]), phx_id::ids::PartyKey) -> phx_core::settle::Books<'a>  // used by: phx-cli, phx-fin, phx-world, sys-frt
-pub fn phx_core::store::deposits_of<'a, B: phx_store::backing::Backing + 'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::store::KindStore<B>>, usize) -> alloc::vec::Vec<i64>  // used by: phx-world
+pub fn phx_core::store::books<'a, B: phx_store::backing::Backing>(&'a mut [phx_core::store::KindMoney<B>], u8, (&'a mut [i64], &'a [bool]), phx_id::ids::PartyKey) -> phx_core::settle::Books<'a>  // used by: phx-cli, phx-fin, phx-world, sys-frt
+pub fn phx_core::store::deposits_of<'a, B: phx_store::backing::Backing + 'a>(impl core::iter::traits::collect::IntoIterator<Item = &'a phx_core::store::KindMoney<B>>, usize) -> alloc::vec::Vec<i64>  // used by: phx-world
 pub mod phx_core::streams  // used by: phx-fin, phx-macros, phx-world
 pub use phx_core::streams::StreamFamily  // used by: phx-fin, phx-geo, phx-rand, phx-world
 pub enum phx_core::streams::Purpose  // used by: phx-geo, phx-world
@@ -2405,15 +2396,9 @@ pub phx_core::Outside::Edge
 pub phx_core::Outside::Refuse
 pub enum phx_core::Place  // used by: phx-fin, phx-market, phx-world, sys-dem
 pub phx_core::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
-pub phx_core::Place::Country::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
-pub phx_core::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
-pub phx_core::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Zone
-impl phx_core::kinds::Place
-pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
-pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub enum phx_core::PopItem  // used by: phx-pop
 pub phx_core::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)  // used by: phx-pop
 pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)  // used by: phx-macros, phx-pop, phx-world, sys-dem

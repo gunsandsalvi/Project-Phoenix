@@ -4,7 +4,7 @@
 
 use phx_macros::{clause, opening};
 
-pub use crate::consts::{AGENCY, BANK, FIRM, HOUSEHOLD};
+pub use crate::consts::{AGENCY, BANK, COUNTRIED, FIRM, HOUSEHOLD, REGIONED, SITED};
 use crate::consts::{INT_BYTES, KIND_GROUPS};
 
 /// An integer a word holds; a store holds no other type.

@@ -10,7 +10,7 @@ use phx_pop::directory::Directory;
 use phx_pop::persons::Persons;
 use phx_store::{AddressSpace, SystemBacking};
 
-use phx_core::store::KindStore;
+use phx_core::store::KindMoney;
 
 /// The day's work counted for the budget: unit costs reckoned, and the meetings' weights reckoned and sales made.
 #[derive(Debug, Default)]
@@ -29,7 +29,9 @@ pub struct Core {
     /// The household kind's place among the population's kinds, which its processes are bound by.
     pub household_pop: usize,
     pub names: Vec<&'static str>,
-    pub kinds: Vec<KindStore<SystemBacking>>,
+    pub kinds: Vec<KindMoney<SystemBacking>>,
+    /// Each kind's places, where its kind declares its parties placed by a site, a region or a country.
+    pub places: Vec<Option<crate::place_store::PlaceStore>>,
     pub persons: Vec<Option<Persons<SystemBacking>>>,
     pub directory: Directory<SystemBacking>,
     /// The firms' own state on their kind's store, opened with the firms.
@@ -313,19 +315,21 @@ impl Core {
     /// itself.
     #[must_use]
     pub fn store_samples(&self) -> Vec<(&'static str, phx_exec::stats::Sample)> {
-        // A zoned kind's rows are its own store's, beside its accounts in the core's; another kind has none there.
-        let zoned = |kind: u8| -> u64 {
-            let firms = self.firms.as_ref().filter(|f| f.kind() == kind).map(|f| &f.store);
-            let households = self.households.as_ref().filter(|h| h.kind() == kind).map(|h| &h.store);
-            match firms.or(households) {
-                Some(store) => phx_store::StoreStats::bytes(store),
-                None => 0,
-            }
+        // A kind's own words are on its kind's stores, beside its accounts in the core's.
+        let own = |kind: u8| -> u64 {
+            let stores = [
+                self.firms.as_ref().filter(|f| f.kind() == kind).map(|f| &f.store),
+                self.households.as_ref().filter(|h| h.kind() == kind).map(|h| &h.store),
+                self.banks.as_ref().filter(|b| b.kind() == kind).map(|b| &b.store),
+                self.agency_store.as_ref().filter(|a| a.kind() == kind).map(|a| &a.store),
+                self.places.iter().flatten().find(|p| p.kind() == kind).map(|p| &p.store),
+            ];
+            stores.into_iter().flatten().map(phx_store::StoreStats::bytes).sum()
         };
         let kinds = self.names.iter().zip(&self.kinds).enumerate().map(|(place, (name, store))| {
             let kind = kind_number(place);
             let (live, ever) = (self.directory.live(kind), u64::from(self.directory.high_water(kind)));
-            let bytes = phx_store::StoreStats::bytes(store) + zoned(kind);
+            let bytes = phx_store::StoreStats::bytes(store) + own(kind);
             (*name, phx_exec::stats::Sample { rows_live: live, rows_ever: ever, bytes })
         });
         kinds.chain([("directory", phx_exec::stats::Sample::of(&self.directory))]).collect()

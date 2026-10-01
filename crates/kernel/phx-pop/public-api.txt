@@ -5,6 +5,7 @@ pub const phx_pop::consts::AGENCY_OCCUPATIONS: u16
 pub const phx_pop::consts::AGENCY_REGIONS: u16
 pub const phx_pop::consts::BANK: phx_pop::layout::KindMap
 pub const phx_pop::consts::BIRTH_BITS: u32
+pub const phx_pop::consts::COUNTRIED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::consts::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
 pub const phx_pop::consts::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
 pub const phx_pop::consts::INT_BYTES: [u16; 4]
@@ -13,7 +14,9 @@ pub const phx_pop::consts::KIND_GROUPS: usize
 pub const phx_pop::consts::KIND_INDEXES: usize
 pub const phx_pop::consts::LOAN_CLASSES: u16
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
+pub const phx_pop::consts::REGIONED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::consts::ROLE_BITS: u32
+pub const phx_pop::consts::SITED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::consts::TOMB_FENCE: usize
 pub const phx_pop::consts::TOMB_KEY_BITS: u32
 pub const phx_pop::consts::TOMB_MERGE_SHARE: usize
@@ -216,8 +219,11 @@ pub phx_pop::layout::WordDecl::ty: phx_pop::layout::IntTy  // used by: phx-check
 pub phx_pop::layout::WordDecl::writer: &'static str  // used by: phx-core, phx-fin, phx-macros
 pub const phx_pop::layout::AGENCY: phx_pop::layout::KindMap
 pub const phx_pop::layout::BANK: phx_pop::layout::KindMap
+pub const phx_pop::layout::COUNTRIED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::layout::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
 pub const phx_pop::layout::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
+pub const phx_pop::layout::REGIONED: phx_pop::layout::KindMap  // used by: phx-world
+pub const phx_pop::layout::SITED: phx_pop::layout::KindMap  // used by: phx-world
 pub const fn phx_pop::layout::fits(&phx_pop::layout::KindMap) -> bool  // used by: phx-market, phx-store
 pub const fn phx_pop::layout::used(&phx_pop::layout::GroupDecl) -> u16  // used by: phx-check, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-frm
 pub const fn phx_pop::layout::width(&phx_pop::layout::KindMap) -> u16  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-val, phx-world

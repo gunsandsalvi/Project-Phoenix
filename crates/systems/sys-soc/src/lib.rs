@@ -12,7 +12,7 @@ use phx_num::{Count, Fixed};
 
 pub use state_pension::{CoveredStream, PENSIONS, PensionStream, Pensions, StatePension};
 
-declare_kind! { pub AGENCY = "agency" { legal_form: "public agency", place: Site { word: 0 }, store: "institutions", clause: "SOC.2" } }
+declare_kind! { pub AGENCY = "agency" { legal_form: "public agency", place: Site, store: "institutions", clause: "SOC.2" } }
 
 declare_prim! {
     /// The normal pension age by sex, in years.

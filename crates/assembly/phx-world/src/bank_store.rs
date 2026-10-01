@@ -1,7 +1,7 @@
 //! The banks on their kind's store: each bank's books (its income-statement lines and its equity at the opening) and
 //! its lending record (its standard, the applications it read, declined and quoted, the loans it made, what its
 //! write-offs lost since its last review, and by class the loan-days it has held and the defaults it has seen). Its
-//! site stays in the core's record until the remaining kinds move.
+//! site is on its kind's place store.
 
 use phx_id::{PartyRef, Slot};
 use phx_macros::clause;

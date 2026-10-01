@@ -40,6 +40,7 @@ pub mod inspector;
 pub mod metrics;
 pub mod observe;
 pub mod opening;
+pub mod place_store;
 pub mod pop_rules;
 pub mod refusals;
 pub mod registry;

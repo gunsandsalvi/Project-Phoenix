@@ -585,16 +585,16 @@ mod tests {
             writer: "HH", audience: Party, repr: Key, clause: "LAB.1" } })),
             "another system writes LAB's fact"
         );
-        assert!(!refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", place: Site { word: 0 },
+        assert!(!refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", place: Site,
         store: "banks", clause: "BNK.1" } })));
-        assert!(refused(&kind_decl(quote! { pub BANK = "Bank" { legal_form: "bank", place: Site { word: 0 },
+        assert!(refused(&kind_decl(quote! { pub BANK = "Bank" { legal_form: "bank", place: Site,
         store: "banks", clause: "BNK.1" } })));
         assert!(
             refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", store: "banks", clause: "BNK.1" } })),
             "a kind with no place"
         );
         assert!(
-            refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", place: Site { word: 0 },
+            refused(&kind_decl(quote! { pub BANK = "bank" { legal_form: "bank", place: Site,
             clause: "BNK.1" } })),
             "a kind with no store"
         );

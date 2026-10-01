@@ -10,9 +10,9 @@ use super::heirless_refusals;
 fn declared_places_of_todays_kinds() {
     assert_eq!(sys_frm::FIRM.place, Place::Zone, "a firm's zone is a word of its store");
     assert_eq!(sys_dem::HOUSEHOLD_KIND.place, Place::Zone, "a household's zone is a word of its store");
-    assert_eq!(phx_core::ESTATE_KIND.place, Place::Country { word: 0 });
+    assert_eq!(phx_core::ESTATE_KIND.place, Place::Country);
     for site in [sys_cb::CENTRAL_BANK, sys_cb::TREASURY, sys_bnk::BANK, sys_soc::AGENCY] {
-        assert_eq!(site.place, Place::Site { word: 0 }, "{} is begun with its site's tile first", site.name);
+        assert_eq!(site.place, Place::Site, "{} is begun with its site's tile first", site.name);
     }
 }
 

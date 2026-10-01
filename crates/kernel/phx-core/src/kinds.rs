@@ -13,7 +13,7 @@ declare_prim! {
 crate::declare_kind! {
     /// An estate: the members of a cell who end on one occasion, holding their count of what they held until it is
     /// sold and passed on.
-    pub ESTATE_KIND = "estate" { legal_form: "estate", place: Country { word: 0 }, store: "estates", clause: "PTY.9" }
+    pub ESTATE_KIND = "estate" { legal_form: "estate", place: Country, store: "estates", clause: "PTY.9" }
 }
 
 /// A kind of party, numbered at assembly in declaration order.
@@ -45,41 +45,15 @@ pub struct KindDecl {
     pub clause: &'static str,
 }
 
-/// Where a kind's parties' region and country are read from: the tile of their site, their region or their country,
-/// each in a word of their record; or their zone, an attribute of their kind's store, whose region and country the map
-/// gives.
+/// Where a kind's parties' region and country are read from, a word of their kind's store: the tile of their site,
+/// their region, their country, or their zone, whose region and country the map gives.
 #[clause("PTY.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
-    Site { word: u16 },
-    Region { word: u16 },
-    Country { word: u16 },
+    Site,
+    Region,
+    Country,
     Zone,
-}
-
-impl Place {
-    /// The record word the place is read from; none for a kind whose store holds its zone.
-    #[must_use]
-    pub const fn word(self) -> Option<u16> {
-        match self {
-            Place::Site { word } | Place::Region { word } | Place::Country { word } => Some(word),
-            Place::Zone => None,
-        }
-    }
-
-    /// A place read from a word of a record of `words` words lies within it; a zone is its store's.
-    ///
-    /// # Errors
-    /// A word beyond the record.
-    #[opening]
-    pub fn check(self, kind: &str, words: usize) -> Result<(), String> {
-        match self.word() {
-            Some(word) if usize::from(word) >= words => {
-                Err(format!("kind `{kind}` reads its place from word {word} of a record of {words}"))
-            }
-            _ => Ok(()),
-        }
-    }
 }
 
 /// What a legal form may be; a form has each feature its country lists for it, and no other.
@@ -212,19 +186,7 @@ mod tests {
     }
 
     #[test]
-    fn country_place_reads_country_word() {
-        assert_eq!(super::ESTATE_KIND.place, Place::Country { word: 0 });
-        assert_eq!(Place::Country { word: 0 }.word(), Some(0));
-        assert_eq!(Place::Zone.word(), None);
-    }
-
-    #[test]
-    fn place_beyond_stride_refused() {
-        assert_eq!(
-            Place::Region { word: 1 }.check("firm", 1),
-            Err("kind `firm` reads its place from word 1 of a record of 1".to_owned())
-        );
-        assert_eq!(Place::Site { word: 0 }.check("bank", 1), Ok(()));
-        assert_eq!(Place::Zone.check("household", 0), Ok(()), "its store holds its zone");
+    fn estate_placed_by_country() {
+        assert_eq!(super::ESTATE_KIND.place, Place::Country);
     }
 }

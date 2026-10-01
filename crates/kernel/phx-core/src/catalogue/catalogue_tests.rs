@@ -30,8 +30,8 @@ const HOUSEHOLD: FormDecl<'static> = FormDecl {
     offices: &["head"],
 };
 const KINDS: [KindEntry<'static>; 3] = [
-    KindEntry { system: "FRM", name: "firm", form: "company", place: Place::Site { word: 0 }, store: "firms" },
-    KindEntry { system: "BNK", name: "bank", form: "company", place: Place::Site { word: 0 }, store: "banks" },
+    KindEntry { system: "FRM", name: "firm", form: "company", place: Place::Site, store: "firms" },
+    KindEntry { system: "BNK", name: "bank", form: "company", place: Place::Site, store: "banks" },
     KindEntry { system: "DEM", name: "household", form: "household", place: Place::Zone, store: "households" },
 ];
 const FAMILIES: [FamilyDecl<'static>; 2] = [

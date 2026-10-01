@@ -194,8 +194,7 @@ const BANK_LENDING: GroupDecl = GroupDecl {
 const BANK_RESERVES: GroupDecl =
     GroupDecl { name: "reserves", width: 8, words: &[word("reserve_target", I64, 1, true, "CB")] };
 
-/// The bank's byte map: its books, its lending record and its reserves target; its site stays in the core's record
-/// until the remaining kinds move.
+/// The bank's byte map: its books, its lending record and its reserves target; its site is on its kind's place store.
 pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS, BANK_LENDING, BANK_RESERVES] };
 
 /// The regions an agency's staffing record holds, more than any world's.
@@ -214,11 +213,31 @@ const AGENCY_STAFFING: GroupDecl = GroupDecl {
     ],
 };
 
-/// The agency's byte map: its staffing record; its site stays in the core's record until the remaining kinds move.
+/// The agency's byte map: its staffing record; its site is on its kind's place store.
 pub const AGENCY: KindMap = KindMap { kind: "agency", groups: &[AGENCY_STAFFING] };
 
+/// A party placed by its site: the tile it stands on.
+const SITE_PLACE: GroupDecl = GroupDecl { name: "place", width: 4, words: &[word("site", U32, 1, true, "K-32")] };
+/// A party placed by its region.
+const REGION_PLACE: GroupDecl = GroupDecl { name: "place", width: 4, words: &[word("region", U32, 1, true, "K-32")] };
+/// A party placed by its country.
+const COUNTRY_PLACE: GroupDecl = GroupDecl { name: "place", width: 1, words: &[word("country", U8, 1, true, "K-32")] };
+
+/// The places of the kinds placed by a site, a region or a country: each such kind's store holds its parties' place.
+pub const SITED: KindMap = KindMap { kind: "sited", groups: &[SITE_PLACE] };
+pub const REGIONED: KindMap = KindMap { kind: "regioned", groups: &[REGION_PLACE] };
+pub const COUNTRIED: KindMap = KindMap { kind: "countried", groups: &[COUNTRY_PLACE] };
+
 /// Every group of the maps within its width, and each map within a store.
-const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM) && fits(&BANK) && fits(&AGENCY));
+const _: () = assert!(
+    fits(&HOUSEHOLD)
+        && fits(&FIRM)
+        && fits(&BANK)
+        && fits(&AGENCY)
+        && fits(&SITED)
+        && fits(&REGIONED)
+        && fits(&COUNTRIED)
+);
 /// The household's 174 bytes, 128 of them hot: two cache lines a visit gathers.
 const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
 /// The firm's 528 bytes, 192 of them hot and 192 warm: three cache lines each.

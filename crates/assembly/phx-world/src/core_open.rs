@@ -12,11 +12,11 @@ use std::collections::BTreeMap;
 
 use phx_core::calendar::Calendar;
 use phx_core::settle::AT_ISSUER;
-use phx_core::store::{KindStore, Opening};
+use phx_core::store::{KindMoney, Opening};
 use phx_core::{Household, OpeningCountry, OpeningCtx, Register, StreamDef, WorldStreams};
 use phx_id::{Day, PartyKey};
 use phx_macros::{clause, opening};
-use phx_num::{MaybeI64, Missing, violation};
+use phx_num::{Missing, violation};
 use phx_pop::directory::Directory;
 use phx_pop::kind::PopKindDecl;
 use phx_pop::persons::{Held, Persons};
@@ -31,6 +31,7 @@ use crate::core_day::{DatedFamily, Due, PENSION};
 use crate::household_store::{HouseholdOpening, HouseholdStore};
 use crate::opening::asked::Asked;
 use crate::opening::sheet::Sheet;
+use crate::place_store::PlaceStore;
 use phx_core::capacity::{AGENT_ROWS, WHEEL_DAYS};
 
 /// A job drawn at the opening, before its employer is dealt: its household, its person, its country, its class —
@@ -167,21 +168,18 @@ impl Core {
     ) -> Core {
         let mut space = AddressSpace::empty();
         let mut kinds = Vec::new();
+        let mut places = Vec::new();
         let mut persons = Vec::new();
-        for traits in &declared.0 {
+        for (k, traits) in declared.0.iter().enumerate() {
             let populated = traits.name == household.kind;
-            // A kind's record reaches as far as the word its place is read from; a kind whose place is its store's
-            // zone keeps no record word.
-            let stride = match traits.place.word() {
-                Some(w) => usize::from(w) + 1,
-                None => 0,
-            };
             let chunk = if populated { AGENT_ROWS_PER_CHUNK } else { KIND_ROWS_PER_CHUNK };
-            let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, traits.rows, chunk, stride);
+            let mut money: KindMoney<SystemBacking> = KindMoney::default();
             if traits.holds_money {
-                store = store.with_accounts(&mut space, traits.rows, chunk);
+                money = money.with_accounts(&mut space, traits.rows, chunk);
             }
-            kinds.push(store);
+            kinds.push(money);
+            // A kind placed by its zone holds it in its own store; every other its place store.
+            places.push(PlaceStore::new(&mut space, kind_number(k), traits.place, traits.rows));
             persons.push(populated.then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK)));
         }
         let names: Vec<&'static str> = declared.0.iter().map(|k| k.name).collect();
@@ -201,6 +199,7 @@ impl Core {
             names,
 
             kinds,
+            places,
             persons,
             directory,
             firms: None,
@@ -265,13 +264,21 @@ impl Core {
         }
     }
 
-    /// A party begun on the core at the slot the directory hands out, with its record and its account where its kind
-    /// holds money.
-    pub(crate) fn begin_party(&mut self, place: usize, record: &[MaybeI64], account: Option<Opening>) -> PartyKey {
+    /// A party begun on the core at the slot the directory hands out, with its place where its kind keeps one and its
+    /// account where its kind holds money.
+    pub(crate) fn begin_party(&mut self, place: usize, at: Option<u32>, account: Option<Opening>) -> PartyKey {
         let Some(store) = self.kinds.get_mut(place) else {
             violation!(clause = "REP.1", "a party of a kind the core does not keep", kind = place);
         };
-        let party = store.begin(self.directory.begin(kind_number(place)), record, account);
+        let party = store.begin(self.directory.begin(kind_number(place)), account);
+        match (self.places.get_mut(place).and_then(Option::as_mut), at) {
+            (Some(p), Some(at)) => p.begin(&self.directory, party, at),
+            (None, None) => {}
+            _ => violation!(
+                clause = "PTY.5",
+                "a party begun without its kind's place, or with one its kind keeps none of"
+            ),
+        }
         PartyKey::new(party.kind(), party.slot())
     }
 
@@ -308,20 +315,16 @@ impl Core {
             core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), (*name).to_owned(), *share)));
             let at = |instrument, sector| phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
             let site = sys_cb::site(&ctx, c);
-            let issuer = core.begin_party(central_bank, &[MaybeI64::present(i64::from(site.get()))], None);
+            let issuer = core.begin_party(central_bank, Some(site.get()), None);
             let treasury = core.begin_party(
                 treasury_kind,
-                &[MaybeI64::present(i64::from(site.get()))],
+                Some(site.get()),
                 Some(Opening { bank: AT_ISSUER, balance: at(DEPOSITS, GOVERNMENT) }),
             );
             core.issuers.push(issuer);
             core.treasuries.push(Some(treasury));
             // Its public agency, sited with it, holds its account at the issuer and is funded as it pays.
-            let agency = core.begin_party(
-                agency_kind,
-                &[MaybeI64::present(i64::from(site.get()))],
-                Some(Opening { bank: AT_ISSUER, balance: 0 }),
-            );
+            let agency = core.begin_party(agency_kind, Some(site.get()), Some(Opening { bank: AT_ISSUER, balance: 0 }));
             let Some(r) = core.reference(agency) else {
                 violation!(clause = "PTY.1", "an agency begun the directory does not name", slot = agency.slot().get());
             };
@@ -334,8 +337,7 @@ impl Core {
             let mut banks = Vec::with_capacity(weights.len());
             for (k, balance) in (0_u32..).zip(reserves) {
                 let site = sys_bnk::bank_site(&ctx, c, k);
-                let record = [MaybeI64::present(i64::from(site.get()))];
-                let bank = core.begin_party(bank_kind, &record, Some(Opening { bank: AT_ISSUER, balance }));
+                let bank = core.begin_party(bank_kind, Some(site.get()), Some(Opening { bank: AT_ISSUER, balance }));
                 let Some(r) = core.reference(bank) else {
                     violation!(clause = "PTY.1", "a bank begun the directory does not name", slot = bank.slot().get());
                 };
@@ -508,7 +510,7 @@ impl Core {
             sys_bnk::households::Banked::Unbanked { .. } => AT_ISSUER,
         };
         let household = declared_kind(self.bound.kinds.household);
-        let key = self.begin_party(household, &[], Some(Opening { bank, balance: 0 }));
+        let key = self.begin_party(household, None, Some(Opening { bank, balance: 0 }));
         let Some(r) = self.reference(key) else {
             violation!(clause = "PTY.1", "a household begun the directory does not name", slot = key.slot().get());
         };

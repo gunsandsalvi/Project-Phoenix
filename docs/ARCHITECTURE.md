@@ -249,7 +249,7 @@ subsection's; a crate not yet in the workspace is created by the first step name
 | --- | --- | --- | --- |
 | `phx-store` | SET.12, SET.15 | §7.1: columns in reserved address space, slots and generations, day buffers and the day plan, chunk arenas, sum-trees, keyed indexes, epoch flags, horizon rings, the interner, the save contract and the world hash, `StoreStats` (K-01–K-10; S1.159–S1.168) | Paged columns, arenas, slot allocators, column descriptors, save encoding. |
 | `phx-exec` | TIME.6 mechanics, N5 | §7.2: chunk plans, partitioned apply, keyed reductions, declared sweeps and rolling cursors, the measurement counters (K-11–K-15; S1.117, S1.169–S1.171) | The pinned pool, chunked traversals, gathers, sharded `KeyedReduce`, fixed-tree reductions, radix sorts. |
-| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | §7.3: streams, the calendar's day facts, the register with handles and policy schedules, the kind catalogue, the units registry, the stage table, the capacity table (K-19–K-24; S1.114, S1.177–S1.185) | The vocabulary every system and kernel crate declares with (§5); and, until their migrations, the core's stores: `store.rs` (kind stores → `phx-pop` K-32, families → `phx-contract` K-53, accounts → `phx-ledger` K-47), `wheel.rs` (→ `phx-agenda` K-42), `flows.rs` and `settle.rs` (→ `phx-ledger` K-48, K-49), `goods.rs` and `units.rs` (→ `phx-hold` K-60, K-66–K-68), `events.rs` (→ `phx-record` K-36), the runtime half of `decisions.rs` (→ `phx-mind` K-100). |
+| `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | §7.3: streams, the calendar's day facts, the register with handles and policy schedules, the kind catalogue, the units registry, the stage table, the capacity table (K-19–K-24; S1.114, S1.177–S1.185) | The vocabulary every system and kernel crate declares with (§5); and, until their migrations, the core's stores: `store.rs` (the kinds' accounts → `phx-ledger` K-47, families → `phx-contract` K-53), `wheel.rs` (→ `phx-agenda` K-42), `flows.rs` and `settle.rs` (→ `phx-ledger` K-48, K-49), `goods.rs` and `units.rs` (→ `phx-hold` K-60, K-66–K-68), `events.rs` (→ `phx-record` K-36), the runtime half of `decisions.rs` (→ `phx-mind` K-100). |
 | `phx-geo` | GEO | §7.4: tiles, zones and distances, networks and routes, cells, deposits, weather and catastrophes (K-25, K-26, K-28–K-30; S1.187–S1.193) | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure. |
 | `phx-pop` | REP | §7.5: the directory, kind stores and windowed groups, persons, offices, the per-day party cache (K-31–K-35; S1.194–S1.211) | The population kinds compiled from the systems' items; each person packed into its word (`persons::Persons`); `hazard.rs` (→ `phx-agenda` K-44). |
 | `phx-record` | — | §7.6: the stored log and the event log, the records store, the day ledger, statistics accumulators and sample frames, life records, tallies and votes, the recorder (K-36–K-41, K-106; created at S1.212) | Planned. |
@@ -2315,7 +2315,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, the firms and households on theirs; S1.200–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, every kind on one; S1.207–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2357,7 +2357,8 @@ and ever are the directory's (`Core::store_samples`). A table of nature's kind i
 
 `phx-pop`'s `KindStore` (`kinds.rs`; PTY.5, REP.1) holds a kind's parties' state as fixed-width groups by slot, at the
 slot the directory (K-31) gave each party, and its windowed groups the columns that exist only inside a dated window;
-the firms (S1.198) and households (S1.199) are on theirs; the other kinds move at S1.200–S1.206.
+every kind is on one: the firms and households on their own maps, the banks and agencies on theirs, and every kind
+placed by a site, a region or a country on a place map.
 
 **Layout** (`layout.rs`, the maps in `consts.rs`): a kind's `KindMap` names its groups, hot first, at most four; a
 group (`GroupDecl`) is a width in bytes and the words the bases declare in it (`WordDecl`: name, integer type, count
@@ -2391,7 +2392,12 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   (BNK) · reserve 4; `reserves`, 8 B — the reserves target, a share of deposits in 2⁻³² parts i64 (CB). The
   agency's map (S1.205), 2 824 B on `AgencyStore`: `staffing` — the staff it keeps 64 regions × 11 occupations × u32,
   region-major, each absent where it keeps none (a world of more regions refused at the opening), and its appropriation
-  i64 (SOC). Their sites stay in `phx-core`'s record until the remaining kinds move (S1.206).
+  i64 (SOC).
+- **Place maps** (`SITED`, `REGIONED`, `COUNTRIED`): one group, `place`, of the one word a kind not placed by its zone
+  declares its place by — its site's tile u32, its region u32 or its country u8 (K-32). Every such kind (the central
+  banks, treasuries, banks and agencies by their sites; the estates by their countries) keeps it on `phx-world`'s
+  `PlaceStore`, built from the kind's declared `Place` alone, so no kind is branched on; a zoned kind's place is its
+  own store's zone word, and it has no place store.
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
   map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
@@ -2472,17 +2478,22 @@ household banks with is its account's (`Core::bank_of`), none at the issuer. A h
 of its head's, is refreshed by reading each head's role and birth from its person word alone
 (`person::role_and_birth`), with no person unpacked.
 
-**Extension points**: the kinds' migrations (S1.200–S1.206); the persons head (S1.207);
+**Places** (`phx-world`'s `place_store.rs`): `PlaceStore::new(space, kind, place, capacity)` compiles the map of the
+kind's declared place, none for a zoned kind; `begin(dir, r, at)` writes a party's place as it begins (a country past
+its word stops the run) and `at(slot)` reads it. `Core::begin_party` takes the place with the party's account, and a
+party's country is read from it through the regions or the map (`core_kinds::country_by_place`).
+
+**Extension points**: the persons head (S1.207);
 cache words (S1.211); agenda slots (S1.227); K-54's aggregates (S1.261); and each reserve's declaring step above.
 
-**Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps, at the slot the directory
-handed its party, each party's record of `stride` words in one column, and, if it holds money, its accounts (bank, balance, pending,
-held, facility) and cash lines, each a column indexed by slot, so a party begun in a released slot writes its own words
-over the ended one's; a kind of money requires an account at `begin` and any other refuses one. `books` makes
-settlement's `Books` from the kinds, and `deposits_of` sums what each bank owes. A kind placed by its zone (firms,
-households) keeps no record word: its state is its `phx-pop` store's. The population kinds' persons are compiled from
-the systems' items (`kind::compile_kinds`): a kind's roles and person attributes are declared item by item
-(`PopKindBuilder`), the declaring system the item's one writer, and each width comes from the number of values.
+**Money beside the kinds** (`phx-core`'s `store.rs`, until K-47): a kind that holds money keeps its parties'
+accounts (bank, balance, pending, held, facility) and cash lines in `KindMoney`, each a column indexed by the slot the
+directory handed the party, so a party begun in a released slot writes its own over the ended one's; a kind of money
+requires an account at `begin` and any other refuses one. `books` makes settlement's `Books` from the kinds, and
+`deposits_of` sums what each bank owes. A party's own words are its kind's `phx-pop` store's. The population kinds'
+persons are compiled from the systems' items (`kind::compile_kinds`): a kind's roles and person attributes are declared
+item by item (`PopKindBuilder`), the declaring system the item's one writer, and each width comes from the number of
+values.
 
 #### K-33 Persons
 

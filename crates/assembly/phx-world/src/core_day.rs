@@ -489,9 +489,9 @@ impl Core {
         let Some(place) = self.bound.kinds.estate else {
             violation!(clause = "PTY.9", "an estate with no kind to hold it");
         };
-        // The estate's one record word is its country, where its kind declares its place.
-        let record = [phx_num::MaybeI64::present(i64::from(country.get()))];
-        let key = self.begin_party(place, &record, Some(phx_core::store::Opening { bank, balance: money }));
+        // The estate's place is its country, where its kind declares it.
+        let at = Some(u32::from(country.get()));
+        let key = self.begin_party(place, at, Some(phx_core::store::Opening { bank, balance: money }));
         self.estates.push((key, country, day));
         key
     }

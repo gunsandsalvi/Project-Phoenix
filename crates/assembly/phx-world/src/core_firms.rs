@@ -311,7 +311,7 @@ impl Core {
                 let (Ok(product), Ok(zone)) = (u16::try_from(d.product), u16::try_from(zone.get())) else {
                     return Err(format!("country {}: a firm's product or zone beyond its word", c.id.get()));
                 };
-                let key = self.begin_party(firm, &[], Some(Opening { bank: d.bank, balance: share }));
+                let key = self.begin_party(firm, None, Some(Opening { bank: d.bank, balance: share }));
                 let Some(r) = self.reference(key) else {
                     violation!(clause = "PTY.1", "a firm begun the directory does not name", slot = key.slot().get());
                 };

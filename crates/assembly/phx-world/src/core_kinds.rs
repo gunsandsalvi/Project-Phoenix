@@ -4,7 +4,7 @@
 use phx_core::kinds::{Feature, Owners};
 use phx_core::{KindDecl, LegalForm, Place};
 use phx_macros::{clause, opening};
-use phx_num::{MaybeI64, Missing, violation};
+use phx_num::{Missing, violation};
 
 use crate::consts::stats::MONEY_CLASSES;
 
@@ -86,25 +86,20 @@ pub(crate) fn of(traits: &[KindTraits], kind: usize) -> &KindTraits {
     }
 }
 
-/// The country a party is of, read from where its kind declares its place: a region word through the regions, the
-/// country word, or its site's tile through the map.
+/// The country a party is of, read from its place as its kind declares it: a region through the regions, a country
+/// itself, or a site's tile through the map. A zone is its kind's own store's to read.
 #[clause("PTY.5")]
 pub(crate) fn country_by_place(
     place: Place,
-    record: &[MaybeI64],
+    at: Option<u32>,
     regions: &[phx_id::CountryId],
     tile_country: impl Fn(u32) -> Option<usize>,
 ) -> Option<usize> {
-    let word = |at: usize| match record.get(at)?.get() {
-        Missing::Present(v) => Some(v),
-        Missing::Absent => None,
-    };
-    let region = |at: usize| regions.get(usize::try_from(word(at)?).ok()?).map(|c| usize::from(c.get()));
+    let at = at?;
     match place {
-        Place::Region { word: at } => region(usize::from(at)),
-        Place::Country { word: at } => usize::try_from(word(usize::from(at))?).ok(),
-        Place::Site { word: at } => tile_country(u32::try_from(word(usize::from(at))?).ok()?),
-        // A zone is its kind's store's to read, not its record's.
+        Place::Region => regions.get(usize::try_from(at).ok()?).map(|c| usize::from(c.get())),
+        Place::Country => usize::try_from(at).ok(),
+        Place::Site => tile_country(at),
         Place::Zone => None,
     }
 }

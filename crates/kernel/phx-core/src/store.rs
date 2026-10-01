@@ -1,11 +1,11 @@
-//! The world's parties and contracts on the core. A kind keeps its parties, each party's record of `stride` words, and,
-//! if it holds money, its accounts and the cash lines its statements report; a family keeps its contracts, the list
-//! heads its listed sides' kinds keep, and the wheel its contracts come due on. Every column is indexed by slot, so a
-//! party's or a contract's words are found by its slot alone.
+//! The world's money and contracts on the core. A kind that holds money keeps its parties' accounts and the cash lines
+//! their statements report; a family keeps its contracts, the list heads its listed sides' kinds keep, and the wheel
+//! its contracts come due on. Every column is indexed by slot, so a party's or a contract's words are found by its slot
+//! alone; a party's own words are its kind's store's.
 
 use phx_id::{Day, PartyRef, Slot};
 use phx_macros::clause;
-use phx_num::{MaybeI64, capacity_exceeded, violation};
+use phx_num::{capacity_exceeded, violation};
 use phx_store::backing::{AddressSpace, Backing};
 use phx_store::edges::{NONE, Row};
 use phx_store::{Column, EdgeTable, StoreStats};
@@ -34,28 +34,25 @@ pub struct CashLines<B: Backing> {
     pub received: Vec<Option<usize>>,
 }
 
-/// A kind's parties' records, and their accounts and cash lines if the kind holds money, each at the slot the
-/// directory gave its party.
+/// A kind's parties' accounts and cash lines if the kind holds money, each at the slot the directory gave its party.
 #[derive(Debug, phx_macros::Saved)]
-pub struct KindStore<B: Backing> {
-    pub records: Column<MaybeI64, B>,
-    pub stride: usize,
+pub struct KindMoney<B: Backing> {
     pub accounts: Option<Accounts<B>>,
     pub cash: Option<CashLines<B>>,
 }
 
-/// A kind's rows are its records, one for each slot ever handed out; which are live is the directory's.
-impl<B: Backing> StoreStats for KindStore<B> {
+/// A kind's rows are its accounts, one for each slot ever handed out; which are live is the directory's.
+impl<B: Backing> StoreStats for KindMoney<B> {
     fn rows_live(&self) -> u64 {
         self.rows_ever()
     }
 
-    #[phx_macros::absent_is_zero(reason = "a kind of empty records holds no words, whatever its slots")]
+    #[phx_macros::absent_is_zero(reason = "a kind that holds no money keeps no rows here")]
     fn rows_ever(&self) -> u64 {
-        let rows = self.records.len().checked_div(self.stride).unwrap_or(0);
-        u64::try_from(rows).unwrap_or(u64::MAX)
+        u64::try_from(self.accounts.as_ref().map_or(0, |a| a.balance.len())).unwrap_or(u64::MAX)
     }
 
+    #[phx_macros::absent_is_zero(reason = "a kind that holds no money commits no bytes here")]
     fn bytes(&self) -> u64 {
         let accounts = self.accounts.as_ref().map_or(0, |a| {
             [a.balance.bytes_committed(), a.pending.bytes_committed(), a.held.bytes_committed()]
@@ -63,8 +60,7 @@ impl<B: Backing> StoreStats for KindStore<B> {
                 .chain([a.facility.bytes_committed(), a.bank.bytes_committed()])
                 .sum()
         });
-        let own =
-            self.records.bytes_committed() + accounts + self.cash.as_ref().map_or(0, |c| c.amounts.bytes_committed());
+        let own = accounts + self.cash.as_ref().map_or(0, |c| c.amounts.bytes_committed());
         u64::try_from(own).unwrap_or_else(|_| capacity_exceeded!("a store's bytes", u64::MAX, own))
     }
 }
@@ -100,20 +96,17 @@ fn place<T: phx_store::pod::Pod, B: Backing>(column: &mut Column<T, B>, slot: Sl
     if index(slot.get()) < column.len() { column.set(slot, value) } else { column.put(slot, value) }
 }
 
-impl<B: Backing> KindStore<B> {
-    /// An empty kind of up to `capacity` parties, each with a record of `stride` words.
-    #[must_use]
-    pub fn new(space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32, stride: usize) -> KindStore<B> {
-        let words = u32::try_from(at(Slot::new(capacity), stride, 0))
-            .unwrap_or_else(|_| violation!(clause = "REP.1", "a kind's records beyond a column"));
-        // A kind of no record words still reserves a row: a reservation of nothing has nothing to map.
-        let words = if words == 0 { 1 } else { words };
-        KindStore { records: Column::new(space, words, rows_per_chunk), stride, accounts: None, cash: None }
+/// A kind that holds no money until accounts are added.
+impl<B: Backing> Default for KindMoney<B> {
+    fn default() -> Self {
+        KindMoney { accounts: None, cash: None }
     }
+}
 
+impl<B: Backing> KindMoney<B> {
     /// The kind with accounts, one a party.
     #[must_use]
-    pub fn with_accounts(mut self, space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32) -> KindStore<B> {
+    pub fn with_accounts(mut self, space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32) -> KindMoney<B> {
         self.add_accounts(space, capacity, rows_per_chunk);
         self
     }
@@ -126,28 +119,21 @@ impl<B: Backing> KindStore<B> {
         (capacity, rows_per_chunk): (u32, u32),
         width: usize,
         (paid, received): (Vec<Option<usize>>, Vec<Option<usize>>),
-    ) -> KindStore<B> {
+    ) -> KindMoney<B> {
         let words = u32::try_from(at(Slot::new(capacity), width, 0))
             .unwrap_or_else(|_| violation!(clause = "ACC.9", "a kind's cash lines beyond a column"));
         self.cash = Some(CashLines { amounts: Column::new(space, words, rows_per_chunk), width, paid, received });
         self
     }
 
-    /// A party the directory began given its record, its words past the record's missing, and its account, which a
-    /// kind holding money requires and any other refuses; all at the slot the directory handed out.
+    /// A party the directory began given its account, which a kind holding money requires and any other refuses, at
+    /// the slot the directory handed out.
     #[clause("PTY.9", "REP.1")]
-    pub fn begin(&mut self, party: PartyRef, record: &[MaybeI64], account: Option<Opening>) -> PartyRef {
-        if record.len() > self.stride {
-            violation!(clause = "REP.1", "a record longer than its kind's", words = record.len());
-        }
+    pub fn begin(&mut self, party: PartyRef, account: Option<Opening>) -> PartyRef {
         if self.accounts.is_some() != account.is_some() {
             violation!(clause = "Law 5", "an account for a kind that holds no money, or none for one that does");
         }
         let slot = party.slot();
-        for i in 0..self.stride {
-            let v = record.get(i).copied().unwrap_or(MaybeI64::ABSENT);
-            place(&mut self.records, word(slot, self.stride, i), v);
-        }
         if let Some(o) = account {
             self.open_account(slot, o);
         }
@@ -174,7 +160,7 @@ impl<B: Backing> KindStore<B> {
     /// Accounts added to a kind whose parties have begun, each to be opened before settlement reads it.
     pub fn add_accounts(&mut self, space: &mut AddressSpace, capacity: u32, rows_per_chunk: u32) {
         if self.accounts.is_some() {
-            violation!(clause = "Law 5", "a kind given accounts twice", stride = self.stride);
+            violation!(clause = "Law 5", "a kind given accounts twice");
         }
         self.accounts = Some(Accounts {
             bank: Column::new(space, capacity, rows_per_chunk),
@@ -183,19 +169,6 @@ impl<B: Backing> KindStore<B> {
             held: Column::new(space, capacity, rows_per_chunk),
             facility: Column::new(space, capacity, rows_per_chunk),
         });
-    }
-
-    /// A party's record.
-    pub fn record(&self, slot: Slot) -> &[MaybeI64] {
-        let from = at(slot, self.stride, 0);
-        self.records.slice().get(from..at(slot, self.stride, self.stride)).unwrap_or(&[])
-    }
-
-    /// A party's record to write.
-    pub fn record_mut(&mut self, slot: Slot) -> &mut [MaybeI64] {
-        let from = at(slot, self.stride, 0);
-        let to = at(slot, self.stride, self.stride);
-        self.records.slice_mut().get_mut(from..to).unwrap_or(&mut [])
     }
 
     /// The kind's accounts as settlement reads them, if it holds money.
@@ -220,6 +193,7 @@ impl<B: Backing> KindStore<B> {
 
     /// The kind's balances and pending together, summed.
     #[must_use]
+    #[phx_macros::absent_is_zero(reason = "a kind that holds no money holds none")]
     pub fn money(&self) -> i128 {
         self.accounts
             .as_ref()
@@ -230,17 +204,17 @@ impl<B: Backing> KindStore<B> {
 /// Every kind's accounts in one currency as settlement reads them.
 #[must_use]
 pub fn books<'a, B: Backing>(
-    kinds: &'a mut [KindStore<B>],
+    kinds: &'a mut [KindMoney<B>],
     banks: u8,
     (deposits, closed): (&'a mut [i64], &'a [bool]),
     issuer: phx_id::PartyKey,
 ) -> Books<'a> {
-    Books { kinds: kinds.iter_mut().map(KindStore::book).collect(), banks, deposits, closed, issuer }
+    Books { kinds: kinds.iter_mut().map(KindMoney::book).collect(), banks, deposits, closed, issuer }
 }
 
 /// What each bank's customers hold with it, their pending included: what each bank owes them.
 #[must_use]
-pub fn deposits_of<'a, B: Backing + 'a>(kinds: impl IntoIterator<Item = &'a KindStore<B>>, banks: usize) -> Vec<i64> {
+pub fn deposits_of<'a, B: Backing + 'a>(kinds: impl IntoIterator<Item = &'a KindMoney<B>>, banks: usize) -> Vec<i64> {
     let mut owed = vec![0_i64; banks];
     for a in kinds.into_iter().filter_map(|k| k.accounts.as_ref()) {
         for ((b, m), p) in a.bank.slice().iter().zip(a.balance.slice()).zip(a.pending.slice()) {

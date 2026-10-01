@@ -1,6 +1,5 @@
 //! The agencies on their kind's store: each agency's staffing record, the staff it keeps by region and occupation
-//! (region-major) and its appropriation for wages a month. Its site stays in the core's record until the remaining
-//! kinds move.
+//! (region-major) and its appropriation for wages a month. Its site is on its kind's place store.
 
 use phx_id::{PartyRef, Slot};
 use phx_macros::clause;

@@ -420,7 +420,6 @@ impl Core {
         (regions, geo): (&[phx_id::CountryId], &phx_geo::GeoState),
     ) -> Option<usize> {
         let k = usize::from(party.kind());
-        let record = self.kinds.get(k)?.record(party.slot());
         let tile_country = |tile: u32| match geo.zone_of(phx_id::TileId::new(tile)) {
             phx_num::Missing::Present(zone) => match geo.zone_country(zone) {
                 phx_num::Missing::Present(c) => Some(usize::from(c.get())),
@@ -433,7 +432,8 @@ impl Core {
             let region = self.zoned_region(party)?;
             return regions.get(usize::try_from(region).ok()?).map(|c| usize::from(c.get()));
         }
-        crate::core_kinds::country_by_place(place, record, regions, tile_country)
+        let at = self.places.get(k)?.as_ref()?.at(party.slot());
+        crate::core_kinds::country_by_place(place, at, regions, tile_country)
     }
 }
 
