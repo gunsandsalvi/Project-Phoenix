@@ -252,7 +252,7 @@ subsection's; a crate not yet in the workspace is created by the first step name
 | `phx-core` | TIME, PTY, NUM.3, NUM.7, CHN.2–CHN.4, OBS.1, OBS.3, SET, MON | §7.3: streams, the calendar's day facts, the register with handles and policy schedules, the kind catalogue, the units registry, the stage table, the capacity table (K-19–K-24; S1.114, S1.177–S1.185) | The vocabulary every system and kernel crate declares with (§5); and, until their migrations, the core's stores: `store.rs` (the kinds' accounts → `phx-ledger` K-47, families → `phx-contract` K-53), `wheel.rs` (→ `phx-agenda` K-42), `flows.rs` and `settle.rs` (→ `phx-ledger` K-48, K-49), `goods.rs` and `units.rs` (→ `phx-hold` K-60, K-66–K-68), `events.rs` (→ `phx-record` K-36), the runtime half of `decisions.rs` (→ `phx-mind` K-100). |
 | `phx-geo` | GEO | §7.4: tiles, zones and distances, networks and routes, cells, deposits, weather and catastrophes (K-25, K-26, K-28–K-30; S1.187–S1.193) | Tiles, map generation, regions, zones, distances, network capacities, deposits, exposure. |
 | `phx-pop` | REP | §7.5: the directory, kind stores and windowed groups, persons, offices, the per-day party cache (K-31–K-35; S1.194–S1.211) | The population kinds compiled from the systems' items; each person packed into its word (`persons::Persons`); `hazard.rs` (→ `phx-agenda` K-44). |
-| `phx-record` | — | §7.6: the stored log and the event log, the records store, the day ledger, statistics accumulators and sample frames, life records, tallies and votes, the recorder (K-36–K-41, K-106; created at S1.212) | Planned. |
+| `phx-record` | SET.13 | §7.6: the stored log and the event log, the records store, the day ledger, statistics accumulators and sample frames, life records, tallies and votes, the recorder (K-36–K-41, K-106; created at S1.212) | The stored log and its storage (S1.212); the rest planned. |
 | `phx-agenda` | — | §7.7: the due wheel, the decision agenda, hazards drawn ahead, messages and notices, the trigger index (K-42–K-46; created at S1.225) | Planned. |
 | `phx-ledger` | REG.5, TAX.2, TAX.7 | §7.8: money accounts, flow batches, settlement, dated commitments, the levy engine, settlement tallies (K-47–K-52; S1.240–S1.256) | The contract algebra (`algebra.rs`, `shape.rs` → `phx-contract` K-55), the reasons and line kinds systems declare, the withholding levy's bands, `opening.rs` (→ `phx-world`'s opening), the online choice of a household's bank (`online.rs` → `sys-bnk`, a rule). |
 | `phx-contract` | — | §7.9: the contract store, side aggregates, terms, shapes and due plans, status and arrears, books, participations, accruing statement contracts (K-53–K-59; created at S1.257) | Planned. |
@@ -2668,12 +2668,61 @@ S3.184 (a fund's NAV); S8.122; S8.130; S4.108 (IM per netting set); S6.104.
 
 ### 7.6 phx-record
 
-Status: planned (S1.212–S1.224, S1.358)
+Status: building (S1.212 done; S1.213–S1.224, S1.358 planned)
 
 #### K-36 The stored log and the event log
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.212–S1.214).
+**The stored log** (`stored.rs`, `storage.rs`; SET.13): a history too large to keep resident — hazard occurrences and
+fails, life records — written each day as one immutable segment on storage.
+
+*Layout.* A stored kind declares itself (`StoredDecl`): its name, its frames' bytes (4 KiB to 1 MiB), its horizon in
+days and its tiers' spans (each a multiple of the one before; none for a kind that keeps its day segments). Its items
+(`Item`) carry a key — two words, the first major (an event's kind and first subject, a life record's person and day)
+— and up to 16 signed words besides. A segment is its 14-byte header (magic, version, first and last day) and its
+frames; a frame is its 24-byte header (its entries' bytes, its entries, its first key) and its entries in the log's
+order — key, then day, then words — each entry its key delta-coded from the one before in the frame (the minor word
+from the minor before when the major repeats), its day from the segment's first and its words zigzagged, every number
+a varint. A segment is named by its content's address (SipHash-128 under a declared key) and never rewritten. The
+resident index holds each standing segment (address, days, its frames' range, bytes, 48 B) and each frame's first key
+and offset (24 B), flat, in order of the segments' first days.
+
+*API.* `flush(day, items)` at 10d is `stage` (the day's items put in the log's order: their keys, packed into one word
+when both fit, radix-sorted with each item's place, K-12, and a run of one key ordered by its words, so the segment is
+the same for any order or chunking the items came in) then `flush_staged` = `encode_staged` (frames cut at the
+declared bytes; a run of one key may go on in the next frame, which begins with it) and `hand_over` (the address
+hashed and the bytes put). `find(key, (from, to), reads, out)` reads, in each segment over the span, the frame the
+index gives — the last beginning before the key — and the frames after it that begin with it; `read_many(keys, …)`
+gathers the frames every key may lie in, each read once, in order of segment and offset. `merge_slice(today, budget,
+dead)` is a tier's rolling job at 10d: for the lowest tier, the oldest period closed by today holding two or more
+shorter segments is merged, up to `budget` entries a call, its inputs' heads compared in the log's order, entries past
+the horizon or that `dead` refuses dropped, the merged segment written piece by piece (`begin`, `append`, `commit`)
+and put in its inputs' place once they are spent. `prune(today, retained)` takes segments wholly past the horizon out
+of the index and deletes every segment out of it that no retained snapshot lists and no merge reads. `open(decl,
+storage, ids)` rebuilds the index from the listed segments' frame headers. `segments()` is what a snapshot lists.
+
+*Storage* (`Storage`): `put`, `read` (into a slice), `read_rest`, `remove`, `begin`/`append`/`commit` for a merge,
+and `sync`. `DirStorage` keeps each segment as a file named by its address's 32 hex digits. A put hands its bytes to
+the system and returns, the system writing them behind the day; only a save calls `sync` (`flush_is_write_behind`).
+
+*Algorithms and bounds.* A flush is the sort and one pass of encoding; a find decodes one frame a segment (more only
+where a run of its key fills frames); a merge's slice is its budget's entries with one comparison an input each; a
+prune is the index's entries. The buffers — the day's segment, the sort's pairs, the merge's inputs' frames and its
+output — are kept and grow to the heaviest day; nothing is allocated on a day after it.
+
+*Save and load.* The segments are on storage, shared by every snapshot that lists them (K-104, S1.356); the index is
+rebuilt from their headers (`index_rebuilt_from_headers`); a merge under way is not saved and starts again.
+
+*Capacity.* A segment's frames and entries are counted in u32, its bytes in u64; an item's words are at most 16.
+
+*Volumes and ratchets* (`[fin.records]`, `tools/bench.sh -F records`): 100 000 stored events a day over the 365-day
+horizon in 16 KiB frames, 0.86 MB a day: `encode_ns` 25 (15–20 measured; the plan's 3 assumed a block-packing codec),
+`index_mb` 1 (0.48 at the horizon, 20 000 frames). The staging sort is 57–67 ns an event, the hand-over 11–13 ns,
+and a key read back from a day's segment 14–18 µs, the frame's bytes in memory.
+
+*Extension points*: S1.213 (the event log's non-public tier); S1.214; S1.223 (life records, tiered); S1.356 (snapshots
+list and share segments).
+
+**The event log**: planned (S1.213, S1.214).
 
 **Today** (`phx-core`'s `events.rs` and `events_rule.rs`, `phx-world`'s `EventStore`): the events of §4.10 and §12.
 

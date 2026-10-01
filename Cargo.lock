@@ -421,6 +421,7 @@ dependencies = [
  "phx-num",
  "phx-pop",
  "phx-rand",
+ "phx-record",
  "phx-store",
  "serde",
  "serde_json",
@@ -528,6 +529,17 @@ dependencies = [
  "libm",
  "phx-macros",
  "phx-num",
+]
+
+[[package]]
+name = "phx-record"
+version = "0.1.0"
+dependencies = [
+ "phx-exec",
+ "phx-id",
+ "phx-macros",
+ "phx-num",
+ "phx-store",
 ]
 
 [[package]]

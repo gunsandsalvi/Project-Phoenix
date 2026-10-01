@@ -1,0 +1,89 @@
+pub mod phx_record  // used by: phx-fin
+pub mod phx_record::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const phx_record::consts::ADDRESS_CHARS: usize
+pub const phx_record::consts::ADDRESS_KEY: [u64; 2]
+pub const phx_record::consts::ENTRY_MOST: usize
+pub const phx_record::consts::FRAME_HEADER: usize
+pub const phx_record::consts::FRAME_LEAST: u32
+pub const phx_record::consts::FRAME_MOST: u32
+pub const phx_record::consts::HEX_DIGITS: &[u8; 16]
+pub const phx_record::consts::ITEM_WORDS: usize
+pub const phx_record::consts::NIBBLE: u128
+pub const phx_record::consts::NIBBLE_BITS: u32
+pub const phx_record::consts::SEGMENT_HEADER: usize
+pub const phx_record::consts::SEGMENT_MAGIC: u32
+pub const phx_record::consts::SEGMENT_VERSION: u16
+pub const phx_record::consts::VARINT_BITS: u32
+pub const phx_record::consts::VARINT_MORE: u8
+pub const phx_record::consts::VARINT_MOST: usize
+pub mod phx_record::storage  // used by: phx-fin, sys-gds
+pub struct phx_record::storage::DirStorage
+impl phx_record::storage::DirStorage
+pub fn phx_record::storage::DirStorage::new(std::path::PathBuf) -> core::result::Result<phx_record::storage::DirStorage, phx_record::storage::StorageError>  // used by: if-base, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_record::storage::Storage for phx_record::storage::DirStorage
+pub fn phx_record::storage::DirStorage::append(&mut self, &[u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-world
+pub fn phx_record::storage::DirStorage::begin(&mut self) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-pop, phx-world
+pub fn phx_record::storage::DirStorage::commit(&mut self, phx_record::storage::SegmentId) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_record::storage::DirStorage::put(&mut self, phx_record::storage::SegmentId, &[u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-cli, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_record::storage::DirStorage::read(&self, phx_record::storage::SegmentId, u64, &mut [u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_record::storage::DirStorage::read_rest(&self, phx_record::storage::SegmentId, u64, &mut alloc::vec::Vec<u8>) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::storage::DirStorage::remove(&mut self, phx_record::storage::SegmentId) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_record::storage::DirStorage::sync(&mut self) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-cli, phx-exec, phx-fin, phx-obs, phx-world
+pub struct phx_record::storage::StorageError(pub alloc::string::String)  // used by: phx-fin
+impl core::fmt::Display for phx_record::storage::StorageError
+pub fn phx_record::storage::StorageError::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-pop, phx-store, phx-val, phx-world
+pub trait phx_record::storage::Storage  // used by: phx-fin
+pub fn phx_record::storage::Storage::append(&mut self, &[u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-world
+pub fn phx_record::storage::Storage::begin(&mut self) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-pop, phx-world
+pub fn phx_record::storage::Storage::commit(&mut self, phx_record::storage::SegmentId) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_record::storage::Storage::put(&mut self, phx_record::storage::SegmentId, &[u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-cli, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_record::storage::Storage::read(&self, phx_record::storage::SegmentId, u64, &mut [u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_record::storage::Storage::read_rest(&self, phx_record::storage::SegmentId, u64, &mut alloc::vec::Vec<u8>) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::storage::Storage::remove(&mut self, phx_record::storage::SegmentId) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_record::storage::Storage::sync(&mut self) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-cli, phx-exec, phx-fin, phx-obs, phx-world
+impl phx_record::storage::Storage for phx_record::storage::DirStorage
+pub fn phx_record::storage::DirStorage::append(&mut self, &[u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-world
+pub fn phx_record::storage::DirStorage::begin(&mut self) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-pop, phx-world
+pub fn phx_record::storage::DirStorage::commit(&mut self, phx_record::storage::SegmentId) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_record::storage::DirStorage::put(&mut self, phx_record::storage::SegmentId, &[u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-cli, phx-core, phx-fin, phx-store, phx-world
+pub fn phx_record::storage::DirStorage::read(&self, phx_record::storage::SegmentId, u64, &mut [u8]) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-dem
+pub fn phx_record::storage::DirStorage::read_rest(&self, phx_record::storage::SegmentId, u64, &mut alloc::vec::Vec<u8>) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::storage::DirStorage::remove(&mut self, phx_record::storage::SegmentId) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-core, phx-fin, phx-geo, phx-market, phx-store, phx-val, phx-world, sys-dem
+pub fn phx_record::storage::DirStorage::sync(&mut self) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-cli, phx-exec, phx-fin, phx-obs, phx-world
+pub type phx_record::storage::SegmentId = u128  // used by: phx-fin, phx-geo
+pub mod phx_record::stored  // used by: phx-cli, phx-core, phx-fin, phx-geo, phx-world
+pub struct phx_record::stored::Key(pub u64, pub u64)  // used by: phx-check, phx-core, phx-fin, phx-num, phx-store
+pub struct phx_record::stored::Reads  // used by: phx-check, phx-fin
+pub struct phx_record::stored::Segment
+pub phx_record::stored::Segment::first: phx_id::day::Day  // used by: phx-acct, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-dem, sys-hh, sys-lab, sys-tec
+pub phx_record::stored::Segment::id: phx_record::storage::SegmentId  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_record::stored::Segment::last: phx_id::day::Day  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-store, phx-val, phx-world, sys-dem, sys-frm
+pub struct phx_record::stored::StoredDecl  // used by: phx-fin
+pub phx_record::stored::StoredDecl::frame_bytes: u32  // used by: phx-fin
+pub phx_record::stored::StoredDecl::horizon: u32  // used by: phx-core, phx-fin, phx-geo, phx-pop, phx-store, phx-val, phx-world
+pub phx_record::stored::StoredDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_record::stored::StoredDecl::tiers: &'static [u32]  // used by: phx-fin
+pub struct phx_record::stored::StoredLog<T: phx_record::stored::Item, S: phx_record::storage::Storage>  // used by: phx-fin
+impl<T: phx_record::stored::Item, S: phx_record::storage::Storage> phx_record::stored::StoredLog<T, S>
+pub fn phx_record::stored::StoredLog<T, S>::encode_staged(&mut self, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::find(&self, phx_record::stored::Key, (phx_id::day::Day, phx_id::day::Day), &mut phx_record::stored::Reads, &mut alloc::vec::Vec<(phx_id::day::Day, T)>) -> core::result::Result<u64, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::flush(&mut self, phx_id::day::Day, &[T]) -> core::result::Result<u64, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::flush_staged(&mut self, phx_id::day::Day) -> core::result::Result<u64, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::frames(&self) -> u64  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::hand_over(&mut self, phx_id::day::Day) -> core::result::Result<(), phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::index_bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::merge_slice(&mut self, phx_id::day::Day, u64, impl core::ops::function::Fn(&T) -> bool) -> core::result::Result<u64, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::new(phx_record::stored::StoredDecl, S) -> phx_record::stored::StoredLog<T, S>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::open(phx_record::stored::StoredDecl, S, &[phx_record::storage::SegmentId]) -> core::result::Result<phx_record::stored::StoredLog<T, S>, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::prune(&mut self, phx_id::day::Day, &[phx_record::storage::SegmentId]) -> core::result::Result<u64, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::read_many(&self, &[phx_record::stored::Key], (phx_id::day::Day, phx_id::day::Day), &mut phx_record::stored::Reads, &mut alloc::vec::Vec<(phx_id::day::Day, T)>) -> core::result::Result<u64, phx_record::storage::StorageError>  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::segments(&self) -> impl core::iter::traits::iterator::Iterator<Item = &phx_record::stored::Segment> + '_  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::stage(&mut self, &[T])  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::storage(&self) -> &S  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::storage_mut(&mut self) -> &mut S  // used by: phx-fin
+pub fn phx_record::stored::StoredLog<T, S>::stored_bytes(&self) -> u64  // used by: phx-fin
+pub trait phx_record::stored::Item: core::marker::Copy  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-pop, phx-store, phx-val, phx-world, sys-frm, sys-lab, sys-tec
+pub const phx_record::stored::Item::WORDS: usize  // used by: phx-fin
+pub fn phx_record::stored::Item::key(&self) -> phx_record::stored::Key  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-pop, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn phx_record::stored::Item::of(phx_record::stored::Key, &[i64]) -> Self  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_record::stored::Item::words(&self, &mut [i64])  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-pop, phx-rand, phx-store, phx-world

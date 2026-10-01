@@ -272,6 +272,23 @@ counter = "fin.ring.prune_ns"
 value = 0.1
 direction = "down"
 
+# The stored log (S1.212, 2026-10-01; `tools/bench.sh -F records`): 100 000 stored events a day over the events'
+# 365-day horizon, a segment a day of 16 KiB frames, 0.86 MB a day. Encoding a day's sorted events into frames of
+# delta-coded keys and zigzag varints, six numbers and about 9 bytes an event, takes 15–20 ns an event on this machine:
+# the ratchet stands a quarter above the highest. The step's 3 ns assumed a codec packing whole blocks of a field at
+# once, which the frame's per-entry varints do not do; a day's encoding is 2 ms of 10d. Its staging sort (57–67 ns an
+# event, phx-exec's radix sort over the packed keys) and its hand-over (the content's hash and the put, 11–13 ns) are
+# measured beside it. The resident index at the horizon holds 20 000 frames in 0.48 MB, under the step's 1 MB.
+[[ratchet]]
+counter = "fin.records.encode_ns"
+value = 25
+direction = "down"
+
+[[ratchet]]
+counter = "fin.records.index_mb"
+value = 1
+direction = "down"
+
 [[ratchet]]
 counter = "fin.ring.range_ns"
 value = 2.8
