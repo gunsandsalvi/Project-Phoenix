@@ -18,6 +18,14 @@ source_ref = "The owner's cells (E 29, plan §12, 2026-09-30): each tile divided
 value = 100
 
 [[primitive]]
+id = "GEO.weather_horizon_days"
+kind = "RESOLUTION"
+owner = "GEO"
+source = "assumed"
+source_ref = "Two years of each region's daily weather, the horizon the design point measures the weather's history at (plan, S1.192), as the series, filings and marks keep two years; the longest window a reader declares, a crop's season, is shorter."
+value = 730
+
+[[primitive]]
 id = "GEO.share_tolerance_per_mille"
 kind = "SHAPE"
 owner = "GEO"

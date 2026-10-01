@@ -195,6 +195,12 @@ impl<B: Backing> WeatherStore<B> {
         u64::try_from(self.today.len()).unwrap_or(u64::MAX)
     }
 
+    /// The rows the last day recorded, in region order.
+    #[must_use]
+    pub fn today(&self) -> &[WeatherRow] {
+        &self.today
+    }
+
     /// A region's latents as the next day moves them on; absent before its first day.
     pub fn latents(&self, region: usize) -> Latents {
         let mut out = [Missing::Absent; VARIABLES.len()];

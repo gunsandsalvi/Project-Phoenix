@@ -2058,7 +2058,7 @@ holds the table to `[store]`.
 
 ### 7.4 phx-geo
 
-Status: building (K-26, K-28–K-30 written; S1.193 planned)
+Status: built (K-25's tiles today; K-26, K-28–K-30 written and followed)
 
 #### K-25 Tiles, zones and distances
 
@@ -2296,11 +2296,12 @@ origins picked uniformly among them (Floyd's method); a footprint spreads breadt
 tile-id order, each untried land tile joining at the hazard's spread chance for its exposure, and each struck tile
 draws its severity from its exposure's distribution.
 
-The world's day begins with `Core::weather_day`, which draws each region's weather (`phx_geo::weather::region_day`, its
-latents kept in the core's `Weather`, saved with it) and each country's catastrophes
-(`phx_geo::catastrophe::hazard_day`), each recorded in the core's event store with its region or its struck tiles, the
-weather public by the declared rule (§4.10). The struck tiles and their severities wait for the day's goods, where
-`Core::destroy`, beside spoilage, destroys each severity's share in permille of every free unit of every good a firm
+The world's day begins with `Core::weather_day`, which records every region's weather in the kernel's `WeatherStore`
+(opened on the first day at `GEO.weather_horizon_days`, two years, and saved with the core) and draws each country's
+catastrophes (`phx_geo::catastrophe::hazard_day`) into the day's footprint, each recorded in the core's event store with
+its region or its struck tiles, the weather public by the declared rule (§4.10). The footprint is cleared as the next
+day's weather begins and opened again at a load. It waits for the day's goods, where `Core::destroy`, beside spoilage,
+destroys each severity's share in permille of every free unit of every good a firm
 sited on the tile holds, whole units, as a flow to nature (`DESTROYED`) the goods family reads and a loss of the units'
 cost in the owner's accounts. Plant, dwellings and infrastructure join what a catastrophe destroys when they are held
 where a catastrophe reaches them. Each catastrophe is followed for the prices' reads: its regions and every mark on its

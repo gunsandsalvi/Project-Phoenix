@@ -732,7 +732,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.mem.bytes_per_person"
-value = 688.704
+value = 688.3202
 direction = "down"
 
 [[ratchet]]
@@ -792,7 +792,7 @@ direction = "down"
 
 [[ratchet]]
 counter = "fin.mem.units_cells_owner_index_mb"
-value = 117.5
+value = 113.8
 direction = "down"
 
 [[ratchet]]

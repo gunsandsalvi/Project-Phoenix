@@ -7,6 +7,11 @@ declare_prim! {
 }
 
 declare_prim! {
+    /// The days of weather each region's history keeps.
+    pub WEATHER_HORIZON_DAYS = "GEO.weather_horizon_days" { kind: Resolution, value: Count, clause: "SET.13", scope: Shared }
+}
+
+declare_prim! {
     /// A cell's side, in metres: a tile's side a whole number of cells.
     pub CELL_M = "GEO.cell_m" { kind: Resolution, value: Count, clause: "GEO.19", scope: Shared }
 }
@@ -509,6 +514,7 @@ pub struct DepositPrims {
 pub struct GeoPrims {
     pub tile_m: Prim<Count>,
     pub cell_m: Prim<Count>,
+    pub weather_horizon_days: Prim<Count>,
     pub sea_share: Prim<Fixed<2>>,
     pub base_cells: Prim<Count>,
     pub octaves: Prim<Count>,
@@ -570,6 +576,7 @@ impl GeoPrims {
         GeoPrims {
             tile_m: d.prim(&TILE_M),
             cell_m: d.prim(&CELL_M),
+            weather_horizon_days: d.prim(&WEATHER_HORIZON_DAYS),
             sea_share: d.prim(&SEA_SHARE),
             base_cells: d.prim(&BASE_CELLS),
             octaves: d.prim(&OCTAVES),

@@ -208,6 +208,7 @@ pub const phx_geo::consts::SEGMENT_CLOSED: u16
 pub const phx_geo::consts::SEGMENT_HELD: u16
 pub const phx_geo::consts::SEGMENT_REMOVED: u16
 pub const phx_geo::consts::TENTHS: f64
+pub const phx_geo::consts::WEATHER_CHUNK_DAYS: u32  // used by: phx-world
 pub const phx_geo::consts::WHOLE_PERCENT: u64
 pub mod phx_geo::deposits  // used by: phx-cli, phx-core, phx-fin, phx-world
 pub enum phx_geo::deposits::Opening  // used by: phx-check, phx-core, phx-rand, phx-world
@@ -457,6 +458,7 @@ pub phx_geo::prims::GeoPrims::tile_m: phx_core::register::Prim<phx_num::qty::Cou
 pub phx_geo::prims::GeoPrims::warm_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
 pub phx_geo::prims::GeoPrims::warp: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
 pub phx_geo::prims::GeoPrims::weather: phx_geo::prims::WeatherPrims  // used by: phx-cli, phx-world
+pub phx_geo::prims::GeoPrims::weather_horizon_days: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::prims::GeoPrims::zone_max_tiles: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-cli
 pub phx_geo::prims::GeoPrims::zone_min_tiles: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-cli
 pub phx_geo::prims::GeoPrims::zones: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-cli, phx-fin, phx-world
@@ -557,6 +559,7 @@ pub const phx_geo::prims::TILE_M: phx_core::register::PrimDecl
 pub const phx_geo::prims::UNBOUNDED: phx_core::register::PrimDecl
 pub const phx_geo::prims::WARM_LATITUDE: phx_core::register::PrimDecl
 pub const phx_geo::prims::WARP: phx_core::register::PrimDecl
+pub const phx_geo::prims::WEATHER_HORIZON_DAYS: phx_core::register::PrimDecl
 pub const phx_geo::prims::WIND_SCALE: phx_core::register::PrimDecl
 pub const phx_geo::prims::WIND_SHAPE: phx_core::register::PrimDecl
 pub const phx_geo::prims::ZONES: phx_core::register::PrimDecl
@@ -599,6 +602,7 @@ pub phx_geo::state::GeoState::map: phx_geo::generate::Map  // used by: phx-check
 pub phx_geo::state::GeoState::params: phx_geo::generate::MapParams  // used by: phx-cli, phx-macros, phx-val, phx-world
 pub phx_geo::state::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
 pub phx_geo::state::GeoState::transport: phx_geo::transport::Transport  // used by: phx-fin, phx-market, phx-world
+pub phx_geo::state::GeoState::weather_horizon: u32  // used by: phx-world
 pub phx_geo::state::GeoState::weather_kinds: alloc::vec::Vec<u16>  // used by: phx-world
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-val, phx-world, sys-dem, sys-tec
@@ -609,7 +613,7 @@ pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num:
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
-impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::transport::Transport: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::transport::Transport: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved, u32: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::state::GeoState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
@@ -862,6 +866,7 @@ pub fn phx_geo::weather::WeatherStore<B>::new(&mut phx_store::backing::AddressSp
 pub fn phx_geo::weather::WeatherStore<B>::on(&self, u16, phx_id::day::Day) -> phx_num::missing::Missing<[i32; 4]>  // used by: phx-fin
 pub fn phx_geo::weather::WeatherStore<B>::range(&self, u16, (phx_id::day::Day, phx_id::day::Day), impl core::ops::function::FnMut(phx_id::day::Day, [i32; 4]))  // used by: phx-fin
 pub fn phx_geo::weather::WeatherStore<B>::record_day(&mut self, phx_id::day::Day, (&[phx_geo::climate::RegionClimate], u8), impl core::ops::function::FnMut(usize) -> phx_rand::draws::Draws) -> u64  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::today(&self) -> &[phx_geo::weather::WeatherRow]  // used by: phx-fin, phx-world
 impl<B: phx_store::backing::Backing> core::cmp::PartialEq for phx_geo::weather::WeatherStore<B>
 pub fn phx_geo::weather::WeatherStore<B>::eq(&self, &phx_geo::weather::WeatherStore<B>) -> bool  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_geo::weather::WeatherStore<B>
@@ -924,6 +929,7 @@ pub phx_geo::GeoPrims::tile_m: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::warm_latitude: phx_core::register::Prim<phx_num::fixed::Fixed<1>>
 pub phx_geo::GeoPrims::warp: phx_core::register::Prim<phx_num::fixed::Fixed<3>>
 pub phx_geo::GeoPrims::weather: phx_geo::prims::WeatherPrims  // used by: phx-cli, phx-world
+pub phx_geo::GeoPrims::weather_horizon_days: phx_core::register::Prim<phx_num::qty::Count>
 pub phx_geo::GeoPrims::zone_max_tiles: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-cli
 pub phx_geo::GeoPrims::zone_min_tiles: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-cli
 pub phx_geo::GeoPrims::zones: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-cli, phx-fin, phx-world
@@ -937,6 +943,7 @@ pub phx_geo::GeoState::map: phx_geo::generate::Map  // used by: phx-check, phx-c
 pub phx_geo::GeoState::params: phx_geo::generate::MapParams  // used by: phx-cli, phx-macros, phx-val, phx-world
 pub phx_geo::GeoState::regions: alloc::vec::Vec<phx_geo::climate::RegionClimate>  // used by: phx-cli, phx-core, phx-fin, phx-world, sys-dem
 pub phx_geo::GeoState::transport: phx_geo::transport::Transport  // used by: phx-fin, phx-market, phx-world
+pub phx_geo::GeoState::weather_horizon: u32  // used by: phx-world
 pub phx_geo::GeoState::weather_kinds: alloc::vec::Vec<u16>  // used by: phx-world
 impl phx_geo::state::GeoState
 pub fn phx_geo::state::GeoState::build(&phx_geo::prims::GeoPrims, &phx_core::register::Register, &phx_geo::state::Allotment, &phx_core::contribution::OpeningCtx<'_>, &dyn core::ops::function::Fn(&str) -> core::option::Option<u16>) -> core::result::Result<phx_geo::state::GeoState, alloc::vec::Vec<alloc::string::String>>  // used by: phx-cli, phx-core, phx-exec, phx-macros, phx-val, phx-world, sys-dem, sys-tec
@@ -947,7 +954,7 @@ pub fn phx_geo::state::GeoState::market_zones(&self) -> alloc::vec::Vec<phx_num:
 pub fn phx_geo::state::GeoState::zone_country(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<phx_id::ids::CountryId>  // used by: phx-world
 pub fn phx_geo::state::GeoState::zone_of(&self, phx_id::ids::TileId) -> phx_num::missing::Missing<phx_id::ids::ZoneId>  // used by: phx-cli, phx-world
 pub fn phx_geo::state::GeoState::zone_region(&self, phx_id::ids::ZoneId) -> phx_num::missing::Missing<u32>  // used by: phx-cli, phx-world
-impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::transport::Transport: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved
+impl phx_store::save::Saved for phx_geo::state::GeoState where phx_geo::generate::MapParams: phx_store::save::Saved, phx_geo::generate::Map: phx_store::save::Saved, phx_geo::distance::ZoneDistances: phx_store::save::Saved, alloc::vec::Vec<phx_geo::climate::RegionClimate>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::state::HazardState>: phx_store::save::Saved, alloc::vec::Vec<phx_geo::deposits::Deposit>: phx_store::save::Saved, phx_geo::transport::Transport: phx_store::save::Saved, alloc::vec::Vec<u16>: phx_store::save::Saved, u32: phx_store::save::Saved
 pub fn phx_geo::state::GeoState::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_geo::state::GeoState::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_geo::state::GeoState::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world

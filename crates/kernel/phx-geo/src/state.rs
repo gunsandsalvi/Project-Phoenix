@@ -52,6 +52,8 @@ pub struct GeoState {
     pub deposits: Vec<Deposit>,
     pub transport: crate::transport::Transport,
     pub weather_kinds: Vec<u16>,
+    /// The days of weather each region's history keeps.
+    pub weather_horizon: u32,
 }
 
 /// What the opening gives the map: each country's land and regions, allotted by the setup.
@@ -229,6 +231,7 @@ impl GeoState {
             deposits,
             transport: crate::transport::Transport::default(),
             weather_kinds,
+            weather_horizon: count(p.weather_horizon_days.shared(r).get()).map_err(one)?,
         };
         state.transport = crate::network::generate(&state.map, &state.distances, &state.market_zones(), &modes);
         Ok(state)

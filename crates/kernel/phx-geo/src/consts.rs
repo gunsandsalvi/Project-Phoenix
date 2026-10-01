@@ -48,3 +48,6 @@ pub const PARCEL_LEASED_APART: u16 = 1 << 1;
 /// A tile's parcels read through in order rather than searched: a few cache lines, about a tile's parcels at the design
 /// point.
 pub const PARCEL_SHORT_RUN: usize = 32;
+/// The days a weather ring's chunk holds: whole days of every region, about a month, so the horizon is pruned a month at
+/// a time.
+pub const WEATHER_CHUNK_DAYS: u32 = 32;
