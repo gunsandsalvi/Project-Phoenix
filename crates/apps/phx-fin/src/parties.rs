@@ -13,6 +13,7 @@ use phx_core::person_word::{LABOUR, PersonWord, SEX};
 use phx_exec::trace::{Reading, Spent};
 use phx_id::{Date, Day, PartyRef, Slot};
 use phx_num::Missing;
+use phx_pop::cache::{CacheWrite, DayCached};
 use phx_pop::directory::{Directory, Resolved};
 use phx_pop::kinds::{Attr, AttrW, KindStore, Opening};
 use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, IntTy, KindMap, Layout, WordDecl};
@@ -20,7 +21,7 @@ use phx_pop::offices::{Holder, OfficeRef, OfficeRow, Offices};
 use phx_pop::person_kind::{Heads, PersonKind, StoreHeads};
 use phx_pop::windowed::{WAttrW, WindowLayout, WindowedGroup};
 use phx_rand::uniform::below_u64;
-use phx_store::{AddressSpace, StoreStats};
+use phx_store::{AddressSpace, DayBuf, StoreStats};
 
 use crate::design::Design;
 use crate::fill::Streams;
@@ -101,6 +102,11 @@ const OFFICE_ROW: u64 = 3;
 /// The offices whose holders a day reads.
 const HOLDER_READS: u64 = 800_000;
 
+/// The firms deciding on a business day, each computing its unit cost on its first read of the day.
+const COST_MISSES: u64 = 600_000;
+/// A firm's unit cost read again after its first, with each further decision and visit of its day.
+const COST_HITS: u64 = 1_200_000;
+
 const MIB: f64 = 1_048_576.0;
 
 /// The directory, its live and ended references, and the day reached.
@@ -124,6 +130,8 @@ pub struct Parties {
     /// The offices, every one opened, and the owner of each office its owner manages.
     offices: Option<Offices>,
     opened: Vec<OfficeRef>,
+    /// The deciding firms' unit costs computed on a miss, for the barrier to write into their rows.
+    back: Option<DayBuf<CacheWrite>>,
     owners: Vec<(OfficeRef, PartyRef)>,
     faults: Option<u64>,
     /// The persons' and households' campaign groups with their write handles, and each kind's slots a country holds.
@@ -241,6 +249,7 @@ struct Handles {
     own_unit: AttrW<u32>,
     zone: AttrW<u16>,
     head: AttrW<u32>,
+    cost: DayCached<i64>,
 }
 
 impl Handles {
@@ -254,6 +263,11 @@ impl Handles {
             own_unit: firm.writer("units", 0, "K-60").map_err(FinError)?,
             zone: firm.writer("zone", 0, "K-32").map_err(FinError)?,
             head: household.writer("persons_head", 0, "K-33").map_err(FinError)?,
+            cost: DayCached::new(
+                firm.writer("unit_cost", 0, "K-35").map_err(FinError)?,
+                firm.writer("unit_cost_day", 0, "K-35").map_err(FinError)?,
+                Day::new(0),
+            ),
         })
     }
 
@@ -270,6 +284,11 @@ impl Handles {
             _ => Vec::new(),
         })
     }
+}
+
+/// A firm's unit cost at the day's prices, a pure function of its state, standing for the costing its kernel does.
+fn unit_cost(slot: Slot) -> i64 {
+    i64::from(slot.get()) * 3 + 1
 }
 
 /// A word read into the measure's checksum, which keeps the reads from being optimised away; an absent one adds one.
@@ -446,6 +465,46 @@ impl Parties {
 }
 
 impl Parties {
+    /// The deciding firms' unit costs computed on their first read of the day and recorded for the barrier, which
+    /// writes them into their rows; then a batch of firms' costs read again and again from rows gathered once.
+    fn cache_day(&mut self, m: &mut Measures<'_>) -> Result<(), FinError> {
+        let (Some(dir), Some(handles), Some(back)) = (self.directory.as_ref(), self.handles, self.back.as_mut()) else {
+            return Err(FinError("the cache measured before its fill".to_owned()));
+        };
+        let Some(fs) = self.stores.iter_mut().find(|(k, _)| *k == FIRMS).map(|(_, s)| s) else {
+            return Err(FinError("no firm store".to_owned()));
+        };
+        let today = Day::new(self.today);
+        let deciding: Vec<Slot> = dir.live_slots(FIRMS).take(index(COST_MISSES)?).collect();
+        back.clear();
+        let cache = handles.cost;
+        let reader = &*fs;
+        self.folded ^= m.read(BASE, "cache_miss", wide(deciding.len()), || {
+            let mut sum = 0_i64;
+            for slot in &deciding {
+                let Some(row) = reader.gather_at(*slot, 0) else { continue };
+                sum ^= cache.get_or((&row, *slot), today, back, (unit_cost, *slot));
+            }
+            black_box(sum.unsigned_abs())
+        });
+        let writes = wide(back.len());
+        m.read(BASE, "cache_apply", writes, || cache.apply_all(fs, dir, today, back.as_slice()));
+        let rows: Vec<_> = deciding.iter().take(index(VISIT_BATCH)?).filter_map(|s| fs.gather_at(*s, 0)).collect();
+        let reps = COST_HITS / VISIT_BATCH;
+        self.folded ^= m.read(BASE, "cache_hit", reps * wide(rows.len()), || {
+            let mut sum = 0_i64;
+            for _ in 0..reps {
+                for row in &rows {
+                    if let Missing::Present(v) = cache.get(row, today) {
+                        sum ^= v;
+                    }
+                }
+            }
+            black_box(sum.unsigned_abs())
+        });
+        Ok(())
+    }
+
     /// The persons ended leaving their households and those born joining drawn ones, the households ended passing
     /// their persons on, a day's moves between households measured, and the dead owners' offices left empty.
     fn persons_day(
@@ -642,6 +701,7 @@ impl FinBase for Parties {
         self.open_offices(&mut space, (store("offices")?, streams))?;
         self.held = StoreStats::bytes(&dir);
         self.handles = Some(handles);
+        self.back = Some(DayBuf::new(&mut space, "unit-cost write-back", index(COST_MISSES)?));
         // Every country's campaign open at once, each over its own third of the persons and households.
         let mut campaign = Campaign::new(&dir)?;
         for country in 0..COUNTRIES {
@@ -732,7 +792,8 @@ impl FinBase for Parties {
         let written = m.read(BASE, "window_write", covered, || campaign.write(reader, 0, today));
         black_box(written);
         self.persons_day(&begun, &mut d, m)?;
-        self.kinds_day(&mut d, m)
+        self.kinds_day(&mut d, m)?;
+        self.cache_day(m)
     }
 
     fn bytes(&self) -> Bytes {

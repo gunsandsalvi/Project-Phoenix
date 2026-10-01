@@ -265,6 +265,8 @@ pub const OFFICE_TERM_BOUND: u16 = 2;
 pub const OFFICE_APPOINTED: u16 = 4;
 /// The rows of an office's 16 bytes a chunk of the offices' column commits.
 pub const OFFICE_ROWS_PER_CHUNK: u32 = 1 << 14;
+/// The bytes of a value a per-day cache's write-back carries: the widest word a cache keeps.
+pub const CACHE_VALUE_BYTES: usize = 8;
 
 /// Every group of the maps within its width, and each map within a store.
 const _: () = assert!(

@@ -545,10 +545,15 @@ impl<D: Backing> KindChunk<'_, D> {
     }
 
     fn row(&mut self, r: PartyRef, group: u8) -> &mut [u8] {
-        let local = r.slot().get().checked_sub(self.first).filter(|s| *s < self.n);
-        let (Some(local), true) = (local, r.kind() == self.kind && self.dir.reference(self.kind, r.slot()) == Some(r))
-        else {
+        if r.kind() != self.kind || self.dir.reference(self.kind, r.slot()) != Some(r) {
             violation!(clause = "PTY.10", "a chunk's write to a party it does not own", party = r.word());
+        }
+        self.row_at(r.slot(), group)
+    }
+
+    fn row_at(&mut self, slot: Slot, group: u8) -> &mut [u8] {
+        let Some(local) = slot.get().checked_sub(self.first).filter(|s| *s < self.n) else {
+            violation!(clause = "PTY.10", "a chunk's write to a slot it does not own", slot = slot.get());
         };
         let g = usize::from(group);
         let Some(w) = self.widths.get(g).map(|w| usize::from(*w)) else {
@@ -571,6 +576,15 @@ impl<D: Backing> KindChunk<'_, D> {
             violation!(clause = "SET.12", "an indexed word written from a chunk", offset = a.0.offset);
         }
         a.0.write_in(self.row(r, a.0.group), v);
+    }
+
+    /// A word of the party at one of the chunk's slots written, as the day names its parties by their place; an
+    /// indexed word is refused.
+    pub fn set_at<T: Word>(&mut self, slot: Slot, a: AttrW<T>, v: Missing<T>) {
+        if self.keyed.contains(&Some((a.0.group, a.0.offset))) {
+            violation!(clause = "SET.12", "an indexed word written from a chunk", offset = a.0.offset);
+        }
+        a.0.write_in(self.row_at(slot, a.0.group), v);
     }
 }
 

@@ -705,6 +705,15 @@ counter = "fin.parties.firm_hot_bytes"
 value = 192
 direction = "down"
 
+# The per-day cache (S1.211, 2026-10-01; `tools/bench.sh -F parties`): a business day's 0.6 M deciding firms each
+# compute their unit cost on its first read, 31 ns a miss with its write-back recorded, and the barrier writes them
+# back into their rows, 26 ns a write; every later read that day is a hit in the hot row already gathered, 1.41 ns
+# (the step's 1.5 on this machine, which stands).
+[[ratchet]]
+counter = "fin.parties.cache_hit_ns"
+value = 1.5
+direction = "down"
+
 [[ratchet]]
 counter = "fin.parties.faults_per_day"
 value = 0

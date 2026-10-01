@@ -1,9 +1,26 @@
 pub mod phx_pop  // used by: phx-cli, phx-world, sys-dem
+pub mod phx_pop::cache  // used by: phx-core, phx-fin
+#[repr(C)] pub struct phx_pop::cache::CacheWrite
+impl phx_store::pod::Pod for phx_pop::cache::CacheWrite
+pub fn phx_pop::cache::CacheWrite::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store, phx-world
+impl phx_store::pod::__seal::Sealed for phx_pop::cache::CacheWrite
+pub struct phx_pop::cache::DayCached<T>  // used by: phx-fin
+impl<T: phx_pop::kinds::Word> phx_pop::cache::DayCached<T>
+pub fn phx_pop::cache::DayCached<T>::apply<D: phx_store::backing::Backing>(&self, &mut phx_pop::kinds::KindChunk<'_, D>, phx_id::day::Day, &[phx_pop::cache::CacheWrite])  // used by: phx-fin
+pub fn phx_pop::cache::DayCached<T>::apply_all<B: phx_store::backing::Backing, D: phx_store::backing::Backing>(&self, &mut phx_pop::kinds::KindStore<B>, &phx_pop::directory::Directory<D>, phx_id::day::Day, &[phx_pop::cache::CacheWrite])  // used by: phx-fin
+pub fn phx_pop::cache::DayCached<T>::get(&self, &phx_pop::kinds::Row<'_>, phx_id::day::Day) -> phx_num::missing::Missing<T>  // used by: phx-fin
+pub fn phx_pop::cache::DayCached<T>::get_or<A, B: phx_store::backing::Backing>(&self, (&phx_pop::kinds::Row<'_>, phx_id::ids::Slot), phx_id::day::Day, &mut phx_store::daybuf::DayBuf<phx_pop::cache::CacheWrite, B>, (impl core::ops::function::FnOnce(A) -> T, A)) -> T  // used by: phx-fin
+pub fn phx_pop::cache::DayCached<T>::get_or_mut<A, B: phx_store::backing::Backing>(&self, &mut phx_pop::kinds::KindStore<B>, (phx_id::ids::Slot, phx_id::day::Day), (impl core::ops::function::FnOnce(A) -> T, A)) -> T  // used by: phx-fin
+pub fn phx_pop::cache::DayCached<T>::new(phx_pop::kinds::AttrW<T>, phx_pop::kinds::AttrW<u16>, phx_id::day::Day) -> phx_pop::cache::DayCached<T>  // used by: phx-fin
+impl<T> core::clone::Clone for phx_pop::cache::DayCached<T>
+pub fn phx_pop::cache::DayCached<T>::clone(&self) -> phx_pop::cache::DayCached<T>  // used by: phx-fin
+impl<T> core::marker::Copy for phx_pop::cache::DayCached<T>
 pub mod phx_pop::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_pop::consts::AGENCY: phx_pop::layout::KindMap
 pub const phx_pop::consts::AGENCY_OCCUPATIONS: u16
 pub const phx_pop::consts::AGENCY_REGIONS: u16
 pub const phx_pop::consts::BANK: phx_pop::layout::KindMap
+pub const phx_pop::consts::CACHE_VALUE_BYTES: usize
 pub const phx_pop::consts::COUNTRIED: phx_pop::layout::KindMap  // used by: phx-world
 pub const phx_pop::consts::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
 pub const phx_pop::consts::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
@@ -100,6 +117,7 @@ pub struct phx_pop::kinds::KindChunk<'a, D: phx_store::backing::Backing>
 impl<D: phx_store::backing::Backing> phx_pop::kinds::KindChunk<'_, D>
 pub fn phx_pop::kinds::KindChunk<'_, D>::get<T: phx_pop::kinds::Word>(&mut self, phx_id::ids::PartyRef, phx_pop::kinds::Attr<T>) -> phx_num::missing::Missing<T>
 pub fn phx_pop::kinds::KindChunk<'_, D>::set<T: phx_pop::kinds::Word>(&mut self, phx_id::ids::PartyRef, phx_pop::kinds::AttrW<T>, phx_num::missing::Missing<T>)
+pub fn phx_pop::kinds::KindChunk<'_, D>::set_at<T: phx_pop::kinds::Word>(&mut self, phx_id::ids::Slot, phx_pop::kinds::AttrW<T>, phx_num::missing::Missing<T>)
 pub fn phx_pop::kinds::KindChunk<'_, D>::slots(&self) -> (phx_id::ids::Slot, u32)
 pub struct phx_pop::kinds::KindStore<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin, phx-world
 impl<B: phx_store::backing::Backing> phx_pop::kinds::KindStore<B>

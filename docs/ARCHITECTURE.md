@@ -2625,8 +2625,46 @@ with the processes that fill them.
 
 #### K-35 The per-day party cache
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.211).
+`phx-pop`'s `DayCached<T>` (`cache.rs`; REP.5) keeps a value that is a pure function of a party's state and the day's
+prices, read several times a day, computed once a day on its first read.
+
+**Layout**: two words of one group of the party's own record, declared by the base that owns the value: the value
+(any `Word` up to 8 bytes) and its stamp u16, the day it was computed for as an offset from the run's first day; the
+stamp's sentinel, `u16::MAX`, is never. A firm's unit cost is i64 + u16 = 10 B of its hot row (`unit_cost`,
+`unit_cost_day`, K-32's map), read from the row a visit has already gathered. A miss's write-back is a 12 B
+`CacheWrite` (slot u32, the value's bytes) in the chunk's day buffer (K-03).
+
+**API**: `new(value, stamp, first)` refuses words of two groups or a value wider than a write-back carries; `get(row,
+today)` reads the value where the stamp is today's, else none; `get_or((row, slot), today, back, (f, arg))` — for a
+reader holding the stores shared, in decide (5b, 5c) — returns the hit, or computes `f(arg)` and records it in the
+chunk's write-back buffer; `get_or_mut(store, (slot, today), (f, arg))` writes in place for a reader holding the store;
+`apply(chunk, today, writes)` writes the writes whose slots the chunk owns (`KindChunk::set_at`): a decide pass's
+chunk records the misses of its own slots, so each chunk's worker applies its own buffer, O(its misses), and the result
+is the same for any chunking; `apply_all` does it for a reader holding the whole
+store. A function marked `#[per_day]` is only ever handed to `get_or` as a path, never called (PC-101), so no path
+computes it twice in a day.
+
+**Algorithms and bounds**: a hit is a stamp compare and a word read in a row in cache; a miss is the function and a
+12 B append; a write-back two word writes. Each decide sub-stage's buffer is applied at its own barrier (the end of 5b,
+the end of 5c), so decide stays `&self`, 5c's reviews hit what 5b computed and nothing is live at 5d. A cached value
+never changes an outcome: two writes of one slot carry one value, the function's on the same state.
+
+**Save and load**: the words are the record's, saved with it as they stand; every stamp a save holds is of a day already
+closed, so a load's next day reads every cache as never and computes it again on first use (`load_clears_stamps`) —
+no copy of a group is masked at the save. The write-back buffers are day buffers, never saved.
+
+**Capacity**: the stamp counts 65 535 days from the run's first, the directory's declared run; a day past it stops the
+run. A buffer holds its sub-stage's heaviest day's misses (≤ 0.35 M, 4 MB, line 21).
+
+**Volumes and ratchets** (`[fin.parties]`, `tools/bench.sh -F parties`): a business day's 0.6 M deciding firms each
+compute their unit cost on its first read (31 ns a miss with its write-back), the barrier writes them back (26 ns a
+write), and every later read is a hit, 1.41 ns: `cache_hit_ns` 1.5.
+
+**Extension points**: S1.295 (a firm's unit cost read once a day from the bases); S1.348; S1.406; S2.174; S2.179;
+S3.184 (a fund's NAV); S8.122; S8.130; S4.108 (IM per netting set); S6.104.
+
+**Today**: `phx-world` reckons a firm's unit cost afresh at each read (`Core::unit_cost`, counted by
+`unit_costs`) until S1.295 reads it once a day through the cache.
 
 ### 7.6 phx-record
 
@@ -4460,7 +4498,7 @@ credited while the world holds it (GEN.10).
     | PC-99 | in PC-92's hot set, outside functions marked `#[cold]` (an error path) or `#[opening]`, the syntax of allocation: `Vec::new`, `Vec::with_capacity`, `Box::new`, `String::new`, `String::from`, `vec!`, `format!`, and `.collect()`, `.to_vec()`, `.to_owned()`, `.to_string()`, `.clone()`; a push into a kernel buffer is admitted, and the arguments of `violation!` and `capacity_exceeded!` are tokens, not calls; what the syntax cannot see the bench's allocation counter measures (K-15); its exceptions file admits today's sites (S1.124) |
     | PC-100 | in a world crate, a field of a struct deriving `Saved` (not marked `#[saved(skip)]`) that names a party or row by where it is now: a map or set (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map) keyed by `u32`, `PartyKey`, `Slot` or an edge slot, or by a tuple they lead; a `PartyMap`; a `Vec<(PartyKey, _)>`. It keys by a generation-checked reference (`PartyRef`, `GenRef<T>` (planned, S1.159), `ContractRef` (planned, S1.174)) or becomes its base's column (S1.125). And in a world crate outside tests, an absent value read as zero — `unwrap_or(0)`, `unwrap_or(0.0)`, `unwrap_or(…::ZERO)`, `map_or(0, …)`, `unwrap_or_default()` — outside a function marked `#[absent_is_zero(reason = "…")]` (`phx-macros`: a marker on a function whose reason is not empty, for an absence that truly is zero, a count of an entry not there) (S1.126); its exceptions file admits today's sites. And, with no exception, a literal capacity: a `const` named `*_ROWS`, `*_WORDS`, `*_CAPACITY` or `INSTRUMENTS` whose value is a shift of literals outside `phx-core`'s `capacity.rs`, or a shift of literals handed to a store's constructor (`Column`, `Directory`, `KindStore`, `Table`, `SlotAlloc`, `Region`, `EdgeTable`, `BlockPool`, `Persons`, `ChunkArena`); a chunk size stays an engineering constant (S1.127) |
     | PC-22 | in `phx-audit`, outside tests, a world store (`Column`, `Table`, `SlotAlloc`, `Directory`, `KindStore`, `EdgeTable`, `ChunkArena`, `BlockList`, `BlockPool`, `Region`, `Persons`, `DueWheel`, `EventStore`, `Register`, `Calendar`, `Core`, `World`) held by `&mut`: the audit holds the world by shared reference; its reads of maintained aggregates are PC-101's (re-aimed at S1.128, the family context it named gone) |
-    | PC-101 | a field marked `#[maintained(writer = path)]` (the `Maintained` derive of `phx-macros`, which refuses a missing writer or a type that is no integer) whose type is no integer (`i8`–`i64`, `u8`–`u64`, or `phx-num`'s `Amount`, `Count`, `Money`, `Qty`, `QtyRaw`, `PriceRaw`, `Fixed`); and in `phx-audit`, outside tests, a field access naming any maintained field, which the audit recounts from source rows instead (N1's independence), a clash of names resolved by renaming (S1.128); and in a world crate, outside tests, a call of a function marked `#[per_day]` (`phx-macros`: a marker on a function, emitted unchanged), which is only ever named as a path handed to the day's cache (`DayCached::get_or` (planned, S1.211), K-35), so a per-day value is computed once a day (S1.129); and a field marked `#[saved(skip)]` without `rebuild = path`, its exceptions file admitting today's sites (S1.130) |
+    | PC-101 | a field marked `#[maintained(writer = path)]` (the `Maintained` derive of `phx-macros`, which refuses a missing writer or a type that is no integer) whose type is no integer (`i8`–`i64`, `u8`–`u64`, or `phx-num`'s `Amount`, `Count`, `Money`, `Qty`, `QtyRaw`, `PriceRaw`, `Fixed`); and in `phx-audit`, outside tests, a field access naming any maintained field, which the audit recounts from source rows instead (N1's independence), a clash of names resolved by renaming (S1.128); and in a world crate, outside tests, a call of a function marked `#[per_day]` (`phx-macros`: a marker on a function, emitted unchanged), which is only ever named as a path handed to the day's cache (`DayCached::get_or`, K-35), so a per-day value is computed once a day (S1.129); and a field marked `#[saved(skip)]` without `rebuild = path`, its exceptions file admitting today's sites (S1.130) |
     | PC-94 | a name — an identifier, or a declared name in a string — in a world crate ending `_small` or `_large`: a mechanism split by size, where a firm is one kind whatever its size (S1.24) |
 
     **Exceptions** (`src/exceptions.rs`): a rule widened over code that does not yet keep it admits today's sites in
