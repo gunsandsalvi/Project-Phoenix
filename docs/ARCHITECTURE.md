@@ -963,9 +963,13 @@ A save is taken at its declared moments, apart from the turn (K-104, N8.10). Mon
 next business day's stage 7 (TIME.8). **Day zero** runs stage 5 alone, on the snapshot (GEN.13); **settling** runs
 ordinary days for GEN.6's length.
 
-**Today** (until S1.185 and S1.186): the day is `phx-world/src/day.rs`'s hand sequence over the sub-steps
-`phx-core/src/substep.rs` names; the stage table's step (S1.185) compiles the table above into data, and the day
-runner (S1.186) walks it.
+The table above is data (`phx_core::stages::DAY_TABLE`, K-23): each slot's stage, whether it is business-only and
+whether a non-business day runs it, the bases that run there, its reads and writes, its barrier and how the pool takes
+it. On a non-business day the walk is TIME.8's list — 1a, 1b, 2a, stages 3 and 4, stage 5, stage 6 and stage 10 — and
+on day zero stage 5 alone.
+
+**Today** (until S1.186): the day is still `phx-world/src/day.rs`'s hand sequence over the sub-steps
+`phx-core/src/substep.rs` names, beside the table; the day runner (S1.186) walks the table and retires the sub-steps.
 
 **The calendar** (`phx-core::calendar`) is built at assembly from each country's declared rules: a weekend and
 holidays that are `Fixed`, `NthWeekday` (−1 the last), `EasterOffset` (the Gregorian computus) or `Substitute`
@@ -984,7 +988,9 @@ convention.
 ### 6.2 Order without order dependence
 
 A slot reads today's writes of earlier slots only: stage 5 reads yesterday's prints and publications, stage 9
-today's (TIME.10), each slot's read tag declared in the stage table (K-23). **Decide, then apply**: a decider reads
+today's (TIME.10), each slot's read tag declared in the stage table (K-23) and checked at assembly: a read of today's
+value of a store some later slot writes is refused, as is a read through a slot after the reader's or of a store no
+slot writes. **Decide, then apply**: a decider reads
 `&self` over its agenda chunk and writes only its own party's columns; every other effect is an **intent** into a
 (chunk, handler) buffer, applied by target range at its stage's apply slot. Ties are broken by identity, then rule,
 then lot, so no outcome depends on registration or processing order, which a logic-level test holds: the canonical
@@ -1764,7 +1770,7 @@ and spin (S1.169); every base implements `StoreStats` at its step.
 
 ### 7.3 phx-core
 
-Status: building (streams and K-19–K-22 built, S1.177–S1.184; K-23 and K-24 planned, S1.114, S1.185)
+Status: building (streams and K-19–K-23 built, S1.177–S1.185; K-24 planned, S1.114)
 
 #### Streams
 
@@ -2006,10 +2012,23 @@ batch header widens to 24 (S1.245). A firm's own unit id becomes its record's ho
 
 #### K-23 The stage table
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.185).
+The day's order is data (`stages/`). `DAY_TABLE` lists the slots of `slots.rs`'s `DaySlot` in their order, each a
+`SlotDecl` (its stage read by its slot from `SLOT_STAGES`): whether it runs only for the countries whose business day it is, whether a non-business day
+runs it (TIME.8), the bases that run there (empty for a slot no rule fills yet: 4b and 4c until a rule declares a
+trip), its reads — a store and `AsOf::Today` (every writer of the day at or before it), `Through(slot)` (as written up
+to a named slot, as stage 5 reads holdings through stage 4) or `Yesterday` — its writes, whether a barrier follows it
+and how the pool takes it (`Pool::Chunked`, `Apply`, `Serial`). Stage 4's trips: 4b writes every trip's loads and 4c
+alone reads them, after. `stages::compile` checks it at assembly (`check.rs`): the slots the day's, each once in its
+order, the stages in order, no slot both business-only and run on a non-business day, every read naming a store some
+slot writes and none of today's value written later the same day (TIME.10), and the barriers within the day's budget
+(`BARRIERS_BUSINESS` 40, a heavy day walking the same slots within `BARRIERS_HEAVY` 48, `BARRIERS_NON_BUSINESS` 20; a
+barrier follows each slot that ran something). `StageTable::walk(mode, any_business)` yields the slots a day runs:
+every slot on a day some country does business; TIME.8's list on a day none does, a business-only slot never; stage 5
+alone on day zero (`Mode::DayZero`, GEN.13); settling days as ordinary ones. The table holds no state and is not saved.
+`[fin.stages]`: the runner's own walk of a day, each slot a span around no work, `runner_ns` 895 (641–716 measured,
+the step's 2 ms) and `day_zero_ns` 795.
 
-**Today** (`substep.rs`): the sub-steps the day runs until the stage table replaces them (§6.1).
+**Today** (`substep.rs`): the sub-steps the day still runs by hand, until the day runner walks the table (S1.186).
 
 #### K-24 The capacity table
 

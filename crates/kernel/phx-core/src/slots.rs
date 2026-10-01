@@ -4,7 +4,7 @@
 use phx_macros::clause;
 use phx_rand::SlotOrdinal;
 
-use crate::consts::DAY_SLOTS;
+use crate::consts::{DAY_SLOTS, SLOT_STAGES};
 
 /// A slot of the day: stage and letter, and the save taken at its declared moments.
 #[clause("TIME.6")]
@@ -97,6 +97,15 @@ pub const DAY_SLOT_ORDER: [DaySlot; DAY_SLOTS] = [
 ];
 
 impl DaySlot {
+    /// The stage the slot belongs to; the save's is none of the ten, 0.
+    #[must_use]
+    pub fn stage(self) -> u8 {
+        match SLOT_STAGES.get(usize::from(self.ordinal().get())) {
+            Some(s) => *s,
+            None => phx_num::violation!(clause = "TIME.6", "a slot missing from the stages' list"),
+        }
+    }
+
     /// The slot's ordinal: its place in the table.
     pub fn ordinal(self) -> SlotOrdinal {
         let at = DAY_SLOT_ORDER.iter().position(|s| *s == self).and_then(|a| u32::try_from(a).ok());

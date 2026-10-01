@@ -489,6 +489,20 @@ counter = "fin.units.ids_mb"
 value = 3
 direction = "down"
 
+# The stage table (S1.185, 2026-10-01; `tools/bench.sh -F stages`): the day runner's own cost, the table walked for each
+# day type with every slot it runs a span around no work and its barriers counted — 641–716 ns a day in the ordinary
+# mode (the step's 2 ms) and 595–635 ns for day zero's stage 5. Each ratchet stands a quarter above the higher.
+
+[[ratchet]]
+counter = "fin.stages.runner_ns"
+value = 895
+direction = "down"
+
+[[ratchet]]
+counter = "fin.stages.day_zero_ns"
+value = 795
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

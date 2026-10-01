@@ -509,6 +509,9 @@ impl phx_core::catalogue::WayH
 pub const fn phx_core::catalogue::WayH::get(self) -> u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_core::catalogue::compile(&phx_core::catalogue::decls::Declared<'_>) -> core::result::Result<phx_core::catalogue::Catalogue, alloc::vec::Vec<alloc::string::String>>  // used by: phx-fin, phx-pop, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub mod phx_core::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
+pub const phx_core::consts::BARRIERS_BUSINESS: usize
+pub const phx_core::consts::BARRIERS_HEAVY: usize
+pub const phx_core::consts::BARRIERS_NON_BUSINESS: usize
 pub const phx_core::consts::BIT_WORD: usize
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
@@ -528,6 +531,7 @@ pub const phx_core::consts::DAYS_PER_WEEK: u16  // used by: phx-id
 pub const phx_core::consts::DAY_30: u8
 pub const phx_core::consts::DAY_31: u8
 pub const phx_core::consts::DAY_SLOTS: usize
+pub const phx_core::consts::DECIDE_STAGE: u8
 pub const phx_core::consts::DECIMAL_BASE: f64  // used by: phx-num, sys-bnk, sys-frt, sys-lab, sys-tax, sys-tec
 pub const phx_core::consts::DECIMAL_RADIX: i64
 pub const phx_core::consts::DECIMAL_RADIX_F64: f64  // used by: phx-geo, sys-dem
@@ -583,6 +587,7 @@ pub const phx_core::consts::RATE_EXP: u8
 pub const phx_core::consts::ROW_BYTES_UNLAID: u32
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
 pub const phx_core::consts::SLOT_BITS: u32
+pub const phx_core::consts::SLOT_STAGES: [u8; 40]
 pub const phx_core::consts::STORES: &[(&str, u32, u32, phx_core::capacity::Growth)]  // used by: phx-check
 pub const phx_core::consts::UNITS_BIT: u16
 pub const phx_core::consts::UNIT_AT_ZONE: u8
@@ -1878,6 +1883,7 @@ pub phx_core::slots::DaySlot::S9d
 pub phx_core::slots::DaySlot::Save  // used by: phx-fin
 impl phx_core::slots::DaySlot
 pub fn phx_core::slots::DaySlot::ordinal(self) -> phx_rand::draws::SlotOrdinal  // used by: phx-rand, phx-store, phx-world, sys-bnk, sys-dem
+pub fn phx_core::slots::DaySlot::stage(self) -> u8  // used by: phx-check, phx-fin, phx-world
 pub const phx_core::slots::DAY_SLOT_ORDER: [phx_core::slots::DaySlot; 40]
 pub mod phx_core::spoilage
 pub struct phx_core::spoilage::SpoilageDecl
@@ -1885,6 +1891,42 @@ pub phx_core::spoilage::SpoilageDecl::clause: &'static str  // used by: if-base,
 pub phx_core::spoilage::SpoilageDecl::rates: fn(&phx_core::register::Register) -> core::result::Result<alloc::vec::Vec<f64>, alloc::string::String>  // used by: if-credit, phx-cli, phx-world, sys-bnk, sys-tax
 pub phx_core::spoilage::SpoilageDecl::visit: &'static str  // used by: phx-check, phx-exec
 pub fn phx_core::spoilage::lost(&[(i64, i64)], i64, f64, i64) -> core::option::Option<i64>  // used by: phx-world
+pub mod phx_core::stages  // used by: phx-cli, phx-fin, phx-world
+pub mod phx_core::stages::check  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
+pub fn phx_core::stages::check::compile(&[phx_core::stages::SlotDecl]) -> core::result::Result<phx_core::stages::StageTable, alloc::vec::Vec<alloc::string::String>>  // used by: phx-fin, phx-pop, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub mod phx_core::stages::table  // used by: phx-check, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-store, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-soc, sys-tax
+pub const phx_core::stages::table::DAY_TABLE: [phx_core::stages::SlotDecl; 40]  // used by: phx-fin
+pub enum phx_core::stages::AsOf
+pub phx_core::stages::AsOf::Through(phx_core::slots::DaySlot)
+pub phx_core::stages::AsOf::Today
+pub phx_core::stages::AsOf::Yesterday
+pub enum phx_core::stages::Mode  // used by: phx-fin, phx-store
+pub phx_core::stages::Mode::DayZero  // used by: phx-fin
+pub phx_core::stages::Mode::Ordinary  // used by: phx-fin
+pub phx_core::stages::Mode::Settling
+pub enum phx_core::stages::Pool  // used by: phx-cli, phx-exec, phx-fin, phx-market, phx-world, sys-dem
+pub phx_core::stages::Pool::Apply  // used by: phx-exec, phx-fin
+pub phx_core::stages::Pool::Chunked
+pub phx_core::stages::Pool::Serial
+pub struct phx_core::stages::Read  // used by: phx-store
+pub phx_core::stages::Read::as_of: phx_core::stages::AsOf
+pub phx_core::stages::Read::store: &'static str  // used by: phx-cli, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world
+pub struct phx_core::stages::SlotDecl
+pub phx_core::stages::SlotDecl::barrier_after: bool
+pub phx_core::stages::SlotDecl::business_only: bool
+pub phx_core::stages::SlotDecl::on_non_business: bool
+pub phx_core::stages::SlotDecl::pool: phx_core::stages::Pool  // used by: phx-cli, phx-exec, phx-fin, phx-market, phx-store, phx-world, sys-dem
+pub phx_core::stages::SlotDecl::reads: &'static [phx_core::stages::Read]  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-world
+pub phx_core::stages::SlotDecl::runs: &'static [&'static str]  // used by: phx-exec, phx-fin, phx-market
+pub phx_core::stages::SlotDecl::slot: phx_core::slots::DaySlot  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-world, sys-soc
+pub phx_core::stages::SlotDecl::writes: &'static [&'static str]  // used by: phx-check
+pub struct phx_core::stages::StageTable  // used by: phx-fin
+impl phx_core::stages::StageTable
+pub fn phx_core::stages::StageTable::barriers(&self, phx_core::stages::Mode, bool) -> usize  // used by: phx-cli, phx-exec, phx-fin
+pub fn phx_core::stages::StageTable::slots(&self) -> &[phx_core::stages::SlotDecl]  // used by: phx-exec, phx-fin, phx-id, phx-pop, phx-store, phx-world
+pub fn phx_core::stages::StageTable::walk(&self, phx_core::stages::Mode, bool) -> impl core::iter::traits::iterator::Iterator<Item = &phx_core::stages::SlotDecl>  // used by: phx-check, phx-exec, phx-fin
+pub const phx_core::stages::DAY_TABLE: [phx_core::stages::SlotDecl; 40]  // used by: phx-fin
+pub fn phx_core::stages::compile(&[phx_core::stages::SlotDecl]) -> core::result::Result<phx_core::stages::StageTable, alloc::vec::Vec<alloc::string::String>>  // used by: phx-fin, phx-pop, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub mod phx_core::store  // used by: phx-cli, phx-exec, phx-fin, phx-macros, phx-obs, phx-pop, phx-store, phx-world
 pub struct phx_core::store::Accounts<B: phx_store::backing::Backing>  // used by: phx-world
 pub phx_core::store::Accounts::balance: phx_store::column::Column<i64, B>  // used by: phx-cli, phx-fin, phx-world

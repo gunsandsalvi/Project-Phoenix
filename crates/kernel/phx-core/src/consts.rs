@@ -275,3 +275,17 @@ pub const UNIT_INSTRUMENT: u8 = 2;
 pub const UNIT_SPECIAL: u8 = 3;
 /// A right's code.
 pub const UNIT_RIGHT: u8 = 4;
+/// The barriers a business day, a heavy day and a non-business day may take: the table's walk of a heavy day is a
+/// business day's, its heavier volumes in the same slots.
+pub const BARRIERS_BUSINESS: usize = 40;
+/// A heavy day's barriers.
+pub const BARRIERS_HEAVY: usize = 48;
+/// A non-business day's barriers.
+pub const BARRIERS_NON_BUSINESS: usize = 20;
+/// Each slot's stage, in the day's order; the save, outside the stages, is stage 0.
+pub const SLOT_STAGES: [u8; DAY_SLOTS] = [
+    1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8, 9, 9, 9, 9, 10, 10, 10,
+    10, 10, 0,
+];
+/// The stage that decides, the only one day zero runs.
+pub const DECIDE_STAGE: u8 = 5;

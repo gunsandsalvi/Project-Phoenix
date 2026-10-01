@@ -26,6 +26,7 @@ pub mod schedule;
 pub mod settle;
 pub mod slots;
 pub mod spoilage;
+pub mod stages;
 pub mod store;
 pub mod streams;
 pub mod substep;

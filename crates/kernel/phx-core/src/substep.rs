@@ -1,5 +1,3 @@
-use phx_macros::clause;
-
 /// How a sub-step visits rows.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SubStepKind {
@@ -16,7 +14,6 @@ pub enum SubStepKind {
 }
 
 /// Every sub-step of a day, in the order the day runs them.
-#[clause("TIME.6", "TIME.8")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SubStep {
     S1a,
