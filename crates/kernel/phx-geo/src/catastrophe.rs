@@ -64,10 +64,28 @@ pub fn days_in_year(date: Date) -> u32 {
     (1..=crate::consts::MONTHS_U8).filter_map(|m| Date::days_in_month(date.year(), m)).map(u32::from).sum()
 }
 
+/// A struck tile and its severity in permille, as the day's footprint holds it.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Pod)]
+pub struct Struck {
+    pub tile: TileId,
+    pub severity: u32,
+}
+
+/// The day's footprint: every tile the day's catastrophes struck with its severity, a day buffer the day's losses
+/// read and the next day clears.
+pub type Footprint<B = phx_store::SystemBacking> = phx_store::DayBuf<Struck, B>;
+
 /// One hazard's day in one country: per exposure class, the count of origins a binomial over the class's tiles at
-/// its daily chance, the origins uniform among them, and each origin's footprint with its tiles' severities.
+/// its daily chance, the origins uniform among them, and each origin's footprint with its tiles' severities, each
+/// struck tile also handed to the day's footprint as it is drawn.
 #[must_use]
-pub fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d: &mut Draws) -> Vec<EventIntent> {
+pub fn hazard_day(
+    geo: &GeoState,
+    (h, country, days): (&HazardState, usize, u32),
+    d: &mut Draws,
+    mut strike: impl FnMut(Struck),
+) -> Vec<EventIntent> {
     let mut out = Vec::new();
     let Some(classes) = h.by_country.get(country) else {
         violation!(clause = "GEO.8", "a country the map does not have", country = country);
@@ -87,6 +105,10 @@ pub fn hazard_day(geo: &GeoState, h: &HazardState, country: usize, days: u32, d:
                 let Ok(share) = Fixed::<0>::from_f64(beta(d, first, second) * PER_MILLE_F64, Round::HalfEven) else {
                     violation!(clause = "GEO.8", "a severity beyond its width");
                 };
+                let Ok(severity) = u32::try_from(share.raw()) else {
+                    violation!(clause = "GEO.8", "a severity below none", tile = t.get());
+                };
+                strike(Struck { tile: *t, severity });
                 details.push((Subject::new(SubjectTag::Tile, u64::from(t.get())), share.raw()));
             }
             let subjects = details.iter().map(|(s, _)| *s).collect();

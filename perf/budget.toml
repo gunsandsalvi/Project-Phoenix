@@ -616,6 +616,29 @@ counter = "fin.deposits.row_bytes"
 value = 32
 direction = "down"
 
+# The weather's store (S1.192, 2026-10-01; `tools/bench.sh -F weather`): the design point's 25 regions with two years of
+# days in the ring (18 250 rows, 0.4 MB). A region's day — its latents moved on, its four values drawn through the
+# month's marginals and appended — costs 8.1–10.7 µs (the step's 1: the gamma and beta quantiles the marginals invert,
+# the arithmetic kept as it was, are nearly all of it); a strike's footprint spread and written into the day's buffer
+# 1.4–1.9 µs, about five tiles a strike and 127 a day (the step's 1 µs a region). The map and network's measured parts
+# (`-F routes,units,deposits,weather`) hold 29.2 MiB (the step's 31). Each time ratchet stands a quarter above the
+# highest; the bytes at the measure.
+
+[[ratchet]]
+counter = "fin.weather.region_day_ns"
+value = 13220
+direction = "down"
+
+[[ratchet]]
+counter = "fin.weather.footprint_ns"
+value = 2400
+direction = "down"
+
+[[ratchet]]
+counter = "fin.geo.mb"
+value = 29.3
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

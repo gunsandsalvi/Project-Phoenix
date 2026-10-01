@@ -2058,7 +2058,7 @@ holds the table to `[store]`.
 
 ### 7.4 phx-geo
 
-Status: building (K-26, K-28, K-29 written; S1.192, S1.193 planned)
+Status: building (K-26, K-28–K-30 written; S1.193 planned)
 
 #### K-25 Tiles, zones and distances
 
@@ -2268,8 +2268,24 @@ their call (S2.09).
 
 #### K-30 Weather and catastrophes
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.192, S1.193).
+**The weather's store** (`weather.rs`; CHN.3, SET.13): `WeatherStore` keeps each region's day of weather as a 20-byte
+`WeatherRow` — its region and each variable's value in its event's units, whole, in `VARIABLES`' order — in a horizon
+ring (K-08) whose chunks hold whole days of every region, kept to the store's horizon and pruned by whole chunks, and
+each region's latents, the one piece of weather state carried from day to day, as fixed-point `Fixed<9>` held as
+`MaybeI64` (absent before a region's first day; no float in a store, NUM.6). `record_day(day, (climates, month),
+draws)` moves every region's latents on and draws its values (`region_day`, its arithmetic unchanged) from the
+region's own (region, day) draws in region order, appends the day's rows and prunes; it returns the rows written. A
+region's first day starts from the stationary law. `range(region, (from, to), each)` and `on(region, day)` read the
+ring. The ring's live chunks and the latents are saved (`weather_save.rs`, cold); the day's rows are not.
+
+**The day's footprint** (`catastrophe.rs`): `hazard_day` hands each struck tile and its severity in permille to the
+caller as it draws them, the world's day buffer of `Struck` rows (`Footprint`, a `DayBuf`, released at the day's end)
+taking them; the losses at owners read it (S1.294), and the events it records move onto the event log (S1.214).
+
+`[fin.weather]` over the design point's 25 regions and two years of days: `region_day_ns` 13 220 (8.1–10.7 µs measured,
+the step's 1: the marginals' gamma and beta quantiles are nearly all of it), `footprint_ns` 2 400 a strike (1.4–1.9
+µs, about five tiles each); `[fin.geo] mb` 29.3 (29.2 measured over the network, the units registry, the deposits and
+the weather, the step's 31).
 
 **Today** (`weather.rs`, `catastrophe.rs`, `climate.rs`, `exposure.rs`; `phx-world`'s `core_weather.rs`): a region's
 climate is its tiles' classes' parameters weighted by their count. Each region moves a latent Gaussian AR(1) per

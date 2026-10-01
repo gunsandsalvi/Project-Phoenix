@@ -20,6 +20,7 @@ pub mod system;
 pub mod tile;
 pub mod transport;
 pub mod weather;
+mod weather_save;
 
 pub use prims::GeoPrims;
 pub use state::{Allotment, GeoState};

@@ -3,10 +3,17 @@ pub mod phx_geo::catastrophe  // used by: phx-cli, phx-world
 pub struct phx_geo::catastrophe::CatastropheStream  // used by: phx-world
 impl phx_core::streams::StreamDef for phx_geo::catastrophe::CatastropheStream
 pub const phx_geo::catastrophe::CatastropheStream::DECL: phx_core::streams::StreamDecl  // used by: phx-core, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta
+#[repr(C)] pub struct phx_geo::catastrophe::Struck
+pub phx_geo::catastrophe::Struck::severity: u32  // used by: phx-fin
+pub phx_geo::catastrophe::Struck::tile: phx_id::ids::TileId  // used by: phx-check, phx-cli, phx-fin, phx-world
+impl phx_store::pod::Pod for phx_geo::catastrophe::Struck
+pub fn phx_geo::catastrophe::Struck::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::catastrophe::Struck
 pub fn phx_geo::catastrophe::days_in_year(phx_id::day::Date) -> u32  // used by: phx-cli, phx-world
 pub fn phx_geo::catastrophe::distinct_picks(&mut phx_rand::draws::Draws, u64, u64) -> alloc::vec::Vec<u64>
 pub fn phx_geo::catastrophe::footprint(&phx_geo::grid::Grid, &[core::option::Option<u8>], &[f64], phx_id::ids::TileId, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_id::ids::TileId>
-pub fn phx_geo::catastrophe::hazard_day(&phx_geo::state::GeoState, &phx_geo::state::HazardState, usize, u32, &mut phx_rand::draws::Draws) -> alloc::vec::Vec<phx_core::events::EventIntent>  // used by: phx-world
+pub fn phx_geo::catastrophe::hazard_day(&phx_geo::state::GeoState, (&phx_geo::state::HazardState, usize, u32), &mut phx_rand::draws::Draws, impl core::ops::function::FnMut(phx_geo::catastrophe::Struck)) -> alloc::vec::Vec<phx_core::events::EventIntent>  // used by: phx-world
+pub type phx_geo::catastrophe::Footprint<B> = phx_store::daybuf::DayBuf<phx_geo::catastrophe::Struck, B>  // used by: phx-fin
 pub mod phx_geo::cells  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
 pub mod phx_geo::cells::parcels  // used by: phx-fin
 pub struct phx_geo::cells::parcels::Held(pub u16)  // used by: phx-cli, phx-core, phx-fin, phx-pop, phx-world
@@ -841,6 +848,29 @@ pub mod phx_geo::weather  // used by: phx-cli, phx-world
 pub struct phx_geo::weather::Variable
 pub phx_geo::weather::Variable::event: phx_core::events::EventKindDecl  // used by: phx-cli, phx-core, phx-ledger, phx-world, sys-dem, sys-lab
 pub phx_geo::weather::Variable::units_per: f64  // used by: phx-cli
+#[repr(C)] pub struct phx_geo::weather::WeatherRow
+impl phx_geo::weather::WeatherRow
+pub fn phx_geo::weather::WeatherRow::region(&self) -> u16  // used by: phx-cli, phx-exec, phx-fin, phx-market, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
+pub fn phx_geo::weather::WeatherRow::values(&self) -> [i32; 4]  // used by: if-pop, if-state, phx-check, phx-cli, phx-core, phx-fin, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
+impl phx_store::pod::Pod for phx_geo::weather::WeatherRow
+pub fn phx_geo::weather::WeatherRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
+impl phx_store::pod::__seal::Sealed for phx_geo::weather::WeatherRow
+pub struct phx_geo::weather::WeatherStore<B: phx_store::backing::Backing>  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_geo::weather::WeatherStore<B>
+pub fn phx_geo::weather::WeatherStore<B>::latents(&self, usize) -> phx_geo::weather::Latents  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::new(&mut phx_store::backing::AddressSpace, usize, u32, u32) -> core::result::Result<phx_geo::weather::WeatherStore<B>, alloc::string::String>  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::on(&self, u16, phx_id::day::Day) -> phx_num::missing::Missing<[i32; 4]>  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::range(&self, u16, (phx_id::day::Day, phx_id::day::Day), impl core::ops::function::FnMut(phx_id::day::Day, [i32; 4]))  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::record_day(&mut self, phx_id::day::Day, (&[phx_geo::climate::RegionClimate], u8), impl core::ops::function::FnMut(usize) -> phx_rand::draws::Draws) -> u64  // used by: phx-fin
+impl<B: phx_store::backing::Backing> core::cmp::PartialEq for phx_geo::weather::WeatherStore<B>
+pub fn phx_geo::weather::WeatherStore<B>::eq(&self, &phx_geo::weather::WeatherStore<B>) -> bool  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_geo::weather::WeatherStore<B>
+pub fn phx_geo::weather::WeatherStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_geo::weather::WeatherStore<B>, phx_store::save::LoadError>  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-fin
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_geo::weather::WeatherStore<B>
+pub fn phx_geo::weather::WeatherStore<B>::bytes(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::rows_ever(&self) -> u64  // used by: phx-fin
+pub fn phx_geo::weather::WeatherStore<B>::rows_live(&self) -> u64  // used by: phx-fin
 pub struct phx_geo::weather::WeatherStream  // used by: phx-world
 impl phx_core::streams::StreamDef for phx_geo::weather::WeatherStream
 pub const phx_geo::weather::WeatherStream::DECL: phx_core::streams::StreamDecl  // used by: phx-core, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-srv, sys-sta

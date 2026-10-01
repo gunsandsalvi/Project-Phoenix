@@ -1135,7 +1135,7 @@ preference_types = "the data's count"   # forced_by: —; one type frees ≈ 0 M
 16 = { name = "small-bases pool", mb = 173.6 }   # the zones' 1.75 unscaled
 17 = { name = "markets", mb = 104.1 }   # 129.5 at the steps' counts, the marks at 730 days; the zones' 2.5 unscaled
 18 = { name = "records", mb = 120.2 }   # 150.2 at the steps' counts: every step's line-18 figure at the horizons above
-19 = { name = "map and network", mb = 32.0 }   # at 1 000 zones, its parts as S1.192 lists them; measured: S1.187 20.2 for 19 (the route tables' member lists), S1.188 4.3 for 4, S1.191 1.6 as stated
+19 = { name = "map and network", mb = 32.0 }   # at 1 000 zones: tiles 0.5, zone distances 2, segments and routes 20.2 (S1.187's 19 and the tables' member lists), loads 4.3 (S1.188's 4), the units registry 3, deposits 1.6, weather 0.4; fin.geo.mb reads the measured parts
 20 = { name = "estates", mb = 18.4 }
 21 = { name = "day buffers", mb = 128.1 }   # the live set at the heaviest sub-step
 22 = { name = "slack", mb = 45.6 }

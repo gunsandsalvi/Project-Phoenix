@@ -42,6 +42,7 @@ pub mod terms;
 #[path = "tests.rs"]
 mod tests;
 pub mod units;
+pub mod weather;
 
 use std::collections::BTreeMap;
 
@@ -53,6 +54,10 @@ use report::Report;
 
 /// Bytes to MiB, a shift.
 const MIB_SHIFT: u32 = 20;
+const MIB_BYTES: f64 = 1_048_576.0;
+/// The bases whose bytes are the map and network's measured parts (ledger line 19): the network with its routes and
+/// day's use, the units registry, the deposits and the weather.
+const GEO_BASES: [&str; 4] = ["routes", "units", "deposits", "weather"];
 
 /// A refusal of the harness: a key the design point lacks, a base it does not know, a capacity or a driver's failure.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -168,6 +173,7 @@ pub const REGISTRY: &[fn() -> Box<dyn FinBase>] = &[
     || Box::new(routes::RoutesBase::default()),
     || Box::new(cells::CellsBase::default()),
     || Box::new(deposits::DepositsBase::default()),
+    || Box::new(weather::WeatherBase::default()),
 ];
 
 /// What a run fills, runs and reads.
@@ -214,6 +220,7 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
     let mut sizes = Vec::new();
     let mut figures = Vec::new();
     let mut slack = 0;
+    let mut geo = Vec::new();
     for driver in &mut chosen {
         let filled = driver.fill(&design, &streams)?;
         let bytes = driver.bytes();
@@ -224,6 +231,10 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
                 design.day(*day).ok_or_else(|| FinError(format!("the design point has no `day.{}`", day.key())))?;
             driver.day(*day, counts, &mut Measures::new(clock))?;
             driver.day(*day, counts, &mut measures)?;
+        }
+        if GEO_BASES.contains(&driver.name()) {
+            let held = driver.bytes();
+            geo.push(held.rows + held.resident);
         }
         // A figure keyed with its own base is another base's, which this driver measures beside its own.
         figures.extend(driver.figures().into_iter().map(|(key, v)| {
@@ -244,6 +255,12 @@ pub fn run(args: &Args, drivers: &[fn() -> Box<dyn FinBase>], clock: &dyn Clock)
         && let Ok(mb) = (slack >> MIB_SHIFT).to_string().parse()
     {
         figures.push(("fin.mem.slack_mb".to_owned(), mb));
+    }
+    // The map and network's measured parts, read together once every one of them is filled.
+    if geo.len() == GEO_BASES.len()
+        && let Ok(bytes) = geo.iter().sum::<u64>().to_string().parse::<f64>()
+    {
+        figures.push(("fin.geo.mb".to_owned(), bytes / MIB_BYTES));
     }
     per_op.extend(figures.iter().cloned());
     let mut lines = compose::declared(&design);

@@ -87,7 +87,8 @@ impl Core {
             let country = Subject::new(SubjectTag::Country, phx_rand::float::len_u64(c));
             let mut d = streams.open_at(&catastrophe::CatastropheStream::DECL, country, day, at);
             for h in &geo.hazards {
-                for e in catastrophe::hazard_day(geo, h, c, days, &mut d) {
+                // The struck tiles are read from the events' details until the footprint replaces them.
+                for e in catastrophe::hazard_day(geo, (h, c, days), &mut d, |_| {}) {
                     let mut regions = Vec::new();
                     for (tile, share) in &e.details {
                         let Ok(t) = u32::try_from(tile.id()) else { continue };
