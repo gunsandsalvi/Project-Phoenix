@@ -2561,8 +2561,11 @@ its contracts, draws and records carry, is its reference's word (PTY.1, PTY.10);
 `person_word` reads its word where its household still holds it and `write_person` writes it. A household is read for
 its processes as its persons' words in the order they joined (`Core::members`); an outcome's changed words are written
 back by reference, a person gone ends the same day naming its household as successor, and one born is begun in the
-directory and linked at its household's tail. The persons live are the person kind's live count; the audit counts the
-households none is left in.
+directory and linked at its household's tail; one household's outcomes read and write on buffers the core keeps across
+households (`OutcomeWork`), so applying them allocates nothing. A process still reads a household as a `Household` of
+`Person` values, each its 8-byte word, which the process interface (`phx-core`'s `PopProcess`) takes. The persons live
+are the person kind's live count; the audit counts the households none is left in. The yearly `refresh_windows` pass
+reads each head's word by field; S1.337 retires it onto the series' age windows.
 
 **Births and leaving school** (`sys-dem`, POP.5, POP.10): a household decides on its head's birthday
 (`DEM.fertility_occasion`, taste `DEM.fertility_taste`) whether to try, and tries when the next child's value

@@ -116,11 +116,10 @@ impl Core {
     /// A hit recorded as an event: its household the subject, each person it reached a detail of one person.
     #[clause("OBS.3", "CHN.4")]
     fn record_event(&mut self, kind: u16, (slot, household): (Slot, phx_id::PartyRef), reached: &[usize], day: Day) {
-        let ids: Vec<u64> = self.members(slot).map(|(r, _)| r.word()).collect();
-        let details: Vec<(Subject, i64)> = reached
-            .iter()
-            .filter_map(|at| ids.get(*at))
-            .map(|person| (Subject::new(SubjectTag::Person, *person), 1))
+        // The persons reached, read in the household's order, which the places a hit reached follow.
+        let details: Vec<(Subject, i64)> = (self.members(slot).enumerate())
+            .filter(|(at, _)| reached.contains(at))
+            .map(|(_, (person, _))| (Subject::new(SubjectTag::Person, person.word()), 1))
             .collect();
         self.happened.record(phx_core::NewEvent {
             day,
@@ -358,10 +357,12 @@ impl Core {
         record: &mut PopDay,
     ) {
         let Some(id) = self.directory.reference(crate::core::kind_number(place), slot) else { return };
-        let mut buffer = None;
-        let h = self.read_household(slot, &mut buffer);
+        // The household's read, its persons as read and the hits' places are kept across households.
+        let mut w = std::mem::take(&mut self.work.outcome);
+        let h = self.read_household(slot, &mut w.h);
         let before = h.persons.len();
-        let held: Vec<(PartyRef, PersonWord)> = self.members(slot).collect();
+        w.held.clear();
+        w.held.extend(self.members(slot));
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let was = h.state;
         let decider = |name: &str| self.decided_in_process(name, (crate::core::kind_number(place), slot));
@@ -374,19 +375,20 @@ impl Core {
             decider: &decider,
             blank: decl.blank,
         };
-        let mut causes: Vec<Option<u16>> = h.persons.iter().map(|_| None).collect();
+        w.causes.clear();
         for (_, process, reached) in hits {
             let Some(b) = ctx.processes.get(*process) else { continue };
-            let places: Vec<usize> =
-                reached.iter().copied().filter(|p| h.persons.get(*p).is_some_and(|q| !q.gone)).collect();
-            if places.is_empty() {
+            w.places.clear();
+            w.places.extend(reached.iter().copied().filter(|p| h.persons.get(*p).is_some_and(|q| !q.gone)));
+            if w.places.is_empty() {
                 continue;
             }
             let mut d = ctx.streams.open_at(&b.stream, Subject::from(id), day, DaySlot::S3b.ordinal());
-            b.process.outcome(ctx.register, &view, h, &places, &mut d);
-            for (p, cause) in h.persons.iter().zip(causes.iter_mut()) {
-                if p.gone && cause.is_none() {
-                    *cause = Some(b.event);
+            b.process.outcome(ctx.register, &view, h, &w.places, &mut d);
+            // Each person gone first by this process takes its event as its cause.
+            for (at, _) in h.persons.iter().enumerate().take(before).filter(|(_, p)| p.gone) {
+                if !w.causes.iter().any(|(i, _)| *i == at) {
+                    w.causes.push((at, b.event));
                 }
             }
         }
@@ -398,8 +400,8 @@ impl Core {
             );
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
-        self.record_vitals(h, &held, (ctx, day));
-        self.write_changed(key, (&h.persons, &held), (ctx, day), record);
+        self.record_vitals(h, &w.held, (ctx, day));
+        self.write_changed(key, (&h.persons, &w.held), (ctx, day), record);
         // What an outcome changed of the household's own, as its decision to try for a child, is its store's.
         let now = h.state;
         if now.trying != was.trying {
@@ -409,17 +411,20 @@ impl Core {
             self.household_write(|hs| hs.set_ideal(slot, now.ideal));
         }
         // The gone end the same day, their household succeeding to what they held; the born join it.
-        let mut died = Vec::new();
-        for ((_, (person, _)), cause) in h.persons.iter().zip(&held).zip(&causes).filter(|((p, _), _)| p.gone) {
+        let died = self.deaths.len();
+        w.causes.sort_unstable();
+        for (at, (person, _)) in w.held.iter().enumerate().filter(|(at, _)| h.persons.get(*at).is_some_and(|p| p.gone))
+        {
             if let (Some(ps), Some(hs)) = (self.persons.as_mut(), self.households.as_mut()) {
                 ps.end_person(&mut self.directory, &mut hs.heads(), *person, (day, Missing::Present(id)));
             }
             self.person_left(key, person.word());
             record.gone += 1;
-            let Some(cause) = *cause else {
+            let Some(cause) = w.causes.iter().find(|(i, _)| *i == at).map(|(_, e)| *e) else {
                 violation!(clause = "POP.15", "a person gone by no process", party = id.word());
             };
-            died.push(Death { day, person: person.word(), household: key, cause, to: Destination::Household(key) });
+            let death = Death { day, person: person.word(), household: key, cause, to: Destination::Household(key) };
+            self.deaths.push(death);
         }
         for p in h.persons.iter().skip(before).filter(|p| !p.gone) {
             if let (Some(ps), Some(hs)) = (self.persons.as_mut(), self.households.as_mut()) {
@@ -427,22 +432,22 @@ impl Core {
             }
             record.born += 1;
         }
-        let state = h.state;
-        let left: Vec<Person> = std::mem::take(&mut h.persons).into_iter().filter(|p| !p.gone).collect();
-        if left.is_empty() {
-            let country = ctx.regions.get(usize::try_from(state.region).unwrap_or(usize::MAX)).copied();
+        h.persons.retain(|p| !p.gone);
+        if h.persons.is_empty() {
+            let country = ctx.regions.get(usize::try_from(h.state.region).unwrap_or(usize::MAX)).copied();
             let Some(country) = country else {
                 violation!(clause = "PTY.5", "an ended household sited in no country", party = id.word());
             };
             let to = self.end_household(key, (country, day)).map_or(Destination::Nothing, Destination::Estate);
-            self.deaths.extend(died.into_iter().map(|d| Death { to, ..d }));
+            for d in self.deaths.iter_mut().skip(died) {
+                d.to = to;
+            }
             record.ended += 1;
+            self.work.outcome = w;
             return;
         }
-        self.deaths.extend(died);
-        let rest = Household { state, persons: left };
-        let mut buffers = Buffers::default();
-        self.book_all(ctx, (place, decl), slot, (&rest, &mut buffers), day.succ());
+        self.book_all(ctx, (place, decl), slot, (h, &mut w.buffers), day.succ());
+        self.work.outcome = w;
     }
 
     /// The deaths an outcome made and the onsets of disability, each counted in its household's country's month by the
@@ -553,6 +558,17 @@ impl Core {
 
 fn index(slot: Slot) -> usize {
     usize::try_from(slot.get()).unwrap_or(usize::MAX)
+}
+
+/// What applying one household's outcomes reads and writes, kept across households so applying them allocates nothing.
+#[derive(Debug, Default)]
+pub(crate) struct OutcomeWork {
+    h: Option<Household>,
+    held: Vec<(PartyRef, PersonWord)>,
+    /// Each person gone, by its place, and the event of the process that first marked it.
+    causes: Vec<(usize, u16)>,
+    places: Vec<usize>,
+    buffers: Buffers,
 }
 
 /// A household's next booking written to its process's wheel: a hit or a redraw on its day, or none.

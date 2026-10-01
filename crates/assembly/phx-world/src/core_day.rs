@@ -201,6 +201,8 @@ pub struct Work {
     pub(crate) follows: crate::pop_rules::Follows,
     /// The households' age classes at a year's close, read before they are written.
     pub(crate) windows: Vec<(phx_id::Slot, phx_num::Missing<u8>)>,
+    /// The hazards' outcomes' household read, its persons as read, each person's cause and the places a hit reached.
+    pub(crate) outcome: crate::core_pop::OutcomeWork,
 }
 
 /// A loan's due on its `k`th date, by its terms' shape: what it pays, and of that what repays its balance.

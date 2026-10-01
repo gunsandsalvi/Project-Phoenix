@@ -59,10 +59,10 @@ direction = "down"
 # rule came, 903 in all (309 collect, 251 Vec::new, 95 vec!, 95 format!, 62 clone, 27 to_owned, 26 with_capacity, 23
 # to_string, 14 to_vec, 1 Box::new). S1.160 (K-03) and each migration remove theirs; the count only falls, and S1.492
 # empties it. S1.208's persons read and written by field, nothing unpacked, removed 14, and the households' arenas
-# deleted 5 more.
+# deleted 5 more, and their outcomes on kept buffers 6 more.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 736
+value = 730
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and
