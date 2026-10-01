@@ -1,4 +1,4 @@
-# The sites PC-17 admits for now, 37 in all, held to `phx_check.exceptions_pc17`. Each migration removes its own; a site is never added.
+# The sites PC-17 admits for now, 36 in all, held to `phx_check.exceptions_pc17`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_bills.rs"
@@ -202,10 +202,4 @@ count = 1
 path = "crates/kernel/phx-ledger/src/algebra.rs"
 item = "Schedule::date_index"
 what = "`Calendar::date`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-pop/src/person.rs"
-item = "role_and_birth"
-what = "`civil_date`"
 count = 1

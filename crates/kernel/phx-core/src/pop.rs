@@ -1,24 +1,26 @@
 //! What a population kind's persons hold, declared item by item by the system that writes each: their roles and their
-//! attributes, which the population compiles into a person's word. The household's own words are its kind store's.
+//! attributes, each a fixed field of a person's word. The household's own words are its kind store's.
 
 use phx_macros::clause;
 
 use crate::system::Declarations;
 
-/// A role a person holds in its household.
+/// A role a person holds in its household, and the value its word's role field holds for it.
 #[clause("REP.26")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RoleDecl {
     pub name: &'static str,
+    pub value: u32,
     pub clause: &'static str,
 }
 
-/// An attribute every person of a kind's agents holds, taking one of `values` values; a person's birth date is held
-/// beside them.
+/// An attribute every person of a kind's agents holds in a field of its word, taking one of `values` values; a
+/// person's birth date and role are held beside them. Its name only reports it.
 #[clause("REP.26", "REP.25")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PersonAttrDecl {
     pub name: &'static str,
+    pub field: crate::person_word::Field,
     pub values: u32,
     pub clause: &'static str,
     /// The value a person holds whom no system has given one, as a child holds its labour state before it works;

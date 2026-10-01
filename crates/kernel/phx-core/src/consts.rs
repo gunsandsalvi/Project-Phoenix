@@ -289,3 +289,28 @@ pub const SLOT_STAGES: [u8; DAY_SLOTS] = [
 ];
 /// The stage that decides, the only one day zero runs.
 pub const DECIDE_STAGE: u8 = 5;
+
+/// A person's role in its word: room for eight roles.
+pub const ROLE_BITS: u32 = 3;
+/// A person's day of the month of birth in its word.
+pub const BIRTH_DAY_BITS: u32 = 5;
+/// A person's month of birth in its word.
+pub const BIRTH_MONTH_BITS: u32 = 4;
+/// A person's year of birth in its word, offset by 32 768, so a year from −32 768 to 32 767 is held.
+pub const BIRTH_YEAR_BITS: u32 = 16;
+/// A person's sex in its word: female or male.
+pub const SEX_BITS: u32 = 1;
+/// A person's health in its word: room for four states.
+pub const HEALTH_BITS: u32 = 2;
+/// A person's education stage in its word, and its field: sixteen of each.
+pub const EDUCATION_BITS: u32 = 4;
+/// A person's labour state in its word: not searching, searching or retired, room for a fourth.
+pub const LABOUR_BITS: u32 = 2;
+/// The occupation family a person last worked in, or none: sixteen.
+pub const OCCUPATION_BITS: u32 = 4;
+/// The wage point of a person's last job, or none: 128.
+pub const POINT_BITS: u32 = 7;
+/// The occupation families a person's skills are held for.
+pub const SKILL_FAMILIES: u32 = 8;
+/// The bits a skill level takes: levels 0 to 15.
+pub const SKILL_BITS: u32 = 4;

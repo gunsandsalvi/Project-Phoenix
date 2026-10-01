@@ -86,14 +86,14 @@ pub if_labour::kind::LabourKind::accept: &'static phx_core::decisions::DecisionP
 pub if_labour::kind::LabourKind::adapt: if_labour::kind::Adapt  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::answer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::AnswerIn, i64>  // used by: phx-market, phx-world, sys-lab
 pub if_labour::kind::LabourKind::conclude: fn(i64, i64, i64) -> phx_num::missing::Missing<i64>  // used by: phx-world, sys-lab
-pub if_labour::kind::LabourKind::education: &'static str  // used by: phx-world, sys-dem, sys-lab
-pub if_labour::kind::LabourKind::last_point: &'static str  // used by: phx-world, sys-lab
+pub if_labour::kind::LabourKind::education: phx_core::person_word::Field  // used by: phx-world, sys-dem, sys-lab
+pub if_labour::kind::LabourKind::last_point: phx_core::person_word::Field  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::law: fn(&phx_core::register::Register, &phx_core::contribution::OpeningCountry) -> core::result::Result<if_labour::law::Law, alloc::string::String>  // used by: if-credit, if-state, phx-check, phx-cli, phx-macros, phx-world, sys-bnk, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax
 pub if_labour::kind::LabourKind::layoff_stream: &'static str  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::least_point: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::lot_stream: &'static str  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::meeting_stream: &'static str  // used by: phx-world, sys-lab
-pub if_labour::kind::LabourKind::occupation: &'static str  // used by: phx-fin, phx-market, phx-world, sys-lab, sys-soc
+pub if_labour::kind::LabourKind::occupation: phx_core::person_word::Field  // used by: phx-fin, phx-market, phx-world, sys-lab, sys-soc
 pub if_labour::kind::LabourKind::offer: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::ReviewIn, i64>  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::owed: fn(&if_labour::law::Law, f64, u32, i64, u32) -> f64  // used by: phx-core, phx-world, sys-lab
 pub if_labour::kind::LabourKind::point_near: fn(&if_labour::law::Law, f64) -> core::option::Option<i64>  // used by: phx-world, sys-lab
@@ -101,7 +101,7 @@ pub if_labour::kind::LabourKind::post: &'static phx_core::decisions::DecisionPoi
 pub if_labour::kind::LabourKind::review_stream: &'static str  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::search: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SearchIn, alloc::vec::Vec<u32>>  // used by: phx-fin, phx-market, phx-world, sys-lab
 pub if_labour::kind::LabourKind::select: &'static phx_core::decisions::DecisionPointDecl<if_labour::decisions::SelectIn, alloc::vec::Vec<u32>>  // used by: phx-market, phx-world, sys-lab
-pub if_labour::kind::LabourKind::state: &'static str  // used by: phx-cli, phx-geo, phx-ledger, phx-world, sys-lab
+pub if_labour::kind::LabourKind::state: phx_core::person_word::Field  // used by: phx-cli, phx-core, phx-exec, phx-geo, phx-ledger, phx-store, phx-world, sys-dem, sys-lab
 pub if_labour::kind::LabourKind::taste_stream: &'static str  // used by: phx-world, sys-lab
 pub if_labour::kind::LabourKind::wage_at: fn(&if_labour::law::Law, i64) -> f64  // used by: phx-world, sys-lab
 pub type if_labour::kind::Adapt = fn(phx_num::missing::Missing<(i64, u32)>, phx_num::missing::Missing<i64>, i64, u32) -> i64

@@ -308,18 +308,19 @@ impl crate::core::Core {
     #[clause("VAL.23")]
     pub(crate) fn refresh_windows(&mut self, types: &Types, date: phx_id::Date) {
         let mut ages = vec![(0_u64, 0_u64); types.windows.len()];
-        let head_role = self.declared.household.as_ref().and_then(|d| d.role(if_pop::HEAD.name));
-        if let (Some(place), Some(head_role)) = (self.bound.kinds.household, head_role) {
+        let head_role = if_pop::HEAD.value;
+        if let Some(place) = self.bound.kinds.household {
             let mut windows = std::mem::take(&mut self.work.windows);
             windows.clear();
             if let Some(Some(ps)) = self.persons.get(place) {
                 for slot in self.directory.live_slots(crate::core::kind_number(place)) {
                     // Its head's word read for its role and birth alone; the first person where none heads it.
-                    let mut words = ps.of(slot).map(|x| phx_pop::person::role_and_birth(x.word));
+                    let role = |x: &phx_core::person_word::PersonWord| x.get(phx_core::person_word::ROLE);
+                    let mut words = ps.of(slot).map(|x| phx_core::person_word::PersonWord(x.word));
                     let first = words.next();
-                    let head = first.filter(|(r, _)| *r == head_role).or_else(|| words.find(|(r, _)| *r == head_role));
-                    let Some((_, born)) = head.or(first) else { continue };
-                    let Ok(age) = u32::try_from(phx_core::pop_process::age_on(born, date)) else { continue };
+                    let head = first.filter(|w| role(w) == head_role).or_else(|| words.find(|w| role(w) == head_role));
+                    let Some(word) = head.or(first) else { continue };
+                    let Ok(age) = u32::try_from(word.age_on(date)) else { continue };
                     let window = types.window_of(age);
                     if let Missing::Present(c) = window
                         && let Some(a) = ages.get_mut(usize::from(c))

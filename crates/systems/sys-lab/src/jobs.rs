@@ -226,13 +226,12 @@ impl Rule {
     /// An adult's sex, the skill its education gives and its chance of being employed: the country's rate times its
     /// age band's and sex's ratio to it; none for a person who is not an adult.
     fn adult(&self, p: &phx_core::Person) -> Option<(usize, u32, f64)> {
-        let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
-        if !adult_roles.contains(&p.role) {
+        let adult_roles = [if_pop::HEAD.value, if_pop::PARTNER.value, if_pop::ADULT.value];
+        if !adult_roles.contains(&p.role()) {
             return None;
         }
-        let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
-        let s = usize::try_from(sex).unwrap_or(usize::MAX);
-        let education = p.attr(if_pop::EDUCATION.name).and_then(|e| usize::try_from(e).ok());
+        let s = usize::try_from(p.get(if_pop::SEX.field)).unwrap_or(usize::MAX);
+        let education = usize::try_from(p.get(if_pop::EDUCATION.field)).ok();
         let Some(skill) = education.and_then(|e| self.law.education_skill.get(e)).copied() else {
             violation!(clause = "LAB.3", "an education that gives no skill level");
         };

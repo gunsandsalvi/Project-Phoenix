@@ -41,9 +41,10 @@ pub(crate) fn of_country<'a, T>(list: &'a [T], agent: &AgentView<'_>) -> &'a T {
 }
 
 pub(crate) fn sex(p: &Person) -> u32 {
-    let Some(s) = p.attr(SEX.name).filter(|s| *s == FEMALE || *s == MALE) else {
+    let s = p.get(SEX.field);
+    if s != FEMALE && s != MALE {
         violation!(clause = "POP.1", "a person of a sex the tables do not hold");
-    };
+    }
     s
 }
 
@@ -133,7 +134,7 @@ impl PopProcess for Mortality {
         };
         let ratio = self.ratio(a);
         let able = -libm::log1p(-dies_at_age(table, a)) / (1.0 + share * (ratio - 1.0));
-        let hazard = if p.attr(HEALTH.name) == Some(DISABLED) { ratio * able } else { able };
+        let hazard = if p.get(HEALTH.field) == DISABLED { ratio * able } else { able };
         phx_core::annual_to_daily(-libm::expm1(-hazard), days)
     }
     fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
@@ -166,7 +167,7 @@ impl PopProcess for Onset {
         HOUSEHOLD
     }
     fn rate(&self, register: &Register, agent: &AgentView<'_>, p: &Person) -> f64 {
-        if p.attr(HEALTH.name) == Some(DISABLED) {
+        if p.get(HEALTH.field) == DISABLED {
             return 0.0;
         }
         let Ok(c) = u8::try_from(country(agent)) else { violation!(clause = "GEN.1", "a country beyond identities") };
@@ -185,7 +186,7 @@ impl PopProcess for Onset {
     fn outcome(&self, _: &Register, _: &AgentView<'_>, h: &mut Household, reached: &[usize], _: &mut Draws) {
         for i in reached {
             if let Some(p) = h.persons.get_mut(*i) {
-                p.set_attr(HEALTH.name, DISABLED);
+                p.set(HEALTH.field, DISABLED);
             }
         }
     }
@@ -200,7 +201,7 @@ mod tests {
 
     #[test]
     fn a_year_of_age_runs_from_birthday_to_birthday() {
-        let p = Person { role: "head", born: Date::new(1990, 3, 10).unwrap(), attrs: Vec::new(), gone: false };
+        let p = Person::of(phx_core::person_word::PersonWord::new(Date::new(1990, 3, 10).unwrap(), 0));
         assert_eq!(year_of_age(&p, Date::new(2027, 6, 1).unwrap()), 366, "10 March 2027 to 10 March 2028");
         assert_eq!(year_of_age(&p, Date::new(2026, 1, 1).unwrap()), 365);
     }

@@ -60,15 +60,17 @@ impl PersonWord {
     /// A person born on a date in a role, every other field nought.
     #[must_use]
     pub fn new(born: Date, role: u32) -> PersonWord {
+        PersonWord(0).born_on(born).with(ROLE, role)
+    }
+
+    /// The word with its birth date written.
+    #[must_use]
+    pub fn born_on(self, born: Date) -> PersonWord {
         let year = born.year();
         let Some(bits) = year.checked_add(1 << (BIRTH_YEAR_BITS - 1)).and_then(|y| u32::try_from(y).ok()) else {
             capacity_exceeded!("a birth year", 1_i64 << (BIRTH_YEAR_BITS - 1), year);
         };
-        PersonWord(0)
-            .with(BIRTH_DAY, u32::from(born.day()))
-            .with(BIRTH_MONTH, u32::from(born.month()))
-            .with(BIRTH_YEAR, bits)
-            .with(ROLE, role)
+        self.with(BIRTH_DAY, u32::from(born.day())).with(BIRTH_MONTH, u32::from(born.month())).with(BIRTH_YEAR, bits)
     }
 
     /// A field's value.

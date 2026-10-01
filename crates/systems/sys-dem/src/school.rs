@@ -43,16 +43,16 @@ impl PopProcess for LeavingSchool {
     }
     /// Certain on the day a child reaches the school-leaving age, and nothing on any other.
     fn rate(&self, _: &Register, agent: &AgentView<'_>, p: &Person) -> f64 {
-        let leaves = p.role == CHILD.name && p.age_on(agent.date) >= *of_country(&self.leaving, agent);
+        let leaves = p.role() == CHILD.value && p.age_on(agent.date) >= *of_country(&self.leaving, agent);
         if leaves { 1.0 } else { 0.0 }
     }
     fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
-        (p.role == CHILD.name).then(|| p.next_birthday(date))
+        (p.role() == CHILD.value).then(|| p.next_birthday(date))
     }
     fn outcome(&self, _: &Register, _: &AgentView<'_>, h: &mut Household, reached: &[usize], _: &mut Draws) {
         for i in reached {
-            if let Some(p) = h.persons.get_mut(*i).filter(|p| p.role == CHILD.name) {
-                p.role = ADULT.name;
+            if let Some(p) = h.persons.get_mut(*i).filter(|p| p.role() == CHILD.value) {
+                p.set(phx_core::person_word::ROLE, ADULT.value);
             }
         }
     }

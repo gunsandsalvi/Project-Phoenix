@@ -346,7 +346,7 @@ impl Core {
                 }
                 banks.push(bank);
             }
-            let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c);
+            let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date, decl.blank), c);
             let mut labour = rules.jobs.rule(o.register, date, c, Asked::of(o.register, c)?.by_occupation());
             labour.couple(formed.iter().flat_map(|(_, f)| f.iter().map(|f| &f.h)));
             let mut draw = CountryDraw {
@@ -366,7 +366,7 @@ impl Core {
             };
             for (region, formed) in formed {
                 for f in formed {
-                    core.open_household((&ctx, o.calendar, decl, o.geo), &mut draw, &mut pensions, (region, f));
+                    core.open_household((&ctx, o.calendar, o.geo), &mut draw, &mut pensions, (region, f));
                 }
             }
             let CountryDraw { money, loans, banks, .. } = draw;
@@ -383,7 +383,7 @@ impl Core {
     /// and loan kept or opened.
     fn open_household(
         &mut self,
-        (ctx, calendar, decl, geo): (&OpeningCtx<'_>, &Calendar, &PopKindDecl, &phx_geo::GeoState),
+        (ctx, calendar, geo): (&OpeningCtx<'_>, &Calendar, &phx_geo::GeoState),
         draw: &mut CountryDraw<'_>,
         pensions: &mut DatedFamily,
         (region, formed): (u32, sys_dem::Formed),
@@ -409,7 +409,7 @@ impl Core {
             violation!(clause = "VAL.22", "a household's types past its preference type's", memory = memory);
         };
         // Its age class is its head's, whose lived years weight its outlooks of public series.
-        let head = h.persons.iter().find(|p| p.role == if_pop::HEAD.name).or_else(|| h.persons.first());
+        let head = h.persons.iter().find(|p| p.role() == if_pop::HEAD.value).or_else(|| h.persons.first());
         let window = head.and_then(|p| u32::try_from(p.age_on(draw.date)).ok()).map(|age| draw.types.window_of(age));
         let Some(Missing::Present(window)) = window else {
             violation!(clause = "VAL.23", "a household drawn with no head of an age class");
@@ -421,8 +421,8 @@ impl Core {
             let Some(p) = h.persons.get_mut(l.place) else {
                 violation!(clause = "REP.26", "labour drawn for a person the household does not hold");
             };
-            p.put_attr(sys_lab::STATE.name, l.state);
-            p.put_attr(sys_lab::OCCUPATION_ATTR.name, l.occupation);
+            p.set(sys_lab::STATE.field, l.state);
+            p.set(sys_lab::OCCUPATION_ATTR.field, l.occupation);
         }
         // A year's income owed at the opening: the pensions drawn, on the months of the year; the wages join it as the
         // jobs are dealt to their employers.
@@ -434,7 +434,7 @@ impl Core {
             window: Missing::Present(window),
             income: pension * draw.months,
         };
-        let key = self.begin_household(decl, (&h, &opening), &banked, &draw.banks);
+        let key = self.begin_household((&h, &opening), &banked, &draw.banks);
         let ids: Vec<u64> = self.persons_of(key);
         let country = draw.c.id.get();
         for l in &labour {
@@ -497,7 +497,6 @@ impl Core {
     /// the issuer where it banks nowhere, and its persons each given an identity.
     fn begin_household(
         &mut self,
-        decl: &PopKindDecl,
         (h, opening): (&Household, &HouseholdOpening),
         banked: &sys_bnk::households::Banked,
         banks: &[PartyKey],
@@ -523,7 +522,7 @@ impl Core {
             .map(|p| {
                 let id = self.next_id;
                 self.next_id += 1;
-                Held { word: phx_pop::person::pack(decl, p), id }
+                Held { word: p.word.0, id }
             })
             .collect();
         if let Some(Some(p)) = self.persons.get_mut(household) {

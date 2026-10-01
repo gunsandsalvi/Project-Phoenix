@@ -16,6 +16,7 @@ use if_labour::kind::LabourKind;
 use if_labour::law::Law;
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::Period;
+use phx_core::person_word::PersonWord;
 use phx_core::slots::DaySlot;
 use phx_core::wheel::DueWheel;
 use phx_core::{OpeningCountry, Register, StreamDef, WorldStreams};
@@ -23,7 +24,6 @@ use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::{clause, opening};
 use phx_market::hiring::{Application, Seeker, Standing, Vacancy, answer, search, select};
 use phx_num::{Missing, violation};
-use phx_pop::person::{pack, unpack};
 use phx_rand::float::{from_i64, from_u64, len_u64};
 use phx_rand::{Draws, Subject, SubjectTag};
 
@@ -336,13 +336,13 @@ impl Core {
     /// Every person whose labour state is searching.
     fn searching_persons(&self, ctx: &LabourCtx<'_>) -> BTreeSet<(PartyKey, u64)> {
         let mut out = BTreeSet::new();
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
+        let Some(place) = self.bound.kinds.household else {
             return out;
         };
         let Some(Some(persons)) = self.persons.get(place) else { return out };
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             for p in persons.of(slot) {
-                if unpack(decl, p.word).attr(ctx.kind.state) == Some(class::SEARCHING) {
+                if PersonWord(p.word).get(ctx.kind.state) == class::SEARCHING {
                     out.insert((PartyKey::new(kind_number(place), slot), p.id));
                 }
             }
@@ -612,11 +612,10 @@ impl Core {
     /// A person's whole years on a day, where its household still holds it.
     pub(crate) fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
         let place = self.bound.kinds.household?;
-        let decl = self.declared.household.as_ref()?;
         let ps = self.persons.get(place)?.as_ref()?;
         let at = ps.place_of(household.slot(), person)?;
         let word = ps.of(household.slot()).nth(at)?.word;
-        u32::try_from(unpack(decl, word).age_on(date)).ok()
+        u32::try_from(PersonWord(word).age_on(date)).ok()
     }
 
     /// An employer's pay round, when due: each of its contracts not under notice offered the lesser of the point
@@ -799,15 +798,14 @@ impl Core {
 
     /// A person's last wage point, as its pay round set it.
     fn set_last_point(&mut self, ctx: &LabourCtx<'_>, (household, person): (PartyKey, u64), point: i64) {
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
+        let Some(place) = self.bound.kinds.household else {
             return;
         };
         let Some(Some(ps)) = self.persons.get_mut(place) else { return };
         let Some(at) = ps.place_of(household.slot(), person) else { return };
         let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
-        let mut p = unpack(&decl, word);
-        p.set_attr(ctx.kind.last_point, u32::try_from(point).unwrap_or(class::NO_POINT));
-        ps.set_word(&mut self.space, household.slot(), at, pack(&decl, &p));
+        let word = PersonWord(word).with(ctx.kind.last_point, u32::try_from(point).unwrap_or(class::NO_POINT));
+        ps.set_word(&mut self.space, household.slot(), at, word.0);
     }
 
     /// An employer's vacancies that stood past the law's patience raised a point.
@@ -827,7 +825,7 @@ impl Core {
     /// Today's searchers, each with what the round reads of it: a searching person of a live household not waiting on
     /// an offer; one no longer searching or no longer held leaves the searchers.
     fn seekers(&mut self, ctx: &LabourCtx<'_>, day: Day) -> Vec<(u8, Seeker)> {
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
+        let Some(place) = self.bound.kinds.household else {
             return Vec::new();
         };
         let date = ctx.calendar.date(day);
@@ -844,8 +842,8 @@ impl Core {
                 gone.push((household, person));
                 continue;
             };
-            let p = unpack(&decl, h.word);
-            if p.attr(ctx.kind.state) != Some(class::SEARCHING) {
+            let p = PersonWord(h.word);
+            if p.get(ctx.kind.state) != class::SEARCHING {
                 gone.push((household, person));
                 continue;
             }
@@ -855,10 +853,9 @@ impl Core {
             let Some(region) = self.household_region(household.slot()) else { continue };
             let c = ctx.country_of(region);
             let law = at_country(&self.labour.laws, c);
-            let schooled =
-                p.attr(ctx.kind.education).and_then(|e| law.education_skill.get(usize::try_from(e).ok()?)).copied();
-            let (Some(schooled), Some(occupation), Some(last)) =
-                (schooled, p.attr(ctx.kind.occupation), p.attr(ctx.kind.last_point))
+            let schooled = usize::try_from(p.get(ctx.kind.education)).ok().and_then(|e| law.education_skill.get(e));
+            let (Some(schooled), occupation, last) =
+                (schooled.copied(), p.get(ctx.kind.occupation), p.get(ctx.kind.last_point))
             else {
                 continue;
             };
@@ -988,7 +985,7 @@ impl Core {
 
     /// A hire made a contract, and its person's state, occupation and last point written.
     fn hire(&mut self, ctx: &LabourCtx<'_>, day: Day, hired: &Application) -> bool {
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
+        let Some(place) = self.bound.kinds.household else {
             return false;
         };
         let (Some(v), Some(p)) = (
@@ -1044,11 +1041,11 @@ impl Core {
             arrears: 0,
         };
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, nth)));
-        let mut person = unpack(&decl, word);
-        person.set_attr(ctx.kind.state, class::NOT_SEARCHING);
-        person.set_attr(ctx.kind.occupation, v.occupation);
-        person.set_attr(ctx.kind.last_point, u32::try_from(p.point).unwrap_or(class::NO_POINT));
-        let packed = pack(&decl, &person);
+        let packed = PersonWord(word)
+            .with(ctx.kind.state, class::NOT_SEARCHING)
+            .with(ctx.kind.occupation, v.occupation)
+            .with(ctx.kind.last_point, u32::try_from(p.point).unwrap_or(class::NO_POINT))
+            .0;
         if let Some(Some(ps)) = self.persons.get_mut(place) {
             ps.set_word(&mut self.space, household.slot(), at, packed);
         }
@@ -1166,20 +1163,19 @@ impl Core {
         amount: Option<i64>,
         law: &Law,
     ) {
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
+        let Some(place) = self.bound.kinds.household else {
             return;
         };
         let Some(Some(ps)) = self.persons.get_mut(place) else { return };
         let Some(at) = ps.place_of(household.slot(), person) else { return };
         let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
-        let mut p = unpack(&decl, word);
-        p.set_attr(ctx.kind.state, class::SEARCHING);
+        let mut p = PersonWord(word).with(ctx.kind.state, class::SEARCHING);
         if let Some(point) =
             amount.and_then(|a| (ctx.kind.point_near)(law, from_i64(a))).and_then(|x| u32::try_from(x).ok())
         {
-            p.set_attr(ctx.kind.last_point, point);
+            p = p.with(ctx.kind.last_point, point);
         }
-        ps.set_word(&mut self.space, household.slot(), at, pack(&decl, &p));
+        ps.set_word(&mut self.space, household.slot(), at, p.0);
         self.touched.insert(household.slot().get());
         self.labour.searching.insert((household, person));
     }
@@ -1243,9 +1239,9 @@ impl Core {
     ) -> bool {
         let Some(Some(pension)) = self.state.pension.get(usize::from(country)).copied() else { return false };
         let Some(Some(treasury)) = self.treasuries.get(usize::from(country)).copied() else { return false };
-        let at = match person.attr(if_pop::SEX.name) {
-            Some(if_pop::FEMALE) => 0,
-            Some(if_pop::MALE) => 1,
+        let at = match person.get(if_pop::SEX.field) {
+            if_pop::FEMALE => 0,
+            if_pop::MALE => 1,
             _ => violation!(clause = "REP.26", "a retiree with no sex of the two"),
         };
         let (Some(age), Some(share), Some(amount)) =

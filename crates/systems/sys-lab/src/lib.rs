@@ -28,6 +28,7 @@ declare_stream! { pub ReviewStream = "LAB.review_phase" { family: World, purpose
 /// A person's labour state: not searching, searching or retired.
 pub const STATE: PersonAttrDecl = PersonAttrDecl {
     name: "LAB.state",
+    field: phx_core::person_word::LABOUR,
     values: if_labour::class::STATES,
     clause: "PTY.3",
     initial: Missing::Present(if_labour::class::NOT_SEARCHING),
@@ -35,6 +36,7 @@ pub const STATE: PersonAttrDecl = PersonAttrDecl {
 /// The occupation family a person last worked in, or none.
 pub const OCCUPATION_ATTR: PersonAttrDecl = PersonAttrDecl {
     name: "LAB.occupation",
+    field: phx_core::person_word::OCCUPATION,
     values: if_labour::class::OCCUPATIONS,
     clause: "PTY.3",
     initial: Missing::Present(if_labour::class::NO_OCCUPATION),
@@ -43,6 +45,7 @@ pub const OCCUPATION_ATTR: PersonAttrDecl = PersonAttrDecl {
 /// never been counted in work, the last value.
 pub const LAST_POINT: PersonAttrDecl = PersonAttrDecl {
     name: "LAB.last_point",
+    field: phx_core::person_word::POINT,
     values: if_labour::class::WAGE_POINTS,
     clause: "PTY.3",
     initial: Missing::Present(if_labour::class::NO_POINT),
@@ -197,10 +200,10 @@ declare_prim! {
 
 /// The labour kind, whose rounds the kernel runs.
 pub const LABOUR: LabourKind = LabourKind {
-    state: STATE.name,
-    occupation: OCCUPATION_ATTR.name,
-    last_point: LAST_POINT.name,
-    education: if_pop::EDUCATION.name,
+    state: STATE.field,
+    occupation: OCCUPATION_ATTR.field,
+    last_point: LAST_POINT.field,
+    education: if_pop::EDUCATION.field,
     taste_stream: TasteStream::DECL.name,
     meeting_stream: MeetingStream::DECL.name,
     lot_stream: LotStream::DECL.name,

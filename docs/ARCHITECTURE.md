@@ -401,8 +401,8 @@ owner's. `Core::basis` gives each pair of places' gap between their marks a lot 
 and `Core::cover_by_place` each place's days of sales its stocks cover; the run report's `freight` holds the days.
 
 **`sys-lab`** (LAB.1, LAB.4–LAB.9, LAB.12, LAB.17, PTY.3, REP.34). A person's labour state is three person attributes
-of the household kind: its state (`LAB.state`: not searching, searching, retired), the occupation family it last worked
-in (`LAB.occupation`) and the wage point of its last job (`LAB.last_point`); a hire sets the occupation and point and
+of the household kind, each a field of its word: its state (`LAB.state`: not searching, searching, retired), the
+occupation family it last worked in (`LAB.occupation`) and the wage point of its last job (`LAB.last_point`); a hire sets the occupation and point and
 stops the search, a layoff or a quit sets it searching. Its employment is its jobs: contracts in `LAB.employment` from
 firm to household naming the person, on its country's monthly dates, each class (occupation, hours, start year) held
 per schedule. The labour kind (`if_labour::LabourKind`) names the decision points — the employer's posting and
@@ -910,8 +910,9 @@ written by its payee system; a kink on an undeclared position; a primitive witho
 decision point without an evaluation form or schedule; a rule signature without an implementer; a commitment kind without the legs it creates; a hazard without a draw scheme (REP.7);
 an interface item whose writer is not registered.
 
-  For a population kind, every refusal is reported at once: a name declared twice, a person attribute of no values,
-  roles or person attributes beyond a person's word.
+  For a population kind, every refusal is reported at once: a name declared twice, two roles of one value or a role
+  past its field, two attributes in one field, an attribute of no values or of more than its field holds, and an
+  initial value past its values.
 
   The kind catalogue (K-21) refuses, all at once, by item and system: a name declared twice in a table; a reference to
   a name no system declares; a kind reserved by a store the capacity table does not hold; a family held by a kind
@@ -2475,8 +2476,7 @@ the hot and warm rows once (`HouseholdStore::view`, slot-addressed like the firm
 `household_of` and `zoned_region` read through it, and a population process reads a household's own state as a typed
 `HouseholdState` (region, trying, ideal, income), the outcome's changes to trying and ideal written back. The bank a
 household banks with is its account's (`Core::bank_of`), none at the issuer. A household's age class, a yearly copy
-of its head's, is refreshed by reading each head's role and birth from its person word alone
-(`person::role_and_birth`), with no person unpacked.
+of its head's, is refreshed by reading each head's role and birth from its person word's fields alone.
 
 **Places** (`phx-world`'s `place_store.rs`): `PlaceStore::new(space, kind, place, capacity)` compiles the map of the
 kind's declared place, none for a zoned kind; `begin(dir, r, at)` writes a party's place as it begins (a country past
@@ -2492,12 +2492,13 @@ directory handed the party, so a party begun in a released slot writes its own o
 requires an account at `begin` and any other refuses one. `books` makes settlement's `Books` from the kinds, and
 `deposits_of` sums what each bank owes. A party's own words are its kind's `phx-pop` store's. The population kinds'
 persons are compiled from the systems' items (`kind::compile_kinds`): a kind's roles and person attributes are declared
-item by item (`PopKindBuilder`), the declaring system the item's one writer, and each width comes from the number of
-values.
+item by item (`PopKindBuilder`), the declaring system the item's one writer — each role with the value its word's role
+field holds, each attribute with the fixed field of the word it lives in (K-33) — and the kind's blank word holds every
+attribute's initial value, from which the opening and each birth begin a person.
 
 #### K-33 Persons
 
-`phx-pop`'s person kind (`person_kind.rs`, `person_word.rs`; PTY.3, PTY.11, REP.25, REP.26) makes every person a
+`phx-pop`'s person kind (`person_kind.rs`, and `phx-core`'s `person_word.rs`; PTY.3, PTY.11, REP.25, REP.26) makes every person a
 party of its own kind, with its own reference from the directory (K-31) and its rows on a kind store (K-32); its
 household's persons are threaded through those rows. The world's persons move onto it at S1.208; until then they stay
 in their households' arenas (below).
@@ -2507,7 +2508,8 @@ bits, POP.1) · household u32 (its slot) · next in its household u32 · account
 nowhere) · chain head u32 (K-53) · the day it began searching u16, from the run's first · goal u16 (K-102) — every
 read of a person gathers this half-line; *money, 20* — banknotes i32 (K-47) · the tax year's taxable income and tax
 withheld 2 × i64 (K-52); *mind, 14* — a reserve the mind (K-102, 13 B) and the experience factor (1 B) declare into.
-The word's fields, from bit 0 (`person_word.rs`, each `Field` a shift and a width, the widths in `consts.rs`): birth
+The word's fields, from bit 0 (`phx-core`'s `person_word.rs`, the vocabulary every system reads and writes a person
+with; each `Field` a shift and a width, the widths in its `consts.rs`): birth
 day 5, month 4 and year 16 (offset by 32 768) · role 3 · sex 1 · health 2 · education stage 4 and field 4 · labour
 state 2 (the labour law's not searching, searching, retired) · occupation family last worked in 4 · last job's wage
 point 7 · life record kept 1 · reserve 11. The birth date is held as its civil fields, not a day serial, so an age is
@@ -2552,8 +2554,8 @@ list, and the other household's generation, live bit and row, each a memory late
 (S1.254); the chain head (S1.258); the searchers' index on the labour state (S1.304); the mind's 13 B and the goal
 (S1.352); the experience byte (S8.197); the campaign's windowed group (S5.137).
 
-**Today** (`persons.rs`, `person.rs`): each household's persons, two words each — its word as its kind packs it (birth
-date, role, attributes: the word is full) and its identity (`Held`) — a list per household in its chunk's arena and
+**Today** (`persons.rs`): each household's persons, two words each — its word (`PersonWord`) and its identity
+(`Held`) — a list per household in its chunk's arena and
 found by its slot; `set`, `push`, `remove` (the rest keep their order) and `clear` keep the count held, `place_of`
 finds a person by its identity, and `compact_due` closes a chunk's gaps in slot order once its dead words pass their
 share. A person's identity is drawn from the same counter as the parties' (a person is a party, PTY.1): each is handed

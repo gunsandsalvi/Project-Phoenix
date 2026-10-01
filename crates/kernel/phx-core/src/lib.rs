@@ -17,6 +17,7 @@ pub mod flows;
 pub mod goods;
 pub mod hazards;
 pub mod kinds;
+pub mod person_word;
 pub mod policy;
 pub mod pop;
 pub mod pop_process;

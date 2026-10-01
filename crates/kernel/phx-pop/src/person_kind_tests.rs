@@ -13,7 +13,7 @@ use super::{PersonKind, StoreHeads};
 use crate::directory::{Directory, Resolved};
 use crate::kinds::{AttrW, KindStore};
 use crate::layout::{HOUSEHOLD, Layout, PERSON, width};
-use crate::person_word::{
+use phx_core::person_word::{
     BIRTH_YEAR, EDUCATION, EDUCATION_FIELD, HEALTH, LABOUR, LIFE_RECORD, OCCUPATION, POINT, PersonWord, ROLE, SEX,
     Skills,
 };

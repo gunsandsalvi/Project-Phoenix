@@ -3,6 +3,7 @@
 //! and a conception is a birth, a child of the household in school.
 
 use if_pop::{ABLE, CHILD, EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEAD, HEALTH, MALE, PARTNER, SEX};
+use phx_core::person_word::ROLE;
 use phx_core::register::values::{Family, Table1, TypeSet, draw_type};
 use phx_core::{AgentView, Household, Person, PopProcess, Register};
 use phx_id::Date;
@@ -90,12 +91,12 @@ impl PopProcess for Fertility {
     }
     /// Certain on the head's birthday, and nothing on any other day.
     fn rate(&self, _: &Register, agent: &AgentView<'_>, p: &Person) -> f64 {
-        let birthday = p.role == HEAD.name && p.birthday_in(agent.date.year()) == agent.date;
+        let birthday = p.role() == HEAD.value && p.birthday_in(agent.date.year()) == agent.date;
         if birthday { 1.0 } else { 0.0 }
     }
     /// The head's next birthday; on the birthday itself the decision is certain, so no change is read.
     fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
-        (p.role == HEAD.name).then(|| p.next_birthday(date))
+        (p.role() == HEAD.value).then(|| p.next_birthday(date))
     }
     fn outcome(&self, _: &Register, agent: &AgentView<'_>, h: &mut Household, _: &[usize], d: &mut Draws) {
         let ideal = self.ideal(agent, h, d);
@@ -106,7 +107,7 @@ impl PopProcess for Fertility {
         };
         let (mut adults, mut children, mut youngest) = (0_u32, 0_u32, None::<i64>);
         for (_, p) in h.present() {
-            if p.role == CHILD.name {
+            if p.role() == CHILD.value {
                 children += 1;
                 let a = p.age_on(agent.date);
                 youngest = Some(youngest.map_or(a, |y| if a < y { a } else { y }));
@@ -146,7 +147,7 @@ impl Conception {
 
 /// Whether a person is a woman of the household's couple.
 fn at_risk(p: &Person) -> bool {
-    (p.role == HEAD.name || p.role == PARTNER.name) && sex(p) == FEMALE
+    (p.role() == HEAD.value || p.role() == PARTNER.value) && sex(p) == FEMALE
 }
 
 impl PopProcess for Conception {
@@ -183,12 +184,9 @@ impl PopProcess for Conception {
         let male_share = *of_country(&self.male_share, agent);
         for _ in reached {
             let s = if phx_rand::open_unit(d) < male_share { MALE } else { FEMALE };
-            h.persons.push(Person {
-                role: CHILD.name,
-                born: agent.date,
-                attrs: vec![(SEX.name, s), (HEALTH.name, ABLE), (EDUCATION.name, EDUCATION_UNRECORDED)],
-                gone: false,
-            });
+            let word = agent.blank.born_on(agent.date).with(ROLE, CHILD.value);
+            let word = word.with(SEX.field, s).with(HEALTH.field, ABLE).with(EDUCATION.field, EDUCATION_UNRECORDED);
+            h.persons.push(Person::of(word));
         }
         h.state.trying = false;
     }

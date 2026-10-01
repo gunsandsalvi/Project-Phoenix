@@ -16,10 +16,10 @@ direction = "down"
 # PC-17's admitted sites on the day's paths (S1.178, 2026-10-01): a day converted to its date by `Calendar::date` or
 # the calendar's civil conversions where the day's facts, computed once at its open, will be read, as the code stood
 # when the check came, 37 in all. Each reader's migration moves it onto the facts or an agenda's date and removes its
-# own; the count only falls.
+# own; the count only falls. S1.208's birth dates read from a person's own fields removed 1.
 [[ratchet]]
 counter = "phx_check.exceptions_pc17"
-value = 37
+value = 36
 direction = "down"
 
 # PC-92's admitted sites (S1.120, 2026-09-30): the maps, lists of lists, trait objects, wide or optional per-party
@@ -58,10 +58,10 @@ direction = "down"
 # PC-99's admitted sites (S1.124, 2026-09-30): the syntax of allocation on the day's paths as the code stood when the
 # rule came, 903 in all (309 collect, 251 Vec::new, 95 vec!, 95 format!, 62 clone, 27 to_owned, 26 with_capacity, 23
 # to_string, 14 to_vec, 1 Box::new). S1.160 (K-03) and each migration remove theirs; the count only falls, and S1.492
-# empties it.
+# empties it. S1.208's persons read and written by field, nothing unpacked, removed 14.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 755
+value = 741
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and

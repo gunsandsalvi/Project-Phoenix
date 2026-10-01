@@ -4,6 +4,7 @@
 use phx_id::{CountryId, Date, PartyRef};
 use phx_macros::clause;
 
+use crate::person_word::{Field, PersonWord, ROLE};
 use crate::register::Register;
 
 /// What a household holds of its own that its processes read: the region it lives in, read through its zone; whether
@@ -26,13 +27,15 @@ impl HouseholdState {
     }
 }
 
-/// An agent as a process reads it: its kind, its party, its household's own state as the day found it, the country
-/// each region lies in, the day, and the decision core, which counts a decision the process takes by its name and says
-/// how it is taken: by the rule at its decider's preferences, by the player's queued intent, or not that day.
+/// An agent as a process reads it: its kind, its party, its household's own state as the day found it, a person's
+/// word as its kind begins one (every declared attribute at its initial value), the country each region lies in, the
+/// day, and the decision core, which counts a decision the process takes by its name and says how it is taken: by the
+/// rule at its decider's preferences, by the player's queued intent, or not that day.
 pub struct AgentView<'a> {
     pub kind: &'static str,
     pub party: PartyRef,
     pub state: HouseholdState,
+    pub blank: PersonWord,
     pub country_of: &'a dyn Fn(u32) -> Option<CountryId>,
     pub date: Date,
     pub decider: &'a dyn Fn(&str) -> crate::decisions::Say,
@@ -57,39 +60,40 @@ impl core::fmt::Debug for AgentView<'_> {
     }
 }
 
-/// A person held in its household: its role, its birth date, its value of each of its kind's person attributes by
-/// name, and whether it has gone — died or left — which keeps its place so the persons a hit reached keep theirs.
+/// A person held in its household: its word — its birth date, its role and its attributes, each a field — and whether
+/// it has gone, died or left, which keeps its place so the persons a hit reached keep theirs.
 #[clause("REP.26", "REP.25")]
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Person {
-    pub role: &'static str,
-    pub born: Date,
-    pub attrs: Vec<(&'static str, u32)>,
+    pub word: PersonWord,
     pub gone: bool,
 }
 
 impl Person {
-    /// The person's value of an attribute its kind declares.
+    /// A person present in its household.
     #[must_use]
-    pub fn attr(&self, name: &str) -> Option<u32> {
-        self.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v)
+    pub const fn of(word: PersonWord) -> Person {
+        Person { word, gone: false }
     }
 
-    /// An attribute set to a value.
-    pub fn set_attr(&mut self, name: &str, value: u32) {
-        let Some((_, v)) = self.attrs.iter_mut().find(|(n, _)| *n == name) else {
-            phx_num::violation!(clause = "REP.26", "a person given an attribute its kind does not declare");
-        };
-        *v = value;
+    /// Its role's value, as its kind declares the role.
+    #[must_use]
+    pub fn role(&self) -> u32 {
+        self.word.get(ROLE)
     }
 
-    /// An attribute given its first value, as the opening's draws give a person the attributes other systems than
-    /// its composer declare; one it already holds is set.
-    pub fn put_attr(&mut self, name: &'static str, value: u32) {
-        match self.attrs.iter_mut().find(|(n, _)| *n == name) {
-            Some((_, v)) => *v = value,
-            None => self.attrs.push((name, value)),
-        }
+    #[must_use]
+    pub fn get(&self, f: Field) -> u32 {
+        self.word.get(f)
+    }
+
+    /// One field of its word written.
+    pub fn set(&mut self, f: Field, v: u32) {
+        self.word = self.word.with(f, v);
+    }
+
+    pub fn born(&self) -> Date {
+        self.word.born()
     }
 
     /// The whole years the person has lived on a date: one more on each birthday, a birthday on the 29th of February
@@ -97,18 +101,17 @@ impl Person {
     #[clause("REP.25")]
     #[must_use]
     pub fn age_on(&self, date: Date) -> i64 {
-        age_on(self.born, date)
+        self.word.age_on(date)
     }
 
     /// The person's birthday in a year, a birthday on the 29th of February falling on the 1st of March in a common
     /// year.
     pub fn birthday_in(&self, year: i32) -> Date {
         let (month, day) = crate::consts::LEAP_BIRTHDAY_IN_COMMON_YEAR;
-        Date::new(year, self.born.month(), self.born.day()).or_else(|| Date::new(year, month, day)).unwrap_or_else(
-            || {
-                phx_num::violation!(clause = "TIME.2", "a birthday on no day of its year");
-            },
-        )
+        let born = self.born();
+        Date::new(year, born.month(), born.day()).or_else(|| Date::new(year, month, day)).unwrap_or_else(|| {
+            phx_num::violation!(clause = "TIME.2", "a birthday on no day of its year");
+        })
     }
 
     /// The person's first birthday after a date.
@@ -178,7 +181,7 @@ mod tests {
     use super::Person;
 
     fn born(y: i32, m: u8, d: u8) -> Person {
-        Person { role: "head", born: Date::new(y, m, d).unwrap(), attrs: Vec::new(), gone: false }
+        Person::of(crate::person_word::PersonWord::new(Date::new(y, m, d).unwrap(), 0))
     }
 
     #[test]

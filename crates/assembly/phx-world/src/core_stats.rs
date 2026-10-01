@@ -321,7 +321,7 @@ impl Core {
     /// month's days.
     fn exposed(&self, regions: &[phx_id::CountryId], period: u32) -> Vec<BTreeMap<(u32, u32), u64>> {
         let mut out = vec![BTreeMap::new(); self.stats.laws.len()];
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
+        let Some(place) = self.bound.kinds.household else {
             return out;
         };
         let Some(Some(persons)) = self.persons.get(place) else { return out };
@@ -335,10 +335,10 @@ impl Core {
             let Some(region) = self.household_region(slot).and_then(|r| usize::try_from(r).ok()) else { continue };
             let Some(table) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
             for p in persons.of(slot) {
-                let person = phx_pop::person::unpack(decl, p.word);
+                let person = phx_core::person_word::PersonWord(p.word);
                 let age = person.age_on(date);
                 let class = u32::try_from(self.stats.classes.iter().filter(|b| **b <= age).count()).unwrap_or(u32::MAX);
-                let Some(health) = person.attr(if_pop::HEALTH.name) else { continue };
+                let health = person.get(if_pop::HEALTH.field);
                 *table.entry((class, health)).or_insert(0) += days;
             }
         }
@@ -349,7 +349,7 @@ impl Core {
     /// adults out of the labour force.
     fn labour_force(&self, regions: &[phx_id::CountryId]) -> Vec<[i64; if_state::stats::LABOUR_STATES]> {
         let mut out = vec![[0_i64; if_state::stats::LABOUR_STATES]; self.stats.laws.len()];
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
+        let Some(place) = self.bound.kinds.household else {
             return out;
         };
         let Some(Some(persons)) = self.persons.get(place) else { return out };
@@ -358,14 +358,14 @@ impl Core {
             let Some(region) = self.household_region(slot).and_then(|r| usize::try_from(r).ok()) else { continue };
             let Some(row) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
             for p in persons.of(slot) {
-                let person = phx_pop::person::unpack(decl, p.word);
-                if person.role == if_pop::CHILD.name {
+                let person = phx_core::person_word::PersonWord(p.word);
+                if person.get(phx_core::person_word::ROLE) == if_pop::CHILD.value {
                     continue;
                 }
-                let state = person.attr(sys_lab::STATE.name);
+                let state = person.get(sys_lab::STATE.field);
                 let at = if employed.binary_search(&p.id).is_ok() {
                     0
-                } else if state == Some(if_labour::class::SEARCHING) {
+                } else if state == if_labour::class::SEARCHING {
                     1
                 } else {
                     2

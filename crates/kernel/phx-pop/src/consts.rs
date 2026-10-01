@@ -1,13 +1,6 @@
 use crate::layout::IntTy::{I32, I64, U8, U16, U32, U64};
 use crate::layout::{GroupDecl, KindMap, fits, used, width, word};
 
-/// A person word's bits for its birth date: the calendar's civil day serial, in two's complement, so persons born
-/// before the world's epoch are held exactly.
-pub const BIRTH_BITS: u32 = 32;
-/// A person word's bits for its role, after its birth date: room for eight roles.
-pub const ROLE_BITS: u32 = 3;
-/// A person word's bits for its kind's person attributes, after its role.
-pub const PERSON_ATTR_BITS: u32 = u64::BITS - BIRTH_BITS - ROLE_BITS;
 /// A tombstone's packed reference's bits below its day byte: kind, slot and generation.
 pub const TOMB_KEY_BITS: u32 = 56;
 /// The share of the main tombstone run the recent one may reach before they are merged: a sixteenth, so a day's merge
@@ -227,29 +220,6 @@ const COUNTRY_PLACE: GroupDecl = GroupDecl { name: "place", width: 1, words: &[w
 pub const SITED: KindMap = KindMap { kind: "sited", groups: &[SITE_PLACE] };
 pub const REGIONED: KindMap = KindMap { kind: "regioned", groups: &[REGION_PLACE] };
 pub const COUNTRIED: KindMap = KindMap { kind: "countried", groups: &[COUNTRY_PLACE] };
-
-/// A person's day of the month of birth in its word.
-pub const BIRTH_DAY_BITS: u32 = 5;
-/// A person's month of birth in its word.
-pub const BIRTH_MONTH_BITS: u32 = 4;
-/// A person's year of birth in its word, offset by 32 768, so a year from −32 768 to 32 767 is held.
-pub const BIRTH_YEAR_BITS: u32 = 16;
-/// A person's sex in its word: female or male.
-pub const SEX_BITS: u32 = 1;
-/// A person's health in its word: room for four states.
-pub const HEALTH_BITS: u32 = 2;
-/// A person's education stage in its word, and its field: sixteen of each.
-pub const EDUCATION_BITS: u32 = 4;
-/// A person's labour state in its word: not searching, searching or retired, room for a fourth.
-pub const LABOUR_BITS: u32 = 2;
-/// The occupation family a person last worked in, or none: sixteen.
-pub const OCCUPATION_BITS: u32 = 4;
-/// The wage point of a person's last job, or none: 128.
-pub const POINT_BITS: u32 = 7;
-/// The occupation families a person's skills are held for.
-pub const SKILL_FAMILIES: u32 = 8;
-/// The bits a skill level takes: levels 0 to 15.
-pub const SKILL_BITS: u32 = 4;
 
 /// A person's core row, what any read of a person gathers: its packed word, its skills, its household and the next
 /// person in it, its account, its chain's head, the day it began searching and its goal.

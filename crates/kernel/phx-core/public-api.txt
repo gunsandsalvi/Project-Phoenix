@@ -512,6 +512,9 @@ pub mod phx_core::consts  // used by: if-base, if-labour, if-pop, if-state, phx-
 pub const phx_core::consts::BARRIERS_BUSINESS: usize
 pub const phx_core::consts::BARRIERS_HEAVY: usize
 pub const phx_core::consts::BARRIERS_NON_BUSINESS: usize
+pub const phx_core::consts::BIRTH_DAY_BITS: u32
+pub const phx_core::consts::BIRTH_MONTH_BITS: u32
+pub const phx_core::consts::BIRTH_YEAR_BITS: u32
 pub const phx_core::consts::BIT_WORD: usize
 pub const phx_core::consts::CALENDAR_WINDOW_YEARS: i32
 pub const phx_core::consts::CALENDAR_WORD_BITS: i64
@@ -544,6 +547,7 @@ pub const phx_core::consts::EASTER_H: [i32; 2]
 pub const phx_core::consts::EASTER_L: [i32; 2]
 pub const phx_core::consts::EASTER_M: [i32; 3]
 pub const phx_core::consts::EASTER_MONTH: [i32; 3]
+pub const phx_core::consts::EDUCATION_BITS: u32
 pub const phx_core::consts::EVENTS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::EVENTS_A_DAY: u32
 pub const phx_core::consts::EVENTS_UNPRUNED: (&str, u32, u32, phx_core::capacity::Growth)
@@ -556,11 +560,13 @@ pub const phx_core::consts::FLOW_GROUP_COST: u64  // used by: phx-world
 pub const phx_core::consts::FORM_FEATURES: usize
 pub const phx_core::consts::GROWTH_DIVISOR: u32
 pub const phx_core::consts::GROWTH_YEARS: u32
+pub const phx_core::consts::HEALTH_BITS: u32
 pub const phx_core::consts::HOLDINGS_CODE: u8
 pub const phx_core::consts::HOUSEHOLD_WORDS: u32
 pub const phx_core::consts::INSTITUTIONS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::INSTRUMENTS: (&str, u32, u32, phx_core::capacity::Growth)  // used by: phx-check, phx-world
 pub const phx_core::consts::KEYED_ORDINAL: u8
+pub const phx_core::consts::LABOUR_BITS: u32
 pub const phx_core::consts::LEAP_BIRTHDAY_IN_COMMON_YEAR: (u8, u8)
 pub const phx_core::consts::LONGEST_QUARTER_DAYS: u32
 pub const phx_core::consts::MAX_NTH: i8
@@ -569,6 +575,7 @@ pub const phx_core::consts::MONTHS_PER_QUARTER: u16
 pub const phx_core::consts::MONTHS_PER_YEAR: u16  // used by: phx-cli, phx-ledger, phx-world, sys-lab
 pub const phx_core::consts::NATURE_WORD: u32
 pub const phx_core::consts::NUMERIC_STEPS: u32
+pub const phx_core::consts::OCCUPATION_BITS: u32
 pub const phx_core::consts::OPENING_BALANCES: u8
 pub const phx_core::consts::OPENING_CONTRACTS: u8
 pub const phx_core::consts::OPENING_DECLARATIONS: u8
@@ -581,11 +588,16 @@ pub const phx_core::consts::PARAM_SCALE_F64: f64
 pub const phx_core::consts::PARTY_KINDS: usize
 pub const phx_core::consts::PERCENT_F64: f64  // used by: phx-ledger, phx-world
 pub const phx_core::consts::PERSONS: (&str, u32, u32, phx_core::capacity::Growth)  // used by: phx-pop
+pub const phx_core::consts::POINT_BITS: u32
 pub const phx_core::consts::PPM: u32  // used by: sys-frm, sys-tec
 pub const phx_core::consts::PRODUCT_SHIFT: u32
 pub const phx_core::consts::RATE_EXP: u8
+pub const phx_core::consts::ROLE_BITS: u32
 pub const phx_core::consts::ROW_BYTES_UNLAID: u32
+pub const phx_core::consts::SEX_BITS: u32
 pub const phx_core::consts::SHORTEST_MONTH_DAYS: u16
+pub const phx_core::consts::SKILL_BITS: u32
+pub const phx_core::consts::SKILL_FAMILIES: u32
 pub const phx_core::consts::SLOT_BITS: u32
 pub const phx_core::consts::SLOT_STAGES: [u8; 40]
 pub const phx_core::consts::STORES: &[(&str, u32, u32, phx_core::capacity::Growth)]  // used by: phx-check
@@ -1170,6 +1182,35 @@ pub fn phx_core::kinds::LegalForm::office(&self, &str) -> core::option::Option<u
 pub fn phx_core::kinds::LegalForm::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub const phx_core::kinds::ESTATE_KIND: phx_core::kinds::KindDecl  // used by: phx-world
 pub const phx_core::kinds::LEGAL_FORMS: phx_core::register::PrimDecl  // used by: phx-world
+pub mod phx_core::person_word  // used by: if-labour, if-pop, phx-cli, phx-fin, phx-pop, phx-world, sys-dem, sys-lab
+pub struct phx_core::person_word::Field  // used by: if-labour, phx-check, phx-macros, phx-pop
+pub phx_core::person_word::Field::bits: u32  // used by: phx-fin, phx-num, phx-pop, phx-rand, phx-store, phx-world
+pub phx_core::person_word::Field::shift: u32  // used by: phx-exec, phx-fin, phx-market, phx-num, phx-rand, phx-store, phx-world
+pub struct phx_core::person_word::PersonWord(pub u64)  // used by: phx-cli, phx-fin, phx-pop, phx-world, sys-dem
+impl phx_core::person_word::PersonWord
+pub fn phx_core::person_word::PersonWord::age_on(self, phx_id::day::Date) -> i64  // used by: phx-cli, phx-pop, phx-world, sys-dem, sys-lab, sys-soc
+pub fn phx_core::person_word::PersonWord::birth_year(self) -> i32
+pub fn phx_core::person_word::PersonWord::born(self) -> phx_id::day::Date  // used by: phx-cli, phx-fin, phx-world, sys-dem
+pub fn phx_core::person_word::PersonWord::born_on(self, phx_id::day::Date) -> phx_core::person_word::PersonWord  // used by: sys-dem
+pub fn phx_core::person_word::PersonWord::get(self, phx_core::person_word::Field) -> u32  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_core::person_word::PersonWord::new(phx_id::day::Date, u32) -> phx_core::person_word::PersonWord  // used by: if-base, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
+pub fn phx_core::person_word::PersonWord::with(self, phx_core::person_word::Field, u32) -> phx_core::person_word::PersonWord  // used by: phx-exec, phx-pop, phx-store, phx-world, sys-dem
+pub struct phx_core::person_word::Skills(pub u32)  // used by: phx-pop
+impl phx_core::person_word::Skills
+pub fn phx_core::person_word::Skills::get(self, u32) -> u32  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub fn phx_core::person_word::Skills::with(self, u32, u32) -> phx_core::person_word::Skills  // used by: phx-exec, phx-pop, phx-store, phx-world, sys-dem
+pub const phx_core::person_word::BIRTH_DAY: phx_core::person_word::Field
+pub const phx_core::person_word::BIRTH_MONTH: phx_core::person_word::Field
+pub const phx_core::person_word::BIRTH_YEAR: phx_core::person_word::Field
+pub const phx_core::person_word::EDUCATION: phx_core::person_word::Field  // used by: if-pop, sys-dem, sys-lab
+pub const phx_core::person_word::EDUCATION_FIELD: phx_core::person_word::Field  // used by: if-pop
+pub const phx_core::person_word::HEALTH: phx_core::person_word::Field  // used by: if-pop, phx-world, sys-dem
+pub const phx_core::person_word::LABOUR: phx_core::person_word::Field  // used by: phx-fin, sys-lab, sys-tec
+pub const phx_core::person_word::LIFE_RECORD: phx_core::person_word::Field
+pub const phx_core::person_word::OCCUPATION: phx_core::person_word::Field  // used by: if-labour, phx-world, sys-lab
+pub const phx_core::person_word::POINT: phx_core::person_word::Field  // used by: sys-lab
+pub const phx_core::person_word::ROLE: phx_core::person_word::Field  // used by: phx-cli, phx-pop, phx-world, sys-dem
+pub const phx_core::person_word::SEX: phx_core::person_word::Field  // used by: if-pop, phx-cli, phx-fin, phx-world, sys-dem, sys-lab, sys-soc
 pub mod phx_core::policy  // used by: phx-fin, phx-macros, phx-val, sys-cb
 pub enum phx_core::policy::AnnounceRefused
 pub phx_core::policy::AnnounceRefused::NotOwner
@@ -1225,6 +1266,7 @@ pub phx_core::pop::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)  // used b
 pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)  // used by: phx-macros, phx-pop, phx-world, sys-dem
 pub struct phx_core::pop::PersonAttrDecl  // used by: if-pop, phx-pop, sys-lab
 pub phx_core::pop::PersonAttrDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::pop::PersonAttrDecl::field: phx_core::person_word::Field  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::pop::PersonAttrDecl::initial: phx_num::missing::Missing<u32>  // used by: if-pop, phx-pop, sys-lab
 pub phx_core::pop::PersonAttrDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::pop::PersonAttrDecl::values: u32  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
@@ -1239,8 +1281,10 @@ pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDec
 pub struct phx_core::pop::RoleDecl  // used by: if-pop, phx-pop
 pub phx_core::pop::RoleDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::RoleDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::pop::RoleDecl::value: u32  // used by: if-pop, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-soc, sys-tax
 pub mod phx_core::pop_process  // used by: phx-world, sys-dem, sys-lab
 pub struct phx_core::pop_process::AgentView<'a>  // used by: phx-world, sys-dem, sys-lab
+pub phx_core::pop_process::AgentView::blank: phx_core::person_word::PersonWord  // used by: phx-pop, phx-world, sys-dem
 pub phx_core::pop_process::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>  // used by: phx-cli, phx-geo, phx-world, sys-dem, sys-lab
 pub phx_core::pop_process::AgentView::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::pop_process::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say  // used by: phx-world
@@ -1264,17 +1308,17 @@ pub phx_core::pop_process::HouseholdState::trying: bool
 impl phx_core::pop_process::HouseholdState
 pub const fn phx_core::pop_process::HouseholdState::formed(u32) -> phx_core::pop_process::HouseholdState
 pub struct phx_core::pop_process::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
-pub phx_core::pop_process::Person::attrs: alloc::vec::Vec<(&'static str, u32)>  // used by: phx-check, phx-macros, phx-pop, phx-world, sys-dem
-pub phx_core::pop_process::Person::born: phx_id::day::Date  // used by: phx-cli, phx-pop, phx-world, sys-dem
 pub phx_core::pop_process::Person::gone: bool  // used by: phx-cli, phx-obs, phx-pop, phx-world, sys-dem
-pub phx_core::pop_process::Person::role: &'static str  // used by: phx-cli, phx-macros, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_core::pop_process::Person::word: phx_core::person_word::PersonWord  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem
 impl phx_core::pop_process::Person
 pub fn phx_core::pop_process::Person::age_on(&self, phx_id::day::Date) -> i64  // used by: phx-cli, phx-world, sys-dem, sys-lab, sys-soc
-pub fn phx_core::pop_process::Person::attr(&self, &str) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub fn phx_core::pop_process::Person::birthday_in(&self, i32) -> phx_id::day::Date  // used by: sys-dem, sys-lab
+pub fn phx_core::pop_process::Person::born(&self) -> phx_id::day::Date  // used by: phx-cli, phx-fin, phx-world, sys-dem
+pub fn phx_core::pop_process::Person::get(&self, phx_core::person_word::Field) -> u32  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_core::pop_process::Person::next_birthday(&self, phx_id::day::Date) -> phx_id::day::Date  // used by: sys-dem, sys-lab
-pub fn phx_core::pop_process::Person::put_attr(&mut self, &'static str, u32)  // used by: phx-world
-pub fn phx_core::pop_process::Person::set_attr(&mut self, &str, u32)  // used by: phx-world, sys-dem, sys-lab
+pub const fn phx_core::pop_process::Person::of(phx_core::person_word::PersonWord) -> phx_core::pop_process::Person  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_core::pop_process::Person::role(&self) -> u32  // used by: phx-macros, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub fn phx_core::pop_process::Person::set(&mut self, phx_core::person_word::Field, u32)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem, sys-lab
 pub trait phx_core::pop_process::PopProcess: core::marker::Send + core::marker::Sync  // used by: phx-world, sys-dem, sys-lab
 pub fn phx_core::pop_process::PopProcess::bind(&mut self, &phx_core::register::Register)  // used by: phx-macros, phx-world, sys-dem, sys-lab
 pub fn phx_core::pop_process::PopProcess::changes_after(&self, &phx_core::pop_process::Person, phx_id::day::Date) -> core::option::Option<phx_id::day::Date>  // used by: phx-world, sys-dem, sys-lab
@@ -2582,6 +2626,7 @@ impl<'a> phx_core::streams::AdviceDraws<'a>
 pub fn phx_core::streams::AdviceDraws<'a>::new(&'a phx_core::streams::WorldStreams) -> phx_core::streams::AdviceDraws<'a>  // used by: phx-world
 pub fn phx_core::streams::AdviceDraws<'a>::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> core::result::Result<phx_rand::draws::Draws, phx_core::streams::NotObserver>  // used by: phx-world
 pub struct phx_core::AgentView<'a>  // used by: phx-world, sys-dem, sys-lab
+pub phx_core::AgentView::blank: phx_core::person_word::PersonWord  // used by: phx-pop, phx-world, sys-dem
 pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>  // used by: phx-cli, phx-geo, phx-world, sys-dem, sys-lab
 pub phx_core::AgentView::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say  // used by: phx-world
@@ -2956,19 +3001,20 @@ pub phx_core::Permitted::bases: alloc::vec::Vec<phx_core::accounting::CarryingBa
 pub phx_core::Permitted::form: alloc::string::String  // used by: phx-acct, phx-macros, phx-world
 pub phx_core::Permitted::held_for: phx_core::accounting::HeldFor  // used by: phx-acct
 pub struct phx_core::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
-pub phx_core::Person::attrs: alloc::vec::Vec<(&'static str, u32)>  // used by: phx-check, phx-macros, phx-pop, phx-world, sys-dem
-pub phx_core::Person::born: phx_id::day::Date  // used by: phx-cli, phx-pop, phx-world, sys-dem
 pub phx_core::Person::gone: bool  // used by: phx-cli, phx-obs, phx-pop, phx-world, sys-dem
-pub phx_core::Person::role: &'static str  // used by: phx-cli, phx-macros, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub phx_core::Person::word: phx_core::person_word::PersonWord  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world, sys-dem
 impl phx_core::pop_process::Person
 pub fn phx_core::pop_process::Person::age_on(&self, phx_id::day::Date) -> i64  // used by: phx-cli, phx-world, sys-dem, sys-lab, sys-soc
-pub fn phx_core::pop_process::Person::attr(&self, &str) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub fn phx_core::pop_process::Person::birthday_in(&self, i32) -> phx_id::day::Date  // used by: sys-dem, sys-lab
+pub fn phx_core::pop_process::Person::born(&self) -> phx_id::day::Date  // used by: phx-cli, phx-fin, phx-world, sys-dem
+pub fn phx_core::pop_process::Person::get(&self, phx_core::person_word::Field) -> u32  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub fn phx_core::pop_process::Person::next_birthday(&self, phx_id::day::Date) -> phx_id::day::Date  // used by: sys-dem, sys-lab
-pub fn phx_core::pop_process::Person::put_attr(&mut self, &'static str, u32)  // used by: phx-world
-pub fn phx_core::pop_process::Person::set_attr(&mut self, &str, u32)  // used by: phx-world, sys-dem, sys-lab
+pub const fn phx_core::pop_process::Person::of(phx_core::person_word::PersonWord) -> phx_core::pop_process::Person  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub fn phx_core::pop_process::Person::role(&self) -> u32  // used by: phx-macros, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
+pub fn phx_core::pop_process::Person::set(&mut self, phx_core::person_word::Field, u32)  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-pop, phx-store, phx-val, phx-world, sys-dem, sys-lab
 pub struct phx_core::PersonAttrDecl  // used by: if-pop, phx-pop, sys-lab
 pub phx_core::PersonAttrDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
+pub phx_core::PersonAttrDecl::field: phx_core::person_word::Field  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-pop, phx-store, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::PersonAttrDecl::initial: phx_num::missing::Missing<u32>  // used by: if-pop, phx-pop, sys-lab
 pub phx_core::PersonAttrDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub phx_core::PersonAttrDecl::values: u32  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
@@ -3120,6 +3166,7 @@ pub fn phx_core::register::RegisterBuilder::new() -> phx_core::register::Registe
 pub struct phx_core::RoleDecl  // used by: if-pop, phx-pop
 pub phx_core::RoleDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::RoleDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_core::RoleDecl::value: u32  // used by: if-pop, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frt, sys-gds, sys-lab, sys-soc, sys-tax
 pub struct phx_core::RoleId(pub &'static str)  // used by: phx-macros
 pub struct phx_core::ScheduleDates  // used by: phx-ledger, phx-world
 pub phx_core::ScheduleDates::anchor: phx_id::day::Date  // used by: phx-geo, phx-ledger, phx-val, phx-world

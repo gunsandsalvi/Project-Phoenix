@@ -93,11 +93,11 @@ impl Pensions {
     #[clause("GEN.2", "SOC.3")]
     #[must_use]
     pub fn draw(&self, household: &phx_core::Household, d: &mut phx_rand::Draws) -> Vec<(usize, usize)> {
-        let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
+        let adult_roles = [if_pop::HEAD.value, if_pop::PARTNER.value, if_pop::ADULT.value];
         let mut out = Vec::new();
-        for (place, p) in household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role)) {
+        for (place, p) in household.persons.iter().enumerate().filter(|(_, p)| adult_roles.contains(&p.role())) {
             let covered = open_unit(d);
-            let Some(sex) = p.attr(if_pop::SEX.name) else { violation!(clause = "REP.26", "a person with no sex") };
+            let sex = p.get(if_pop::SEX.field);
             let age = phx_rand::float::from_i64(p.age_on(self.date));
             let at = match sex {
                 if_pop::FEMALE => 0,

@@ -90,8 +90,8 @@ impl Banking {
     /// once; a household with an account banks at a bank chosen online by the banks' shares.
     #[clause("GEN.2", "REP.23", "BNK.1")]
     pub fn draw(&mut self, household: &phx_core::Household, wealth: f64, d: &mut Draws) -> Banked {
-        let adult_roles = [if_pop::HEAD.name, if_pop::PARTNER.name, if_pop::ADULT.name];
-        let adults = household.persons.iter().filter(|p| adult_roles.contains(&p.role)).count();
+        let adult_roles = [if_pop::HEAD.value, if_pop::PARTNER.value, if_pop::ADULT.value];
+        let adults = household.persons.iter().filter(|p| adult_roles.contains(&p.role())).count();
         let account = any_of(adults, self.account, d);
         let borrowed = any_of(adults, self.borrowed, d);
         if !account {

@@ -6,7 +6,9 @@ pub mod facts;
 
 use phx_core::{FactDef, ItemDecl, PersonAttrDecl, RoleDecl};
 
-use crate::consts::EDUCATION_VALUES;
+use phx_core::person_word::{EDUCATION as EDUCATION_FIELD, HEALTH as HEALTH_FIELD, SEX as SEX_FIELD};
+
+use crate::consts::{ADULT_VALUE, CHILD_VALUE, EDUCATION_VALUES, HEAD_VALUE, PARTNER_VALUE};
 
 /// Every item the crate exports.
 pub const ITEMS: &[ItemDecl] = &[
@@ -20,16 +22,27 @@ pub const ITEMS: &[ItemDecl] = &[
 pub const HOUSEHOLD: &str = "household";
 
 /// A person's sex: female, male.
-pub const SEX: PersonAttrDecl =
-    PersonAttrDecl { name: "DEM.sex", values: 2, clause: "REP.26", initial: phx_num::Missing::Absent };
+pub const SEX: PersonAttrDecl = PersonAttrDecl {
+    name: "DEM.sex",
+    field: SEX_FIELD,
+    values: 2,
+    clause: "REP.26",
+    initial: phx_num::Missing::Absent,
+};
 /// A person's health: able, or disabled lastingly.
-pub const HEALTH: PersonAttrDecl =
-    PersonAttrDecl { name: "DEM.health", values: 2, clause: "POP.4", initial: phx_num::Missing::Absent };
+pub const HEALTH: PersonAttrDecl = PersonAttrDecl {
+    name: "DEM.health",
+    field: HEALTH_FIELD,
+    values: 2,
+    clause: "POP.4",
+    initial: phx_num::Missing::Absent,
+};
 /// An adult's highest level of education: none, incomplete primary, primary, lower secondary, upper secondary, short
 /// post-secondary, bachelor, master and higher; and a last value, not yet recorded, for a child and for a person who
 /// reached adulthood in the run before schooling is kept.
 pub const EDUCATION: PersonAttrDecl = PersonAttrDecl {
     name: "DEM.education",
+    field: EDUCATION_FIELD,
     values: EDUCATION_VALUES,
     clause: "REP.26",
     initial: phx_num::Missing::Absent,
@@ -41,9 +54,9 @@ pub const MALE: u32 = 1;
 pub const ABLE: u32 = 0;
 pub const DISABLED: u32 = 1;
 
-pub const HEAD: RoleDecl = RoleDecl { name: "head", clause: "REP.26" };
-pub const PARTNER: RoleDecl = RoleDecl { name: "partner", clause: "REP.26" };
+pub const HEAD: RoleDecl = RoleDecl { name: "head", value: HEAD_VALUE, clause: "REP.26" };
+pub const PARTNER: RoleDecl = RoleDecl { name: "partner", value: PARTNER_VALUE, clause: "REP.26" };
 /// Another adult of the household.
-pub const ADULT: RoleDecl = RoleDecl { name: "adult", clause: "REP.26" };
+pub const ADULT: RoleDecl = RoleDecl { name: "adult", value: ADULT_VALUE, clause: "REP.26" };
 /// A child of the household still in school.
-pub const CHILD: RoleDecl = RoleDecl { name: "child", clause: "REP.26" };
+pub const CHILD: RoleDecl = RoleDecl { name: "child", value: CHILD_VALUE, clause: "REP.26" };

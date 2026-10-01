@@ -8,6 +8,7 @@
 use std::collections::BTreeMap;
 use std::hint::black_box;
 
+use phx_core::person_word::{LABOUR, PersonWord, SEX};
 use phx_exec::trace::{Reading, Spent};
 use phx_id::{Date, Day, PartyRef, Slot};
 use phx_num::Missing;
@@ -15,7 +16,6 @@ use phx_pop::directory::{Directory, Resolved};
 use phx_pop::kinds::{Attr, AttrW, KindStore, Opening};
 use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, IntTy, KindMap, Layout, WordDecl};
 use phx_pop::person_kind::{PersonKind, StoreHeads};
-use phx_pop::person_word::{LABOUR, PersonWord, SEX};
 use phx_pop::windowed::{WAttrW, WindowLayout, WindowedGroup};
 use phx_rand::uniform::below_u64;
 use phx_store::{AddressSpace, StoreStats};

@@ -183,9 +183,7 @@ fn life_table_traced(w: Inspector<'_>) -> Outcome {
 /// as the events of the process that takes them from school.
 fn cohorts_leave(w: Inspector<'_>) -> Outcome {
     let core = w.core();
-    let (Some(place), Some(decl)) =
-        (core.names.iter().position(|n| *n == "household"), core.declared.household.as_ref())
-    else {
+    let Some(place) = core.names.iter().position(|n| *n == "household") else {
         return Outcome::NotYet("no households on the core");
     };
     let Some(Some(persons)) = core.persons.get(place) else {
@@ -206,8 +204,8 @@ fn cohorts_leave(w: Inspector<'_>) -> Outcome {
             return Outcome::Fail(format!("household slot {} in a region of no country", slot.get()));
         };
         for p in persons.of(slot) {
-            let person = phx_pop::person::unpack(decl, p.word);
-            if person.role == if_pop::CHILD.name && person.age_on(date) >= *leaving {
+            let person = phx_core::person_word::PersonWord(p.word);
+            if person.get(phx_core::person_word::ROLE) == if_pop::CHILD.value && person.age_on(date) >= *leaving {
                 return Outcome::Fail(format!(
                     "household slot {}: a child of {} still in school past {leaving}",
                     slot.get(),
@@ -259,7 +257,6 @@ impl Structure {
 pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let core = w.core();
     let place = core.names.iter().position(|n| *n == "household")?;
-    let decl = core.declared.household.as_ref()?;
     let persons = core.persons.get(place)?.as_ref()?;
     let bounds = w.register().partition("DEM.age_classes").ok()?.bounds.to_vec();
     let mut classes: Vec<(i64, [u64; 2])> = bounds.iter().map(|b| (*b, [0, 0])).collect();
@@ -267,8 +264,8 @@ pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let (mut women, mut counted) = (0_u64, 0_u64);
     for slot in core.live_slots(place) {
         for p in persons.of(slot) {
-            let person = phx_pop::person::unpack(decl, p.word);
-            let (age, sex) = (person.age_on(date), person.attr(if_pop::SEX.name)?);
+            let person = phx_core::person_word::PersonWord(p.word);
+            let (age, sex) = (person.age_on(date), person.get(if_pop::SEX.field));
             let class = bounds.partition_point(|b| *b <= age).checked_sub(1)?;
             *classes.get_mut(class)?.1.get_mut(usize::try_from(sex).ok()?)? += 1;
             counted += 1;

@@ -23,13 +23,13 @@ pub struct Retirement {
 impl Retirement {
     fn pension_months(&self, agent: &AgentView<'_>, p: &Person) -> Option<i64> {
         let country: CountryId = (agent.country_of)(agent.state.region)?;
-        let sex = usize::try_from(p.attr(if_pop::SEX.name)?).ok()?;
+        let sex = usize::try_from(p.get(if_pop::SEX.field)).ok()?;
         self.pension.get(usize::from(country.get()))?.get(sex).copied()
     }
 
     fn deciding(&self, agent: &AgentView<'_>, p: &Person, on: Date) -> bool {
-        let adult = p.role != if_pop::CHILD.name;
-        let retired = p.attr(crate::STATE.name) == Some(RETIRED);
+        let adult = p.role() != if_pop::CHILD.value;
+        let retired = p.get(crate::STATE.field) == RETIRED;
         let reached = self.pension_months(agent, p).is_some_and(|m| age_months(p, on) >= m);
         adult && !retired && reached
     }
@@ -65,7 +65,7 @@ impl PopProcess for Retirement {
         if birthday && self.deciding(agent, p, agent.date) { 1.0 } else { 0.0 }
     }
     fn changes_after(&self, p: &Person, date: Date) -> Option<Date> {
-        (p.attr(crate::STATE.name) != Some(RETIRED)).then(|| p.next_birthday(date))
+        (p.get(crate::STATE.field) != RETIRED).then(|| p.next_birthday(date))
     }
     fn outcome(&self, _: &Register, agent: &AgentView<'_>, h: &mut Household, reached: &[usize], _: &mut Draws) {
         for i in reached {
@@ -77,7 +77,7 @@ impl PopProcess for Retirement {
             if retires == Some(true)
                 && let Some(p) = h.persons.get_mut(*i)
             {
-                p.set_attr(crate::STATE.name, RETIRED);
+                p.set(crate::STATE.field, RETIRED);
             }
         }
     }

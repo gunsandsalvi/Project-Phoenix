@@ -1,6 +1,7 @@
 //! The population's processes: each process on a kind's persons bound at assembly to its kind, hazard, event kind
 //! and stream; a household's persons' chances read on a day; and a booking come due followed on to its hits.
 
+use phx_core::person_word::PersonWord;
 use phx_core::{ActsOn, AgentView, Declarations, Household, PopProcess, Register, StreamDecl};
 use phx_id::{CountryId, Day, PartyRef};
 use phx_macros::clause;
@@ -109,7 +110,7 @@ pub(crate) struct Reading<'a> {
 #[clause("REP.7", "REP.25")]
 pub(crate) fn chances(
     reading: &Reading<'_>,
-    (kind, party): (&'static str, PartyRef),
+    (kind, party, blank): (&'static str, PartyRef, PersonWord),
     bound: &Bound,
     household: &Household,
     day: Day,
@@ -117,8 +118,15 @@ pub(crate) fn chances(
 ) -> Missing<Day> {
     let date = reading.calendar.date(day);
     let decider = |_: &str| violation!(clause = "MND.20", "a decision taken while a chance is read");
-    let view =
-        AgentView { kind, party, state: household.state, country_of: reading.country_of, date, decider: &decider };
+    let view = AgentView {
+        kind,
+        party,
+        state: household.state,
+        blank,
+        country_of: reading.country_of,
+        date,
+        decider: &decider,
+    };
     let mut change = None::<Day>;
     s.places.clear();
     s.qs.clear();
@@ -187,7 +195,7 @@ pub(crate) struct Followed {
 #[clause("REP.7", "REP.12", "CHN.4")]
 pub(crate) fn follow(
     r: &Reading<'_>,
-    who: (&'static str, PartyRef),
+    who: (&'static str, PartyRef, PersonWord),
     b: &Bound,
     (h, buffers): (&Household, &mut Buffers),
     (today, start): (Day, (Day, bool)),
@@ -222,7 +230,7 @@ pub(crate) fn follow(
 /// returned, the day any may change.
 fn open(
     r: &Reading<'_>,
-    (who, b, h): ((&'static str, PartyRef), &Bound, &Household),
+    (who, b, h): ((&'static str, PartyRef, PersonWord), &Bound, &Household),
     day: Day,
     reached_all: &[usize],
     s: &mut Buffers,
@@ -311,7 +319,7 @@ mod tests {
         let entries = [PopEntry {
             system: "DEM",
             kind: "household",
-            item: PopItem::Role(RoleDecl { name: "head", clause: "x" }),
+            item: PopItem::Role(RoleDecl { name: "head", value: 0, clause: "x" }),
         }];
         vec![PopKindDecl::compile("household", &entries).unwrap()]
     }
@@ -346,7 +354,7 @@ mod tests {
         let country_of = |_: u32| None;
         let reading = Reading { register: &register, calendar: &calendar, country_of: &country_of };
         let born = phx_id::Date::new(1960, 1, 1).unwrap();
-        let person = || phx_core::Person { role: "head", born, attrs: Vec::new(), gone: false };
+        let person = || phx_core::Person::of(phx_core::person_word::PersonWord::new(born, 0));
         let households: Vec<Household> = (0..40)
             .map(|i| Household {
                 state: phx_core::HouseholdState::formed(0),
@@ -365,7 +373,14 @@ mod tests {
                     let start = (Day::new(400 - k * 7), k % 2 == 0);
                     let id = PartyRef::new(0, 0, phx_id::Slot::new(k));
                     let mut draws = Draws::new(key, Subject::from(id), today.get(), 0);
-                    let f = follow(&reading, ("household", id), &bound, (h, &mut buffers), (today, start), &mut draws);
+                    let f = follow(
+                        &reading,
+                        ("household", id, kinds()[0].blank),
+                        &bound,
+                        (h, &mut buffers),
+                        (today, start),
+                        &mut draws,
+                    );
                     out.push((f.reached, f.next));
                 }
             }

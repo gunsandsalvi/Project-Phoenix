@@ -72,15 +72,15 @@ impl Core {
     /// What a firm's working owners' hours earn a month: each one's last wage point; none where an owner holds none.
     pub(crate) fn owners_pay(&self, firm: PartyKey, country: usize) -> Option<f64> {
         let law = self.labour.laws.get(country)?;
-        let decl = self.declared.household.as_ref()?;
         let mut pay = 0.0;
         for w in self.owners.working.get(&firm).into_iter().flatten() {
             let ps = self.persons.get(usize::from(w.household.kind()))?.as_ref()?;
             let at = ps.place_of(w.household.slot(), w.person)?;
             let word = ps.of(w.household.slot()).nth(at)?.word;
-            let point = phx_pop::person::unpack(decl, word)
-                .attr(sys_lab::LAST_POINT.name)
-                .filter(|p| *p != if_labour::class::NO_POINT)?;
+            let point = phx_core::person_word::PersonWord(word).get(sys_lab::LAST_POINT.field);
+            if point == if_labour::class::NO_POINT {
+                return None;
+            }
             pay += sys_lab::wages::wage_at(law, i64::from(point));
         }
         Some(pay)

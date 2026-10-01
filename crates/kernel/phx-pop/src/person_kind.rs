@@ -10,7 +10,7 @@ use phx_store::{AddressSpace, Backing, SystemBacking};
 use crate::directory::Directory;
 use crate::kinds::{Attr, AttrW, KindStore, Opening, Row};
 use crate::layout::{Layout, PERSON};
-use crate::person_word::{Field, PersonWord, Skills};
+use phx_core::person_word::{Field, PersonWord, Skills};
 
 /// The group every read of a person gathers.
 const CORE: u8 = 0;

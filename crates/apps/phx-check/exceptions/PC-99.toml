@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 755 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 741 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -800,12 +800,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_jobs.rs"
-item = "Core::put_last_point"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_jobs.rs"
 item = "activity_rates"
 what = "`.collect()`"
 count = 1
@@ -868,7 +862,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::hire"
 what = "`.clone()`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_labour.rs"
@@ -938,18 +932,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::searches_again"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::seekers"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::seekers"
 what = "`.collect()`"
 count = 1
@@ -975,12 +957,6 @@ count = 1
 [[site]]
 path = "crates/assembly/phx-world/src/core_labour.rs"
 item = "Core::separate"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_labour.rs"
-item = "Core::set_last_point"
 what = "`.clone()`"
 count = 1
 
@@ -2792,24 +2768,6 @@ count = 2
 
 [[site]]
 path = "crates/kernel/phx-pop/src/kind.rs"
-item = "PopKindDecl::compile"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-pop/src/kind.rs"
-item = "PopKindDecl::compile"
-what = "`Vec::new`"
-count = 3
-
-[[site]]
-path = "crates/kernel/phx-pop/src/kind.rs"
-item = "PopKindDecl::compile"
-what = "`format!`"
-count = 4
-
-[[site]]
-path = "crates/kernel/phx-pop/src/kind.rs"
 item = "compile_kinds"
 what = "`Vec::new`"
 count = 1
@@ -2818,12 +2776,6 @@ count = 1
 path = "crates/kernel/phx-pop/src/kind.rs"
 item = "compile_kinds"
 what = "`Vec::with_capacity`"
-count = 1
-
-[[site]]
-path = "crates/kernel/phx-pop/src/person.rs"
-item = "unpack"
-what = "`Vec::new`"
 count = 1
 
 [[site]]

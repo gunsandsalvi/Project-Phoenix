@@ -1,4 +1,4 @@
-//! The labour kind as `sys-lab` declares it: the employment line kind, the person attributes of the labour state, the
+//! The labour kind as `sys-lab` declares it: the employment line kind, the person fields of the labour state, the
 //! streams its matching draws from, the compile of each country's law, and its decisions.
 
 use phx_core::decisions::DecisionPointDecl;
@@ -12,15 +12,15 @@ use crate::law::Law;
 pub type Adapt = fn(phx_num::Missing<(i64, u32)>, phx_num::Missing<i64>, i64, u32) -> i64;
 
 /// The labour kind: the employment line kind's name and the reasons hires, separations, severance and reviews move under; the
-/// person attributes of the labour state, the occupation and the last wage point; the streams of tastes, of the
+/// person fields of the labour state, the occupation, the last wage point and the education; the streams of tastes, of the
 /// meeting of an application, of the employers' lots and of their reviews' phase; the visits on which employers decide, their production
 /// schedule's; the hazard persons retire by; each country's law; its decisions; its wage points' arithmetic, the offer its fill history sets and the severance a separation owes.
 #[derive(Clone, Copy, Debug)]
 pub struct LabourKind {
-    pub state: &'static str,
-    pub occupation: &'static str,
-    pub last_point: &'static str,
-    pub education: &'static str,
+    pub state: phx_core::person_word::Field,
+    pub occupation: phx_core::person_word::Field,
+    pub last_point: phx_core::person_word::Field,
+    pub education: phx_core::person_word::Field,
     pub taste_stream: &'static str,
     pub meeting_stream: &'static str,
     pub lot_stream: &'static str,

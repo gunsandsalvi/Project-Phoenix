@@ -1,8 +1,9 @@
 //! The opening's households: each region's persons drawn by age and sex from its country's declared distributions,
 //! formed into households, and each household made an agent, region by region.
 
-use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, MALE, SEX};
+use if_pop::{ADULT, CHILD, EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEAD, HEALTH, MALE, PARTNER, SEX};
 use phx_core::calendar::daycount::actual_days;
+use phx_core::person_word::{PersonWord, ROLE};
 use phx_core::register::values::{Distribution, Table2, TypeSet};
 use phx_core::{
     Household, HouseholdState, OpeningCountry, Person, PrimDecl, Register, StreamDef, ValueType, apportion,
@@ -18,7 +19,6 @@ use crate::compose::{self, Member, Pick, Place, Pool, Rules, Type};
 use crate::consts::{
     BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, WORKING_AGE,
 };
-use crate::household::Role;
 use crate::{
     CompositionStream, EducationStream, HealthStream, MeansStream, PersonsStream, Prims, RegionsStream, SitesStream,
 };
@@ -390,21 +390,21 @@ fn index(v: u32) -> usize {
 }
 
 /// A drawn person as its household holds it.
-fn person(country: &Country, m: &Member, (d, health, school): (&mut Draws, &mut Draws, &mut Draws)) -> Person {
+fn person(
+    country: &Country,
+    (m, blank): (&Member, PersonWord),
+    (d, health, school): (&mut Draws, &mut Draws, &mut Draws),
+) -> Person {
     let role = match m.place {
-        Place::Head => Role::Head,
-        Place::Partner => Role::Partner,
-        Place::Adult => Role::Adult,
-        Place::Child => Role::Child,
+        Place::Head => HEAD,
+        Place::Partner => PARTNER,
+        Place::Adult => ADULT,
+        Place::Child => CHILD,
     };
     let disabled = country.disabled(m, health);
     let education = if m.place == Place::Child { EDUCATION_UNRECORDED } else { country.education(m, school) };
-    Person {
-        role: role.name(),
-        born: country.born(m, d),
-        attrs: vec![(SEX.name, m.sex), (HEALTH.name, disabled), (EDUCATION.name, education)],
-        gone: false,
-    }
+    let word = blank.born_on(country.born(m, d)).with(ROLE, role.value);
+    Person::of(word.with(SEX.field, m.sex).with(HEALTH.field, disabled).with(EDUCATION.field, education))
 }
 
 /// A household drawn in a region, before the books hold it: the subject its draws are keyed by, what formed it, its
@@ -427,7 +427,7 @@ pub struct Formed {
 pub fn draw_country(
     p: &Prims,
     register: &Register,
-    (opening_ctx, date): (&phx_core::OpeningCtx<'_>, phx_id::Date),
+    (opening_ctx, date, blank): (&phx_core::OpeningCtx<'_>, phx_id::Date, PersonWord),
     c: &OpeningCountry,
 ) -> Vec<(u32, Vec<Formed>)> {
     let country = Country::of(p, register, c, date);
@@ -437,7 +437,7 @@ pub fn draw_country(
     c.regions
         .iter()
         .zip(shares)
-        .map(|((region, land), people)| (*region, draw_region(&country, opening_ctx, (*region, land, people))))
+        .map(|((region, land), people)| (*region, draw_region((&country, blank), opening_ctx, (*region, land, people))))
         .collect()
 }
 
@@ -445,7 +445,7 @@ pub fn draw_country(
 /// its place in it, so a region is drawn alone; with the persons it counts disabled and by age band. Each is sited on a
 /// tile of the region's land, every tile alike, as the region's persons are shared by its land.
 fn draw_region(
-    country: &Country,
+    (country, blank): (&Country, PersonWord),
     opening_ctx: &phx_core::OpeningCtx<'_>,
     (region, land, people): (u32, &[phx_id::TileId], u64),
 ) -> Vec<Formed> {
@@ -464,7 +464,7 @@ fn draw_region(
         let mut school = opening_ctx.draws(&EducationStream::DECL, subject);
         let mut persons = Vec::with_capacity(members.len());
         for m in &members {
-            let p = person(country, m, (&mut d, &mut health, &mut school));
+            let p = person(country, (m, blank), (&mut d, &mut health, &mut school));
             persons.push(p);
         }
         let h = Household { state: HouseholdState::formed(region), persons };
