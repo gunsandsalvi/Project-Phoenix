@@ -389,7 +389,7 @@ impl Core {
             }
             self.freight.today.departed += b.units;
             self.recognise(b.carrier, Line::Revenue, b.freight);
-            if self.accounts.opening.contains_key(b.carrier) {
+            if self.keeps_books(b.carrier) {
                 self.accounts.revenue += i128::from(b.freight);
             }
             self.recognise(b.shipper, Line::ServicesUsed, b.freight);

@@ -956,7 +956,7 @@ pub const LC_1_24: Check = live_check! {
 /// The accounts family found nothing: every firm's and bank's equity account equals what its books show at every
 /// close.
 fn accounts_clean(w: Inspector<'_>) -> Outcome {
-    if w.core().accounts.opening.is_empty() {
+    if w.core().accounts.opened.is_none() {
         return Outcome::NotYet("no party keeps an equity account in the run");
     }
     match w.findings().iter().find(|f| f.family == "accounts") {

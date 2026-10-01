@@ -97,7 +97,12 @@ impl Core {
             "taxes" => *self.taxes.arisen.first_mut().ok_or_else(refused)? += 1,
             "debt" => self.bills.issued += 1,
             "loans" => self.loan_books.values_mut().next().ok_or_else(refused)?.book += 1,
-            "accounts" => *self.accounts.opening.values_mut().next().ok_or_else(refused)? += 1,
+            "accounts" => {
+                let bank = self.banks.as_ref().map(crate::bank_store::BankStore::kind).ok_or_else(refused)?;
+                let slot = self.directory.live_slots(bank).next().ok_or_else(refused)?;
+                let (store, books) = self.banks.as_mut().ok_or_else(refused)?.books_mut();
+                books.add(store, slot, crate::account_lines::Line::Revenue, 1);
+            }
             "revenue" => self.accounts.revenue += 1,
             "deposits" => *self.deposits.remaining.iter_mut().flatten().next().ok_or_else(refused)? += 1,
             _ => return Err(format!("the audit runs no family `{family}`")),

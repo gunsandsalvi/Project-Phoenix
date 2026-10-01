@@ -158,8 +158,22 @@ const FIRM_LISTS: GroupDecl = GroupDecl {
 /// The firm's byte map, 528 bytes.
 pub const FIRM: KindMap = KindMap { kind: "firm", groups: &[FIRM_HOT, FIRM_WARM, FIRM_COLD, FIRM_LISTS] };
 
-/// Every group of both maps within its width, and each map within a store.
-const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM));
+/// A bank's books: its income-statement lines, its equity and its net assets.
+const BANK_BOOKS: GroupDecl = GroupDecl {
+    name: "books",
+    width: 96,
+    words: &[
+        word("income_lines", I64, 10, false, "K-87"),
+        word("equity", I64, 1, false, "K-88"),
+        word("net_assets", I64, 1, false, "K-88"),
+    ],
+};
+
+/// The bank's byte map, its books alone until its lending and its site move onto it.
+pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS] };
+
+/// Every group of the maps within its width, and each map within a store.
+const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM) && fits(&BANK));
 /// The household's 174 bytes, 128 of them hot: two cache lines a visit gathers.
 const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
 /// The firm's 528 bytes, 192 of them hot and 192 warm: three cache lines each.

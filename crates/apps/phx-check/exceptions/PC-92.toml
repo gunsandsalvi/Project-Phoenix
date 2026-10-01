@@ -1,10 +1,4 @@
-# The sites PC-92 admits for now, 234 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_accounts.rs"
-item = "Accounts"
-what = "PartyMap"
-count = 2
+# The sites PC-92 admits for now, 232 in all, held to `phx_check.exceptions_pc92`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"

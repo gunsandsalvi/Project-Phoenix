@@ -36,6 +36,8 @@ pub struct Core {
     pub firms: Option<crate::firm_store::FirmStore>,
     /// The households' own state on their kind's store, opened with the households.
     pub households: Option<crate::household_store::HouseholdStore>,
+    /// The banks' books on their kind's store, opened with the banks.
+    pub banks: Option<crate::bank_store::BankStore>,
     /// Each country's central bank, the issuer of its currency, by the currency's index.
     pub issuers: Vec<PartyKey>,
     pub bank_kind: Option<u8>,

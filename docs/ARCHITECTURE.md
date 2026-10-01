@@ -581,7 +581,7 @@ ranks.
 
 | Crate or project | Owns |
 | --- | --- |
-| `phx-world` | The registry and schema compilation (§5.3); the opening's orchestration (§10); the day runner walking the stage table (K-23, §7.18); save orchestration (K-104, §11); the player's decider (§12); the inspector. It assembles and routes: once the core closes (S1.360) it holds no store and no per-party pass, `party_map.rs` and every `core_*.rs` store holder having been deleted by the migrations. |
+| `phx-world` | The registry and schema compilation (§5.3); the opening's orchestration (§10); the day runner walking the stage table (K-23, §7.18); save orchestration (K-104, §11); the player's decider (§12); the inspector. It assembles and routes: once the core closes (S1.360) it holds no store and no per-party pass, every `core_*.rs` store holder having been deleted by the migrations. |
 | `phx-obs` | Read-only views: a party (OBS.8), the map (OBS.12), and in the inspector build the realism recorder (§14.8). |
 | `phx-fin` | The finished-volume measure: one module per base, each filling its base at the design point (`perf/design.toml`) and timing it (§14.7; created at S1.116). |
 | `phx-cli` | `run` (with its report, each day's stages timed, which `tools/bench.sh` reads), `inject` and `fin`; the live-check suite. `realism`, `chains` and `register-report` arrive with Stage 7 (§14.4). |
@@ -2379,6 +2379,9 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
   lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
 - **Institution**: per kind, the groups its declaration gives (most ≤ 1 024 B; unions and public authorities ≈ 3 KB).
+  The bank's map holds its books alone (S1.200): `books`, 96 B — income-statement lines 10 × i64 (K-87), equity and
+  net assets 2 × i64 (K-88) — on `phx-world`'s `BankStore`, beside its site in `phx-core`'s record until its lending
+  record and site join it.
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
   map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
@@ -3068,9 +3071,13 @@ Status: planned (S1.328–S1.335)
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
 planned (S1.328, S1.329).
 
-**Today** (`phx-world`'s `core_accounts.rs`; ACC.4, ACC.10, FRM.13): `Accounts` keeps each firm's and bank's equity
-account at the opening (`open_accounts`, from `net_assets`) and its `Income` by line since. `recognise` enters an event
-on its line: deliveries (revenue, cost of sales, services used), spoilage and perished capacity (goods lost), a
+**Today** (`phx-world`'s `core_accounts.rs` and `account_lines.rs`; ACC.4, ACC.10, FRM.13): each firm and bank keeps
+its books on its kind's store (K-32): its equity at the opening in its `equity` word (`open_accounts`, from
+`net_assets`; past an i64 stops the run) and its ten lines since in its `income_lines` words (the firm's cold row, the
+bank map's `books` group), each an i64 whose overflow stops the run (`account_lines::added`). `BookWords` holds a kind's
+handles to them; `Core::books_of` finds the store that keeps a kind's books, and a kind with owners that keeps none
+stops the run. A party's equity account is its opening equity and the income its lines make (`Lines::net`;
+`Core::equity_of`, `lines_of`). `recognise` enters an event on its line once the accounts have opened: deliveries (revenue, cost of sales, services used), spoilage and perished capacity (goods lost), a
 service's inputs used (cost of sales), the day's settled flows by reason (`account_flows`: wages, severance and taxes
 paid; a loan payment as interest), and the families' moves (`account_moves`: principal repaid taken back out of
 interest, arrears' changes accrued, balances written off).
@@ -3080,8 +3087,9 @@ interest, arrears' changes accrued, balances written off).
 Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
 planned (S1.330, S1.331).
 
-**Today** (`core_accounts.rs`): `audit_accounts` holds each equity account to `net_assets` — money, goods at cost and
-what it is owed, less what it owes and a bank's deposits — and the revenue recognised to the money received for sales.
+**Today** (`core_accounts.rs`): `audit_accounts`, a sweep over the live parties of every kind with owners at each
+close, holds each equity account to `net_assets` — money, goods at cost and what it is owed, less what it owes and a
+bank's deposits — and the revenue recognised to the money received for sales.
 
 #### K-89 Carrying values
 
@@ -4318,7 +4326,7 @@ credited while the world holds it (GEN.10).
     | PC-17 | outside `phx-id` and `phx-core`'s `calendar/`, a call of `days_from_civil`/`civil_from_days` or a number added to or taken from a day; on the day's paths, `Calendar::date`, `civil_date` or `days_after` (the day's facts are read instead; today's sites admitted by its exceptions file) |
     | PC-18 | a primitive's value reached other than through `Prim` or a `PolicyBook`'s handle; `toml` or `serde` in a world crate other than `phx-core`'s `register/` and the data readers (`phx-world`, `phx-obs`, `phx-cli`); committed data outside its places; and the placeholder SHAPEs of `data/` above their ratchet |
     | PC-19 | `Draws::new` outside `phx-rand` and `phx-core`'s `streams.rs`; `WorldStreams`, `open_keyed`, `ObserverDraws` and `AdviceDraws` named outside their listed files (§5.3) |
-    | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map, `PartyMap`), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
+    | PC-92 | on the day's paths — every non-test module of the core's crates (§3.1's kernel list), `phx-world`'s `day.rs` and `core_*.rs`, every `sys-*/src/rules/**` module, less the cold ones named with their reasons in `rules/hot_paths.rs` (the register and contributions of `phx-core`, `phx-store`'s saving modules, `phx-world`'s `registry.rs`, `compile.rs` and `save/`, and any `opening/` module), a new file of a hot crate hot by default — a map (`BTreeMap`, `BTreeSet`, `HashMap`, `HashSet`, the kernel's map), a trait object, a struct field typed `Vec<Vec<_>>`, `Vec<i128>`, `Column<i128>`, `Vec<Option<_>>` or `Column<Option<_>>` (a scalar total is not a field of those), or a field named `next`, `prev`, `heads` or `next_*` outside `phx-store`; its exceptions file admits today's sites (S1.120) |
     | PC-96 | in a hot module of `phx-world` or a system (PC-92's hot set; the kernel's crates implement the traversals and are not read), a whole-table walk: a call of `live_slots`, `live_every`, `open_slots`, `firm_slots`, `deposits_of`, `money_totals` or `issuer_held`, or of `all`, `totals` or `money` with no argument, or a range `0..x.len()`, `0..x.count()` or `0..x.rows()`; admitted inside what is handed to `for_chunks`, `for_agenda` or `apply_by_range`, in a function carrying `#[sweep(store, cycle = …)]` or `#[opening]`; a `#[sweep]` without its cycle is refused; its exceptions file admits today's sites (S1.121) |
     | PC-97 | in `phx-world` and the systems, a literal `None` at the pool's place in a call of a public kernel function or method taking `Option<&Pool>` (collected from the kernel's crates); in any world crate but `phx-exec`, a call `Pool::map`, `Pool::for_each` or `pool::each`/`map`, or `.map`/`.for_each`/`.each` on a receiver named `…pool`, so only the kernel's traversals dispatch; in a system's `src/rules/**`, a parameter `&mut T` but the kernel's output buffers (`DayBuf`, `DayBufs` (planned, S1.160), `IntentBuf`, `OptionSet` (planned, S1.154)); tests are not read; its exceptions file admits no site since S1.169 |
     | PC-98 | in PC-92's hot set, outside functions marked `#[opening]` (`phx-macros`: a marker on a function, emitted unchanged, refused on anything else), a read by name: a call of the register's readers (`count`, `fixed`, `table1`, `table2`, `products`, `stored_by_id`, `value`) or any method whose first argument is a string literal on a receiver held as `register` or `reg`; `==` or `!=` with a string literal; `.starts_with`, `.ends_with` or `.contains` of a string literal. A primitive, kind, family, reason or market is read by its handle, bound in the opening (Law 10); a literal in a message is no comparison; its exceptions file admits today's sites (S1.123) |

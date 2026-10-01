@@ -10,6 +10,7 @@ use phx_pop::kinds::{AttrW, KindStore, Opening, Row};
 use phx_pop::layout::{Extra, FIRM, IntTy, Layout, WordDecl};
 use phx_store::{AddressSpace, SystemBacking};
 
+use crate::account_lines::BookWords;
 use crate::consts::DAYS_A_YEAR;
 use crate::consts::firm::{PART_ONE, PRODUCTIVITY_ONE, RATE_ONE};
 
@@ -37,6 +38,7 @@ struct Words {
     sold: AttrW<i64>,
     seen: AttrW<i64>,
     reviewed: AttrW<u16>,
+    books: BookWords,
 }
 
 fn words() -> Words {
@@ -64,6 +66,7 @@ fn words() -> Words {
         sold: w!(i64, "sales_since_review", 0, "K-74"),
         seen: w!(i64, "sales_since_review", 1, "K-74"),
         reviewed: w!(u16, "last_review", 0, "K-32"),
+        books: BookWords::bind(&mut l),
     }
 }
 
@@ -133,6 +136,17 @@ impl FirmStore {
             Some(w) => w,
             None => violation!(clause = "REP.1", "a firm store read before its handles are bound"),
         }
+    }
+
+    /// The firms' rows and the words their books are kept in.
+    #[must_use]
+    pub fn books(&self) -> (&KindStore<SystemBacking>, BookWords) {
+        (&self.store, self.w().books)
+    }
+
+    pub fn books_mut(&mut self) -> (&mut KindStore<SystemBacking>, BookWords) {
+        let books = self.w().books;
+        (&mut self.store, books)
     }
 
     /// The kind its firms are of.

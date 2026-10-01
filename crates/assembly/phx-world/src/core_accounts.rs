@@ -7,107 +7,90 @@
 
 use std::collections::BTreeMap;
 
-use crate::party_map::PartyMap;
-
 use phx_core::findings::{Finding, FindingOwner, Unit};
 use phx_core::flows::Flow;
 use phx_id::{Day, PartyKey};
-use phx_macros::clause;
+use phx_macros::{clause, opening, sweep};
+use phx_num::violation;
+use phx_pop::kinds::KindStore;
+use phx_store::SystemBacking;
 
+use crate::account_lines::BookWords;
+pub use crate::account_lines::{Line, Lines};
 use crate::consts::reason::{CARRIED, REPAID, SEVERANCE, SOLD, TAXED, WAGE};
 use crate::core::Core;
 
-/// A party's income since the opening, by line.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, phx_macros::Saved)]
-pub struct Income {
-    pub revenue: i128,
-    pub cost_of_sales: i128,
-    pub goods_lost: i128,
-    pub services_used: i128,
-    pub wages: i128,
-    pub taxes: i128,
-    pub interest_paid: i128,
-    pub interest_received: i128,
-    pub written_off: i128,
-    pub depreciation: i128,
-}
-
-impl Income {
-    /// The income the lines make.
-    #[must_use]
-    pub fn net(&self) -> i128 {
-        self.revenue + self.interest_received
-            - self.cost_of_sales
-            - self.goods_lost
-            - self.services_used
-            - self.wages
-            - self.taxes
-            - self.interest_paid
-            - self.written_off
-            - self.depreciation
-    }
-}
-
-/// A line of income an event moves.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, phx_macros::Saved)]
-pub enum Line {
-    Revenue,
-    CostOfSales,
-    GoodsLost,
-    ServicesUsed,
-    Wages,
-    Taxes,
-    InterestPaid,
-    InterestReceived,
-    WrittenOff,
-    Depreciation,
-}
-
-/// The accounts: the day they opened, each owned party's equity account at the opening and its income since, and
-/// the money received for sales against the revenue recognised on their delivery.
+/// The accounts: the day they opened, and the money received for sales against the revenue recognised on their
+/// delivery. Each owned party's equity at the opening and its lines since are its kind's store's.
 #[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Accounts {
     pub opened: Option<Day>,
-    pub opening: PartyMap<i128>,
-    pub income: PartyMap<Income>,
     pub sales_received: i128,
     pub revenue: i128,
 }
 
-impl Accounts {
-    /// A party's equity account.
-    #[must_use]
-    pub fn equity(&self, party: PartyKey) -> Option<i128> {
-        let opening = self.opening.get(party)?;
-        Some(opening + self.income.get(party).map_or(0, Income::net))
-    }
-}
-
 impl Core {
-    /// Whether a party keeps an equity account: its kind's legal form has owners who hold its equity.
-    fn owned(&self, party: PartyKey) -> bool {
-        crate::core_kinds::of(&self.declared.kinds, usize::from(party.kind())).has_owners
+    /// Whether a kind keeps books: its legal form has owners who hold its equity.
+    fn kind_owned(&self, kind: u8) -> bool {
+        crate::core_kinds::of(&self.declared.kinds, usize::from(kind)).has_owners
     }
 
-    /// An event of a party's income entered on its line, where the party keeps an equity account.
+    fn owned(&self, party: PartyKey) -> bool {
+        self.kind_owned(party.kind())
+    }
+
+    /// Whether a party keeps an equity account now: its kind keeps books, and the accounts have opened.
+    pub(crate) fn keeps_books(&self, party: PartyKey) -> bool {
+        self.accounts.opened.is_some() && self.owned(party)
+    }
+
+    /// The store a kind that keeps books keeps them in, with its book words; none for a kind that keeps none.
+    fn books_of(&self, kind: u8) -> Option<(&KindStore<SystemBacking>, BookWords)> {
+        match (self.firms.as_ref(), self.banks.as_ref()) {
+            (Some(f), _) if f.kind() == kind => Some(f.books()),
+            (_, Some(b)) if b.kind() == kind => Some(b.books()),
+            _ => None,
+        }
+    }
+
+    fn books_mut_of(&mut self, kind: u8) -> Option<(&mut KindStore<SystemBacking>, BookWords)> {
+        match (self.firms.as_mut(), self.banks.as_mut()) {
+            (Some(f), _) if f.kind() == kind => Some(f.books_mut()),
+            (_, Some(b)) if b.kind() == kind => Some(b.books_mut()),
+            _ => None,
+        }
+    }
+
+    /// An event of a party's income entered on its line, where the party keeps an equity account. A party whose kind
+    /// keeps books on no store stops the run.
     pub(crate) fn recognise(&mut self, party: PartyKey, line: Line, amount: i64) {
-        if amount == 0 || !self.accounts.opening.contains_key(party) {
+        if amount == 0 || !self.keeps_books(party) {
             return;
         }
-        let Some(i) = self.accounts.income.entry_or_default(party) else { return };
-        let a = i128::from(amount);
-        match line {
-            Line::Revenue => i.revenue += a,
-            Line::CostOfSales => i.cost_of_sales += a,
-            Line::GoodsLost => i.goods_lost += a,
-            Line::ServicesUsed => i.services_used += a,
-            Line::Wages => i.wages += a,
-            Line::Taxes => i.taxes += a,
-            Line::InterestPaid => i.interest_paid += a,
-            Line::InterestReceived => i.interest_received += a,
-            Line::WrittenOff => i.written_off += a,
-            Line::Depreciation => i.depreciation += a,
+        let Some((store, books)) = self.books_mut_of(party.kind()) else {
+            violation!(clause = "ACC.4", "a party with owners whose kind keeps no books", kind = party.kind());
+        };
+        books.add(store, party.slot(), line, amount);
+    }
+
+    /// A party's lines since the accounts opened; none for a party that keeps none.
+    #[must_use]
+    pub fn lines_of(&self, party: PartyKey) -> Option<Lines> {
+        if !self.keeps_books(party) {
+            return None;
         }
+        let (store, books) = self.books_of(party.kind())?;
+        books.lines(store, party.slot())
+    }
+
+    /// A party's equity account: its equity at the opening and the income its lines make.
+    #[must_use]
+    pub fn equity_of(&self, party: PartyKey) -> Option<i128> {
+        if !self.keeps_books(party) {
+            return None;
+        }
+        let (store, books) = self.books_of(party.kind())?;
+        books.equity(store, party.slot())
     }
 
     /// What a party's balance sheet shows: its money, its goods and plant at their cost, its projects at what they
@@ -162,22 +145,33 @@ impl Core {
         phx_core::store::deposits_of(self.kinds.iter(), usize::try_from(banks).unwrap_or(0))
     }
 
-    /// The accounts opened: every firm's and bank's equity account at what its balance sheet shows.
+    /// The accounts opened: every firm's and bank's equity account at what its balance sheet shows, written to its
+    /// kind's store; an equity past an i64 stops the run.
     #[clause("ACC.4")]
+    #[opening]
     pub fn open_accounts(&mut self, today: Day) {
         let (deposits, projects) = (self.deposits(), self.project_costs());
-        let mut opening = PartyMap::default();
+        let mut opening = Vec::new();
         for kind in self.directory.kind_numbers() {
             for slot in self.directory.live_slots(kind) {
                 let party = PartyKey::new(kind, slot);
                 if self.owned(party)
                     && let Some(worth) = self.net_assets(party, (&deposits, &projects))
                 {
-                    opening.insert(party, worth);
+                    let Ok(worth) = i64::try_from(worth) else {
+                        phx_num::capacity_exceeded!("a party's equity at the opening", i64::MAX, worth);
+                    };
+                    opening.push((party, worth));
                 }
             }
         }
-        self.accounts = Accounts { opened: Some(today), opening, ..Accounts::default() };
+        for (party, worth) in opening {
+            let Some((store, books)) = self.books_mut_of(party.kind()) else {
+                violation!(clause = "ACC.4", "a party with owners whose kind keeps no books", kind = party.kind());
+            };
+            books.open(store, party.slot(), worth);
+        }
+        self.accounts = Accounts { opened: Some(today), ..Accounts::default() };
     }
 
     /// The day's settled flows entered as income: wages, severance and taxes paid; what a loan's payments paid
@@ -243,19 +237,17 @@ impl Core {
     /// Every equity account held to what its party's balance sheet shows, and the revenue recognised to the money
     /// received for sales; a difference is a finding.
     #[clause("ACC.10", "ACC.11", "ACC.16", "FRM.17", "II.5")]
+    #[sweep(store = books, reason = "every equity account is held to its party's books at each close")]
     pub(crate) fn audit_accounts(&mut self, day: Day) {
-        let parties: Vec<PartyKey> = self.accounts.opening.keys().collect();
+        if self.accounts.opened.is_none() {
+            return;
+        }
         let (deposits, projects) = (self.deposits(), self.project_costs());
         let mut found = Vec::new();
-        let mut ended = Vec::new();
+        let owned = self.directory.kind_numbers().filter(|k| self.kind_owned(*k));
+        let parties = owned.flat_map(|k| self.directory.live_slots(k).map(move |s| PartyKey::new(k, s)));
         for party in parties {
-            let live = self.directory.is_live(party.kind(), party.slot());
-            if !live {
-                ended.push(party);
-                continue;
-            }
-            let (Some(equity), Some(worth)) =
-                (self.accounts.equity(party), self.net_assets(party, (&deposits, &projects)))
+            let (Some(equity), Some(worth)) = (self.equity_of(party), self.net_assets(party, (&deposits, &projects)))
             else {
                 continue;
             };
@@ -287,10 +279,6 @@ impl Core {
                     self.accounts.revenue, self.accounts.sales_received
                 ),
             });
-        }
-        for party in ended {
-            self.accounts.opening.remove(party);
-            self.accounts.income.remove(party);
         }
         self.found.extend(found);
     }

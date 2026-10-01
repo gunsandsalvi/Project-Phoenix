@@ -23,6 +23,7 @@ use phx_pop::persons::{Held, Persons};
 use phx_rand::float::len_u64;
 use phx_store::{AddressSpace, SystemBacking};
 
+use crate::bank_store::BankStore;
 use crate::consts::sheet::{BANKS, CURRENCY, DEPOSITS, GOVERNMENT, HOUSEHOLDS, RESERVES};
 use crate::consts::{AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, KIND_ROWS_PER_CHUNK};
 use crate::core::{Core, declared_kind, kind_number};
@@ -204,6 +205,7 @@ impl Core {
             directory,
             firms: None,
             households: None,
+            banks: None,
             issuers: Vec::new(),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),
@@ -296,6 +298,8 @@ impl Core {
             declared_kind(bound.agency),
             declared_kind(bound.bank),
         );
+        let rows = core.kind_rows(bank_kind);
+        core.banks = Some(BankStore::new(&mut core.space, crate::core::kind_number(bank_kind), rows));
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
             core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), (*name).to_owned(), *share)));
             let at = |instrument, sector| phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
@@ -321,7 +325,14 @@ impl Core {
             for (k, balance) in (0_u32..).zip(reserves) {
                 let site = sys_bnk::bank_site(&ctx, c, k);
                 let record = [MaybeI64::present(i64::from(site.get()))];
-                banks.push(core.begin_party(bank_kind, &record, Some(Opening { bank: AT_ISSUER, balance })));
+                let bank = core.begin_party(bank_kind, &record, Some(Opening { bank: AT_ISSUER, balance }));
+                let Some(r) = core.reference(bank) else {
+                    violation!(clause = "PTY.1", "a bank begun the directory does not name", slot = bank.slot().get());
+                };
+                if let Some(bs) = core.banks.as_mut() {
+                    bs.begin(&core.directory, r);
+                }
+                banks.push(bank);
             }
             let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c);
             let mut labour = rules.jobs.rule(o.register, date, c, Asked::of(o.register, c)?.by_occupation());

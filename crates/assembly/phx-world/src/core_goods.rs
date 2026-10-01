@@ -1876,7 +1876,7 @@ impl Core {
             // A sale is income on the day it is delivered: its price, less what its units cost.
             self.recognise(seller, Line::Revenue, d.paid);
             self.recognise(seller, Line::CostOfSales, carried.unwrap_or(0));
-            if self.accounts.opening.contains_key(seller) {
+            if self.keeps_books(seller) {
                 self.accounts.revenue += i128::from(d.paid);
             }
             if d.goods.payee == NATURE {

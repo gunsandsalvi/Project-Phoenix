@@ -148,6 +148,10 @@ pub const CORE_RANGE_BITS: u32 = 12;
 /// and the sales a day it expects in millionths, the units it sold since its last review and that review's day, its
 /// management's memory and switching types, the heuristic it relies on, the width of its sales' surprises and its sales as last seen, the return its management requires; the purposes its opening draws and its
 /// jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
+/// The income-statement lines a party with owners keeps: revenue, cost of sales, goods lost, services used, wages,
+/// taxes, interest paid and received, written off and depreciation.
+pub const LINES: usize = 10;
+
 pub mod household {
     /// The stance's place in a household's states byte: its top three bits, above the tenure's two and the credit
     /// stage's three.

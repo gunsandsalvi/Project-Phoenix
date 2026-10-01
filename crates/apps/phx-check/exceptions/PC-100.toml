@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 230 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 227 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -39,24 +39,6 @@ count = 1
 [[site]]
 path = "crates/assembly/phx-world/src/core.rs"
 item = "Core::count"
-what = "`.map_or`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_accounts.rs"
-item = "Accounts"
-what = "field `income`: `PartyMap`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_accounts.rs"
-item = "Accounts"
-what = "field `opening`: `PartyMap`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_accounts.rs"
-item = "Accounts::equity"
 what = "`.map_or`"
 count = 1
 
