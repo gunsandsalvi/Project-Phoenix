@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 221 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 218 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -68,21 +68,9 @@ count = 4
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_agencies.rs"
-item = "Agencies"
-what = "field `budget`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_agencies.rs"
-item = "Agencies"
-what = "field `targets`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_agencies.rs"
 item = "Core::post_agencies"
 what = "`.unwrap_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_audit.rs"

@@ -206,6 +206,7 @@ impl Core {
             firms: None,
             households: None,
             banks: None,
+            agency_store: None,
             issuers: Vec::new(),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),
@@ -300,6 +301,9 @@ impl Core {
         );
         let rows = core.kind_rows(bank_kind);
         core.banks = Some(BankStore::new(&mut core.space, crate::core::kind_number(bank_kind), rows));
+        let rows = core.kind_rows(agency_kind);
+        core.agency_store =
+            Some(crate::agency_store::AgencyStore::new(&mut core.space, crate::core::kind_number(agency_kind), rows));
         for (c, sheet) in o.countries.iter().zip(o.sheets) {
             core.closures.extend(sheet.closures.iter().map(|(name, share)| (c.id.get(), (*name).to_owned(), *share)));
             let at = |instrument, sector| phx_ledger::opening::whole(sheet.at(instrument, sector) * c.gdp);
@@ -318,6 +322,12 @@ impl Core {
                 &[MaybeI64::present(i64::from(site.get()))],
                 Some(Opening { bank: AT_ISSUER, balance: 0 }),
             );
+            let Some(r) = core.reference(agency) else {
+                violation!(clause = "PTY.1", "an agency begun the directory does not name", slot = agency.slot().get());
+            };
+            if let Some(a) = core.agency_store.as_mut() {
+                a.begin(&core.directory, r);
+            }
             core.agencies.push(Some(agency));
             let (_, _, weights) = sys_bnk::bank_weights(c);
             let reserves = core.apportion(("banks' reserves", c.id.get()), at(RESERVES, BANKS), &weights);

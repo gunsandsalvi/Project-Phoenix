@@ -4,7 +4,7 @@
 
 use phx_macros::{clause, opening};
 
-pub use crate::consts::{BANK, FIRM, HOUSEHOLD};
+pub use crate::consts::{AGENCY, BANK, FIRM, HOUSEHOLD};
 use crate::consts::{INT_BYTES, KIND_GROUPS};
 
 /// An integer a word holds; a store holds no other type.
@@ -120,7 +120,10 @@ pub struct Layout {
     pub kind: &'static str,
     pub widths: Vec<u16>,
     pub words: Vec<Placed>,
+    /// Whether each value's one writer is handed out: a bit a value, every word's values after the last's.
     written: Vec<u64>,
+    /// Each word's first value's place among the bits.
+    bases: Vec<u32>,
 }
 
 impl Layout {
@@ -166,14 +169,14 @@ impl Layout {
         if let Some(w) = names.windows(2).find(|w| matches!(w, [a, b] if a == b)).and_then(|w| w.first()) {
             return Err(format!("kind `{}` declares `{w}` twice", map.kind));
         }
-        if let Some(w) = words.iter().find(|w| u32::from(w.decl.count) > u64::BITS) {
-            return Err(format!(
-                "kind `{}`: `{}` holds more values than its writers are told apart",
-                map.kind, w.decl.name
-            ));
+        let mut bases = Vec::with_capacity(words.len());
+        let mut values = 0_u32;
+        for w in &words {
+            bases.push(values);
+            values += u32::from(w.decl.count);
         }
-        let written = vec![0; words.len()];
-        Ok(Layout { kind: map.kind, widths: map.groups.iter().map(|g| g.width).collect(), words, written })
+        let written = vec![0; usize::try_from(values.div_ceil(u64::BITS)).unwrap_or(usize::MAX)];
+        Ok(Layout { kind: map.kind, widths: map.groups.iter().map(|g| g.width).collect(), words, written, bases })
     }
 
     #[opening]
@@ -221,8 +224,9 @@ impl Layout {
         if declared != Some(base) {
             return Err(format!("kind `{}`: `{name}` is written by {declared:?}, not `{base}`", self.kind));
         }
-        let bit = 1_u64 << i;
-        match self.written.get_mut(at) {
+        let value = self.bases.get(at).map_or(u32::MAX, |b| b + u32::from(i));
+        let bit = 1_u64 << (value % u64::BITS);
+        match self.written.get_mut(usize::try_from(value / u64::BITS).unwrap_or(usize::MAX)) {
             Some(handed) if *handed & bit == 0 => {
                 *handed |= bit;
                 Ok(crate::kinds::AttrW(a))

@@ -1,4 +1,5 @@
 pub mod account_lines;
+pub mod agency_store;
 pub mod bank_store;
 pub mod bound;
 pub mod compile;

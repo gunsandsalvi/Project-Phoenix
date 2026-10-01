@@ -535,7 +535,8 @@ public administration's hours of the occupation over all the employees' hours th
 (`opening::asked`) — and every job no firm's way takes (the armed forces'); the rest are dealt to firms. Its head buys
 the state's final uses at retail (`SOC.consume`) and keeps its staff: each business day it posts what it lacks of its
 opening staff by region and occupation, as far as its appropriation for wages pays (`SOC.staff`; the appropriation is
-its opening staff's wages a month, a placeholder naming POL until the budget votes it); its vacancies are met, selected
+its opening staff's wages a month, a placeholder naming POL until the budget votes it), the staff it keeps and its
+appropriation the agency's own staffing record on its kind's store (`AgencyStore`, K-32); its vacancies are met, selected
 by the head of its service and raised when they stand, as any employer's, and a person it hires leaves the job it
 held, whoever the employer. Its account is at the issuer beside the treasury's, the state's money, and its treasury
 funds it each day for what it pays beyond what it holds (a flow of `FUNDED`), so a treasury short of cash leaves its
@@ -2387,7 +2388,10 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   The bank's map (S1.200–S1.202), 344 B on `phx-world`'s `BankStore`: `books`, 96 B — income-statement lines
   10 × i64 (K-87), equity and net assets 2 × i64 (K-88); `lending`, 240 B — standard u32, applications, declined,
   quoted and lent 4 × u64, written off since the last review i64, loan-days 16 × u64 and defaults 16 × u32 by class
-  (BNK) · reserve 4; `reserves`, 8 B — the reserves target, a share of deposits in 2⁻³² parts i64 (CB). Its site stays in `phx-core`'s record until the remaining kinds move (S1.206).
+  (BNK) · reserve 4; `reserves`, 8 B — the reserves target, a share of deposits in 2⁻³² parts i64 (CB). The
+  agency's map (S1.205), 2 824 B on `AgencyStore`: `staffing` — the staff it keeps 64 regions × 11 occupations × u32,
+  region-major, each absent where it keeps none (a world of more regions refused at the opening), and its appropriation
+  i64 (SOC). Their sites stay in `phx-core`'s record until the remaining kinds move (S1.206).
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
   map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its

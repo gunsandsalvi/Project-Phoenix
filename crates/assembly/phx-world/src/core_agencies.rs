@@ -28,11 +28,10 @@ pub struct AgencyDay {
     pub posted: u64,
 }
 
-/// The agencies: the staff each keeps by region and occupation, its appropriation for wages a month, and their days.
+/// The agencies' days; the staff each keeps by region and occupation and its appropriation for wages a month are its
+/// kind's store's.
 #[derive(Debug, Default, phx_macros::Saved)]
 pub struct Agencies {
-    pub targets: BTreeMap<(PartyKey, u32, u32), u32>,
-    pub budget: BTreeMap<PartyKey, i64>,
     pub days: Vec<AgencyDay>,
 }
 
@@ -65,12 +64,12 @@ impl Core {
     /// Each agency's staff and wages at the opening, which it keeps.
     #[clause("SOC.2", "SOC.8")]
     pub fn open_agencies(&mut self) {
-        let mut agencies = Agencies::default();
-        for (agency, region, occupation, amount) in self.posts_held(None) {
-            *agencies.targets.entry((agency, region, occupation)).or_insert(0) += 1;
-            *agencies.budget.entry(agency).or_insert(0) += amount;
+        let posts = self.posts_held(None);
+        let Some(store) = self.agency_store.as_mut() else { return };
+        for (agency, region, occupation, amount) in posts {
+            store.keep_post(agency.slot(), (region, occupation), amount);
         }
-        self.agencies_kept = agencies;
+        self.agencies_kept = Agencies::default();
     }
 
     /// Each agency of a country on its business day posts what it lacks of the staff it keeps, its head's decision
@@ -104,19 +103,17 @@ impl Core {
                     bill += v.wage * f64::from(v.open);
                 }
             }
-            let budget = self.agencies_kept.budget.get(&agency).copied().unwrap_or(0);
+            let Some(record) = self.agency_store.as_ref().and_then(|a| a.staffing(agency.slot())) else { continue };
+            let budget = record.budget();
             let mut gaps = Vec::new();
-            for ((a, region, occupation), target) in &self.agencies_kept.targets {
-                if *a != agency {
-                    continue;
-                }
-                let held = have.get(&(*region, *occupation)).copied().unwrap_or(0);
-                if held < *target {
-                    let point = self.offer_point(ctx, &law, (agency, *occupation), &means);
+            for (region, occupation, target) in record.targets() {
+                let held = have.get(&(region, occupation)).copied().unwrap_or(0);
+                if held < target {
+                    let point = self.offer_point(ctx, &law, (agency, occupation), &means);
                     gaps.push(sys_soc::points::Gap {
-                        region: *region,
-                        occupation: *occupation,
-                        jobs: *target - held,
+                        region,
+                        occupation,
+                        jobs: target - held,
                         wage: ctx.wage_at(&law, point),
                     });
                 }

@@ -198,8 +198,27 @@ const BANK_RESERVES: GroupDecl =
 /// until the remaining kinds move.
 pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS, BANK_LENDING, BANK_RESERVES] };
 
+/// The regions an agency's staffing record holds, more than any world's.
+pub const AGENCY_REGIONS: u16 = 64;
+/// The occupations an agency's staffing record holds: the labour law's.
+pub const AGENCY_OCCUPATIONS: u16 = 11;
+
+/// An agency's staffing: the staff it keeps by region and occupation, region-major, and its appropriation for wages
+/// a month.
+const AGENCY_STAFFING: GroupDecl = GroupDecl {
+    name: "staffing",
+    width: 2824,
+    words: &[
+        word("targets", U32, AGENCY_REGIONS * AGENCY_OCCUPATIONS, true, "SOC"),
+        word("budget", I64, 1, false, "SOC"),
+    ],
+};
+
+/// The agency's byte map: its staffing record; its site stays in the core's record until the remaining kinds move.
+pub const AGENCY: KindMap = KindMap { kind: "agency", groups: &[AGENCY_STAFFING] };
+
 /// Every group of the maps within its width, and each map within a store.
-const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM) && fits(&BANK));
+const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM) && fits(&BANK) && fits(&AGENCY));
 /// The household's 174 bytes, 128 of them hot: two cache lines a visit gathers.
 const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
 /// The firm's 528 bytes, 192 of them hot and 192 warm: three cache lines each.
