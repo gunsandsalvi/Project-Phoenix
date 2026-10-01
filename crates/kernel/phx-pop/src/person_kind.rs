@@ -1,6 +1,7 @@
 //! The person kind: every person a party with its own reference and 66 bytes of rows, its household's persons
-//! threaded through them — the household's head word, then each person's next — so a move between households is an
-//! unlink, a link and one word written, and what a person owns names the person, never its household.
+//! threaded through them in the order they joined — the household's head word, then each person's next — so a move
+//! between households is an unlink, a link and one word written, and what a person owns names the person, never its
+//! household.
 
 use phx_id::{Day, PartyRef, Slot};
 use phx_macros::clause;
@@ -197,11 +198,25 @@ impl<B: Backing> PersonKind<B> {
         self.link(heads, r.slot(), to.slot());
     }
 
+    /// A person linked at its household's tail, so a household lists its persons in the order they joined it.
     fn link(&mut self, heads: &mut impl Heads, slot: Slot, household: Slot) {
         let w = self.w();
-        self.store.set_at(slot, w.link, heads.head(household));
+        self.store.set_at(slot, w.link, Missing::Absent);
         self.store.set_at(slot, w.household, Missing::Present(household.get()));
-        heads.set_head(household, Missing::Present(slot.get()));
+        let mut last = None;
+        let mut at = heads.head(household);
+        for _ in 0..self.store.rows() {
+            let Missing::Present(s) = at else { break };
+            last = Some(Slot::new(s));
+            at = self.next_of(Slot::new(s));
+        }
+        if let Missing::Present(s) = at {
+            violation!(clause = "PTY.11", "a household's list that returns on itself", slot = s);
+        }
+        match last {
+            Some(l) => self.store.set_at(l, w.link, Missing::Present(slot.get())),
+            None => heads.set_head(household, Missing::Present(slot.get())),
+        }
     }
 
     /// A person taken from its household's list: the one before it, or the head, pointed past it.
@@ -234,9 +249,10 @@ impl<B: Backing> PersonKind<B> {
         violation!(clause = "PTY.11", "a person missing from its household's list", slot = slot.get())
     }
 
-    /// A household's persons, in the order its list holds them, which no reader relies on.
-    pub fn members<'a>(&'a self, heads: &impl Heads, household: Slot) -> Members<'a, B> {
-        Members { kind: self, at: heads.head(household), left: self.store.rows() }
+    /// A household's persons from its first, in the order they joined it.
+    #[must_use]
+    pub fn members(&self, first: Missing<u32>) -> Members<'_, B> {
+        Members { kind: self, at: first, left: self.store.rows() }
     }
 
     /// A live person's core row, gathered once.
@@ -250,6 +266,12 @@ impl<B: Backing> PersonKind<B> {
     #[must_use]
     pub fn view_at(&self, slot: Slot) -> Option<PersonView<'_>> {
         Some(PersonView { row: self.store.gather_at(slot, CORE)?, w: self.words() })
+    }
+
+    /// A person's word written whole, as an outcome changed it.
+    pub fn set_word<D: Backing>(&mut self, dir: &Directory<D>, r: PartyRef, word: PersonWord) {
+        let _ = self.view(dir, r);
+        self.store.set_at(r.slot(), self.w().word, Missing::Present(word.0));
     }
 
     /// One field of a person's word written.

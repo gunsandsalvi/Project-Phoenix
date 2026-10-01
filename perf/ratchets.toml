@@ -58,20 +58,21 @@ direction = "down"
 # PC-99's admitted sites (S1.124, 2026-09-30): the syntax of allocation on the day's paths as the code stood when the
 # rule came, 903 in all (309 collect, 251 Vec::new, 95 vec!, 95 format!, 62 clone, 27 to_owned, 26 with_capacity, 23
 # to_string, 14 to_vec, 1 Box::new). S1.160 (K-03) and each migration remove theirs; the count only falls, and S1.492
-# empties it. S1.208's persons read and written by field, nothing unpacked, removed 14.
+# empties it. S1.208's persons read and written by field, nothing unpacked, removed 14, and the households' arenas
+# deleted 5 more.
 [[ratchet]]
 counter = "phx_check.exceptions_pc99"
-value = 741
+value = 736
 direction = "down"
 
 # PC-100's admitted sites: saved maps, sets and pair lists keyed by a bare slot or a party's key (S1.125, 35), and
 # absent values read as zero without a stated reason (S1.126, 231: 118 unwrap_or, 76 map_or, 37 unwrap_or_default),
 # as the code stood when each check came, 266 in all. The second check raises the count once, by its own sites;
 # S1.136–S1.139, S1.159 (K-02) and the migrations remove them; the count only falls, and S1.492 empties it. S1.195's
-# reads through the directory removed 12; S1.198's firm words through their store 1; S1.200's lines on the kinds' stores 3; S1.201's lending records on the bank kind 3; S1.202's reserves targets 1; S1.203's extraction flag 1; S1.204's carriers' modes 1; S1.205's agencies' staffing 3; S1.206's kinds' money, its sums stated, 3.
+# reads through the directory removed 12; S1.198's firm words through their store 1; S1.200's lines on the kinds' stores 3; S1.201's lending records on the bank kind 3; S1.202's reserves targets 1; S1.203's extraction flag 1; S1.204's carriers' modes 1; S1.205's agencies' staffing 3; S1.206's kinds' money, its sums stated, 3; S1.208's persons on their kind 4.
 [[ratchet]]
 counter = "phx_check.exceptions_pc100"
-value = 215
+value = 211
 direction = "down"
 
 # PC-101's admitted sites (S1.130, 2026-09-30): fields left out of a save without naming their rebuild, which today's

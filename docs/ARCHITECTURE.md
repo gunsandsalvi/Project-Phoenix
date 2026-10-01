@@ -2398,7 +2398,7 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   declares its place by — its site's tile u32, its region u32 or its country u8 (K-32). Every such kind (the central
   banks, treasuries, banks and agencies by their sites; the estates by their countries) keeps it on `phx-world`'s
   `PlaceStore`, built from the kind's declared `Place` alone, so no kind is branched on; a zoned kind's place is its
-  own store's zone word, and it has no place store.
+  own store's zone word, a person's its household's (K-33), and neither has a place store.
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
   map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
@@ -2500,8 +2500,7 @@ attribute's initial value, from which the opening and each birth begin a person.
 
 `phx-pop`'s person kind (`person_kind.rs`, and `phx-core`'s `person_word.rs`; PTY.3, PTY.11, REP.25, REP.26) makes every person a
 party of its own kind, with its own reference from the directory (K-31) and its rows on a kind store (K-32); its
-household's persons are threaded through those rows. The world's persons move onto it at S1.208; until then they stay
-in their households' arenas (below).
+household's persons are threaded through those rows, in the order they joined.
 
 **Layout** (`PERSON` in `consts.rs`, 66 B): *core, 32* — its packed word u64 · skills u32 (8 occupation families × 4
 bits, POP.1) · household u32 (its slot) · next in its household u32 · account u32 (K-47; absent for a person banking
@@ -2514,19 +2513,20 @@ day 5, month 4 and year 16 (offset by 32 768) · role 3 · sex 1 · health 2 · 
 state 2 (the labour law's not searching, searching, retired) · occupation family last worked in 4 · last job's wage
 point 7 · life record kept 1 · reserve 11. The birth date is held as its civil fields, not a day serial, so an age is
 read from the day's date in its facts (K-19) with no conversion on the day's path (PC-17): `age_on(today)` is one more
-on each birthday, a 29 February birthday falling on 1 March in a common year (REP.25). The word holds today's person
-attributes in full — the labour state, last occupation and wage point among them — so S1.208 moves every user onto
-fields.
+on each birthday, a 29 February birthday falling on 1 March in a common year (REP.25). The word holds every person
+attribute the systems declare — sex, health and education (DEM), the labour state, last occupation and wage point
+(LAB) — each in its fixed field.
 
 **API**: `PersonWord::new(born, role)`, `get(field)`, `with(field, v)` (a value past its bits stops the run), `born`,
 `birth_year`, `age_on`; `Skills::get(family)`, `with(family, level)` (a ninth family or a level past 15 stops it).
 `PersonKind::new(space, kind, capacity)`; `begin_person(dir, heads, household, (word, init))` begins a person in the
 directory and its kind, writes its rows in full (blank, then `init`'s words and its word) and links it at its
-household's head, and `begin` does so for a person the directory began; `end_person(dir, heads, r, (day,
+household's tail, and `begin` does so for a person the directory began; `end_person(dir, heads, r, (day,
 successor))` unlinks it and ends it in the directory the same day, and `left` unlinks and ends in its kind a person the
-directory ended; `move_person(dir, heads, r, to)` unlinks it, links it at the other household's head and writes its
-household — what it owns names the person, so nothing else moves (REP.26); `members(heads, household)` walks a
-household's list (its order is never read; a list longer than the persons ever begun stops the run); `view(dir, r)`
+directory ended; `move_person(dir, heads, r, to)` unlinks it, links it at the other household's tail and writes its
+household — what it owns names the person, so nothing else moves (REP.26); `members(first)` walks a household's list
+from its first person, in the order its persons joined (a list longer than the persons ever begun stops the run);
+`set_word` writes a person's word whole, as an outcome changed it; `view(dir, r)`
 gathers its core row once and `PersonView` reads its word's fields, skills, household, account, chain head, search start
 and goal in place, `view_at(slot)` as the day names it; `set_field`, `set_skill`, `set_search_start` write one word.
 `Heads` is where each household's list starts — its persons-head word on the household's own store; `StoreHeads` reads
@@ -2554,12 +2554,15 @@ list, and the other household's generation, live bit and row, each a memory late
 (S1.254); the chain head (S1.258); the searchers' index on the labour state (S1.304); the mind's 13 B and the goal
 (S1.352); the experience byte (S8.197); the campaign's windowed group (S5.137).
 
-**Today** (`persons.rs`): each household's persons, two words each — its word (`PersonWord`) and its identity
-(`Held`) — a list per household in its chunk's arena and
-found by its slot; `set`, `push`, `remove` (the rest keep their order) and `clear` keep the count held, `place_of`
-finds a person by its identity, and `compact_due` closes a chunk's gaps in slot order once its dead words pass their
-share. A person's identity is drawn from the same counter as the parties' (a person is a party, PTY.1): each is handed
-the next as its household begins, a newborn the next after.
+**In the world** (`phx-world`): persons are the person kind's parties (`sys_dem::PERSON_KIND`, legal form
+"natural person", owned by no one and ending at death; placed by its household, `Place::Household`), on the core's
+`PersonKind`. The household's persons-head word is written through `HouseholdStore::heads`. A person's identity, which
+its contracts, draws and records carry, is its reference's word (PTY.1, PTY.10); `Core::person_of` resolves one live,
+`person_word` reads its word where its household still holds it and `write_person` writes it. A household is read for
+its processes as its persons' words in the order they joined (`Core::members`); an outcome's changed words are written
+back by reference, a person gone ends the same day naming its household as successor, and one born is begun in the
+directory and linked at its household's tail. The persons live are the person kind's live count; the audit counts the
+households none is left in.
 
 **Births and leaving school** (`sys-dem`, POP.5, POP.10): a household decides on its head's birthday
 (`DEM.fertility_occasion`, taste `DEM.fertility_taste`) whether to try, and tries when the next child's value

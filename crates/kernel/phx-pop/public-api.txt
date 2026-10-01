@@ -108,6 +108,7 @@ pub fn phx_pop::kinds::KindStore<B>::get<T: phx_pop::kinds::Word, D: phx_store::
 pub fn phx_pop::kinds::KindStore<B>::group_bytes(&self, u8) -> core::option::Option<usize>  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::index(&self, usize) -> core::option::Option<&phx_store::index::Index<B>>  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::keep_index<T: phx_pop::kinds::Word>(&mut self, &mut phx_store::backing::AddressSpace, phx_pop::kinds::Attr<T>, phx_store::index_decl::IndexDecl, impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot>) -> core::result::Result<usize, alloc::string::String>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::kind(&self) -> u8  // used by: phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u8, &phx_pop::layout::Layout, u32) -> phx_pop::kinds::KindStore<B>  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::rows(&self) -> u32  // used by: phx-core, phx-fin, phx-world
 pub fn phx_pop::kinds::KindStore<B>::scan(&self, u8) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::Slot, phx_pop::kinds::Row<'_>)> + '_  // used by: phx-core, phx-fin, phx-world
@@ -232,12 +233,13 @@ pub fn phx_pop::person_kind::PersonKind<B>::begin_person<D: phx_store::backing::
 pub fn phx_pop::person_kind::PersonKind<B>::end_person<D: phx_store::backing::Backing>(&mut self, &mut phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef, (phx_id::day::Day, phx_num::missing::Missing<phx_id::ids::PartyRef>))  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::layout(&mut self) -> &mut phx_pop::layout::Layout  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::left<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef)  // used by: phx-fin
-pub fn phx_pop::person_kind::PersonKind<B>::members<'a>(&'a self, &impl phx_pop::person_kind::Heads, phx_id::ids::Slot) -> phx_pop::person_kind::Members<'a, B>  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::members(&self, phx_num::missing::Missing<u32>) -> phx_pop::person_kind::Members<'_, B>  // used by: phx-fin, phx-world
 pub fn phx_pop::person_kind::PersonKind<B>::move_person<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, &mut impl phx_pop::person_kind::Heads, phx_id::ids::PartyRef, phx_id::ids::PartyRef)  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::new(&mut phx_store::backing::AddressSpace, u8, u32) -> phx_pop::person_kind::PersonKind<B>  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::set_field<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_core::person_word::Field, u32)  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::set_search_start<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_num::missing::Missing<u16>)  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::set_skill<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, u32, u32)  // used by: phx-fin
+pub fn phx_pop::person_kind::PersonKind<B>::set_word<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_core::person_word::PersonWord)  // used by: phx-fin, phx-world
 pub fn phx_pop::person_kind::PersonKind<B>::view<D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef) -> phx_pop::person_kind::PersonView<'_>  // used by: phx-fin
 pub fn phx_pop::person_kind::PersonKind<B>::view_at(&self, phx_id::ids::Slot) -> core::option::Option<phx_pop::person_kind::PersonView<'_>>  // used by: phx-fin
 impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::person_kind::PersonKind<B> where phx_pop::kinds::KindStore<B>: phx_store::save::Saved, core::option::Option<(phx_pop::layout::Layout, Words)>: core::default::Default
@@ -270,27 +272,6 @@ impl<B: phx_store::backing::Backing> phx_pop::person_kind::Heads for phx_pop::pe
 pub fn phx_pop::person_kind::StoreHeads<'_, B>::head(&self, phx_id::ids::Slot) -> phx_num::missing::Missing<u32>  // used by: phx-fin
 pub fn phx_pop::person_kind::StoreHeads<'_, B>::kind(&self) -> u8  // used by: phx-fin
 pub fn phx_pop::person_kind::StoreHeads<'_, B>::set_head(&mut self, phx_id::ids::Slot, phx_num::missing::Missing<u32>)  // used by: phx-fin
-pub mod phx_pop::persons  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
-pub struct phx_pop::persons::Held  // used by: phx-cli, phx-core, phx-world
-pub phx_pop::persons::Held::id: u64  // used by: if-base, phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec, sys-trs
-pub phx_pop::persons::Held::word: u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-market, phx-rand, phx-store, phx-world
-pub struct phx_pop::persons::Persons<B: phx_store::backing::Backing>  // used by: phx-core, phx-macros, phx-obs, phx-world
-impl<B: phx_store::backing::Backing> phx_pop::persons::Persons<B>
-pub fn phx_pop::persons::Persons<B>::clear(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot)  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::compact_due(&mut self, &mut phx_store::backing::AddressSpace) -> u64  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::count(&self, phx_id::ids::Slot) -> usize  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::held(&self) -> u64  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::new(&mut phx_store::backing::AddressSpace, u32, u32) -> phx_pop::persons::Persons<B>  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::of(&self, phx_id::ids::Slot) -> impl core::iter::traits::exact_size::ExactSizeIterator<Item = phx_pop::persons::Held> + '_  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::place_of(&self, phx_id::ids::Slot, u64) -> core::option::Option<usize>  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::push(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, phx_pop::persons::Held)  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::remove(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize)  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::set(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, &[phx_pop::persons::Held])  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::set_word(&mut self, &mut phx_store::backing::AddressSpace, phx_id::ids::Slot, usize, u64)  // used by: phx-core, phx-macros, phx-obs, phx-world
-impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::persons::Persons<B> where phx_store::column::Column<phx_store::arena::CellListRef, B>: phx_store::save::Saved, alloc::vec::Vec<phx_store::arena::ChunkArena<B>>: phx_store::save::Saved, u32: phx_store::save::Saved, u64: phx_store::save::Saved
-pub fn phx_pop::persons::Persons<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-core, phx-macros, phx-obs, phx-world
-pub fn phx_pop::persons::Persons<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-macros, phx-obs, phx-world
 pub mod phx_pop::prims  // used by: phx-cli, phx-core, phx-geo, phx-market, phx-val, phx-world, sys-cap, sys-dem, sys-frm, sys-tec
 pub struct phx_pop::prims::RepPrims  // used by: phx-world
 pub phx_pop::prims::RepPrims::persons: phx_core::register::Prim<phx_num::qty::Count>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc

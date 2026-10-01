@@ -456,11 +456,10 @@ impl Core {
     fn persons_by_region(&self, c: &OpeningCountry) -> Vec<(u32, u64)> {
         let mut out: Vec<(u32, u64)> = c.regions.iter().map(|(r, _)| (*r, 0)).collect();
         let Some(place) = self.bound.kinds.household else { return out };
-        let Some(Some(persons)) = self.persons.get(place) else { return out };
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             let Some(r) = self.household_region(slot) else { continue };
             if let Some((_, n)) = out.iter_mut().find(|(x, _)| *x == r) {
-                *n += len_u64(persons.count(slot));
+                *n += len_u64(self.persons_in(phx_id::PartyKey::new(crate::core::kind_number(place), slot)));
             }
         }
         out

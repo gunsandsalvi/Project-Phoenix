@@ -19,7 +19,7 @@ use phx_macros::{clause, opening};
 use phx_num::{Missing, violation};
 use phx_pop::directory::Directory;
 use phx_pop::kind::PopKindDecl;
-use phx_pop::persons::{Held, Persons};
+use phx_pop::person_kind::PersonKind;
 use phx_rand::float::len_u64;
 use phx_store::{AddressSpace, SystemBacking};
 
@@ -159,7 +159,7 @@ impl Rules {
 
 impl Core {
     /// The core with no party yet: each declared kind's store, in the catalogue's order, reserving its capacity's rows;
-    /// the population kind's with its persons.
+    /// the persons' kind on its own.
     #[opening]
     fn empty(
         (household, household_pop): (&PopKindDecl, usize),
@@ -169,7 +169,7 @@ impl Core {
         let mut space = AddressSpace::empty();
         let mut kinds = Vec::new();
         let mut places = Vec::new();
-        let mut persons = Vec::new();
+        let mut persons = None;
         for (k, traits) in declared.0.iter().enumerate() {
             let populated = traits.name == household.kind;
             let chunk = if populated { AGENT_ROWS_PER_CHUNK } else { KIND_ROWS_PER_CHUNK };
@@ -180,7 +180,10 @@ impl Core {
             kinds.push(money);
             // A kind placed by its zone holds it in its own store; every other its place store.
             places.push(PlaceStore::new(&mut space, kind_number(k), traits.place, traits.rows));
-            persons.push(populated.then(|| Persons::new(&mut space, AGENT_ROWS, AGENT_ROWS_PER_CHUNK)));
+            // The kind placed by its household is the persons'.
+            if traits.place == phx_core::Place::Household {
+                persons = Some(PersonKind::new(&mut space, kind_number(k), traits.rows));
+            }
         }
         let names: Vec<&'static str> = declared.0.iter().map(|k| k.name).collect();
         let capacities: Vec<u32> = declared.0.iter().map(|k| k.rows).collect();
@@ -236,7 +239,6 @@ impl Core {
             taxes: crate::core_taxes::Taxes::default(),
             collectors: Vec::new(),
             bills: crate::core_bills::Bills::default(),
-            next_id: 1,
             banks_of: Vec::new(),
             pop_days: Vec::new(),
             events: Vec::new(),
@@ -516,28 +518,19 @@ impl Core {
         if let Some(hs) = self.households.as_mut() {
             hs.begin(&self.directory, r, opening);
         }
-        let held: Vec<Held> = h
-            .persons
-            .iter()
-            .map(|p| {
-                let id = self.next_id;
-                self.next_id += 1;
-                Held { word: p.word.0, id }
-            })
-            .collect();
-        if let Some(Some(p)) = self.persons.get_mut(household) {
-            p.set(&mut self.space, key.slot(), &held);
+        // Each person begun in the directory and in its household, in the order the household holds them.
+        if let (Some(ps), Some(hs)) = (self.persons.as_mut(), self.households.as_mut()) {
+            let mut heads = hs.heads();
+            for p in &h.persons {
+                let _ = ps.begin_person(&mut self.directory, &mut heads, r, (p.word, &[]));
+            }
         }
         key
     }
 
-    /// The identities of a household's persons, in their places.
+    /// The identities of a household's persons, in the order they joined it.
     fn persons_of(&self, household: PartyKey) -> Vec<u64> {
-        self.persons
-            .get(usize::from(household.kind()))
-            .and_then(Option::as_ref)
-            .map(|p| p.of(household.slot()).map(|x| x.id).collect())
-            .unwrap_or_default()
+        self.members(household.slot()).map(|(r, _)| r.word()).collect()
     }
 
     /// A country's households' money: its deposits over those that bank by their wealth, each at its bank; its

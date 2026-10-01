@@ -74,10 +74,7 @@ impl Core {
         let law = self.labour.laws.get(country)?;
         let mut pay = 0.0;
         for w in self.owners.working.get(&firm).into_iter().flatten() {
-            let ps = self.persons.get(usize::from(w.household.kind()))?.as_ref()?;
-            let at = ps.place_of(w.household.slot(), w.person)?;
-            let word = ps.of(w.household.slot()).nth(at)?.word;
-            let point = phx_core::person_word::PersonWord(word).get(sys_lab::LAST_POINT.field);
+            let point = self.person_word((w.household, w.person))?.get(sys_lab::LAST_POINT.field);
             if point == if_labour::class::NO_POINT {
                 return None;
             }

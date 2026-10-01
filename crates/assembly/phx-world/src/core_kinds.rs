@@ -87,7 +87,7 @@ pub(crate) fn of(traits: &[KindTraits], kind: usize) -> &KindTraits {
 }
 
 /// The country a party is of, read from its place as its kind declares it: a region through the regions, a country
-/// itself, or a site's tile through the map. A zone is its kind's own store's to read.
+/// itself, or a site's tile through the map. A zone is its kind's own store's to read, and a household its person's.
 #[clause("PTY.5")]
 pub(crate) fn country_by_place(
     place: Place,
@@ -100,7 +100,7 @@ pub(crate) fn country_by_place(
         Place::Region => regions.get(usize::try_from(at).ok()?).map(|c| usize::from(c.get())),
         Place::Country => usize::try_from(at).ok(),
         Place::Site => tile_country(at),
-        Place::Zone => None,
+        Place::Zone | Place::Household => None,
     }
 }
 

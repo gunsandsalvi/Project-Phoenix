@@ -439,12 +439,9 @@ impl Core {
 
     /// A person's last wage point written to it.
     pub(crate) fn put_last_point(&mut self, (household, person): (PartyKey, u64), point: i64) {
-        let Some(Some(ps)) = self.persons.get_mut(usize::from(household.kind())) else { return };
-        let Some(at) = ps.place_of(household.slot(), person) else { return };
-        let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
+        let Some(word) = self.person_word((household, person)) else { return };
         let point = u32::try_from(point).unwrap_or(if_labour::class::NO_POINT);
-        let word = phx_core::person_word::PersonWord(word).with(sys_lab::LAST_POINT.field, point);
-        ps.set_word(&mut self.space, household.slot(), at, word.0);
+        self.write_person((household, person), word.with(sys_lab::LAST_POINT.field, point));
     }
 }
 

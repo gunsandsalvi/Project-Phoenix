@@ -179,7 +179,6 @@ pub const phx_core::capacity::EVENT_ROWS: u32  // used by: phx-world
 pub const phx_core::capacity::INSTRUMENT_ROWS: u32
 pub const phx_core::capacity::KIND_ROWS: u32  // used by: phx-world
 pub const phx_core::capacity::LINK_BITS: u32
-pub const phx_core::capacity::PERSON_ARENA_WORDS: u32  // used by: phx-pop
 pub const phx_core::capacity::UNIT_ID_ROWS: u32
 pub const phx_core::capacity::WHEEL_DAYS: u32  // used by: phx-world
 pub const fn phx_core::capacity::slot_fits(u32) -> bool
@@ -562,7 +561,6 @@ pub const phx_core::consts::GROWTH_DIVISOR: u32
 pub const phx_core::consts::GROWTH_YEARS: u32
 pub const phx_core::consts::HEALTH_BITS: u32
 pub const phx_core::consts::HOLDINGS_CODE: u8
-pub const phx_core::consts::HOUSEHOLD_WORDS: u32
 pub const phx_core::consts::INSTITUTIONS: (&str, u32, u32, phx_core::capacity::Growth)
 pub const phx_core::consts::INSTRUMENTS: (&str, u32, u32, phx_core::capacity::Growth)  // used by: phx-check, phx-world
 pub const phx_core::consts::KEYED_ORDINAL: u8
@@ -1150,12 +1148,14 @@ pub phx_core::kinds::Feature::TakesDeposits  // used by: phx-world
 pub enum phx_core::kinds::Owners  // used by: phx-world
 pub phx_core::kinds::Owners::HeirsAndCreditors
 pub phx_core::kinds::Owners::Members
+pub phx_core::kinds::Owners::Nobody
 pub phx_core::kinds::Owners::Shareholders
 pub phx_core::kinds::Owners::State  // used by: phx-world
 impl phx_core::kinds::Owners
 pub fn phx_core::kinds::Owners::parse(&str) -> core::result::Result<phx_core::kinds::Owners, alloc::string::String>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-macros
 pub enum phx_core::kinds::Place  // used by: phx-fin, phx-market, phx-world, sys-dem
 pub phx_core::kinds::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
+pub phx_core::kinds::Place::Household  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub phx_core::kinds::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::kinds::Place::Zone
@@ -2440,6 +2440,7 @@ pub phx_core::Outside::Edge
 pub phx_core::Outside::Refuse
 pub enum phx_core::Place  // used by: phx-fin, phx-market, phx-world, sys-dem
 pub phx_core::Place::Country  // used by: phx-id, phx-rand, phx-world, sys-dem
+pub phx_core::Place::Household  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub phx_core::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::Place::Zone

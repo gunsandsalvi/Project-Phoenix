@@ -9,7 +9,7 @@ use phx_id::{Date, Day, PartyRef, Slot};
 use phx_num::Missing;
 use phx_store::{AddressSpace, HeapBacking};
 
-use super::{PersonKind, StoreHeads};
+use super::{Heads, PersonKind, StoreHeads};
 use crate::directory::{Directory, Resolved};
 use crate::kinds::{AttrW, KindStore};
 use crate::layout::{HOUSEHOLD, Layout, PERSON, width};
@@ -54,7 +54,7 @@ impl World {
 
     fn members(&mut self, household: PartyRef) -> BTreeSet<u32> {
         let heads = StoreHeads { store: &mut self.households, head: self.head };
-        self.persons.members(&heads, household.slot()).map(Slot::get).collect()
+        self.persons.members(heads.head(household.slot())).map(Slot::get).collect()
     }
 
     fn move_to(&mut self, p: PartyRef, to: PartyRef) {
@@ -273,9 +273,22 @@ fn save_round_trip_lists() {
     let before: Vec<BTreeSet<u32>> = hs.iter().map(|h| w.members(*h)).collect();
     let heads = StoreHeads { store: &mut w.households, head: w.head };
     for (h, set) in hs.iter().zip(&before) {
-        assert_eq!(&back.members(&heads, h.slot()).map(Slot::get).collect::<BTreeSet<u32>>(), set);
+        assert_eq!(&back.members(heads.head(h.slot())).map(Slot::get).collect::<BTreeSet<u32>>(), set);
     }
     for p in ps.iter().filter(|p| **p != ps[2]) {
         assert_eq!(back.view(&w.dir, *p).word(), w.persons.view(&w.dir, *p).word());
     }
+}
+
+#[test]
+fn members_in_joining_order() {
+    let mut w = World::new();
+    let (a, b) = (w.household(), w.household());
+    let ps: Vec<PartyRef> = (0..4).map(|i| w.person(a, 1950 + i)).collect();
+    w.move_to(ps[0], b);
+    w.move_to(ps[0], a);
+    let heads = StoreHeads { store: &mut w.households, head: w.head };
+    let order: Vec<u32> = w.persons.members(heads.head(a.slot())).map(Slot::get).collect();
+    let joined: Vec<u32> = [ps[1], ps[2], ps[3], ps[0]].iter().map(|p| p.slot().get()).collect();
+    assert_eq!(order, joined, "one who left and came back joins at the end");
 }

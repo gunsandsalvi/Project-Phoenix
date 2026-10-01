@@ -106,12 +106,13 @@ impl Views {
         for r in &self.histograms {
             let Ok(mut h) = Histogram::new(r.edges.clone()) else { continue };
             let core = w.core();
-            let persons = core.persons.get(r.kind).and_then(Option::as_ref);
             let Ok(kind) = u8::try_from(r.kind) else { continue };
             let mut sample = Vec::new();
             for slot in core.directory.live_slots(kind) {
                 let value = match r.of {
-                    Of::Persons => i64::try_from(persons.map_or(0, |p| p.count(slot))).unwrap_or(i64::MAX),
+                    Of::Persons => {
+                        i64::try_from(core.persons_in(phx_id::PartyKey::new(kind, slot))).unwrap_or(i64::MAX)
+                    }
                     Of::Region => match core.zoned_region(phx_id::PartyKey::new(kind, slot)) {
                         Some(r) => i64::from(r),
                         None => continue,

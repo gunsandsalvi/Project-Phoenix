@@ -437,6 +437,12 @@ impl<B: Backing> KindStore<B> {
         Chunks { dir, kind: self.kind, rest, widths, keyed, slots, cursor: 0, rows: self.rows }
     }
 
+    /// The kind its parties are of.
+    #[must_use]
+    pub fn kind(&self) -> u8 {
+        self.kind
+    }
+
     /// The slots ever begun.
     #[must_use]
     pub fn rows(&self) -> u32 {

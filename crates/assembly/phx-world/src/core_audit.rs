@@ -83,11 +83,9 @@ impl Core {
             }
         }
         // A household is its persons: one with none left must have ended.
-        if let (Some(place), Some(persons)) =
-            (self.bound.kinds.household, self.bound.kinds.household.and_then(|p| self.persons.get(p)?.as_ref()))
-        {
+        if let (Some(place), Some(hs)) = (self.bound.kinds.household, self.households.as_ref()) {
             let kind = crate::core::kind_number(place);
-            let empty = self.directory.live_slots(kind).filter(|s| persons.count(*s) == 0).count();
+            let empty = self.directory.live_slots(kind).filter(|s| hs.head(*s) == phx_num::Missing::Absent).count();
             if empty > 0 {
                 found.push(Finding {
                     family: "persons",

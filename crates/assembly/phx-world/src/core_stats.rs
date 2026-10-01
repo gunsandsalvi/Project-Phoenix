@@ -324,7 +324,6 @@ impl Core {
         let Some(place) = self.bound.kinds.household else {
             return out;
         };
-        let Some(Some(persons)) = self.persons.get(place) else { return out };
         let Some((year, month)) = month_of(period) else { return out };
         let (Some(date), Some(days)) = (phx_id::Date::new(year, month, 1), phx_id::Date::days_in_month(year, month))
         else {
@@ -334,8 +333,7 @@ impl Core {
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             let Some(region) = self.household_region(slot).and_then(|r| usize::try_from(r).ok()) else { continue };
             let Some(table) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
-            for p in persons.of(slot) {
-                let person = phx_core::person_word::PersonWord(p.word);
+            for (_, person) in self.members(slot) {
                 let age = person.age_on(date);
                 let class = u32::try_from(self.stats.classes.iter().filter(|b| **b <= age).count()).unwrap_or(u32::MAX);
                 let health = person.get(if_pop::HEALTH.field);
@@ -352,18 +350,16 @@ impl Core {
         let Some(place) = self.bound.kinds.household else {
             return out;
         };
-        let Some(Some(persons)) = self.persons.get(place) else { return out };
         let employed = self.employed_ids();
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
             let Some(region) = self.household_region(slot).and_then(|r| usize::try_from(r).ok()) else { continue };
             let Some(row) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
-            for p in persons.of(slot) {
-                let person = phx_core::person_word::PersonWord(p.word);
+            for (r, person) in self.members(slot) {
                 if person.get(phx_core::person_word::ROLE) == if_pop::CHILD.value {
                     continue;
                 }
                 let state = person.get(sys_lab::STATE.field);
-                let at = if employed.binary_search(&p.id).is_ok() {
+                let at = if employed.binary_search(&r.word()).is_ok() {
                     0
                 } else if state == if_labour::class::SEARCHING {
                     1

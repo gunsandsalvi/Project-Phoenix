@@ -595,12 +595,10 @@ impl Core {
     fn region_shares(&self, regions: &[CountryId]) -> Vec<f64> {
         let mut persons = vec![0.0; regions.len()];
         let Some(place) = self.bound.kinds.household else { return persons };
-        if let Some(Some(ps)) = self.persons.get(place) {
-            for slot in self.directory.live_slots(kind_number(place)) {
-                let Some(r) = self.household_region(slot) else { continue };
-                if let Some(p) = usize::try_from(r).ok().and_then(|r| persons.get_mut(r)) {
-                    *p += from_i64(i64::try_from(ps.count(slot)).unwrap_or(0));
-                }
+        for slot in self.directory.live_slots(kind_number(place)) {
+            let Some(r) = self.household_region(slot) else { continue };
+            if let Some(p) = usize::try_from(r).ok().and_then(|r| persons.get_mut(r)) {
+                *p += from_i64(i64::try_from(self.persons_in(PartyKey::new(kind_number(place), slot))).unwrap_or(0));
             }
         }
         let mut totals: BTreeMap<u8, f64> = BTreeMap::new();

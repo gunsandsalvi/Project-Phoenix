@@ -36,6 +36,7 @@ fn forms() -> Vec<LegalForm> {
         form("company", &["money", "stocks"], &[SeparateParty, LimitedLiability, HasOwners], Owners::Shareholders),
         form("estate", &["money"], &[SeparateParty], Owners::HeirsAndCreditors),
         form("household", &["money", "dwellings"], &[], Owners::Members),
+        form("natural person", &[], &[], Owners::Nobody),
         form("public agency", &["money", "plant"], &[SeparateParty], Owners::State),
     ]
 }

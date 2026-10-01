@@ -46,7 +46,8 @@ pub struct KindDecl {
 }
 
 /// Where a kind's parties' region and country are read from, a word of their kind's store: the tile of their site,
-/// their region, their country, or their zone, whose region and country the map gives.
+/// their region, their country, their zone, whose region and country the map gives, or their household, whose zone
+/// gives them.
 #[clause("PTY.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
@@ -54,6 +55,7 @@ pub enum Place {
     Region,
     Country,
     Zone,
+    Household,
 }
 
 /// What a legal form may be; a form has each feature its country lists for it, and no other.
@@ -70,14 +72,15 @@ pub enum Feature {
     HasOwners,
 }
 
-/// Who owns a legal form's parties: the state, its shareholders, its own members, or the heirs and creditors of the
-/// party it was.
+/// Who owns a legal form's parties: the state, its shareholders, its own members, the heirs and creditors of the
+/// party it was, or no one, as no one owns a natural person.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Owners {
     State,
     Shareholders,
     Members,
     HeirsAndCreditors,
+    Nobody,
 }
 
 impl Owners {
@@ -92,6 +95,7 @@ impl Owners {
             "shareholders" => Ok(Owners::Shareholders),
             "members" => Ok(Owners::Members),
             "heirs_and_creditors" => Ok(Owners::HeirsAndCreditors),
+            "none" => Ok(Owners::Nobody),
             other => Err(format!("`{other}` is not an owner of a legal form")),
         }
     }

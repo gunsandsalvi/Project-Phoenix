@@ -10,7 +10,6 @@ pub mod kinds;
 mod kinds_save;
 pub mod layout;
 pub mod person_kind;
-pub mod persons;
 pub mod prims;
 mod tombs;
 pub mod windowed;

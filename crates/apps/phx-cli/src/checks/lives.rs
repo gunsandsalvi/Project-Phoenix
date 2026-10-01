@@ -186,9 +186,6 @@ fn cohorts_leave(w: Inspector<'_>) -> Outcome {
     let Some(place) = core.names.iter().position(|n| *n == "household") else {
         return Outcome::NotYet("no households on the core");
     };
-    let Some(Some(persons)) = core.persons.get(place) else {
-        return Outcome::NotYet("no households on the core");
-    };
     let mut ages = Vec::new();
     for c in w.regions() {
         match w.register().count_in("DEM.school_leaving_age", *c).map(i64::try_from) {
@@ -203,8 +200,7 @@ fn cohorts_leave(w: Inspector<'_>) -> Outcome {
         let Some(leaving) = region.and_then(|r| ages.get(r)) else {
             return Outcome::Fail(format!("household slot {} in a region of no country", slot.get()));
         };
-        for p in persons.of(slot) {
-            let person = phx_core::person_word::PersonWord(p.word);
+        for (_, person) in core.members(slot) {
             if person.get(phx_core::person_word::ROLE) == if_pop::CHILD.value && person.age_on(date) >= *leaving {
                 return Outcome::Fail(format!(
                     "household slot {}: a child of {} still in school past {leaving}",
@@ -257,14 +253,12 @@ impl Structure {
 pub fn structure(w: Inspector<'_>) -> Option<Structure> {
     let core = w.core();
     let place = core.names.iter().position(|n| *n == "household")?;
-    let persons = core.persons.get(place)?.as_ref()?;
     let bounds = w.register().partition("DEM.age_classes").ok()?.bounds.to_vec();
     let mut classes: Vec<(i64, [u64; 2])> = bounds.iter().map(|b| (*b, [0, 0])).collect();
     let date = w.date(w.today());
     let (mut women, mut counted) = (0_u64, 0_u64);
     for slot in core.live_slots(place) {
-        for p in persons.of(slot) {
-            let person = phx_core::person_word::PersonWord(p.word);
+        for (_, person) in core.members(slot) {
             let (age, sex) = (person.age_on(date), person.get(if_pop::SEX.field));
             let class = bounds.partition_point(|b| *b <= age).checked_sub(1)?;
             *classes.get_mut(class)?.1.get_mut(usize::try_from(sex).ok()?)? += 1;

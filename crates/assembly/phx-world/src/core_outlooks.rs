@@ -312,11 +312,11 @@ impl crate::core::Core {
         if let Some(place) = self.bound.kinds.household {
             let mut windows = std::mem::take(&mut self.work.windows);
             windows.clear();
-            if let Some(Some(ps)) = self.persons.get(place) {
+            {
                 for slot in self.directory.live_slots(crate::core::kind_number(place)) {
                     // Its head's word read for its role and birth alone; the first person where none heads it.
                     let role = |x: &phx_core::person_word::PersonWord| x.get(phx_core::person_word::ROLE);
-                    let mut words = ps.of(slot).map(|x| phx_core::person_word::PersonWord(x.word));
+                    let mut words = self.members(slot).map(|(_, w)| w);
                     let first = words.next();
                     let head = first.filter(|w| role(w) == head_role).or_else(|| words.find(|w| role(w) == head_role));
                     let Some(word) = head.or(first) else { continue };

@@ -26,6 +26,7 @@ pub use processes::{Mortality, Onset};
 pub use school::LeavingSchool;
 
 declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", place: Zone, store: "households", clause: "POP.2" } }
+declare_kind! { pub PERSON_KIND = "person" { legal_form: "natural person", place: Household, store: "persons", clause: "PTY.3" } }
 
 declare_stream! { pub RegionsStream = "DEM.opening_regions" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub PersonsStream = "DEM.opening_persons" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
@@ -92,6 +93,7 @@ impl System for Dem {
 
     fn declare(d: &mut Declarations) {
         d.kind(HOUSEHOLD_KIND);
+        d.kind(PERSON_KIND);
         declare_household(d);
         for stream in [
             RegionsStream::DECL,

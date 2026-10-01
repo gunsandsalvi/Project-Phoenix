@@ -36,6 +36,7 @@ struct Words {
     looked: AttrW<u16>,
     window: AttrW<u8>,
     ideal: AttrW<u8>,
+    head: AttrW<u32>,
 }
 
 fn words() -> Words {
@@ -61,6 +62,7 @@ fn words() -> Words {
         looked: w!(u16, "looked", "K-32"),
         window: w!(u8, "window", "K-32"),
         ideal: w!(u8, "ideal", "K-32"),
+        head: w!(u32, "persons_head", "K-33"),
     }
 }
 
@@ -131,6 +133,20 @@ impl HouseholdStore {
     #[must_use]
     pub fn kind(&self) -> u8 {
         self.kind
+    }
+
+    /// Where each household's persons start, for the person kind to thread them.
+    pub fn heads(&mut self) -> phx_pop::person_kind::StoreHeads<'_, SystemBacking> {
+        let head = self.w().head;
+        phx_pop::person_kind::StoreHeads { store: &mut self.store, head }
+    }
+
+    /// A household's first person; none for a slot no household was begun at, or one no person is left in.
+    pub fn head(&self, slot: phx_id::Slot) -> Missing<u32> {
+        match self.store.gather_at(slot, 0) {
+            Some(row) => row.get(self.w().head.read()),
+            None => Missing::Absent,
+        }
     }
 
     /// A household the directory began, its words written from its opening.

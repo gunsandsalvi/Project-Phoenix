@@ -51,7 +51,8 @@ fn compiled(by: u8) -> (Layout, Word) {
 }
 
 impl PlaceStore {
-    /// A kind's places, room for `capacity` parties; none for a kind placed by its zone, whose own store holds it.
+    /// A kind's places, room for `capacity` parties; none for a kind placed by its zone, whose own store holds it, or by
+    /// its household, whose zone places it.
     #[must_use]
     #[phx_macros::opening]
     pub fn new(space: &mut AddressSpace, kind: u8, place: Place, capacity: u32) -> Option<PlaceStore> {
@@ -59,7 +60,7 @@ impl PlaceStore {
             Place::Site => 0,
             Place::Region => 1,
             Place::Country => 2,
-            Place::Zone => return None,
+            Place::Zone | Place::Household => return None,
         };
         let (layout, word) = compiled(by);
         Some(PlaceStore { store: KindStore::new(space, kind, &layout, capacity), kind, by, word: Some(word) })

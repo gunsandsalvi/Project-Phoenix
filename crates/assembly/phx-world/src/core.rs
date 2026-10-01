@@ -3,11 +3,11 @@
 //! own identity — its account at its bank, and the dated families of contracts between them. The core draws its
 //! own opening (`core_open`).
 
+use phx_core::person_word::PersonWord;
 use phx_id::consts::NATURE_KIND;
-use phx_id::{PartyKey, PartyRef};
+use phx_id::{PartyKey, PartyRef, Slot};
 use phx_num::violation;
 use phx_pop::directory::Directory;
-use phx_pop::persons::Persons;
 use phx_store::{AddressSpace, SystemBacking};
 
 use phx_core::store::KindMoney;
@@ -32,7 +32,8 @@ pub struct Core {
     pub kinds: Vec<KindMoney<SystemBacking>>,
     /// Each kind's places, where its kind declares its parties placed by a site, a region or a country.
     pub places: Vec<Option<crate::place_store::PlaceStore>>,
-    pub persons: Vec<Option<Persons<SystemBacking>>>,
+    /// The persons, each a party of the person kind, threaded through their households.
+    pub persons: Option<phx_pop::person_kind::PersonKind>,
     pub directory: Directory<SystemBacking>,
     /// The firms' own state on their kind's store, opened with the firms.
     pub firms: Option<crate::firm_store::FirmStore>,
@@ -93,8 +94,6 @@ pub struct Core {
     pub decisions: crate::core_decide::Decisions,
     /// The player's household, its intents and each day a decision came for it.
     pub player: crate::core_player::PlayerDesk,
-    /// The next identity the core hands a person it begins.
-    pub next_id: u64,
     /// Each country's banks on the core, by slot, each weighed by what its customers hold with it at the opening.
     pub banks_of: Vec<Vec<(u32, u64)>>,
     pub pop_days: Vec<(phx_id::Day, crate::core_pop::PopDay)>,
@@ -270,13 +269,6 @@ impl Core {
         crate::core_kinds::of(&self.declared.kinds, kind).rows
     }
 
-    /// The identity of a household's person at a place, none where it holds no one there.
-    #[must_use]
-    pub fn person_at(&self, household: PartyKey, place: usize) -> Option<u64> {
-        let persons = self.persons.get(usize::from(household.kind()))?.as_ref()?;
-        persons.of(household.slot()).nth(place).map(|p| p.id)
-    }
-
     /// The reference of the party at a key, live or ended this day; none for a slot never handed out.
     #[must_use]
     pub fn reference(&self, key: PartyKey) -> Option<PartyRef> {
@@ -323,6 +315,7 @@ impl Core {
                 self.banks.as_ref().filter(|b| b.kind() == kind).map(|b| &b.store),
                 self.agency_store.as_ref().filter(|a| a.kind() == kind).map(|a| &a.store),
                 self.places.iter().flatten().find(|p| p.kind() == kind).map(|p| &p.store),
+                self.persons.as_ref().filter(|p| p.store.kind() == kind).map(|p| &p.store),
             ];
             stores.into_iter().flatten().map(phx_store::StoreStats::bytes).sum()
         };
@@ -335,9 +328,55 @@ impl Core {
         kinds.chain([("directory", phx_exec::stats::Sample::of(&self.directory))]).collect()
     }
 
-    /// The persons every household on the core holds.
+    /// The persons live on the core, every one of them held in a household.
     #[must_use]
+    #[phx_macros::absent_is_zero(reason = "a world that declares no person kind holds no persons")]
     pub fn persons_held(&self) -> u64 {
-        self.persons.iter().flatten().map(Persons::held).sum()
+        self.bound.kinds.person.map_or(0, |k| self.directory.live(kind_number(k)))
+    }
+
+    /// A household's persons, in the order they joined it, each with its word; none for a household of no person.
+    pub fn members(&self, household: Slot) -> impl Iterator<Item = (PartyRef, PersonWord)> + '_ {
+        let (persons, households) = (self.persons.as_ref(), self.households.as_ref());
+        let first = households.map_or(phx_num::Missing::Absent, |h| h.head(household));
+        let kind = self.bound.kinds.person.map(kind_number);
+        persons.into_iter().flat_map(move |p| p.members(first)).filter_map(move |slot| {
+            let r = self.directory.reference(kind?, slot)?;
+            Some((r, self.persons.as_ref()?.view_at(slot)?.word()))
+        })
+    }
+
+    /// The persons a party holds: a household its members, any other party none.
+    #[must_use]
+    pub fn persons_in(&self, party: PartyKey) -> usize {
+        match (self.persons.as_ref(), self.households.as_ref()) {
+            (Some(ps), Some(hs)) if hs.kind() == party.kind() => ps.members(hs.head(party.slot())).count(),
+            _ => 0,
+        }
+    }
+
+    /// A person's word, where it is live and its household still holds it.
+    #[must_use]
+    pub fn person_word(&self, (household, id): (PartyKey, u64)) -> Option<PersonWord> {
+        let view = self.persons.as_ref()?.view_at(self.person_of(id)?.slot())?;
+        (view.household() == household.slot()).then(|| view.word())
+    }
+
+    /// A person's word written, where it is live and its household still holds it.
+    pub(crate) fn write_person(&mut self, (household, id): (PartyKey, u64), word: PersonWord) {
+        if self.person_word((household, id)).is_none() {
+            return;
+        }
+        let Some(r) = self.person_of(id) else { return };
+        if let Some(ps) = self.persons.as_mut() {
+            ps.set_word(&self.directory, r, word);
+        }
+    }
+
+    /// A person by its identity, its reference's word; none where it is not live.
+    pub(crate) fn person_of(&self, id: u64) -> Option<PartyRef> {
+        let r = PartyRef::from_word(id);
+        (Some(r.kind()) == self.bound.kinds.person.map(kind_number) && self.directory.at(r.kind(), r.slot()) == Some(r))
+            .then_some(r)
     }
 }

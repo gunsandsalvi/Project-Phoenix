@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 215 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 211 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -10,7 +10,7 @@ count = 1
 path = "crates/assembly/phx-obs/src/view.rs"
 item = "Views::close"
 what = "`.map_or`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core.rs"
@@ -548,12 +548,6 @@ count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_open.rs"
-item = "Core::persons_of"
-what = "`.unwrap_or_default`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_open.rs"
 item = "DatedFamily::alike_to"
 what = "`.unwrap_or_default`"
 count = 1
@@ -658,18 +652,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_plant.rs"
 item = "Plant"
 what = "field `sold`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::outcomes"
-what = "`.unwrap_or_default`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::record_event"
-what = "`.unwrap_or_default`"
 count = 1
 
 [[site]]

@@ -492,11 +492,7 @@ fn jobs_held_by_persons(w: Inspector<'_>) -> Outcome {
         for edge in f.store.edges.open_slots() {
             let Some(row) = f.store.edges.row(edge) else { continue };
             let [_, household] = row.ends;
-            let held = core
-                .persons
-                .get(usize::from(household.kind()))
-                .and_then(Option::as_ref)
-                .is_some_and(|p| p.of(household.slot()).any(|x| x.id == row.person));
+            let held = core.person_word((household, row.person)).is_some();
             if !held {
                 return Outcome::Fail(format!(
                     "a job of {} names person {}, whom its household does not hold",

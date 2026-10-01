@@ -15,6 +15,7 @@ pub struct KindsBound {
     pub firm: Option<usize>,
     pub estate: Option<usize>,
     pub household: Option<usize>,
+    pub person: Option<usize>,
     pub agency: Option<usize>,
 }
 
@@ -56,6 +57,7 @@ impl Bound {
                 firm: kind(sys_frm::FIRM.name),
                 estate: kind(phx_core::ESTATE_KIND.name),
                 household: kind(sys_dem::HOUSEHOLD_KIND.name),
+                person: kind(sys_dem::PERSON_KIND.name),
                 agency: kind(sys_soc::AGENCY.name),
             },
             families: FamiliesBound {

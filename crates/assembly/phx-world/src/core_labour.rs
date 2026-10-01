@@ -16,7 +16,6 @@ use if_labour::kind::LabourKind;
 use if_labour::law::Law;
 use phx_core::calendar::Calendar;
 use phx_core::calendar::period::Period;
-use phx_core::person_word::PersonWord;
 use phx_core::slots::DaySlot;
 use phx_core::wheel::DueWheel;
 use phx_core::{OpeningCountry, Register, StreamDef, WorldStreams};
@@ -339,11 +338,10 @@ impl Core {
         let Some(place) = self.bound.kinds.household else {
             return out;
         };
-        let Some(Some(persons)) = self.persons.get(place) else { return out };
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
-            for p in persons.of(slot) {
-                if PersonWord(p.word).get(ctx.kind.state) == class::SEARCHING {
-                    out.insert((PartyKey::new(kind_number(place), slot), p.id));
+            for (r, word) in self.members(slot) {
+                if word.get(ctx.kind.state) == class::SEARCHING {
+                    out.insert((PartyKey::new(kind_number(place), slot), r.word()));
                 }
             }
         }
@@ -611,11 +609,7 @@ impl Core {
 
     /// A person's whole years on a day, where its household still holds it.
     pub(crate) fn age_of(&self, (household, person): (PartyKey, u64), date: phx_id::Date) -> Option<u32> {
-        let place = self.bound.kinds.household?;
-        let ps = self.persons.get(place)?.as_ref()?;
-        let at = ps.place_of(household.slot(), person)?;
-        let word = ps.of(household.slot()).nth(at)?.word;
-        u32::try_from(PersonWord(word).age_on(date)).ok()
+        u32::try_from(self.person_word((household, person))?.age_on(date)).ok()
     }
 
     /// An employer's pay round, when due: each of its contracts not under notice offered the lesser of the point
@@ -798,14 +792,9 @@ impl Core {
 
     /// A person's last wage point, as its pay round set it.
     fn set_last_point(&mut self, ctx: &LabourCtx<'_>, (household, person): (PartyKey, u64), point: i64) {
-        let Some(place) = self.bound.kinds.household else {
-            return;
-        };
-        let Some(Some(ps)) = self.persons.get_mut(place) else { return };
-        let Some(at) = ps.place_of(household.slot(), person) else { return };
-        let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
-        let word = PersonWord(word).with(ctx.kind.last_point, u32::try_from(point).unwrap_or(class::NO_POINT));
-        ps.set_word(&mut self.space, household.slot(), at, word.0);
+        let Some(word) = self.person_word((household, person)) else { return };
+        let word = word.with(ctx.kind.last_point, u32::try_from(point).unwrap_or(class::NO_POINT));
+        self.write_person((household, person), word);
     }
 
     /// An employer's vacancies that stood past the law's patience raised a point.
@@ -833,16 +822,12 @@ impl Core {
         let mut out = Vec::new();
         let mut gone = Vec::new();
         for &(household, person) in &self.labour.searching {
-            let held = self.persons.get(place).and_then(Option::as_ref).and_then(|ps| {
-                let at = ps.place_of(household.slot(), person)?;
-                ps.of(household.slot()).nth(at)
-            });
-            let Some(h) = held.filter(|_| self.directory.is_live(crate::core::kind_number(place), household.slot()))
+            let held = self.person_word((household, person));
+            let Some(p) = held.filter(|_| self.directory.is_live(crate::core::kind_number(place), household.slot()))
             else {
                 gone.push((household, person));
                 continue;
             };
-            let p = PersonWord(h.word);
             if p.get(ctx.kind.state) != class::SEARCHING {
                 gone.push((household, person));
                 continue;
@@ -985,9 +970,6 @@ impl Core {
 
     /// A hire made a contract, and its person's state, occupation and last point written.
     fn hire(&mut self, ctx: &LabourCtx<'_>, day: Day, hired: &Application) -> bool {
-        let Some(place) = self.bound.kinds.household else {
-            return false;
-        };
         let (Some(v), Some(p)) = (
             self.labour.vacancies.get(usize::try_from(hired.vacancy).unwrap_or(usize::MAX)).copied(),
             self.labour.postings.get(usize::try_from(hired.vacancy).unwrap_or(usize::MAX)).copied(),
@@ -1000,8 +982,7 @@ impl Core {
             violation!(clause = "LAB.15", "a hire by an employer that has ended", employer = v.employer.word());
         }
         let household = hired.seeker.household;
-        let Some(ps) = self.persons.get(place).and_then(Option::as_ref) else { return false };
-        let Some(at) = ps.place_of(household.slot(), hired.seeker.person) else {
+        let Some(word) = self.person_word((household, hired.seeker.person)) else {
             // The person left before its answer took effect; the job returns to its vacancy.
             if let Some(v) = self.labour.vacancies.get_mut(usize::try_from(hired.vacancy).unwrap_or(usize::MAX)) {
                 v.open += 1;
@@ -1009,7 +990,6 @@ impl Core {
             return false;
         };
         let law = at_country(&self.labour.laws, p.country).clone();
-        let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return false };
         // An employee hired quits the job it holds for this one, whoever its employer.
         if self.quit_jobs(household, hired.seeker.person) > 0 {
             self.labour.job_to_job += 1;
@@ -1041,14 +1021,11 @@ impl Core {
             arrears: 0,
         };
         let _ = f.store.open(due, Some(dates.nth(ctx.calendar, nth)));
-        let packed = PersonWord(word)
+        let hired_word = word
             .with(ctx.kind.state, class::NOT_SEARCHING)
             .with(ctx.kind.occupation, v.occupation)
-            .with(ctx.kind.last_point, u32::try_from(p.point).unwrap_or(class::NO_POINT))
-            .0;
-        if let Some(Some(ps)) = self.persons.get_mut(place) {
-            ps.set_word(&mut self.space, household.slot(), at, packed);
-        }
+            .with(ctx.kind.last_point, u32::try_from(p.point).unwrap_or(class::NO_POINT));
+        self.write_person((household, hired.seeker.person), hired_word);
         self.touched.insert(household.slot().get());
         self.labour.searching.remove(&(household, hired.seeker.person));
         self.end_benefit(household, hired.seeker.person);
@@ -1163,19 +1140,14 @@ impl Core {
         amount: Option<i64>,
         law: &Law,
     ) {
-        let Some(place) = self.bound.kinds.household else {
-            return;
-        };
-        let Some(Some(ps)) = self.persons.get_mut(place) else { return };
-        let Some(at) = ps.place_of(household.slot(), person) else { return };
-        let Some(word) = ps.of(household.slot()).nth(at).map(|x| x.word) else { return };
-        let mut p = PersonWord(word).with(ctx.kind.state, class::SEARCHING);
+        let Some(word) = self.person_word((household, person)) else { return };
+        let mut p = word.with(ctx.kind.state, class::SEARCHING);
         if let Some(point) =
             amount.and_then(|a| (ctx.kind.point_near)(law, from_i64(a))).and_then(|x| u32::try_from(x).ok())
         {
             p = p.with(ctx.kind.last_point, point);
         }
-        ps.set_word(&mut self.space, household.slot(), at, p.0);
+        self.write_person((household, person), p);
         self.touched.insert(household.slot().get());
         self.labour.searching.insert((household, person));
     }

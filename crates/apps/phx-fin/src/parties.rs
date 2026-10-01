@@ -15,7 +15,7 @@ use phx_num::Missing;
 use phx_pop::directory::{Directory, Resolved};
 use phx_pop::kinds::{Attr, AttrW, KindStore, Opening};
 use phx_pop::layout::{FIRM, GroupDecl, HOUSEHOLD, IntTy, KindMap, Layout, WordDecl};
-use phx_pop::person_kind::{PersonKind, StoreHeads};
+use phx_pop::person_kind::{Heads, PersonKind, StoreHeads};
 use phx_pop::windowed::{WAttrW, WindowLayout, WindowedGroup};
 use phx_rand::uniform::below_u64;
 use phx_store::{AddressSpace, StoreStats};
@@ -309,7 +309,7 @@ fn rehouse(
     heads: &mut StoreHeads<'_, phx_store::SystemBacking>,
     (ended, to): (PartyRef, PartyRef),
 ) -> Result<(), FinError> {
-    let members: Vec<Slot> = persons.members(heads, ended.slot()).collect();
+    let members: Vec<Slot> = persons.members(heads.head(ended.slot())).collect();
     for slot in members {
         let p = dir.reference(PERSONS, slot).ok_or_else(|| FinError("a member never begun".to_owned()))?;
         persons.move_person(dir, heads, p, to);

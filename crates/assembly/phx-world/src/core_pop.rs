@@ -1,14 +1,15 @@
 //! Chance on the core's persons: for each process on the households' persons, a wheel of each household's next
 //! booking — a hit or a redraw — read from the same rules the books' day reads. A household due is read into its
 //! explicit form, its booking followed to today, and its hits' outcomes applied in process order; its gone persons
-//! leave it, each one's contracts closing and the places after it moving up, its newborns join it, and a household no
-//! one is left in ends. A household changed is booked again for every process from the next day.
+//! end that day, each one's contracts closing, its newborns are begun and join it, and a household no one is left in
+//! ends. A household changed is booked again for every process from the next day.
 
+use phx_core::person_word::PersonWord;
 use phx_core::pop_process::{Household, HouseholdState, Person};
 use phx_core::slots::DaySlot;
 use phx_core::wheel::DueWheel;
 use phx_core::{Register, WorldStreams};
-use phx_id::{CountryId, Day, PartyKey, Slot};
+use phx_id::{CountryId, Day, PartyKey, PartyRef, Slot};
 use phx_macros::clause;
 use phx_num::{Missing, violation};
 use phx_pop::hazard::{Booking, any_hit, next_booking};
@@ -114,19 +115,8 @@ impl Core {
 
     /// A hit recorded as an event: its household the subject, each person it reached a detail of one person.
     #[clause("OBS.3", "CHN.4")]
-    fn record_event(
-        &mut self,
-        kind: u16,
-        (place, slot, household): (usize, Slot, phx_id::PartyRef),
-        reached: &[usize],
-        day: Day,
-    ) {
-        let ids: Vec<u64> = self
-            .persons
-            .get(place)
-            .and_then(Option::as_ref)
-            .map(|p| p.of(slot).map(|x| x.id).collect())
-            .unwrap_or_default();
+    fn record_event(&mut self, kind: u16, (slot, household): (Slot, phx_id::PartyRef), reached: &[usize], day: Day) {
+        let ids: Vec<u64> = self.members(slot).map(|(r, _)| r.word()).collect();
         let details: Vec<(Subject, i64)> = reached
             .iter()
             .filter_map(|at| ids.get(*at))
@@ -193,22 +183,15 @@ impl Core {
     }
 
     /// A household read into its explicit form in a buffer kept across reads: its own state from its store, its
-    /// persons unpacked. A live household its store does not hold stops the run.
+    /// persons' words in the order they joined it. A live household its store does not hold stops the run.
     #[phx_macros::absent_is_zero(reason = "a buffer before its first household holds no persons")]
-    pub(crate) fn read_household<'h>(
-        &self,
-        place: usize,
-        slot: Slot,
-        buffer: &'h mut Option<Household>,
-    ) -> &'h mut Household {
+    pub(crate) fn read_household<'h>(&self, slot: Slot, buffer: &'h mut Option<Household>) -> &'h mut Household {
         let Some(state) = self.household_state(slot) else {
             violation!(clause = "REP.41", "a household its store does not hold", slot = slot.get());
         };
         let mut persons = buffer.take().map(|h| h.persons).unwrap_or_default();
         persons.clear();
-        if let Some(Some(p)) = self.persons.get(place) {
-            persons.extend(p.of(slot).map(|x| Person::of(phx_core::person_word::PersonWord(x.word))));
-        }
+        persons.extend(self.members(slot).map(|(_, w)| Person::of(w)));
         buffer.insert(Household { state, persons })
     }
 
@@ -234,7 +217,7 @@ impl Core {
         let mut h = None;
         let mut buffers = Buffers::default();
         for slot in slots {
-            let h = self.read_household(place, slot, &mut h);
+            let h = self.read_household(slot, &mut h);
             self.book_all(ctx, (place, decl), slot, (h, &mut buffers), from);
         }
     }
@@ -280,7 +263,7 @@ impl Core {
             if self.directory.at(crate::core::kind_number(place), slot).is_none() {
                 continue;
             }
-            let h = self.read_household(place, slot, &mut h);
+            let h = self.read_household(slot, &mut h);
             self.book_all(ctx, (place, decl), slot, (h, &mut buffers), day);
         }
         // Every process's bookings due today, taken in process order.
@@ -321,7 +304,7 @@ impl Core {
                 ) else {
                     violation!(clause = "REP.7", "a booking due for no household or process", slot = slot.get());
                 };
-                let h = this.read_household(place, slot, &mut chunk.h);
+                let h = this.read_household(slot, &mut chunk.h);
                 let subject = Subject::from(id);
                 let mut d = ctx.streams.open_at(&b.stream, subject, day, DaySlot::S3b.ordinal());
                 let f = follow(&reading, (decl.kind, id, decl.blank), b, (h, &mut chunk.buffers), (day, start), &mut d);
@@ -344,9 +327,9 @@ impl Core {
             if !f.reached.is_empty() {
                 record.hits += 1;
                 self.count_event(b.event, phx_rand::float::len_u64(f.reached.len()));
-                self.record_event(b.event, (place, slot, id), &f.reached, day);
+                self.record_event(b.event, (slot, id), &f.reached, day);
                 if crate::core_rates::sampled(id) {
-                    let h = self.read_household(place, slot, &mut h);
+                    let h = self.read_household(slot, &mut h);
                     self.rates.realised(process, h, &f.reached, ctx.calendar.date(day));
                 }
                 hits.push((slot, process, f.reached));
@@ -376,10 +359,9 @@ impl Core {
     ) {
         let Some(id) = self.directory.reference(crate::core::kind_number(place), slot) else { return };
         let mut buffer = None;
-        let h = self.read_household(place, slot, &mut buffer);
+        let h = self.read_household(slot, &mut buffer);
         let before = h.persons.len();
-        let held: Vec<phx_pop::persons::Held> =
-            self.persons.get(place).and_then(Option::as_ref).map(|p| p.of(slot).collect()).unwrap_or_default();
+        let held: Vec<(PartyRef, PersonWord)> = self.members(slot).collect();
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
         let was = h.state;
         let decider = |name: &str| self.decided_in_process(name, (crate::core::kind_number(place), slot));
@@ -417,7 +399,7 @@ impl Core {
         }
         let key = PartyKey::new(u8::try_from(place).unwrap_or(u8::MAX), slot);
         self.record_vitals(h, &held, (ctx, day));
-        self.write_changed(place, key, (&h.persons, &held), (ctx, day), record);
+        self.write_changed(key, (&h.persons, &held), (ctx, day), record);
         // What an outcome changed of the household's own, as its decision to try for a child, is its store's.
         let now = h.state;
         if now.trying != was.trying {
@@ -426,28 +408,22 @@ impl Core {
         if now.ideal != was.ideal {
             self.household_write(|hs| hs.set_ideal(slot, now.ideal));
         }
-        // The gone leave from the last, so each earlier place still reads the person the outcome marked.
+        // The gone end the same day, their household succeeding to what they held; the born join it.
         let mut died = Vec::new();
-        for at in (0..before).rev() {
-            if h.persons.get(at).is_some_and(|p| p.gone) {
-                let Some(Some(persons)) = self.persons.get_mut(place) else { continue };
-                let Some(person) = persons.of(slot).nth(at).map(|x| x.id) else {
-                    violation!(clause = "REP.26", "a person gone that its household does not hold", party = id.word());
-                };
-                persons.remove(&mut self.space, slot, at);
-                self.person_left(key, person);
-                record.gone += 1;
-                let Some(cause) = causes.get(at).copied().flatten() else {
-                    violation!(clause = "POP.15", "a person gone by no process", party = id.word());
-                };
-                died.push(Death { day, person, household: key, cause, to: Destination::Household(key) });
+        for ((_, (person, _)), cause) in h.persons.iter().zip(&held).zip(&causes).filter(|((p, _), _)| p.gone) {
+            if let (Some(ps), Some(hs)) = (self.persons.as_mut(), self.households.as_mut()) {
+                ps.end_person(&mut self.directory, &mut hs.heads(), *person, (day, Missing::Present(id)));
             }
+            self.person_left(key, person.word());
+            record.gone += 1;
+            let Some(cause) = *cause else {
+                violation!(clause = "POP.15", "a person gone by no process", party = id.word());
+            };
+            died.push(Death { day, person: person.word(), household: key, cause, to: Destination::Household(key) });
         }
         for p in h.persons.iter().skip(before).filter(|p| !p.gone) {
-            let person = self.next_id;
-            self.next_id += 1;
-            if let Some(Some(persons)) = self.persons.get_mut(place) {
-                persons.push(&mut self.space, slot, phx_pop::persons::Held { word: p.word.0, id: person });
+            if let (Some(ps), Some(hs)) = (self.persons.as_mut(), self.households.as_mut()) {
+                let _ = ps.begin_person(&mut self.directory, &mut hs.heads(), id, (p.word, &[]));
             }
             record.born += 1;
         }
@@ -471,14 +447,14 @@ impl Core {
 
     /// The deaths an outcome made and the onsets of disability, each counted in its household's country's month by the
     /// person's age class and health before it.
-    fn record_vitals(&mut self, h: &Household, held: &[phx_pop::persons::Held], (ctx, day): (&Ctx<'_>, Day)) {
+    fn record_vitals(&mut self, h: &Household, held: &[(PartyRef, PersonWord)], (ctx, day): (&Ctx<'_>, Day)) {
         let Some(country) = ctx.regions.get(usize::try_from(h.state.region).unwrap_or(usize::MAX)).map(|c| c.get())
         else {
             return;
         };
         let date = ctx.calendar.date(day);
         for (p, was) in h.persons.iter().zip(held) {
-            let before = phx_core::person_word::PersonWord(was.word);
+            let before = was.1;
             let health = before.get(if_pop::HEALTH.field);
             let age = before.age_on(date);
             if p.gone {
@@ -494,30 +470,24 @@ impl Core {
     #[clause("REP.26", "LAB.6")]
     fn write_changed(
         &mut self,
-        place: usize,
         key: PartyKey,
-        (persons, held): (&[Person], &[phx_pop::persons::Held]),
+        (persons, held): (&[Person], &[(PartyRef, PersonWord)]),
         (ctx, day): (&Ctx<'_>, Day),
         record: &mut PopDay,
     ) {
         let state = sys_lab::STATE.field;
-        for (at, (p, h)) in persons.iter().zip(held).enumerate() {
-            if p.gone {
+        for (p, (r, word)) in persons.iter().zip(held) {
+            if p.gone || p.word == *word {
                 continue;
             }
-            let word = p.word.0;
-            if word == h.word {
-                continue;
+            if let Some(ps) = self.persons.as_mut() {
+                ps.set_word(&self.directory, *r, p.word);
             }
-            if let Some(Some(ps)) = self.persons.get_mut(place) {
-                ps.set_word(&mut self.space, key.slot(), at, word);
-            }
-            let was = phx_core::person_word::PersonWord(h.word).get(state);
-            if p.get(state) == if_labour::class::RETIRED && was != if_labour::class::RETIRED {
-                self.leave_jobs(key, h.id);
+            if p.get(state) == if_labour::class::RETIRED && word.get(state) != if_labour::class::RETIRED {
+                self.leave_jobs(key, r.word());
                 record.retired += 1;
                 if let Some(country) = self.country_of_household(ctx, key)
-                    && self.claim_pension((ctx.calendar, ctx.streams, day), (key, p), (h.id, country))
+                    && self.claim_pension((ctx.calendar, ctx.streams, day), (key, p), (r.word(), country))
                 {
                     record.claimed += 1;
                 }
@@ -575,9 +545,6 @@ impl Core {
             for edge in mine {
                 family.close_contract(edge);
             }
-        }
-        if let Some(Some(p)) = self.persons.get_mut(place) {
-            p.clear(&mut self.space, key.slot());
         }
         self.end_party(key, day, estate);
         estate

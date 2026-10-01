@@ -468,11 +468,13 @@ is a party with a permanent identity.
   ownership are the person's. A household holds its persons, each with its role in it (REP.26).
 - **PTY.4 STATE** — Every party has a **legal form**, and the legal form is declared data (Law 10): what it
   may hold, whether it is a party separate from its owners, whether its owners have limited liability,
-  whether it may take deposits, how it can end, who its owners are — the state, its shareholders, its members, or
-  the heirs and creditors of the party it was — and whether they hold its equity (ACC.4).
+  whether it may take deposits, how it can end, who its owners are — the state, its shareholders, its members, the
+  heirs and creditors of the party it was, or no one, as for a natural person — and whether they hold its equity
+  (ACC.4).
 - **PTY.5 STATE** — Every party has a **site** on the map (GEO), from which its region and country are read;
   a party with several establishments has a site for each. A household or firm has a **zone** for each site among
-  its attributes, and its site is the tile of what it holds there, drawn when something depends on it (REP.24).
+  its attributes, and its site is the tile of what it holds there, drawn when something depends on it (REP.24). A
+  person's site is its household's.
 - **PTY.6 STATE** — Every party has a **home currency** — its country's — and keeps its books in it.
 - **PTY.7 STATE** — **Ownership and control are relations between parties**, recorded as holdings of the
   owned party's equity (REG), never as attributes. A **group** is a parent and the subsidiaries it controls
