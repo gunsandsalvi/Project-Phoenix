@@ -1,3 +1,6 @@
+use crate::layout::IntTy::{I32, I64, U8, U16, U32, U64};
+use crate::layout::{GroupDecl, KindMap, fits, used, width, word};
+
 /// A person word's bits for its birth date: the calendar's civil day serial, in two's complement, so persons born
 /// before the world's epoch are held exactly.
 pub const BIRTH_BITS: u32 = 32;
@@ -13,3 +16,147 @@ pub const TOMB_MERGE_SHARE: usize = 16;
 /// The main tombstone run's keys a fence entry stands for: a block of a kilobyte, so a lookup is a search of the fence,
 /// which stays in cache, then of one block.
 pub const TOMB_FENCE: usize = 64;
+/// The groups a kind's store holds at most: hot, warm, cold and list headers.
+pub const KIND_GROUPS: usize = 4;
+/// The indexes a kind keeps on its words at most.
+pub const KIND_INDEXES: usize = 4;
+/// A kind's group column's chunk, in bytes: a power of two the column's pages commit by.
+pub const KIND_CHUNK_BYTES: u32 = 1 << 18;
+/// The bytes of each integer type a word may hold: one, two, four and eight.
+pub const INT_BYTES: [u16; 4] = [1, 2, 4, 8];
+
+/// A household's hot row, the two lines a visit gathers: its attributes (where it lives, a zone or a building, from
+/// which its region and country are read; tenure, credit stage and stance packed in one byte; its preference type; its
+/// flags; the day it formed), its persons' and contracts' heads, its positions, its own outlooks and its agenda.
+const HOUSEHOLD_HOT: GroupDecl = GroupDecl {
+    name: "hot",
+    width: 128,
+    words: &[
+        word("residence", U32, 1, true, "K-32"),
+        word("states", U8, 1, false, "K-32"),
+        word("preference", U16, 1, true, "K-32"),
+        word("flags", U8, 1, false, "K-32"),
+        word("formed", U32, 1, true, "K-32"),
+        word("persons_head", U32, 1, true, "K-33"),
+        word("chain_head", U32, 1, true, "K-53"),
+        word("positions", I64, 3, true, "K-32"),
+        word("outlooks", I32, 4, true, "K-102"),
+        word("agenda_base", U32, 1, true, "K-43"),
+        word("agenda", U16, 27, true, "K-43"),
+    ],
+};
+
+/// A household's warm row: two named-unit slots its persons or their groups own (owner, unit, count, cost).
+const HOUSEHOLD_WARM: GroupDecl = GroupDecl {
+    name: "warm",
+    width: 46,
+    words: &[
+        word("unit_owner", U32, 2, true, "K-60"),
+        word("unit_id", U32, 2, true, "K-60"),
+        word("unit_count", U32, 2, false, "K-60"),
+        word("unit_cost", I64, 2, false, "K-60"),
+    ],
+};
+
+/// The household's byte map, 174 bytes.
+pub const HOUSEHOLD: KindMap = KindMap { kind: "household", groups: &[HOUSEHOLD_HOT, HOUSEHOLD_WARM] };
+
+/// A firm's hot row, what a production visit reads: its own and four inputs' unit ids, its stall, its own and its
+/// inputs' stocks at cost, its work in progress, its exact output rate, its unit cost and the day it was reckoned, its
+/// sales since its review and the expected sales that call one, and its flags.
+const FIRM_HOT: GroupDecl = GroupDecl {
+    name: "hot",
+    width: 192,
+    words: &[
+        word("units", U32, 5, true, "K-60"),
+        word("stall", U32, 1, true, "K-71"),
+        word("own_stock", I64, 2, false, "K-60"),
+        word("input_stocks", I64, 8, false, "K-60"),
+        word("in_progress", I64, 1, false, "K-69"),
+        word("rate", I64, 1, true, "K-68"),
+        word("rate_anchor", U32, 1, true, "K-68"),
+        word("realised", I64, 1, false, "K-68"),
+        word("unit_cost", I64, 1, true, "K-35"),
+        word("unit_cost_day", U16, 1, true, "K-35"),
+        word("sales_since_review", I64, 2, false, "K-74"),
+        word("expected_sales", I64, 1, true, "K-74"),
+        word("flags", U32, 1, false, "K-32"),
+    ],
+};
+
+/// A firm's warm row: its agenda, sales outlook, wage bill, staff hours and plant capacity, plant occupancy, committed
+/// stock, identity (account, zone, legal form, flags, founding preferences, memory and stance types, head's office,
+/// industry, founding day), markup, productivity and last price review, equity and net assets, and cumulative output.
+const FIRM_WARM: GroupDecl = GroupDecl {
+    name: "warm",
+    width: 184,
+    words: &[
+        word("agenda_base", U32, 1, true, "K-43"),
+        word("agenda", U16, 24, true, "K-43"),
+        word("sales_outlook", I32, 3, true, "K-102"),
+        word("wage_bill", I64, 1, false, "K-54"),
+        word("staff_hours", U32, 4, false, "K-54"),
+        word("plant_capacity", I64, 1, false, "K-67"),
+        word("occupancy", U32, 1, false, "K-60"),
+        word("overflow_run", U32, 1, true, "K-60"),
+        word("committed", I64, 1, false, "K-60"),
+        word("account", U32, 1, true, "K-47"),
+        word("zone", U16, 1, true, "K-32"),
+        word("legal_form", U8, 1, false, "K-32"),
+        word("identity_flags", U8, 1, false, "K-32"),
+        word("types", U8, 3, true, "K-32"),
+        word("head_office", U32, 1, true, "K-34"),
+        word("industry", U16, 1, true, "K-32"),
+        word("founded", U32, 1, true, "K-32"),
+        word("markup", I32, 1, true, "K-32"),
+        word("productivity", I32, 1, true, "K-32"),
+        word("last_review", U16, 1, true, "K-32"),
+        word("equity", I64, 1, false, "K-88"),
+        word("net_assets", I64, 1, false, "K-88"),
+        word("cumulative_output", U64, 2, false, "K-68"),
+    ],
+};
+
+/// A firm's cold row: its income-statement lines, tax accrued, trade-credit terms and equity issued.
+const FIRM_COLD: GroupDecl = GroupDecl {
+    name: "cold",
+    width: 112,
+    words: &[
+        word("income_lines", I64, 10, false, "K-87"),
+        word("tax_accrued", I64, 2, false, "K-51"),
+        word("credit_terms", U32, 1, true, "K-55"),
+        word("equity_issued", I64, 1, false, "K-64"),
+    ],
+};
+
+/// A firm's list headers: its employer, invoice-seller and invoice-buyer lists (block, length, dead each), and its
+/// holder chain's head.
+const FIRM_LISTS: GroupDecl = GroupDecl {
+    name: "lists",
+    width: 32,
+    words: &[
+        word("list_blocks", U32, 3, true, "K-53"),
+        word("list_lengths", U16, 3, false, "K-53"),
+        word("list_dead", U16, 3, false, "K-53"),
+        word("holder_chain", U32, 1, true, "K-53"),
+    ],
+};
+
+/// The firm's byte map, 520 bytes.
+pub const FIRM: KindMap = KindMap { kind: "firm", groups: &[FIRM_HOT, FIRM_WARM, FIRM_COLD, FIRM_LISTS] };
+
+/// Every group of both maps within its width, and each map within a store.
+const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM));
+/// The household's 174 bytes, 128 of them hot: two cache lines a visit gathers.
+const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
+/// The firm's 520 bytes, 192 of them hot: three cache lines.
+const _: () = assert!(width(&FIRM) == 520 && FIRM_HOT.width == 192);
+/// The reserves later steps fill: the household's 16 bytes.
+const _: () = assert!(HOUSEHOLD_HOT.width - used(&HOUSEHOLD_HOT) + HOUSEHOLD_WARM.width - used(&HOUSEHOLD_WARM) == 16);
+/// The firm's reserve, 39 bytes.
+const _: () = assert!(
+    FIRM_HOT.width - used(&FIRM_HOT) + FIRM_WARM.width - used(&FIRM_WARM) + FIRM_COLD.width - used(&FIRM_COLD)
+        + FIRM_LISTS.width
+        - used(&FIRM_LISTS)
+        == 39
+);

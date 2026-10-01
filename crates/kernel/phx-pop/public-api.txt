@@ -1,6 +1,12 @@
 pub mod phx_pop  // used by: phx-cli, phx-world, sys-dem
 pub mod phx_pop::consts  // used by: if-base, if-labour, if-pop, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const phx_pop::consts::BIRTH_BITS: u32
+pub const phx_pop::consts::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
+pub const phx_pop::consts::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
+pub const phx_pop::consts::INT_BYTES: [u16; 4]
+pub const phx_pop::consts::KIND_CHUNK_BYTES: u32
+pub const phx_pop::consts::KIND_GROUPS: usize
+pub const phx_pop::consts::KIND_INDEXES: usize
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
 pub const phx_pop::consts::ROLE_BITS: u32
 pub const phx_pop::consts::TOMB_FENCE: usize
@@ -73,6 +79,142 @@ pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option
 pub fn phx_pop::kind::PopKindDecl::role(&self, &str) -> core::option::Option<usize>  // used by: phx-cli, phx-core, phx-macros, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub fn phx_pop::kind::PopKindDecl::role_name(&self, usize) -> &'static str
 pub fn phx_pop::kind::compile_kinds(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>  // used by: phx-world
+pub mod phx_pop::kinds  // used by: if-state, phx-cli, phx-core, phx-fin, phx-id, phx-macros, phx-obs, phx-world, sys-cap, sys-soc, sys-sov, sys-tax, sys-trs
+pub struct phx_pop::kinds::Attr<T>  // used by: phx-core, phx-fin, phx-obs
+impl<T> core::clone::Clone for phx_pop::kinds::Attr<T>
+pub fn phx_pop::kinds::Attr<T>::clone(&self) -> phx_pop::kinds::Attr<T>  // used by: phx-core, phx-fin, phx-obs
+impl<T> core::cmp::PartialEq for phx_pop::kinds::Attr<T>
+pub fn phx_pop::kinds::Attr<T>::eq(&self, &phx_pop::kinds::Attr<T>) -> bool  // used by: phx-core, phx-fin, phx-obs
+impl<T> core::marker::Copy for phx_pop::kinds::Attr<T>
+pub struct phx_pop::kinds::AttrW<T>(_)  // used by: phx-fin
+impl<T> phx_pop::kinds::AttrW<T>
+pub fn phx_pop::kinds::AttrW<T>::read(self) -> phx_pop::kinds::Attr<T>  // used by: phx-fin
+impl<T> core::clone::Clone for phx_pop::kinds::AttrW<T>
+pub fn phx_pop::kinds::AttrW<T>::clone(&self) -> phx_pop::kinds::AttrW<T>  // used by: phx-fin
+impl<T> core::marker::Copy for phx_pop::kinds::AttrW<T>
+pub struct phx_pop::kinds::Chunks<'a, D: phx_store::backing::Backing>
+impl<'a, D: phx_store::backing::Backing> core::iter::traits::iterator::Iterator for phx_pop::kinds::Chunks<'a, D>
+pub type phx_pop::kinds::Chunks<'a, D>::Item = phx_pop::kinds::KindChunk<'a, D>
+pub fn phx_pop::kinds::Chunks<'a, D>::next(&mut self) -> core::option::Option<phx_pop::kinds::KindChunk<'a, D>>
+pub struct phx_pop::kinds::KindChunk<'a, D: phx_store::backing::Backing>
+impl<D: phx_store::backing::Backing> phx_pop::kinds::KindChunk<'_, D>
+pub fn phx_pop::kinds::KindChunk<'_, D>::get<T: phx_pop::kinds::Word>(&mut self, phx_id::ids::PartyRef, phx_pop::kinds::Attr<T>) -> phx_num::missing::Missing<T>
+pub fn phx_pop::kinds::KindChunk<'_, D>::set<T: phx_pop::kinds::Word>(&mut self, phx_id::ids::PartyRef, phx_pop::kinds::AttrW<T>, phx_num::missing::Missing<T>)
+pub fn phx_pop::kinds::KindChunk<'_, D>::slots(&self) -> (phx_id::ids::Slot, u32)
+pub struct phx_pop::kinds::KindStore<B: phx_store::backing::Backing>  // used by: phx-core, phx-fin, phx-world
+impl<B: phx_store::backing::Backing> phx_pop::kinds::KindStore<B>
+pub fn phx_pop::kinds::KindStore<B>::begin<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, &[phx_pop::kinds::Opening])  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::chunks_mut<'a, D: phx_store::backing::Backing>(&'a mut self, &'a phx_pop::directory::Directory<D>, u32) -> phx_pop::kinds::Chunks<'a, D>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::end<D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef)  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::gather<D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, u8) -> phx_pop::kinds::Row<'_>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::get<T: phx_pop::kinds::Word, D: phx_store::backing::Backing>(&self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::kinds::Attr<T>) -> phx_num::missing::Missing<T>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::group_bytes(&self, u8) -> core::option::Option<usize>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::index(&self, usize) -> core::option::Option<&phx_store::index::Index<B>>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::keep_index<T: phx_pop::kinds::Word>(&mut self, &mut phx_store::backing::AddressSpace, phx_pop::kinds::Attr<T>, phx_store::index_decl::IndexDecl, impl core::iter::traits::iterator::Iterator<Item = phx_id::ids::Slot>) -> core::result::Result<usize, alloc::string::String>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::new(&mut phx_store::backing::AddressSpace, u8, &phx_pop::layout::Layout, u32) -> phx_pop::kinds::KindStore<B>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::rows(&self) -> u32  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::scan(&self, u8) -> impl core::iter::traits::iterator::Iterator<Item = (phx_id::ids::Slot, phx_pop::kinds::Row<'_>)> + '_  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::set<T: phx_pop::kinds::Word, D: phx_store::backing::Backing>(&mut self, &phx_pop::directory::Directory<D>, phx_id::ids::PartyRef, phx_pop::kinds::AttrW<T>, phx_num::missing::Missing<T>)  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::widths(&self) -> &[u16]  // used by: phx-core, phx-fin, phx-world
+impl<B: phx_store::backing::Backing> phx_store::save::Saved for phx_pop::kinds::KindStore<B>
+pub fn phx_pop::kinds::KindStore<B>::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<phx_pop::kinds::KindStore<B>, phx_store::save::LoadError>  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-core, phx-fin, phx-world
+impl<B: phx_store::backing::Backing> phx_store::stats::StoreStats for phx_pop::kinds::KindStore<B>
+pub fn phx_pop::kinds::KindStore<B>::bytes(&self) -> u64  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::rows_ever(&self) -> u64  // used by: phx-core, phx-fin, phx-world
+pub fn phx_pop::kinds::KindStore<B>::rows_live(&self) -> u64  // used by: phx-core, phx-fin, phx-world
+pub struct phx_pop::kinds::Opening  // used by: phx-check, phx-core, phx-fin, phx-geo, phx-rand, phx-world
+impl phx_pop::kinds::Opening
+pub fn phx_pop::kinds::Opening::of<T: phx_pop::kinds::Word>(phx_pop::kinds::AttrW<T>, T) -> phx_pop::kinds::Opening  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-dem, sys-frm, sys-lab, sys-soc
+pub struct phx_pop::kinds::Row<'a>  // used by: phx-core, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Row<'_>
+pub fn phx_pop::kinds::Row<'_>::get<T: phx_pop::kinds::Word>(&self, phx_pop::kinds::Attr<T>) -> phx_num::missing::Missing<T>  // used by: phx-core, phx-fin, phx-store, phx-world
+pub trait phx_pop::kinds::Word: core::marker::Copy + core::cmp::PartialEq + core::fmt::Debug
+pub const phx_pop::kinds::Word::ABSENT: Self  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const phx_pop::kinds::Word::TY: phx_pop::layout::IntTy
+pub fn phx_pop::kinds::Word::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn phx_pop::kinds::Word::read(&[u8]) -> core::option::Option<Self>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn phx_pop::kinds::Word::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Word for i32
+pub const i32::ABSENT: i32  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const i32::TY: phx_pop::layout::IntTy
+pub fn i32::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn i32::read(&[u8]) -> core::option::Option<i32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn i32::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Word for i64
+pub const i64::ABSENT: i64  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const i64::TY: phx_pop::layout::IntTy
+pub fn i64::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn i64::read(&[u8]) -> core::option::Option<i64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn i64::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Word for u16
+pub const u16::ABSENT: u16  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const u16::TY: phx_pop::layout::IntTy
+pub fn u16::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn u16::read(&[u8]) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn u16::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Word for u32
+pub const u32::ABSENT: u32  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const u32::TY: phx_pop::layout::IntTy
+pub fn u32::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn u32::read(&[u8]) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn u32::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Word for u64
+pub const u64::ABSENT: u64  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const u64::TY: phx_pop::layout::IntTy
+pub fn u64::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn u64::read(&[u8]) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn u64::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+impl phx_pop::kinds::Word for u8
+pub const u8::ABSENT: u8  // used by: phx-core, phx-geo, phx-num, phx-world
+pub const u8::TY: phx_pop::layout::IntTy
+pub fn u8::key(self) -> core::option::Option<u64>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-market, phx-num, phx-rand, phx-store, phx-world, sys-lab, sys-tec
+pub fn u8::read(&[u8]) -> core::option::Option<u8>  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-dem
+pub fn u8::write(self, &mut [u8])  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-store, phx-world
+pub mod phx_pop::layout  // used by: phx-check, phx-exec, phx-fin, phx-store
+pub enum phx_pop::layout::IntTy
+pub phx_pop::layout::IntTy::I32
+pub phx_pop::layout::IntTy::I64
+pub phx_pop::layout::IntTy::U16
+pub phx_pop::layout::IntTy::U32
+pub phx_pop::layout::IntTy::U64
+pub phx_pop::layout::IntTy::U8
+impl phx_pop::layout::IntTy
+pub const fn phx_pop::layout::IntTy::bytes(self) -> u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub struct phx_pop::layout::Extra
+pub phx_pop::layout::Extra::group: &'static str  // used by: phx-check, phx-core, phx-fin, phx-market, phx-world
+pub phx_pop::layout::Extra::word: phx_pop::layout::WordDecl  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-market, phx-rand, phx-store, phx-world
+pub struct phx_pop::layout::GroupDecl  // used by: phx-fin
+pub phx_pop::layout::GroupDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_pop::layout::GroupDecl::width: u16  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-val, phx-world
+pub phx_pop::layout::GroupDecl::words: &'static [phx_pop::layout::WordDecl]  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-rand, phx-store, phx-world
+pub struct phx_pop::layout::KindMap  // used by: phx-fin
+pub phx_pop::layout::KindMap::groups: &'static [phx_pop::layout::GroupDecl]  // used by: phx-core, phx-exec, phx-fin, phx-market, phx-store, phx-world
+pub phx_pop::layout::KindMap::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub struct phx_pop::layout::Layout  // used by: phx-exec, phx-fin, phx-store
+pub phx_pop::layout::Layout::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
+pub phx_pop::layout::Layout::widths: alloc::vec::Vec<u16>  // used by: phx-fin
+pub phx_pop::layout::Layout::words: alloc::vec::Vec<phx_pop::layout::Placed>  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-geo, phx-rand, phx-store, phx-world
+impl phx_pop::layout::Layout
+pub fn phx_pop::layout::Layout::attr<T: phx_pop::kinds::Word>(&self, &str, u16) -> core::result::Result<phx_pop::kinds::Attr<T>, alloc::string::String>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-macros, phx-obs, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
+pub fn phx_pop::layout::Layout::blanks(&self) -> alloc::vec::Vec<alloc::vec::Vec<u8>>
+pub fn phx_pop::layout::Layout::compile(&phx_pop::layout::KindMap, &[phx_pop::layout::Extra]) -> core::result::Result<phx_pop::layout::Layout, alloc::string::String>  // used by: phx-core, phx-fin, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
+pub fn phx_pop::layout::Layout::writer<T: phx_pop::kinds::Word>(&mut self, &str, u16, &str) -> core::result::Result<phx_pop::kinds::AttrW<T>, alloc::string::String>  // used by: phx-core, phx-fin, phx-macros
+pub struct phx_pop::layout::Placed  // used by: phx-store, phx-world
+pub phx_pop::layout::Placed::decl: phx_pop::layout::WordDecl  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-macros, phx-obs, phx-store, phx-world, sys-cap, sys-dem, sys-frm, sys-frt, sys-tec
+pub phx_pop::layout::Placed::group: u8  // used by: phx-check, phx-core, phx-fin, phx-market, phx-world
+pub phx_pop::layout::Placed::offset: u16  // used by: phx-check, phx-core, phx-exec, phx-geo, phx-store, sys-dem
+pub struct phx_pop::layout::WordDecl
+pub phx_pop::layout::WordDecl::absent: bool  // used by: phx-macros
+pub phx_pop::layout::WordDecl::count: u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub phx_pop::layout::WordDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_pop::layout::WordDecl::ty: phx_pop::layout::IntTy  // used by: phx-check, phx-core, phx-geo, phx-macros
+pub phx_pop::layout::WordDecl::writer: &'static str  // used by: phx-core, phx-fin, phx-macros
+pub const phx_pop::layout::FIRM: phx_pop::layout::KindMap  // used by: phx-fin, phx-world, sys-frm
+pub const phx_pop::layout::HOUSEHOLD: phx_pop::layout::KindMap  // used by: if-pop, phx-fin, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab
+pub const fn phx_pop::layout::fits(&phx_pop::layout::KindMap) -> bool  // used by: phx-market, phx-store
+pub const fn phx_pop::layout::used(&phx_pop::layout::GroupDecl) -> u16  // used by: phx-check, phx-core, phx-fin, phx-market, phx-store, phx-world, sys-frm
+pub const fn phx_pop::layout::width(&phx_pop::layout::KindMap) -> u16  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-val, phx-world
 pub mod phx_pop::person  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
 pub fn phx_pop::person::pack(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Person) -> u64  // used by: phx-store, phx-world
 pub fn phx_pop::person::unpack(&phx_pop::kind::PopKindDecl, u64) -> phx_core::pop_process::Person  // used by: phx-cli, phx-store, phx-world

@@ -673,6 +673,55 @@ counter = "fin.parties.mass_end_ns"
 value = 60300000
 direction = "down"
 
+# The kinds' stores (S1.196, 2026-10-01; `tools/bench.sh -F parties`): the design point's 1.77 M households at 174 bytes
+# (128 hot), 0.92 M firms at 520 (192 hot) and 16 000 institutions at a 1 024-byte record, 777 MiB committed. A day's
+# 1.6 M household and 0.9 M firm visits, in slot order, gather a hot row in 28.6 ns (no step figure: one row's lines
+# a memory latency away, prefetched in slot order); a word read after its gather 0.48 ns (the step's 1, which stands);
+# a surprise day's scan of every household's and firm's hot row 12.9–13.3 ns a record (the step's 3.8: a bare read of
+# the rows' first words at their stride takes 9–10 ns a record on this machine, its memory streaming 12.7 GB/s to one
+# core, the adjacent line fetched with each; the rest is the rows' handles). The day's gathers and scan fault no page.
+# The bytes a party are its rows' declared widths, which only a widened group raises; each time ratchet stands a quarter
+# above the highest, the word read at the step's figure.
+[[ratchet]]
+counter = "fin.parties.household_bytes"
+value = 174
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.household_hot_bytes"
+value = 128
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.firm_bytes"
+value = 520
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.firm_hot_bytes"
+value = 192
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.faults_per_day"
+value = 0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.attr_ns"
+value = 1
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.gather_ns"
+value = 35.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.parties.wake_scan_ns"
+value = 16.7
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

@@ -2311,7 +2311,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; S1.196–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores written; S1.197–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2351,8 +2351,74 @@ and ever are the directory's (`Core::store_samples`). A table of nature's kind i
 
 #### K-32 Kind stores and windowed groups
 
-Layout · API · algorithms and bounds · traversal · save and load · capacity · volumes and ratchets · extension points:
-planned (S1.196–S1.206).
+`phx-pop`'s `KindStore` (`kinds.rs`; PTY.5, REP.1) holds a kind's parties' state as fixed-width groups by slot, at the
+slot the directory (K-31) gave each party; windowed groups are planned (S1.197), and today's kinds move onto the stores
+at S1.198–S1.206.
+
+**Layout** (`layout.rs`, the maps in `consts.rs`): a kind's `KindMap` names its groups, hot first, at most four; a
+group (`GroupDecl`) is a width in bytes and the words the bases declare in it (`WordDecl`: name, integer type, count
+side by side, whether it may be absent, and the base that writes it); what the words leave is the group's reserve.
+Stores hold integers only; an absent-capable word's sentinel is its type's most negative value, or its largest
+unsigned. `const` checks hold every map within its widths and the sizes below.
+
+- **Household, 174 B.** *Hot, 128* (two lines): residence u32 (a zone or a building, from which region and country are
+  read) · states u8 (tenure 2 bits, credit stage 3, stance 3) · preference type u16 · flags u8 · formed day u32 (K-32)
+  · persons head u32 (K-33) · chain head u32 (K-53) · positions 3 × i64 (recent income, debt service, buffer target;
+  K-32) · own outlooks 4 × i32 (`Fixed`; K-102) · agenda base u32 and 27 × u16 (K-43) · reserve 10. *Warm, 46*: two
+  named-unit slots, each owner u32, unit u32, count u32, cost i64 (K-60) · reserve 6.
+- **Firm, 520 B.** *Hot, 192*: own and four input unit ids 5 × u32 (K-60) · stall u32 (K-71) · own stock units and cost
+  2 × i64 and four input stocks 8 × i64 (K-60) · work in progress i64 (K-69) · rate i64, anchor day u32, realised i64
+  (K-68) · unit cost i64 and its day u16 (K-35) · sales since review 2 × i64 and expected sales i64 (K-74) · flags u32
+  (K-32) · reserve 22. *Warm, 184*: agenda base u32 and 24 × u16 (K-43) · sales outlook 3 × i32 (K-102) · wage bill
+  i64 and staff hours 4 × u32 (K-54) · plant capacity i64 (K-67) · occupancy u32, overflow run u32, committed stock
+  i64 (K-60) · account u32 (K-47) · zone u16, legal form u8, flags u8, types 3 × u8 (K-32) · head's office u32 (K-34)
+  · industry u16, founded day u32, markup i32, productivity i32, last review u16 (K-32) · equity i64, net assets i64
+  (K-88) · cumulative output 2 × u64 (K-68) · reserve 9. *Cold, 112*: income-statement lines 10 × i64 (K-87) · tax
+  accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
+  lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
+- **Institution**: per kind, the groups its declaration gives (most ≤ 1 024 B; unions and public authorities ≈ 3 KB).
+- **Reserves**: the household's 16 B (S2.109 3, S3.158 10, S6.124 2; 1 spare) and the firm's 39 B (S1.426 4, S1.441 1,
+  S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
+  words (`Extra`) into a named group's reserve, after the map's words.
+
+**API**: `Layout::compile(map, extras)` places each word at its offset, refusing a word twice, a group the map lacks
+and a group whose words pass its width, naming the kind, group and bytes. `attr::<T>(name, i)` hands the read handle
+`Attr<T>` (group, offset, absent) of a word's `i`th, refusing another type or a place past its count; `writer::<T>(name,
+i, base)` hands the write handle `AttrW<T>` once, to the base that declared the word (one writer an attribute).
+`KindStore::new(space, kind, layout, capacity)` reserves each group's column at capacity (K-01). `begin(dir, r,
+openings)` takes a party the directory handed out and writes every group's row in full — its blank (each absent-capable
+word's sentinel, every other byte nought), then its `Opening`s — appending at the next slot or overwriting a reused one,
+and refusing a slot past the next. `get(dir, r, a)` and `set(dir, r, w, v)` read and write one word as `Missing<T>`;
+`gather(dir, r, group)` hands a party's row, whose `Row::get(a)` reads in place. Every one checks the reference against
+the directory's generation for the slot first, so a stale or foreign reference stops the run (PTY.10); an ended party
+reads until its slot is reused. Writing a sentinel as a value, or absent to a word never absent, stops the run (NUM.8).
+`end(dir, r)` leaves the row until the slot's next `begin`. `keep_index(space, a, decl, live)` keeps a K-06 instance
+on a word (four a kind at most), filled from the live slots in slot order: `begin`, `set` and `end` move a member's
+entry when its key changes. `scan(group)` walks one group's rows in slot order; `chunks_mut(dir, slots)` hands each run
+of slots' rows of every group to one worker (`KindChunk`), whose `get` and `set` take only its own slots and refuse an
+indexed word.
+
+**Algorithms and bounds**: a word is one load at a fixed offset from its slot's row; a visit gathers its hot row (two
+or three lines) and reads its words from it. Nothing is allocated per call.
+
+**Traversal**: reads by `&self` from any worker; writes through `set` on one thread, or through chunks each owned by
+one worker (§6.6's R3). The traversal that walks a store counts its rows in `phx-exec` (K-15).
+
+**Save and load** (`kinds_save.rs`, cold): the kind, the rows begun, the blank rows and each group's width and rows,
+raw; indexes are left out and kept again from the directory's live slots after a load
+(`save_round_trip_rebuilds_indexes`).
+
+**Capacity**: each group's column at the kind's declared capacity times its width, within a column's `u32` of bytes.
+
+**Volumes and ratchets** (`[fin.parties]` at the design point: 1.77 M households, 0.92 M firms, 16 000 institutions at
+a 1 024-byte record; 777 MiB committed): `household_bytes` 174, `household_hot_bytes` 128, `firm_bytes` 520,
+`firm_hot_bytes` 192 — a party's declared widths, which only a widened group raises; `gather_ns` 35.8 (28.5 measured:
+a hot row a memory latency away, in slot order); `attr_ns` 1 (0.47 measured, after the gather); `wake_scan_ns` 16.7
+(12.7–13.3 measured, the step's 3.8: a bare read of the rows' first words at their stride takes 9–10 ns a record here,
+one core's memory streaming 12.7 GB/s); `faults_per_day` 0.
+
+**Extension points**: windowed groups (S1.197); the kinds' migrations (S1.198–S1.206); the persons head (S1.207);
+cache words (S1.211); agenda slots (S1.227); K-54's aggregates (S1.261); and each reserve's declaring step above.
 
 **Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps, at the slot the directory
 handed its party, each party's record of `stride` words in one column, and, if it holds money, its accounts (bank, balance, pending,
