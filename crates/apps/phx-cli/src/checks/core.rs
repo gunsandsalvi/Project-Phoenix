@@ -993,18 +993,22 @@ pub const LC_1_06: Check = live_check! {
 
 /// Each bank's applications, declines and quotes are counted, and declines are seen where any bank refused.
 fn declines_counted(w: Inspector<'_>) -> Outcome {
-    let lenders = &w.core().credit.lenders;
-    let applied: u64 = lenders.values().map(|l| l.applications).sum();
+    use phx_world::bank_store::Count;
+    let core = w.core();
+    let Some(banks) = core.banks.as_ref() else { return Outcome::NotYet("no bank in the world") };
+    let lenders: Vec<_> = core.lenders().filter_map(|(b, _)| banks.lender(b.slot()).map(|l| (b, l))).collect();
+    let applied: u64 = lenders.iter().map(|(_, l)| l.counted(Count::Applications)).sum();
     if applied == 0 {
         return Outcome::NotYet("no firm applied for a loan in the run");
     }
-    match lenders.iter().find(|(_, l)| l.declined + l.quoted != l.applications) {
+    let n = |l: &phx_world::bank_store::LenderView<'_>, c| l.counted(c);
+    match lenders.iter().find(|(_, l)| n(l, Count::Declined) + n(l, Count::Quoted) != n(l, Count::Applications)) {
         Some((bank, l)) => Outcome::Fail(format!(
             "bank {}: {} applications where it declined {} and quoted {}",
             bank.word(),
-            l.applications,
-            l.declined,
-            l.quoted
+            n(l, Count::Applications),
+            n(l, Count::Declined),
+            n(l, Count::Quoted)
         )),
         None => Outcome::Pass,
     }

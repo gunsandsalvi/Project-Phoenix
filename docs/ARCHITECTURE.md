@@ -2379,9 +2379,10 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
   lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
 - **Institution**: per kind, the groups its declaration gives (most ≤ 1 024 B; unions and public authorities ≈ 3 KB).
-  The bank's map holds its books alone (S1.200): `books`, 96 B — income-statement lines 10 × i64 (K-87), equity and
-  net assets 2 × i64 (K-88) — on `phx-world`'s `BankStore`, beside its site in `phx-core`'s record until its lending
-  record and site join it.
+  The bank's map (S1.200, S1.201), 336 B on `phx-world`'s `BankStore`: `books`, 96 B — income-statement lines
+  10 × i64 (K-87), equity and net assets 2 × i64 (K-88); `lending`, 240 B — standard u32, applications, declined,
+  quoted and lent 4 × u64, written off since the last review i64, loan-days 16 × u64 and defaults 16 × u32 by class
+  (BNK) · reserve 4. Its site stays in `phx-core`'s record until the remaining kinds move (S1.206).
 - **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
   map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
@@ -3010,8 +3011,11 @@ Layout · API · algorithms and bounds · traversal · save and load · capacity
 planned (S1.317, S1.318).
 
 **Today** (`phx-world`'s `core_lending.rs`; BNK.4–BNK.6, BNK.20): `Credit` keeps each country's
-`if_credit::law::Law`, each firm's filed earnings a year at the opening, and each bank's `Lender` (standard,
-applications, declines, quotes, loans). `apply_for_loan` draws the banks a firm asks (`BNK.lenders_asked`), reads its
+`if_credit::law::Law` and each firm's filed earnings a year at the opening; each bank's lending record is its
+`BankStore` row (K-32): its standard, applications, declines, quotes and loans, what its write-offs lost since its
+last review, and by class the loan-days it has held (whole days, its loan-years their sum over a year's days) and the
+defaults it has seen, at most `LOAN_CLASSES` (16) classes, a law with more refused at the opening. The monthly review
+(`review_lenders`, a declared sweep over the banks) enters each bank's loan-days and reads its standard again. `apply_for_loan` draws the banks a firm asks (`BNK.lenders_asked`), reads its
 `cover`, and has each bank decline or quote by `sys_bnk::credit`; the firm chooses by its tastes (`BNK.lender_taste`).
 `lend_shortfalls` lends the shortfall at the chosen quote's rate from the chosen bank, or nothing.
 

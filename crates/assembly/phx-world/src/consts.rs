@@ -152,6 +152,9 @@ pub const CORE_RANGE_BITS: u32 = 12;
 /// taxes, interest paid and received, written off and depreciation.
 pub const LINES: usize = 10;
 
+/// The loan classes a bank's lending record holds, its words in the bank map.
+pub const LOAN_CLASSES: usize = 16;
+
 pub mod household {
     /// The stance's place in a household's states byte: its top three bits, above the tenure's two and the credit
     /// stage's three.

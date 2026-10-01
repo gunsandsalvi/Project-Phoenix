@@ -12,35 +12,20 @@ use if_credit::decisions::{ChooseIn, DeclineIn, QuoteIn};
 use if_credit::law::Law;
 use phx_core::StreamDef;
 use phx_core::slots::DaySlot;
-use phx_id::{Day, PartyKey};
-use phx_macros::clause;
+use phx_id::{Day, PartyKey, Slot};
+use phx_macros::{clause, opening, sweep};
 use phx_num::{Missing, violation};
 use phx_rand::Subject;
 
+use crate::bank_store::{Count, LenderView};
 use crate::core::Core;
 
-/// A bank's lending: the worst class it admits; the applications it answered, declined and quoted, and the loans it
-/// made; by class, the loan-years its book has held and the defaults it has seen; and what it wrote off since its
-/// last review.
-#[derive(Clone, Debug, Default, PartialEq, phx_macros::Saved)]
-pub struct Lender {
-    pub standard: u32,
-    pub applications: u64,
-    pub declined: u64,
-    pub quoted: u64,
-    pub lent: u64,
-    pub loan_years: Vec<f64>,
-    pub defaults: Vec<u64>,
-    pub written: i128,
-}
-
-/// Lending on the core: each country's lending law, each firm's filed earnings a year at the opening, and each bank's
-/// lending.
+/// Lending on the core: each country's lending law and each firm's filed earnings a year at the opening; each bank's
+/// lending record is its kind's store's.
 #[derive(Clone, Debug, Default, phx_macros::Saved)]
 pub struct Credit {
     pub laws: Vec<Law>,
     pub filed: BTreeMap<PartyKey, f64>,
-    pub lenders: BTreeMap<PartyKey, Lender>,
     /// Each firm loan's class when it was made and the day it was, by its family and contract.
     pub classes: BTreeMap<(usize, u32), (u32, Day)>,
     /// The month the banks last reviewed their standards in, and its first day.
@@ -61,13 +46,12 @@ fn asked(shares: &[f64], u: f64) -> usize {
 
 /// A class's default rate as a bank has learned it from its own book: the published rate counted as the law's prior
 /// loan-years, with the defaults and loan-years it has seen.
-fn learned_rate(law: &Law, lender: &Lender, class: usize) -> f64 {
+fn learned_rate(law: &Law, lender: &LenderView<'_>, class: usize) -> f64 {
     let published = law.default_rates.get(class).copied().unwrap_or_else(|| {
         phx_num::violation!(clause = "BNK.20", "a class beyond the published default rates", class = class)
     });
-    let years = lender.loan_years.get(class).copied().unwrap_or(0.0);
-    let defaults = lender.defaults.get(class).map_or(0.0, |d| phx_rand::float::from_u64(*d));
-    sys_bnk::credit::learned(published, law.prior_loan_years, defaults, years)
+    let defaults = phx_rand::float::from_u64(lender.defaults(class));
+    sys_bnk::credit::learned(published, law.prior_loan_years, defaults, lender.loan_years(class))
 }
 
 /// A quoted yearly rate, a fraction, as the rate its contract carries.
@@ -82,6 +66,7 @@ impl Core {
     /// # Errors
     /// A primitive of the lending law the register does not hold.
     #[clause("BNK.16", "BNK.20")]
+    #[opening]
     pub fn open_credit(
         &mut self,
         register: &phx_core::Register,
@@ -103,26 +88,27 @@ impl Core {
                 filed.insert(PartyKey::new(crate::core::kind_number(firm), slot), margin * output);
             }
         }
-        let lenders = self.bank_kind.map_or_else(BTreeMap::new, |b| {
-            self.directory.live_slots(b).map(|s| (PartyKey::new(b, s), Lender::default())).collect::<BTreeMap<_, _>>()
-        });
-        self.credit = Credit { laws, filed, lenders, ..Credit::default() };
+        if let Some(c) = laws.iter().position(|l| l.default_rates.len() > crate::consts::LOAN_CLASSES) {
+            return Err(format!("country {c}: more loan classes than a bank's lending record holds"));
+        }
+        self.credit = Credit { laws, filed, ..Credit::default() };
         let mut founded = Vec::new();
-        for (bank, lender) in &mut self.credit.lenders {
-            let country = self.banks_of.iter().position(|bs| bs.iter().any(|(s, _)| *s == bank.slot().get()));
-            let Some(law) = country.and_then(|c| self.credit.laws.get(c)) else { continue };
+        for (bank, country) in self.lenders() {
+            let Some(law) = self.credit.laws.get(country) else { continue };
             // A bank opens admitting every class but those in default.
-            lender.standard =
+            let standard =
                 law.default_rates.iter().position(|r| *r < 1.0).and_then(|p| u32::try_from(p).ok()).unwrap_or(0);
-            lender.loan_years = vec![0.0; law.default_rates.len()];
-            lender.defaults = vec![0; law.default_rates.len()];
             // The return its shareholders require is its preference at its founding, every bank's the same.
             founded.push((
-                *bank,
+                bank,
+                standard,
                 phx_core::Prefs { required_return: Missing::Present(law.required_return), ..phx_core::Prefs::NONE },
             ));
         }
-        for (bank, prefs) in founded {
+        for (bank, standard, prefs) in founded {
+            if let Some(bs) = self.banks.as_mut() {
+                bs.set_standard(bank.slot(), standard);
+            }
             self.found(bank, prefs);
         }
         self.class_opening_loans(today);
@@ -157,20 +143,36 @@ impl Core {
         })
     }
 
+    /// Every bank, with its country's place, by the country's banks in their order.
+    pub fn lenders(&self) -> impl Iterator<Item = (PartyKey, usize)> + '_ {
+        let bank = self.bank_kind;
+        self.banks_of.iter().enumerate().flat_map(move |(c, bs)| {
+            bs.iter().filter_map(move |(s, _)| bank.map(|b| (PartyKey::new(b, Slot::new(*s)), c)))
+        })
+    }
+
+    /// A country's `i`th bank, by the country's banks in their order.
+    fn lender_at(&self, country: usize, i: usize) -> Option<PartyKey> {
+        let (s, _) = self.banks_of.get(country)?.get(i)?;
+        Some(PartyKey::new(self.bank_kind?, Slot::new(*s)))
+    }
+
     /// A classed loan written off: a default its bank has seen in the loan's class, and what it lost.
     pub(crate) fn loan_defaulted(&mut self, bank: PartyKey, amount: i64, loan: (usize, u32)) {
         let Some((class, _)) = self.credit.classes.remove(&loan) else { return };
-        let Some(lender) = self.credit.lenders.get_mut(&bank) else { return };
-        if let Some(d) = usize::try_from(class).ok().and_then(|c| lender.defaults.get_mut(c)) {
-            *d += 1;
-        }
-        lender.written += i128::from(amount);
+        let (Some(bs), Ok(class)) = (self.banks.as_mut().filter(|b| b.kind() == bank.kind()), usize::try_from(class))
+        else {
+            return;
+        };
+        bs.add_default(bank.slot(), class);
+        bs.add_written(bank.slot(), amount);
     }
 
     /// On a month's first day each bank reviews its standard: its loan-years since its last review entered by class,
     /// and the loss its write-offs showed against the loss its classes' default rates, as it has learned them, priced
     /// for its book over the month; a class tighter where it lost more, a class looser where less.
     #[clause("BNK.5", "BNK.20")]
+    #[sweep(store = banks, reason = "every bank reviews its standard on a month's first day")]
     pub(crate) fn review_lenders(&mut self, day: Day, month: i64) {
         let Some((last, since)) = self.credit.reviewed else {
             self.credit.reviewed = Some((month, day));
@@ -186,57 +188,57 @@ impl Core {
             .retain(|(i, e), _| families.get(*i).is_some_and(|f| f.store.edges.is_open(phx_id::Slot::new(*e))));
         let year = crate::consts::DAYS_A_YEAR;
         let span = phx_rand::float::from_i64(i64::from(day.get()) - i64::from(since.get()));
-        let mut held: BTreeMap<PartyKey, Vec<(f64, f64)>> = BTreeMap::new();
+        // Each bank's loan-days and balances by class since its last review.
+        let mut held: BTreeMap<PartyKey, Vec<(u64, f64)>> = BTreeMap::new();
         for ((i, e), (class, opened)) in &self.credit.classes {
-            let Some(row) = self.families.get(*i).and_then(|f| f.store.edges.row(phx_id::Slot::new(*e))) else {
+            let Some(row) = self.families.get(*i).and_then(|f| f.store.edges.row(Slot::new(*e))) else {
                 continue;
             };
             // A loan made since the last review has been held from its day.
             let from = if *opened > since { *opened } else { since };
-            let days = phx_rand::float::from_i64(i64::from(day.get()) - i64::from(from.get()));
+            let Some(days) = day.since(from) else { continue };
             let c = usize::try_from(*class).unwrap_or(usize::MAX);
             let by = held.entry(row.ends[1]).or_default();
             if by.len() <= c {
-                by.resize(c + 1, (0.0, 0.0));
+                by.resize(c + 1, (0, 0.0));
             }
             if let Some(slot) = by.get_mut(c) {
-                slot.0 += days / year;
+                slot.0 += u64::from(days);
                 slot.1 += phx_rand::float::from_i64(row.amount);
             }
         }
         let reviewing = self.point(|p| p.standard, &sys_bnk::points::STANDARD);
-        let countries: Vec<(PartyKey, usize)> = self
-            .credit
-            .lenders
-            .keys()
-            .filter_map(|b| {
-                self.banks_of.iter().position(|bs| bs.iter().any(|(s, _)| *s == b.slot().get())).map(|c| (*b, c))
-            })
-            .collect();
-        for (bank, country) in countries {
+        for country in 0..self.banks_of.len() {
             let Some(law) = self.credit.laws.get(country).cloned() else { continue };
-            let Some(mut lender) = self.credit.lenders.remove(&bank) else { continue };
-            let by = held.remove(&bank).unwrap_or_default();
-            let mut book = 0.0;
-            let mut priced = 0.0;
-            for (c, (years, balance)) in by.iter().enumerate() {
-                if let Some(y) = lender.loan_years.get_mut(c) {
-                    *y += years;
+            let n = self.banks_of.get(country).map_or(0, Vec::len);
+            for i in 0..n {
+                let (Some(bank), Some(bs)) = (self.lender_at(country, i), self.banks.as_mut()) else { continue };
+                let by = held.remove(&bank).unwrap_or_default();
+                for (c, (days, _)) in by.iter().enumerate() {
+                    bs.add_loan_days(bank.slot(), c, *days);
                 }
-                let rate = learned_rate(&law, &lender, c);
-                book += balance;
-                priced += balance * rate * law.loss_given_default * span / year;
+                let written = phx_rand::float::from_i64(bs.take_written(bank.slot()));
+                let Some(lender) = bs.lender(bank.slot()) else { continue };
+                let mut book = 0.0;
+                let mut priced = 0.0;
+                for (c, (_, balance)) in by.iter().enumerate() {
+                    let rate = learned_rate(&law, &lender, c);
+                    book += balance;
+                    priced += balance * rate * law.loss_given_default * span / year;
+                }
+                let Some(standard) = lender.standard() else { continue };
+                if book > 0.0 {
+                    let standard = self.decide(reviewing, bank, |_| if_credit::decisions::StandardIn {
+                        seen_loss: written / book,
+                        priced_loss: priced / book,
+                        standard,
+                        classes: u32::try_from(law.default_rates.len()).unwrap_or(u32::MAX),
+                    });
+                    if let Some(bs) = self.banks.as_mut() {
+                        bs.set_standard(bank.slot(), standard);
+                    }
+                }
             }
-            let written = i64::try_from(std::mem::take(&mut lender.written)).map_or(0.0, phx_rand::float::from_i64);
-            if book > 0.0 {
-                lender.standard = self.decide(reviewing, bank, |_| if_credit::decisions::StandardIn {
-                    seen_loss: written / book,
-                    priced_loss: priced / book,
-                    standard: lender.standard,
-                    classes: u32::try_from(law.default_rates.len()).unwrap_or(u32::MAX),
-                });
-            }
-            self.credit.lenders.insert(bank, lender);
         }
     }
 
@@ -312,9 +314,9 @@ impl Core {
                 .loan_books
                 .get(&bank)
                 .map_or(0.0, |b| i64::try_from(b.book).map_or(0.0, phx_rand::float::from_i64));
-            let Some(lender) = self.credit.lenders.get(&bank) else { continue };
-            let standard = lender.standard;
-            let default_rate = learned_rate(&law, lender, usize::try_from(class).unwrap_or(usize::MAX));
+            let Some(lender) = self.banks.as_ref().and_then(|b| b.lender(bank.slot())) else { continue };
+            let Some(standard) = lender.standard() else { continue };
+            let default_rate = learned_rate(&law, &lender, usize::try_from(class).unwrap_or(usize::MAX));
             let refused = self.decide(declining, bank, |_| DeclineIn {
                 class,
                 standard,
@@ -341,12 +343,12 @@ impl Core {
                     rate_step: law.rate_step,
                 })
             });
-            let Some(lender) = self.credit.lenders.get_mut(&bank) else { continue };
-            lender.applications += 1;
+            let Some(bs) = self.banks.as_mut() else { continue };
+            bs.count(bank.slot(), Count::Applications);
             match rate {
-                None => lender.declined += 1,
+                None => bs.count(bank.slot(), Count::Declined),
                 Some(rate) => {
-                    lender.quoted += 1;
+                    bs.count(bank.slot(), Count::Quoted);
                     quotes.push((bank, rate));
                 }
             }
@@ -362,8 +364,8 @@ impl Core {
         });
         let Missing::Present(i) = pick else { return None };
         let (bank, rate) = quotes.get(usize::try_from(i).ok()?).copied()?;
-        if let Some(l) = self.credit.lenders.get_mut(&bank) {
-            l.lent += 1;
+        if let Some(bs) = self.banks.as_mut() {
+            bs.count(bank.slot(), Count::Lent);
         }
         Some((bank, as_rate(rate), class))
     }

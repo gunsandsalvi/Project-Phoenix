@@ -1029,19 +1029,20 @@ fn agencies_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
 
 /// Each bank's applications, declines, quotes and loans, and its standard.
 fn lenders_report(w: Inspector<'_>) -> Vec<serde_json::Value> {
-    w.core()
-        .credit
-        .lenders
-        .iter()
-        .map(|(b, l)| {
-            json!({
+    use phx_world::bank_store::Count;
+    let core = w.core();
+    let Some(banks) = core.banks.as_ref() else { return Vec::new() };
+    core.lenders()
+        .filter_map(|(b, _)| {
+            let l = banks.lender(b.slot())?;
+            Some(json!({
                 "bank": b.word(),
-                "standard": l.standard,
-                "applications": l.applications,
-                "declined": l.declined,
-                "quoted": l.quoted,
-                "lent": l.lent,
-            })
+                "standard": l.standard(),
+                "applications": l.counted(Count::Applications),
+                "declined": l.counted(Count::Declined),
+                "quoted": l.counted(Count::Quoted),
+                "lent": l.counted(Count::Lent),
+            }))
         })
         .collect::<Vec<_>>()
 }

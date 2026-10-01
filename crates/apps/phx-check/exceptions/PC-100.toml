@@ -1,4 +1,4 @@
-# The sites PC-100 admits for now, 227 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
+# The sites PC-100 admits for now, 224 in all, held to `phx_check.exceptions_pc100`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-obs/src/reads.rs"
@@ -562,24 +562,6 @@ count = 1
 path = "crates/assembly/phx-world/src/core_lending.rs"
 item = "Credit"
 what = "field `filed`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "Credit"
-what = "field `lenders`: `BTreeMap` keyed by `PartyKey`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "learned_rate"
-what = "`.map_or`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "learned_rate"
-what = "`.unwrap_or`"
 count = 1
 
 [[site]]

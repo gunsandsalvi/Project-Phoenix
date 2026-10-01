@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 761 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 755 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -1029,30 +1029,6 @@ count = 1
 [[site]]
 path = "crates/assembly/phx-world/src/core_lending.rs"
 item = "Core::class_opening_loans"
-what = "`.collect()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "Core::open_credit"
-what = "`.collect()`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "Core::open_credit"
-what = "`Vec::new`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "Core::open_credit"
-what = "`vec!`"
-count = 2
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_lending.rs"
-item = "Core::review_lenders"
 what = "`.collect()`"
 count = 1
 

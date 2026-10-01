@@ -8,6 +8,7 @@ pub const phx_pop::consts::INT_BYTES: [u16; 4]
 pub const phx_pop::consts::KIND_CHUNK_BYTES: u32
 pub const phx_pop::consts::KIND_GROUPS: usize
 pub const phx_pop::consts::KIND_INDEXES: usize
+pub const phx_pop::consts::LOAN_CLASSES: u16
 pub const phx_pop::consts::PERSON_ATTR_BITS: u32
 pub const phx_pop::consts::ROLE_BITS: u32
 pub const phx_pop::consts::TOMB_FENCE: usize

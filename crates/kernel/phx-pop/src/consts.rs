@@ -169,8 +169,30 @@ const BANK_BOOKS: GroupDecl = GroupDecl {
     ],
 };
 
-/// The bank's byte map, its books alone until its lending and its site move onto it.
-pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS] };
+/// The loan classes a bank's lending record holds, above the published classes of any country's law.
+pub const LOAN_CLASSES: u16 = 16;
+
+/// A bank's lending record: its standard (the worst class it admits), the applications it read, declined and quoted,
+/// the loans it made, what its write-offs lost since its last review, and by class the loan-days it has held and the
+/// defaults it has seen.
+const BANK_LENDING: GroupDecl = GroupDecl {
+    name: "lending",
+    width: 240,
+    words: &[
+        word("standard", U32, 1, true, "BNK"),
+        word("applications", U64, 1, false, "BNK"),
+        word("declined", U64, 1, false, "BNK"),
+        word("quoted", U64, 1, false, "BNK"),
+        word("lent", U64, 1, false, "BNK"),
+        word("written", I64, 1, false, "BNK"),
+        word("loan_days", U64, LOAN_CLASSES, false, "BNK"),
+        word("defaults", U32, LOAN_CLASSES, false, "BNK"),
+    ],
+};
+
+/// The bank's byte map: its books and its lending record; its site stays in the core's record until the remaining
+/// kinds move.
+pub const BANK: KindMap = KindMap { kind: "bank", groups: &[BANK_BOOKS, BANK_LENDING] };
 
 /// Every group of the maps within its width, and each map within a store.
 const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM) && fits(&BANK));
