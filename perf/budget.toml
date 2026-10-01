@@ -526,6 +526,40 @@ counter = "fin.routes.mb"
 value = 20.3
 direction = "down"
 
+# The day's use (S1.188, 2026-10-01; `tools/bench.sh -F routes`): a working day's 40 000 active (mode, origin,
+# destination) pairs at 1 000 zones — every pair of market zones by each mode, the rest within regions — handed in pair
+# order as their counts are kept, 4.2 legs a route (167 528 items a day, the step's ≈ 10 legs and 0.4 M). An item added
+# costs 6.5–8.8 ns, of which reading the pair's route through the regional and trunk tables is 4.1–6.1 (`pair_route`)
+# and the load's own add 2.4–2.7 (the step's 2.3); a pair's time 10.3–15.1 ns a leg (the step's 10), the route's read
+# and the curve's float work within it. With 3 470 segments loaded and 133 carried past their capacity, admission costs
+# 120–172 ns a pair, nearly all its draws without replacement. The loads and the day's buffers hold 4.30 MiB (the
+# step's 4). Each time ratchet stands a quarter above the highest; the bytes at the measure.
+
+[[ratchet]]
+counter = "fin.day_use.load_ns"
+value = 11.0
+direction = "down"
+
+[[ratchet]]
+counter = "fin.day_use.pair_route_ns"
+value = 7.7
+direction = "down"
+
+[[ratchet]]
+counter = "fin.day_use.pair_time_ns"
+value = 18.8
+direction = "down"
+
+[[ratchet]]
+counter = "fin.day_use.admit_ns"
+value = 215
+direction = "down"
+
+[[ratchet]]
+counter = "fin.routes.use_mb"
+value = 4.3
+direction = "down"
+
 # The core's rules counted in the world's run (S1.133, 2026-09-30), at the committed resolution over twenty days: 2.80
 # unit costs reckoned a firm-day (the rule's value 1, reached at S1.211), 3.35 sellers' weights reckoned a sale, 2 345 416
 # allocations a day from the tenth day (the rule's 0), no span of 64 k items on fewer than 2.5 busy cores, 360 barriers

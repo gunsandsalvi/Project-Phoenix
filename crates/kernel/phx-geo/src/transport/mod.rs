@@ -1,6 +1,7 @@
 //! The transport network: its segments, and each mode's routes between the regions' market zones, rebuilt from the
 //! open segments whenever a segment of the mode opens, closes, reopens or is removed, and at load.
 
+pub mod day_use;
 pub mod routes;
 pub mod segments;
 
@@ -9,6 +10,7 @@ use phx_macros::clause;
 use phx_num::Missing;
 use phx_store::StoreStats;
 
+pub use day_use::{PairFlow, SegmentUse};
 pub use routes::{Route, Routes};
 pub use segments::{Change, SegmentDecl, SegmentId, SegmentRow, Segments};
 

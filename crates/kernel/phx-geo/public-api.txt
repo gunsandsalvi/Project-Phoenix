@@ -503,6 +503,25 @@ pub fn phx_geo::tile::Zone::save(&self, &mut phx_store::save::Writer<'_>)  // us
 pub const phx_geo::tile::LAND: u8  // used by: sys-tec
 pub const phx_geo::tile::WATER: u8
 pub mod phx_geo::transport  // used by: phx-fin
+pub mod phx_geo::transport::day_use
+pub struct phx_geo::transport::day_use::PairFlow  // used by: phx-fin
+pub phx_geo::transport::day_use::PairFlow::count: u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub phx_geo::transport::day_use::PairFlow::from: u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_geo::transport::day_use::PairFlow::mode: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub phx_geo::transport::day_use::PairFlow::to: u16  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-store, phx-world, sys-lab
+pub struct phx_geo::transport::day_use::SegmentUse  // used by: phx-fin
+impl phx_geo::transport::day_use::SegmentUse
+pub fn phx_geo::transport::day_use::SegmentUse::add_flows<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::day_use::SegmentUse::admit<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, (&mut phx_rand::draws::Draws, phx_id::day::Day)) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::day_use::SegmentUse::admitted(&self) -> &[u32]  // used by: phx-check, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::load(&self, phx_geo::transport::segments::SegmentId, phx_id::day::Day) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::loaded(&self) -> (usize, usize)  // used by: phx-cli, phx-exec, phx-fin, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::time_at(&self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, phx_id::day::Day, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentRow, u32) -> u64) -> u64  // used by: phx-fin
+impl phx_store::stats::StoreStats for phx_geo::transport::day_use::SegmentUse
+pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::rows_ever(&self) -> u64  // used by: phx-core, phx-exec, phx-store
+pub fn phx_geo::transport::day_use::SegmentUse::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-store
 pub mod phx_geo::transport::routes  // used by: phx-fin, phx-world
 pub struct phx_geo::transport::routes::Route<'a>
 pub phx_geo::transport::routes::Route::metres: u64  // used by: phx-fin, phx-market, phx-world
@@ -566,6 +585,11 @@ pub fn phx_geo::transport::segments::Segments::save(&self, &mut phx_store::save:
 pub enum phx_geo::transport::Change  // used by: phx-check
 pub phx_geo::transport::Change::Opened  // used by: phx-world
 pub phx_geo::transport::Change::Removed
+pub struct phx_geo::transport::PairFlow  // used by: phx-fin
+pub phx_geo::transport::PairFlow::count: u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-frt, sys-gds, sys-hh, sys-sov, sys-tax
+pub phx_geo::transport::PairFlow::from: u16  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc, sys-sov, sys-tec
+pub phx_geo::transport::PairFlow::mode: u8  // used by: phx-core, phx-fin, phx-market, phx-rand, phx-store, phx-world
+pub phx_geo::transport::PairFlow::to: u16  // used by: phx-check, phx-core, phx-exec, phx-fin, phx-ledger, phx-market, phx-num, phx-store, phx-world, sys-lab
 pub struct phx_geo::transport::Route<'a>
 pub phx_geo::transport::Route::metres: u64  // used by: phx-fin, phx-market, phx-world
 pub phx_geo::transport::Route::segments: &'a [u32]  // used by: phx-check, phx-core, phx-fin, phx-macros, phx-market, phx-world
@@ -604,6 +628,19 @@ pub fn phx_geo::transport::segments::SegmentRow::unit(self) -> phx_num::missing:
 impl phx_store::pod::Pod for phx_geo::transport::segments::SegmentRow
 pub fn phx_geo::transport::segments::SegmentRow::layout(u16, phx_store::descriptor::Transform, &mut alloc::vec::Vec<phx_store::descriptor::FieldDescriptor>)  // used by: phx-check, phx-exec, phx-fin, phx-store
 impl phx_store::pod::__seal::Sealed for phx_geo::transport::segments::SegmentRow
+pub struct phx_geo::transport::SegmentUse  // used by: phx-fin
+impl phx_geo::transport::day_use::SegmentUse
+pub fn phx_geo::transport::day_use::SegmentUse::add_flows<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, phx_id::day::Day) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::day_use::SegmentUse::admit<'r>(&mut self, &phx_geo::transport::segments::Segments, &[phx_geo::transport::day_use::PairFlow], impl core::ops::function::Fn(&phx_geo::transport::day_use::PairFlow) -> phx_num::missing::Missing<phx_geo::transport::routes::Route<'r>>, (&mut phx_rand::draws::Draws, phx_id::day::Day)) -> u64  // used by: phx-fin
+pub fn phx_geo::transport::day_use::SegmentUse::admitted(&self) -> &[u32]  // used by: phx-check, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::load(&self, phx_geo::transport::segments::SegmentId, phx_id::day::Day) -> u32  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::loaded(&self) -> (usize, usize)  // used by: phx-cli, phx-exec, phx-fin, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::time_at(&self, &phx_geo::transport::segments::Segments, phx_geo::transport::routes::Route<'_>, phx_id::day::Day, impl core::ops::function::Fn(phx_geo::transport::segments::SegmentRow, u32) -> u64) -> u64  // used by: phx-fin
+impl phx_store::stats::StoreStats for phx_geo::transport::day_use::SegmentUse
+pub fn phx_geo::transport::day_use::SegmentUse::bytes(&self) -> u64  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
+pub fn phx_geo::transport::day_use::SegmentUse::rows_ever(&self) -> u64  // used by: phx-core, phx-exec, phx-store
+pub fn phx_geo::transport::day_use::SegmentUse::rows_live(&self) -> u64  // used by: phx-cli, phx-core, phx-exec, phx-fin, phx-store
 pub struct phx_geo::transport::Segments  // used by: phx-core, phx-fin
 impl phx_geo::transport::segments::Segments
 pub fn phx_geo::transport::segments::Segments::bytes(&self) -> usize  // used by: phx-check, phx-cli, phx-core, phx-exec, phx-fin, phx-id, phx-macros, phx-rand, phx-store, phx-world
