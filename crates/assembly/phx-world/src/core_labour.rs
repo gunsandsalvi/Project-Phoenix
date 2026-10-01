@@ -852,14 +852,7 @@ impl Core {
             if waiting.contains(&person) {
                 continue;
             }
-            let region = match decl.sited_by {
-                Missing::Present(i) => {
-                    self.kinds.get(place).and_then(|k| k.record(household.slot()).get(i).map(|w| w.get()))
-                }
-                Missing::Absent => None,
-            };
-            let Some(Missing::Present(region)) = region else { continue };
-            let Ok(region) = u32::try_from(region) else { continue };
+            let Some(region) = self.household_region(household.slot()) else { continue };
             let c = ctx.country_of(region);
             let law = at_country(&self.labour.laws, c);
             let schooled =

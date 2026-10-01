@@ -1,27 +1,19 @@
-//! Each kind's declared place is where its records or its store hold it, and a population kind no declaration sites is
-//! refused.
+//! Each kind's declared place is where its records or its store hold it, and each country's law names a destination
+//! for an estate with no heir.
 #![cfg(test)]
 
-use phx_core::{Declarations, Place};
+use phx_core::Place;
 
-use super::{heirless_refusals, misplaced_kinds};
+use super::heirless_refusals;
 
 #[test]
 fn declared_places_of_todays_kinds() {
     assert_eq!(sys_frm::FIRM.place, Place::Zone, "a firm's zone is a word of its store");
-    assert_eq!(sys_dem::HOUSEHOLD_KIND.place, Place::Sited);
+    assert_eq!(sys_dem::HOUSEHOLD_KIND.place, Place::Zone, "a household's zone is a word of its store");
     assert_eq!(phx_core::ESTATE_KIND.place, Place::Country { word: 0 });
     for site in [sys_cb::CENTRAL_BANK, sys_cb::TREASURY, sys_bnk::BANK, sys_soc::AGENCY] {
         assert_eq!(site.place, Place::Site { word: 0 }, "{} is begun with its site's tile first", site.name);
     }
-    let mut d = Declarations::new();
-    for k in [sys_frm::FIRM, sys_cb::CENTRAL_BANK, phx_core::ESTATE_KIND] {
-        d.kind(k);
-    }
-    assert!(misplaced_kinds(&d, &[]).is_empty());
-    let mut d = Declarations::new();
-    d.kind(sys_dem::HOUSEHOLD_KIND);
-    assert_eq!(misplaced_kinds(&d, &[]).len(), 1, "a household no declaration sites");
 }
 
 #[test]

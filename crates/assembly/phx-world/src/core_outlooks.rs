@@ -308,27 +308,40 @@ impl crate::core::Core {
     #[clause("VAL.23")]
     pub(crate) fn refresh_windows(&mut self, types: &Types, date: phx_id::Date) {
         let mut ages = vec![(0_u64, 0_u64); types.windows.len()];
-        if let (Some((place, [_, _, _, w])), Some(decl)) = (self.decisions.household, self.declared.household.clone()) {
-            let slots: Vec<phx_id::Slot> = self.directory.live_slots(crate::core::kind_number(place)).collect();
-            for slot in slots {
-                let Some(Some(ps)) = self.persons.get(place) else { break };
-                let persons: Vec<phx_core::Person> =
-                    ps.of(slot).map(|x| phx_pop::person::unpack(&decl, x.word)).collect();
-                let head = persons.iter().find(|p| p.role == if_pop::HEAD.name).or_else(|| persons.first());
-                let Some(age) = head.and_then(|p| u32::try_from(p.age_on(date)).ok()) else { continue };
-                let window = types.window_of(age);
-                if let Missing::Present(c) = window
-                    && let Some(a) = ages.get_mut(usize::from(c))
-                {
-                    *a = (a.0 + u64::from(age), a.1 + 1);
-                }
-                if let Some(word) = self.kinds.get_mut(place).and_then(|k| k.record_mut(slot).get_mut(w)) {
-                    *word = match window {
-                        Missing::Present(c) => phx_num::MaybeI64::present(i64::from(c)),
-                        Missing::Absent => phx_num::MaybeI64::ABSENT,
+        let head_role = self.declared.household.as_ref().and_then(|d| d.role(if_pop::HEAD.name));
+        if let (Some(place), Some(head_role)) = (self.bound.kinds.household, head_role) {
+            let mut windows = std::mem::take(&mut self.work.windows);
+            windows.clear();
+            if let Some(Some(ps)) = self.persons.get(place) {
+                for slot in self.directory.live_slots(crate::core::kind_number(place)) {
+                    // Its head's word read for its role and birth alone; the first person where none heads it.
+                    let mut words = ps.of(slot).map(|x| phx_pop::person::role_and_birth(x.word));
+                    let first = words.next();
+                    let head = first.filter(|(r, _)| *r == head_role).or_else(|| words.find(|(r, _)| *r == head_role));
+                    let Some((_, born)) = head.or(first) else { continue };
+                    let Ok(age) = u32::try_from(phx_core::pop_process::age_on(born, date)) else { continue };
+                    let window = types.window_of(age);
+                    if let Missing::Present(c) = window
+                        && let Some(a) = ages.get_mut(usize::from(c))
+                    {
+                        *a = (a.0 + u64::from(age), a.1 + 1);
+                    }
+                    let window = match window {
+                        Missing::Present(c) => match u8::try_from(c) {
+                            Ok(c) => Missing::Present(c),
+                            Err(_) => violation!(clause = "VAL.23", "an age class past its word", class = c),
+                        },
+                        Missing::Absent => Missing::Absent,
                     };
+                    windows.push((slot, window));
                 }
             }
+            self.household_write(|hs| {
+                for (slot, window) in &windows {
+                    hs.set_window(*slot, *window);
+                }
+            });
+            self.work.windows = windows;
         }
         let lived: Vec<Missing<u16>> = ages
             .iter()

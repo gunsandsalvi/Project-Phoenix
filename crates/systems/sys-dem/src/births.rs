@@ -2,10 +2,9 @@
 //! of children at its first decision; while it tries, each woman of its couple conceives by her age's chance a cycle,
 //! and a conception is a birth, a child of the household in school.
 
-use if_pop::fertility::{IDEAL, IDEAL_UNDRAWN, NOT_TRYING, TRYING, TRYING_FOR_CHILD};
 use if_pop::{ABLE, CHILD, EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEAD, HEALTH, MALE, PARTNER, SEX};
 use phx_core::register::values::{Family, Table1, TypeSet, draw_type};
-use phx_core::{AgentView, FactDef, Household, Person, PopProcess, Register};
+use phx_core::{AgentView, Household, Person, PopProcess, Register};
 use phx_id::Date;
 use phx_macros::clause;
 use phx_num::{Missing, violation};
@@ -40,21 +39,21 @@ impl Fertility {
 
     /// The household's ideal, drawn at its first decision.
     fn ideal(&self, agent: &AgentView<'_>, h: &mut Household, d: &mut Draws) -> u32 {
-        let held = h.attr(IDEAL.name);
-        if held != IDEAL_UNDRAWN {
-            return held - 1;
+        if let Missing::Present(held) = h.state.ideal {
+            return u32::from(held);
         }
         let set = of_country(&self.ideals, agent);
         let id = draw_type(set, d);
         let drawn = set.types().iter().find(|t| t.id == id).map(|t| t.value);
-        let Some(ideal) = drawn.and_then(|n| u32::try_from(n).ok()) else {
-            violation!(clause = "POP.16", "an ideal number of children beyond counting");
+        let Some(ideal) = drawn.and_then(|n| u8::try_from(n).ok()) else {
+            violation!(
+                clause = "POP.16",
+                "an ideal number of children beyond its word",
+                household = agent.party.word()
+            );
         };
-        if ideal + 1 >= IDEAL.values {
-            phx_num::capacity_exceeded!("a household's ideal number of children", IDEAL.values - 1, ideal);
-        }
-        h.set_attr(IDEAL.name, ideal + 1);
-        ideal
+        h.state.ideal = Missing::Present(ideal);
+        u32::from(ideal)
     }
 }
 
@@ -101,7 +100,7 @@ impl PopProcess for Fertility {
     fn outcome(&self, _: &Register, agent: &AgentView<'_>, h: &mut Household, _: &[usize], d: &mut Draws) {
         let ideal = self.ideal(agent, h, d);
         let taste = self.spread * logistic(phx_rand::open_unit(d));
-        let income = match h.position(<if_pop::facts::Income as FactDef>::ITEM.name) {
+        let income = match h.state.income {
             Missing::Present(y) => Some(from_i64(y)),
             Missing::Absent => None,
         };
@@ -122,7 +121,7 @@ impl PopProcess for Fertility {
         else {
             return;
         };
-        h.set_attr(TRYING.name, if tries { TRYING_FOR_CHILD } else { NOT_TRYING });
+        h.state.trying = tries;
     }
 }
 
@@ -166,7 +165,7 @@ impl PopProcess for Conception {
         if_pop::HOUSEHOLD
     }
     fn rate(&self, _: &Register, agent: &AgentView<'_>, p: &Person) -> f64 {
-        if (agent.attr)(TRYING.name) != Some(TRYING_FOR_CHILD) || !at_risk(p) {
+        if !agent.state.trying || !at_risk(p) {
             return 0.0;
         }
         let Some(table) = &self.table else { violation!(clause = "POP.16", "a conception before its binding") };
@@ -191,6 +190,6 @@ impl PopProcess for Conception {
                 gone: false,
             });
         }
-        h.set_attr(TRYING.name, NOT_TRYING);
+        h.state.trying = false;
     }
 }

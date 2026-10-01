@@ -1,13 +1,12 @@
-//! The household and its persons, the vocabulary every system that reads or writes a household shares: its roles,
-//! its attributes and its persons' attributes. `sys-dem` declares them; other systems read and extend them.
+//! The household and its persons, the vocabulary every system that reads or writes a household shares: its roles and
+//! its persons' attributes. `sys-dem` declares them; other systems read and extend them.
 
 pub mod consts;
 pub mod facts;
-pub mod fertility;
 
-use phx_core::{AttrDecl, FactDef, ItemDecl, PersonAttrDecl, RoleDecl};
+use phx_core::{FactDef, ItemDecl, PersonAttrDecl, RoleDecl};
 
-use crate::consts::{EDUCATION_VALUES, REGIONS};
+use crate::consts::EDUCATION_VALUES;
 
 /// Every item the crate exports.
 pub const ITEMS: &[ItemDecl] = &[
@@ -41,9 +40,6 @@ pub const FEMALE: u32 = 0;
 pub const MALE: u32 = 1;
 pub const ABLE: u32 = 0;
 pub const DISABLED: u32 = 1;
-
-/// The region a household lives in.
-pub const REGION: AttrDecl = AttrDecl { name: "DEM.region", values: REGIONS, clause: "REP.41" };
 
 pub const HEAD: RoleDecl = RoleDecl { name: "head", clause: "REP.26" };
 pub const PARTNER: RoleDecl = RoleDecl { name: "partner", clause: "REP.26" };

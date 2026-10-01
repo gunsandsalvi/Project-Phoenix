@@ -1,4 +1,4 @@
-# The sites PC-99 admits for now, 787 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
+# The sites PC-99 admits for now, 763 in all, held to `phx_check.exceptions_pc99`. Each migration removes its own; a site is never added.
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_accounts.rs"
@@ -555,12 +555,6 @@ count = 1
 [[site]]
 path = "crates/assembly/phx-world/src/core_goods.rs"
 item = "Core::decide_spending"
-what = "`.clone()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_goods.rs"
-item = "Core::decide_spending"
 what = "`Vec::new`"
 count = 2
 
@@ -1072,7 +1066,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_open.rs"
 item = "Core::begin_household"
 what = "`.collect()`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_open.rs"
@@ -1138,13 +1132,13 @@ count = 1
 path = "crates/assembly/phx-world/src/core_outlooks.rs"
 item = "Core::refresh_windows"
 what = "`.clone()`"
-count = 2
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_outlooks.rs"
 item = "Core::refresh_windows"
 what = "`.collect()`"
-count = 4
+count = 2
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_outlooks.rs"
@@ -1263,12 +1257,6 @@ count = 2
 [[site]]
 path = "crates/assembly/phx-world/src/core_player.rs"
 item = "Core::seat_player"
-what = "`.to_owned()`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_player.rs"
-item = "Core::seat_player"
 what = "`format!`"
 count = 1
 
@@ -1299,19 +1287,7 @@ count = 2
 [[site]]
 path = "crates/assembly/phx-world/src/core_pop.rs"
 item = "Core::open_hazards"
-what = "`Vec::new`"
-count = 3
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::open_hazards"
 what = "`vec!`"
-count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_pop.rs"
-item = "Core::outcomes"
-what = "`.clone()`"
 count = 1
 
 [[site]]
@@ -1324,7 +1300,7 @@ count = 4
 path = "crates/assembly/phx-world/src/core_pop.rs"
 item = "Core::outcomes"
 what = "`Vec::new`"
-count = 4
+count = 1
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_pop.rs"
@@ -1348,7 +1324,7 @@ count = 1
 path = "crates/assembly/phx-world/src/core_pop.rs"
 item = "Core::run_hazards"
 what = "`Vec::new`"
-count = 5
+count = 2
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_rates.rs"
@@ -1361,12 +1337,6 @@ path = "crates/assembly/phx-world/src/core_rates.rs"
 item = "Core::measure_rates"
 what = "`.collect()`"
 count = 1
-
-[[site]]
-path = "crates/assembly/phx-world/src/core_rates.rs"
-item = "Core::measure_rates"
-what = "`Vec::new`"
-count = 3
 
 [[site]]
 path = "crates/assembly/phx-world/src/core_stats.rs"
@@ -2860,13 +2830,13 @@ count = 1
 path = "crates/kernel/phx-pop/src/kind.rs"
 item = "PopKindDecl::compile"
 what = "`Vec::new`"
-count = 5
+count = 3
 
 [[site]]
 path = "crates/kernel/phx-pop/src/kind.rs"
 item = "PopKindDecl::compile"
 what = "`format!`"
-count = 7
+count = 4
 
 [[site]]
 path = "crates/kernel/phx-pop/src/kind.rs"

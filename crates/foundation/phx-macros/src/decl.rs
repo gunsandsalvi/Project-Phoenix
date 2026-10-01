@@ -346,7 +346,7 @@ fn kind(d: &Decl) -> syn::Result<(TokenStream, TokenStream)> {
                 name: #id,
                 legal_form: #form,
                 place: {
-                    use ::phx_core::kinds::Place::{Country, Region, Site, Sited, Zone};
+                    use ::phx_core::kinds::Place::{Country, Region, Site, Zone};
                     #place
                 },
                 store: #store,

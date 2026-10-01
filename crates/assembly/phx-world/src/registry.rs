@@ -91,26 +91,6 @@ fn unlawful_kinds(d: &Declarations, kernel: &KernelPrims, register: &phx_core::R
         .collect()
 }
 
-/// Kinds whose place their records do not hold: a population kind's place word beyond its attributes and positions,
-/// or a kind sited by a population declaration that sites it by none. Every other kind's record is made to reach its
-/// place's word, and a kind placed by its zone keeps it in its store.
-#[opening]
-fn misplaced_kinds(d: &Declarations, pop: &[(phx_pop::kind::PopKindDecl, usize)]) -> Vec<String> {
-    d.kinds
-        .iter()
-        .filter_map(|(_, k)| {
-            let declared = pop.iter().find(|(p, _)| p.kind == k.name).map(|(p, _)| p);
-            if k.place == phx_core::Place::Sited
-                && !declared.is_some_and(|p| matches!(p.sited_by, phx_num::Missing::Present(_)))
-            {
-                return Some(format!("kind `{}` is sited by a population declaration that sites it by none", k.name));
-            }
-            let p = declared?;
-            k.place.check(k.name, p.attrs.len() + p.positions.len()).err()
-        })
-        .collect()
-}
-
 /// Countries whose inheritance law names no destination for an estate with no heir, or names a kind the world does
 /// not declare.
 #[opening]
@@ -276,7 +256,6 @@ fn prepare(
             (Vec::new(), Vec::new())
         }
     };
-    errors.extend(misplaced_kinds(&d, &pop));
     errors.extend(heirless_destinations(&d, &c.register, levels.len()));
     if !errors.is_empty() {
         return Err(AssemblyErrors(errors));
@@ -432,10 +411,10 @@ fn declared_kinds(p: &Prepared) -> Result<crate::core_kinds::Bound, String> {
     Ok((traits, heirless))
 }
 
-/// The core's own opening over the population's household kind.
+/// The core's own opening over the population's household kind, its households sited on the map.
 fn open_core(
     p: &Prepared,
-    (countries, sheets): (&[phx_core::OpeningCountry], &[crate::opening::sheet::Sheet]),
+    (countries, sheets, geo): (&[phx_core::OpeningCountry], &[crate::opening::sheet::Sheet], &GeoState),
     calendar: &phx_core::calendar::Calendar,
     today: phx_id::Day,
 ) -> Result<crate::core::Core, AssemblyErrors> {
@@ -453,6 +432,7 @@ fn open_core(
         today,
         household: (household, household_pop),
         declared: &declared,
+        geo,
     })
     .map_err(|e| AssemblyErrors(vec![e]))
 }
@@ -501,7 +481,7 @@ fn core_of(
     let (opening, _) =
         phx_exec::trace::span("open.countries", || opening_countries(&p.kernel, &p.c, &p.game, geo, p.representation));
     let sheets = phx_exec::trace::span("open.sheets", || opening_sheets(p, own, &opening))?;
-    let mut core = phx_exec::trace::span("open.core", || open_core(p, (&opening, &sheets), calendar, today))?;
+    let mut core = phx_exec::trace::span("open.core", || open_core(p, (&opening, &sheets, geo), calendar, today))?;
     phx_exec::trace::span("open.decisions", || open_decisions(p, &mut core));
     core.bind_points(labour);
     let regions: Vec<phx_id::CountryId> = geo.map.regions.iter().map(|r| r.country).collect();

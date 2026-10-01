@@ -52,12 +52,18 @@ pub fn unpack(kind: &PopKindDecl, word: u64) -> Person {
     Person { role, born, attrs, gone: false }
 }
 
-/// A word's role and birth date, its attributes written to `attrs`.
-fn read(kind: &PopKindDecl, word: u64, attrs: &mut Vec<(&'static str, u32)>) -> (&'static str, Date) {
+/// A word's role, its place among its kind's, and its birth date, read without its attributes.
+pub fn role_and_birth(word: u64) -> (usize, Date) {
     let Ok(low) = u32::try_from(word & mask(BIRTH_BITS)) else {
         violation!(clause = "REP.25", "a birth date wider than its bits");
     };
-    let role = (word >> BIRTH_BITS) & mask(ROLE_BITS);
+    let role = phx_rand::float::index((word >> BIRTH_BITS) & mask(ROLE_BITS));
+    (role, civil_date(i64::from(low.cast_signed())))
+}
+
+/// A word's role and birth date, its attributes written to `attrs`.
+fn read(kind: &PopKindDecl, word: u64, attrs: &mut Vec<(&'static str, u32)>) -> (&'static str, Date) {
+    let (role, born) = role_and_birth(word);
     let base = BIRTH_BITS + ROLE_BITS;
     attrs.clear();
     attrs.extend(kind.person_attrs.iter().map(|f| {
@@ -66,7 +72,7 @@ fn read(kind: &PopKindDecl, word: u64, attrs: &mut Vec<(&'static str, u32)>) -> 
         };
         (f.decl.name, v)
     }));
-    (kind.role_name(phx_rand::float::index(role)), civil_date(i64::from(low.cast_signed())))
+    (kind.role_name(role), born)
 }
 
 #[cfg(test)]
@@ -117,6 +123,7 @@ mod tests {
                 gone: false,
             };
             assert_eq!(unpack(&k, pack(&k, &p)), p);
+            assert_eq!(super::role_and_birth(pack(&k, &p)), (k.role(role).unwrap(), p.born));
         }
     }
 

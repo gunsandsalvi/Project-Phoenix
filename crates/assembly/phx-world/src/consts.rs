@@ -148,6 +148,15 @@ pub const CORE_RANGE_BITS: u32 = 12;
 /// and the sales a day it expects in millionths, the units it sold since its last review and that review's day, its
 /// management's memory and switching types, the heuristic it relies on, the width of its sales' surprises and its sales as last seen, the return its management requires; the purposes its opening draws and its
 /// jobs' dealing are keyed by; and the column of the value added's parts that is labour's.
+pub mod household {
+    /// The stance's place in a household's states byte: its top three bits, above the tenure's two and the credit
+    /// stage's three.
+    pub const STANCE_SHIFT: u32 = 5;
+    pub const STANCE_BITS: u32 = 3;
+    /// The flag of a household whose last decision was to try for a child.
+    pub const TRYING: u8 = 1;
+}
+
 pub mod firm {
     /// A share, a rate or a firm's sales in millionths, as a firm's words hold them.
     pub const PART_ONE: f64 = 1_000_000.0;

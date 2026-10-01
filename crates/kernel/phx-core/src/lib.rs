@@ -61,8 +61,8 @@ pub use hazards::{ActsOn, DrawScheme, HazardDecl, RateChange, RateFn, annual_to_
 pub use kinds::{ESTATE_KIND, Feature, KindDecl, KindId, LEGAL_FORMS, LegalForm, Place};
 pub use phx_macros::{declare_fact, declare_hazard, declare_kind, declare_prim, declare_stream};
 pub use policy::{AnnounceRefused, PolicyBook, PolicyEntry, PolicyH};
-pub use pop::{AttrDecl, PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, PositionDecl, PositionOpening, RoleDecl};
-pub use pop_process::{AgentView, Household, Person, PopProcess};
+pub use pop::{PersonAttrDecl, PopEntry, PopItem, PopKindBuilder, RoleDecl};
+pub use pop_process::{AgentView, Household, HouseholdState, Person, PopProcess};
 pub use products::ProductEntry;
 pub use register::limit::{Binding, Bindings, Bound, DeclaredLimit, Limited, PhysicalToken, TermsToken};
 pub use register::profile::{JointProfile, Pinned, ProfileValue, Transform, draw_profile};

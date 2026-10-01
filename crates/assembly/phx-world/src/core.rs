@@ -1,6 +1,6 @@
 //! The world on the core: every party of every kind in the core's stores with its identity — the institutions sited
-//! by a tile, the firms by their record, each household by its attributes, positions and persons, each person with
-//! its own identity — its account at its bank, and the dated families of contracts between them. The core draws its
+//! by a tile, the firms and households by their kinds' stores, each household with its persons, each person with its
+//! own identity — its account at its bank, and the dated families of contracts between them. The core draws its
 //! own opening (`core_open`).
 
 use phx_id::consts::NATURE_KIND;
@@ -34,6 +34,8 @@ pub struct Core {
     pub directory: Directory<SystemBacking>,
     /// The firms' own state on their kind's store, opened with the firms.
     pub firms: Option<crate::firm_store::FirmStore>,
+    /// The households' own state on their kind's store, opened with the households.
+    pub households: Option<crate::household_store::HouseholdStore>,
     /// Each country's central bank, the issuer of its currency, by the currency's index.
     pub issuers: Vec<PartyKey>,
     pub bank_kind: Option<u8>,
@@ -307,10 +309,19 @@ impl Core {
     /// itself.
     #[must_use]
     pub fn store_samples(&self) -> Vec<(&'static str, phx_exec::stats::Sample)> {
+        // A zoned kind's rows are its own store's, beside its accounts in the core's; another kind has none there.
+        let zoned = |kind: u8| -> u64 {
+            let firms = self.firms.as_ref().filter(|f| f.kind() == kind).map(|f| &f.store);
+            let households = self.households.as_ref().filter(|h| h.kind() == kind).map(|h| &h.store);
+            match firms.or(households) {
+                Some(store) => phx_store::StoreStats::bytes(store),
+                None => 0,
+            }
+        };
         let kinds = self.names.iter().zip(&self.kinds).enumerate().map(|(place, (name, store))| {
             let kind = kind_number(place);
             let (live, ever) = (self.directory.live(kind), u64::from(self.directory.high_water(kind)));
-            let bytes = phx_store::StoreStats::bytes(store);
+            let bytes = phx_store::StoreStats::bytes(store) + zoned(kind);
             (*name, phx_exec::stats::Sample { rows_live: live, rows_ever: ever, bytes })
         });
         kinds.chain([("directory", phx_exec::stats::Sample::of(&self.directory))]).collect()

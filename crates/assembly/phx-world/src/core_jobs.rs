@@ -424,24 +424,17 @@ impl Core {
         Ok(())
     }
 
-    /// Where a household's record holds its income a year, as its kind's position.
-    fn income_word(&self) -> Option<usize> {
-        let decl = self.declared.household.as_ref()?;
-        let income_name = <if_pop::facts::Income as phx_core::FactDef>::ITEM.name;
-        Some(decl.attrs.len() + decl.positions.iter().position(|p| p.item.name == income_name)?)
-    }
-
-    /// A household's income a year; none where its record holds none.
+    /// A household's outlook of its income a year; none where it holds none.
     pub(crate) fn income_of(&self, household: PartyKey) -> Option<i64> {
-        self.household_word(usize::from(household.kind()), household.slot(), self.income_word()?)
+        self.household_of(household)?.income()
     }
 
     /// A household's income a year raised by an amount.
     fn add_income(&mut self, household: PartyKey, amount: i64) {
-        let (Some(at), Some(held)) = (self.income_word(), self.income_of(household)) else {
+        let Some(held) = self.income_of(household) else {
             violation!(clause = "GEN.2", "a household with no income to add a wage to", slot = household.slot().get());
         };
-        self.set_household_word(usize::from(household.kind()), household.slot(), at, held + amount);
+        self.household_write(|hs| hs.set_income(household.slot(), held + amount));
     }
 
     /// A person's last wage point written to it.

@@ -270,7 +270,7 @@ fn after(day: Day, n: u64) -> Day {
 }
 
 /// A month counted from the calendar's year zero.
-fn months(date: phx_id::Date) -> i64 {
+pub(crate) fn months(date: phx_id::Date) -> i64 {
     i64::from(date.year()) * MONTHS + i64::from(date.month())
 }
 
@@ -303,20 +303,6 @@ impl CoreGoods {
 }
 
 impl Core {
-    /// A household's record word, as its attribute or position holds it; none where it is absent.
-    pub(crate) fn household_word(&self, place: usize, slot: Slot, at: usize) -> Option<i64> {
-        match self.kinds.get(place)?.record(slot).get(at).map(|w| w.get()) {
-            Some(Missing::Present(v)) => Some(v),
-            _ => None,
-        }
-    }
-
-    pub(crate) fn set_household_word(&mut self, place: usize, slot: Slot, at: usize, v: i64) {
-        if let Some(w) = self.kinds.get_mut(place).and_then(|k| k.record_mut(slot).get_mut(at)) {
-            *w = phx_num::MaybeI64::present(v);
-        }
-    }
-
     /// A firm's hot and warm rows, gathered for its visit's reads; none for a slot no firm holds.
     pub fn firm_view(&self, slot: Slot) -> Option<crate::firm_store::FirmView<'_>> {
         self.firms.as_ref()?.view(slot)
@@ -518,20 +504,15 @@ impl Core {
     #[opening]
     fn opening_spending(&self, ctx: &GoodsCtx<'_>, today: Day) -> Vec<f64> {
         let mut out = vec![0.0; self.goods.gdp.len()];
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
-            return out;
-        };
-        let income_name = <if_pop::facts::Income as phx_core::FactDef>::ITEM.name;
-        let Some(income_at) = decl.positions.iter().position(|p| p.item.name == income_name) else { return out };
-        let income_at = decl.attrs.len() + income_at;
-        let Missing::Present(region_at) = decl.sited_by else { return out };
+        let Some(place) = self.bound.kinds.household else { return out };
         let next = after(today, u64::from(self.goods.spend_days));
         let Some(store) = self.kinds.get(place) else { return out };
         for slot in self.directory.live_slots(kind_number(place)) {
-            let (Some(money), Some(income), Some(Missing::Present(region))) = (
+            let Some(v) = self.household_view(slot) else { continue };
+            let (Some(money), Some(income), Some(region)) = (
                 store.accounts.as_ref().and_then(|a| a.balance.get(slot)),
-                self.household_word(place, slot, income_at).map(from_i64).filter(|y| *y > 0.0),
-                store.record(slot).get(region_at).map(|w| w.get()),
+                v.income().map(from_i64).filter(|y| *y > 0.0),
+                v.region(),
             ) else {
                 continue;
             };
@@ -614,11 +595,9 @@ impl Core {
     fn region_shares(&self, regions: &[CountryId]) -> Vec<f64> {
         let mut persons = vec![0.0; regions.len()];
         let Some(place) = self.bound.kinds.household else { return persons };
-        let Some(decl) = self.declared.household.as_ref() else { return persons };
-        let Missing::Present(at) = decl.sited_by else { return persons };
-        if let (Some(store), Some(Some(ps))) = (self.kinds.get(place), self.persons.get(place)) {
+        if let Some(Some(ps)) = self.persons.get(place) {
             for slot in self.directory.live_slots(kind_number(place)) {
-                let Some(Missing::Present(r)) = store.record(slot).get(at).map(|w| w.get()) else { continue };
+                let Some(r) = self.household_region(slot) else { continue };
                 if let Some(p) = usize::try_from(r).ok().and_then(|r| persons.get_mut(r)) {
                     *p += from_i64(i64::try_from(ps.count(slot)).unwrap_or(0));
                 }
@@ -1246,20 +1225,7 @@ impl Core {
     /// and asks its country's budget shares of that of each product at retail.
     #[clause("HH.1", "HH.2", "HH.4", "HH.5", "HH.18", "HH.19")]
     fn decide_spending(&mut self, ctx: &GoodsCtx<'_>, day: Day) -> (u64, u64) {
-        let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.clone()) else {
-            return (0, 0);
-        };
-        let position =
-            |name: &str| decl.positions.iter().position(|p| p.item.name == name).map(|i| decl.attrs.len() + i);
-        let (Some(income_at), Some(after_at), Some(received_at), Some(looked_at)) = (
-            position(<if_pop::facts::Income as phx_core::FactDef>::ITEM.name),
-            position(<if_pop::facts::After as phx_core::FactDef>::ITEM.name),
-            position(<if_pop::facts::Received as phx_core::FactDef>::ITEM.name),
-            position(<if_pop::facts::Looked as phx_core::FactDef>::ITEM.name),
-        ) else {
-            return (0, 0);
-        };
-        let Missing::Present(region_at) = decl.sited_by else { return (0, 0) };
+        let Some(place) = self.bound.kinds.household else { return (0, 0) };
         let mut due = Vec::new();
         if let Some(w) = self.goods.spenders.as_mut() {
             w.take(day, &mut due, ctx.pool);
@@ -1280,24 +1246,21 @@ impl Core {
                 continue;
             };
             spenders += 1;
-            if let Some(Missing::Present(region)) =
-                self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
-                && let Some(country) = usize::try_from(region).ok().and_then(|r| ctx.regions.get(r))
-            {
+            let Some(region) = self.household_region(slot) else { continue };
+            if let Some(country) = usize::try_from(region).ok().and_then(|r| ctx.regions.get(r)) {
                 let household = PartyKey::new(kind_number(place), slot);
                 self.reconsider_household((ctx.streams, &ctx.rule.types), (household, id), (country.get(), day));
             }
-            let at = [income_at, after_at, received_at, looked_at];
-            let outlook = self.income_outlook((place, slot), at, (money, month), ctx.rule.gain);
+            let outlook = self.income_outlook(slot, (money, month), ctx.rule.gain);
             let Some(income) = outlook.filter(|y| *y > 0.0) else {
-                self.set_household_word(place, slot, after_at, money);
+                self.household_write(|hs| hs.set_after(slot, money));
                 continue;
             };
             // What its contracts will take before its next spending day is not its to spend.
             let party = PartyKey::new(kind_number(place), slot);
             let free = money - self.owed_until(party, (day, next), ctx.calendar);
             if free <= 0 {
-                self.set_household_word(place, slot, after_at, money);
+                self.household_write(|hs| hs.set_after(slot, money));
                 continue;
             }
             let rule = &ctx.rule.rule;
@@ -1312,15 +1275,9 @@ impl Core {
             });
             // The player keeping the decision and queuing nothing spends nothing today.
             let Some(spent) = spent else {
-                self.set_household_word(place, slot, after_at, money);
+                self.household_write(|hs| hs.set_after(slot, money));
                 continue;
             };
-            let Some(Missing::Present(region)) =
-                self.kinds.get(place).and_then(|k| k.record(slot).get(region_at).map(|w| w.get()))
-            else {
-                continue;
-            };
-            let Ok(region) = u32::try_from(region) else { continue };
             let c = ctx.regions.get(usize::try_from(region).unwrap_or(usize::MAX)).map(|c| usize::from(c.get()));
             let Some(shares) = c.and_then(|c| ctx.rule.shares.get(c)) else {
                 violation!(clause = "HH.5", "a household's country with no budget shares", region = region);
@@ -1335,9 +1292,9 @@ impl Core {
                 }
             }
             if let Some(o) = outlook.and_then(floor_to_i64) {
-                self.set_household_word(place, slot, income_at, o);
+                self.household_write(|hs| hs.set_income(slot, o));
             }
-            self.set_household_word(place, slot, after_at, money - total);
+            self.household_write(|hs| hs.set_after(slot, money - total));
         }
         let n = len_u64(wants.len());
         self.goods.wants = wants;
@@ -1346,19 +1303,13 @@ impl Core {
 
     /// A household's outlook of its income a year: what it received since it last decided taken in, and once a month
     /// its receipts a year since its last look into its outlook at its gain.
-    fn income_outlook(
-        &mut self,
-        (place, slot): (usize, Slot),
-        [income_at, after_at, received_at, looked_at]: [usize; 4],
-        (money, month): (i64, i64),
-        gain: f64,
-    ) -> Option<f64> {
-        let read = |at: usize| self.household_word(place, slot, at);
-        let (received, looked) = match (read(after_at), read(received_at), read(looked_at)) {
+    fn income_outlook(&mut self, slot: Slot, (money, month): (i64, i64), gain: f64) -> Option<f64> {
+        let v = self.household_view(slot)?;
+        let (received, looked) = match (v.after(), v.received(), v.looked()) {
             (Some(after), Some(received), Some(looked)) => (received + money - after, looked),
             _ => (0, month),
         };
-        let mut outlook = read(income_at).map(from_i64);
+        let mut outlook = v.income().map(from_i64);
         let (received, looked) = if month > looked {
             let seen = from_i64(received) * MONTHS_A_YEAR / from_i64(month - looked);
             outlook = Some(match outlook {
@@ -1369,8 +1320,10 @@ impl Core {
         } else {
             (received, looked)
         };
-        self.set_household_word(place, slot, received_at, received);
-        self.set_household_word(place, slot, looked_at, looked);
+        self.household_write(|hs| {
+            hs.set_received(slot, received);
+            hs.set_looked(slot, looked);
+        });
         outlook
     }
 

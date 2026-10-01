@@ -13,8 +13,7 @@ mod prims;
 mod processes;
 mod school;
 
-use if_pop::fertility::{IDEAL, TRYING};
-use if_pop::{ADULT, CHILD, EDUCATION, HEAD, HEALTH, HOUSEHOLD, PARTNER, REGION, SEX};
+use if_pop::{ADULT, CHILD, EDUCATION, HEAD, HEALTH, HOUSEHOLD, PARTNER, SEX};
 use phx_core::{
     Declarations, EventKindDecl, SetupValue, StreamDef, System, declare_hazard, declare_kind, declare_stream,
 };
@@ -26,7 +25,7 @@ pub use prims::{HEIRLESS_TO, Prims};
 pub use processes::{Mortality, Onset};
 pub use school::LeavingSchool;
 
-declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", place: Sited, store: "households", clause: "POP.2" } }
+declare_kind! { pub HOUSEHOLD_KIND = "household" { legal_form: "household", place: Zone, store: "households", clause: "POP.2" } }
 
 declare_stream! { pub RegionsStream = "DEM.opening_regions" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub PersonsStream = "DEM.opening_persons" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
@@ -34,6 +33,7 @@ declare_stream! { pub CompositionStream = "DEM.opening_composition" { family: Wo
 declare_stream! { pub HealthStream = "DEM.opening_health" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub EducationStream = "DEM.opening_education" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
 declare_stream! { pub MeansStream = "DEM.opening_means" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
+declare_stream! { pub SitesStream = "DEM.opening_sites" { family: World, purpose: Opening, keyed: false, clause: "PTY.5" } }
 declare_stream! { pub MortalityStream = "DEM.mortality" { family: World, purpose: Mortality, keyed: false, clause: "CHN.3" } }
 declare_stream! { pub IllnessStream = "DEM.illness" { family: World, purpose: Illness, keyed: false, clause: "CHN.3" } }
 declare_stream! { pub BirthdayStream = "DEM.birthdays" { family: World, purpose: Birthday, keyed: false, clause: "CHN.3" } }
@@ -80,13 +80,11 @@ declare_hazard! {
 #[derive(Debug)]
 pub struct Dem;
 
-/// The household kind's roles, attribute and person attributes, from the households' vocabulary, and where it is
-/// sited.
+/// The household kind's roles and person attributes, from the households' vocabulary.
 fn declare_household(d: &mut Declarations) {
     let mut k = d.pop_kind(HOUSEHOLD);
-    k.role(HEAD).role(PARTNER).role(ADULT).role(CHILD).attr(REGION).attr(TRYING).attr(IDEAL);
+    k.role(HEAD).role(PARTNER).role(ADULT).role(CHILD);
     k.person_attr(SEX).person_attr(HEALTH).person_attr(EDUCATION);
-    k.sited_by(REGION.name);
 }
 
 impl System for Dem {
@@ -102,6 +100,7 @@ impl System for Dem {
             HealthStream::DECL,
             EducationStream::DECL,
             MeansStream::DECL,
+            SitesStream::DECL,
         ] {
             d.stream(stream);
         }

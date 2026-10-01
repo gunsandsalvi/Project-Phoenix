@@ -135,6 +135,12 @@ impl FirmStore {
         }
     }
 
+    /// The kind its firms are of.
+    #[must_use]
+    pub fn kind(&self) -> u8 {
+        self.kind
+    }
+
     /// A firm the directory began, its words written from its opening.
     pub fn begin(&mut self, dir: &Directory<SystemBacking>, r: PartyRef, o: &FirmOpening) {
         let w = *self.w();

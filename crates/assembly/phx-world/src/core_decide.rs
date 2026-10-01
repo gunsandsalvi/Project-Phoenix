@@ -9,7 +9,7 @@ use phx_core::decisions::{DecisionKinds, DecisionPointDecl, Prefs, QueuedPayload
 use phx_core::kinds::LegalForm;
 use phx_id::{PartyKey, Slot};
 use phx_macros::{clause, opening};
-use phx_num::{MaybeI64, Missing, violation};
+use phx_num::{Missing, violation};
 
 use crate::core::Core;
 
@@ -118,7 +118,6 @@ pub struct Decisions {
     founding: Vec<Vec<Prefs>>,
     holders: BTreeMap<(PartyKey, u8), (u64, Prefs)>,
     taken: Vec<Vec<phx_exec::Tally>>,
-    pub(crate) household: Option<(usize, [usize; 4])>,
 }
 
 impl Decisions {
@@ -222,14 +221,6 @@ fn standing_at(standing: Standing) -> usize {
     Standing::ALL.iter().position(|s| *s == standing).unwrap_or(0)
 }
 
-/// A record word read as a type's index.
-fn index_of(w: Option<&MaybeI64>) -> Missing<u16> {
-    match w.map(|w| w.get()) {
-        Some(Missing::Present(v)) => u16::try_from(v).map_or(Missing::Absent, Missing::Present),
-        _ => Missing::Absent,
-    }
-}
-
 impl Core {
     /// The decisions opened: each kind as the register declares it, its office found among the forms of the core's
     /// kinds, each kind's founding preferences empty until its parties are drawn, and no office held.
@@ -248,19 +239,6 @@ impl Core {
                     .collect()
             })
             .collect();
-        let household = self.bound.kinds.household.and_then(|place| {
-            let decl = self.declared.household.as_ref()?;
-            let at = |name: &str| decl.attrs.iter().position(|a| a.item.name == name);
-            Some((
-                place,
-                [
-                    at(sys_hh::MEMORY_ATTR.name)?,
-                    at(sys_hh::SWITCHING_ATTR.name)?,
-                    at(sys_hh::STANCE_ATTR.name)?,
-                    at(sys_hh::WINDOW_ATTR.name)?,
-                ],
-            ))
-        });
         self.decisions = Decisions {
             names: kinds.kinds.iter().map(|k| k.name.clone()).collect(),
             taken_in: kinds.kinds.iter().map(|k| k.taken_in.clone()).collect(),
@@ -272,7 +250,6 @@ impl Core {
                 .iter()
                 .map(|_| Standing::ALL.iter().map(|_| phx_exec::Tally::default()).collect())
                 .collect(),
-            household,
         };
     }
 
@@ -324,16 +301,19 @@ impl Core {
         Bound { at, point }
     }
 
-    /// A household's preferences: its record's memory and switching types, its stance and its age class.
+    /// A household's preferences: its memory and switching types, its stance and its age class.
     fn household_prefs(&self, slot: Slot) -> Prefs {
-        let Some((place, [m, s, h, w])) = self.decisions.household else { return Prefs::NONE };
-        let Some(store) = self.kinds.get(place) else { return Prefs::NONE };
-        let record = store.record(slot);
+        let Some(v) = self.household_view(slot) else { return Prefs::NONE };
+        let present = |x: Option<u16>| x.map_or(Missing::Absent, Missing::Present);
+        let types = v.types();
         Prefs {
-            memory: index_of(record.get(m)),
-            switching: index_of(record.get(s)),
-            stance: index_of(record.get(h)),
-            window: index_of(record.get(w)),
+            memory: present(types.map(|(m, _)| m)),
+            switching: present(types.map(|(_, s)| s)),
+            stance: present(v.stance()),
+            window: match v.window() {
+                Missing::Present(c) => Missing::Present(u16::from(c)),
+                Missing::Absent => Missing::Absent,
+            },
             ..Prefs::NONE
         }
     }
@@ -415,7 +395,7 @@ impl Core {
     }
 
     /// A decider's stance, reconsidered in a decision, written where its preferences live: its holder's, its
-    /// institution's founding preferences, or its household's record.
+    /// institution's founding preferences, or its household's store.
     #[clause("VAL.7", "MND.20")]
     pub(crate) fn set_stance<I, O>(&mut self, b: Bound<I, O>, party: PartyKey, stance: u16) {
         match self.decider(b, party).0 {
@@ -435,10 +415,7 @@ impl Core {
                 }
             }
             Standing::Household | Standing::Person => {
-                let Some((place, [_, _, h, _])) = self.decisions.household else { return };
-                if let Some(w) = self.kinds.get_mut(place).and_then(|k| k.record_mut(party.slot()).get_mut(h)) {
-                    *w = MaybeI64::present(i64::from(stance));
-                }
+                self.household_write(|hs| hs.set_stance(party.slot(), stance));
             }
             Standing::Player => {}
         }
@@ -467,7 +444,6 @@ mod tests {
             founding: vec![Vec::new(), vec![Prefs::NONE, Prefs::NONE, founded]],
             holders: BTreeMap::new(),
             taken: vec![Standing::ALL.iter().map(|_| phx_exec::Tally::default()).collect()],
-            household: None,
         };
         (decisions, firm)
     }

@@ -308,9 +308,9 @@ sweeps. It holds no store, no per-party pass and no `&mut` world state (PC-97); 
 its paragraph below. The rules each system holds on the core, one paragraph a system that owns one:
 
 **`sys-hh`** (HH.4, HH.5). A household decides its spending every `HH.spending_days` business days from its money, its
-country and four positions: `HH.income`, the outlook of its permanent income a year; `HH.after`, what it held after
-its last decision; `HH.received`, the money taken in since its last look at its income; and `HH.looked`, the month of
-that look. Its money less `HH.after` is added to what it received; at its first decision in a new month it looks, the
+country and four words of its store (K-32): `HH.income`, the outlook of its permanent income a year; `HH.after`, what
+it held after its last decision; `HH.received`, the money taken in since its last look at its income; and `HH.looked`,
+the month of that look. Its money less `HH.after` is added to what it received; at its first decision in a new month it looks, the
 month's receipts grossed to a year taken into the outlook at `HH.income_gain` — a month, since its pay comes monthly
 and a week's receipts would read a payday as a year's income and the weeks between as none. It spends by the
 buffer-stock rule at its cash on hand in years of its income (Carroll's cash on hand holds the period's income):
@@ -906,9 +906,8 @@ written by its payee system; a kink on an undeclared position; a primitive witho
 decision point without an evaluation form or schedule; a rule signature without an implementer; a commitment kind without the legs it creates; a hazard without a draw scheme (REP.7);
 an interface item whose writer is not registered.
 
-  For a population kind, every refusal is reported at once: a name declared twice, an attribute or person attribute
-  of no values, roles or person attributes beyond a person's word, a kind sited by two attributes or by one it does
-  not hold.
+  For a population kind, every refusal is reported at once: a name declared twice, a person attribute of no values,
+  roles or person attributes beyond a person's word.
 
   The kind catalogue (K-21) refuses, all at once, by item and system: a name declared twice in a table; a reference to
   a name no system declares; a kind reserved by a store the capacity table does not hold; a family held by a kind
@@ -923,8 +922,7 @@ an interface item whose writer is not registered.
   members.
 
   A kind is refused whose place (`KindDecl::place`: its site's tile, its region or its country in a word of its
-  record, `Sited` by its population declaration, or `Zone`, its zone on its kind's store) is read from a word beyond
-  the record its parties are begun with, or which is sited by a population declaration that sites it by none.
+  record, or `Zone`, its zone on its kind's store) is read from a word beyond the record its parties are begun with.
 
   The opening refuses a primitive absent for what the world holds, naming it, rather than reading it as zero: a product
   with no lead time (`TEC.lead_time`, compiled once into `CoreGoods::lead`), a country with no lending rate
@@ -2311,7 +2309,7 @@ day, and the first day after it each (product, region) mark rose above that (`Sh
 
 ### 7.5 phx-pop
 
-Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, the firms on one; S1.199–S1.211 planned)
+Status: building (K-31 written and followed; K-32's kind stores and windowed groups written, the firms and households on theirs; S1.200–S1.211 planned)
 
 #### K-31 The directory
 
@@ -2353,7 +2351,7 @@ and ever are the directory's (`Core::store_samples`). A table of nature's kind i
 
 `phx-pop`'s `KindStore` (`kinds.rs`; PTY.5, REP.1) holds a kind's parties' state as fixed-width groups by slot, at the
 slot the directory (K-31) gave each party, and its windowed groups the columns that exist only inside a dated window;
-the firms are on one (S1.198); the other kinds move at S1.199–S1.206.
+the firms (S1.198) and households (S1.199) are on theirs; the other kinds move at S1.200–S1.206.
 
 **Layout** (`layout.rs`, the maps in `consts.rs`): a kind's `KindMap` names its groups, hot first, at most four; a
 group (`GroupDecl`) is a width in bytes and the words the bases declare in it (`WordDecl`: name, integer type, count
@@ -2362,10 +2360,12 @@ Stores hold integers only; an absent-capable word's sentinel is its type's most 
 unsigned. `const` checks hold every map within its widths and the sizes below.
 
 - **Household, 174 B.** *Hot, 128* (two lines): residence u32 (a zone or a building, from which region and country are
-  read) · states u8 (tenure 2 bits, credit stage 3, stance 3) · preference type u16 · flags u8 · formed day u32 (K-32)
-  · persons head u32 (K-33) · chain head u32 (K-53) · positions 3 × i64 (recent income, debt service, buffer target;
-  K-32) · own outlooks 4 × i32 (`Fixed`; K-102) · agenda base u32 and 27 × u16 (K-43) · reserve 10. *Warm, 46*: two
-  named-unit slots, each owner u32, unit u32, count u32, cost i64 (K-60) · reserve 6.
+  read) · states u8 (tenure 2 bits, credit stage 3, stance 3) · preference type u16 (memory and switching types) · flags
+  u8 (bit 0 trying for a child) · formed day u32 (K-32) · persons head u32 (K-33) · chain head u32 (K-53) · income
+  received since the last look i64 (K-32) · debt service i64 (K-54) · held after the last spending i64 (K-32) · own
+  outlooks: income a year i64 and 2 × i32 (`Fixed`; K-102) · month of the last look u16, from the run's first, and age
+  class u8 (K-32) · agenda base u32 and 27 × u16 (K-43) · reserve 7. *Warm, 46*: two named-unit slots, each owner u32,
+  unit u32, count u32, cost i64 (K-60) · ideal number of children u8 (K-32) · reserve 5.
 - **Firm, 528 B.** *Hot, 192*: own and four input unit ids 5 × u32 (K-60) · stall u32 (K-71) · own stock units and cost
   2 × i64 and four input stocks 8 × i64 (K-60) · work in progress i64 (K-69) · rate i64, anchor day u32, realised i64
   (K-68) · unit cost i64 and its day u16 (K-35) · sales since review 2 × i64 and expected sales i64 (K-74) · flags u32
@@ -2379,7 +2379,8 @@ unsigned. `const` checks hold every map within its widths and the sizes below.
   accrued 2 × i64 (K-51) · trade-credit terms u32 (K-55) · equity issued i64 (K-64) · reserve 4. *Lists, 32*: three
   lists' block u32, length u16 and dead u16 each, and the holder chain's head u32 (K-53) · reserve 4.
 - **Institution**: per kind, the groups its declaration gives (most ≤ 1 024 B; unions and public authorities ≈ 3 KB).
-- **Reserves**: the household's 16 B (S2.109 3, S3.158 10, S6.124 2; 1 spare) and the firm's 39 B (S1.426 4, S1.441 1,
+- **Reserves**: the household's 12 B (S2.109 3, S6.124 2, and 7 of S3.158's 10; the words the world held beside the
+  map took 4 B at S1.199, the owner's 3 950 MB ledger leaving no room to widen, so S3.158 finds its other 3) and the firm's 39 B (S1.426 4, S1.441 1,
   S1.458 8, S1.461 4, S2.109 3, S2.123 3, S5.104 1, S6.103 4, S6.106 8, S8.104 2; 1 spare). A later step declares its
   words (`Extra`) into a named group's reserve, after the map's words.
 
@@ -2447,16 +2448,28 @@ day named the firm by, which no other party takes before the close (`KindStore::
 pays no directory read; a reference from elsewhere is checked first (`Core::firm_of`). Markups reach tens and outlooks
 millions of units a day, so both are i64 millionths.
 
-**Extension points**: the kinds' migrations (S1.199–S1.206); the persons head (S1.207);
+**Households** (`phx-world`'s `household_store.rs`, S1.199): the household kind's state is on a `KindStore`, its place
+`Place::Zone`, and `phx-core` keeps it its accounts and persons alone. `HouseholdStore` keeps the map's region of each
+zone and the run's first month, and the write handles of its words: zone, states (the stance in its top three bits,
+written in place), preference type, flags (trying), received, after, income, looked, window and ideal. A visit gathers
+the hot and warm rows once (`HouseholdStore::view`, slot-addressed like the firms'); `Core::household_region`,
+`household_of` and `zoned_region` read through it, and a population process reads a household's own state as a typed
+`HouseholdState` (region, trying, ideal, income), the outcome's changes to trying and ideal written back. The bank a
+household banks with is its account's (`Core::bank_of`), none at the issuer. A household's age class, a yearly copy
+of its head's, is refreshed by reading each head's role and birth from its person word alone
+(`person::role_and_birth`), with no person unpacked.
+
+**Extension points**: the kinds' migrations (S1.200–S1.206); the persons head (S1.207);
 cache words (S1.211); agenda slots (S1.227); K-54's aggregates (S1.261); and each reserve's declaring step above.
 
 **Today** (`phx-core`'s `store.rs`, `phx-pop`'s `kind.rs`): a kind (`KindStore`) keeps, at the slot the directory
 handed its party, each party's record of `stride` words in one column, and, if it holds money, its accounts (bank, balance, pending,
 held, facility) and cash lines, each a column indexed by slot, so a party begun in a released slot writes its own words
 over the ended one's; a kind of money requires an account at `begin` and any other refuses one. `books` makes
-settlement's `Books` from the kinds, and `deposits_of` sums what each bank owes. The population kinds are compiled from the systems' items (`kind::compile_kinds`): a kind is declared item by
-item (`PopKindBuilder`: attributes, roles, person attributes, positions, and the attribute whose value is the party's
-region), the declaring system the item's one writer, and each width comes from the number of values.
+settlement's `Books` from the kinds, and `deposits_of` sums what each bank owes. A kind placed by its zone (firms,
+households) keeps no record word: its state is its `phx-pop` store's. The population kinds' persons are compiled from
+the systems' items (`kind::compile_kinds`): a kind's roles and person attributes are declared item by item
+(`PopKindBuilder`), the declaring system the item's one writer, and each width comes from the number of values.
 
 #### K-33 Persons
 
@@ -2473,8 +2486,8 @@ the next as its household begins, a newborn the next after.
 **Births and leaving school** (`sys-dem`, POP.5, POP.10): a household decides on its head's birthday
 (`DEM.fertility_occasion`, taste `DEM.fertility_taste`) whether to try, and tries when the next child's value
 `ln((1 + n*)/(1 + n)) − ln(e(n + 1)/e(n)) − ln(1 + 1/(1 + a)) + s·ε` is positive — `n*` its ideal
-(`DEM.ideal_children`, drawn from its country's shares at its first decision and held as an attribute beside
-`DEM.trying`), `n` its children, `e` its needs on `DEM.equivalence_scale`, `a` its youngest child's age, `ε` a standard
+(`DEM.ideal_children`, drawn from its country's shares at its first decision and held in the household's `ideal` word,
+beside its trying flag), `n` its children, `e` its needs on `DEM.equivalence_scale`, `a` its youngest child's age, `ε` a standard
 logistic draw; with no income outlook it does not try. While it tries, each woman of its couple conceives at
 `DEM.fecundability` a cycle compounded over `DEM.cycle_days` (`DEM.conception`), and a conception is a birth at once: a
 child in school, its sex by the sex ratio at birth, the household then trying no more until its next decision. A child
@@ -3106,11 +3119,12 @@ of the next print. A series keeps each calendar year's prints summed and counted
 the last into its mean (`Series::annual`, newest first). The anchor's level is the mean of the prints since the
 opening, and, once two years have closed, at an age class the closed years' means weighted by its lived years
 (`phx_val::experience::long_mean`, `VAL.experience_theta`, `Series::experienced`). A class's lived years are the mean age
-of the household heads in it (`Outlooks::lived`); a household's class is its head's (`HH.window`), an office holder's
-its own, both set at the opening and on each year's first day (`Core::refresh_windows`); an institution no person
-holds has none and reads the view of no age. A party's memory type, switching type and stance are words of its record
-(the firm's `MEMORY`, `SWITCHING`, `STANCE`; the household's `HH.memory`, `HH.switching`, `HH.stance`), drawn at the
-opening, the first stance by taste alone; a firm reconsiders its stance at each price review, a household on each
+of the household heads in it (`Outlooks::lived`); a household's class is its head's (its `window` word, the head's
+role and birth read from its person word alone), an office holder's its own, both set at the opening and on each
+year's first day (`Core::refresh_windows`); an institution no person holds has none and reads the view of no age. A
+party's memory type, switching type and stance are its own (the firm's founding preferences; the household's
+preference type, one value for its memory and switching types, `sys_hh::preference_type`, and its stance in three
+bits of its states byte), drawn at the opening, the first stance by taste alone; a firm reconsiders its stance at each price review, a household on each
 spending occasion (`Outlooks::reconsider`, stream `FRM.stance` or `HH.stance`), each at its view. Each method's lag
 behind a series' turns is counted in prints on the view of no age (`Outlooks::lags`).
 
@@ -3223,8 +3237,8 @@ an office, so persons and minds attach to it later (S3.05, Stage 8) without a de
 - **Preferences** (`phx_core::decisions::Prefs`): what a decider brings to a rule before minds — its memory type, its
   switching type and its stance on the heuristics' menu (VAL.6, VAL.7), the return it requires (FRM.15) and its
   management type (FRM.5's speeds and curvature, one declared type while no source measures their spread); each
-  `Missing` where the decider holds none. A firm's are its founding preferences; a household's are its record's
-  outlook attributes (VAL.23); a person's are its household's until S8.01 draws each person's.
+  `Missing` where the decider holds none. A firm's are its founding preferences; a household's are its store's
+  outlook words (VAL.23); a person's are its household's until S8.01 draws each person's.
 - **Resolution.** `decide(point, party, input)` binds the point's kind once per pass (`bind`, an index, no lookup by
   name on the path), then for each party names the decider: the player where it keeps the decision, else the office's
   holder, else the institution's founding preferences; a household's or a person's decision is its own. It hands the
@@ -3233,7 +3247,7 @@ an office, so persons and minds attach to it later (S3.05, Stage 8) without a de
   household, person), counts any worker adds to (`phx_exec::Tally`) that the run report's `decisions` and LC-1-52 read.
   A decision whose taker is an office the party's form does not declare stops the run (MND.20).
 - **A decider's outlooks change with its decisions.** A reconsidered stance is written back to where the decider's
-  preferences live: the founding preferences for an office no one holds, the household's record for a household.
+  preferences live: the founding preferences for an office no one holds, the household's store for a household.
 - **Processes' decisions.** A decision taken inside a population process (retiring, trying for a child) reads its
   decider through the process view's `decider`, which the core supplies and counts; the rule is then called as any
   other's.
@@ -3631,9 +3645,10 @@ concentration gives (`sys_bnk::bank_weights`), each sited by BNK's draw. Its hou
 DEM (`sys_dem::draw_country`), and each household's adults' labour (`sys_lab::Rule::draw`), its banking
 (`sys_bnk::households::Banking::draw`) and its pensioners (`sys_soc::Pensions::draw`) by their systems' pure rules,
 each keyed by the household's subject; a rule is built from the register alone (`Register::handle` finds a declared
-primitive's handle). The draws' attributes are written to the persons and the household, the household is begun with
-its positions as its kind opens them (its income a year as the wages and pensions drawn times the year's months), and
-each person takes the next identity. Accounts come from the country's balance sheet: the banks' reserves by their
+primitive's handle). The draws' attributes are written to the persons, the household is begun on its store with its
+zone (the zone of a tile of its region's land drawn under `DEM.opening_sites`, every tile alike, as the region's
+persons are shared by its land), its preference type, stance and age class and its income a year as the wages and
+pensions drawn times the year's months, and each person takes the next identity. Accounts come from the country's balance sheet: the banks' reserves by their
 shares and the treasury's deposits at the issuer, the households' deposits over those that bank by their wealth at
 their bank, the households' currency over those that bank nowhere by their persons at the issuer. The pensions are
 opened at once from the treasury, naming the person; the jobs and the households' loans are kept (`core_open::Drawn`)
@@ -3687,7 +3702,7 @@ the onset hazard gives from birth.
 **The households' banking and pensions.** A household any of whose adults holds an account banks with one bank, chosen
 online among its country's by their shares (`phx_ledger::online`: the n-th household takes the bank furthest below its
 share of n, ties by lot, so every prefix of the households is apportioned within one of exact) and held as its
-attribute (`BNK.bank`); its deposit is its share of the households' deposits (the country's deposits less the firms')
+account's bank, which `Core::bank_of` reads (none for an account at the issuer); its deposit is its share of the households' deposits (the country's deposits less the firms')
 by its wealth. A household any of whose adults has borrowed owes its bank a household loan, its share of the
 households' debt by its income times the years it has left — drawn uniformly between `BNK.household_loan_years_min`
 and `_max` until housing's mortgages draw each term — repaid monthly with its interest, each date taking the balance

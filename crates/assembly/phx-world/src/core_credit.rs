@@ -157,11 +157,14 @@ impl Core {
         }
     }
 
-    /// A party's bank on the core, by its account.
-    pub(crate) fn bank_of(&self, party: PartyKey) -> Option<PartyKey> {
+    /// A party's bank on the core, by its account; none for a party that banks nowhere, its account at the issuer.
+    pub fn bank_of(&self, party: PartyKey) -> Option<PartyKey> {
         let bank = self.bank_kind?;
         let b = self.kinds.get(usize::from(party.kind()))?.accounts.as_ref()?.bank.get(party.slot())?;
-        (b != phx_core::settle::AT_ISSUER).then(|| PartyKey::new(bank, Slot::new(b)))
+        match crate::core_kinds::banked(b) {
+            phx_num::Missing::Present(b) => Some(PartyKey::new(bank, Slot::new(b))),
+            phx_num::Missing::Absent => None,
+        }
     }
 
     /// The loans opened on the core: the households' as the opening drew them, the firms' from the sheet.

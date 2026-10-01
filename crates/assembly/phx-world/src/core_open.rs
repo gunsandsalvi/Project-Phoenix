@@ -27,6 +27,7 @@ use crate::consts::sheet::{BANKS, CURRENCY, DEPOSITS, GOVERNMENT, HOUSEHOLDS, RE
 use crate::consts::{AGENT_ROWS_PER_CHUNK, CORE_RANGE_BITS, KIND_ROWS_PER_CHUNK};
 use crate::core::{Core, declared_kind, kind_number};
 use crate::core_day::{DatedFamily, Due, PENSION};
+use crate::household_store::{HouseholdOpening, HouseholdStore};
 use crate::opening::asked::Asked;
 use crate::opening::sheet::Sheet;
 use phx_core::capacity::{AGENT_ROWS, WHEEL_DAYS};
@@ -96,6 +97,8 @@ pub struct CoreOpening<'a> {
     pub household: (&'a PopKindDecl, usize),
     /// The kinds' declared traits and each country's heirless destination's kind.
     pub declared: &'a crate::core_kinds::Bound,
+    /// The map, whose zones the households live in.
+    pub geo: &'a phx_geo::GeoState,
 }
 
 /// A country's households' banking: each banked household with its bank's place and deposit's weight, and each
@@ -154,7 +157,7 @@ impl Rules {
 
 impl Core {
     /// The core with no party yet: each declared kind's store, in the catalogue's order, reserving its capacity's rows;
-    /// the population kind's with its record of attributes and positions, and its persons.
+    /// the population kind's with its persons.
     #[opening]
     fn empty(
         (household, household_pop): (&PopKindDecl, usize),
@@ -168,15 +171,11 @@ impl Core {
             let populated = traits.name == household.kind;
             // A kind's record reaches as far as the word its place is read from; a kind whose place is its store's
             // zone keeps no record word.
-            let (chunk, stride) = if populated {
-                (AGENT_ROWS_PER_CHUNK, household.attrs.len() + household.positions.len())
-            } else {
-                let words = match traits.place.word() {
-                    Some(w) => usize::from(w) + 1,
-                    None => 0,
-                };
-                (KIND_ROWS_PER_CHUNK, words)
+            let stride = match traits.place.word() {
+                Some(w) => usize::from(w) + 1,
+                None => 0,
             };
+            let chunk = if populated { AGENT_ROWS_PER_CHUNK } else { KIND_ROWS_PER_CHUNK };
             let mut store: KindStore<SystemBacking> = KindStore::new(&mut space, traits.rows, chunk, stride);
             if traits.holds_money {
                 store = store.with_accounts(&mut space, traits.rows, chunk);
@@ -204,6 +203,7 @@ impl Core {
             persons,
             directory,
             firms: None,
+            households: None,
             issuers: Vec::new(),
             range_bits: CORE_RANGE_BITS,
             families: Vec::new(),
@@ -285,6 +285,11 @@ impl Core {
         let date = o.calendar.date(o.today);
         let mut pensions = core.pension_family(o.today);
         let bound = core.bound.kinds;
+        let household = declared_kind(bound.household);
+        let held = (crate::household_store::zone_regions(o.geo), crate::core_goods::months(date));
+        let capacity = core.kind_rows(household);
+        core.households =
+            Some(HouseholdStore::new(&mut core.space, crate::core::kind_number(household), capacity, held));
         let (central_bank, treasury_kind, agency_kind, bank_kind) = (
             declared_kind(bound.central_bank),
             declared_kind(bound.treasury),
@@ -318,7 +323,7 @@ impl Core {
                 let record = [MaybeI64::present(i64::from(site.get()))];
                 banks.push(core.begin_party(bank_kind, &record, Some(Opening { bank: AT_ISSUER, balance })));
             }
-            let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c, decl);
+            let formed = sys_dem::draw_country(&rules.dem, o.register, (&ctx, date), c);
             let mut labour = rules.jobs.rule(o.register, date, c, Asked::of(o.register, c)?.by_occupation());
             labour.couple(formed.iter().flat_map(|(_, f)| f.iter().map(|f| &f.h)));
             let mut draw = CountryDraw {
@@ -338,7 +343,7 @@ impl Core {
             };
             for (region, formed) in formed {
                 for f in formed {
-                    core.open_household((&ctx, o.calendar, decl), &mut draw, &mut pensions, (region, f));
+                    core.open_household((&ctx, o.calendar, decl, o.geo), &mut draw, &mut pensions, (region, f));
                 }
             }
             let CountryDraw { money, loans, banks, .. } = draw;
@@ -355,12 +360,19 @@ impl Core {
     /// and loan kept or opened.
     fn open_household(
         &mut self,
-        (ctx, calendar, decl): (&OpeningCtx<'_>, &Calendar, &PopKindDecl),
+        (ctx, calendar, decl, geo): (&OpeningCtx<'_>, &Calendar, &PopKindDecl, &phx_geo::GeoState),
         draw: &mut CountryDraw<'_>,
         pensions: &mut DatedFamily,
         (region, formed): (u32, sys_dem::Formed),
     ) {
-        let sys_dem::Formed { subject, mut h, wealth, .. } = formed;
+        let sys_dem::Formed { subject, mut h, wealth, site, .. } = formed;
+        let zone = match geo.zone_of(site) {
+            Missing::Present(z) => u16::try_from(z.get()).ok(),
+            Missing::Absent => None,
+        };
+        let Some(zone) = zone else {
+            violation!(clause = "PTY.5", "a household sited on no zone's land", tile = site.get());
+        };
         let labour = draw.labour.draw(&h, &mut ctx.draws(&sys_lab::JobsStream::DECL, subject));
         let banked =
             draw.banking.draw(&h, wealth, &mut ctx.draws(&sys_bnk::households::HouseholdsStream::DECL, subject));
@@ -370,16 +382,18 @@ impl Core {
         let memory = phx_core::register::values::draw_type(&draw.types.memory, &mut t).get();
         let switching = phx_core::register::values::draw_type(&draw.types.switching, &mut t).get();
         let stance = phx_rand::below_u64(&mut t, phx_rand::float::len_u64(phx_val::heuristic::MENU.len()));
-        h.set_attr(sys_hh::MEMORY_ATTR.name, u32::from(memory));
-        h.set_attr(sys_hh::SWITCHING_ATTR.name, u32::from(switching));
-        h.set_attr(sys_hh::STANCE_ATTR.name, u32::try_from(stance).unwrap_or(u32::MAX));
+        let (Some(preference), Ok(stance)) = (sys_hh::preference_type(memory, switching), u8::try_from(stance)) else {
+            violation!(clause = "VAL.22", "a household's types past its preference type's", memory = memory);
+        };
         // Its age class is its head's, whose lived years weight its outlooks of public series.
         let head = h.persons.iter().find(|p| p.role == if_pop::HEAD.name).or_else(|| h.persons.first());
         let window = head.and_then(|p| u32::try_from(p.age_on(draw.date)).ok()).map(|age| draw.types.window_of(age));
         let Some(Missing::Present(window)) = window else {
             violation!(clause = "VAL.23", "a household drawn with no head of an age class");
         };
-        h.set_attr(sys_hh::WINDOW_ATTR.name, u32::from(window));
+        let Ok(window) = u8::try_from(window) else {
+            violation!(clause = "VAL.23", "an age class past its word", class = window);
+        };
         for l in &labour {
             let Some(p) = h.persons.get_mut(l.place) else {
                 violation!(clause = "REP.26", "labour drawn for a person the household does not hold");
@@ -387,16 +401,17 @@ impl Core {
             p.put_attr(sys_lab::STATE.name, l.state);
             p.put_attr(sys_lab::OCCUPATION_ATTR.name, l.occupation);
         }
-        if let sys_bnk::households::Banked::At { bank, .. } = banked {
-            let Ok(place) = u32::try_from(bank + 1) else {
-                violation!(clause = "REP.41", "a bank beyond the attribute's values");
-            };
-            h.set_attr(sys_bnk::households::BANK_ATTR.name, place);
-        }
         // A year's income owed at the opening: the pensions drawn, on the months of the year; the wages join it as the
         // jobs are dealt to their employers.
         let pension: i64 = pensioners.iter().filter_map(|(_, sex)| draw.paid.amount.get(*sex)).sum();
-        let key = self.begin_household(decl, &h, pension * draw.months, &banked, &draw.banks);
+        let opening = HouseholdOpening {
+            zone,
+            preference,
+            stance,
+            window: Missing::Present(window),
+            income: pension * draw.months,
+        };
+        let key = self.begin_household(decl, (&h, &opening), &banked, &draw.banks);
         let ids: Vec<u64> = self.persons_of(key);
         let country = draw.c.id.get();
         for l in &labour {
@@ -455,22 +470,15 @@ impl Core {
         }
     }
 
-    /// A household begun with its attributes, its positions as its kind opens them — its income a year as owed —
-    /// its account at its bank, or the issuer where it banks nowhere, and its persons each given an identity.
+    /// A household begun with its words from its opening — its income a year as owed — its account at its bank, or
+    /// the issuer where it banks nowhere, and its persons each given an identity.
     fn begin_household(
         &mut self,
         decl: &PopKindDecl,
-        h: &Household,
-        owed: i64,
+        (h, opening): (&Household, &HouseholdOpening),
         banked: &sys_bnk::households::Banked,
         banks: &[PartyKey],
     ) -> PartyKey {
-        let mut record: Vec<MaybeI64> =
-            decl.attrs.iter().map(|a| MaybeI64::present(i64::from(h.attr(a.item.name)))).collect();
-        record.extend(decl.positions.iter().map(|p| match p.item.opening {
-            phx_core::PositionOpening::OwedAYear => MaybeI64::present(owed),
-            phx_core::PositionOpening::Missing => MaybeI64::ABSENT,
-        }));
         let bank = match banked {
             sys_bnk::households::Banked::At { bank, .. } => match banks.get(*bank) {
                 Some(k) => k.slot().get(),
@@ -479,7 +487,13 @@ impl Core {
             sys_bnk::households::Banked::Unbanked { .. } => AT_ISSUER,
         };
         let household = declared_kind(self.bound.kinds.household);
-        let key = self.begin_party(household, &record, Some(Opening { bank, balance: 0 }));
+        let key = self.begin_party(household, &[], Some(Opening { bank, balance: 0 }));
+        let Some(r) = self.reference(key) else {
+            violation!(clause = "PTY.1", "a household begun the directory does not name", slot = key.slot().get());
+        };
+        if let Some(hs) = self.households.as_mut() {
+            hs.begin(&self.directory, r, opening);
+        }
         let held: Vec<Held> = h
             .persons
             .iter()

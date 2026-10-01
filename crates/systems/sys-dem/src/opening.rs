@@ -1,16 +1,16 @@
 //! The opening's households: each region's persons drawn by age and sex from its country's declared distributions,
 //! formed into households, and each household made an agent, region by region.
 
-use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, MALE, REGION, SEX};
+use if_pop::{EDUCATION, EDUCATION_UNRECORDED, FEMALE, HEALTH, MALE, SEX};
 use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::{Distribution, Table2, TypeSet};
 use phx_core::{
-    Household, OpeningCountry, Person, PrimDecl, Register, StreamDef, ValueType, apportion, opening_subject,
+    Household, HouseholdState, OpeningCountry, Person, PrimDecl, Register, StreamDef, ValueType, apportion,
+    opening_subject,
 };
 use phx_id::{CountryId, Date};
 use phx_macros::clause;
 use phx_num::{capacity_exceeded, violation};
-use phx_pop::kind::PopKindDecl;
 use phx_rand::float::{floor_to_i64, from_i64, len_u64};
 use phx_rand::{AliasTable, Draws, below_u64, open_unit};
 
@@ -19,7 +19,9 @@ use crate::consts::{
     BANDS, CHILDREN_COLUMN, GAP_TYPES, MEMBER_COLUMNS, OLD_AGE, OLDER, OTHER, PARTNER_COLUMN, PERCENT, WORKING_AGE,
 };
 use crate::household::Role;
-use crate::{CompositionStream, EducationStream, HealthStream, MeansStream, PersonsStream, Prims, RegionsStream};
+use crate::{
+    CompositionStream, EducationStream, HealthStream, MeansStream, PersonsStream, Prims, RegionsStream, SitesStream,
+};
 
 /// A declared table's value at a point, its decimals undone.
 pub(crate) fn value(table: &Table2, decl: &PrimDecl, row: i64, column: i64) -> f64 {
@@ -406,7 +408,8 @@ fn person(country: &Country, m: &Member, (d, health, school): (&mut Draws, &mut 
 }
 
 /// A household drawn in a region, before the books hold it: the subject its draws are keyed by, what formed it, its
-/// persons and the wealth it was drawn, as a multiple of the mean.
+/// persons, the wealth it was drawn, as a multiple of the mean, and its site, a tile of its region's land, whose zone
+/// it lives in.
 #[derive(Debug)]
 pub struct Formed {
     pub subject: phx_rand::Subject,
@@ -414,6 +417,7 @@ pub struct Formed {
     pub kind: usize,
     pub h: Household,
     pub wealth: f64,
+    pub site: phx_id::TileId,
 }
 
 /// A country's households drawn region by region, its persons apportioned over its regions by their land: each
@@ -425,7 +429,6 @@ pub fn draw_country(
     register: &Register,
     (opening_ctx, date): (&phx_core::OpeningCtx<'_>, phx_id::Date),
     c: &OpeningCountry,
-    kind: &PopKindDecl,
 ) -> Vec<(u32, Vec<Formed>)> {
     let country = Country::of(p, register, c, date);
     let tiles: Vec<u64> = c.regions.iter().map(|(_, tiles)| len_u64(tiles.len())).collect();
@@ -433,19 +436,18 @@ pub fn draw_country(
     let shares = apportion(c.people, &tiles, &mut lot);
     c.regions
         .iter()
-        .map(|(r, _)| *r)
         .zip(shares)
-        .map(|(region, people)| (region, draw_region(&country, opening_ctx, (region, people), kind)))
+        .map(|((region, land), people)| (*region, draw_region(&country, opening_ctx, (*region, land, people))))
         .collect()
 }
 
 /// One region's households formed from its persons, each household's draws keyed by the region and
-/// its place in it, so a region is drawn alone; with the persons it counts disabled and by age band.
+/// its place in it, so a region is drawn alone; with the persons it counts disabled and by age band. Each is sited on a
+/// tile of the region's land, every tile alike, as the region's persons are shared by its land.
 fn draw_region(
     country: &Country,
     opening_ctx: &phx_core::OpeningCtx<'_>,
-    (region, people): (u32, u64),
-    kind: &PopKindDecl,
+    (region, land, people): (u32, &[phx_id::TileId], u64),
 ) -> Vec<Formed> {
     let mut lot = opening_ctx.draws(&PersonsStream::DECL, opening_subject(region, 0));
     let [women, men] = &country.people;
@@ -453,9 +455,6 @@ fn draw_region(
     let mut counts = compose::apportion(people, &weights, &mut lot);
     let men_counts = counts.split_off(women.len());
     let mut pool = Pool::of(counts, men_counts);
-    let region_at = kind.attr(REGION.name).unwrap_or_else(|| {
-        violation!(clause = "REP.41", "a household kind without its region");
-    });
     let (mut ordinal, mut members, mut out) = (0_u32, Vec::new(), Vec::new());
     loop {
         let subject = opening_subject(region, ordinal);
@@ -468,15 +467,14 @@ fn draw_region(
             let p = person(country, m, (&mut d, &mut health, &mut school));
             persons.push(p);
         }
-        let mut attrs = vec![0_u32; kind.attrs.len()];
-        if let Some(r) = attrs.get_mut(region_at) {
-            *r = region;
-        }
-        let names: Vec<(&'static str, u32)> = kind.attrs.iter().zip(&attrs).map(|(a, v)| (a.item.name, *v)).collect();
-        let h = Household { attrs: names, persons, positions: Vec::new() };
+        let h = Household { state: HouseholdState::formed(region), persons };
         let mut means = opening_ctx.draws(&MeansStream::DECL, subject);
         let wealth = country.wealth.draw(&mut means) / country.wealth.mean();
-        out.push(Formed { subject, raised: formed.raised, kind: formed.kind.index, h, wealth });
+        let mut at = opening_ctx.draws(&SitesStream::DECL, subject);
+        let Some(site) = land.get(phx_rand::float::index(below_u64(&mut at, len_u64(land.len())))).copied() else {
+            violation!(clause = "PTY.5", "a household formed in a region with no land", region = region);
+        };
+        out.push(Formed { subject, raised: formed.raised, kind: formed.kind.index, h, wealth, site });
         let Some(next) = ordinal.checked_add(1) else {
             capacity_exceeded!("households of a region", u32::MAX, ordinal);
         };

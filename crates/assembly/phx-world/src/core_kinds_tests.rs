@@ -117,17 +117,23 @@ fn form_outside_holder_classes_counts_other() {
 }
 
 #[test]
+fn unbanked_household_bank_missing() {
+    assert_eq!(super::banked(phx_core::settle::AT_ISSUER), Missing::Absent, "an account at the issuer banks nowhere");
+    assert_eq!(super::banked(4), Missing::Present(4));
+}
+
+#[test]
 fn country_by_declared_place() {
     let regions = [CountryId::new(0), CountryId::new(2)];
     let tile = |t: u32| (t == 7).then_some(1);
     let record = [MaybeI64::present(1), MaybeI64::present(7)];
-    let read = |place| country_by_place(place, &record, (Missing::Present(0), &regions), tile);
+    let read = |place| country_by_place(place, &record, &regions, tile);
     assert_eq!(read(Place::Region { word: 0 }), Some(2), "region 1 lies in country 2");
-    assert_eq!(read(Place::Sited), Some(2));
+    assert_eq!(read(Place::Zone), None, "a zone is its store's to read");
     assert_eq!(read(Place::Country { word: 0 }), Some(1));
     assert_eq!(read(Place::Site { word: 1 }), Some(1), "tile 7 lies in country 1");
     let absent = [MaybeI64::ABSENT];
-    assert_eq!(country_by_place(Place::Country { word: 0 }, &absent, (Missing::Absent, &regions), tile), None);
+    assert_eq!(country_by_place(Place::Country { word: 0 }, &absent, &regions, tile), None);
 }
 
 #[test]

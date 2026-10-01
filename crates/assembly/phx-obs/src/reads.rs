@@ -85,8 +85,9 @@ pub struct ReadDecl {
     pub fact: Option<String>,
 }
 
-/// One declared histogram over a kind's parties, over fixed lower edges: of their persons (`of = "persons"`), of an
-/// attribute's values (`of = "attr.<attribute>"`), or of their contracts in a family (`of = "contracts.<family>"`). Each is
+/// One declared histogram over a kind's parties, over fixed lower edges: of their persons (`of = "persons"`), the region
+/// they lie in (`of = "region"`), the bank they bank with (`of = "bank"`), or their contracts in a family
+/// (`of = "contracts.<family>"`). Each is
 /// an opening distribution whose distance from the world's own is read.
 #[derive(Clone, Debug, Deserialize, PartialEq, Eq)]
 #[serde(deny_unknown_fields)]

@@ -6,13 +6,33 @@ use phx_macros::clause;
 
 use crate::register::Register;
 
-/// An agent as a process reads it: its kind, its party, the value of each of its attributes by name, the country each
-/// region lies in, the day, and the decision core, which counts a decision the process takes by its name and says how
-/// it is taken: by the rule at its decider's preferences, by the player's queued intent, or not that day.
+/// What a household holds of its own that its processes read: the region it lives in, read through its zone; whether
+/// its last decision was to try for a child; its ideal number of children, none until its first decision draws it; and
+/// its outlook of its income a year, none before its first look.
+#[clause("REP.41", "POP.2", "POP.10")]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HouseholdState {
+    pub region: u32,
+    pub trying: bool,
+    pub ideal: phx_num::Missing<u8>,
+    pub income: phx_num::Missing<i64>,
+}
+
+impl HouseholdState {
+    /// A household as it forms in a region: not trying for a child, its ideal not yet drawn, no outlook of its income.
+    #[must_use]
+    pub const fn formed(region: u32) -> HouseholdState {
+        HouseholdState { region, trying: false, ideal: phx_num::Missing::Absent, income: phx_num::Missing::Absent }
+    }
+}
+
+/// An agent as a process reads it: its kind, its party, its household's own state as the day found it, the country
+/// each region lies in, the day, and the decision core, which counts a decision the process takes by its name and says
+/// how it is taken: by the rule at its decider's preferences, by the player's queued intent, or not that day.
 pub struct AgentView<'a> {
     pub kind: &'static str,
     pub party: PartyRef,
-    pub attr: &'a dyn Fn(&str) -> Option<u32>,
+    pub state: HouseholdState,
     pub country_of: &'a dyn Fn(u32) -> Option<CountryId>,
     pub date: Date,
     pub decider: &'a dyn Fn(&str) -> crate::decisions::Say,
@@ -77,8 +97,7 @@ impl Person {
     #[clause("REP.25")]
     #[must_use]
     pub fn age_on(&self, date: Date) -> i64 {
-        let before = (date.month(), date.day()) < (self.born.month(), self.born.day());
-        i64::from(date.year()) - i64::from(self.born.year()) - i64::from(before)
+        age_on(self.born, date)
     }
 
     /// The person's birthday in a year, a birthday on the 29th of February falling on the 1st of March in a common
@@ -99,40 +118,26 @@ impl Person {
     }
 }
 
-/// A household made explicit for the day's outcomes: its attributes by name, its persons, and the positions its
-/// kind holds, as read. An outcome changes its attributes and persons; the kernel then writes them back to its agent,
-/// or ends the agent when no one is left. Its positions are handlers' to write, so they are never written back.
+/// The whole years lived on a date by one born on another: one more on each birthday, a birthday on the 29th of
+/// February falling on the 1st of March in a common year.
+#[clause("REP.25")]
+#[must_use]
+pub fn age_on(born: Date, date: Date) -> i64 {
+    let before = (date.month(), date.day()) < (born.month(), born.day());
+    i64::from(date.year()) - i64::from(born.year()) - i64::from(before)
+}
+
+/// A household made explicit for the day's outcomes: its own state and its persons, as read. An outcome changes
+/// whether it tries for a child, its ideal and its persons; the kernel then writes them back, or ends the household when
+/// no one is left. Its region and income are others' to write, so they are never written back.
 #[clause("REP.26", "REP.41")]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Household {
-    pub attrs: Vec<(&'static str, u32)>,
+    pub state: HouseholdState,
     pub persons: Vec<Person>,
-    pub positions: Vec<(&'static str, phx_num::Missing<i64>)>,
 }
 
 impl Household {
-    /// An attribute's value; every household holds each of its kind's.
-    #[must_use]
-    pub fn attr(&self, name: &str) -> u32 {
-        let Some((_, v)) = self.attrs.iter().find(|(n, _)| *n == name) else {
-            phx_num::violation!(clause = "REP.41", "a household read by an attribute its kind does not hold");
-        };
-        *v
-    }
-
-    /// An attribute set to a value.
-    pub fn set_attr(&mut self, name: &str, value: u32) {
-        let Some((_, v)) = self.attrs.iter_mut().find(|(n, _)| *n == name) else {
-            phx_num::violation!(clause = "REP.41", "a household given an attribute its kind does not hold");
-        };
-        *v = value;
-    }
-
-    /// A position's value as read; absent where the kind holds no such position or the household none yet.
-    pub fn position(&self, name: &str) -> phx_num::Missing<i64> {
-        self.positions.iter().find(|(n, _)| *n == name).map_or(phx_num::Missing::Absent, |(_, v)| *v)
-    }
-
     /// The persons still in the household.
     pub fn present(&self) -> impl Iterator<Item = (usize, &Person)> {
         self.persons.iter().enumerate().filter(|(_, p)| !p.gone)

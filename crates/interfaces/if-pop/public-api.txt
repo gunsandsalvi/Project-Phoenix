@@ -1,8 +1,6 @@
 pub mod if_pop  // used by: phx-cli, phx-world, sys-bnk, sys-dem, sys-frm, sys-hh, sys-lab, sys-soc
 pub mod if_pop::consts  // used by: if-base, if-labour, if-state, phx-cli, phx-core, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-sta, sys-tax, sys-tec
 pub const if_pop::consts::EDUCATION_VALUES: u32
-pub const if_pop::consts::IDEAL_VALUES: u32
-pub const if_pop::consts::REGIONS: u32  // used by: phx-world, sys-frm
 pub mod if_pop::facts  // used by: phx-core, phx-macros, phx-world, sys-dem, sys-hh
 pub struct if_pop::facts::After  // used by: phx-world, sys-hh
 impl phx_core::facts::FactDef for if_pop::facts::After
@@ -16,13 +14,6 @@ pub const if_pop::facts::Looked::ITEM: phx_core::facts::ItemDecl  // used by: ph
 pub struct if_pop::facts::Received  // used by: phx-world, sys-hh
 impl phx_core::facts::FactDef for if_pop::facts::Received
 pub const if_pop::facts::Received::ITEM: phx_core::facts::ItemDecl  // used by: phx-core, phx-world, sys-dem, sys-hh
-pub const if_pop::facts::POSITIONS: [phx_core::pop::PositionDecl; 4]  // used by: sys-hh
-pub mod if_pop::fertility  // used by: sys-dem
-pub const if_pop::fertility::IDEAL: phx_core::pop::AttrDecl  // used by: sys-dem
-pub const if_pop::fertility::IDEAL_UNDRAWN: u32  // used by: sys-dem
-pub const if_pop::fertility::NOT_TRYING: u32  // used by: sys-dem
-pub const if_pop::fertility::TRYING: phx_core::pop::AttrDecl  // used by: sys-dem
-pub const if_pop::fertility::TRYING_FOR_CHILD: u32  // used by: sys-dem
 pub const if_pop::ABLE: u32  // used by: phx-world, sys-dem
 pub const if_pop::ADULT: phx_core::pop::RoleDecl  // used by: sys-bnk, sys-dem, sys-lab, sys-soc
 pub const if_pop::CHILD: phx_core::pop::RoleDecl  // used by: phx-cli, phx-world, sys-dem, sys-lab
@@ -36,5 +27,4 @@ pub const if_pop::HOUSEHOLD: &str  // used by: phx-world, sys-bnk, sys-dem, sys-
 pub const if_pop::ITEMS: &[phx_core::facts::ItemDecl]  // used by: phx-world
 pub const if_pop::MALE: u32  // used by: phx-world, sys-dem, sys-lab, sys-soc
 pub const if_pop::PARTNER: phx_core::pop::RoleDecl  // used by: sys-bnk, sys-dem, sys-lab, sys-soc
-pub const if_pop::REGION: phx_core::pop::AttrDecl  // used by: if-labour, phx-cli, phx-world, sys-dem, sys-frm, sys-lab
 pub const if_pop::SEX: phx_core::pop::PersonAttrDecl  // used by: phx-cli, phx-world, sys-dem, sys-lab, sys-soc

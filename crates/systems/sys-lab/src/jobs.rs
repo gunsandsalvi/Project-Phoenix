@@ -331,7 +331,7 @@ impl Rule {
     #[clause("GEN.2", "LAB.1", "PTY.3")]
     #[must_use]
     pub fn draw(&self, household: &phx_core::Household, d: &mut Draws) -> Vec<Drawn> {
-        let region = household.attr(if_pop::REGION.name);
+        let region = household.state.region;
         let mut out = Vec::new();
         for (place, p) in household.persons.iter().enumerate() {
             let Some((s, skill, chance)) = self.adult(p) else { continue };

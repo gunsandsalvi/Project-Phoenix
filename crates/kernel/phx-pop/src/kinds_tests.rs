@@ -48,7 +48,7 @@ fn absent_reads_missing() {
     let b = begun(&mut dir, &mut store, &[Opening::of(w, 7)]);
     assert_eq!(store.get(&dir, a, w.read()), Missing::Absent, "a party with nothing reads its word missing");
     assert_eq!(store.get(&dir, b, w.read()), Missing::Present(7));
-    let positions: Attr<i64> = layout.attr("positions", 2).unwrap();
+    let positions: Attr<i64> = layout.attr("after", 0).unwrap();
     assert_eq!(store.gather(&dir, b, 0).get(positions), Missing::Absent);
     let flags: Attr<u8> = layout.attr("flags", 0).unwrap();
     assert_eq!(store.get(&dir, a, flags), Missing::Present(0), "a word never absent opens at nought");
@@ -101,7 +101,7 @@ fn stale_reference_refused() {
 fn reused_slot_written_in_full() {
     let (mut dir, mut store, mut layout) = fixture();
     let w = residence(&mut layout);
-    let pos = layout.writer::<i64>("positions", 1, "K-32").unwrap();
+    let pos = layout.writer::<i64>("received", 0, "K-32").unwrap();
     let old = begun(&mut dir, &mut store, &[Opening::of(w, 9), Opening::of(pos, -40)]);
     store.set(&dir, old, layout.writer::<u8>("flags", 0, "K-32").unwrap(), Missing::Present(5));
     dir.end(old, Day::new(1), Missing::Absent);
@@ -120,7 +120,7 @@ fn household_layout_is_174_bytes() {
     assert_eq!(width(&HOUSEHOLD), 174);
     assert_eq!(HOUSEHOLD.groups.first().map(|g| g.width), Some(128));
     let reserve: u16 = HOUSEHOLD.groups.iter().map(|g| g.width - used(g)).sum();
-    assert_eq!(reserve, 16, "the reserve later steps fill");
+    assert_eq!(reserve, 12, "the reserve later steps fill");
     let l = Layout::compile(&HOUSEHOLD, &[]).unwrap();
     assert_eq!(l.blanks().iter().map(Vec::len).sum::<usize>(), 174);
 }
@@ -144,9 +144,9 @@ fn overfull_group_refused() {
         group: "warm",
         word: WordDecl { name, ty: IntTy::U16, count, absent: false, writer: "S2.109" },
     };
-    assert!(Layout::compile(&HOUSEHOLD, &[wide("fits", 3)]).is_ok(), "six bytes fit the warm reserve");
-    let err = Layout::compile(&HOUSEHOLD, &[wide("too_wide", 4)]).unwrap_err();
-    assert!(err.contains("household") && err.contains("warm") && err.contains("48"), "{err}");
+    assert!(Layout::compile(&HOUSEHOLD, &[wide("fits", 2)]).is_ok(), "four bytes fit the warm reserve");
+    let err = Layout::compile(&HOUSEHOLD, &[wide("too_wide", 3)]).unwrap_err();
+    assert!(err.contains("household") && err.contains("warm") && err.contains("47"), "{err}");
     assert!(Layout::compile(&HOUSEHOLD, &[Extra { group: "attic", ..wide("x", 1) }]).is_err());
     assert!(Layout::compile(&HOUSEHOLD, &[wide("flags", 1)]).is_err(), "a word declared twice");
 }
@@ -157,11 +157,11 @@ fn one_writer_per_attribute() {
     assert!(l.writer::<u32>("residence", 0, "K-60").is_err(), "a base other than the word's writer");
     assert!(l.writer::<u32>("residence", 0, "K-32").is_ok());
     assert!(l.writer::<u32>("residence", 0, "K-32").is_err(), "the word's one writer already handed out");
-    assert!(l.writer::<i64>("positions", 0, "K-32").is_ok() && l.writer::<i64>("positions", 1, "K-32").is_ok());
-    assert!(l.writer::<i64>("positions", 1, "K-32").is_err(), "each value its own attribute, one writer each");
+    assert!(l.writer::<i32>("outlooks", 0, "K-102").is_ok() && l.writer::<i32>("outlooks", 1, "K-102").is_ok());
+    assert!(l.writer::<i32>("outlooks", 1, "K-102").is_err(), "each value its own attribute, one writer each");
     assert!(l.attr::<u32>("residence", 0).is_ok(), "reads are anyone's");
     assert!(l.attr::<u16>("residence", 0).is_err(), "a word read as another type");
-    assert!(l.attr::<i64>("positions", 3).is_err(), "past the word's count");
+    assert!(l.attr::<i32>("outlooks", 2).is_err(), "past the word's count");
 }
 
 fn by_residence() -> IndexDecl {
@@ -210,7 +210,7 @@ fn index_instance_follows_set() {
 #[test]
 fn chunk_writes_disjoint() {
     let (mut dir, mut store, mut layout) = fixture();
-    let pos = layout.writer::<i64>("positions", 0, "K-32").unwrap();
+    let pos = layout.writer::<i64>("received", 0, "K-32").unwrap();
     let parties: Vec<PartyRef> = (0..40).map(|_| begun(&mut dir, &mut store, &[])).collect();
     let mut seen = Vec::new();
     for mut chunk in store.chunks_mut(&dir, 16) {

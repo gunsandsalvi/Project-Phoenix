@@ -1,7 +1,7 @@
 //! The processes on households' persons: death by the country's life table at the person's exact age, and the onset
 //! of lasting disability by age and sex.
 
-use if_pop::{DISABLED, FEMALE, HEALTH, HOUSEHOLD, MALE, REGION, SEX};
+use if_pop::{DISABLED, FEMALE, HEALTH, HOUSEHOLD, MALE, SEX};
 use phx_core::calendar::daycount::actual_days;
 use phx_core::register::values::Table1;
 use phx_core::{AgentView, Household, Person, PopProcess, Register};
@@ -17,10 +17,7 @@ use crate::life::{dies_at_age, level_for, survivorship};
 use crate::opening::value as read;
 
 pub(crate) fn country(agent: &AgentView<'_>) -> usize {
-    let region = (agent.attr)(REGION.name).unwrap_or_else(|| {
-        violation!(clause = "REP.41", "a household without its region");
-    });
-    let Some(c) = (agent.country_of)(region) else {
+    let Some(c) = (agent.country_of)(agent.state.region) else {
         violation!(clause = "REP.41", "a household in a region of no country");
     };
     usize::from(c.get())

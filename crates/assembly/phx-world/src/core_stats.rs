@@ -324,8 +324,7 @@ impl Core {
         let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
-        let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
-        let phx_num::Missing::Present(region_at) = decl.sited_by else { return out };
+        let Some(Some(persons)) = self.persons.get(place) else { return out };
         let Some((year, month)) = month_of(period) else { return out };
         let (Some(date), Some(days)) = (phx_id::Date::new(year, month, 1), phx_id::Date::days_in_month(year, month))
         else {
@@ -333,12 +332,7 @@ impl Core {
         };
         let days = u64::from(days);
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
-            let Some(region) = store.record(slot).get(region_at).and_then(|w| match w.get() {
-                phx_num::Missing::Present(v) => usize::try_from(v).ok(),
-                phx_num::Missing::Absent => None,
-            }) else {
-                continue;
-            };
+            let Some(region) = self.household_region(slot).and_then(|r| usize::try_from(r).ok()) else { continue };
             let Some(table) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
             for p in persons.of(slot) {
                 let person = phx_pop::person::unpack(decl, p.word);
@@ -358,16 +352,10 @@ impl Core {
         let (Some(place), Some(decl)) = (self.bound.kinds.household, self.declared.household.as_ref()) else {
             return out;
         };
-        let (Some(store), Some(Some(persons))) = (self.kinds.get(place), self.persons.get(place)) else { return out };
-        let phx_num::Missing::Present(region_at) = decl.sited_by else { return out };
+        let Some(Some(persons)) = self.persons.get(place) else { return out };
         let employed = self.employed_ids();
         for slot in self.directory.live_slots(crate::core::kind_number(place)) {
-            let Some(region) = store.record(slot).get(region_at).and_then(|w| match w.get() {
-                phx_num::Missing::Present(v) => usize::try_from(v).ok(),
-                phx_num::Missing::Absent => None,
-            }) else {
-                continue;
-            };
+            let Some(region) = self.household_region(slot).and_then(|r| usize::try_from(r).ok()) else { continue };
             let Some(row) = regions.get(region).and_then(|c| out.get_mut(usize::from(c.get()))) else { continue };
             for p in persons.of(slot) {
                 let person = phx_pop::person::unpack(decl, p.word);
@@ -433,7 +421,6 @@ impl Core {
     ) -> Option<usize> {
         let k = usize::from(party.kind());
         let record = self.kinds.get(k)?.record(party.slot());
-        let sited_by = self.declared.household.as_ref().map_or(phx_num::Missing::Absent, |d| d.sited_by);
         let tile_country = |tile: u32| match geo.zone_of(phx_id::TileId::new(tile)) {
             phx_num::Missing::Present(zone) => match geo.zone_country(zone) {
                 phx_num::Missing::Present(c) => Some(usize::from(c.get())),
@@ -443,10 +430,10 @@ impl Core {
         };
         let place = crate::core_kinds::of(&self.declared.kinds, k).place;
         if place == phx_core::Place::Zone {
-            let region = self.firm_of(party)?.region()?;
+            let region = self.zoned_region(party)?;
             return regions.get(usize::try_from(region).ok()?).map(|c| usize::from(c.get()));
         }
-        crate::core_kinds::country_by_place(place, record, (sited_by, regions), tile_country)
+        crate::core_kinds::country_by_place(place, record, regions, tile_country)
     }
 }
 

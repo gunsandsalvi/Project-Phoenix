@@ -1,18 +1,9 @@
-//! What a population kind's agents hold, declared item by item by the system that writes each; the population
-//! compiles them into the kind's layout.
+//! What a population kind's persons hold, declared item by item by the system that writes each: their roles and their
+//! attributes, which the population compiles into a person's word. The household's own words are its kind store's.
 
 use phx_macros::clause;
 
 use crate::system::Declarations;
-
-/// An attribute every agent of a kind holds exactly, taking one of `values` values.
-#[clause("REP.41")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct AttrDecl {
-    pub name: &'static str,
-    pub values: u32,
-    pub clause: &'static str,
-}
 
 /// A role a person holds in its household.
 #[clause("REP.26")]
@@ -35,35 +26,11 @@ pub struct PersonAttrDecl {
     pub initial: phx_num::Missing<u32>,
 }
 
-/// A position every agent of a kind holds: an amount, a stock or a rate of its own, missing until its
-/// writer writes it unless the opening writes it as it declares.
-#[clause("REP.20")]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PositionDecl {
-    pub name: &'static str,
-    pub clause: &'static str,
-    pub opening: PositionOpening,
-}
-
-/// What a position holds when the opening is done.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PositionOpening {
-    /// Missing, until its writer first writes it.
-    Missing,
-    /// The money the agent's contracts owe it over the year after the opening: an outlook of its income drawn from
-    /// what it is owed.
-    OwedAYear,
-}
-
 /// One item of a population kind.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PopItem {
-    Attr(AttrDecl),
     Role(RoleDecl),
     PersonAttr(PersonAttrDecl),
-    Position(PositionDecl),
-    /// The attribute whose value is the region the agent lives in, where what it leaves behind is sited.
-    SitedBy(&'static str),
 }
 
 /// An item as declared: the system that declared it, which writes it, and the kind it belongs to.
@@ -93,23 +60,11 @@ impl<'a> PopKindBuilder<'a> {
         self
     }
 
-    pub fn attr(&mut self, decl: AttrDecl) -> &mut Self {
-        self.add(PopItem::Attr(decl))
-    }
-
     pub fn role(&mut self, decl: RoleDecl) -> &mut Self {
         self.add(PopItem::Role(decl))
     }
 
     pub fn person_attr(&mut self, decl: PersonAttrDecl) -> &mut Self {
         self.add(PopItem::PersonAttr(decl))
-    }
-
-    pub fn position(&mut self, decl: PositionDecl) -> &mut Self {
-        self.add(PopItem::Position(decl))
-    }
-
-    pub fn sited_by(&mut self, attr: &'static str) -> &mut Self {
-        self.add(PopItem::SitedBy(attr))
     }
 }

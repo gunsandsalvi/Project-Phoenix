@@ -188,11 +188,8 @@ fn cohorts_leave(w: Inspector<'_>) -> Outcome {
     else {
         return Outcome::NotYet("no households on the core");
     };
-    let (Some(store), Some(Some(persons))) = (core.kinds.get(place), core.persons.get(place)) else {
+    let Some(Some(persons)) = core.persons.get(place) else {
         return Outcome::NotYet("no households on the core");
-    };
-    let phx_num::Missing::Present(region_at) = decl.sited_by else {
-        return Outcome::Fail("households sited nowhere".to_owned());
     };
     let mut ages = Vec::new();
     for c in w.regions() {
@@ -204,10 +201,7 @@ fn cohorts_leave(w: Inspector<'_>) -> Outcome {
     }
     let date = w.date(w.today());
     for slot in core.live_slots(place) {
-        let region = store.record(slot).get(region_at).and_then(|x| match x.get() {
-            phx_num::Missing::Present(v) => usize::try_from(v).ok(),
-            phx_num::Missing::Absent => None,
-        });
+        let region = core.household_region(slot).and_then(|r| usize::try_from(r).ok());
         let Some(leaving) = region.and_then(|r| ages.get(r)) else {
             return Outcome::Fail(format!("household slot {} in a region of no country", slot.get()));
         };

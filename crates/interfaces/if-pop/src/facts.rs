@@ -1,6 +1,6 @@
-//! What a household holds and expects, which its decisions read and write, as positions of its agent.
+//! What a household holds and expects, which its decisions read and write, as words of its kind store.
 
-use phx_core::{FactDef, PositionDecl, PositionOpening, declare_fact};
+use phx_core::declare_fact;
 
 declare_fact! {
     /// The household's outlook of its permanent income a year: the mean of its adaptive outlook.
@@ -29,16 +29,3 @@ declare_fact! {
         value: Count, kinds: ["household"], writer: "HH", audience: Party, repr: Position, clause: "HH.4",
     }
 }
-
-/// A fact as the position a household's agent holds of the same name, as the opening leaves it.
-const fn from_fact<F: FactDef>(opening: PositionOpening) -> PositionDecl {
-    PositionDecl { name: F::ITEM.name, clause: F::ITEM.clause, opening }
-}
-
-/// Every position a household's agent holds, in the order its table keeps them.
-pub const POSITIONS: [PositionDecl; 4] = [
-    from_fact::<Income>(PositionOpening::OwedAYear),
-    from_fact::<After>(PositionOpening::Missing),
-    from_fact::<Received>(PositionOpening::Missing),
-    from_fact::<Looked>(PositionOpening::Missing),
-];

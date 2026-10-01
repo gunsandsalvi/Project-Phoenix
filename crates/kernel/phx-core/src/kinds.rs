@@ -46,31 +46,28 @@ pub struct KindDecl {
 }
 
 /// Where a kind's parties' region and country are read from: the tile of their site, their region or their country,
-/// each in a word of their record; their region in the attribute their population declaration sites them by; or their
-/// zone, an attribute of their kind's store, whose region and country the map gives.
+/// each in a word of their record; or their zone, an attribute of their kind's store, whose region and country the map
+/// gives.
 #[clause("PTY.5")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Place {
     Site { word: u16 },
     Region { word: u16 },
     Country { word: u16 },
-    Sited,
     Zone,
 }
 
 impl Place {
-    /// The record word the place is read from; none for a kind its population declaration sites, or whose store
-    /// holds its zone.
+    /// The record word the place is read from; none for a kind whose store holds its zone.
     #[must_use]
     pub const fn word(self) -> Option<u16> {
         match self {
             Place::Site { word } | Place::Region { word } | Place::Country { word } => Some(word),
-            Place::Sited | Place::Zone => None,
+            Place::Zone => None,
         }
     }
 
-    /// A place read from a word of a record of `words` words lies within it; a sited kind's attribute is checked by
-    /// its population declaration.
+    /// A place read from a word of a record of `words` words lies within it; a zone is its store's.
     ///
     /// # Errors
     /// A word beyond the record.
@@ -218,7 +215,7 @@ mod tests {
     fn country_place_reads_country_word() {
         assert_eq!(super::ESTATE_KIND.place, Place::Country { word: 0 });
         assert_eq!(Place::Country { word: 0 }.word(), Some(0));
-        assert_eq!(Place::Sited.word(), None);
+        assert_eq!(Place::Zone.word(), None);
     }
 
     #[test]
@@ -228,6 +225,6 @@ mod tests {
             Err("kind `firm` reads its place from word 1 of a record of 1".to_owned())
         );
         assert_eq!(Place::Site { word: 0 }.check("bank", 1), Ok(()));
-        assert_eq!(Place::Sited.check("household", 0), Ok(()), "its population declaration checks the attribute");
+        assert_eq!(Place::Zone.check("household", 0), Ok(()), "its store holds its zone");
     }
 }

@@ -11,7 +11,7 @@ pub mod produce;
 pub mod rules;
 
 use phx_core::register::values::Table2;
-use phx_core::{AttrDecl, Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
+use phx_core::{Declarations, StreamDef, System, declare_kind, declare_prim, declare_stream};
 use phx_macros::opening;
 use phx_num::{Count, Fixed};
 
@@ -56,11 +56,6 @@ impl FilingPrims {
         libm::pow(consts::DECADE, f64::from(exp))
     }
 }
-
-/// The region a small firm is sited in.
-pub const REGION: AttrDecl = AttrDecl { name: "FRM.region", values: if_pop::consts::REGIONS, clause: "REP.41" };
-/// The bank a small firm banks with, which the banks declare on the kind; the opening draws it with the firm.
-pub const BANK_ATTR: &str = "BNK.bank";
 
 declare_prim! {
     /// Enterprises per person employed, by product: how many firms the persons employed making it make.

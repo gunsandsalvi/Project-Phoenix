@@ -1149,7 +1149,6 @@ pub phx_core::kinds::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-
 pub phx_core::kinds::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::kinds::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::kinds::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
-pub phx_core::kinds::Place::Sited  // used by: phx-world
 pub phx_core::kinds::Place::Zone
 impl phx_core::kinds::Place
 pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
@@ -1228,18 +1227,8 @@ pub type phx_core::policy::Segments<'_, T>::Item = (phx_id::day::Day, phx_id::da
 pub fn phx_core::policy::Segments<'_, T>::next(&mut self) -> core::option::Option<(phx_id::day::Day, phx_id::day::Day, T)>
 pub mod phx_core::pop  // used by: phx-check, phx-cli, phx-geo, phx-rand, phx-store, phx-world
 pub enum phx_core::pop::PopItem  // used by: phx-pop
-pub phx_core::pop::PopItem::Attr(phx_core::pop::AttrDecl)  // used by: phx-obs, phx-pop
 pub phx_core::pop::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)  // used by: phx-pop
-pub phx_core::pop::PopItem::Position(phx_core::pop::PositionDecl)  // used by: phx-pop
 pub phx_core::pop::PopItem::Role(phx_core::pop::RoleDecl)  // used by: phx-macros, phx-pop, phx-world, sys-dem
-pub phx_core::pop::PopItem::SitedBy(&'static str)  // used by: phx-pop
-pub enum phx_core::pop::PositionOpening  // used by: if-pop, phx-world
-pub phx_core::pop::PositionOpening::Missing  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::pop::PositionOpening::OwedAYear  // used by: if-pop, phx-world
-pub struct phx_core::pop::AttrDecl  // used by: if-pop, phx-pop, sys-bnk, sys-frm, sys-hh
-pub phx_core::pop::AttrDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
-pub phx_core::pop::AttrDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::pop::AttrDecl::values: u32  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct phx_core::pop::PersonAttrDecl  // used by: if-pop, phx-pop, sys-lab
 pub phx_core::pop::PersonAttrDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::PersonAttrDecl::initial: phx_num::missing::Missing<u32>  // used by: if-pop, phx-pop, sys-lab
@@ -1251,39 +1240,35 @@ pub phx_core::pop::PopEntry::kind: &'static str  // used by: if-labour, phx-chec
 pub phx_core::pop::PopEntry::system: &'static str  // used by: phx-check, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_core::pop::PopKindBuilder<'a>
 impl<'a> phx_core::pop::PopKindBuilder<'a>
-pub fn phx_core::pop::PopKindBuilder<'a>::attr(&mut self, phx_core::pop::AttrDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::person_attr(&mut self, phx_core::pop::PersonAttrDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
-pub struct phx_core::pop::PositionDecl  // used by: if-pop, phx-pop
-pub phx_core::pop::PositionDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
-pub phx_core::pop::PositionDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::pop::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub struct phx_core::pop::RoleDecl  // used by: if-pop, phx-pop
 pub phx_core::pop::RoleDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::pop::RoleDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
 pub mod phx_core::pop_process  // used by: phx-world, sys-dem, sys-lab
 pub struct phx_core::pop_process::AgentView<'a>  // used by: phx-world, sys-dem, sys-lab
-pub phx_core::pop_process::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub phx_core::pop_process::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>  // used by: phx-cli, phx-geo, phx-world, sys-dem, sys-lab
 pub phx_core::pop_process::AgentView::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::pop_process::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say  // used by: phx-world
 pub phx_core::pop_process::AgentView::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::pop_process::AgentView::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
+pub phx_core::pop_process::AgentView::state: phx_core::pop_process::HouseholdState
 impl phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>  // used by: phx-world, sys-dem, sys-lab
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::fmt(&self, &mut core::fmt::Formatter<'_>) -> core::fmt::Result  // used by: phx-world, sys-dem, sys-lab
 pub struct phx_core::pop_process::Household  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
-pub phx_core::pop_process::Household::attrs: alloc::vec::Vec<(&'static str, u32)>  // used by: phx-check, phx-macros, phx-pop, phx-world, sys-dem
 pub phx_core::pop_process::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
-pub phx_core::pop_process::Household::positions: alloc::vec::Vec<(&'static str, phx_num::missing::Missing<i64>)>  // used by: phx-pop, phx-world, sys-dem
+pub phx_core::pop_process::Household::state: phx_core::pop_process::HouseholdState
 impl phx_core::pop_process::Household
-pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
-pub fn phx_core::pop_process::Household::position(&self, &str) -> phx_num::missing::Missing<i64>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>  // used by: phx-num, phx-val, phx-world, sys-dem
-pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)  // used by: phx-world, sys-dem, sys-lab
+pub struct phx_core::pop_process::HouseholdState
+pub phx_core::pop_process::HouseholdState::ideal: phx_num::missing::Missing<u8>
+pub phx_core::pop_process::HouseholdState::income: phx_num::missing::Missing<i64>
+pub phx_core::pop_process::HouseholdState::region: u32
+pub phx_core::pop_process::HouseholdState::trying: bool
+impl phx_core::pop_process::HouseholdState
+pub const fn phx_core::pop_process::HouseholdState::formed(u32) -> phx_core::pop_process::HouseholdState
 pub struct phx_core::pop_process::Person  // used by: phx-pop, phx-world, sys-dem, sys-lab
 pub phx_core::pop_process::Person::attrs: alloc::vec::Vec<(&'static str, u32)>  // used by: phx-check, phx-macros, phx-pop, phx-world, sys-dem
 pub phx_core::pop_process::Person::born: phx_id::day::Date  // used by: phx-cli, phx-pop, phx-world, sys-dem
@@ -1303,6 +1288,7 @@ pub fn phx_core::pop_process::PopProcess::hazard(&self) -> &'static str  // used
 pub fn phx_core::pop_process::PopProcess::kind(&self) -> &'static str  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub fn phx_core::pop_process::PopProcess::outcome(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &mut phx_core::pop_process::Household, &[usize], &mut phx_rand::draws::Draws)  // used by: phx-check, phx-cli, phx-geo, phx-macros, phx-world, sys-dem, sys-lab
 pub fn phx_core::pop_process::PopProcess::rate(&self, &phx_core::register::Register, &phx_core::pop_process::AgentView<'_>, &phx_core::pop_process::Person) -> f64  // used by: if-state, phx-cli, phx-geo, phx-ledger, phx-macros, phx-num, phx-rand, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-gds, sys-lab, sys-soc, sys-sta, sys-tax
+pub fn phx_core::pop_process::age_on(phx_id::day::Date, phx_id::day::Date) -> i64
 pub mod phx_core::products  // used by: if-base, phx-fin, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub struct phx_core::products::ProductEntry  // used by: sys-tec
 pub phx_core::products::ProductEntry::delivered_at_once: bool  // used by: if-base, sys-tec
@@ -2424,20 +2410,13 @@ pub phx_core::Place::Region  // used by: phx-cli, phx-exec, phx-geo, phx-id, phx
 pub phx_core::Place::Region::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub phx_core::Place::Site  // used by: phx-check, phx-exec, phx-market, phx-world
 pub phx_core::Place::Site::word: u16  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
-pub phx_core::Place::Sited  // used by: phx-world
 pub phx_core::Place::Zone
 impl phx_core::kinds::Place
 pub fn phx_core::kinds::Place::check(self, &str, usize) -> core::result::Result<(), alloc::string::String>  // used by: phx-check, phx-cli, phx-macros, phx-store, phx-val, phx-world
 pub const fn phx_core::kinds::Place::word(self) -> core::option::Option<u16>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-market, phx-pop, phx-rand, phx-store, phx-world
 pub enum phx_core::PopItem  // used by: phx-pop
-pub phx_core::PopItem::Attr(phx_core::pop::AttrDecl)  // used by: phx-obs, phx-pop
 pub phx_core::PopItem::PersonAttr(phx_core::pop::PersonAttrDecl)  // used by: phx-pop
-pub phx_core::PopItem::Position(phx_core::pop::PositionDecl)  // used by: phx-pop
 pub phx_core::PopItem::Role(phx_core::pop::RoleDecl)  // used by: phx-macros, phx-pop, phx-world, sys-dem
-pub phx_core::PopItem::SitedBy(&'static str)  // used by: phx-pop
-pub enum phx_core::PositionOpening  // used by: if-pop, phx-world
-pub phx_core::PositionOpening::Missing  // used by: if-base, if-labour, if-pop, phx-acct, phx-cli, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::PositionOpening::OwedAYear  // used by: if-pop, phx-world
 pub enum phx_core::PrimKind
 pub phx_core::PrimKind::Endowment
 pub phx_core::PrimKind::Policy  // used by: phx-fin, phx-macros
@@ -2618,12 +2597,12 @@ impl<'a> phx_core::streams::AdviceDraws<'a>
 pub fn phx_core::streams::AdviceDraws<'a>::new(&'a phx_core::streams::WorldStreams) -> phx_core::streams::AdviceDraws<'a>  // used by: phx-world
 pub fn phx_core::streams::AdviceDraws<'a>::open(&self, &phx_core::streams::StreamDecl, phx_rand::key::Subject, phx_id::day::Day, u8) -> core::result::Result<phx_rand::draws::Draws, phx_core::streams::NotObserver>  // used by: phx-world
 pub struct phx_core::AgentView<'a>  // used by: phx-world, sys-dem, sys-lab
-pub phx_core::AgentView::attr: &'a dyn core::ops::function::Fn(&str) -> core::option::Option<u32>  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub phx_core::AgentView::country_of: &'a dyn core::ops::function::Fn(u32) -> core::option::Option<phx_id::ids::CountryId>  // used by: phx-cli, phx-geo, phx-world, sys-dem, sys-lab
 pub phx_core::AgentView::date: phx_id::day::Date  // used by: phx-cli, phx-geo, phx-id, phx-ledger, phx-world, sys-dem, sys-lab, sys-soc
 pub phx_core::AgentView::decider: &'a dyn core::ops::function::Fn(&str) -> phx_core::decisions::Say  // used by: phx-world
 pub phx_core::AgentView::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_core::AgentView::party: phx_id::ids::PartyRef  // used by: phx-fin, phx-ledger, phx-market, phx-obs, phx-pop, phx-store, phx-world
+pub phx_core::AgentView::state: phx_core::pop_process::HouseholdState
 impl phx_core::pop_process::AgentView<'_>
 pub fn phx_core::pop_process::AgentView<'_>::decide<I, O: phx_core::decisions::QueuedPayload>(&self, &phx_core::decisions::DecisionPointDecl<I, O>, impl core::ops::function::FnOnce(&phx_core::decisions::Prefs) -> I) -> core::option::Option<O>  // used by: phx-world, sys-dem, sys-lab
 impl core::fmt::Debug for phx_core::pop_process::AgentView<'_>
@@ -2637,10 +2616,6 @@ impl phx_store::save::Saved for phx_core::contribution::Apportioned where alloc:
 pub fn phx_core::contribution::Apportioned::load(&mut phx_store::save::Reader<'_>) -> core::result::Result<Self, phx_store::save::LoadError>  // used by: phx-check, phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-market, phx-store, phx-world
 pub fn phx_core::contribution::Apportioned::rebuild_derived(&mut self, &mut phx_store::rebuild::Rebuilt) -> core::result::Result<(), phx_store::rebuild::RebuildError>  // used by: phx-macros, phx-store
 pub fn phx_core::contribution::Apportioned::save(&self, &mut phx_store::save::Writer<'_>)  // used by: phx-cli, phx-exec, phx-fin, phx-ledger, phx-macros, phx-store, phx-world
-pub struct phx_core::AttrDecl  // used by: if-pop, phx-pop, sys-bnk, sys-frm, sys-hh
-pub phx_core::AttrDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
-pub phx_core::AttrDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::AttrDecl::values: u32  // used by: if-pop, if-state, phx-check, phx-cli, phx-fin, phx-geo, phx-macros, phx-market, phx-obs, phx-pop, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sta, sys-tax, sys-tec, sys-trs
 pub struct phx_core::Binding
 pub phx_core::Binding::day: phx_id::day::Day  // used by: if-state, phx-check, phx-cli, phx-exec, phx-fin, phx-id, phx-ledger, phx-market, phx-num, phx-obs, phx-rand, phx-store, phx-val, phx-world, sys-sta
 pub phx_core::Binding::excess: i128  // used by: if-state, phx-world, sys-sov
@@ -2884,14 +2859,17 @@ pub phx_core::HazardDecl::stream: &'static str  // used by: phx-check, phx-fin, 
 impl phx_core::hazards::HazardDecl
 pub fn phx_core::hazards::HazardDecl::validate(&self) -> core::result::Result<(), alloc::string::String>
 pub struct phx_core::Household  // used by: phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
-pub phx_core::Household::attrs: alloc::vec::Vec<(&'static str, u32)>  // used by: phx-check, phx-macros, phx-pop, phx-world, sys-dem
 pub phx_core::Household::persons: alloc::vec::Vec<phx_core::pop_process::Person>  // used by: phx-check, phx-cli, phx-fin, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
-pub phx_core::Household::positions: alloc::vec::Vec<(&'static str, phx_num::missing::Missing<i64>)>  // used by: phx-pop, phx-world, sys-dem
+pub phx_core::Household::state: phx_core::pop_process::HouseholdState
 impl phx_core::pop_process::Household
-pub fn phx_core::pop_process::Household::attr(&self, &str) -> u32  // used by: phx-check, phx-cli, phx-macros, phx-obs, phx-pop, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
-pub fn phx_core::pop_process::Household::position(&self, &str) -> phx_num::missing::Missing<i64>  // used by: phx-check, phx-cli, phx-fin, phx-geo, phx-market, phx-obs, phx-pop, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
 pub fn phx_core::pop_process::Household::present(&self) -> impl core::iter::traits::iterator::Iterator<Item = (usize, &phx_core::pop_process::Person)>  // used by: phx-num, phx-val, phx-world, sys-dem
-pub fn phx_core::pop_process::Household::set_attr(&mut self, &str, u32)  // used by: phx-world, sys-dem, sys-lab
+pub struct phx_core::HouseholdState
+pub phx_core::HouseholdState::ideal: phx_num::missing::Missing<u8>
+pub phx_core::HouseholdState::income: phx_num::missing::Missing<i64>
+pub phx_core::HouseholdState::region: u32
+pub phx_core::HouseholdState::trying: bool
+impl phx_core::pop_process::HouseholdState
+pub const fn phx_core::pop_process::HouseholdState::formed(u32) -> phx_core::pop_process::HouseholdState
 pub struct phx_core::ItemDecl  // used by: if-pop, phx-world
 pub phx_core::ItemDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
 pub phx_core::ItemDecl::kind: phx_core::facts::ItemKind  // used by: if-labour, phx-check, phx-cli, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-pop, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
@@ -3063,15 +3041,8 @@ pub phx_core::PopEntry::kind: &'static str  // used by: if-labour, phx-check, ph
 pub phx_core::PopEntry::system: &'static str  // used by: phx-check, phx-geo, phx-pop, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_core::PopKindBuilder<'a>
 impl<'a> phx_core::pop::PopKindBuilder<'a>
-pub fn phx_core::pop::PopKindBuilder<'a>::attr(&mut self, phx_core::pop::AttrDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::person_attr(&mut self, phx_core::pop::PersonAttrDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::position(&mut self, phx_core::pop::PositionDecl) -> &mut Self
 pub fn phx_core::pop::PopKindBuilder<'a>::role(&mut self, phx_core::pop::RoleDecl) -> &mut Self
-pub fn phx_core::pop::PopKindBuilder<'a>::sited_by(&mut self, &'static str) -> &mut Self
-pub struct phx_core::PositionDecl  // used by: if-pop, phx-pop
-pub phx_core::PositionDecl::clause: &'static str  // used by: if-base, if-pop, phx-acct, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-id, phx-ledger, phx-macros, phx-market, phx-num, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-idx, sys-lab, sys-soc, sys-sov, sys-srv, sys-sta, sys-tax, sys-tec, sys-trs
-pub phx_core::PositionDecl::name: &'static str  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-pop, phx-rand, phx-store, phx-val, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov, sys-tec
-pub phx_core::PositionDecl::opening: phx_core::pop::PositionOpening  // used by: if-pop, phx-check, phx-cli, phx-exec, phx-fin, phx-geo, phx-ledger, phx-macros, phx-obs, phx-store, phx-val, phx-world, sys-bnk, sys-cb, sys-dem, sys-frm, sys-gds, sys-lab, sys-soc
 pub struct phx_core::Prefs  // used by: phx-world
 pub phx_core::Prefs::management: phx_num::missing::Missing<u16>  // used by: phx-cli, phx-world, sys-frm
 pub phx_core::Prefs::memory: phx_num::missing::Missing<u16>  // used by: phx-val, phx-world

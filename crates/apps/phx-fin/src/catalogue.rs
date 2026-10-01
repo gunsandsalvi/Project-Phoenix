@@ -186,7 +186,7 @@ impl<'a> Tables<'a> {
                     system: "PTY",
                     name,
                     form: nth(&s.forms, i, 0),
-                    place: Place::Sited,
+                    place: Place::Zone,
                     store: "firms",
                 })
                 .collect(),

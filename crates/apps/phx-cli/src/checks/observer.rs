@@ -1,7 +1,6 @@
 //! The observer's checks: the player and the public events.
 
 use phx_core::PublicEventRule as _;
-use phx_num::Missing;
 use phx_world::Inspector;
 use phx_world::core_player::Taken;
 
@@ -16,20 +15,11 @@ fn player_decides(w: Inspector<'_>) -> Outcome {
     let p = w.player();
     let Some(key) = p.household else { return Outcome::Fail("no player was seated at the opening".to_owned()) };
     let core = w.core();
-    let Some(store) = core.kinds.get(usize::from(key.kind())) else {
-        return Outcome::Fail("the player's household is of no kind".to_owned());
-    };
     if !core.lives(key) {
         return Outcome::Fail(format!("the player's household {} is not live", key.word()));
     }
-    let region = core.declared.household.as_ref().and_then(|d| match d.sited_by {
-        Missing::Present(at) => store.record(key.slot()).get(at).map(|v| v.get()),
-        Missing::Absent => None,
-    });
-    let country = match region {
-        Some(Missing::Present(r)) => usize::try_from(r).ok().and_then(|r| w.regions().get(r)).map(|c| c.get()),
-        _ => None,
-    };
+    let region = core.household_of(key).and_then(|v| v.region());
+    let country = region.and_then(|r| usize::try_from(r).ok()).and_then(|r| w.regions().get(r)).map(|c| c.get());
     let chosen = w.game().setup.player.country;
     if country.map(|c| u64::from(c) + 1) != Some(chosen) {
         return Outcome::Fail(format!("the player lives in country {country:?}, not the setup's {chosen}"));

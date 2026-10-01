@@ -58,8 +58,7 @@ pub(crate) fn succeed(h: &mut Household) {
 
 #[cfg(test)]
 mod tests {
-    use if_pop::REGION;
-    use phx_core::{Household, Person};
+    use phx_core::{Household, HouseholdState, Person};
     use phx_id::Date;
 
     use super::{Role, succeed};
@@ -69,7 +68,7 @@ mod tests {
     }
 
     fn household(persons: Vec<Person>) -> Household {
-        Household { attrs: vec![(REGION.name, 3)], persons, positions: Vec::new() }
+        Household { state: HouseholdState::formed(3), persons }
     }
 
     #[test]

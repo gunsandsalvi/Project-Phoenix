@@ -29,8 +29,10 @@ pub struct View {
 enum Of {
     /// Its persons.
     Persons,
-    /// The value of the attribute at this place among its kind's.
-    Attr(usize),
+    /// The region it lies in.
+    Region,
+    /// The bank it banks with, by the bank's slot.
+    Bank,
     /// Its contracts in the family at this place among the core's, on the side its kind is.
     Contracts { family: usize, side: usize },
 }
@@ -63,10 +65,11 @@ impl Views {
             let Some(kind) = core.names.iter().position(|n| *n == d.kind) else {
                 return Err(format!("histogram `{}` is of `{}`, a kind the world does not keep", d.id, d.kind));
             };
-            let decl = core.declared.household.as_ref().filter(|h| h.kind == d.kind);
-            let of = match (d.of.as_str(), d.of.strip_prefix("attr.")) {
-                ("persons", _) => Of::Persons,
-                (of, None) if of.starts_with("contracts.") => {
+            let of = match d.of.as_str() {
+                "persons" => Of::Persons,
+                "region" => Of::Region,
+                "bank" => Of::Bank,
+                of if of.starts_with("contracts.") => {
                     let name = of.trim_start_matches("contracts.");
                     let number = u8::try_from(kind).ok();
                     let found = core.families.iter().enumerate().find_map(|(i, f)| {
@@ -78,15 +81,9 @@ impl Views {
                     };
                     Of::Contracts { family, side }
                 }
-                (_, Some(attr)) => {
-                    let Some(i) = decl.and_then(|k| k.attr(attr)) else {
-                        return Err(format!("histogram `{}` reads `{attr}`, no attribute of `{}`", d.id, d.kind));
-                    };
-                    Of::Attr(i)
-                }
-                (other, None) => {
+                other => {
                     return Err(format!(
-                        "histogram `{}` is of `{other}`, not persons, an attribute or contracts",
+                        "histogram `{}` is of `{other}`, not persons, a region, a bank or contracts",
                         d.id
                     ));
                 }
@@ -109,18 +106,19 @@ impl Views {
         for r in &self.histograms {
             let Ok(mut h) = Histogram::new(r.edges.clone()) else { continue };
             let core = w.core();
-            let (Some(store), persons) = (core.kinds.get(r.kind), core.persons.get(r.kind).and_then(Option::as_ref))
-            else {
-                continue;
-            };
+            let persons = core.persons.get(r.kind).and_then(Option::as_ref);
             let Ok(kind) = u8::try_from(r.kind) else { continue };
             let mut sample = Vec::new();
             for slot in core.directory.live_slots(kind) {
                 let value = match r.of {
                     Of::Persons => i64::try_from(persons.map_or(0, |p| p.count(slot))).unwrap_or(i64::MAX),
-                    Of::Attr(attr) => match store.record(slot).get(attr).map(|w| w.get()) {
-                        Some(Missing::Present(v)) => v,
-                        _ => continue,
+                    Of::Region => match core.zoned_region(phx_id::PartyKey::new(kind, slot)) {
+                        Some(r) => i64::from(r),
+                        None => continue,
+                    },
+                    Of::Bank => match core.bank_of(phx_id::PartyKey::new(kind, slot)) {
+                        Some(b) => i64::from(b.slot().get()),
+                        None => continue,
                     },
                     Of::Contracts { family, side } => core
                         .families

@@ -32,7 +32,7 @@ const HOUSEHOLD: FormDecl<'static> = FormDecl {
 const KINDS: [KindEntry<'static>; 3] = [
     KindEntry { system: "FRM", name: "firm", form: "company", place: Place::Site { word: 0 }, store: "firms" },
     KindEntry { system: "BNK", name: "bank", form: "company", place: Place::Site { word: 0 }, store: "banks" },
-    KindEntry { system: "DEM", name: "household", form: "household", place: Place::Sited, store: "households" },
+    KindEntry { system: "DEM", name: "household", form: "household", place: Place::Zone, store: "households" },
 ];
 const FAMILIES: [FamilyDecl<'static>; 2] = [
     FamilyDecl {
@@ -235,7 +235,7 @@ fn kind_census_refused() {
     let names: Vec<String> = (0..32).map(|i| format!("k{i}")).collect();
     let many: Vec<KindEntry<'_>> = names
         .iter()
-        .map(|n| KindEntry { system: "X", name: n, form: "company", place: Place::Sited, store: "institutions" })
+        .map(|n| KindEntry { system: "X", name: n, form: "company", place: Place::Zone, store: "institutions" })
         .collect();
     let mut d = declared(&forms, &many, &[]);
     d.families = &[];
@@ -275,7 +275,7 @@ fn undeclared_references_and_twins_refused() {
         KINDS[0],
         KINDS[1],
         KINDS[2],
-        KindEntry { system: "X", name: "ghost", form: "nowhere", place: Place::Sited, store: "crypts" },
+        KindEntry { system: "X", name: "ghost", form: "nowhere", place: Place::Zone, store: "crypts" },
     ];
     let errors = refused(&declared(&forms, &kinds, &[MARKET]));
     assert!(errors.iter().any(|e| e.contains("legal form `company` declared twice")), "{errors:?}");

@@ -22,8 +22,7 @@ pub struct Retirement {
 
 impl Retirement {
     fn pension_months(&self, agent: &AgentView<'_>, p: &Person) -> Option<i64> {
-        let region = (agent.attr)(if_pop::REGION.name)?;
-        let country: CountryId = (agent.country_of)(region)?;
+        let country: CountryId = (agent.country_of)(agent.state.region)?;
         let sex = usize::try_from(p.attr(if_pop::SEX.name)?).ok()?;
         self.pension.get(usize::from(country.get()))?.get(sex).copied()
     }

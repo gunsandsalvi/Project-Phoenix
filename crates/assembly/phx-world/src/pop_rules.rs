@@ -116,9 +116,9 @@ pub(crate) fn chances(
     s: &mut Buffers,
 ) -> Missing<Day> {
     let date = reading.calendar.date(day);
-    let attr = |name: &str| household.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
     let decider = |_: &str| violation!(clause = "MND.20", "a decision taken while a chance is read");
-    let view = AgentView { kind, party, attr: &attr, country_of: reading.country_of, date, decider: &decider };
+    let view =
+        AgentView { kind, party, state: household.state, country_of: reading.country_of, date, decider: &decider };
     let mut change = None::<Day>;
     s.places.clear();
     s.qs.clear();
@@ -149,10 +149,11 @@ pub(crate) struct Buffers {
     out: Vec<usize>,
 }
 
-/// A chunk of the day's follows: its household read, its chance buffers and what its follows came to.
+/// A chunk of the day's follows: its household read, none before its first, its chance buffers and what its follows
+/// came to.
 #[derive(Debug, Default)]
 pub(crate) struct FollowChunk {
-    pub h: Household,
+    pub h: Option<Household>,
     pub buffers: Buffers,
     pub out: Vec<Followed>,
 }
@@ -348,9 +349,8 @@ mod tests {
         let person = || phx_core::Person { role: "head", born, attrs: Vec::new(), gone: false };
         let households: Vec<Household> = (0..40)
             .map(|i| Household {
-                attrs: Vec::new(),
+                state: phx_core::HouseholdState::formed(0),
                 persons: (0..=i % 5).map(|_| person()).collect(),
-                positions: Vec::new(),
             })
             .collect();
         let today = Day::new(400);

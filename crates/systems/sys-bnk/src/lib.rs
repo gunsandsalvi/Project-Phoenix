@@ -146,7 +146,6 @@ impl System for Bnk {
         }
         let _: phx_core::Prim<phx_core::register::values::Table1> = d.prim(&ACCOUNTS);
         d.stream(households::HouseholdsStream::DECL);
-        d.pop_kind(if_pop::HOUSEHOLD).attr(households::BANK_ATTR);
         d.stream(AskedStream::DECL);
         d.stream(TasteStream::DECL);
         for p in [&COVER_BOUNDS, &DEFAULT_RATES, &LENDERS_ASKED] {

@@ -6,7 +6,7 @@ use phx_core::decisions::{Prefs, Say, Standing};
 use phx_core::{QueuedIntent, WorldStreams};
 use phx_id::{Day, PartyKey, Slot};
 use phx_macros::clause;
-use phx_num::{Missing, violation};
+use phx_num::violation;
 use phx_rand::{Subject, SubjectTag};
 
 use crate::core::{Core, kind_number};
@@ -63,18 +63,11 @@ impl Core {
         regions: &[phx_id::CountryId],
     ) -> Result<(), String> {
         let place = self.bound.kinds.household.ok_or("no household kind")?;
-        let Some(Missing::Present(sited)) = self.declared.household.as_ref().map(|d| d.sited_by) else {
-            return Err("households sited by no region".to_owned());
-        };
-        let store = self.kinds.get(place).ok_or("no household kind")?;
         let of_country: Vec<Slot> = self
             .directory
             .live_slots(crate::core::kind_number(place))
             .filter(|s| {
-                let region = store.record(*s).get(sited).and_then(|w| match w.get() {
-                    Missing::Present(r) => usize::try_from(r).ok(),
-                    Missing::Absent => None,
-                });
+                let region = self.household_region(*s).and_then(|r| usize::try_from(r).ok());
                 region.and_then(|r| regions.get(r)).is_some_and(|c| c.get() == country)
             })
             .collect();

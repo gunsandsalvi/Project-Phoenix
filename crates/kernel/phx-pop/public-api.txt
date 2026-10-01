@@ -64,18 +64,13 @@ pub phx_pop::kind::PersonField::decl: phx_core::pop::PersonAttrDecl  // used by:
 pub phx_pop::kind::PersonField::shift: u32  // used by: phx-exec, phx-market, phx-num, phx-rand, phx-store, phx-world
 pub phx_pop::kind::PersonField::system: &'static str  // used by: phx-check, phx-core, phx-geo, phx-world, sys-bnk, sys-cap, sys-dem, sys-frm, sys-frt, sys-gds, sys-hh, sys-lab, sys-soc, sys-sov
 pub struct phx_pop::kind::PopKindDecl  // used by: phx-world, sys-dem
-pub phx_pop::kind::PopKindDecl::attrs: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::AttrDecl>>  // used by: phx-check, phx-core, phx-macros, phx-world, sys-dem
 pub phx_pop::kind::PopKindDecl::kind: &'static str  // used by: if-labour, phx-check, phx-cli, phx-core, phx-exec, phx-geo, phx-id, phx-ledger, phx-macros, phx-obs, phx-store, phx-world, sys-bnk, sys-cap, sys-cb, sys-dem, sys-frm, sys-lab, sys-soc, sys-tec
 pub phx_pop::kind::PopKindDecl::person_attrs: alloc::vec::Vec<phx_pop::kind::PersonField>
-pub phx_pop::kind::PopKindDecl::positions: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::PositionDecl>>  // used by: phx-core, phx-world, sys-dem
 pub phx_pop::kind::PopKindDecl::roles: alloc::vec::Vec<phx_pop::kind::Declared<phx_core::pop::RoleDecl>>
-pub phx_pop::kind::PopKindDecl::sited_by: phx_num::missing::Missing<usize>  // used by: phx-cli, phx-core, phx-world, sys-dem
 impl phx_pop::kind::PopKindDecl
-pub fn phx_pop::kind::PopKindDecl::attr(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-core, phx-macros, phx-obs, phx-world, sys-bnk, sys-dem, sys-hh, sys-lab, sys-soc
 pub fn phx_pop::kind::PopKindDecl::compile(&'static str, &[phx_core::pop::PopEntry]) -> core::result::Result<phx_pop::kind::PopKindDecl, alloc::vec::Vec<alloc::string::String>>  // used by: phx-core, phx-val, phx-world, sys-cap, sys-frm, sys-hh, sys-tec
 pub fn phx_pop::kind::PopKindDecl::has_persons(&self) -> bool  // used by: phx-world
 pub fn phx_pop::kind::PopKindDecl::person_attr(&self, &str) -> core::option::Option<usize>  // used by: phx-core, sys-dem, sys-lab
-pub fn phx_pop::kind::PopKindDecl::position(&self, &str) -> core::option::Option<usize>  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-geo, phx-market, phx-obs, phx-store, phx-world, sys-dem, sys-gds, sys-hh, sys-tec
 pub fn phx_pop::kind::PopKindDecl::role(&self, &str) -> core::option::Option<usize>  // used by: phx-cli, phx-core, phx-macros, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub fn phx_pop::kind::PopKindDecl::role_name(&self, usize) -> &'static str
 pub fn phx_pop::kind::compile_kinds(&[&'static str], &[phx_core::pop::PopEntry]) -> core::result::Result<alloc::vec::Vec<phx_pop::kind::PopKindDecl>, alloc::vec::Vec<alloc::string::String>>  // used by: phx-world
@@ -221,6 +216,7 @@ pub const fn phx_pop::layout::used(&phx_pop::layout::GroupDecl) -> u16  // used 
 pub const fn phx_pop::layout::width(&phx_pop::layout::KindMap) -> u16  // used by: phx-core, phx-fin, phx-geo, phx-store, phx-val, phx-world
 pub mod phx_pop::person  // used by: phx-cli, phx-core, phx-fin, phx-market, phx-world, sys-dem
 pub fn phx_pop::person::pack(&phx_pop::kind::PopKindDecl, &phx_core::pop_process::Person) -> u64  // used by: phx-store, phx-world
+pub fn phx_pop::person::role_and_birth(u64) -> (usize, phx_id::day::Date)
 pub fn phx_pop::person::unpack(&phx_pop::kind::PopKindDecl, u64) -> phx_core::pop_process::Person  // used by: phx-cli, phx-store, phx-world
 pub mod phx_pop::persons  // used by: phx-check, phx-cli, phx-core, phx-fin, phx-obs, phx-world, sys-bnk, sys-dem, sys-lab, sys-soc
 pub struct phx_pop::persons::Held  // used by: phx-cli, phx-core, phx-world

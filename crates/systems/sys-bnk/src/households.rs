@@ -5,19 +5,16 @@
 //! share of the currency in circulation a head.
 
 use phx_core::register::values::Table1;
-use phx_core::{AttrDecl, OpeningCountry, Prim, Register, declare_stream};
+use phx_core::{OpeningCountry, Prim, Register, declare_stream};
 use phx_ledger::online::Online;
 use phx_ledger::opening::whole;
 use phx_macros::clause;
 use phx_num::{Count, violation};
 use phx_rand::{Draws, open_unit};
 
-use crate::consts::{MOST_BANKS, SHARE_PARTS, WEALTH_PARTS};
+use crate::consts::{SHARE_PARTS, WEALTH_PARTS};
 
 declare_stream! { pub HouseholdsStream = "BNK.opening_households" { family: World, purpose: Opening, keyed: false, clause: "GEN.3" } }
-
-/// The bank a household banks with, counted from one; nought, none.
-pub const BANK_ATTR: AttrDecl = AttrDecl { name: "BNK.bank", values: MOST_BANKS + 1, clause: "REP.41" };
 
 /// The published shares of adults with an account and having borrowed, at their places in the declared table.
 const HOLDS_ACCOUNT: i64 = 0;

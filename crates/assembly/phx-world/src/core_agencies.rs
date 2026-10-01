@@ -10,7 +10,6 @@ use if_labour::law::Law;
 use phx_id::{CountryId, Day, PartyKey, Slot};
 use phx_macros::clause;
 use phx_market::hiring::Vacancy;
-use phx_num::Missing;
 
 use crate::core::Core;
 use crate::core_labour::{LabourCtx, Posting, at_country};
@@ -41,11 +40,7 @@ impl Core {
     /// The public administration's jobs, each with its agency, region, occupation and monthly wage: every agency's,
     /// or one's.
     fn posts_held(&self, only: Option<PartyKey>) -> Vec<(PartyKey, u32, u32, i64)> {
-        let (Some(family), Some(place), Some(Missing::Present(region_at))) = (
-            self.bound.families.public_employment.and_then(|i| self.families.get(i)),
-            self.bound.kinds.household,
-            self.declared.household.as_ref().map(|d| d.sited_by),
-        ) else {
+        let Some(family) = self.bound.families.public_employment.and_then(|i| self.families.get(i)) else {
             return Vec::new();
         };
         let edges: Vec<Slot> = match only {
@@ -60,11 +55,7 @@ impl Core {
             else {
                 continue;
             };
-            let region = self.kinds.get(place).and_then(|k| match k.record(row.ends[1].slot()).get(region_at)?.get() {
-                Missing::Present(r) => u32::try_from(r).ok(),
-                Missing::Absent => None,
-            });
-            if let Some(region) = region {
+            if let Some(region) = self.household_region(row.ends[1].slot()) {
                 out.push((row.ends[0], region, occupation, row.amount));
             }
         }

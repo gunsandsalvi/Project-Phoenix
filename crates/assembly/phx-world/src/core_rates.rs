@@ -79,13 +79,12 @@ impl Core {
         let date = ctx.calendar.date(day);
         let year = year_of(date);
         let country_of = |r: u32| ctx.regions.get(usize::try_from(r).ok()?).copied();
-        let mut h = Household { attrs: Vec::new(), persons: Vec::new(), positions: Vec::new() };
+        let mut buffer = None;
         for &(slot, party) in &sample {
-            self.read_household((place, &decl), slot, &mut h);
-            let attr = |name: &str| h.attrs.iter().find(|(n, _)| *n == name).map(|(_, v)| *v);
+            let h = self.read_household((place, &decl), slot, &mut buffer);
             let decider = |_: &str| phx_num::violation!(clause = "MND.20", "a decision taken while a chance is read");
             let view =
-                AgentView { kind: decl.kind, party, attr: &attr, country_of: &country_of, date, decider: &decider };
+                AgentView { kind: decl.kind, party, state: h.state, country_of: &country_of, date, decider: &decider };
             for hz in &self.hazards {
                 let Some(b) = ctx.processes.get(hz.process) else { continue };
                 for (_, person) in h.present() {

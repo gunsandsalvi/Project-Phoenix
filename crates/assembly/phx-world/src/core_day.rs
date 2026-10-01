@@ -199,6 +199,8 @@ pub struct Work {
     pub taken: Vec<u32>,
     /// The hazards' follows of the day.
     pub(crate) follows: crate::pop_rules::Follows,
+    /// The households' age classes at a year's close, read before they are written.
+    pub(crate) windows: Vec<(phx_id::Slot, phx_num::Missing<u8>)>,
 }
 
 /// A loan's due on its `k`th date, by its terms' shape: what it pays, and of that what repays its balance.

@@ -9,7 +9,7 @@ pub mod points;
 pub use buffer::{Model, Solution, solve, spend};
 
 use if_pop::facts::{After, Income, Looked, Received};
-use phx_core::{AttrDecl, Declarations, StreamDef, System, declare_prim, declare_stream};
+use phx_core::{Declarations, StreamDef, System, declare_prim, declare_stream};
 use phx_num::{Count, Fixed};
 
 use crate::consts::DAYS_A_YEAR;
@@ -18,15 +18,25 @@ declare_stream! { pub VisitStream = "HH.visits" { family: World, purpose: Schedu
 declare_stream! { pub TypesStream = "HH.outlook_types" { family: World, purpose: Opening, keyed: false, clause: "VAL.22" } }
 declare_stream! { pub StanceStream = "HH.stance" { family: World, purpose: Occasion, keyed: false, clause: "VAL.7" } }
 
-/// A household's memory type, at which its outlooks of public series correct.
-pub const MEMORY_ATTR: AttrDecl = AttrDecl { name: "HH.memory", values: crate::consts::MOST_TYPES, clause: "VAL.22" };
-/// A household's switching type: how strongly its stance moves toward the heuristic that has forecast best.
-pub const SWITCHING_ATTR: AttrDecl =
-    AttrDecl { name: "HH.switching", values: crate::consts::MOST_TYPES, clause: "VAL.22" };
-/// The heuristic of the menu a household's outlooks of public series rely on.
-pub const STANCE_ATTR: AttrDecl = AttrDecl { name: "HH.stance", values: crate::consts::MOST_TYPES, clause: "VAL.7" };
-/// The age class of a household's head, whose lived years weight its outlooks of public series.
-pub const WINDOW_ATTR: AttrDecl = AttrDecl { name: "HH.window", values: crate::consts::MOST_TYPES, clause: "VAL.23" };
+/// A household's preference type, its memory type (at which its outlooks of public series correct) and its switching
+/// type (how strongly its stance moves toward the heuristic that has forecast best) as one value; none past the types a
+/// household's preference holds.
+#[phx_macros::clause("VAL.22", "NUM.4")]
+#[must_use]
+pub fn preference_type(memory: u16, switching: u16) -> Option<u16> {
+    let most = u16::try_from(crate::consts::MOST_TYPES).ok()?;
+    if memory >= most || switching >= most {
+        return None;
+    }
+    memory.checked_mul(most)?.checked_add(switching)
+}
+
+/// A preference type's memory and switching types.
+#[must_use]
+pub fn preference_parts(preference: u16) -> Option<(u16, u16)> {
+    let most = u16::try_from(crate::consts::MOST_TYPES).ok()?;
+    Some((preference.checked_div(most)?, preference.checked_rem(most)?))
+}
 
 declare_prim! {
     /// A household type's yearly patience, the weight of next year's utility.
@@ -124,11 +134,6 @@ impl System for Hh {
         ] {
             d.claim(fact);
         }
-        let mut household = d.pop_kind(if_pop::HOUSEHOLD);
-        household.attr(MEMORY_ATTR).attr(SWITCHING_ATTR).attr(STANCE_ATTR).attr(WINDOW_ATTR);
-        for p in if_pop::facts::POSITIONS {
-            household.position(p);
-        }
         d.compile(Box::new(|register, countries| {
             let model = Model {
                 beta: register.fixed(PATIENCE.id)?,
@@ -161,10 +166,23 @@ impl System for Hh {
             let period = phx_rand::float::from_u64(days) / DAYS_A_YEAR;
             let types = phx_val::types::Types::compile(register)?;
             let most = usize::try_from(crate::consts::MOST_TYPES).map_err(|e| e.to_string())?;
-            if types.gains.len() > most || types.intensities.len() > most || phx_val::heuristic::MENU.len() > most {
-                return Err(format!("more outlook types or heuristics than a household's attribute holds ({most})"));
+            if types.gains.len() > most || types.intensities.len() > most {
+                return Err(format!("more outlook types than a household's preference type holds ({most} of each)"));
             }
             Ok(Box::new(Own { rule, gain: register.fixed(INCOME_GAIN.id)?, period, shares, types }))
         }));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{preference_parts, preference_type};
+
+    #[test]
+    fn a_preference_type_reads_back_its_parts() {
+        for (m, s) in [(0, 0), (3, 7), (15, 15)] {
+            assert_eq!(preference_type(m, s).and_then(preference_parts), Some((m, s)));
+        }
+        assert_eq!(preference_type(16, 0), None, "a memory type past the types held");
     }
 }

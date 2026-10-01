@@ -87,12 +87,12 @@ pub(crate) fn of(traits: &[KindTraits], kind: usize) -> &KindTraits {
 }
 
 /// The country a party is of, read from where its kind declares its place: a region word through the regions, the
-/// region its population declaration sites it by, the country word, or its site's tile through the map.
+/// country word, or its site's tile through the map.
 #[clause("PTY.5")]
 pub(crate) fn country_by_place(
     place: Place,
     record: &[MaybeI64],
-    (sited_by, regions): (Missing<usize>, &[phx_id::CountryId]),
+    regions: &[phx_id::CountryId],
     tile_country: impl Fn(u32) -> Option<usize>,
 ) -> Option<usize> {
     let word = |at: usize| match record.get(at)?.get() {
@@ -102,15 +102,17 @@ pub(crate) fn country_by_place(
     let region = |at: usize| regions.get(usize::try_from(word(at)?).ok()?).map(|c| usize::from(c.get()));
     match place {
         Place::Region { word: at } => region(usize::from(at)),
-        Place::Sited => match sited_by {
-            Missing::Present(at) => region(at),
-            Missing::Absent => None,
-        },
         Place::Country { word: at } => usize::try_from(word(usize::from(at))?).ok(),
         Place::Site { word: at } => tile_country(u32::try_from(word(usize::from(at))?).ok()?),
         // A zone is its kind's store's to read, not its record's.
         Place::Zone => None,
     }
+}
+
+/// The bank an account is held at, by the bank's slot; none for one held at the issuer, its holder banking nowhere.
+#[clause("MON.14")]
+pub(crate) fn banked(bank: u32) -> Missing<u32> {
+    if bank == phx_core::settle::AT_ISSUER { Missing::Absent } else { Missing::Present(bank) }
 }
 
 /// The party a country's inheritance law passes an estate with no heir to: of its institutions, the one of the kind

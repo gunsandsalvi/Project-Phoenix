@@ -22,5 +22,5 @@ pub const NORMAL_EDGE: f64 = 12.0;
 pub const HALF: f64 = 0.5;
 /// Days of a year, over which a year's income is spent between decisions.
 pub const DAYS_A_YEAR: f64 = 365.2425;
-/// The most memory or switching types a household's attribute can hold.
+/// The most memory or switching types a household's preference type can hold.
 pub const MOST_TYPES: u32 = 16;

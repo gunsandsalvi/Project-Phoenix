@@ -27,7 +27,10 @@ pub const INT_BYTES: [u16; 4] = [1, 2, 4, 8];
 
 /// A household's hot row, the two lines a visit gathers: its attributes (where it lives, a zone or a building, from
 /// which its region and country are read; tenure, credit stage and stance packed in one byte; its preference type; its
-/// flags; the day it formed), its persons' and contracts' heads, its positions, its own outlooks and its agenda.
+/// flags; the day it formed), its persons' and contracts' heads, its positions (the income it received since it last
+/// looked, its debt service and what it held after it last spent), its own outlooks (of its income a year, and two
+/// ratios in `Fixed`), the month it last looked at its income, counted from the run's first, its age class, and its
+/// agenda.
 const HOUSEHOLD_HOT: GroupDecl = GroupDecl {
     name: "hot",
     width: 128,
@@ -39,14 +42,20 @@ const HOUSEHOLD_HOT: GroupDecl = GroupDecl {
         word("formed", U32, 1, true, "K-32"),
         word("persons_head", U32, 1, true, "K-33"),
         word("chain_head", U32, 1, true, "K-53"),
-        word("positions", I64, 3, true, "K-32"),
-        word("outlooks", I32, 4, true, "K-102"),
+        word("received", I64, 1, true, "K-32"),
+        word("debt_service", I64, 1, true, "K-54"),
+        word("after", I64, 1, true, "K-32"),
+        word("income", I64, 1, true, "K-102"),
+        word("outlooks", I32, 2, true, "K-102"),
+        word("looked", U16, 1, true, "K-32"),
+        word("window", U8, 1, true, "K-32"),
         word("agenda_base", U32, 1, true, "K-43"),
         word("agenda", U16, 27, true, "K-43"),
     ],
 };
 
-/// A household's warm row: two named-unit slots its persons or their groups own (owner, unit, count, cost).
+/// A household's warm row: two named-unit slots its persons or their groups own (owner, unit, count, cost), and its
+/// ideal number of children, one more than the number once drawn.
 const HOUSEHOLD_WARM: GroupDecl = GroupDecl {
     name: "warm",
     width: 46,
@@ -55,6 +64,7 @@ const HOUSEHOLD_WARM: GroupDecl = GroupDecl {
         word("unit_id", U32, 2, true, "K-60"),
         word("unit_count", U32, 2, false, "K-60"),
         word("unit_cost", I64, 2, false, "K-60"),
+        word("ideal", U8, 1, true, "K-32"),
     ],
 };
 
@@ -154,8 +164,8 @@ const _: () = assert!(fits(&HOUSEHOLD) && fits(&FIRM));
 const _: () = assert!(width(&HOUSEHOLD) == 174 && HOUSEHOLD_HOT.width == 128);
 /// The firm's 528 bytes, 192 of them hot and 192 warm: three cache lines each.
 const _: () = assert!(width(&FIRM) == 528 && FIRM_HOT.width == 192 && FIRM_WARM.width == 192);
-/// The reserves later steps fill: the household's 16 bytes.
-const _: () = assert!(HOUSEHOLD_HOT.width - used(&HOUSEHOLD_HOT) + HOUSEHOLD_WARM.width - used(&HOUSEHOLD_WARM) == 16);
+/// The reserves later steps fill: the household's 12 bytes.
+const _: () = assert!(HOUSEHOLD_HOT.width - used(&HOUSEHOLD_HOT) + HOUSEHOLD_WARM.width - used(&HOUSEHOLD_WARM) == 12);
 /// The firm's reserve, 39 bytes.
 const _: () = assert!(
     FIRM_HOT.width - used(&FIRM_HOT) + FIRM_WARM.width - used(&FIRM_WARM) + FIRM_COLD.width - used(&FIRM_COLD)
